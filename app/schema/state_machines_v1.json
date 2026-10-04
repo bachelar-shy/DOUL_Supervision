@@ -1,0 +1,139 @@
+{
+  "version": "1.0",
+  "machines": {
+    "observation": {
+      "states": [
+        "candidate",
+        "under_review",
+        "confirmed",
+        "rejected"
+      ],
+      "initial": "candidate",
+      "transitions": [
+        [
+          "candidate",
+          "under_review"
+        ],
+        [
+          "under_review",
+          "confirmed"
+        ],
+        [
+          "under_review",
+          "rejected"
+        ]
+      ]
+    },
+    "inspection": {
+      "states": [
+        "draft",
+        "requested",
+        "completeness_review",
+        "scheduled",
+        "in_progress",
+        "result_pending",
+        "passed",
+        "conditional",
+        "failed",
+        "hold",
+        "completed"
+      ],
+      "initial": "draft"
+    },
+    "issue": {
+      "states": [
+        "open",
+        "assigned",
+        "in_progress",
+        "ready_for_recheck",
+        "reinspection",
+        "rework_required",
+        "closed",
+        "cancelled",
+        "superseded"
+      ],
+      "initial": "open",
+      "transitions": [
+        [
+          "open",
+          "assigned"
+        ],
+        [
+          "assigned",
+          "in_progress"
+        ],
+        [
+          "in_progress",
+          "ready_for_recheck"
+        ],
+        [
+          "ready_for_recheck",
+          "reinspection"
+        ],
+        [
+          "reinspection",
+          "closed"
+        ],
+        [
+          "reinspection",
+          "rework_required"
+        ],
+        [
+          "rework_required",
+          "in_progress"
+        ]
+      ]
+    },
+    "rfi": {
+      "states": [
+        "draft",
+        "submitted",
+        "supervisor_review",
+        "responsible_party_review",
+        "response_received",
+        "answered",
+        "closed",
+        "returned_for_clarification",
+        "withdrawn",
+        "cancelled"
+      ],
+      "initial": "draft"
+    },
+    "change": {
+      "states": [
+        "proposed",
+        "impact_review",
+        "decision_required",
+        "approved",
+        "rejected",
+        "returned",
+        "revised_information_issued",
+        "implementation",
+        "verification",
+        "closed"
+      ],
+      "initial": "proposed"
+    },
+    "approval": {
+      "states": [
+        "pending",
+        "under_review",
+        "approved",
+        "rejected",
+        "returned",
+        "expired",
+        "revoked",
+        "superseded"
+      ],
+      "initial": "pending"
+    }
+  },
+  "common_guards": [
+    "role_assignment_authorized",
+    "expected_version_matches",
+    "requirement_version_valid",
+    "required_evidence_present",
+    "drawing_revision_current",
+    "hold_point_released_when_required"
+  ]
+}

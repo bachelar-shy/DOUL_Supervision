@@ -9,17 +9,29 @@
 
 ## 2. 사용자
 
-- 발주처
-- DOUL 총괄
-- 감리단장
-- 분야감리
-- 안전담당
-- 품질·시험
-- 문서관리
-- 설계자
-- 시공사
-- 전문시공사
-- 읽기 전용 감사자
+상위 사용자군은 다음 5개 Human Actor와 1개 System Actor로 단순화한다.
+
+- SUP: DOUL 감리
+- ADM: DOUL PM / 관리자
+- CON: 시공사
+- OWN: 발주처
+- DES: 설계자
+- SYS: AI / 자동화 / 시스템 연동
+
+감리단장·분야감리·안전담당·품질·시험·문서관리 등은 별도 사용자종류가 아니라 프로젝트별 RoleAssignment로 정의한다.
+
+시험기관과 외부검토자는 앱 사용자군에서 제외한다. 관련 시험성적서·검토자료는 시공사가 제출하고 감리가 검토하는 문서·증빙으로 관리한다.
+
+권한은 User가 아니라 다음 구조로 계산한다.
+
+> User → Organization → Project → RoleAssignment → Authority
+
+## 2.1 접속환경
+
+- Mobile Native: 감리 현장촬영·검측·Evidence·Offline 중심
+- Tablet: 도면·체크리스트·현장검토 중심
+- Responsive Web: 관리·보고·의사결정·문서작성 중심
+- WebView: 일반 업무화면 재사용에 한정하며 카메라·AR·Offline 핵심기능의 기반으로 사용하지 않는다.
 
 ## 3. 핵심 모듈
 
@@ -199,3 +211,16 @@ Issue ID를 중심으로 다음을 연결한다.
 - TypeScript 타입: `app/types/supervision.ts`
 
 법정서명자는 자격·유효기간·프로젝트 배치상태를 확인한 후에만 선택 가능하도록 한다.
+
+
+## 15. v2 구현 모델
+
+Core Domain Object, State Machine, Authority Matrix, Mobile/Web 구조는 다음 파일을 기준으로 한다.
+
+- 17_Domain_State_Authority_Model.md
+- 18_Mobile_Web_Product_Architecture.md
+- 19_MVP_Vertical_Slice.md
+- app/schema/domain_model_v2.json
+- app/schema/state_machines_v1.json
+- app/schema/authority_matrix_v1.json
+- app/schema/ui_surfaces_v1.json

@@ -1,0 +1,83 @@
+{
+  "version": "1.0",
+  "actor_groups": [
+    "SUP",
+    "ADM",
+    "CON",
+    "OWN",
+    "DES",
+    "SYS"
+  ],
+  "excluded_user_groups": [
+    "TEST_LAB",
+    "EXTERNAL_REVIEWER"
+  ],
+  "note": "Field-specific positions are project RoleAssignments, not global user types.",
+  "actions": {
+    "create_self_inspection": [
+      "CON"
+    ],
+    "submit_inspection_request": [
+      "CON"
+    ],
+    "perform_official_inspection": [
+      "SUP"
+    ],
+    "confirm_observation": [
+      "SUP"
+    ],
+    "issue_official_issue": [
+      "SUP"
+    ],
+    "submit_corrective_action": [
+      "CON"
+    ],
+    "request_reinspection": [
+      "CON"
+    ],
+    "perform_reinspection": [
+      "SUP"
+    ],
+    "close_issue": [
+      "SUP"
+    ],
+    "answer_rfi": [
+      "DES"
+    ],
+    "review_rfi_response": [
+      "SUP"
+    ],
+    "request_owner_decision": [
+      "SUP",
+      "ADM"
+    ],
+    "owner_decide": [
+      "OWN"
+    ],
+    "manage_project_roles": [
+      "ADM"
+    ],
+    "suggest_observation": [
+      "SYS",
+      "SUP"
+    ]
+  },
+  "deny": [
+    {
+      "actor": "CON",
+      "action": "close_issue"
+    },
+    {
+      "actor": "SYS",
+      "action": "official_approval"
+    },
+    {
+      "actor": "SYS",
+      "action": "close_issue"
+    },
+    {
+      "actor": "SYS",
+      "action": "legal_signature"
+    }
+  ]
+}

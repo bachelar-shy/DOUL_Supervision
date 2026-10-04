@@ -537,3 +537,19 @@ PCCC 승인설계
 - 03_Roles_Responsibilities_Approval_Matrix.md
 - 04_Supervision_Workflow.md
 - 04A_Vietnam_Mandatory_Documents_Forms.md
+
+
+## 14. v2 애플리케이션 데이터 모델 적용
+
+본 문서의 29개 관리대장은 계속 유지한다. 단, 앱 내부의 모든 업무행위를 하나의 RegisterRecord로 처리하지 않는다.
+
+운영 원본은 17 문서의 Core Domain Object를 사용하고 관리대장은 다음처럼 Projection한다.
+
+- 11 검측·검수 ← Inspection + Evidence + Requirement
+- 12 부적합·시정 ← Issue + Action + Evidence
+- 13 기술질의 ← WorkItem(RFI) + InformationItem
+- 14 설계변경 ← WorkItem(Change) + Decision + Approval
+- 22 발주처 보고·결정 ← Issue/WorkItem + Decision + Approval + Report
+- 23 일일기록·사진증빙 ← Evidence + Inspection + WorkItem
+
+이 구조로 기존 A4 양식 및 관리대장을 유지하면서 상태전이·권한·AI·Offline Sync를 독립적으로 검증할 수 있다.

@@ -1,0 +1,61 @@
+{
+  "version": "1.0",
+  "strategy": "field_first_responsive",
+  "surfaces": {
+    "mobile": {
+      "primary": [
+        "SUP",
+        "CON"
+      ],
+      "native": [
+        "camera",
+        "video",
+        "audio",
+        "gps",
+        "qr_apriltag",
+        "ar",
+        "offline_sync"
+      ]
+    },
+    "tablet": {
+      "primary": [
+        "SUP",
+        "DES"
+      ],
+      "focus": [
+        "drawing_review",
+        "inspection",
+        "evidence_compare",
+        "issue_pin"
+      ]
+    },
+    "web": {
+      "primary": [
+        "ADM",
+        "OWN",
+        "DES",
+        "CON",
+        "SUP"
+      ],
+      "focus": [
+        "dashboard",
+        "reporting",
+        "decision",
+        "document_authoring",
+        "administration"
+      ]
+    }
+  },
+  "stitch": {
+    "projectName": "DOUL Supervision MVP",
+    "projectId": "11486949689509673114",
+    "designSystem": "assets/4105194232699724772",
+    "screens": [
+      {
+        "id": "cc94d5225c01416c9947c9f63db21ae1",
+        "code": "SUP-TODAY-M",
+        "title": "DOUL 감리 - 오늘"
+      }
+    ]
+  }
+}

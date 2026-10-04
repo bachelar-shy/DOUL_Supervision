@@ -20,6 +20,9 @@
 16. [DOUL 프로젝트 감리 착수 체크리스트](./15_Project_Startup_Checklist.md)
 17. [DOUL 감리 앱 구현 및 A4 양식 엔진](./16_App_Implementation_Form_Engine.md)
 18. [A4 양식·배포팩 생성물 매니페스트](./artifacts/README.md)
+19. [Domain · State · Authority Model v2](./17_Domain_State_Authority_Model.md)
+20. [Mobile · Tablet · Web 제품구조](./18_Mobile_Web_Product_Architecture.md)
+21. [MVP Vertical Slice](./19_MVP_Vertical_Slice.md)
 
 ### 현재 상태
 
@@ -30,7 +33,10 @@
 - 디지털 시스템 요구사항: 완료
 - DOUL A4 감리양식 25종: 제작·렌더링 QA 완료
 - 앱 구현계약: 29개 관리대장·25개 양식·법정서식 레지스트리·API·A4 CSS 반영
-- 다음 단계: 베트남 공식 원본서식 파일 탑재 → 실제 앱 개발 → 시범현장 적용
+- Domain Model v2 / State Machine / Authority Matrix: 구현기준 반영
+- Mobile · Tablet · Responsive Web 제품구조: 구현기준 반영
+- Stitch UI 연계: DOUL Supervision MVP 프로젝트 및 SUP-TODAY-M 연결
+- 다음 단계: MVP Vertical Slice 구현 → 베트남 공식 원본서식 탑재 → 시범현장 적용
 
 ---
 

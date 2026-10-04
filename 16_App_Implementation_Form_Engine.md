@@ -197,3 +197,18 @@ FM-25 미완료·하자 추적표
 > **입력은 앱에서 한 번, 검토·결정·서명은 권한에 따라, 문서는 데이터에서 자동 생성한다.**
 
 이 원칙이 DOUL 감리 앱의 기준이다.
+
+
+## 14. v2 Domain 적용
+
+v1의 RegisterRecord 중심 구조는 문서·관리대장 엔진으로 유지한다. 실제 운영 Workflow의 원본은 Core Domain Object로 확장한다.
+
+> Core Domain Object → Register Projection → Workflow Approval → FormTemplate → DocumentSnapshot
+
+따라서 29개 관리대장은 폐기하지 않으며, Inspection/Issue/Action/Decision/Approval 등의 업무객체를 집계하는 관리 View와 문서생성 원천으로 사용한다.
+
+구현기준:
+- app/schema/domain_model_v2.json
+- app/schema/state_machines_v1.json
+- app/schema/authority_matrix_v1.json
+- app/schema/ui_surfaces_v1.json

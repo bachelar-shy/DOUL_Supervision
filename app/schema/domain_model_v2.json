@@ -1,0 +1,79 @@
+{
+  "version": "2.0",
+  "principle": "Core domain objects are operational source-of-truth; registers are projections/views and document feeds.",
+  "objects": [
+    "Project",
+    "Party",
+    "RoleAssignment",
+    "Requirement",
+    "Location",
+    "Asset",
+    "InformationItem",
+    "Evidence",
+    "WorkItem",
+    "Inspection",
+    "Observation",
+    "Issue",
+    "Action",
+    "Decision",
+    "Approval"
+  ],
+  "subtypes": {
+    "InformationItem": [
+      "Drawing",
+      "Specification",
+      "MethodStatement",
+      "ChecklistTemplate",
+      "Report",
+      "Certificate",
+      "MeetingRecord",
+      "Manual",
+      "GeneralDocument"
+    ],
+    "Asset": [
+      "BuildingElement",
+      "Equipment",
+      "System",
+      "Material",
+      "MaterialLot",
+      "InstalledComponent"
+    ],
+    "WorkItem": [
+      "ContractorSubmission",
+      "InspectionRequest",
+      "MaterialSubmittal",
+      "TestRequest",
+      "RFI",
+      "ChangeRequest",
+      "Variation",
+      "ScheduleActivity",
+      "PaymentClaim",
+      "SafetyPermit",
+      "OwnerDecisionRequest",
+      "CommissioningPackage",
+      "HandoverPackage",
+      "WarrantyClaim"
+    ],
+    "Issue": [
+      "Defect",
+      "NCR",
+      "Safety",
+      "Environmental",
+      "Material",
+      "Fire",
+      "Punch",
+      "Schedule",
+      "Design"
+    ]
+  },
+  "invariants": [
+    "evidence_original_immutable",
+    "observation_requires_authorized_verification_before_issue",
+    "issue_close_requires_authority_and_closure_evidence",
+    "approval_is_version_specific",
+    "requirement_versions_preserved",
+    "official_records_no_physical_delete",
+    "ai_cannot_execute_official_transition",
+    "stale_offline_write_cannot_overwrite_newer_version"
+  ]
+}

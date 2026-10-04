@@ -1,16 +1,46 @@
 openapi: 3.1.0
 info:
   title: DOUL Supervision Core API
-  version: 1.0.0
+  version: 2.0.0
 paths:
   /projects/{projectId}/registers/{registerId}:
-    get: {summary: 관리대장 목록 조회, responses: {'200': {description: OK}}}
-    post: {summary: 관리대장 기록 생성, responses: {'201': {description: Created}}}
-  /records/{recordId}: 
+    get: {summary: 관리대장 Projection 조회, responses: {'200': {description: OK}}}
+  /records/{recordId}:
     get: {summary: 기록 상세, responses: {'200': {description: OK}}}
-    patch: {summary: 새 revision으로 기록 수정, responses: {'200': {description: Updated}}}
-  /records/{recordId}/workflow/{action}:
-    post: {summary: 제출·검토·승인·반려·종결 상태전이, responses: {'200': {description: Transitioned}, '409': {description: Gate failed}}}
+  /inspections:
+    post: {summary: 검측 생성, responses: {'201': {description: Created}}}
+  /inspections/{inspectionId}/request:
+    post: {summary: 시공사 검측요청, responses: {'200': {description: Transitioned}, '409': {description: Gate failed}}}
+  /inspections/{inspectionId}/start:
+    post: {summary: 감리 검측 시작, responses: {'200': {description: Transitioned}, '403': {description: Not authorized}}}
+  /inspections/{inspectionId}/result:
+    post: {summary: 검측 판정 제출, responses: {'200': {description: Transitioned}, '409': {description: Gate failed}}}
+  /evidence:
+    post: {summary: 원본 또는 파생 Evidence 등록, responses: {'201': {description: Created}}}
+  /observations:
+    post: {summary: Observation Candidate 생성, responses: {'201': {description: Created}}}
+  /observations/{observationId}/confirm:
+    post: {summary: 권한 있는 감리자가 Observation 확인, responses: {'200': {description: Confirmed}, '403': {description: Not authorized}}}
+  /observations/{observationId}/reject:
+    post: {summary: Observation 기각, responses: {'200': {description: Rejected}}}
+  /issues:
+    post: {summary: 공식 Issue/NCR 발행, responses: {'201': {description: Created}, '403': {description: Not authorized}}}
+  /issues/{issueId}/assign:
+    post: {summary: Issue 담당 지정, responses: {'200': {description: Assigned}}}
+  /issues/{issueId}/corrective-actions:
+    post: {summary: 시공사 시정조치 제출, responses: {'201': {description: Submitted}}}
+  /issues/{issueId}/request-reinspection:
+    post: {summary: 시공사 재검측 요청, responses: {'200': {description: Ready for reinspection}}}
+  /issues/{issueId}/close:
+    post: {summary: 감리 종결, responses: {'200': {description: Closed}, '403': {description: Not authorized}, '409': {description: Gate failed}}}
+  /owner-decisions:
+    post: {summary: 발주처 의사결정 요청 생성, responses: {'201': {description: Created}}}
+  /owner-decisions/{decisionId}/decide:
+    post: {summary: 발주처 결정 기록, responses: {'200': {description: Decided}, '403': {description: Not authorized}}}
+  /roles:
+    get: {summary: 프로젝트 RoleAssignment 조회, responses: {'200': {description: OK}}}
+  /roles/{roleAssignmentId}/authorities:
+    get: {summary: 현재 유효 Authority 조회, responses: {'200': {description: OK}}}
   /forms/{formId}/preview:
     post: {summary: DOUL A4 HTML 미리보기, responses: {'200': {description: Preview}}}
   /forms/{formId}/render:
