@@ -1,0 +1,914 @@
+{
+  "version": "1.0",
+  "layout": "DOUL_A4",
+  "templates": [
+    {
+      "id": "FM-01",
+      "title": "시공사 제출자료 표지",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "contract.package",
+            "work.discipline",
+            "work.location",
+            "submittal.no",
+            "submittal.type",
+            "submittal.submitted_at",
+            "submittal.required_by"
+          ]
+        },
+        {
+          "type": "repeat_table",
+          "source": "items",
+          "columns": [
+            "title",
+            "no_rev",
+            "note"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "review.status",
+            "review.comment",
+            "review.due"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-02",
+      "title": "시공계획 검토서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv_compact",
+          "fields": [
+            "work.discipline",
+            "work.location",
+            "method.no",
+            "method.rev"
+          ]
+        },
+        {
+          "type": "review_table",
+          "rows": [
+            "design",
+            "method",
+            "quality",
+            "safety",
+            "schedule"
+          ],
+          "source": "review"
+        },
+        {
+          "type": "text",
+          "field": "review.conclusion"
+        },
+        {
+          "type": "signatures",
+          "roles": [
+            "discipline_supervisor",
+            "chief_supervisor"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-03",
+      "title": "시공상세도 검토서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "contract.package",
+            "work.discipline",
+            "work.location",
+            "shop.no",
+            "shop.rev",
+            "shop.design_drawings"
+          ]
+        },
+        {
+          "type": "review_table",
+          "rows": [
+            "intent",
+            "dimension",
+            "clash",
+            "constructability",
+            "change_required"
+          ],
+          "source": "review"
+        },
+        {
+          "type": "text",
+          "fields": [
+            "review.final_status",
+            "review.comment"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-04",
+      "title": "자재승인 요청·검토서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "contract.package",
+            "work.discipline",
+            "work.location",
+            "material.name",
+            "material.manufacturer_model",
+            "material.request_no"
+          ]
+        },
+        {
+          "type": "review_table",
+          "rows": [
+            "spec",
+            "cert",
+            "sample",
+            "equivalence"
+          ],
+          "source": "review"
+        },
+        {
+          "type": "text",
+          "fields": [
+            "review.final_status",
+            "review.conditions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-05",
+      "title": "자재반입 검사서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "contract.package",
+            "work.discipline",
+            "work.location",
+            "material.name",
+            "material.approval_no",
+            "material.delivery_date"
+          ]
+        },
+        {
+          "type": "check_table",
+          "rows": [
+            "model",
+            "qty_spec",
+            "cert",
+            "condition",
+            "storage"
+          ],
+          "source": "check"
+        },
+        {
+          "type": "text",
+          "fields": [
+            "review.status",
+            "review.ncr_no"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-06",
+      "title": "시험·검사 요청서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "contract.package",
+            "work.discipline",
+            "work.location",
+            "test.type",
+            "test.datetime",
+            "test.lab",
+            "test.inspection_no"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "test.criteria",
+            "test.method",
+            "test.equipment",
+            "test.sample",
+            "test.witness"
+          ]
+        },
+        {
+          "type": "text",
+          "fields": [
+            "review.status",
+            "review.comment"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-07",
+      "title": "검수요청서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "contract.package",
+            "work.discipline",
+            "work.location",
+            "inspection.request_no",
+            "inspection.work_name",
+            "inspection.requested_at",
+            "inspection.requested_inspection_at"
+          ]
+        },
+        {
+          "type": "gate_table",
+          "fields": [
+            "precheck.self_check",
+            "precheck.drawing",
+            "precheck.material",
+            "precheck.test",
+            "precheck.previous",
+            "precheck.change"
+          ]
+        },
+        {
+          "type": "attachments",
+          "field": "inspection.attachments"
+        }
+      ],
+      "legal_mode": "legal_support"
+    },
+    {
+      "id": "FM-08",
+      "title": "시공사 자체검측표",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "contract.package",
+            "work.discipline",
+            "work.location",
+            "inspection.work_name",
+            "inspection.checklist_code"
+          ]
+        },
+        {
+          "type": "repeat_table",
+          "source": "checks",
+          "columns": [
+            "item",
+            "criteria",
+            "result",
+            "note"
+          ]
+        },
+        {
+          "type": "text",
+          "field": "inspection.self_result"
+        }
+      ]
+    },
+    {
+      "id": "FM-09",
+      "title": "시공작업 검수기록",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv_compact",
+          "fields": [
+            "inspection.no",
+            "inspection.work_name",
+            "work.discipline",
+            "work.location",
+            "inspection.datetime",
+            "inspection.place"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "basis.drawings",
+            "basis.criteria",
+            "basis.tests",
+            "basis.attachments"
+          ]
+        },
+        {
+          "type": "result",
+          "fields": [
+            "result.status",
+            "result.next_work_allowed",
+            "result.corrections"
+          ]
+        },
+        {
+          "type": "signatures",
+          "roles": [
+            "owner_side_supervisor",
+            "contractor_technical_lead"
+          ],
+          "conditional": [
+            {
+              "when": "participants.subcontractor != null",
+              "role": "subcontractor_technical_lead"
+            }
+          ]
+        }
+      ],
+      "legal_mode": "legal_required_fields"
+    },
+    {
+      "id": "FM-10",
+      "title": "단계·부분 검수기록",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv_compact",
+          "fields": [
+            "stage.name",
+            "stage.datetime",
+            "work.discipline",
+            "work.location"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "stage.inspections",
+            "stage.tests",
+            "stage.changes",
+            "stage.asbuilt"
+          ]
+        },
+        {
+          "type": "text",
+          "fields": [
+            "result.status",
+            "result.comment"
+          ]
+        },
+        {
+          "type": "signatures",
+          "roles": [
+            "chief_or_supervisor",
+            "contractor_lead",
+            "other_participant"
+          ]
+        }
+      ],
+      "legal_mode": "legal_required_fields"
+    },
+    {
+      "id": "FM-11",
+      "title": "완료검수기록",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv_compact",
+          "fields": [
+            "completion.facility",
+            "contract.package",
+            "completion.datetime_place",
+            "project.name"
+          ]
+        },
+        {
+          "type": "gate_table",
+          "fields": [
+            "completion.design_compliance",
+            "completion.testing",
+            "completion.ncr_closed",
+            "completion.pccc",
+            "completion.dossier"
+          ]
+        },
+        {
+          "type": "text",
+          "fields": [
+            "result.status",
+            "result.comment",
+            "warranty.start",
+            "warranty.period"
+          ]
+        },
+        {
+          "type": "signatures",
+          "roles": [
+            "investor",
+            "chief_supervisor",
+            "contractor_lead",
+            "other_legal_participant"
+          ]
+        }
+      ],
+      "legal_mode": "legal_required_fields"
+    },
+    {
+      "id": "FM-12",
+      "title": "부적합 보고서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "contract.package",
+            "work.discipline",
+            "work.location",
+            "ncr.no",
+            "ncr.date",
+            "ncr.related"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "ncr.description",
+            "ncr.criteria",
+            "ncr.impact",
+            "ncr.immediate_action",
+            "ncr.due"
+          ]
+        },
+        {
+          "type": "text",
+          "fields": [
+            "ncr.priority",
+            "ncr.owner_report"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-13",
+      "title": "시정조치서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "car.ncr_no",
+            "car.no",
+            "car.owner",
+            "car.due"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "car.root_cause",
+            "car.corrective_action",
+            "car.preventive_action",
+            "car.evidence",
+            "car.reinspection"
+          ]
+        },
+        {
+          "type": "text",
+          "fields": [
+            "car.close_status",
+            "car.closed_at"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-14",
+      "title": "현장지시서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "contract.package",
+            "work.discipline",
+            "work.location",
+            "instruction.no",
+            "instruction.date",
+            "instruction.to"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "instruction.description",
+            "instruction.basis",
+            "instruction.due",
+            "instruction.impact",
+            "instruction.design_change"
+          ]
+        },
+        {
+          "type": "text",
+          "fields": [
+            "instruction.close_status",
+            "instruction.closed_at"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-15",
+      "title": "기술질의서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "contract.package",
+            "work.discipline",
+            "work.location",
+            "rfi.no",
+            "rfi.date",
+            "rfi.required_by"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "rfi.question",
+            "rfi.site_condition",
+            "rfi.references",
+            "rfi.proposal",
+            "rfi.schedule_impact"
+          ]
+        },
+        {
+          "type": "text",
+          "fields": [
+            "rfi.response",
+            "rfi.change_required"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-16",
+      "title": "설계변경 검토서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "contract.package",
+            "work.discipline",
+            "work.location",
+            "change.no",
+            "change.rfi",
+            "change.date"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "change.reason",
+            "change.description",
+            "change.quality",
+            "change.schedule",
+            "change.cost",
+            "change.permit"
+          ]
+        },
+        {
+          "type": "text",
+          "fields": [
+            "change.recommendation",
+            "change.owner_decision"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-17",
+      "title": "고위험작업 안전확인서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "contract.package",
+            "work.discipline",
+            "work.location",
+            "safety.work_type",
+            "safety.datetime",
+            "safety.supervisor"
+          ]
+        },
+        {
+          "type": "check_table",
+          "rows": [
+            "method",
+            "risk_assessment",
+            "training",
+            "equipment",
+            "controls",
+            "emergency"
+          ],
+          "source": "safety"
+        },
+        {
+          "type": "text",
+          "fields": [
+            "safety.permission",
+            "safety.conditions"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-18",
+      "title": "일일 감리기록",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "daily.date_weather",
+            "daily.supervision_staff",
+            "daily.contractor_resources"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "daily.work",
+            "daily.inspections",
+            "daily.quality",
+            "daily.safety",
+            "daily.coordination",
+            "daily.next_day"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-19",
+      "title": "주간 감리보고",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "weekly.period",
+            "weekly.progress",
+            "weekly.milestones"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "weekly.achievements",
+            "weekly.next_week",
+            "weekly.quality",
+            "weekly.safety",
+            "weekly.submittals",
+            "weekly.open_decisions"
+          ]
+        },
+        {
+          "type": "text",
+          "field": "weekly.summary"
+        }
+      ]
+    },
+    {
+      "id": "FM-20",
+      "title": "발주처 즉시보고",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "urgent.no",
+            "urgent.occurred_at",
+            "urgent.priority",
+            "urgent.recipient"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "urgent.fact",
+            "urgent.cause",
+            "urgent.impact",
+            "urgent.immediate_action",
+            "urgent.next_action"
+          ]
+        },
+        {
+          "type": "text",
+          "fields": [
+            "urgent.decision_required",
+            "urgent.decision_due"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-21",
+      "title": "발주처 의사결정 요청서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv",
+          "fields": [
+            "project.name",
+            "decision.no",
+            "decision.date",
+            "decision.due"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "decision.issue",
+            "decision.impact",
+            "decision.option_a",
+            "decision.option_b",
+            "decision.option_c",
+            "decision.recommendation"
+          ]
+        },
+        {
+          "type": "text",
+          "fields": [
+            "decision.result",
+            "decision.decided_at"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-22",
+      "title": "미결사항 목록",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "summary",
+          "fields": [
+            "project.name",
+            "open.as_of",
+            "open.total",
+            "open.critical"
+          ]
+        },
+        {
+          "type": "repeat_table",
+          "source": "items",
+          "columns": [
+            "issue",
+            "discipline",
+            "owner",
+            "due",
+            "status"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-23",
+      "title": "준공서류 완성도표",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "summary",
+          "fields": [
+            "project.name",
+            "dossier.as_of",
+            "dossier.percent"
+          ]
+        },
+        {
+          "type": "legal_completeness_table",
+          "source": "dossier.items",
+          "columns": [
+            "name",
+            "apply",
+            "draft",
+            "sign",
+            "original",
+            "digital",
+            "file"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-24",
+      "title": "인수인계 확인서",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv_compact",
+          "fields": [
+            "handover.area",
+            "handover.date",
+            "handover.parties",
+            "project.name"
+          ]
+        },
+        {
+          "type": "handover_table",
+          "fields": [
+            "handover.asbuilt",
+            "handover.om",
+            "handover.testing",
+            "handover.warranty",
+            "handover.training",
+            "handover.legal"
+          ]
+        },
+        {
+          "type": "signatures",
+          "roles": [
+            "handover_from",
+            "handover_to",
+            "supervision_confirm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "FM-25",
+      "title": "미완료·하자 추적표",
+      "version": "1.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "summary",
+          "fields": [
+            "project.name",
+            "defect.area",
+            "defect.as_of"
+          ]
+        },
+        {
+          "type": "repeat_table",
+          "source": "items",
+          "columns": [
+            "issue",
+            "owner",
+            "due",
+            "recheck",
+            "status"
+          ]
+        }
+      ]
+    }
+  ]
+}
