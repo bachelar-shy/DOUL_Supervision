@@ -1,4 +1,4 @@
-# DOUL 감리체계 연구 기준서 v0.1
+# DOUL 감리체계 v1.0 Candidate
 
 ## 문서목록
 
@@ -8,6 +8,25 @@
 4. [DOUL 감리 표준 업무절차](./04_Supervision_Workflow.md)
 5. [베트남 필수 문서·법정 서식 대장](./04A_Vietnam_Mandatory_Documents_Forms.md)
 6. [DOUL 감리 관리대장 및 데이터 구조](./05_Registers_Data_Model.md)
+7. [DOUL 공종별 검측·시험계획](./06_Inspection_Test_Plan.md)
+8. [DOUL 표준서식 및 문서체계](./07_Forms_Document_Control.md)
+9. [DOUL 발주처 보고 및 의사결정 체계](./08_Owner_Reporting_Decision_Process.md)
+10. [DOUL 시운전·준공·인수인계·하자관리](./09_Commissioning_Handover_Defects.md)
+11. [베트남 현장 운영특성 및 DOUL 적용원칙](./10_Vietnam_Site_Operating_Principles.md)
+12. [DOUL Construction Supervision Standard](./11_DOUL_Supervision_Standard.md)
+13. [DOUL 디지털 감리시스템 요구사항](./12_Digital_System_Requirements.md)
+14. [DOUL 감리체계 도입·운영·성과관리](./13_Implementation_Governance_KPI.md)
+15. [DOUL 감리체계 최종 누락검증](./14_Final_Completeness_Audit.md)
+16. [DOUL 프로젝트 감리 착수 체크리스트](./15_Project_Startup_Checklist.md)
+
+### 현재 상태
+
+- 체계설계: 완료
+- 한국·베트남 법령 기준구조: 완료
+- 베트남 법정문서·서식 매핑: 완료
+- 현장 업무절차·검측·보고·준공: 완료
+- 디지털 시스템 요구사항: 완료
+- 다음 단계: 법정 원본서식 확보 → DOUL 실제 DOCX/XLSX/PDF 양식 제작 → 시범현장 적용
 
 ---
 
