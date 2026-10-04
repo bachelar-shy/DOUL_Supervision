@@ -1,0 +1,225 @@
+{
+  "version": "1.0",
+  "common_fields": [
+    {
+      "key": "id",
+      "type": "uuid",
+      "required": true
+    },
+    {
+      "key": "project_id",
+      "type": "uuid",
+      "required": true
+    },
+    {
+      "key": "contract_id",
+      "type": "uuid"
+    },
+    {
+      "key": "discipline",
+      "type": "enum"
+    },
+    {
+      "key": "location_id",
+      "type": "uuid"
+    },
+    {
+      "key": "drawing_ids",
+      "type": "uuid[]"
+    },
+    {
+      "key": "standard_refs",
+      "type": "string[]"
+    },
+    {
+      "key": "owner_user_id",
+      "type": "uuid"
+    },
+    {
+      "key": "status",
+      "type": "enum",
+      "required": true
+    },
+    {
+      "key": "priority",
+      "type": "enum"
+    },
+    {
+      "key": "due_at",
+      "type": "datetime"
+    },
+    {
+      "key": "attachments",
+      "type": "file[]"
+    },
+    {
+      "key": "related_issue_ids",
+      "type": "uuid[]"
+    },
+    {
+      "key": "revision",
+      "type": "integer",
+      "required": true
+    },
+    {
+      "key": "audit_log_id",
+      "type": "uuid",
+      "required": true
+    }
+  ],
+  "statuses": {
+    "general": [
+      "draft",
+      "submitted",
+      "received",
+      "review",
+      "revise",
+      "resubmitted",
+      "approved",
+      "conditional",
+      "rejected",
+      "executing",
+      "verified",
+      "closed",
+      "cancelled"
+    ],
+    "inspection": [
+      "requested",
+      "incomplete",
+      "scheduled",
+      "inspected",
+      "nonconforming",
+      "reinspection",
+      "passed",
+      "next_work_allowed"
+    ],
+    "decision": [
+      "preparing",
+      "reported",
+      "awaiting_decision",
+      "supplement_requested",
+      "decided",
+      "executing",
+      "verified",
+      "closed"
+    ]
+  },
+  "registers": [
+    {
+      "id": "01",
+      "name": "법령·인허가"
+    },
+    {
+      "id": "02",
+      "name": "계약·업무범위"
+    },
+    {
+      "id": "03",
+      "name": "인력·자격"
+    },
+    {
+      "id": "04",
+      "name": "도면·개정"
+    },
+    {
+      "id": "05",
+      "name": "문서송수신"
+    },
+    {
+      "id": "06",
+      "name": "시공사 제출자료"
+    },
+    {
+      "id": "07",
+      "name": "시공상세도"
+    },
+    {
+      "id": "08",
+      "name": "자재승인"
+    },
+    {
+      "id": "09",
+      "name": "자재반입검사"
+    },
+    {
+      "id": "10",
+      "name": "시험·계측"
+    },
+    {
+      "id": "11",
+      "name": "검측·검수"
+    },
+    {
+      "id": "12",
+      "name": "부적합·시정"
+    },
+    {
+      "id": "13",
+      "name": "기술질의"
+    },
+    {
+      "id": "14",
+      "name": "설계변경"
+    },
+    {
+      "id": "15",
+      "name": "현장지시"
+    },
+    {
+      "id": "16",
+      "name": "공정·지연"
+    },
+    {
+      "id": "17",
+      "name": "물량·기성"
+    },
+    {
+      "id": "18",
+      "name": "안전·고위험작업"
+    },
+    {
+      "id": "19",
+      "name": "안전검사 장비·기계"
+    },
+    {
+      "id": "20",
+      "name": "PCCC(소방)"
+    },
+    {
+      "id": "21",
+      "name": "환경"
+    },
+    {
+      "id": "22",
+      "name": "회의·발주처 보고·결정"
+    },
+    {
+      "id": "23",
+      "name": "일일기록·사진증빙"
+    },
+    {
+      "id": "24",
+      "name": "준공·인수·하자"
+    },
+    {
+      "id": "25",
+      "name": "위험·기회"
+    },
+    {
+      "id": "26",
+      "name": "계약통지·클레임·공기연장"
+    },
+    {
+      "id": "27",
+      "name": "보험·보증"
+    },
+    {
+      "id": "28",
+      "name": "내부감사·준수점검"
+    },
+    {
+      "id": "29",
+      "name": "경험·교훈"
+    }
+  ]
+}
