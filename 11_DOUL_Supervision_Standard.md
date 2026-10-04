@@ -1,6 +1,6 @@
 # 11. DOUL Construction Supervision Standard
 
-버전: v0.9 Draft
+버전: v1.0 Candidate
 기준일: 2026-10-04
 
 ## 1. 목적
@@ -171,3 +171,4 @@ DOUL 감리는 문제를 전달하는 조직이 아니라 결정 가능한 자�
 12 디지털 시스템
 13 도입·운영
 14 최종검증
+15 프로젝트 착수 체크리스트
