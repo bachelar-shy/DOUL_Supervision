@@ -1,0 +1,240 @@
+{
+  "version": "1.0",
+  "standard": "DOUL A4",
+  "forms": [
+    {
+      "id": "FM-01",
+      "title": "시공사 제출자료 표지",
+      "registers": [
+        "05",
+        "06"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-02",
+      "title": "시공계획 검토서",
+      "registers": [
+        "06",
+        "18"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-03",
+      "title": "시공상세도 검토서",
+      "registers": [
+        "04",
+        "07",
+        "14"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-04",
+      "title": "자재승인 요청·검토서",
+      "registers": [
+        "08"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-05",
+      "title": "자재반입 검사서",
+      "registers": [
+        "09"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-06",
+      "title": "시험·검사 요청서",
+      "registers": [
+        "10"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-07",
+      "title": "검수요청서",
+      "registers": [
+        "11"
+      ],
+      "legal_mode": "legal_support",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-08",
+      "title": "시공사 자체검측표",
+      "registers": [
+        "11"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-09",
+      "title": "시공작업 검수기록",
+      "registers": [
+        "11"
+      ],
+      "legal_mode": "legal_required_fields",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-10",
+      "title": "단계·부분 검수기록",
+      "registers": [
+        "11"
+      ],
+      "legal_mode": "legal_required_fields",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-11",
+      "title": "완료검수기록",
+      "registers": [
+        "24"
+      ],
+      "legal_mode": "legal_required_fields",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-12",
+      "title": "부적합 보고서",
+      "registers": [
+        "12"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-13",
+      "title": "시정조치서",
+      "registers": [
+        "12"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-14",
+      "title": "현장지시서",
+      "registers": [
+        "15"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-15",
+      "title": "기술질의서",
+      "registers": [
+        "13"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-16",
+      "title": "설계변경 검토서",
+      "registers": [
+        "14",
+        "22"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-17",
+      "title": "고위험작업 안전확인서",
+      "registers": [
+        "18",
+        "19"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-18",
+      "title": "일일 감리기록",
+      "registers": [
+        "23"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-19",
+      "title": "주간 감리보고",
+      "registers": [
+        "16",
+        "22"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-20",
+      "title": "발주처 즉시보고",
+      "registers": [
+        "22",
+        "25"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-21",
+      "title": "발주처 의사결정 요청서",
+      "registers": [
+        "22"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-22",
+      "title": "미결사항 목록",
+      "registers": [
+        "V-01"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-23",
+      "title": "준공서류 완성도표",
+      "registers": [
+        "24",
+        "V-03"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-24",
+      "title": "인수인계 확인서",
+      "registers": [
+        "24"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    },
+    {
+      "id": "FM-25",
+      "title": "미완료·하자 추적표",
+      "registers": [
+        "24"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "1.0"
+    }
+  ]
+}
