@@ -4,6 +4,7 @@
 
 1. [한·베 감리 법령 요구사항 매트릭스](./01_Regulatory_Requirement_Matrix.md)
 2. [DOUL 감리인력 배치 및 자격기준](./02_Supervision_Staffing_Matrix.md)
+3. [DOUL 감리 조직·책임·승인체계](./03_Roles_Responsibilities_Approval_Matrix.md)
 
 ---
 
