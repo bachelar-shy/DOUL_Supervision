@@ -1,56 +1,182 @@
 {
-  "version": "2026-10-04",
+  "version": "2.0",
   "rule": "official_fixed forms use the official Vietnamese template and must not be restyled as DOUL A4.",
   "official_fixed": [
     {
       "id": "VN-ND207-IVa",
       "name": "Báo cáo định kỳ về công tác giám sát(정기 감리보고)",
-      "source": "Nghị định 207/2026/NĐ-CP Appendix IVa"
+      "source": "Nghị định 207/2026/NĐ-CP Appendix IVa",
+      "template_status": "not_installed",
+      "render_enabled": false,
+      "template_version": null,
+      "template_file": null,
+      "template_sha256": null,
+      "effective_from": null,
+      "effective_to": null,
+      "verified_source_url": null,
+      "required_fields": [],
+      "required_signature_roles": [],
+      "mode": "official_template"
     },
     {
       "id": "VN-ND207-IVb",
       "name": "Báo cáo hoàn thành công tác giám sát(감리완료보고)",
-      "source": "Nghị định 207/2026/NĐ-CP Appendix IVb"
+      "source": "Nghị định 207/2026/NĐ-CP Appendix IVb",
+      "template_status": "not_installed",
+      "render_enabled": false,
+      "template_version": null,
+      "template_file": null,
+      "template_sha256": null,
+      "effective_from": null,
+      "effective_to": null,
+      "verified_source_url": null,
+      "required_fields": [],
+      "required_signature_roles": [],
+      "mode": "official_template"
     },
     {
       "id": "VN-ND207-V",
       "name": "Thông báo khởi công(착공통보)",
-      "source": "Nghị định 207/2026/NĐ-CP Appendix V"
+      "source": "Nghị định 207/2026/NĐ-CP Appendix V",
+      "template_status": "not_installed",
+      "render_enabled": false,
+      "template_version": null,
+      "template_file": null,
+      "template_sha256": null,
+      "effective_from": null,
+      "effective_to": null,
+      "verified_source_url": null,
+      "required_fields": [],
+      "required_signature_roles": [],
+      "mode": "official_template"
     },
     {
       "id": "VN-ND207-VI",
       "name": "Báo cáo hoàn thành thi công xây dựng(공사완료보고)",
-      "source": "Nghị định 207/2026/NĐ-CP Appendix VI"
+      "source": "Nghị định 207/2026/NĐ-CP Appendix VI",
+      "template_status": "not_installed",
+      "render_enabled": false,
+      "template_version": null,
+      "template_file": null,
+      "template_sha256": null,
+      "effective_from": null,
+      "effective_to": null,
+      "verified_source_url": null,
+      "required_fields": [],
+      "required_signature_roles": [],
+      "mode": "official_template"
     },
     {
       "id": "VN-ND207-VIII",
       "name": "Thông báo kết quả kiểm tra công tác nghiệm thu(완료검수 검사결과 통보)",
-      "source": "Nghị định 207/2026/NĐ-CP Appendix VIII"
+      "source": "Nghị định 207/2026/NĐ-CP Appendix VIII",
+      "template_status": "not_installed",
+      "render_enabled": false,
+      "template_version": null,
+      "template_file": null,
+      "template_sha256": null,
+      "effective_from": null,
+      "effective_to": null,
+      "verified_source_url": null,
+      "required_fields": [],
+      "required_signature_roles": [],
+      "mode": "receive_only"
     },
     {
       "id": "VN-PCCC-PC11",
       "name": "PC11 PCCC 설계심사 신청",
-      "source": "Nghị định 347/2026/NĐ-CP"
+      "source": "Nghị định 347/2026/NĐ-CP",
+      "template_status": "not_installed",
+      "render_enabled": false,
+      "template_version": null,
+      "template_file": null,
+      "template_sha256": null,
+      "effective_from": null,
+      "effective_to": null,
+      "verified_source_url": null,
+      "required_fields": [],
+      "required_signature_roles": [],
+      "mode": "official_template"
     },
     {
       "id": "VN-PCCC-PC12",
       "name": "PC12 PCCC 설계심사 문서",
-      "source": "Nghị định 347/2026/NĐ-CP"
+      "source": "Nghị định 347/2026/NĐ-CP",
+      "template_status": "not_installed",
+      "render_enabled": false,
+      "template_version": null,
+      "template_file": null,
+      "template_sha256": null,
+      "effective_from": null,
+      "effective_to": null,
+      "verified_source_url": null,
+      "required_fields": [],
+      "required_signature_roles": [],
+      "mode": "official_template"
     },
     {
       "id": "VN-PCCC-PC13",
       "name": "PC13 PCCC 설계심사 문서",
-      "source": "Nghị định 347/2026/NĐ-CP"
+      "source": "Nghị định 347/2026/NĐ-CP",
+      "template_status": "not_installed",
+      "render_enabled": false,
+      "template_version": null,
+      "template_file": null,
+      "template_sha256": null,
+      "effective_from": null,
+      "effective_to": null,
+      "verified_source_url": null,
+      "required_fields": [],
+      "required_signature_roles": [],
+      "mode": "official_template"
     },
     {
       "id": "VN-PCCC-PC14",
       "name": "PC14 설계심사 확인도장",
-      "source": "Nghị định 347/2026/NĐ-CP"
+      "source": "Nghị định 347/2026/NĐ-CP",
+      "template_status": "not_installed",
+      "render_enabled": false,
+      "template_version": null,
+      "template_file": null,
+      "template_sha256": null,
+      "effective_from": null,
+      "effective_to": null,
+      "verified_source_url": null,
+      "required_fields": [],
+      "required_signature_roles": [],
+      "mode": "official_template"
     },
     {
       "id": "VN-PCCC-PC18",
       "name": "PC18 PCCC 자체검수 문서",
-      "source": "Nghị định 347/2026/NĐ-CP"
+      "source": "Nghị định 347/2026/NĐ-CP",
+      "template_status": "not_installed",
+      "render_enabled": false,
+      "template_version": null,
+      "template_file": null,
+      "template_sha256": null,
+      "effective_from": null,
+      "effective_to": null,
+      "verified_source_url": null,
+      "required_fields": [],
+      "required_signature_roles": [],
+      "mode": "official_template"
+    },
+    {
+      "id": "VN-ND207-IIb",
+      "name": "Bản vẽ hoàn công(준공도면) 확인도장",
+      "source": "Nghị định 207/2026/NĐ-CP Appendix IIb",
+      "template_status": "not_installed",
+      "render_enabled": false,
+      "mode": "official_template",
+      "template_version": null,
+      "template_file": null,
+      "template_sha256": null,
+      "effective_from": null,
+      "effective_to": null,
+      "verified_source_url": null,
+      "required_fields": [],
+      "required_signature_roles": []
     }
   ],
   "legal_required_fields_doul_layout": [
@@ -67,5 +193,6 @@
       "id": "VN-ND207-X",
       "name": "Hồ sơ phục vụ quản lý, sử dụng công trình(운영·사용 인수서류 목록)"
     }
-  ]
+  ],
+  "applicability_rule": "Project-approved Requirement baseline, effective date and transition provisions; never assume every template applies."
 }

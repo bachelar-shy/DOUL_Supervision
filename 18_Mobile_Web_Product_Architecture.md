@@ -74,7 +74,7 @@ RFI, 설계검토, 변경정보, 개정도면
 
 ## 7. Stitch 연결
 
-Stitch는 UI Design Source of Truth로 사용한다.
+Stitch는 Presentation / UI Design Source로 사용한다. 업무규칙의 우선순위는 Domain Model → State Machine → Authority Matrix → Requirement/Gate → API Contract → UI/Stitch다. 화면에 있는 버튼만으로 업무권한이나 판정규칙을 만들지 않는다.
 
 현재:
 - Project: DOUL Supervision MVP

@@ -1,4 +1,4 @@
-# DOUL 감리체계 v1.0 Candidate
+# DOUL 감리체계 v2.1 구현계약
 
 ## 문서목록
 
@@ -23,20 +23,22 @@
 19. [Domain · State · Authority Model v2](./17_Domain_State_Authority_Model.md)
 20. [Mobile · Tablet · Web 제품구조](./18_Mobile_Web_Product_Architecture.md)
 21. [MVP Vertical Slice](./19_MVP_Vertical_Slice.md)
+22. [사진·영상·발화 분석 상세정의](./20_Media_Analysis_Detailed_Definition.md)
+23. [발주처 보고·조치 종결 상세계약](./21_Owner_Report_Closure_Contract.md)
+24. [이슈 #1 해결 근거와 검증](./22_Issue_1_Resolution_Validation.md)
 
 ### 현재 상태
 
-- 체계설계: 완료
-- 한국·베트남 법령 기준구조: 완료
-- 베트남 법정문서·서식 매핑: 완료
-- 현장 업무절차·검측·보고·준공: 완료
-- 디지털 시스템 요구사항: 완료
-- DOUL A4 감리양식 25종: 제작·렌더링 QA 완료
-- 앱 구현계약: 29개 관리대장·25개 양식·법정서식 레지스트리·API·A4 CSS 반영
-- Domain Model v2 / State Machine / Authority Matrix: 구현기준 반영
-- Mobile · Tablet · Responsive Web 제품구조: 구현기준 반영
-- Stitch UI 연계: DOUL Supervision MVP 프로젝트 및 SUP-TODAY-M 연결
-- 다음 단계: MVP Vertical Slice 구현 → 베트남 공식 원본서식 탑재 → 시범현장 적용
+- 체계·법령·현장절차: 기존 기준서 유지, 프로젝트별 적용성·원문 검토 필요
+- 구현계약: 10개 상태모델·98개 전이·51개 권한정책·29개 조회 대장
+- 사진·영상·발화: 원본·PTS·발화구간·처리범위·사람 확인 상세정의 및 결과 검증
+- 25개 A4 양식: 필드·서명·출처 계약 및 HTML 구조 검증. DOCX/PDF 시각 QA는 후속 작업
+- 참조 실행: Python 표준 라이브러리 기반 업무흐름·권한·문서 엔진, 79개 자동시험
+- Mobile · Tablet · Responsive Web: 제품·화면 계약, 실제 앱 배포 전
+- Stitch: Presentation / UI Design Source, 업무권한·판정의 원본은 Domain/State/Authority
+- 다음 단계: 운영 DB·인증·업로드·미디어/AI·문서 어댑터 → 법정 원본서식 확인·탑재 → 현장 시범운영
+
+검증 방법은 [app README](./app/README.md)를 따른다. 계약과 참조 실행의 완료 범위는 [이슈 #1 검증서](./22_Issue_1_Resolution_Validation.md)에 명시했다.
 
 ---
 

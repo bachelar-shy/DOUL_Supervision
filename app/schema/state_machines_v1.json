@@ -1,34 +1,122 @@
 {
-  "version": "1.0",
+  "version": "2.0",
+  "schema_version": "command-transition/1",
+  "compatibility": "Filename retained; v1 tuple transitions are superseded.",
+  "common_guards": [
+    "assignment_authorized",
+    "expected_version_matches",
+    "requirement_versions_current",
+    "evidence_provenance_valid",
+    "drawing_revision_current",
+    "upstream_hold_points_released"
+  ],
   "machines": {
     "observation": {
+      "object_type": "Observation",
+      "subtype": null,
+      "initial": "candidate",
       "states": [
         "candidate",
         "under_review",
         "confirmed",
         "rejected"
       ],
-      "initial": "candidate",
       "transitions": [
-        [
-          "candidate",
-          "under_review"
-        ],
-        [
-          "under_review",
-          "confirmed"
-        ],
-        [
-          "under_review",
-          "rejected"
-        ]
+        {
+          "from": "candidate",
+          "to": "under_review",
+          "command": "begin_review",
+          "authority": "review_observation",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "under_review",
+          "to": "confirmed",
+          "command": "confirm",
+          "authority": "confirm_observation",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "observation_grounded"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "verificationNote",
+            "verificationGrounding"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "OBSERVATION_GROUNDED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "under_review",
+          "to": "rejected",
+          "command": "reject",
+          "authority": "review_observation",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        }
       ]
     },
     "inspection": {
+      "object_type": "Inspection",
+      "subtype": null,
+      "initial": "draft",
       "states": [
         "draft",
         "requested",
         "completeness_review",
+        "returned",
         "scheduled",
         "in_progress",
         "result_pending",
@@ -36,70 +124,1385 @@
         "conditional",
         "failed",
         "hold",
-        "completed"
+        "completed",
+        "cancelled"
       ],
-      "initial": "draft"
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "requested",
+          "command": "request",
+          "authority": "submit_inspection_request",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "self_inspection_complete"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "requestedAt",
+            "requestedInspectionAt"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "SELF_INSPECTION_COMPLETE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "requested",
+          "to": "completeness_review",
+          "command": "receive",
+          "authority": "review_inspection_request",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "receivedAt"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "completeness_review",
+          "to": "returned",
+          "command": "return",
+          "authority": "review_inspection_request",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "returned",
+          "to": "requested",
+          "command": "resubmit",
+          "authority": "submit_inspection_request",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "self_inspection_complete"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "requestedAt",
+            "requestedInspectionAt"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "SELF_INSPECTION_COMPLETE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "completeness_review",
+          "to": "scheduled",
+          "command": "schedule",
+          "authority": "review_inspection_request",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "inspection_package_complete"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "scheduledAt"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "INSPECTION_PACKAGE_COMPLETE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "scheduled",
+          "to": "in_progress",
+          "command": "start",
+          "authority": "perform_official_inspection",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "in_progress",
+          "to": "result_pending",
+          "command": "submit_results",
+          "authority": "perform_official_inspection",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "measurement_results_complete"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "checkResults"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "MEASUREMENT_RESULTS_COMPLETE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "result_pending",
+          "to": "passed",
+          "command": "pass",
+          "authority": "judge_inspection",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "all_checks_pass"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "ALL_CHECKS_PASS"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "result_pending",
+          "to": "conditional",
+          "command": "conditional",
+          "authority": "judge_inspection",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "conditional_allowed"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "conditions"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "CONDITIONAL_ALLOWED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "result_pending",
+          "to": "failed",
+          "command": "fail",
+          "authority": "judge_inspection",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "failure_identified"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "failureReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "FAILURE_IDENTIFIED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "result_pending",
+          "to": "hold",
+          "command": "hold",
+          "authority": "judge_inspection",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "hold",
+          "to": "in_progress",
+          "command": "resume",
+          "authority": "perform_official_inspection",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "conditional",
+          "to": "in_progress",
+          "command": "resolve_conditions",
+          "authority": "perform_official_inspection",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "conditions_resolved"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "CONDITIONS_RESOLVED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "passed",
+          "to": "completed",
+          "command": "release_next_work",
+          "authority": "release_hold_point",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "acceptance_signed",
+            "hold_approval_valid"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "ACCEPTANCE_SIGNED",
+            "HOLD_APPROVAL_VALID"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "failed",
+          "to": "completed",
+          "command": "record_failure",
+          "authority": "judge_inspection",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "failure_record_signed"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "FAILURE_RECORD_SIGNED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "draft",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "submit_inspection_request",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "requested",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "submit_inspection_request",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        }
+      ]
     },
     "issue": {
+      "object_type": "Issue",
+      "subtype": null,
+      "initial": "open",
       "states": [
         "open",
         "assigned",
         "in_progress",
         "ready_for_recheck",
         "reinspection",
-        "rework_required",
         "closed",
+        "rework_required",
         "cancelled",
         "superseded"
       ],
-      "initial": "open",
       "transitions": [
-        [
-          "open",
-          "assigned"
-        ],
-        [
-          "assigned",
-          "in_progress"
-        ],
-        [
-          "in_progress",
-          "ready_for_recheck"
-        ],
-        [
-          "ready_for_recheck",
-          "reinspection"
-        ],
-        [
-          "reinspection",
-          "closed"
-        ],
-        [
-          "reinspection",
-          "rework_required"
-        ],
-        [
-          "rework_required",
-          "in_progress"
-        ]
+        {
+          "from": "open",
+          "to": "assigned",
+          "command": "assign",
+          "authority": "assign_issue",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "responsiblePartyId",
+            "responsibleOrganizationId",
+            "dueAt",
+            "actionIds"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "assigned",
+          "to": "in_progress",
+          "command": "start_correction",
+          "authority": "submit_corrective_action",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "in_progress",
+          "to": "in_progress",
+          "command": "link_actions",
+          "authority": "create_action",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "action_issue_match"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "actionIds"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "ACTION_ISSUE_MATCH"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "in_progress",
+          "to": "ready_for_recheck",
+          "command": "request_reinspection",
+          "authority": "request_reinspection",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "corrective_action_submitted",
+            "new_reinspection_linked"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "inspectionIds"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "CORRECTIVE_ACTION_SUBMITTED",
+            "NEW_REINSPECTION_LINKED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "ready_for_recheck",
+          "to": "reinspection",
+          "command": "start_reinspection",
+          "authority": "perform_reinspection",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "new_reinspection_linked"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "NEW_REINSPECTION_LINKED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "reinspection",
+          "to": "closed",
+          "command": "close",
+          "authority": "close_issue",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reinspection_passed",
+            "closure_evidence_present",
+            "current_actions_verified"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REINSPECTION_PASSED",
+            "CLOSURE_EVIDENCE_PRESENT",
+            "CURRENT_ACTIONS_VERIFIED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "reinspection",
+          "to": "rework_required",
+          "command": "reject_reinspection",
+          "authority": "perform_reinspection",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reinspection_failed"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REINSPECTION_FAILED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "rework_required",
+          "to": "in_progress",
+          "command": "restart_correction",
+          "authority": "submit_corrective_action",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "open",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "cancel_official_issue",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "assigned",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "cancel_official_issue",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "in_progress",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "cancel_official_issue",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "ready_for_recheck",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "cancel_official_issue",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "open",
+          "to": "superseded",
+          "command": "supersede",
+          "authority": "cancel_official_issue",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "replacement_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPLACEMENT_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "assigned",
+          "to": "superseded",
+          "command": "supersede",
+          "authority": "cancel_official_issue",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "replacement_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPLACEMENT_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "in_progress",
+          "to": "superseded",
+          "command": "supersede",
+          "authority": "cancel_official_issue",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "replacement_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPLACEMENT_PRESENT"
+          ],
+          "audit_event": true
+        }
       ]
     },
     "rfi": {
+      "object_type": "WorkItem",
+      "subtype": "RFI",
+      "initial": "draft",
       "states": [
         "draft",
         "submitted",
         "supervisor_review",
+        "returned_for_clarification",
         "responsible_party_review",
         "response_received",
+        "supervisor_response_review",
         "answered",
         "closed",
-        "returned_for_clarification",
         "withdrawn",
         "cancelled"
       ],
-      "initial": "draft"
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "submitted",
+          "command": "submit",
+          "authority": "submit_rfi",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "question",
+            "references",
+            "dueAt"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "supervisor_review",
+          "command": "receive",
+          "authority": "review_rfi",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "supervisor_review",
+          "to": "returned_for_clarification",
+          "command": "return",
+          "authority": "review_rfi",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "returned_for_clarification",
+          "to": "submitted",
+          "command": "resubmit",
+          "authority": "submit_rfi",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "question",
+            "references"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "supervisor_review",
+          "to": "responsible_party_review",
+          "command": "refer",
+          "authority": "review_rfi",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "responsiblePartyId"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "responsible_party_review",
+          "to": "response_received",
+          "command": "answer",
+          "authority": "answer_rfi",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "rfi_response_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "response",
+            "responseInformationRefs",
+            "changeRequired",
+            "references"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "RFI_RESPONSE_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "response_received",
+          "to": "supervisor_response_review",
+          "command": "review_response",
+          "authority": "review_rfi_response",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "supervisor_response_review",
+          "to": "answered",
+          "command": "accept_response",
+          "authority": "review_rfi_response",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "change_routed_if_required"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "CHANGE_ROUTED_IF_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "supervisor_response_review",
+          "to": "responsible_party_review",
+          "command": "return_response",
+          "authority": "review_rfi_response",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "answered",
+          "to": "closed",
+          "command": "close",
+          "authority": "review_rfi_response",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "draft",
+          "to": "withdrawn",
+          "command": "withdraw",
+          "authority": "submit_rfi",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "withdrawn",
+          "command": "withdraw",
+          "authority": "submit_rfi",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "returned_for_clarification",
+          "to": "withdrawn",
+          "command": "withdraw",
+          "authority": "submit_rfi",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "supervisor_review",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "review_rfi",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "responsible_party_review",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "review_rfi",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        }
+      ]
     },
     "change": {
+      "object_type": "WorkItem",
+      "subtype": "ChangeRequest",
+      "initial": "proposed",
       "states": [
         "proposed",
         "impact_review",
@@ -112,9 +1515,288 @@
         "verification",
         "closed"
       ],
-      "initial": "proposed"
+      "transitions": [
+        {
+          "from": "proposed",
+          "to": "impact_review",
+          "command": "review_impact",
+          "authority": "review_change",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "impact_review",
+          "to": "decision_required",
+          "command": "request_decision",
+          "authority": "request_owner_decision",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "impact_complete"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "impact",
+            "decisionId"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "IMPACT_COMPLETE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decision_required",
+          "to": "approved",
+          "command": "approve",
+          "authority": "approve_change",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "owner_decision_approved",
+            "approval_target_current"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "OWNER_DECISION_APPROVED",
+            "APPROVAL_TARGET_CURRENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decision_required",
+          "to": "rejected",
+          "command": "reject",
+          "authority": "approve_change",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decision_required",
+          "to": "returned",
+          "command": "return",
+          "authority": "approve_change",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "returned",
+          "to": "impact_review",
+          "command": "resubmit",
+          "authority": "review_change",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "approved",
+          "to": "revised_information_issued",
+          "command": "issue_revision",
+          "authority": "issue_revised_information",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "approved_information_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "revisedInformationRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "APPROVED_INFORMATION_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "revised_information_issued",
+          "to": "implementation",
+          "command": "implement",
+          "authority": "implement_change",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "change_approval_valid"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "CHANGE_APPROVAL_VALID"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "implementation",
+          "to": "verification",
+          "command": "verify",
+          "authority": "verify_change",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "verification",
+          "to": "closed",
+          "command": "close",
+          "authority": "verify_change",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "change_verified"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "CHANGE_VERIFIED"
+          ],
+          "audit_event": true
+        }
+      ]
     },
     "approval": {
+      "object_type": "Approval",
+      "subtype": null,
+      "initial": "pending",
       "states": [
         "pending",
         "under_review",
@@ -125,15 +1807,1142 @@
         "revoked",
         "superseded"
       ],
-      "initial": "pending"
+      "transitions": [
+        {
+          "from": "pending",
+          "to": "under_review",
+          "command": "review",
+          "authority": "review_approval",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "under_review",
+          "to": "approved",
+          "command": "approve",
+          "authority": "approve_target",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "approval_target_current",
+            "independent_approver"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "APPROVAL_TARGET_CURRENT",
+            "INDEPENDENT_APPROVER"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "under_review",
+          "to": "rejected",
+          "command": "reject",
+          "authority": "approve_target",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "under_review",
+          "to": "returned",
+          "command": "return",
+          "authority": "approve_target",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "returned",
+          "to": "pending",
+          "command": "resubmit",
+          "authority": "request_approval",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "approved",
+          "to": "expired",
+          "command": "expire",
+          "authority": "expire_approval",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "approval_expired"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "APPROVAL_EXPIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "approved",
+          "to": "revoked",
+          "command": "revoke",
+          "authority": "approve_target",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "approved",
+          "to": "superseded",
+          "command": "supersede",
+          "authority": "approve_target",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "replacement_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPLACEMENT_PRESENT"
+          ],
+          "audit_event": true
+        }
+      ]
+    },
+    "action": {
+      "object_type": "Action",
+      "subtype": null,
+      "initial": "draft",
+      "states": [
+        "draft",
+        "assigned",
+        "in_progress",
+        "submitted",
+        "verified",
+        "rework_required",
+        "closed",
+        "cancelled"
+      ],
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "assigned",
+          "command": "assign",
+          "authority": "assign_action",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "responsiblePartyId",
+            "responsibleOrganizationId",
+            "dueAt"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "assigned",
+          "to": "in_progress",
+          "command": "start",
+          "authority": "perform_action",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "in_progress",
+          "to": "submitted",
+          "command": "submit",
+          "authority": "perform_action",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "action_evidence_present"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "correction",
+            "rootCause",
+            "preventiveAction"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "ACTION_EVIDENCE_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "verified",
+          "command": "verify",
+          "authority": "verify_action",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "action_evidence_present"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "ACTION_EVIDENCE_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "rework_required",
+          "command": "return",
+          "authority": "verify_action",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "rework_required",
+          "to": "in_progress",
+          "command": "restart",
+          "authority": "perform_action",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "verified",
+          "to": "closed",
+          "command": "close",
+          "authority": "verify_action",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "draft",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "assign_action",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        }
+      ]
+    },
+    "decision": {
+      "object_type": "Decision",
+      "subtype": null,
+      "initial": "preparing",
+      "states": [
+        "preparing",
+        "reported",
+        "awaiting_decision",
+        "supplement_requested",
+        "decided",
+        "executing",
+        "verified",
+        "closed",
+        "cancelled"
+      ],
+      "transitions": [
+        {
+          "from": "preparing",
+          "to": "reported",
+          "command": "report",
+          "authority": "request_owner_decision",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "decision_package_complete"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "dueAt",
+            "reportId",
+            "options",
+            "recommendation",
+            "impact"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "DECISION_PACKAGE_COMPLETE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "reported",
+          "to": "awaiting_decision",
+          "command": "acknowledge",
+          "authority": "acknowledge_owner_report",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "awaiting_decision",
+          "to": "supplement_requested",
+          "command": "request_supplement",
+          "authority": "owner_decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "supplement_requested",
+          "to": "reported",
+          "command": "resubmit",
+          "authority": "request_owner_decision",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "decision_package_complete"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "options",
+            "recommendation",
+            "impact"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "DECISION_PACKAGE_COMPLETE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "awaiting_decision",
+          "to": "decided",
+          "command": "decide",
+          "authority": "owner_decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "decision_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "decision",
+            "decisionReason",
+            "selectedOption",
+            "decisionAt"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "DECISION_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decided",
+          "to": "executing",
+          "command": "dispatch",
+          "authority": "request_owner_decision",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "decision_action_linked"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "actionIds",
+            "notifiedAt"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "DECISION_ACTION_LINKED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "executing",
+          "to": "verified",
+          "command": "verify",
+          "authority": "verify_owner_followup",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "linked_actions_closed"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "LINKED_ACTIONS_CLOSED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "verified",
+          "to": "closed",
+          "command": "close",
+          "authority": "verify_owner_followup",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "preparing",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "request_owner_decision",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        }
+      ]
+    },
+    "report": {
+      "object_type": "InformationItem",
+      "subtype": "Report",
+      "initial": "draft",
+      "states": [
+        "draft",
+        "review",
+        "issued",
+        "acknowledged",
+        "followup",
+        "verified",
+        "closed",
+        "cancelled"
+      ],
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "review",
+          "command": "submit",
+          "authority": "author_report",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "report_package_complete"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPORT_PACKAGE_COMPLETE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "review",
+          "to": "issued",
+          "command": "issue",
+          "authority": "issue_owner_report",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "report_package_complete",
+            "report_due_defined"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPORT_PACKAGE_COMPLETE",
+            "REPORT_DUE_DEFINED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "issued",
+          "to": "acknowledged",
+          "command": "acknowledge",
+          "authority": "acknowledge_owner_report",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "acknowledged",
+          "to": "acknowledged",
+          "command": "link_followup",
+          "authority": "issue_owner_report",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "report_followup_linked"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "actionIds",
+            "decisionIds"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPORT_FOLLOWUP_LINKED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "acknowledged",
+          "to": "followup",
+          "command": "dispatch",
+          "authority": "issue_owner_report",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "report_followup_linked"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPORT_FOLLOWUP_LINKED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "followup",
+          "to": "verified",
+          "command": "verify",
+          "authority": "verify_owner_followup",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "report_followup_closed"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPORT_FOLLOWUP_CLOSED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "verified",
+          "to": "closed",
+          "command": "close",
+          "authority": "verify_owner_followup",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "draft",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "author_report",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        }
+      ]
+    },
+    "analysis_run": {
+      "object_type": "AnalysisRun",
+      "subtype": null,
+      "initial": "queued",
+      "states": [
+        "queued",
+        "running",
+        "succeeded",
+        "failed",
+        "cancelled"
+      ],
+      "transitions": [
+        {
+          "from": "queued",
+          "to": "running",
+          "command": "start",
+          "authority": "run_analysis",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "analysis_sources_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "ANALYSIS_SOURCES_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "running",
+          "to": "succeeded",
+          "command": "complete",
+          "authority": "run_analysis",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "analysis_outputs_grounded"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "outputs",
+            "coverage",
+            "completedAt"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "ANALYSIS_OUTPUTS_GROUNDED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "running",
+          "to": "failed",
+          "command": "fail",
+          "authority": "run_analysis",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "queued",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "cancel_analysis",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "running",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "cancel_analysis",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        }
+      ]
     }
-  },
-  "common_guards": [
-    "role_assignment_authorized",
-    "expected_version_matches",
-    "requirement_version_valid",
-    "required_evidence_present",
-    "drawing_revision_current",
-    "hold_point_released_when_required"
-  ]
+  }
 }

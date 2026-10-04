@@ -1,0 +1,92 @@
+"""Fail closed on inconsistent domain/state/authority/API/form declarations."""
+import ast
+import json
+from pathlib import Path
+import re
+import sys
+ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
+from app.reference.engine import load
+
+
+def check(condition,message):
+    if not condition:raise AssertionError(message)
+
+
+def validate_all():
+    schemas=load('schema/domain_schemas_v2.json')['components']['schemas']
+    machines=load('schema/state_machines_v1.json')['machines'];authority=load('schema/authority_matrix_v1.json');policies=authority['policies']
+    mapping=load('schema/register_projection_map_v2.json');catalog=load('schema/register_catalog.json')
+    forms=load('forms/form_catalog.json')['forms'];data=load('forms/form_data_schemas_v1.json')['forms'];bindings=load('forms/form_domain_bindings_v2.json')['forms']
+    check(authority['default']=='deny','Authority must default deny')
+    for name,policy in policies.items():check(not policy['official'] or not set(policy['actor_groups'])&{'AI','SYSTEM','INTEGRATION'},name+' gives nonhuman official authority')
+    tree=ast.parse((ROOT/'app/reference/engine.py').read_text());guard_keys=set()
+    for node in ast.walk(tree):
+        if isinstance(node,ast.Assign) and isinstance(node.value,ast.Dict) and any(isinstance(t,ast.Name) and t.id in ['predicates','checks'] for t in node.targets):
+            guard_keys.update(k.value for k in node.value.keys if isinstance(k,ast.Constant))
+    for name,machine in machines.items():
+        check(machine['object_type'] in schemas,name+' has unknown object type');seen=set()
+        for t in machine['transitions']:
+            signature=t['from'],t['command'];check(signature not in seen,name+' has ambiguous command');seen.add(signature)
+            check(t['from'] in machine['states'] and t['to'] in machine['states'],name+' has unknown state')
+            check(t['authority'] in policies,name+' has unknown authority')
+            check(t['audit_event'] and t['failure_reasons'],name+' lacks failure/audit contract')
+            check(set(t['guards'])<=guard_keys|set(load('schema/state_machines_v1.json')['common_guards']),name+' has unimplemented guard')
+    check([p['register_id'] for p in mapping['registers']]==[f'{i:02}' for i in range(1,30)],'29 projection mappings required')
+    subtypes=load('schema/domain_model_v2.json')['subtypes']
+    all_commands={name+':'+t['command'] for name,m in machines.items() for t in m['transitions']}
+    for projection in mapping['registers']:
+        check(projection['raw_status_patch'] is False,'Projection status writes forbidden')
+        check(set(projection['allowed_commands'])<=all_commands,'Unknown projection command')
+        check(projection['mode'] in ['read_only','actionable'],'Unknown projection mode')
+        check(projection['join_relations'] and projection['calculated_fields'],'Join/calculation contract absent')
+        for source in projection['sources']:
+            kind=source['object_type'];check(kind in schemas,'Unknown projection source')
+            if source['subtype']:check(source['subtype'] in (subtypes.get(kind,[]) or schemas[kind]['properties'].get('kind',{}).get('enum',[])),'Unknown subtype '+str(source))
+    identifiers={p['register_id'] for p in mapping['registers']}|{v['id'] for v in catalog['views']}
+    check(len(forms)==25 and set(data)==set(bindings)=={f['id'] for f in forms},'25 form contracts and bindings required')
+    for form in forms:
+        check(set(form['registers'])<=identifiers,form['id']+' refers to unknown view')
+        for conditional in data[form['id']]['conditional_signatures']:
+            check(isinstance(conditional['when'],dict) and conditional['when']['operator']=='non_null','Unsafe conditional predicate')
+    known={'$ref','$schema','type','enum','const','format','pattern','minLength','minimum','maximum','properties','required','additionalProperties','items','minItems','uniqueItems','allOf','oneOf','anyOf','if','then','else','description','title','default'}
+    def walk(schema):
+        check(set(schema)<=known,'Unsupported validation keywords '+str(set(schema)-known))
+        if '$ref' in schema:check(schema['$ref'].split('/')[-1] in schemas,'Unresolved schema reference')
+        for value in schema.get('properties',{}).values():walk(value)
+        if 'items' in schema:walk(schema['items'])
+        for key in ['allOf','oneOf','anyOf']:
+            for value in schema.get(key,[]):walk(value)
+        for key in ['if','then','else']:
+            if key in schema:walk(schema[key])
+    for schema in schemas.values():walk(schema)
+    api=json.loads((ROOT/'app/api/openapi.yaml').read_text());ops=0
+    operation_ids=set()
+    for path,item in api['paths'].items():
+        check(path.startswith('/projects/{projectId}'),'Unscoped API route')
+        for method,op in item.items():
+            if method not in ['get','post','put','patch','delete']:continue
+            ops+=1;check(method not in ['patch','delete'],'Raw status/deletion endpoint forbidden')
+            params=item.get('parameters',[])+op.get('parameters',[])
+            for token in re.findall(r'\{([^}]+)\}',path):check(any(p['name']==token and p['in']=='path' and p['required'] for p in params),'Undeclared path parameter '+path)
+            check(op['operationId'] not in operation_ids,'Duplicate operationId');operation_ids.add(op['operationId'])
+            if method in ['post','put']:
+                check(op.get('requestBody',{}).get('required'),'Write body absent')
+                check(any(p['name']=='Idempotency-Key' and p['required'] for p in params),'Write lacks idempotency')
+            check(any(k.startswith('2') for k in op['responses']),'Success response absent')
+            if 'x-domain-command' in op:check(op['x-domain-command'] in all_commands,'Unknown API command')
+    def refs(value):
+        if isinstance(value,dict):
+            if '$ref' in value:
+                cursor=api
+                for p in value['$ref'].removeprefix('#/').split('/'):cursor=cursor[p]
+            for v in value.values():refs(v)
+        elif isinstance(value,list):
+            for v in value:refs(v)
+    refs(api)
+    legal=load('forms/legal_form_registry.json')['official_fixed'];check(len({x['id'] for x in legal})==len(legal),'Duplicate legal template')
+    for entry in legal:
+        if entry['render_enabled']:check(all(entry.get(k) for k in ['template_file','template_sha256','effective_from','verified_source_url']),'Unverified legal template enabled')
+    return dict(machines=len(machines),transitions=sum(len(m['transitions']) for m in machines.values()),policies=len(policies),registers=29,forms=25,api_paths=len(api['paths']),api_operations=ops)
+
+if __name__=='__main__':print(json.dumps(validate_all(),ensure_ascii=False))

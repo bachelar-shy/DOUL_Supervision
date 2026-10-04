@@ -1,5 +1,5 @@
 {
-  "version": "2.0",
+  "version": "2.1",
   "principle": "Core domain objects are operational source-of-truth; registers are projections/views and document feeds.",
   "objects": [
     "Project",
@@ -52,7 +52,16 @@
       "OwnerDecisionRequest",
       "CommissioningPackage",
       "HandoverPackage",
-      "WarrantyClaim"
+      "WarrantyClaim",
+      "Contract",
+      "SiteInstruction",
+      "SafetyEquipmentInspection",
+      "EnvironmentalControl",
+      "Risk",
+      "ContractNotice",
+      "InsuranceGuarantee",
+      "ComplianceAudit",
+      "Lesson"
     ],
     "Issue": [
       "Defect",
@@ -74,6 +83,79 @@
     "requirement_versions_preserved",
     "official_records_no_physical_delete",
     "ai_cannot_execute_official_transition",
-    "stale_offline_write_cannot_overwrite_newer_version"
-  ]
+    "stale_offline_write_cannot_overwrite_newer_version",
+    "hold_point_requires_version_bound_approval_and_signed_acceptance",
+    "rfi_response_does_not_authorize_change",
+    "owner_report_requires_receipt_and_verified_followup",
+    "nonhuman_actor_cannot_execute_official_transition",
+    "derived_evidence_has_immutable_parent_and_source_range",
+    "projection_has_no_independent_workflow_state"
+  ],
+  "auxiliary_objects": [
+    "Qualification",
+    "DocumentSnapshot",
+    "Signature",
+    "AuditEvent",
+    "AnalysisRun",
+    "UploadSession",
+    "Notification"
+  ],
+  "party_kinds": [
+    "PERSON",
+    "ORGANIZATION",
+    "TEST_LAB",
+    "EXTERNAL_REVIEWER",
+    "AUTHORITY"
+  ],
+  "relations": {
+    "RoleAssignment": [
+      "Party",
+      "Qualification",
+      "Project"
+    ],
+    "Inspection": [
+      "Requirement",
+      "Evidence",
+      "WorkItem",
+      "Location",
+      "Approval",
+      "DocumentSnapshot"
+    ],
+    "Observation": [
+      "Evidence",
+      "AnalysisRun",
+      "Location"
+    ],
+    "Issue": [
+      "Observation",
+      "Action",
+      "Inspection",
+      "Requirement"
+    ],
+    "Action": [
+      "Issue",
+      "Decision",
+      "InformationItem",
+      "Evidence"
+    ],
+    "Decision": [
+      "InformationItem",
+      "Approval",
+      "Action"
+    ],
+    "Approval": [
+      "versioned_target_ref"
+    ],
+    "DocumentSnapshot": [
+      "sourceDomainRefs",
+      "source_payload_hash",
+      "template_hash"
+    ],
+    "AnalysisRun": [
+      "Evidence",
+      "derived_outputs",
+      "model_and_prompt_versions",
+      "coverage_manifest"
+    ]
+  }
 }

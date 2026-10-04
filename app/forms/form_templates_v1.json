@@ -1,11 +1,11 @@
 {
-  "version": "1.0",
+  "version": "2.0",
   "layout": "DOUL_A4",
   "templates": [
     {
       "id": "FM-01",
       "title": "시공사 제출자료 표지",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -38,12 +38,13 @@
             "review.due"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-02",
       "title": "시공계획 검토서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -77,12 +78,13 @@
             "chief_supervisor"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-03",
       "title": "시공상세도 검토서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -115,12 +117,13 @@
             "review.comment"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-04",
       "title": "자재승인 요청·검토서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -152,12 +155,13 @@
             "review.conditions"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-05",
       "title": "자재반입 검사서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -190,12 +194,13 @@
             "review.ncr_no"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-06",
       "title": "시험·검사 요청서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -228,12 +233,13 @@
             "review.comment"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-07",
       "title": "검수요청서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -270,7 +276,7 @@
     {
       "id": "FM-08",
       "title": "시공사 자체검측표",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -298,12 +304,13 @@
           "type": "text",
           "field": "inspection.self_result"
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-09",
       "title": "시공작업 검수기록",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -342,18 +349,52 @@
           ],
           "conditional": [
             {
-              "when": "participants.subcontractor != null",
+              "when": {
+                "path": "participants.subcontractor",
+                "operator": "non_null"
+              },
               "role": "subcontractor_technical_lead"
             }
           ]
         }
       ],
-      "legal_mode": "legal_required_fields"
+      "legal_mode": "legal_required_fields",
+      "legal_requirements": {
+        "required_fields": [
+          "inspection.no",
+          "inspection.work_name",
+          "work.discipline",
+          "work.location",
+          "inspection.datetime",
+          "inspection.place",
+          "basis.drawings",
+          "basis.criteria",
+          "basis.tests",
+          "result.status",
+          "result.next_work_allowed"
+        ],
+        "required_signature_roles": [
+          "owner_side_supervisor",
+          "contractor_technical_lead"
+        ],
+        "conditional_signatures": [
+          {
+            "when": {
+              "path": "participants.subcontractor",
+              "operator": "non_null"
+            },
+            "role": "subcontractor_technical_lead"
+          }
+        ],
+        "require_signer_name_position": true,
+        "require_corporate_seal": false,
+        "final_language": "vi"
+      }
     },
     {
       "id": "FM-10",
       "title": "단계·부분 검수기록",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -390,12 +431,34 @@
           ]
         }
       ],
-      "legal_mode": "legal_required_fields"
+      "legal_mode": "legal_required_fields",
+      "legal_requirements": {
+        "required_fields": [
+          "stage.name",
+          "stage.datetime",
+          "work.discipline",
+          "work.location",
+          "stage.inspections",
+          "stage.tests",
+          "stage.changes",
+          "stage.asbuilt",
+          "result.status"
+        ],
+        "required_signature_roles": [
+          "chief_or_supervisor",
+          "contractor_lead",
+          "other_participant"
+        ],
+        "conditional_signatures": [],
+        "require_signer_name_position": true,
+        "require_corporate_seal": false,
+        "final_language": "vi"
+      }
     },
     {
       "id": "FM-11",
       "title": "완료검수기록",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -436,12 +499,38 @@
           ]
         }
       ],
-      "legal_mode": "legal_required_fields"
+      "legal_mode": "legal_required_fields",
+      "legal_requirements": {
+        "required_fields": [
+          "completion.facility",
+          "contract.package",
+          "completion.datetime_place",
+          "project.name",
+          "completion.design_compliance",
+          "completion.testing",
+          "completion.ncr_closed",
+          "completion.pccc",
+          "completion.dossier",
+          "result.status",
+          "warranty.start",
+          "warranty.period"
+        ],
+        "required_signature_roles": [
+          "investor",
+          "chief_supervisor",
+          "contractor_lead",
+          "other_legal_participant"
+        ],
+        "conditional_signatures": [],
+        "require_signer_name_position": true,
+        "require_corporate_seal": true,
+        "final_language": "vi"
+      }
     },
     {
       "id": "FM-12",
       "title": "부적합 보고서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -473,12 +562,13 @@
             "ncr.owner_report"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-13",
       "title": "시정조치서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -507,12 +597,13 @@
             "car.closed_at"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-14",
       "title": "현장지시서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -544,12 +635,13 @@
             "instruction.closed_at"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-15",
       "title": "기술질의서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -581,12 +673,13 @@
             "rfi.change_required"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-16",
       "title": "설계변경 검토서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -619,12 +712,13 @@
             "change.owner_decision"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-17",
       "title": "고위험작업 안전확인서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -658,12 +752,13 @@
             "safety.conditions"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-18",
       "title": "일일 감리기록",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -686,12 +781,13 @@
             "daily.next_day"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-19",
       "title": "주간 감리보고",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -718,12 +814,13 @@
           "type": "text",
           "field": "weekly.summary"
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-20",
       "title": "발주처 즉시보고",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -753,12 +850,13 @@
             "urgent.decision_due"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-21",
       "title": "발주처 의사결정 요청서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -788,12 +886,13 @@
             "decision.decided_at"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-22",
       "title": "미결사항 목록",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -816,12 +915,13 @@
             "status"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-23",
       "title": "준공서류 완성도표",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -845,12 +945,13 @@
             "file"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-24",
       "title": "인수인계 확인서",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -881,12 +982,13 @@
             "supervision_confirm"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     },
     {
       "id": "FM-25",
       "title": "미완료·하자 추적표",
-      "version": "1.0",
+      "version": "2.0",
       "layout": "DOUL_A4",
       "sections": [
         {
@@ -908,7 +1010,9 @@
             "status"
           ]
         }
-      ]
+      ],
+      "legal_mode": "doul_internal"
     }
-  ]
+  ],
+  "data_contract": "form_data_schemas_v1.json"
 }

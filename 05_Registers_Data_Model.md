@@ -1,5 +1,6 @@
 # 05. DOUL 감리 관리대장 및 데이터 구조
 
+현재 구현 기준: 대장은 읽기 전용 Projection이며 원본·명령은 17과 `register_projection_map_v2.json`을 따른다.
 기준일: 2026-10-04  
 문서상태: 초안 v0.1
 

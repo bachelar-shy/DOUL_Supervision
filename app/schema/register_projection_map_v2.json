@@ -1,0 +1,2504 @@
+{
+  "version": "2.0",
+  "projection_only": true,
+  "read_only_note": "Read-only means no command on this projection; source creation/update will use separately implemented domain services.",
+  "registers": [
+    {
+      "register_id": "01",
+      "sources": [
+        {
+          "object_type": "Requirement",
+          "subtype": null
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "GeneralDocument"
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "applicability",
+        "permit_status"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "applicability": {
+          "operator": "coalesce",
+          "paths": [
+            "applicability"
+          ],
+          "missing_value": null
+        },
+        "permit_status": {
+          "operator": "coalesce",
+          "paths": [
+            "status",
+            "data.permitStatus"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "02",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "Contract"
+        },
+        {
+          "object_type": "Party",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "scope",
+        "contract_period"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "scope": {
+          "operator": "coalesce",
+          "paths": [
+            "data.scope"
+          ],
+          "missing_value": null
+        },
+        "contract_period": {
+          "operator": "coalesce",
+          "paths": [
+            "data.contractPeriod"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "03",
+      "sources": [
+        {
+          "object_type": "Party",
+          "subtype": null
+        },
+        {
+          "object_type": "RoleAssignment",
+          "subtype": null
+        },
+        {
+          "object_type": "Qualification",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "qualification_valid",
+        "deployed"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "RoleAssignment",
+          "left_path": "partyId",
+          "right_object": "Party",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "Qualification",
+          "left_path": "partyId",
+          "right_object": "Party",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "RoleAssignment",
+          "left_path": "qualificationIds",
+          "right_object": "Qualification",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "qualification_valid": {
+          "operator": "validity",
+          "from_path": "validFrom",
+          "to_path": "validTo",
+          "verified_path": "verified",
+          "revoked_path": "revoked",
+          "missing_value": null
+        },
+        "deployed": {
+          "operator": "validity",
+          "from_path": "validFrom",
+          "to_path": "validTo",
+          "active_path": "active",
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "04",
+      "sources": [
+        {
+          "object_type": "InformationItem",
+          "subtype": "Drawing"
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "current_revision",
+        "approval_status"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "current_revision": {
+          "operator": "coalesce",
+          "paths": [
+            "revision"
+          ],
+          "missing_value": null
+        },
+        "approval_status": {
+          "operator": "coalesce",
+          "paths": [
+            "status"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "05",
+      "sources": [
+        {
+          "object_type": "InformationItem",
+          "subtype": null
+        },
+        {
+          "object_type": "Notification",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "sent_at",
+        "received_at",
+        "response_due"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "Notification",
+          "left_path": "sourceRef",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "sent_at": {
+          "operator": "coalesce",
+          "paths": [
+            "sentAt",
+            "report.issuedAt"
+          ],
+          "missing_value": null
+        },
+        "received_at": {
+          "operator": "coalesce",
+          "paths": [
+            "acknowledgedAt",
+            "report.acknowledgedAt"
+          ],
+          "missing_value": null
+        },
+        "response_due": {
+          "operator": "coalesce",
+          "paths": [
+            "dueAt",
+            "report.dueAt"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "06",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "ContractorSubmission"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "MethodStatement"
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "status",
+        "due_at"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Approval",
+          "left_path": "targetRef",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "status": {
+          "operator": "coalesce",
+          "paths": [
+            "status"
+          ],
+          "missing_value": null
+        },
+        "due_at": {
+          "operator": "coalesce",
+          "paths": [
+            "dueAt"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "07",
+      "sources": [
+        {
+          "object_type": "InformationItem",
+          "subtype": "Drawing"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "ContractorSubmission"
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "drawing_revision",
+        "clash_status"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Approval",
+          "left_path": "targetRef",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "drawing_revision": {
+          "operator": "coalesce",
+          "paths": [
+            "revision"
+          ],
+          "missing_value": null
+        },
+        "clash_status": {
+          "operator": "coalesce",
+          "paths": [
+            "data.clashStatus"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "08",
+      "sources": [
+        {
+          "object_type": "Asset",
+          "subtype": "Material"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "MaterialSubmittal"
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "approved_revision",
+        "conditions"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Approval",
+          "left_path": "targetRef",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "approved_revision": {
+          "operator": "coalesce",
+          "paths": [
+            "data.approvedRevision"
+          ],
+          "missing_value": null
+        },
+        "conditions": {
+          "operator": "coalesce",
+          "paths": [
+            "conditions",
+            "data.conditions"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "09",
+      "sources": [
+        {
+          "object_type": "Asset",
+          "subtype": "MaterialLot"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "lot_accepted",
+        "approval_match"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "inspection:request",
+        "inspection:receive",
+        "inspection:return",
+        "inspection:resubmit",
+        "inspection:schedule",
+        "inspection:start",
+        "inspection:submit_results",
+        "inspection:pass",
+        "inspection:conditional",
+        "inspection:fail",
+        "inspection:hold",
+        "inspection:resume",
+        "inspection:resolve_conditions",
+        "inspection:release_next_work",
+        "inspection:record_failure",
+        "inspection:cancel",
+        "inspection:cancel"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Inspection",
+          "left_path": "evidenceIds",
+          "right_object": "Evidence",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "lot_accepted": {
+          "operator": "coalesce",
+          "paths": [
+            "nextWorkAllowed"
+          ],
+          "missing_value": null
+        },
+        "approval_match": {
+          "operator": "coalesce",
+          "paths": [
+            "data.approvalMatch"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "10",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "TestRequest"
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        },
+        {
+          "object_type": "Party",
+          "subtype": "TEST_LAB"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Certificate"
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "test_result",
+        "retest_due"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "Evidence",
+          "left_path": "sourcePartyId",
+          "right_object": "Party",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "test_result": {
+          "operator": "coalesce",
+          "paths": [
+            "resultStatus",
+            "data.testResult"
+          ],
+          "missing_value": null
+        },
+        "retest_due": {
+          "operator": "coalesce",
+          "paths": [
+            "data.retestDueAt"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "11",
+      "sources": [
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        },
+        {
+          "object_type": "Requirement",
+          "subtype": null
+        },
+        {
+          "object_type": "DocumentSnapshot",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "result_status",
+        "next_work_allowed",
+        "response_elapsed"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "inspection:request",
+        "inspection:receive",
+        "inspection:return",
+        "inspection:resubmit",
+        "inspection:schedule",
+        "inspection:start",
+        "inspection:submit_results",
+        "inspection:pass",
+        "inspection:conditional",
+        "inspection:fail",
+        "inspection:hold",
+        "inspection:resume",
+        "inspection:resolve_conditions",
+        "inspection:release_next_work",
+        "inspection:record_failure",
+        "inspection:cancel",
+        "inspection:cancel"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Inspection",
+          "left_path": "requirementRefs",
+          "right_object": "Requirement",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "Inspection",
+          "left_path": "evidenceIds",
+          "right_object": "Evidence",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "DocumentSnapshot",
+          "left_path": "sourceDomainRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "result_status": {
+          "operator": "coalesce",
+          "paths": [
+            "resultStatus"
+          ],
+          "missing_value": null
+        },
+        "next_work_allowed": {
+          "operator": "coalesce",
+          "paths": [
+            "nextWorkAllowed"
+          ],
+          "missing_value": null
+        },
+        "response_elapsed": {
+          "operator": "elapsed_seconds",
+          "start_path": "requestedAt",
+          "end_path": "receivedAt",
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "12",
+      "sources": [
+        {
+          "object_type": "Issue",
+          "subtype": null
+        },
+        {
+          "object_type": "Action",
+          "subtype": null
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "correction_cycle",
+        "due_at",
+        "closure_verified"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "issue:assign",
+        "issue:start_correction",
+        "issue:request_reinspection",
+        "issue:start_reinspection",
+        "issue:close",
+        "issue:reject_reinspection",
+        "issue:restart_correction",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:supersede",
+        "issue:supersede",
+        "issue:supersede",
+        "action:assign",
+        "action:start",
+        "action:submit",
+        "action:verify",
+        "action:return",
+        "action:restart",
+        "action:close",
+        "action:cancel",
+        "issue:link_actions"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Inspection",
+          "left_path": "evidenceIds",
+          "right_object": "Evidence",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "Inspection",
+          "left_path": "relatedIssueId",
+          "right_object": "Issue",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "Issue",
+          "left_path": "actionIds",
+          "right_object": "Action",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "Issue",
+          "left_path": "inspectionIds",
+          "right_object": "Inspection",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "Action",
+          "left_path": "relatedIssueId",
+          "right_object": "Issue",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "correction_cycle": {
+          "operator": "coalesce",
+          "paths": [
+            "correctionCycle"
+          ],
+          "missing_value": null
+        },
+        "due_at": {
+          "operator": "coalesce",
+          "paths": [
+            "dueAt"
+          ],
+          "missing_value": null
+        },
+        "closure_verified": {
+          "operator": "coalesce",
+          "paths": [
+            "closedBy"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "13",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "RFI"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "response_due",
+        "change_required"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "rfi:submit",
+        "rfi:receive",
+        "rfi:return",
+        "rfi:resubmit",
+        "rfi:refer",
+        "rfi:answer",
+        "rfi:review_response",
+        "rfi:accept_response",
+        "rfi:return_response",
+        "rfi:close",
+        "rfi:withdraw",
+        "rfi:withdraw",
+        "rfi:withdraw",
+        "rfi:cancel",
+        "rfi:cancel"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "response_due": {
+          "operator": "coalesce",
+          "paths": [
+            "dueAt",
+            "report.dueAt"
+          ],
+          "missing_value": null
+        },
+        "change_required": {
+          "operator": "coalesce",
+          "paths": [
+            "data.changeRequired"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "14",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "ChangeRequest"
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Drawing"
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "approved_version",
+        "impact"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "change:review_impact",
+        "change:request_decision",
+        "change:approve",
+        "change:reject",
+        "change:return",
+        "change:resubmit",
+        "change:issue_revision",
+        "change:implement",
+        "change:verify",
+        "change:close",
+        "approval:review",
+        "approval:approve",
+        "approval:reject",
+        "approval:return",
+        "approval:resubmit",
+        "approval:expire",
+        "approval:revoke",
+        "approval:supersede"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Decision",
+          "left_path": "reportId",
+          "right_object": "InformationItem",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "Approval",
+          "left_path": "targetRef",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "approved_version": {
+          "operator": "coalesce",
+          "paths": [
+            "targetRef.version"
+          ],
+          "missing_value": null
+        },
+        "impact": {
+          "operator": "coalesce",
+          "paths": [
+            "data.impact",
+            "impact",
+            "report.impact"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "15",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "SiteInstruction"
+        },
+        {
+          "object_type": "Action",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "instruction_due",
+        "execution_status"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "action:assign",
+        "action:start",
+        "action:submit",
+        "action:verify",
+        "action:return",
+        "action:restart",
+        "action:close",
+        "action:cancel"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "instruction_due": {
+          "operator": "coalesce",
+          "paths": [
+            "dueAt"
+          ],
+          "missing_value": null
+        },
+        "execution_status": {
+          "operator": "coalesce",
+          "paths": [
+            "status"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "16",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "ScheduleActivity"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Report"
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "planned_actual",
+        "delay_days"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "planned_actual": {
+          "operator": "coalesce",
+          "paths": [
+            "data.plannedActual"
+          ],
+          "missing_value": null
+        },
+        "delay_days": {
+          "operator": "elapsed_days",
+          "start_path": "data.plannedFinishAt",
+          "end_path": "data.actualFinishAt",
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "17",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "PaymentClaim"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "verified_quantity",
+        "approved_variation"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Approval",
+          "left_path": "targetRef",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "verified_quantity": {
+          "operator": "coalesce",
+          "paths": [
+            "data.verifiedQuantity"
+          ],
+          "missing_value": null
+        },
+        "approved_variation": {
+          "operator": "coalesce",
+          "paths": [
+            "data.approvedVariation"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "18",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "SafetyPermit"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Issue",
+          "subtype": "Safety"
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "permit_valid",
+        "stop_resume_status"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "inspection:request",
+        "inspection:receive",
+        "inspection:return",
+        "inspection:resubmit",
+        "inspection:schedule",
+        "inspection:start",
+        "inspection:submit_results",
+        "inspection:pass",
+        "inspection:conditional",
+        "inspection:fail",
+        "inspection:hold",
+        "inspection:resume",
+        "inspection:resolve_conditions",
+        "inspection:release_next_work",
+        "inspection:record_failure",
+        "inspection:cancel",
+        "inspection:cancel",
+        "issue:assign",
+        "issue:start_correction",
+        "issue:request_reinspection",
+        "issue:start_reinspection",
+        "issue:close",
+        "issue:reject_reinspection",
+        "issue:restart_correction",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:supersede",
+        "issue:supersede",
+        "issue:supersede",
+        "issue:link_actions"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Inspection",
+          "left_path": "relatedIssueId",
+          "right_object": "Issue",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "Issue",
+          "left_path": "inspectionIds",
+          "right_object": "Inspection",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "permit_valid": {
+          "operator": "validity",
+          "from_path": "data.validFrom",
+          "to_path": "data.validTo",
+          "active_path": "data.active",
+          "missing_value": null
+        },
+        "stop_resume_status": {
+          "operator": "coalesce",
+          "paths": [
+            "status"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "19",
+      "sources": [
+        {
+          "object_type": "Asset",
+          "subtype": "Equipment"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "SafetyEquipmentInspection"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Certificate"
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "certificate_expiry",
+        "equipment_available"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "certificate_expiry": {
+          "operator": "coalesce",
+          "paths": [
+            "data.certificateExpiry"
+          ],
+          "missing_value": null
+        },
+        "equipment_available": {
+          "operator": "coalesce",
+          "paths": [
+            "data.equipmentAvailable"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "20",
+      "sources": [
+        {
+          "object_type": "Requirement",
+          "subtype": null
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": null
+        },
+        {
+          "object_type": "DocumentSnapshot",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "applicability",
+        "pc18_signed",
+        "integrated_test"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "inspection:request",
+        "inspection:receive",
+        "inspection:return",
+        "inspection:resubmit",
+        "inspection:schedule",
+        "inspection:start",
+        "inspection:submit_results",
+        "inspection:pass",
+        "inspection:conditional",
+        "inspection:fail",
+        "inspection:hold",
+        "inspection:resume",
+        "inspection:resolve_conditions",
+        "inspection:release_next_work",
+        "inspection:record_failure",
+        "inspection:cancel",
+        "inspection:cancel"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Inspection",
+          "left_path": "requirementRefs",
+          "right_object": "Requirement",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "DocumentSnapshot",
+          "left_path": "sourceDomainRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "applicability": {
+          "operator": "coalesce",
+          "paths": [
+            "applicability"
+          ],
+          "missing_value": null
+        },
+        "pc18_signed": {
+          "operator": "coalesce",
+          "paths": [
+            "data.pc18Signed"
+          ],
+          "missing_value": null
+        },
+        "integrated_test": {
+          "operator": "coalesce",
+          "paths": [
+            "data.integratedTest"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "21",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "EnvironmentalControl"
+        },
+        {
+          "object_type": "Requirement",
+          "subtype": null
+        },
+        {
+          "object_type": "Issue",
+          "subtype": "Environmental"
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "condition_compliance",
+        "incident_status"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "issue:assign",
+        "issue:start_correction",
+        "issue:request_reinspection",
+        "issue:start_reinspection",
+        "issue:close",
+        "issue:reject_reinspection",
+        "issue:restart_correction",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:supersede",
+        "issue:supersede",
+        "issue:supersede",
+        "issue:link_actions"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "condition_compliance": {
+          "operator": "coalesce",
+          "paths": [
+            "data.conditionCompliance"
+          ],
+          "missing_value": null
+        },
+        "incident_status": {
+          "operator": "coalesce",
+          "paths": [
+            "status"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "22",
+      "sources": [
+        {
+          "object_type": "InformationItem",
+          "subtype": "MeetingRecord"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Report"
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "Action",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "receipt",
+        "decision_due",
+        "followup_status"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "report:submit",
+        "report:issue",
+        "report:acknowledge",
+        "report:link_followup",
+        "report:dispatch",
+        "report:verify",
+        "report:close",
+        "report:cancel",
+        "decision:report",
+        "decision:acknowledge",
+        "decision:request_supplement",
+        "decision:resubmit",
+        "decision:decide",
+        "decision:dispatch",
+        "decision:verify",
+        "decision:close",
+        "decision:cancel",
+        "approval:review",
+        "approval:approve",
+        "approval:reject",
+        "approval:return",
+        "approval:resubmit",
+        "approval:expire",
+        "approval:revoke",
+        "approval:supersede",
+        "action:assign",
+        "action:start",
+        "action:submit",
+        "action:verify",
+        "action:return",
+        "action:restart",
+        "action:close",
+        "action:cancel"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Action",
+          "left_path": "decisionId",
+          "right_object": "Decision",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "Action",
+          "left_path": "reportId",
+          "right_object": "InformationItem",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "Decision",
+          "left_path": "reportId",
+          "right_object": "InformationItem",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "Decision",
+          "left_path": "actionIds",
+          "right_object": "Action",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "Approval",
+          "left_path": "targetRef",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "receipt": {
+          "operator": "coalesce",
+          "paths": [
+            "report.acknowledgedAt"
+          ],
+          "missing_value": null
+        },
+        "decision_due": {
+          "operator": "coalesce",
+          "paths": [
+            "dueAt",
+            "report.dueAt"
+          ],
+          "missing_value": null
+        },
+        "followup_status": {
+          "operator": "coalesce",
+          "paths": [
+            "status"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "23",
+      "sources": [
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": null
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Report"
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "capture_date",
+        "daily_completeness"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Inspection",
+          "left_path": "evidenceIds",
+          "right_object": "Evidence",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "capture_date": {
+          "operator": "coalesce",
+          "paths": [
+            "capturedAt",
+            "uploadedAt"
+          ],
+          "missing_value": null
+        },
+        "daily_completeness": {
+          "operator": "coalesce",
+          "paths": [
+            "data.dailyCompleteness"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "24",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "HandoverPackage"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "CommissioningPackage"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "WarrantyClaim"
+        },
+        {
+          "object_type": "Issue",
+          "subtype": "Punch"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "dossier_completeness",
+        "handover_status",
+        "warranty_due"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "issue:assign",
+        "issue:start_correction",
+        "issue:request_reinspection",
+        "issue:start_reinspection",
+        "issue:close",
+        "issue:reject_reinspection",
+        "issue:restart_correction",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:supersede",
+        "issue:supersede",
+        "issue:supersede",
+        "inspection:request",
+        "inspection:receive",
+        "inspection:return",
+        "inspection:resubmit",
+        "inspection:schedule",
+        "inspection:start",
+        "inspection:submit_results",
+        "inspection:pass",
+        "inspection:conditional",
+        "inspection:fail",
+        "inspection:hold",
+        "inspection:resume",
+        "inspection:resolve_conditions",
+        "inspection:release_next_work",
+        "inspection:record_failure",
+        "inspection:cancel",
+        "inspection:cancel",
+        "issue:link_actions"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Inspection",
+          "left_path": "relatedIssueId",
+          "right_object": "Issue",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "Issue",
+          "left_path": "inspectionIds",
+          "right_object": "Inspection",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "dossier_completeness": {
+          "operator": "coalesce",
+          "paths": [
+            "data.dossierCompleteness"
+          ],
+          "missing_value": null
+        },
+        "handover_status": {
+          "operator": "coalesce",
+          "paths": [
+            "status"
+          ],
+          "missing_value": null
+        },
+        "warranty_due": {
+          "operator": "coalesce",
+          "paths": [
+            "data.warrantyDueAt"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "25",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "Risk"
+        },
+        {
+          "object_type": "Issue",
+          "subtype": null
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "residual_risk",
+        "response_due"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "decision:report",
+        "decision:acknowledge",
+        "decision:request_supplement",
+        "decision:resubmit",
+        "decision:decide",
+        "decision:dispatch",
+        "decision:verify",
+        "decision:close",
+        "decision:cancel"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "residual_risk": {
+          "operator": "coalesce",
+          "paths": [
+            "data.residualRisk"
+          ],
+          "missing_value": null
+        },
+        "response_due": {
+          "operator": "coalesce",
+          "paths": [
+            "dueAt",
+            "report.dueAt"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "26",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "ContractNotice"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "Variation"
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "notice_due",
+        "claim_status"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "decision:report",
+        "decision:acknowledge",
+        "decision:request_supplement",
+        "decision:resubmit",
+        "decision:decide",
+        "decision:dispatch",
+        "decision:verify",
+        "decision:close",
+        "decision:cancel"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "notice_due": {
+          "operator": "coalesce",
+          "paths": [
+            "dueAt"
+          ],
+          "missing_value": null
+        },
+        "claim_status": {
+          "operator": "coalesce",
+          "paths": [
+            "status"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "27",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "InsuranceGuarantee"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Certificate"
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "expiry",
+        "renewal_due"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "InformationItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "expiry": {
+          "operator": "coalesce",
+          "paths": [
+            "expiresAt",
+            "data.expiresAt"
+          ],
+          "missing_value": null
+        },
+        "renewal_due": {
+          "operator": "coalesce",
+          "paths": [
+            "data.renewalDueAt"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "28",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "ComplianceAudit"
+        },
+        {
+          "object_type": "Issue",
+          "subtype": null
+        },
+        {
+          "object_type": "Action",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "finding_status",
+        "independence"
+      ],
+      "mode": "actionable",
+      "allowed_commands": [
+        "issue:assign",
+        "issue:start_correction",
+        "issue:request_reinspection",
+        "issue:start_reinspection",
+        "issue:close",
+        "issue:reject_reinspection",
+        "issue:restart_correction",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:cancel",
+        "issue:supersede",
+        "issue:supersede",
+        "issue:supersede",
+        "action:assign",
+        "action:start",
+        "action:submit",
+        "action:verify",
+        "action:return",
+        "action:restart",
+        "action:close",
+        "action:cancel",
+        "issue:link_actions"
+      ],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "Issue",
+          "left_path": "actionIds",
+          "right_object": "Action",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "Action",
+          "left_path": "relatedIssueId",
+          "right_object": "Issue",
+          "right_key": "id",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "current"
+        },
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "finding_status": {
+          "operator": "coalesce",
+          "paths": [
+            "status"
+          ],
+          "missing_value": null
+        },
+        "independence": {
+          "operator": "coalesce",
+          "paths": [
+            "data.independenceVerified"
+          ],
+          "missing_value": null
+        }
+      }
+    },
+    {
+      "register_id": "29",
+      "sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "Lesson"
+        },
+        {
+          "object_type": "Requirement",
+          "subtype": null
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        }
+      ],
+      "join_relations": [
+        "projectId",
+        "sourceDomainRefs",
+        "relatedRefs",
+        "locationId",
+        "packageId"
+      ],
+      "calculated_fields": [
+        "standard_revision_needed",
+        "approval_status"
+      ],
+      "mode": "read_only",
+      "allowed_commands": [],
+      "raw_status_patch": false,
+      "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
+      "joins": [
+        {
+          "left_object": "WorkItem",
+          "left_path": "relatedRefs",
+          "right_object": "*",
+          "right_key": "versioned_ref",
+          "cardinality": "many",
+          "project_match_required": true,
+          "version_policy": "exact"
+        }
+      ],
+      "fallback_join": "No implicit join by shared location/package; keep unrelated rows separate.",
+      "calculation_rules": {
+        "standard_revision_needed": {
+          "operator": "coalesce",
+          "paths": [
+            "data.standardRevisionNeeded"
+          ],
+          "missing_value": null
+        },
+        "approval_status": {
+          "operator": "coalesce",
+          "paths": [
+            "status"
+          ],
+          "missing_value": null
+        }
+      }
+    }
+  ],
+  "views": [
+    {
+      "id": "V-01",
+      "name": "미결사항",
+      "sources": "all_actionable_registers",
+      "calculated_fields": [
+        "owner",
+        "due_at",
+        "elapsed_days",
+        "priority",
+        "sourceDomainRefs"
+      ]
+    },
+    {
+      "id": "V-02",
+      "name": "기한초과",
+      "sources": "all_actionable_registers",
+      "calculated_fields": [
+        "due_at",
+        "overdue_seconds",
+        "sourceDomainRefs"
+      ]
+    },
+    {
+      "id": "V-03",
+      "name": "법정문서 완성도",
+      "sources": [
+        "01",
+        "20",
+        "24"
+      ],
+      "calculated_fields": [
+        "applicable",
+        "signed",
+        "original",
+        "digital",
+        "filed",
+        "percent",
+        "sourceDomainRefs"
+      ]
+    },
+    {
+      "id": "V-04",
+      "name": "발주처 결정대기",
+      "sources": [
+        "22"
+      ],
+      "calculated_fields": [
+        "due_at",
+        "decision_status",
+        "report_receipt",
+        "sourceDomainRefs"
+      ]
+    }
+  ],
+  "missing_data_policy": "Return null with unavailableFields; missing source data is never treated as passed/approved/completed."
+}

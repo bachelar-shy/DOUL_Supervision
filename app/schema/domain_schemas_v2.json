@@ -1,0 +1,3435 @@
+{
+  "version": "2.1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "components": {
+    "schemas": {
+      "DomainRef": {
+        "type": "object",
+        "properties": {
+          "objectType": {
+            "type": "string",
+            "enum": [
+              "Project",
+              "Party",
+              "RoleAssignment",
+              "Requirement",
+              "Location",
+              "Asset",
+              "InformationItem",
+              "Evidence",
+              "WorkItem",
+              "Inspection",
+              "Observation",
+              "Issue",
+              "Action",
+              "Decision",
+              "Approval",
+              "Qualification",
+              "DocumentSnapshot",
+              "Signature",
+              "AuditEvent",
+              "AnalysisRun",
+              "UploadSession",
+              "Notification"
+            ]
+          },
+          "objectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "objectType",
+          "objectId",
+          "version"
+        ],
+        "additionalProperties": false
+      },
+      "MediaRange": {
+        "type": "object",
+        "properties": {
+          "startMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "endMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "frameIndex": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "ptsMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "segmentId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "startMs",
+          "endMs"
+        ],
+        "additionalProperties": false
+      },
+      "Qualification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "partyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "disciplines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "revoked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "partyId",
+          "number",
+          "rank",
+          "disciplines",
+          "validFrom",
+          "validTo",
+          "verified",
+          "revoked"
+        ],
+        "additionalProperties": false
+      },
+      "RoleAssignment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "partyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actorGroup": {
+            "type": "string",
+            "enum": [
+              "SUP",
+              "ADM",
+              "CON",
+              "OWN",
+              "DES",
+              "AI",
+              "SYSTEM",
+              "INTEGRATION"
+            ]
+          },
+          "roleCode": {
+            "type": "string"
+          },
+          "authorityCodes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "perform_official_inspection",
+                "judge_inspection",
+                "confirm_observation",
+                "issue_official_issue",
+                "perform_reinspection",
+                "review_change",
+                "verify_change",
+                "review_inspection_request",
+                "review_rfi",
+                "review_rfi_response",
+                "verify_action",
+                "close_issue",
+                "release_hold_point",
+                "cancel_official_issue",
+                "review_observation",
+                "assign_issue",
+                "assign_action",
+                "submit_inspection_request",
+                "create_self_inspection",
+                "submit_corrective_action",
+                "request_reinspection",
+                "implement_change",
+                "submit_rfi",
+                "propose_change",
+                "create_action",
+                "manage_requirement_baseline",
+                "answer_rfi",
+                "issue_revised_information",
+                "request_owner_decision",
+                "owner_decide",
+                "acknowledge_owner_report",
+                "approve_change",
+                "request_approval",
+                "review_approval",
+                "approve_target",
+                "expire_approval",
+                "perform_action",
+                "author_report",
+                "issue_owner_report",
+                "verify_owner_followup",
+                "create_observation",
+                "create_evidence",
+                "create_analysis_run",
+                "run_analysis",
+                "cancel_analysis",
+                "sign_legal_document",
+                "render_document",
+                "manage_project_roles",
+                "notify_sla",
+                "refresh_projection",
+                "import_external_information"
+              ]
+            }
+          },
+          "disciplines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "packageIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "locationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "qualificationIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "approvedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "allowedPartyIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "partyId",
+          "organizationId",
+          "actorGroup",
+          "roleCode",
+          "authorityCodes",
+          "disciplines",
+          "packageIds",
+          "locationIds",
+          "qualificationIds",
+          "validFrom",
+          "validTo",
+          "active",
+          "approvedBy"
+        ],
+        "additionalProperties": false
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string",
+            "enum": [
+              "VN",
+              "KR"
+            ]
+          },
+          "classification": {
+            "type": "string"
+          },
+          "organizationIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "requirementBaselineRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "qualificationRules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "discipline": {
+                  "type": "string"
+                },
+                "minimumRank": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 3
+                }
+              },
+              "required": [
+                "discipline",
+                "minimumRank"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "name",
+          "country",
+          "timezone"
+        ],
+        "additionalProperties": false
+      },
+      "Party": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "PERSON",
+              "ORGANIZATION",
+              "TEST_LAB",
+              "EXTERNAL_REVIEWER",
+              "AUTHORITY"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loginEnabled": {
+            "type": "boolean"
+          },
+          "externalSourceId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "kind",
+          "name",
+          "loginEnabled"
+        ],
+        "additionalProperties": false
+      },
+      "Requirement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "legal",
+              "contract",
+              "doul"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "sourceUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "article": {
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "effectiveTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "applicability": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": true
+          },
+          "requiredFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "requiredSignatures": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "superseded"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "kind",
+          "title",
+          "effectiveFrom",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "semanticAnchor": {
+            "type": "string"
+          },
+          "drawingAnchors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "drawingRef": {
+                  "$ref": "#/components/schemas/DomainRef"
+                },
+                "page": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "coordinateSystem": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "drawingRef",
+                "page",
+                "x",
+                "y",
+                "coordinateSystem"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "name",
+          "semanticAnchor"
+        ],
+        "additionalProperties": false
+      },
+      "Asset": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "subtype": {
+            "type": "string",
+            "enum": [
+              "BuildingElement",
+              "Equipment",
+              "System",
+              "Material",
+              "MaterialLot",
+              "InstalledComponent"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "serialOrLot": {
+            "type": "string"
+          },
+          "materialApprovalRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "subtype",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "InformationItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "subtype": {
+            "type": "string",
+            "enum": [
+              "Drawing",
+              "Specification",
+              "MethodStatement",
+              "ChecklistTemplate",
+              "Report",
+              "Certificate",
+              "MeetingRecord",
+              "Manual",
+              "GeneralDocument"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "fileIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "relatedRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "report": {
+            "$ref": "#/components/schemas/OwnerReportData"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "subtype",
+          "title",
+          "revision",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "Evidence": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "sourceType": {
+            "type": "string",
+            "enum": [
+              "original",
+              "derived"
+            ]
+          },
+          "mediaType": {
+            "type": "string",
+            "enum": [
+              "photo",
+              "video",
+              "audio",
+              "document",
+              "measurement"
+            ]
+          },
+          "fileId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fileHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "sourcePartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "submittedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "capturedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "originalEvidenceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourceRange": {
+            "$ref": "#/components/schemas/MediaRange"
+          },
+          "derivationRunId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "durationMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "frameCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "sourceType",
+          "mediaType",
+          "fileId",
+          "fileHash",
+          "sourcePartyId",
+          "submittedBy",
+          "uploadedAt"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "sourceType": {
+                  "const": "derived"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "originalEvidenceId",
+                "sourceRange",
+                "derivationRunId"
+              ]
+            }
+          }
+        ]
+      },
+      "Grounding": {
+        "type": "object",
+        "properties": {
+          "evidenceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "range": {
+            "$ref": "#/components/schemas/MediaRange"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "visual",
+              "speech",
+              "measurement",
+              "document"
+            ]
+          },
+          "claimSupport": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "reported",
+              "inferred",
+              "contradictory"
+            ]
+          }
+        },
+        "required": [
+          "evidenceId",
+          "channel",
+          "claimSupport"
+        ],
+        "additionalProperties": false
+      },
+      "Observation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "candidate",
+              "under_review",
+              "confirmed",
+              "rejected"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "supervisor",
+              "contractor",
+              "owner",
+              "ai"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "grounding": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Grounding"
+            }
+          },
+          "analysisRunId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "verificationNote": {
+            "type": "string"
+          },
+          "confirmedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "confirmedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewFlags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "verificationGrounding": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Grounding"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "status",
+          "source",
+          "description",
+          "grounding"
+        ],
+        "additionalProperties": false
+      },
+      "CheckResult": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "requirementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "measuredValue": {
+            "type": [
+              "number",
+              "string"
+            ]
+          },
+          "unit": {
+            "type": "string"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "fail",
+              "not_applicable"
+            ]
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId",
+          "requirementRef",
+          "result",
+          "evidenceIds"
+        ],
+        "additionalProperties": false
+      },
+      "Inspection": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "requested",
+              "completeness_review",
+              "returned",
+              "scheduled",
+              "in_progress",
+              "result_pending",
+              "passed",
+              "conditional",
+              "failed",
+              "hold",
+              "completed",
+              "cancelled"
+            ]
+          },
+          "workName": {
+            "type": "string"
+          },
+          "selfInspectionComplete": {
+            "type": "boolean"
+          },
+          "precheck": {
+            "type": "object",
+            "properties": {
+              "drawing": {
+                "type": "boolean"
+              },
+              "material": {
+                "type": "boolean"
+              },
+              "test": {
+                "type": "boolean"
+              },
+              "previous": {
+                "type": "boolean"
+              },
+              "change": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "drawing",
+              "material",
+              "test",
+              "previous",
+              "change"
+            ],
+            "additionalProperties": false
+          },
+          "holdPoint": {
+            "type": "boolean"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requestedInspectionAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "checkResults": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckResult"
+            }
+          },
+          "conditions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "failureReason": {
+            "type": "string"
+          },
+          "resultStatus": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "conditional",
+              "fail",
+              "hold"
+            ]
+          },
+          "nextWorkAllowed": {
+            "type": "boolean"
+          },
+          "approvalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "acceptanceDocumentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "relatedIssueId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "previousInspectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "correctionCycle": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "status",
+          "workName",
+          "selfInspectionComplete",
+          "precheck",
+          "holdPoint",
+          "minimumQualificationRank",
+          "nextWorkAllowed"
+        ],
+        "additionalProperties": false
+      },
+      "Issue": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "assigned",
+              "in_progress",
+              "ready_for_recheck",
+              "reinspection",
+              "closed",
+              "rework_required",
+              "cancelled",
+              "superseded"
+            ]
+          },
+          "subtype": {
+            "type": "string",
+            "enum": [
+              "Defect",
+              "NCR",
+              "Safety",
+              "Environmental",
+              "Material",
+              "Fire",
+              "Punch",
+              "Schedule",
+              "Design"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "observationIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "actionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "inspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "correctionCycle": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "closureEvidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "closedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "responsiblePartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "replacementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "status",
+          "subtype",
+          "title",
+          "observationIds",
+          "actionIds",
+          "inspectionIds",
+          "correctionCycle",
+          "minimumQualificationRank"
+        ],
+        "additionalProperties": false
+      },
+      "WorkItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "subtype": {
+            "type": "string",
+            "enum": [
+              "ContractorSubmission",
+              "InspectionRequest",
+              "MaterialSubmittal",
+              "TestRequest",
+              "RFI",
+              "ChangeRequest",
+              "Variation",
+              "ScheduleActivity",
+              "PaymentClaim",
+              "SafetyPermit",
+              "OwnerDecisionRequest",
+              "CommissioningPackage",
+              "HandoverPackage",
+              "WarrantyClaim",
+              "Contract",
+              "SiteInstruction",
+              "SafetyEquipmentInspection",
+              "EnvironmentalControl",
+              "Risk",
+              "ContractNotice",
+              "InsuranceGuarantee",
+              "ComplianceAudit",
+              "Lesson"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": true
+          },
+          "relatedRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "subtype",
+          "status",
+          "title",
+          "data"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "RFI"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/RFIData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "ChangeRequest"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/ChangeData"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "RFIData": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "responsiblePartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "response": {
+            "type": "string"
+          },
+          "responseInformationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "changeRequired": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "ChangeData": {
+        "type": "object",
+        "properties": {
+          "impact": {
+            "type": "object",
+            "properties": {
+              "quality": {
+                "type": "string"
+              },
+              "schedule": {
+                "type": "string"
+              },
+              "cost": {
+                "type": "string"
+              },
+              "permit": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "decisionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "approvalTargetRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "revisedInformationRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "Action": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "assigned",
+              "in_progress",
+              "submitted",
+              "verified",
+              "rework_required",
+              "closed",
+              "cancelled"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "relatedIssueId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "decisionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "responsiblePartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "correction": {
+            "type": "string"
+          },
+          "rootCause": {
+            "type": "string"
+          },
+          "preventiveAction": {
+            "type": "string"
+          },
+          "correctionCycle": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "status",
+          "title"
+        ],
+        "additionalProperties": false
+      },
+      "Decision": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "preparing",
+              "reported",
+              "awaiting_decision",
+              "supplement_requested",
+              "decided",
+              "executing",
+              "verified",
+              "closed",
+              "cancelled"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "targetRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": true
+            }
+          },
+          "impact": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": true
+          },
+          "recommendation": {
+            "type": "string"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected",
+              "returned"
+            ]
+          },
+          "selectedOption": {
+            "type": "string"
+          },
+          "decisionReason": {
+            "type": "string"
+          },
+          "decisionAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "notifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "status",
+          "title",
+          "options",
+          "impact",
+          "recommendation",
+          "actionIds"
+        ],
+        "additionalProperties": false
+      },
+      "Approval": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "under_review",
+              "approved",
+              "rejected",
+              "returned",
+              "expired",
+              "revoked",
+              "superseded"
+            ]
+          },
+          "targetRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "requestedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "approvedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "replacementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "approvalKind": {
+            "type": "string",
+            "enum": [
+              "technical",
+              "commercial"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "status",
+          "targetRef",
+          "requestedBy",
+          "approvalKind"
+        ],
+        "additionalProperties": false
+      },
+      "OwnerReportData": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "urgent",
+              "decision_request"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "P1",
+              "P2",
+              "P3",
+              "P4"
+            ]
+          },
+          "sourceDomainRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "recipients": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "facts": {
+            "type": "string"
+          },
+          "cause": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": true
+          },
+          "immediateActions": {
+            "type": "string"
+          },
+          "recommendation": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acknowledgedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acknowledgedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "verifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receiptDueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "decisionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "informationOnly": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "priority",
+          "sourceDomainRefs",
+          "recipients",
+          "facts",
+          "impact",
+          "recommendation",
+          "dueAt",
+          "receiptDueAt",
+          "actionIds",
+          "decisionIds",
+          "informationOnly"
+        ],
+        "additionalProperties": false
+      },
+      "Signature": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "partyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "roleAssignmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "roleCode": {
+            "type": "string"
+          },
+          "qualificationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "signedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "documentHash": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "wet_original_verified",
+              "approved_e_signature"
+            ]
+          },
+          "legal": {
+            "type": "boolean"
+          },
+          "originalFileId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "documentId",
+          "partyId",
+          "roleAssignmentId",
+          "roleCode",
+          "qualificationRefs",
+          "signedAt",
+          "documentHash",
+          "method",
+          "legal",
+          "version",
+          "projectId"
+        ],
+        "additionalProperties": false
+      },
+      "DocumentSnapshot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "formId": {
+            "type": "string"
+          },
+          "templateVersion": {
+            "type": "string"
+          },
+          "templateHash": {
+            "type": "string"
+          },
+          "rendererVersion": {
+            "type": "string"
+          },
+          "sourceDomainRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "projectionRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sourcePayload": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": true
+          },
+          "sourcePayloadHash": {
+            "type": "string"
+          },
+          "renderHash": {
+            "type": "string"
+          },
+          "renderedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "final",
+              "signed",
+              "superseded"
+            ]
+          },
+          "signatureIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "supersedesId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "legalTemplateVersion": {
+            "type": "string"
+          },
+          "pdfFileId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "docxFileId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "htmlFileId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "formId",
+          "templateVersion",
+          "templateHash",
+          "rendererVersion",
+          "sourceDomainRefs",
+          "sourcePayload",
+          "sourcePayloadHash",
+          "renderHash",
+          "renderedAt",
+          "status",
+          "signatureIds",
+          "version"
+        ],
+        "additionalProperties": false
+      },
+      "AuditEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "objectRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "command": {
+            "type": "string"
+          },
+          "actorPartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "roleAssignmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "beforeVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "afterVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "idempotencyKey": {
+            "type": "string"
+          },
+          "requestHash": {
+            "type": "string"
+          },
+          "beforeState": {
+            "type": "string"
+          },
+          "afterState": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "objectRef",
+          "command",
+          "actorPartyId",
+          "roleAssignmentId",
+          "at",
+          "beforeVersion",
+          "afterVersion",
+          "idempotencyKey",
+          "requestHash"
+        ],
+        "additionalProperties": false
+      },
+      "AnalysisRun": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "sourceEvidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "photo",
+              "keyframes",
+              "adaptive",
+              "every_frame",
+              "audio"
+            ]
+          },
+          "model": {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "provider",
+              "name",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "promptVersion": {
+            "type": "string"
+          },
+          "policyVersion": {
+            "type": "string"
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ko",
+                "vi",
+                "en",
+                "auto"
+              ]
+            }
+          },
+          "coverage": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": true
+          },
+          "outputs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {},
+              "required": [],
+              "additionalProperties": true
+            }
+          },
+          "retryOfId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "status",
+          "sourceEvidenceIds",
+          "mode",
+          "model",
+          "promptVersion",
+          "policyVersion",
+          "languages"
+        ],
+        "additionalProperties": false
+      },
+      "UploadSession": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "captureId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "byteCount": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "expectedHash": {
+            "type": "string"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "uploading",
+              "verifying",
+              "completed",
+              "failed",
+              "expired"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "captureId",
+          "fileName",
+          "mimeType",
+          "byteCount",
+          "expectedHash",
+          "offset",
+          "status",
+          "expiresAt"
+        ],
+        "additionalProperties": false
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "minimumQualificationRank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "requirementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "drawingRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "upstreamInspectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "recipientPartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourceRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "in_app",
+              "push",
+              "email_adapter"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "sent",
+              "delivered",
+              "acknowledged",
+              "failed"
+            ]
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acknowledgedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "retryCount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "createdBy",
+          "recipientPartyId",
+          "sourceRef",
+          "channel",
+          "status",
+          "dueAt",
+          "retryCount"
+        ],
+        "additionalProperties": false
+      },
+      "CommandRequest": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "roleAssignmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payload": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": true
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "expectedVersion",
+          "roleAssignmentId",
+          "payload",
+          "evidenceIds"
+        ],
+        "additionalProperties": false
+      },
+      "CommandError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "currentVersion": {
+            "type": "integer"
+          },
+          "failedGuards": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "failedGuards"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

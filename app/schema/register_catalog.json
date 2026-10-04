@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "2.0",
   "common_fields": [
     {
       "key": "id",
@@ -67,43 +67,6 @@
       "required": true
     }
   ],
-  "statuses": {
-    "general": [
-      "draft",
-      "submitted",
-      "received",
-      "review",
-      "revise",
-      "resubmitted",
-      "approved",
-      "conditional",
-      "rejected",
-      "executing",
-      "verified",
-      "closed",
-      "cancelled"
-    ],
-    "inspection": [
-      "requested",
-      "incomplete",
-      "scheduled",
-      "inspected",
-      "nonconforming",
-      "reinspection",
-      "passed",
-      "next_work_allowed"
-    ],
-    "decision": [
-      "preparing",
-      "reported",
-      "awaiting_decision",
-      "supplement_requested",
-      "decided",
-      "executing",
-      "verified",
-      "closed"
-    ]
-  },
   "registers": [
     {
       "id": "01",
@@ -221,5 +184,62 @@
       "id": "29",
       "name": "경험·교훈"
     }
-  ]
+  ],
+  "principle": "Read-only projections; changes execute domain commands. Status is calculated from source machines.",
+  "views": [
+    {
+      "id": "V-01",
+      "name": "미결사항",
+      "sources": "all_actionable_registers",
+      "calculated_fields": [
+        "owner",
+        "due_at",
+        "elapsed_days",
+        "priority",
+        "sourceDomainRefs"
+      ]
+    },
+    {
+      "id": "V-02",
+      "name": "기한초과",
+      "sources": "all_actionable_registers",
+      "calculated_fields": [
+        "due_at",
+        "overdue_seconds",
+        "sourceDomainRefs"
+      ]
+    },
+    {
+      "id": "V-03",
+      "name": "법정문서 완성도",
+      "sources": [
+        "01",
+        "20",
+        "24"
+      ],
+      "calculated_fields": [
+        "applicable",
+        "signed",
+        "original",
+        "digital",
+        "filed",
+        "percent",
+        "sourceDomainRefs"
+      ]
+    },
+    {
+      "id": "V-04",
+      "name": "발주처 결정대기",
+      "sources": [
+        "22"
+      ],
+      "calculated_fields": [
+        "due_at",
+        "decision_status",
+        "report_receipt",
+        "sourceDomainRefs"
+      ]
+    }
+  ],
+  "projection_map": "register_projection_map_v2.json"
 }

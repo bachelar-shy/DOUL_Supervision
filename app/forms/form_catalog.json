@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "2.0",
   "standard": "DOUL A4",
   "forms": [
     {
@@ -10,7 +10,7 @@
         "06"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-02",
@@ -20,7 +20,7 @@
         "18"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-03",
@@ -31,7 +31,7 @@
         "14"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-04",
@@ -40,7 +40,7 @@
         "08"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-05",
@@ -49,7 +49,7 @@
         "09"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-06",
@@ -58,7 +58,7 @@
         "10"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-07",
@@ -67,7 +67,7 @@
         "11"
       ],
       "legal_mode": "legal_support",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-08",
@@ -76,7 +76,7 @@
         "11"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-09",
@@ -85,7 +85,7 @@
         "11"
       ],
       "legal_mode": "legal_required_fields",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-10",
@@ -94,7 +94,7 @@
         "11"
       ],
       "legal_mode": "legal_required_fields",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-11",
@@ -103,7 +103,7 @@
         "24"
       ],
       "legal_mode": "legal_required_fields",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-12",
@@ -112,7 +112,7 @@
         "12"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-13",
@@ -121,7 +121,7 @@
         "12"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-14",
@@ -130,7 +130,7 @@
         "15"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-15",
@@ -139,7 +139,7 @@
         "13"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-16",
@@ -149,7 +149,7 @@
         "22"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-17",
@@ -159,7 +159,7 @@
         "19"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-18",
@@ -168,7 +168,7 @@
         "23"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-19",
@@ -178,7 +178,7 @@
         "22"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-20",
@@ -188,7 +188,7 @@
         "25"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-21",
@@ -197,7 +197,7 @@
         "22"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-22",
@@ -206,7 +206,7 @@
         "V-01"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-23",
@@ -216,7 +216,7 @@
         "V-03"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-24",
@@ -225,7 +225,7 @@
         "24"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     },
     {
       "id": "FM-25",
@@ -234,7 +234,8 @@
         "24"
       ],
       "legal_mode": "doul_internal",
-      "template_version": "1.0"
+      "template_version": "2.0"
     }
-  ]
+  ],
+  "view_id_schema": "V-01|V-02|V-03|V-04"
 }
