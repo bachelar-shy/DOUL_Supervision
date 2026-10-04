@@ -1,16 +1,43 @@
 {
-  "version": "1.0",
+  "version": "2.0",
   "placeholder_syntax": "{{path.to.value}}",
   "outputs": [
     "html_a4",
     "docx",
     "pdf"
   ],
+  "source": "immutable sourcePayload + sourceDomainRefs, not mutable RegisterRecord",
+  "snapshot_required": [
+    "id",
+    "projectId",
+    "formId",
+    "templateVersion",
+    "templateHash",
+    "rendererVersion",
+    "sourceDomainRefs",
+    "sourcePayload",
+    "sourcePayloadHash",
+    "renderHash",
+    "renderedAt",
+    "status",
+    "signatureIds"
+  ],
   "rules": [
-    "Rendered documents store source record IDs and revisions.",
-    "Signed snapshots are immutable; changes create a new revision.",
-    "Legal template version is locked per document snapshot.",
-    "Missing statutory fields blocks finalization.",
-    "Conditional/repeating rows are generated from record data."
-  ]
+    "Finalization validates form data schema, statutory language and signature roles.",
+    "Signed payload and render bytes never change; corrections create a new snapshot with supersedesId.",
+    "Historical source versions are retained and are valid for re-rendering even after live revisions change.",
+    "Template bytes/hash/version and renderer version are preserved with the source payload.",
+    "Repeat tables paginate with repeated headers and per-page DOUL footer.",
+    "Canonical payload hash is reproducible; output renderHash hashes actual output bytes, not source JSON."
+  ],
+  "reference_outputs": [
+    "canonical_json",
+    "html_a4"
+  ],
+  "production_adapters_pending": [
+    "docx",
+    "pdf",
+    "legal_official_template"
+  ],
+  "official_template_policy": "Block statutory fixed-form rendering until original template, checksum, fields and verified effective dates are installed."
 }

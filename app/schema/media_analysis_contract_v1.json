@@ -1,0 +1,127 @@
+{
+  "version": "1.0",
+  "original_evidence_immutable": true,
+  "official_issue_requires_human_confirmation": true,
+  "nonhuman_actor": "AI",
+  "capture": {
+    "required": [
+      "captureId",
+      "projectId",
+      "createdBy",
+      "sourcePartyId",
+      "mediaType",
+      "fileHash",
+      "uploadedAt"
+    ],
+    "optional": [
+      "capturedAt",
+      "gps",
+      "locationId",
+      "drawingRef",
+      "orientation"
+    ],
+    "captured_at_trust": "device_reported"
+  },
+  "upload": {
+    "chunk_bytes": 8388608,
+    "max_parallel_chunks": 3,
+    "resumable": true,
+    "idempotency_required": true,
+    "server_hash_verification": true,
+    "offset_conflict_http": 409,
+    "session_hours": 24,
+    "limits": {
+      "photo_bytes": 52428800,
+      "video_bytes": 2147483648,
+      "audio_bytes": 209715200,
+      "max_duration_ms": 3600000
+    }
+  },
+  "pipeline": [
+    "authorize_capture",
+    "resumable_upload",
+    "verify_hash_mime_and_quarantine",
+    "index_media",
+    "transcribe_diarize_translate",
+    "index_frames_by_pts",
+    "analyze_visual_and_speech",
+    "crosscheck_sources",
+    "propose_observations",
+    "human_review",
+    "issue_command"
+  ],
+  "modes": {
+    "photo": {
+      "coverage_unit": "image"
+    },
+    "keyframes": {
+      "coverage_unit": "selected_frames",
+      "claim_all_frames": false
+    },
+    "adaptive": {
+      "coverage_unit": "selected_ranges",
+      "claim_all_frames": false
+    },
+    "every_frame": {
+      "coverage_unit": "decoded_frame",
+      "require_full_pts_manifest": true,
+      "claim_all_frames": "only if analyzed_frame_count equals decoded_frame_count and missing_ranges is empty"
+    },
+    "audio": {
+      "coverage_unit": "time_ranges"
+    }
+  },
+  "frame_required": [
+    "frameIndex",
+    "ptsMs",
+    "sourceEvidenceId",
+    "derivedEvidenceId",
+    "analysisRunId",
+    "modelVersion"
+  ],
+  "transcript_required": [
+    "segmentId",
+    "startMs",
+    "endMs",
+    "speakerLabel",
+    "originalLanguage",
+    "originalText",
+    "sourceEvidenceId",
+    "analysisRunId"
+  ],
+  "transcript_rules": [
+    "speaker labels are provisional until human attribution",
+    "translated text never replaces original",
+    "numbers units grid names and negation preserved",
+    "global timecode retained when splitting audio",
+    "no speech segment fabricated across a gap"
+  ],
+  "candidate_required": [
+    "description",
+    "source",
+    "grounding",
+    "analysisRunId",
+    "confidence",
+    "reviewFlags"
+  ],
+  "evidence_link_rules": [
+    "all ranges bounded by original duration",
+    "frame PTS comes from decoder; frameIndex/fps is insufficient for variable frame rate",
+    "derived image retains originalEvidenceId and derivationRunId",
+    "speech-only claims remain reported facts until corroborated",
+    "contradiction or poor visibility requires review; no automatic PASS/FAIL"
+  ],
+  "confidence_rule": "Model reference score, not calibrated probability or legal acceptance; confidence never bypasses authorized review.",
+  "coverage_required": [
+    "decodedFrameCount",
+    "analyzedFrameCount",
+    "analyzedRanges",
+    "missingRanges",
+    "audioProcessedRanges",
+    "complete"
+  ],
+  "retry_rule": "New run with retryOfId; retain prior outputs and model/prompt/policy versions.",
+  "offline_rule": "captureId deduplicates evidence; expectedVersion conflict goes to human resolution, never last-write-wins.",
+  "privacy_rule": "Original access follows project/package/location/organization scope; redacted derivatives can be shared with source provenance retained.",
+  "provider_adapter": "No model provider selected. Workers must return this normalized contract; model calls and media decoding are outside the reference runner."
+}

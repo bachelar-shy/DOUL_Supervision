@@ -1,11 +1,11 @@
 # 16. DOUL 감리 앱 구현 및 A4 양식 엔진
 
 기준일: 2026-10-04  
-문서상태: v1.0 구현기준
+문서상태: v2.1 구현기준
 
 ## 1. 핵심 구조
 
-DOUL 감리 앱은 **관리대장 데이터가 원본**이고 문서는 원본 데이터를 출력한 결과물로 본다.
+DOUL 감리 앱은 **Core Domain Object가 업무 원본**이며 관리대장은 조회 Projection, 문서는 특정 원본 버전의 출력이다.
 
 > 앱 데이터 → 업무승인 → 문서 스냅샷 → DOUL A4 DOCX/PDF 또는 베트남 공식 법정서식
 
@@ -13,7 +13,7 @@ DOUL 감리 앱은 **관리대장 데이터가 원본**이고 문서는 원본 �
 
 ## 2. 데이터 원본
 
-05 관리대장의 29개 실관리대장을 앱 DB의 기본 업무 엔티티로 구현한다.
+17의 Core Domain Object를 기본 업무 엔티티로 구현한다. 05의 29개 대장은 원본을 집계한 조회로 구현한다. 대장에 별도 상태·승인·종결 필드를 저장하지 않는다.
 
 모든 기록은 공통적으로:
 - Project ID
@@ -33,8 +33,8 @@ DOUL 감리 앱은 **관리대장 데이터가 원본**이고 문서는 원본 �
 
 ## 3. 주요 시스템 엔티티
 
-### RegisterRecord
-29개 관리대장의 원본 레코드.
+### RegisterProjection
+29개 관리대장의 읽기 전용 조회 DTO. sourceDomainRefs로 원본과 정확한 버전을 표시한다. 수정은 원본의 업무명령을 실행한다.
 
 ### FormTemplate
 FM-01~FM-25의 화면·출력 정의.
@@ -43,7 +43,7 @@ FM-01~FM-25의 화면·출력 정의.
 베트남 법정 고정서식의 원본 템플릿과 법령버전.
 
 ### DocumentSnapshot
-특정 시점의 RegisterRecord revision으로 생성한 DOCX/PDF/HTML.
+특정 시점의 DomainRef(objectType/objectId/version), 불변 sourcePayload, 양식·렌더러 버전과 실제 출력 해시로 생성한 문서. projectionRefs는 선택적 조회 출처다.
 
 ### Signature
 서명자, 역할, 자격, 서명일, 법정서명 여부.
@@ -201,7 +201,7 @@ FM-25 미완료·하자 추적표
 
 ## 14. v2 Domain 적용
 
-v1의 RegisterRecord 중심 구조는 문서·관리대장 엔진으로 유지한다. 실제 운영 Workflow의 원본은 Core Domain Object로 확장한다.
+v1 RegisterRecord의 독립 업무원본·상태 수정 방식은 폐기한다. 기존 대장명·양식 ID는 유지하며 실제 운영 원본은 Core Domain Object다.
 
 > Core Domain Object → Register Projection → Workflow Approval → FormTemplate → DocumentSnapshot
 

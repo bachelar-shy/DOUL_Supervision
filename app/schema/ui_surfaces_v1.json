@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "2.0",
   "strategy": "field_first_responsive",
   "surfaces": {
     "mobile": {
@@ -56,6 +56,37 @@
         "code": "SUP-TODAY-M",
         "title": "DOUL 감리 - 오늘"
       }
-    ]
+    ],
+    "role": "Presentation / UI Design Source"
+  },
+  "authority_precedence": [
+    "Domain Model",
+    "State Machine",
+    "Authority Matrix",
+    "Requirement / Gate",
+    "API Contract",
+    "UI Contract / Stitch"
+  ],
+  "media_review": {
+    "sources": [
+      "photo",
+      "video",
+      "audio"
+    ],
+    "required_display": [
+      "original_and_derived",
+      "pts_timeline",
+      "coverage_and_missing_ranges",
+      "original_transcript_and_translation",
+      "provisional_speaker",
+      "grounding_and_review_flags"
+    ],
+    "candidate_label": "공식 판정 대기",
+    "actions": [
+      "observation:begin_review",
+      "observation:confirm",
+      "observation:reject"
+    ],
+    "official_issue_requires_separate_human_command": true
   }
 }

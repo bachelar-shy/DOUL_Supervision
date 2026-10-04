@@ -1,7 +1,7 @@
 # 17. DOUL 감리 앱 Domain · State · Authority Model v2
 
 기준일: 2026-10-04
-상태: v0.2 구현기준
+상태: v2.1 구현기준
 
 ## 1. 목적
 
@@ -129,9 +129,11 @@ Approval은 대상 객체와 정확한 version/revision에 결합한다.
 - DES: 설계자
 
 System Actor:
-- SYS: AI / 자동화 / 외부 시스템 연동
+- AI: 관찰후보 제안
+- SYSTEM: 분석작업·업무자동화
+- INTEGRATION: 외부자료 연동
 
-시험기관과 외부검토자는 앱 사용자군에서 제외한다. 시험성적서·외부검토자료는 시공사가 제출하고 감리가 검토하는 InformationItem/Evidence로 관리한다.
+시험기관과 외부검토자는 MVP 로그인 대상에서 제외한다. Party(TEST_LAB/EXTERNAL_REVIEWER), sourcePartyId, submittedBy와 원본 발행 출처는 보존한다.
 
 ## 10. RoleAssignment
 
@@ -148,7 +150,7 @@ User → Organization → Project → RoleAssignment → Authority
 - Designer: RFI 기술답변, 설계검토, 개정정보
 - Owner: 계약·비용·공기·주요변경·중요사항 결정/승인
 - Admin/PM: 프로젝트·조직·권한·기준 관리
-- AI/SYS: 제안·분류·초안 가능, 공식 승인/종결 불가
+- AI/SYSTEM/INTEGRATION: 승인·판정·종결·법정서명 불가. 정책·계정·허용명령을 각각 분리한다.
 
 ## 12. 불변 규칙
 
@@ -178,3 +180,17 @@ R15 승인 필요 변경은 Approval 전 실행 불가
 - 설계변경 대장 ← WorkItem(Change) + Decision + Approval
 - 발주처 보고·결정 대장 ← Issue/WorkItem + Decision + Approval + Report
 - 일일기록·사진증빙 ← Evidence + WorkItem + Inspection
+
+## 14. 명령·범위·완료판정의 상세 계약
+
+`state_machines_v1.json`은 기존 파일명을 유지한 v2 계약이며 10개 모델·98개 전이를 선언한다. Observation/Inspection/Issue/RFI/Change/Approval 외에 Action, Decision, Report, AnalysisRun을 포함한다. 각 전이는 from/to/command/authority/guards/필수증빙/payload_fields/실패사유/감사기록을 가진다. 상태 직접 PATCH는 금지한다.
+
+검측의 `status`, `resultStatus`, `nextWorkAllowed`를 분리한다. `completed`만으로 합격이나 후속공정 허용을 해석하지 않는다. 합격은 정확한 결과 버전의 작업검수 서명, Hold Point는 추가 기술승인 후 `release_next_work` 명령을 실행한다. 불합격 결과도 서명 기록을 남기되 후속공정은 허용하지 않는다.
+
+각 재검측은 새 Inspection이며 이전 검측·Issue·correctionCycle을 참조한다. 실패하면 주기를 증가시키고 새 시정 Action과 새 재검측을 연결한다. 과거 검측과 조치를 목록에서 제거할 수 없다. 이슈 종결에는 현재 주기 조치 검증, 서명·승인된 합격 재검측, 종결증빙이 필요하다.
+
+RoleAssignment 검사는 인증된 Party·프로젝트·활성 배치·분야·패키지·위치·조직·roleCode·authorityCode와 검증된 자격·등급·유효기간을 함께 확인한다. 숫자 등급 1이 상위이며 현장 기준이 허용하는 등급 범위를 적용한다. 자격 증빙의 적법성·분야 분류는 프로젝트 기준선에서 확인한다. 최소 등급은 신뢰된 Project.qualificationRules에서 계산하며 요청자가 더 낮은 요건을 입력해도 프로젝트 요건을 완화하지 않는다. 기술승인은 요청에 적힌 범위와 실제 승인대상의 범위를 함께 검사한다. 명시적으로 승인된 `*` 범위만 광역 권한이며 SUP라는 그룹만으로 검사·종결권한을 부여하지 않는다.
+
+버전은 optimistic concurrency의 기준이다. 동일한 Idempotency-Key와 동일 본문 재전송은 같은 결과를 반환하고 다른 본문은 충돌한다. 재전송도 현재 인증·배치권한을 확인한다. 오류는 상태·버전·자료·권한을 변경하지 않는다. 운영 저장소는 레코드 갱신·감사기록·중복요청 결과를 한 트랜잭션으로 확정해야 한다.
+
+29개 대장의 연결·계산은 `register_projection_map_v2.json`, 모든 객체의 필드는 `domain_schemas_v2.json`, 문서의 출처 DTO는 `form_domain_bindings_v2.json`이 정의한다. 계산 자료가 빠지면 null/unavailable을 반환한다. 아직 명령서비스가 없는 다른 WorkItem 하위유형은 읽기 전용 조회로 다룬다.

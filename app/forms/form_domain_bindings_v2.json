@@ -1,0 +1,2478 @@
+{
+  "version": "2.0",
+  "forms": {
+    "FM-01": {
+      "source_registers": [
+        "05",
+        "06"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "InformationItem",
+          "subtype": null
+        },
+        {
+          "object_type": "Notification",
+          "subtype": null
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "ContractorSubmission"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "MethodStatement"
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-01",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "submittal.no": {
+          "dto_path": "submittal.no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "submittal.type": {
+          "dto_path": "submittal.type",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "submittal.submitted_at": {
+          "dto_path": "submittal.submitted_at",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "submittal.required_by": {
+          "dto_path": "submittal.required_by",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "review.status": {
+          "dto_path": "review.status",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "review.comment": {
+          "dto_path": "review.comment",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": false
+        },
+        "review.due": {
+          "dto_path": "review.due",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "title",
+            "no_rev",
+            "note"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-02": {
+      "source_registers": [
+        "06",
+        "18"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "ContractorSubmission"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "MethodStatement"
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "SafetyPermit"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Issue",
+          "subtype": "Safety"
+        }
+      ],
+      "payload_schema": "FM-02",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "method.no": {
+          "dto_path": "method.no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "method.rev": {
+          "dto_path": "method.rev",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "review.conclusion": {
+          "dto_path": "review.conclusion",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "review": {
+          "dto_path": "review",
+          "columns": [
+            "design",
+            "method",
+            "quality",
+            "safety",
+            "schedule"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-03": {
+      "source_registers": [
+        "04",
+        "07",
+        "14"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "InformationItem",
+          "subtype": "Drawing"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Drawing"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "ContractorSubmission"
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "ChangeRequest"
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Drawing"
+        }
+      ],
+      "payload_schema": "FM-03",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "shop.no": {
+          "dto_path": "shop.no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "shop.rev": {
+          "dto_path": "shop.rev",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "shop.design_drawings": {
+          "dto_path": "shop.design_drawings",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "review.final_status": {
+          "dto_path": "review.final_status",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "review.comment": {
+          "dto_path": "review.comment",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": false
+        }
+      },
+      "table_bindings": {
+        "review": {
+          "dto_path": "review",
+          "columns": [
+            "intent",
+            "dimension",
+            "clash",
+            "constructability",
+            "change_required"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-04": {
+      "source_registers": [
+        "08"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "Asset",
+          "subtype": "Material"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "MaterialSubmittal"
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-04",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "material.name": {
+          "dto_path": "material.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "material.manufacturer_model": {
+          "dto_path": "material.manufacturer_model",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "material.request_no": {
+          "dto_path": "material.request_no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "review.final_status": {
+          "dto_path": "review.final_status",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "review.conditions": {
+          "dto_path": "review.conditions",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": false
+        }
+      },
+      "table_bindings": {
+        "review": {
+          "dto_path": "review",
+          "columns": [
+            "spec",
+            "cert",
+            "sample",
+            "equivalence"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-05": {
+      "source_registers": [
+        "09"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "Asset",
+          "subtype": "MaterialLot"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-05",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "material.name": {
+          "dto_path": "material.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "material.approval_no": {
+          "dto_path": "material.approval_no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "material.delivery_date": {
+          "dto_path": "material.delivery_date",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "review.status": {
+          "dto_path": "review.status",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "review.ncr_no": {
+          "dto_path": "review.ncr_no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "check": {
+          "dto_path": "check",
+          "columns": [
+            "model",
+            "qty_spec",
+            "cert",
+            "condition",
+            "storage"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-06": {
+      "source_registers": [
+        "10"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "TestRequest"
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        },
+        {
+          "object_type": "Party",
+          "subtype": "TEST_LAB"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Certificate"
+        }
+      ],
+      "payload_schema": "FM-06",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "test.type": {
+          "dto_path": "test.type",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "test.datetime": {
+          "dto_path": "test.datetime",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "test.lab": {
+          "dto_path": "test.lab",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "test.inspection_no": {
+          "dto_path": "test.inspection_no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "test.criteria": {
+          "dto_path": "test.criteria",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "test.method": {
+          "dto_path": "test.method",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "test.equipment": {
+          "dto_path": "test.equipment",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "test.sample": {
+          "dto_path": "test.sample",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "test.witness": {
+          "dto_path": "test.witness",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "review.status": {
+          "dto_path": "review.status",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "review.comment": {
+          "dto_path": "review.comment",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": false
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-07": {
+      "source_registers": [
+        "11"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        },
+        {
+          "object_type": "Requirement",
+          "subtype": null
+        },
+        {
+          "object_type": "DocumentSnapshot",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-07",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "inspection.request_no": {
+          "dto_path": "inspection.request_no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "inspection.work_name": {
+          "dto_path": "inspection.work_name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "inspection.requested_at": {
+          "dto_path": "inspection.requested_at",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "inspection.requested_inspection_at": {
+          "dto_path": "inspection.requested_inspection_at",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "precheck.self_check": {
+          "dto_path": "precheck.self_check",
+          "source": "reviewed_context",
+          "type": "boolean",
+          "required": true
+        },
+        "precheck.drawing": {
+          "dto_path": "precheck.drawing",
+          "source": "reviewed_context",
+          "type": "boolean",
+          "required": true
+        },
+        "precheck.material": {
+          "dto_path": "precheck.material",
+          "source": "reviewed_context",
+          "type": "boolean",
+          "required": true
+        },
+        "precheck.test": {
+          "dto_path": "precheck.test",
+          "source": "reviewed_context",
+          "type": "boolean",
+          "required": true
+        },
+        "precheck.previous": {
+          "dto_path": "precheck.previous",
+          "source": "reviewed_context",
+          "type": "boolean",
+          "required": true
+        },
+        "precheck.change": {
+          "dto_path": "precheck.change",
+          "source": "reviewed_context",
+          "type": "boolean",
+          "required": true
+        },
+        "inspection.attachments": {
+          "dto_path": "inspection.attachments",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-08": {
+      "source_registers": [
+        "11"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        },
+        {
+          "object_type": "Requirement",
+          "subtype": null
+        },
+        {
+          "object_type": "DocumentSnapshot",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-08",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "inspection.work_name": {
+          "dto_path": "inspection.work_name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "inspection.checklist_code": {
+          "dto_path": "inspection.checklist_code",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "inspection.self_result": {
+          "dto_path": "inspection.self_result",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "checks": {
+          "dto_path": "checks",
+          "columns": [
+            "item",
+            "criteria",
+            "result",
+            "note"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-09": {
+      "source_registers": [
+        "11"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        },
+        {
+          "object_type": "Requirement",
+          "subtype": null
+        },
+        {
+          "object_type": "DocumentSnapshot",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-09",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "inspection.no": {
+          "dto_path": "inspection.no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "inspection.work_name": {
+          "dto_path": "inspection.work_name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "inspection.datetime": {
+          "dto_path": "inspection.datetime",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "inspection.place": {
+          "dto_path": "inspection.place",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "basis.drawings": {
+          "dto_path": "basis.drawings",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "basis.criteria": {
+          "dto_path": "basis.criteria",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "basis.tests": {
+          "dto_path": "basis.tests",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "basis.attachments": {
+          "dto_path": "basis.attachments",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": false
+        },
+        "result.status": {
+          "dto_path": "result.status",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "result.next_work_allowed": {
+          "dto_path": "result.next_work_allowed",
+          "source": "reviewed_context",
+          "type": "boolean",
+          "required": true
+        },
+        "result.corrections": {
+          "dto_path": "result.corrections",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": false
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-10": {
+      "source_registers": [
+        "11"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        },
+        {
+          "object_type": "Requirement",
+          "subtype": null
+        },
+        {
+          "object_type": "DocumentSnapshot",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-10",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "stage.name": {
+          "dto_path": "stage.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "stage.datetime": {
+          "dto_path": "stage.datetime",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "stage.inspections": {
+          "dto_path": "stage.inspections",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "stage.tests": {
+          "dto_path": "stage.tests",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "stage.changes": {
+          "dto_path": "stage.changes",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "stage.asbuilt": {
+          "dto_path": "stage.asbuilt",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "result.status": {
+          "dto_path": "result.status",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "result.comment": {
+          "dto_path": "result.comment",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": false
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-11": {
+      "source_registers": [
+        "24"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "HandoverPackage"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "CommissioningPackage"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "WarrantyClaim"
+        },
+        {
+          "object_type": "Issue",
+          "subtype": "Punch"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-11",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "completion.facility": {
+          "dto_path": "completion.facility",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "completion.datetime_place": {
+          "dto_path": "completion.datetime_place",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "completion.design_compliance": {
+          "dto_path": "completion.design_compliance",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "completion.testing": {
+          "dto_path": "completion.testing",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "completion.ncr_closed": {
+          "dto_path": "completion.ncr_closed",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "completion.pccc": {
+          "dto_path": "completion.pccc",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "completion.dossier": {
+          "dto_path": "completion.dossier",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "result.status": {
+          "dto_path": "result.status",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "result.comment": {
+          "dto_path": "result.comment",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": false
+        },
+        "warranty.start": {
+          "dto_path": "warranty.start",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "warranty.period": {
+          "dto_path": "warranty.period",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-12": {
+      "source_registers": [
+        "12"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "Issue",
+          "subtype": null
+        },
+        {
+          "object_type": "Action",
+          "subtype": null
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-12",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "ncr.no": {
+          "dto_path": "ncr.no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "ncr.date": {
+          "dto_path": "ncr.date",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "ncr.related": {
+          "dto_path": "ncr.related",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "ncr.description": {
+          "dto_path": "ncr.description",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "ncr.criteria": {
+          "dto_path": "ncr.criteria",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "ncr.impact": {
+          "dto_path": "ncr.impact",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "ncr.immediate_action": {
+          "dto_path": "ncr.immediate_action",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "ncr.due": {
+          "dto_path": "ncr.due",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "ncr.priority": {
+          "dto_path": "ncr.priority",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "ncr.owner_report": {
+          "dto_path": "ncr.owner_report",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-13": {
+      "source_registers": [
+        "12"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "Issue",
+          "subtype": null
+        },
+        {
+          "object_type": "Action",
+          "subtype": null
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-13",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "car.ncr_no": {
+          "dto_path": "car.ncr_no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "car.no": {
+          "dto_path": "car.no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "car.owner": {
+          "dto_path": "car.owner",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "car.due": {
+          "dto_path": "car.due",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "car.root_cause": {
+          "dto_path": "car.root_cause",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "car.corrective_action": {
+          "dto_path": "car.corrective_action",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "car.preventive_action": {
+          "dto_path": "car.preventive_action",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "car.evidence": {
+          "dto_path": "car.evidence",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "car.reinspection": {
+          "dto_path": "car.reinspection",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "car.close_status": {
+          "dto_path": "car.close_status",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "car.closed_at": {
+          "dto_path": "car.closed_at",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-14": {
+      "source_registers": [
+        "15"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "SiteInstruction"
+        },
+        {
+          "object_type": "Action",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-14",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "instruction.no": {
+          "dto_path": "instruction.no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "instruction.date": {
+          "dto_path": "instruction.date",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "instruction.to": {
+          "dto_path": "instruction.to",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "instruction.description": {
+          "dto_path": "instruction.description",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "instruction.basis": {
+          "dto_path": "instruction.basis",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "instruction.due": {
+          "dto_path": "instruction.due",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "instruction.impact": {
+          "dto_path": "instruction.impact",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "instruction.design_change": {
+          "dto_path": "instruction.design_change",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "instruction.close_status": {
+          "dto_path": "instruction.close_status",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "instruction.closed_at": {
+          "dto_path": "instruction.closed_at",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-15": {
+      "source_registers": [
+        "13"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "RFI"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-15",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "rfi.no": {
+          "dto_path": "rfi.no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "rfi.date": {
+          "dto_path": "rfi.date",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "rfi.required_by": {
+          "dto_path": "rfi.required_by",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "rfi.question": {
+          "dto_path": "rfi.question",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "rfi.site_condition": {
+          "dto_path": "rfi.site_condition",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "rfi.references": {
+          "dto_path": "rfi.references",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "rfi.proposal": {
+          "dto_path": "rfi.proposal",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "rfi.schedule_impact": {
+          "dto_path": "rfi.schedule_impact",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "rfi.response": {
+          "dto_path": "rfi.response",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "rfi.change_required": {
+          "dto_path": "rfi.change_required",
+          "source": "reviewed_context",
+          "type": "boolean",
+          "required": true
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-16": {
+      "source_registers": [
+        "14",
+        "22"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "ChangeRequest"
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Drawing"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "MeetingRecord"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Report"
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "Action",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-16",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "change.no": {
+          "dto_path": "change.no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "change.rfi": {
+          "dto_path": "change.rfi",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "change.date": {
+          "dto_path": "change.date",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "change.reason": {
+          "dto_path": "change.reason",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "change.description": {
+          "dto_path": "change.description",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "change.quality": {
+          "dto_path": "change.quality",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "change.schedule": {
+          "dto_path": "change.schedule",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "change.cost": {
+          "dto_path": "change.cost",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "change.permit": {
+          "dto_path": "change.permit",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "change.recommendation": {
+          "dto_path": "change.recommendation",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "change.owner_decision": {
+          "dto_path": "change.owner_decision",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-17": {
+      "source_registers": [
+        "18",
+        "19"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "SafetyPermit"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Issue",
+          "subtype": "Safety"
+        },
+        {
+          "object_type": "Asset",
+          "subtype": "Equipment"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "SafetyEquipmentInspection"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Certificate"
+        }
+      ],
+      "payload_schema": "FM-17",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.discipline": {
+          "dto_path": "work.discipline",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "work.location": {
+          "dto_path": "work.location",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "safety.work_type": {
+          "dto_path": "safety.work_type",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "safety.datetime": {
+          "dto_path": "safety.datetime",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "safety.supervisor": {
+          "dto_path": "safety.supervisor",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "safety.permission": {
+          "dto_path": "safety.permission",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "safety.conditions": {
+          "dto_path": "safety.conditions",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "safety": {
+          "dto_path": "safety",
+          "columns": [
+            "method",
+            "risk_assessment",
+            "training",
+            "equipment",
+            "controls",
+            "emergency"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-18": {
+      "source_registers": [
+        "23"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": null
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Report"
+        }
+      ],
+      "payload_schema": "FM-18",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "daily.date_weather": {
+          "dto_path": "daily.date_weather",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "daily.supervision_staff": {
+          "dto_path": "daily.supervision_staff",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "daily.contractor_resources": {
+          "dto_path": "daily.contractor_resources",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "daily.work": {
+          "dto_path": "daily.work",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "daily.inspections": {
+          "dto_path": "daily.inspections",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "daily.quality": {
+          "dto_path": "daily.quality",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "daily.safety": {
+          "dto_path": "daily.safety",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "daily.coordination": {
+          "dto_path": "daily.coordination",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "daily.next_day": {
+          "dto_path": "daily.next_day",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-19": {
+      "source_registers": [
+        "16",
+        "22"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "ScheduleActivity"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Report"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "MeetingRecord"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Report"
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "Action",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-19",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "weekly.period": {
+          "dto_path": "weekly.period",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "weekly.progress": {
+          "dto_path": "weekly.progress",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "weekly.milestones": {
+          "dto_path": "weekly.milestones",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "weekly.achievements": {
+          "dto_path": "weekly.achievements",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "weekly.next_week": {
+          "dto_path": "weekly.next_week",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "weekly.quality": {
+          "dto_path": "weekly.quality",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "weekly.safety": {
+          "dto_path": "weekly.safety",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "weekly.submittals": {
+          "dto_path": "weekly.submittals",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "weekly.open_decisions": {
+          "dto_path": "weekly.open_decisions",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "weekly.summary": {
+          "dto_path": "weekly.summary",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-20": {
+      "source_registers": [
+        "22",
+        "25"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "InformationItem",
+          "subtype": "MeetingRecord"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Report"
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "Action",
+          "subtype": null
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "Risk"
+        },
+        {
+          "object_type": "Issue",
+          "subtype": null
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-20",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "urgent.no": {
+          "dto_path": "urgent.no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "urgent.occurred_at": {
+          "dto_path": "urgent.occurred_at",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "urgent.priority": {
+          "dto_path": "urgent.priority",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "urgent.recipient": {
+          "dto_path": "urgent.recipient",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "urgent.fact": {
+          "dto_path": "urgent.fact",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "urgent.cause": {
+          "dto_path": "urgent.cause",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "urgent.impact": {
+          "dto_path": "urgent.impact",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "urgent.immediate_action": {
+          "dto_path": "urgent.immediate_action",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "urgent.next_action": {
+          "dto_path": "urgent.next_action",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "urgent.decision_required": {
+          "dto_path": "urgent.decision_required",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "urgent.decision_due": {
+          "dto_path": "urgent.decision_due",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-21": {
+      "source_registers": [
+        "22"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "InformationItem",
+          "subtype": "MeetingRecord"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Report"
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "Action",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-21",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "decision.no": {
+          "dto_path": "decision.no",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "decision.date": {
+          "dto_path": "decision.date",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "decision.due": {
+          "dto_path": "decision.due",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        },
+        "decision.issue": {
+          "dto_path": "decision.issue",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "decision.impact": {
+          "dto_path": "decision.impact",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "decision.option_a": {
+          "dto_path": "decision.option_a",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "decision.option_b": {
+          "dto_path": "decision.option_b",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "decision.option_c": {
+          "dto_path": "decision.option_c",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "decision.recommendation": {
+          "dto_path": "decision.recommendation",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "decision.result": {
+          "dto_path": "decision.result",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "decision.decided_at": {
+          "dto_path": "decision.decided_at",
+          "source": "reviewed_context",
+          "type": "date-time",
+          "required": true
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-22": {
+      "source_registers": [
+        "V-01"
+      ],
+      "domain_sources": [
+        {
+          "view_id": "V-01",
+          "source_domain_refs_required": true
+        }
+      ],
+      "payload_schema": "FM-22",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "open.as_of": {
+          "dto_path": "open.as_of",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "open.total": {
+          "dto_path": "open.total",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "open.critical": {
+          "dto_path": "open.critical",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "issue",
+            "discipline",
+            "owner",
+            "due",
+            "status"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-23": {
+      "source_registers": [
+        "24",
+        "V-03"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "HandoverPackage"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "CommissioningPackage"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "WarrantyClaim"
+        },
+        {
+          "object_type": "Issue",
+          "subtype": "Punch"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "view_id": "V-03",
+          "source_domain_refs_required": true
+        }
+      ],
+      "payload_schema": "FM-23",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "dossier.as_of": {
+          "dto_path": "dossier.as_of",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "dossier.percent": {
+          "dto_path": "dossier.percent",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "dossier.items": {
+          "dto_path": "dossier.items",
+          "columns": [
+            "name",
+            "apply",
+            "draft",
+            "sign",
+            "original",
+            "digital",
+            "file"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-24": {
+      "source_registers": [
+        "24"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "HandoverPackage"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "CommissioningPackage"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "WarrantyClaim"
+        },
+        {
+          "object_type": "Issue",
+          "subtype": "Punch"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-24",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "handover.area": {
+          "dto_path": "handover.area",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "handover.date": {
+          "dto_path": "handover.date",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "handover.parties": {
+          "dto_path": "handover.parties",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "handover.asbuilt": {
+          "dto_path": "handover.asbuilt",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "handover.om": {
+          "dto_path": "handover.om",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "handover.testing": {
+          "dto_path": "handover.testing",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "handover.warranty": {
+          "dto_path": "handover.warranty",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "handover.training": {
+          "dto_path": "handover.training",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "handover.legal": {
+          "dto_path": "handover.legal",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {}
+    },
+    "FM-25": {
+      "source_registers": [
+        "24"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "HandoverPackage"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "CommissioningPackage"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "WarrantyClaim"
+        },
+        {
+          "object_type": "Issue",
+          "subtype": "Punch"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-25",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "defect.area": {
+          "dto_path": "defect.area",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        },
+        "defect.as_of": {
+          "dto_path": "defect.as_of",
+          "source": "reviewed_context",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "issue",
+            "owner",
+            "due",
+            "recheck",
+            "status"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    }
+  }
+}

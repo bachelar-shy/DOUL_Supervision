@@ -1,0 +1,53 @@
+{
+  "version": "1.0",
+  "workflow": [
+    "draft",
+    "review",
+    "issued",
+    "acknowledged",
+    "followup",
+    "verified",
+    "closed"
+  ],
+  "report_machine": "report",
+  "decision_machine": "decision",
+  "action_machine": "action",
+  "required_fields": [
+    "type",
+    "priority",
+    "sourceDomainRefs",
+    "recipients",
+    "facts",
+    "impact",
+    "recommendation",
+    "dueAt",
+    "receiptDueAt",
+    "actionIds",
+    "decisionIds",
+    "informationOnly"
+  ],
+  "sla": {
+    "timezone_source": "Project.timezone",
+    "urgent_p1": "immediate; site-defined response minutes required at project startup",
+    "p2_report_hours": 24,
+    "legal_and_contract_precedence": true,
+    "clocks": [
+      "occurredAt",
+      "issuedAt",
+      "receiptDueAt",
+      "acknowledgedAt",
+      "decisionDueAt",
+      "verifiedAt"
+    ]
+  },
+  "escalation": {
+    "trigger": "receipt or decision deadline exceeded",
+    "dedup_key": "projectId/reportId/escalationLevel/deadline",
+    "recipients": "approved project report chain",
+    "no_auto_approval": true
+  },
+  "issue_effect": "Record report issuedAt and immutable recipient set; material change creates a new report version.",
+  "closure": "All linked decisions and actions verified/closed; informationOnly requires explicit owner acknowledgment and SUP verification.",
+  "safety": "Immediate authorized safety action does not await owner acknowledgment.",
+  "sender_permission": "Application notifications use explicit project settings and delivery adapters; no external message is sent by this repository change."
+}

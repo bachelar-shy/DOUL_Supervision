@@ -1,84 +1,35 @@
-# 19. DOUL Supervision MVP Vertical Slice
+# 19. DOUL 감리 MVP 업무흐름과 검증
 
-기준일: 2026-10-04
-상태: v0.1
+기준일: 2026-10-04 · 버전: v2.1
 
-## 1. 목적
+## 1. 합격 흐름 — AI 선택사항
 
-문서·모듈을 넓게 추가하기보다 하나의 핵심 업무를 Mobile/Web에서 끝까지 실행 가능하게 만든다.
+시공사 자체검측과 사전자료 확인 → Inspection 생성 → request → 감리 receive → 완전성 확인 → schedule → start → 증빙·checkResults 제출 → pass → 해당 결과 버전의 FM-09 스냅샷과 필수서명 → Hold Point 기술승인(해당 시) → release_next_work → 완료·후속공정 허용.
 
-## 2. Golden Path
+자체검측, 기준선, 승인도면, 자재·시험·선행작업·변경 확인 중 빠진 항목이 있으면 접수 후 반려 사유를 남기고 resubmit으로 다시 제출한다. 전 항목 적용제외만으로 합격할 수 없다. 아직 서명되지 않은 합격 결과는 후속공정을 허용하지 않는다.
 
-시공사 자체검측
-→ 검측요청
-→ 감리 접수·완전성 확인
-→ 감리 현장검측
-→ Evidence 수집
-→ AI Observation Candidate
-→ 감리 확인
-→ Issue/NCR
-→ 시공사 시정
-→ 재검측 요청
-→ 감리 재검측
-→ 종결
-→ 발주처 보고
-→ A4/법정문서 생성
+## 2. 불합격·반복 재검측 흐름
 
-## 3. MVP 화면
+불합격 결과·증빙 → FM-09 서명 및 record_failure → 사람의 관찰 확인 → 공식 Issue/NCR → 책임자·시정 Action 배정 → 시정·원인·재발방지·증빙 제출 → 새 Inspection 생성 → issue.request_reinspection으로 새 검측 연결 → 감리 start_reinspection → 실제 검측.
 
-### Supervisor Mobile
-SUP-TODAY-M / SUP-INSPECTION-M / SUP-CHECKLIST-M / SUP-CAPTURE-M / SUP-OBSERVATION-M / SUP-ISSUE-M / SUP-CORRECTION-REVIEW-M / SUP-REINSPECTION-M / SUP-ISSUE-CLOSE-M
+재검측 불합격은 reject_reinspection으로 새 correctionCycle을 시작한다. 새 시정 Action을 link_actions로 추가하고 새 재검측을 만든다. 재검측 합격·서명·후속공정 승인이 완료되고 현재 주기의 시정 Action도 검증되어야 Issue.close를 실행할 수 있다. 원검측·과거 시정·실패주기를 덮어쓰거나 삭제하지 않는다. 종결된 원본 버전으로 문서 스냅샷을 만든다.
 
-### Contractor Responsive
-CON-TODAY-R / CON-SELF-INSPECTION-R / CON-INSPECTION-REQUEST-R / CON-ISSUE-R / CON-CORRECTIVE-ACTION-R / CON-REINSPECTION-REQUEST-R
+## 3. 보고·결정 흐름
 
-### Owner Web
-OWN-DASHBOARD-W / OWN-MAJOR-ISSUES-W / OWN-DECISION-W / OWN-REPORT-W
+InformationItem(Report) 초안·검토 → issue → 발주처 acknowledge → 결정/Action 연결 → dispatch → 조치 완료·결정 이행 검증 → verify → close. Decision과 Action은 각각의 상태모델을 따른다. 기한초과는 알림 의도를 만들며 자동 승인을 실행하지 않는다. 세부 책임·시각·종결조건은 21을 따른다.
 
-### Designer Web
-DES-RFI-W / DES-DESIGN-RESPONSE-W
+RFI 답변만으로 변경을 실행하지 않는다. ChangeRequest 영향 검토·발주처 버전별 결정·개정정보 발행·실행·검증을 별도 처리한다. request_decision의 decisionId는 예정 ID를 지정할 수 있으나 실제 Decision이 생성되고 해당 변경 버전을 승인하기 전에는 approve가 거부된다.
 
-### Admin Web
-ADM-PROJECT-W / ADM-USERS-ROLES-W / ADM-AUTHORITY-W / ADM-REQUIREMENT-BASELINE-W
+## 4. 화면과 API
 
-## 4. 구현순서
+감리 모바일: 오늘·촬영·검측·체크리스트·분석 검토·관찰 확인·공식 이슈·시정검토·재검측·종결. 시공사 웹/PWA: 자체검측·요청·내 이슈·시정·재검측요청. 발주처 웹: 주요사항·보고 수령·결정·승인. 설계자: RFI·기술답변·개정정보. 관리자: 프로젝트·배치·자격·기준선·권한·양식.
 
-1. Project / Party / RoleAssignment / Authority
-2. Requirement / Drawing / Location
-3. Inspection / Evidence
-4. Observation
-5. Issue / Action
-6. Reinspection / Closure
-7. Owner Report / Decision / Approval
-8. DocumentSnapshot / A4 render
-9. Offline conflict handling
-10. Drawing spatial mapping
-11. AI assist
+실제 명령 경로는 `/projects/{projectId}/inspections/{objectId}/start`, `/issues/{objectId}/request-reinspection`, `/owner-reports/{objectId}/acknowledge` 등이며 전체 경로는 OpenAPI를 따른다. 모든 쓰기 요청은 인증, RoleAssignment, expectedVersion, 명령별 payload, evidenceIds와 Idempotency-Key를 사용한다. 생성·업로드·문서 요청은 각 전용 스키마를 사용한다.
 
-AI가 없어도 1~8은 완전하게 작동해야 한다.
+Stitch 화면은 표현 설계 자료다. 명령·권한·필수자료 검증을 화면 내부에 재정의하지 않는다. 버튼 활성 여부는 서버가 계산한 허용 업무와 실패조건을 표시해야 한다.
 
-## 5. Command API 원칙
+## 5. 현재 완료와 다음 구현
 
-상태값 직접 PATCH보다 업무명령을 우선한다.
+참조 실행과 자동검증: AI 없는 합격/불합격·반복 재검측, 역할·범위·자격·배치, Hold, 기준·도면·버전 충돌, RFI/변경/승인, 발주처 수령·조치·기한, 분석결과 출처, 불변 HTML·서명 해시.
 
-예:
-- POST /inspections/{id}/start
-- POST /inspections/{id}/complete
-- POST /observations/{id}/confirm
-- POST /issues/{id}/assign
-- POST /issues/{id}/corrective-actions
-- POST /issues/{id}/request-reinspection
-- POST /issues/{id}/close
-
-모든 명령은 RoleAssignment, current state, version, required evidence, Requirement/Gate를 검증한다.
-
-## 6. 완료조건
-
-- Contractor가 공식 Issue를 Close할 수 없음
-- A/Hold Point 우회 불가
-- Observation Candidate가 사람 확인 없이 Issue가 되지 않음
-- 재검측 실패 시 correction cycle 보존
-- 발주처 결정 필요사항이 Owner queue에 나타남
-- 동일 데이터에서 A4/법정문서 출력 가능
-- 모든 공식 transition에 AuditEvent 생성
-- Offline stale update가 최신 상태를 덮어쓰지 않음
+운영 구현: DB 트랜잭션·인증·HTTP·파일/단말 동기화·업로드·모델/미디어 작업자·실제 알림·전자서명·공식서식·DOCX/PDF·페이지 시각 QA·현장 성능시험. 참조 검증을 운영 앱 완료로 표시하지 않는다. 22의 재현 명령과 이슈 #1 근거를 따른다.
