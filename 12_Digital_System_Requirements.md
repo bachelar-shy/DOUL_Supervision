@@ -180,3 +180,22 @@ Issue ID를 중심으로 다음을 연결한다.
 3단계: 발주처 대시보드
 4단계: 법정서식 자동생성
 5단계: AI 품질검토·경험DB
+
+
+## 14. A4 양식 엔진
+
+관리대장과 양식의 이중입력을 금지한다.
+
+앱 구조:
+
+> RegisterRecord → Workflow Approval → FormTemplate → DocumentSnapshot → DOCX/PDF/HTML
+
+구현기준:
+- 29개 관리대장: `app/schema/register_catalog.json`
+- DOUL A4 25종: `app/forms/form_catalog.json`, `app/forms/form_templates_v1.json`
+- 공식 법정서식: `app/forms/legal_form_registry.json`
+- 렌더링 규칙: `app/forms/rendering_contract.json`
+- API: `app/api/openapi.yaml`
+- TypeScript 타입: `app/types/supervision.ts`
+
+법정서명자는 자격·유효기간·프로젝트 배치상태를 확인한 후에만 선택 가능하도록 한다.
