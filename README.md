@@ -19,6 +19,7 @@
 15. [DOUL 감리체계 최종 누락검증](./14_Final_Completeness_Audit.md)
 16. [DOUL 프로젝트 감리 착수 체크리스트](./15_Project_Startup_Checklist.md)
 17. [DOUL 감리 앱 구현 및 A4 양식 엔진](./16_App_Implementation_Form_Engine.md)
+18. [A4 양식·배포팩 생성물 매니페스트](./artifacts/README.md)
 
 ### 현재 상태
 
