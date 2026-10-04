@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "placeholder_syntax": "{{path.to.value}}",
+  "outputs": [
+    "html_a4",
+    "docx",
+    "pdf"
+  ],
+  "rules": [
+    "Rendered documents store source record IDs and revisions.",
+    "Signed snapshots are immutable; changes create a new revision.",
+    "Legal template version is locked per document snapshot.",
+    "Missing statutory fields blocks finalization.",
+    "Conditional/repeating rows are generated from record data."
+  ]
+}
