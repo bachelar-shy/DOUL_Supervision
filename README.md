@@ -18,6 +18,7 @@
 14. [DOUL 감리체계 도입·운영·성과관리](./13_Implementation_Governance_KPI.md)
 15. [DOUL 감리체계 최종 누락검증](./14_Final_Completeness_Audit.md)
 16. [DOUL 프로젝트 감리 착수 체크리스트](./15_Project_Startup_Checklist.md)
+17. [DOUL 감리 앱 구현 및 A4 양식 엔진](./16_App_Implementation_Form_Engine.md)
 
 ### 현재 상태
 
@@ -26,7 +27,9 @@
 - 베트남 법정문서·서식 매핑: 완료
 - 현장 업무절차·검측·보고·준공: 완료
 - 디지털 시스템 요구사항: 완료
-- 다음 단계: 법정 원본서식 확보 → DOUL 실제 DOCX/XLSX/PDF 양식 제작 → 시범현장 적용
+- DOUL A4 감리양식 25종: 제작·렌더링 QA 완료
+- 앱 구현계약: 29개 관리대장·25개 양식·법정서식 레지스트리·API·A4 CSS 반영
+- 다음 단계: 베트남 공식 원본서식 파일 탑재 → 실제 앱 개발 → 시범현장 적용
 
 ---
 
