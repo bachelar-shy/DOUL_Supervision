@@ -1,0 +1,21 @@
+{
+  "name": "doul-supervision",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "apps/mobile",
+    "packages/client"
+  ],
+  "scripts": {
+    "web": "npm run dev --workspace apps/web",
+    "web:build": "npm run build --workspace apps/web",
+    "mobile": "npm run start --workspace apps/mobile",
+    "typecheck": "npm run typecheck --workspace apps/web && npm run typecheck --workspace apps/mobile",
+    "test:contracts": "python3 scripts/validate_contracts.py && python3 -m unittest discover -s tests -q",
+    "test:api": ".venv/bin/python -m unittest discover -s tests_mvp -v"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}

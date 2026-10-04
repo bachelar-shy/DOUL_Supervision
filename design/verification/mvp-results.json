@@ -1,0 +1,218 @@
+{
+  "verifiedAt": "2026-10-04T18:32:58.950110+00:00",
+  "baseCommit": "d13e744f23ac183ca5246f1ed431f40fe74ef0c1",
+  "branch": "feat/mvp-skeleton-stitch-20261005",
+  "mode": "local_development_synthetic_data",
+  "checks": [
+    {
+      "name": "contracts",
+      "command": [
+        "python3",
+        "scripts/validate_contracts.py"
+      ],
+      "cwd": ".",
+      "exitCode": 0,
+      "status": "passed",
+      "seconds": 0.05,
+      "logSha256": "c9ce62c38238f54f69a84f811b7954eb10905b5337d97d145afdb609184e7e94"
+    },
+    {
+      "name": "api_codegen",
+      "command": [
+        "python3",
+        "scripts/generate_api.py",
+        "--check"
+      ],
+      "cwd": ".",
+      "exitCode": 0,
+      "status": "passed",
+      "seconds": 0.04,
+      "logSha256": "afc8ca5c4edc1d276a55cb4359360cf781f97ab552a0e5ea48328bdd878e783a"
+    },
+    {
+      "name": "types_codegen",
+      "command": [
+        "python3",
+        "scripts/generate_types.py",
+        "--check"
+      ],
+      "cwd": ".",
+      "exitCode": 0,
+      "status": "passed",
+      "seconds": 0.02,
+      "logSha256": "d1bd96005e839537910533bdf9b4e4c8e66a4d0cdf1e05520efb0f6d4e0869a8"
+    },
+    {
+      "name": "reference_tests",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-q"
+      ],
+      "cwd": ".",
+      "exitCode": 0,
+      "status": "passed",
+      "seconds": 0.53,
+      "logSha256": "f7e0a77a51121975e7b195baf34d9da5b7f7b38539db1e43cbab2efc40d053a3",
+      "testsExecuted": 79
+    },
+    {
+      "name": "http_tests",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests_mvp",
+        "-v"
+      ],
+      "cwd": ".",
+      "exitCode": 0,
+      "status": "passed",
+      "seconds": 2.62,
+      "logSha256": "b343eadcdf347b895f96582c9a05c95f88d972af4b4e9804da91d3f016c2087e",
+      "testsExecuted": 34
+    },
+    {
+      "name": "typecheck",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": ".",
+      "exitCode": 0,
+      "status": "passed",
+      "seconds": 1.2,
+      "logSha256": "f2ec1ecdf0123bb03598e16ec081c95d8a5e3021e250af2f1d16b7a417118bcd"
+    },
+    {
+      "name": "web_lint",
+      "command": [
+        "npm",
+        "run",
+        "lint",
+        "--workspace",
+        "apps/web"
+      ],
+      "cwd": ".",
+      "exitCode": 0,
+      "status": "passed",
+      "seconds": 0.13,
+      "logSha256": "0f5ad15b2c32b8a2c7196727ff4fc61741a70337fb0d5e450f8df902ae7c6f90"
+    },
+    {
+      "name": "web_build",
+      "command": [
+        "npm",
+        "run",
+        "web:build"
+      ],
+      "cwd": ".",
+      "exitCode": 0,
+      "status": "passed",
+      "seconds": 0.91,
+      "logSha256": "313149fed717930fec96b27c90549d8afc0529da3584dc5bbf0c4470038fe849"
+    },
+    {
+      "name": "browser_tests",
+      "command": [
+        "npx",
+        "playwright",
+        "test"
+      ],
+      "cwd": ".",
+      "exitCode": 0,
+      "status": "passed",
+      "seconds": 13.62,
+      "logSha256": "c08a4e840efed3bbdc32d104c546a45b2927366afe9865b6e7e055586c814825",
+      "statistics": {
+        "startTime": "2026-10-04T18:33:04.823Z",
+        "duration": 13264.465999999999,
+        "expected": 9,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    {
+      "name": "native_js_bundles",
+      "command": [
+        "npx",
+        "expo",
+        "export",
+        "--platform",
+        "ios",
+        "--platform",
+        "android",
+        "--output-dir",
+        "../../.local/mobile-export"
+      ],
+      "cwd": "apps/mobile",
+      "exitCode": 0,
+      "status": "passed",
+      "seconds": 3.23,
+      "logSha256": "17cb0e96930435ce41499637e5d4d6cf5c7b5354cb80c35ccfb52d374afd8f62",
+      "note": "JavaScript/Hermes export only; not APK/IPA, signing or real-device validation"
+    },
+    {
+      "name": "git_whitespace",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": ".",
+      "exitCode": 0,
+      "status": "passed",
+      "seconds": 0.01,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "productionAcceptance": false,
+  "nativeSignedBuildTested": false,
+  "realDeviceTested": false,
+  "formalModelCheckerExecuted": false,
+  "remoteCIExecuted": false,
+  "remaining": [
+    "production authentication and account lifecycle",
+    "normalized PostgreSQL/PostGIS and object storage",
+    "trusted legal signature verifier",
+    "video/audio AI and actual spatial positioning",
+    "DOCX/PDF adapters and statutory templates",
+    "dependency security remediation",
+    "field pilot and actual device tests"
+  ],
+  "allExecutedChecksPassed": true,
+  "releaseStatus": "LOCAL_ONLY_SECURITY_AND_PRODUCTION_ADAPTERS_PENDING",
+  "stitch": {
+    "projectId": "11486949689509673114",
+    "resourceVerifiedCount": 16,
+    "canvasVerifiedCount": 13,
+    "canonicalCounts": {
+      "mobile": 6,
+      "desktop": 10
+    },
+    "preservedVerified": true,
+    "allPlannedScreensVerified": false,
+    "errors": [
+      {
+        "code": "CON-CORRECTION-M",
+        "error": "mobile_resource_exists_but_project_canvas_replacement_not_verified"
+      },
+      {
+        "code": "SUP-CAPTURE-M",
+        "error": "mobile_resource_exists_but_project_canvas_replacement_not_verified"
+      },
+      {
+        "code": "SUP-INSPECTION-M",
+        "error": "mobile_resource_exists_but_project_canvas_replacement_not_verified"
+      }
+    ]
+  }
+}

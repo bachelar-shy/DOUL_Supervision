@@ -1,3 +1,15 @@
 __pycache__/
 *.py[cod]
 .venv/
+
+# Local application state and dependencies
+.local/
+node_modules/
+dist/
+.expo/
+.env
+.env.*
+!.env.example
+playwright-report/
+test-results/
+*.tsbuildinfo

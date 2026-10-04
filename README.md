@@ -1,5 +1,14 @@
 # DOUL 감리체계 v2.1 구현계약
 
+## 실행 가능한 개발 골격 (2026-10-05)
+
+PR #2 병합 커밋 `d13e744`의 계약·검증 엔진을 재사용한 반응형 웹, Android/iOS 공통 앱, HTTP/SQLite 개발 어댑터를 추가했다. 운영 인증·법정 서명·영상 AI·DOCX/PDF·실기기 배포는 아직 미구현이다. 실제 현장 데이터 입력과 운영 배포를 금지한다.
+
+- [코드 구조·실행·검증·제약](./23_MVP_Code_Skeleton_and_Stitch.md)
+- [Stitch 화면 계획](./design/stitch/screen-plan.json)
+- [Stitch 실제 화면 연결](./design/stitch/screens.json)
+- [실행 검증 결과](./design/verification/mvp-results.json)
+
 ## 문서목록
 
 1. [한·베 감리 법령 요구사항 매트릭스](./01_Regulatory_Requirement_Matrix.md)
