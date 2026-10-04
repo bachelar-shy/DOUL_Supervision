@@ -163,3 +163,16 @@ DOUL 내부양식:
 ## 10. 다음 작업
 
 실제 DOCX/XLSX/PDF 양식 제작은 본 문서의 데이터 필드를 기준으로 수행한다.
+
+
+## 11. 앱 연계
+
+표준 감리양식은 앱의 FormTemplate으로 관리한다.
+
+- 앱 DB의 관리대장 데이터가 원본
+- FM-01~FM-25는 `app/forms/form_templates_v1.json`을 기준으로 화면과 A4 출력을 생성
+- A4 웹 출력은 `app/forms/doul-a4.css` 적용
+- DOCX/PDF는 동일 데이터 revision으로 생성
+- 서명된 문서는 DocumentSnapshot으로 고정하고 덮어쓰기 금지
+- 반복행·조건부 서명은 앱 데이터에 따라 동적 생성
+- 베트남 공식 고정서식은 `app/forms/legal_form_registry.json`에서 별도 관리
