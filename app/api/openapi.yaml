@@ -1,0 +1,25 @@
+openapi: 3.1.0
+info:
+  title: DOUL Supervision Core API
+  version: 1.0.0
+paths:
+  /projects/{projectId}/registers/{registerId}:
+    get: {summary: 관리대장 목록 조회, responses: {'200': {description: OK}}}
+    post: {summary: 관리대장 기록 생성, responses: {'201': {description: Created}}}
+  /records/{recordId}: 
+    get: {summary: 기록 상세, responses: {'200': {description: OK}}}
+    patch: {summary: 새 revision으로 기록 수정, responses: {'200': {description: Updated}}}
+  /records/{recordId}/workflow/{action}:
+    post: {summary: 제출·검토·승인·반려·종결 상태전이, responses: {'200': {description: Transitioned}, '409': {description: Gate failed}}}
+  /forms/{formId}/preview:
+    post: {summary: DOUL A4 HTML 미리보기, responses: {'200': {description: Preview}}}
+  /forms/{formId}/render:
+    post: {summary: DOCX/PDF 스냅샷 생성, responses: {'201': {description: Created}, '422': {description: Required legal field missing}}}
+  /legal-forms/{legalFormId}/render:
+    post: {summary: 베트남 공식 고정서식 데이터 채움, responses: {'201': {description: Created}}}
+  /documents/{documentId}/sign:
+    post: {summary: 자격·권한 확인 후 서명, responses: {'200': {description: Signed}, '403': {description: Not authorized}}}
+  /dashboards/open-items:
+    get: {summary: 미결사항 통합현황, responses: {'200': {description: OK}}}
+  /dashboards/legal-completeness:
+    get: {summary: 베트남 법정문서 완성도, responses: {'200': {description: OK}}}
