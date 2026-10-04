@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "DOUL Supervision",
+    "slug": "doul-supervision",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.doul.supervision.dev"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.doul.supervision.dev"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "현장 사진을 증빙으로 등록합니다.",
+          "cameraPermission": "현장 증빙 사진을 촬영합니다.",
+          "microphonePermission": false
+        }
+      ]
+    ]
+  }
+}

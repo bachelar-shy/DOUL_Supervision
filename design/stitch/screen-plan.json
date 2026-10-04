@@ -1,0 +1,193 @@
+[
+  {
+    "code": "SUP-TODAY-W",
+    "surface": "desktop",
+    "actor": "SUP",
+    "title": "감리 업무현황",
+    "route": "/today",
+    "description": "Desktop supervisor workbench. Sidebar today, inspections, evidence, observations, issues, reports, documents. Compact KPI counts, inspection queue table left, urgent Hold approval and owner immediate-report queue right. Drawing context lower pane. No charts that compete with tasks. No invented live weather or crane safety conclusion.",
+    "commands": []
+  },
+  {
+    "code": "SUP-INSPECTION-M",
+    "surface": "mobile",
+    "actor": "SUP",
+    "title": "검측 상세",
+    "route": "/inspections",
+    "description": "Inspection detail, A동 2층 벽체. State scheduled. Drawing A-201 Rev.03, baseline checklist, 5 prerequisite indicators, evidence thumbnails. Primary 검측 시작. Show result not yet entered, next-work NOT allowed. After pass, show separate signature and Hold approval checklist; never a combined pass-and-release button.",
+    "commands": [
+      "inspection:start",
+      "inspection:submit_results",
+      "inspection:pass",
+      "inspection:release_next_work"
+    ]
+  },
+  {
+    "code": "SUP-INSPECTION-W",
+    "surface": "desktop",
+    "actor": "SUP",
+    "title": "검측 검토",
+    "route": "/inspections",
+    "description": "Desktop split view: inspection list at left; large clean schematic floor plan center with grid and location pin marked 도면 예시; checklist, evidence and command panel right. Separate 판정, 서명상태, 후속공정 허용. Display missing required evidence and disabled release with reason. Revision and source links visible.",
+    "commands": [
+      "inspection:start",
+      "inspection:submit_results",
+      "inspection:pass",
+      "inspection:release_next_work"
+    ]
+  },
+  {
+    "code": "SUP-CAPTURE-M",
+    "surface": "mobile",
+    "actor": "SUP",
+    "title": "현장 촬영",
+    "route": "/capture",
+    "description": "Native capture design: large neutral camera-preview placeholder labelled 카메라 미리보기, photo/video/audio mode controls, timer, microphone permission indicator, A동 2F C-5 position marked 수동 지정. QR rescan and manual pin fallback. 원본 보존, 기기 저장, 전송 대기 are separate. Primary 촬영, finish 저장. No automatic GPS/AR accuracy claim. AI status 분석 전.",
+    "commands": []
+  },
+  {
+    "code": "SUP-MEDIA-W",
+    "surface": "desktop",
+    "actor": "SUP",
+    "title": "증빙 작업실",
+    "route": "/capture",
+    "description": "Desktop media intake workbench. Upload drop zone photo/video/audio, queue with bytes/offset/checksum status, immutable original and derived columns, evidence metadata and source author vs uploader. Detail panel associates drawing/version/location. Analysis disabled with 분석 서비스 미연결. Show bulk upload and local pending, not automatic confirmed findings.",
+    "commands": []
+  },
+  {
+    "code": "SUP-OBSERVATION-M",
+    "surface": "mobile",
+    "actor": "SUP",
+    "title": "관찰 후보 검토",
+    "route": "/observations",
+    "description": "Review a candidate observation, badge 공식 판정 대기. Representative frame marked 파생 프레임, original clip PTS 00:42-00:48, original Korean speech and optional Vietnamese translation tabs, speaker 화자 후보 미확정. Coverage 42/120초 분석, 누락 78초 (예시) and 근거 부족. Human verification note; confirm observation / reject; separate disabled 공식 이슈 발행 until observed visual or measurement corroboration. No confidence percent.",
+    "commands": [
+      "observation:begin_review",
+      "observation:confirm",
+      "observation:reject"
+    ]
+  },
+  {
+    "code": "SUP-OBSERVATION-W",
+    "surface": "desktop",
+    "actor": "SUP",
+    "title": "영상·발화 검토",
+    "route": "/observations",
+    "description": "Three-pane desktop evidence review. Original video with PTS timeline and visibly shaded skipped ranges, transcript with provisional speakers at left/bottom, candidate list and source drawing revision at right. Distinguish original, derived frame, spoken allegation, observed fact. Show partial coverage not entire-video analyzed. Human verification action and separate issue command.",
+    "commands": [
+      "observation:begin_review",
+      "observation:confirm",
+      "observation:reject"
+    ]
+  },
+  {
+    "code": "SUP-REINSPECTION-M",
+    "surface": "mobile",
+    "actor": "SUP",
+    "title": "재검측·종결 검토",
+    "route": "/issues",
+    "description": "Issue NCR-008 current correction cycle 2; before/after evidence side by side, expandable previous failed cycles read-only. New inspection I-044 required. Separate action verified, reinspection passed, signed record, Hold approval. 종결 button disabled with 필수 서명 미완료. Primary 재검측 시작, failure 재시정 요청. Original failed inspection remains visible.",
+    "commands": [
+      "issue:start_reinspection",
+      "issue:reject_reinspection",
+      "issue:close"
+    ]
+  },
+  {
+    "code": "SUP-REINSPECTION-W",
+    "surface": "desktop",
+    "actor": "SUP",
+    "title": "부적합·시정 이력",
+    "route": "/issues",
+    "description": "Desktop issue board and detail. Timeline original inspection -> issue -> correction cycle1 fail -> cycle2 reinspection. Before/after images and checklist and source versions. Closure gate checklist with missing signature. Owner-report thread visible independently, not delayed until closure. Only supervisor closure, explicit disabled reason.",
+    "commands": [
+      "issue:start_reinspection",
+      "issue:reject_reinspection",
+      "issue:close"
+    ]
+  },
+  {
+    "code": "CON-CORRECTION-M",
+    "surface": "mobile",
+    "actor": "CON",
+    "title": "시공사 시정조치",
+    "route": "/actions",
+    "description": "Contractor mobile role clearly labelled 시공사. My issue NCR-008, assigned company and due date, fields 원인, 시정내용, 재발방지, after evidence. Primary 시정조치 제출 then 재검측 요청 as a separate step linking a NEW inspection. Never show issue close or supervisor pass buttons. Offline draft banner 저장됨·아직 제출되지 않음.",
+    "commands": [
+      "action:start",
+      "action:submit",
+      "issue:request_reinspection"
+    ]
+  },
+  {
+    "code": "CON-CORRECTION-W",
+    "surface": "desktop",
+    "actor": "CON",
+    "title": "시정·재검측 요청",
+    "route": "/actions",
+    "description": "Contractor desktop workspace. Left own-company tasks, right correction form root cause/action/prevention, evidence uploads, checklist and new reinspection request reference. Separate own self-check and official supervisor inspection. Cannot view other contractor private data or close official issue. Submission receipts and version conflict banner pattern.",
+    "commands": [
+      "action:start",
+      "action:submit",
+      "issue:request_reinspection"
+    ]
+  },
+  {
+    "code": "OWN-DECISION-M",
+    "surface": "mobile",
+    "actor": "OWN",
+    "title": "발주처 결정",
+    "route": "/owner",
+    "description": "Owner mobile concise decision request: immediate report, received/not received badge, facts/cause, quality/schedule/cost impact labelled 예시, A/B options and supervision recommendation, decision deadline. Separate 수령 확인 and 결정 제출 requiring reason. Decision not technical inspection approval or issue closure. No direct contractor instruction button.",
+    "commands": [
+      "report:acknowledge",
+      "decision:acknowledge",
+      "decision:decide"
+    ]
+  },
+  {
+    "code": "OWN-DECISION-W",
+    "surface": "desktop",
+    "actor": "OWN",
+    "title": "발주처 현황·결정",
+    "route": "/owner",
+    "description": "Owner desktop overview and decision panel. KPI outstanding decisions, receipt overdue, major issues; table with decision deadline. Right options comparison, impact and recommendation, received timestamp, decision reason and option selection. Show report receipt -> decision -> execution -> supervisor verification -> closure. No auto approval on overdue.",
+    "commands": [
+      "report:acknowledge",
+      "decision:acknowledge",
+      "decision:decide"
+    ]
+  },
+  {
+    "code": "DOC-AUTHOR-W",
+    "surface": "desktop",
+    "actor": "SUP",
+    "title": "보고서 작성",
+    "route": "/documents",
+    "description": "Document authoring desktop: left approved template catalog FM-19/20/21; middle A4 white page preview with black typography and gray table headers; right linked sourceDomainRefs exact object versions, evidence citations and snapshot hash. Draft editable vs issued snapshot read-only. Save draft, preview HTML, request review. DOCX/PDF disabled 어댑터 미연결. Do not label draft legally signed.",
+    "commands": [
+      "report:submit",
+      "report:issue"
+    ]
+  },
+  {
+    "code": "DES-RFI-W",
+    "surface": "desktop",
+    "actor": "DES",
+    "title": "설계질의 답변",
+    "route": "/rfis",
+    "description": "Designer desktop RFI inbox scoped to assignment, center drawing revision and query, right response editor and related design documents. Explicit separate 설계변경 필요 checkbox, response submission. Banner RFI 답변은 설계변경 승인이 아닙니다. No contractor closure, no cost approval.",
+    "commands": [
+      "rfi:answer"
+    ]
+  },
+  {
+    "code": "ADM-ROLES-W",
+    "surface": "desktop",
+    "actor": "ADM",
+    "title": "프로젝트 배치·권한",
+    "route": "/admin",
+    "description": "Project admin desktop human groups SUP ADM CON OWN DES only. Table organization/person/project role/disciplines/package/location/validity/qualification status. Detail effective authority read-only preview with reason when expired. Separate service actors AI SYSTEM INTEGRATION without human approval powers. TEST_LAB/EXTERNAL_REVIEWER exist only as document source parties without login invite. No all-powerful admin technical-sign override.",
+    "commands": []
+  }
+]

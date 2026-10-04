@@ -1,0 +1,57 @@
+import unittest
+from fastapi.testclient import TestClient
+from services.api.main import create_app
+from app.reference.engine import uid
+
+
+def put(data,path,value):
+    bits=path.split('.');node=data
+    for key in bits[:-1]:node=node.setdefault(key,{})
+    node[bits[-1]]=value
+
+
+class DocumentHTTPTests(unittest.TestCase):
+    def setUp(self):
+        self.app=create_app(demo=True);self.client=TestClient(self.app)
+        self.s=self.client.post('/dev/sessions',json={'actorGroup':'SUP'}).json()
+        self.project=self.s['projectId'];self.role=self.s['actor']['roleAssignmentId']
+        self.h={'Authorization':'Bearer '+self.s['accessToken'],'X-RoleAssignment-Id':self.role,'Idempotency-Key':uid()}
+        self.w=self.client.get('/projects/'+self.project+'/workspace',headers=self.h).json()
+        self.report=next(x['record'] for x in self.w['items'] if x['machine']=='report')
+        spec=self.w['formSchemas']['FM-20'];data={}
+        for table in spec['tables']:put(data,table['path'],{k:'' for k in table['columns']} if table['type'] in ['review_table','check_table'] else [])
+        self.body=dict(roleAssignmentId=self.role,sourceDomainRefs=[dict(objectType='InformationItem',objectId=self.report['id'],version=self.report['version'])],data=data,language='ko',output='html_a4')
+    def tearDown(self):self.client.close();self.app.state.store.close()
+    def preview(self):return self.client.post('/projects/'+self.project+'/forms/FM-20/preview',headers=self.h,json=self.body)
+
+    def test_draft_html_and_source_version(self):
+        r=self.preview();self.assertEqual(r.status_code,200,r.text);d=r.json()
+        self.assertEqual(d['status'],'draft');self.assertEqual(d['sourceDomainRefs'][0]['version'],self.report['version'])
+        html=self.client.get('/projects/'+self.project+'/documents/'+d['id']+'/content',headers=self.h)
+        self.assertEqual(html.status_code,200);self.assertIn('text/html',html.headers['content-type']);self.assertIn('sandbox',html.headers['content-security-policy'])
+
+    def test_document_survives_later_source_change(self):
+        d=self.preview().json();path='/projects/'+self.project+'/documents/'+d['id']+'/content'
+        before=self.client.get(path,headers=self.h).content
+        owner=self.client.post('/dev/sessions',json={'actorGroup':'OWN'}).json()
+        self.client.post('/projects/'+self.project+'/owner-reports/'+self.report['id']+'/acknowledge',headers={'Authorization':'Bearer '+owner['accessToken'],'Idempotency-Key':uid()},json=dict(roleAssignmentId=owner['actor']['roleAssignmentId'],expectedVersion=self.report['version'],payload={},evidenceIds=[]))
+        after=self.client.get(path,headers=self.h).content
+        self.assertEqual(before,after)
+
+    def test_no_fake_docx_pdf(self):
+        for output in ['docx','pdf']:
+            r=self.client.post('/projects/'+self.project+'/forms/FM-20/render',headers=self.h,json={**self.body,'output':output})
+            self.assertEqual(r.status_code,501)
+
+    def test_no_unverified_signing(self):
+        d=self.preview().json();r=self.client.post('/projects/'+self.project+'/documents/'+d['id']+'/sign',headers=self.h,json=dict(roleAssignmentId=self.role,documentHash=d['renderHash'],roleCode='supervisor',method='wet_original_verified'))
+        self.assertEqual(r.status_code,501)
+
+    def test_spoofed_signature_receipt_rejected(self):
+        d=self.preview().json();r=self.client.post('/projects/'+self.project+'/documents/'+d['id']+'/sign',headers=self.h,json=dict(roleAssignmentId=self.role,documentHash=d['renderHash'],roleCode='supervisor',method='wet_original_verified',receipt={'verified':True}))
+        self.assertEqual(r.status_code,422)
+
+    def test_cross_project_render_reference_denied(self):
+        self.body['sourceDomainRefs'][0]['objectId']=uid();self.assertEqual(self.preview().status_code,404)
+
+if __name__=='__main__':unittest.main()
