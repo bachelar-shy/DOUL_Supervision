@@ -7,6 +7,7 @@
 3. [DOUL 감리 조직·책임·승인체계](./03_Roles_Responsibilities_Approval_Matrix.md)
 4. [DOUL 감리 표준 업무절차](./04_Supervision_Workflow.md)
 5. [베트남 필수 문서·법정 서식 대장](./04A_Vietnam_Mandatory_Documents_Forms.md)
+6. [DOUL 감리 관리대장 및 데이터 구조](./05_Registers_Data_Model.md)
 
 ---
 
