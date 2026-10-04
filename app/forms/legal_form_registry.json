@@ -1,0 +1,71 @@
+{
+  "version": "2026-10-04",
+  "rule": "official_fixed forms use the official Vietnamese template and must not be restyled as DOUL A4.",
+  "official_fixed": [
+    {
+      "id": "VN-ND207-IVa",
+      "name": "Báo cáo định kỳ về công tác giám sát(정기 감리보고)",
+      "source": "Nghị định 207/2026/NĐ-CP Appendix IVa"
+    },
+    {
+      "id": "VN-ND207-IVb",
+      "name": "Báo cáo hoàn thành công tác giám sát(감리완료보고)",
+      "source": "Nghị định 207/2026/NĐ-CP Appendix IVb"
+    },
+    {
+      "id": "VN-ND207-V",
+      "name": "Thông báo khởi công(착공통보)",
+      "source": "Nghị định 207/2026/NĐ-CP Appendix V"
+    },
+    {
+      "id": "VN-ND207-VI",
+      "name": "Báo cáo hoàn thành thi công xây dựng(공사완료보고)",
+      "source": "Nghị định 207/2026/NĐ-CP Appendix VI"
+    },
+    {
+      "id": "VN-ND207-VIII",
+      "name": "Thông báo kết quả kiểm tra công tác nghiệm thu(완료검수 검사결과 통보)",
+      "source": "Nghị định 207/2026/NĐ-CP Appendix VIII"
+    },
+    {
+      "id": "VN-PCCC-PC11",
+      "name": "PC11 PCCC 설계심사 신청",
+      "source": "Nghị định 347/2026/NĐ-CP"
+    },
+    {
+      "id": "VN-PCCC-PC12",
+      "name": "PC12 PCCC 설계심사 문서",
+      "source": "Nghị định 347/2026/NĐ-CP"
+    },
+    {
+      "id": "VN-PCCC-PC13",
+      "name": "PC13 PCCC 설계심사 문서",
+      "source": "Nghị định 347/2026/NĐ-CP"
+    },
+    {
+      "id": "VN-PCCC-PC14",
+      "name": "PC14 설계심사 확인도장",
+      "source": "Nghị định 347/2026/NĐ-CP"
+    },
+    {
+      "id": "VN-PCCC-PC18",
+      "name": "PC18 PCCC 자체검수 문서",
+      "source": "Nghị định 347/2026/NĐ-CP"
+    }
+  ],
+  "legal_required_fields_doul_layout": [
+    "FM-09",
+    "FM-10",
+    "FM-11"
+  ],
+  "statutory_lists": [
+    {
+      "id": "VN-ND207-VII",
+      "name": "Hồ sơ hoàn thành công trình(준공서류 목록)"
+    },
+    {
+      "id": "VN-ND207-X",
+      "name": "Hồ sơ phục vụ quản lý, sử dụng công trình(운영·사용 인수서류 목록)"
+    }
+  ]
+}
