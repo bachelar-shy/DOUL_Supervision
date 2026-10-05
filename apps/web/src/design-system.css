@@ -1,0 +1,265 @@
+/*
+ * DOUL Supervision UI Design System v1.0
+ * Presentation layer only. Domain/state/authority/API contracts remain authoritative.
+ */
+
+:root {
+  --doul-color-primary: #0b2e91;
+  --doul-color-primary-muted: #33518d;
+  --doul-color-primary-deep: #061b5c;
+  --doul-color-ink: #030213;
+  --doul-color-slate-900: #0f172a;
+  --doul-color-slate-700: #334155;
+  --doul-color-slate-600: #475569;
+  --doul-color-slate-500: #64748b;
+  --doul-color-slate-300: #cbd5e1;
+  --doul-color-line: #e2e8f0;
+  --doul-color-surface: #ffffff;
+  --doul-color-surface-alt: #f8fafc;
+  --doul-color-surface-tint: #f3f6fb;
+  --doul-color-success: #127a4a;
+  --doul-color-warning: #b45309;
+  --doul-color-danger: #d4183d;
+
+  --doul-space-1: 4px;
+  --doul-space-2: 8px;
+  --doul-space-3: 12px;
+  --doul-space-4: 16px;
+  --doul-space-6: 24px;
+  --doul-space-8: 32px;
+  --doul-space-12: 48px;
+  --doul-space-16: 64px;
+
+  --doul-radius-xs: 2px;
+  --doul-radius-sm: 4px;
+  --doul-radius-md: 6px;
+  --doul-radius-lg: 8px;
+  --doul-radius-full: 999px;
+
+  --doul-control-height: 40px;
+  --doul-control-height-touch: 44px;
+  --doul-table-row-min: 40px;
+  --doul-content-max: 1280px;
+  --doul-page-x: 32px;
+  --doul-page-x-mobile: 16px;
+
+  --doul-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Noto Sans KR", "Noto Sans", Arial, sans-serif;
+  --doul-font-data: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas,
+    monospace;
+
+  /* Backward-compatible aliases used by the current MVP stylesheet. */
+  --navy: var(--doul-color-primary);
+  --border: var(--doul-color-line);
+  --muted: var(--doul-color-slate-500);
+  --white: var(--doul-color-surface);
+
+  font-family: var(--doul-font-sans);
+  color: var(--doul-color-slate-900);
+  background: var(--doul-color-surface-alt);
+}
+
+body {
+  background: var(--doul-color-surface-alt);
+}
+
+h1,
+h2,
+h3,
+p,
+button,
+input,
+select,
+textarea {
+  letter-spacing: 0;
+}
+
+h1 {
+  color: var(--doul-color-ink);
+}
+
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--doul-color-primary);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: #dbe5ff;
+  color: var(--doul-color-primary-deep);
+}
+
+.main-shell main {
+  max-width: var(--doul-content-max);
+}
+
+.primary {
+  min-height: var(--doul-control-height);
+  border-radius: var(--doul-radius-sm);
+  background: var(--doul-color-primary);
+  border-color: var(--doul-color-primary);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--doul-color-primary-muted);
+  border-color: var(--doul-color-primary-muted);
+}
+
+.secondary {
+  min-height: var(--doul-control-height);
+  border-radius: var(--doul-radius-sm);
+  color: var(--doul-color-slate-900);
+  border-color: var(--doul-color-slate-300);
+  background: var(--doul-color-surface);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--doul-color-surface-alt);
+}
+
+.text-button {
+  color: var(--doul-color-primary);
+}
+
+.panel,
+.kpi,
+.modal,
+.preview-pane,
+.capture-drop {
+  border-color: var(--doul-color-line);
+}
+
+.panel,
+.kpi,
+.capture-drop {
+  border-radius: var(--doul-radius-lg);
+}
+
+.modal {
+  border-radius: var(--doul-radius-lg);
+}
+
+.sidebar nav button {
+  border-radius: var(--doul-radius-sm);
+}
+
+.sidebar nav button.active {
+  background: var(--doul-color-surface-tint);
+  color: var(--doul-color-primary);
+}
+
+.project-mark,
+.avatar,
+.text-button,
+.breadcrumbs b,
+.priority h2,
+.notice strong {
+  color: var(--doul-color-primary);
+}
+
+.badge {
+  border-radius: var(--doul-radius-full);
+  background: var(--doul-color-surface-alt);
+  color: var(--doul-color-slate-600);
+  border-color: var(--doul-color-line);
+}
+
+.badge.positive {
+  background: #eef8f2;
+  color: var(--doul-color-success);
+  border-color: #cfe9d9;
+}
+
+.badge.danger {
+  background: #fff0f3;
+  color: var(--doul-color-danger);
+  border-color: #f6cbd4;
+}
+
+.offline-bar,
+.gate-grid .warn {
+  color: var(--doul-color-warning);
+}
+
+.error-box {
+  color: #9f1239;
+  background: #fff1f2;
+  border-color: #fecdd3;
+}
+
+.kpi b,
+.snapshot-note,
+.technical pre,
+table [data-code],
+.data-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi {
+  padding: var(--doul-space-6);
+}
+
+.kpi > span,
+.section-heading > span,
+.eyebrow {
+  color: var(--doul-color-slate-500);
+}
+
+.table-scroll {
+  border: 1px solid var(--doul-color-line);
+  border-radius: var(--doul-radius-sm);
+  background: var(--doul-color-surface);
+}
+
+.table-scroll table {
+  margin: -1px 0 0;
+}
+
+.table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--doul-color-surface-alt);
+  color: var(--doul-color-slate-500);
+}
+
+.table-scroll th,
+.table-scroll td {
+  min-height: var(--doul-table-row-min);
+  border-color: var(--doul-color-line);
+}
+
+.table-scroll td {
+  color: var(--doul-color-slate-700);
+}
+
+input,
+select,
+textarea {
+  accent-color: var(--doul-color-primary);
+}
+
+@media (max-width: 720px) {
+  :root {
+    --doul-page-x: var(--doul-page-x-mobile);
+  }
+
+  .primary,
+  .secondary,
+  .icon-button,
+  .bottom-nav button {
+    min-height: var(--doul-control-height-touch);
+  }
+
+  .kpi {
+    padding: var(--doul-space-4);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .panel,
+  .kpi,
+  .table-scroll,
+  .secondary {
+    border-color: var(--doul-color-slate-500);
+  }
+}
