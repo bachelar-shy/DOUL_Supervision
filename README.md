@@ -35,6 +35,7 @@ PR #2 병합 커밋 `d13e744`의 계약·검증 엔진을 재사용한 반응형
 22. [사진·영상·발화 분석 상세정의](./20_Media_Analysis_Detailed_Definition.md)
 23. [발주처 보고·조치 종결 상세계약](./21_Owner_Report_Closure_Contract.md)
 24. [이슈 #1 해결 근거와 검증](./22_Issue_1_Resolution_Validation.md)
+25. [UI · 기능 병렬개발 경계](./25_UI_Function_Parallel_Development.md)
 
 ### 현재 상태
 

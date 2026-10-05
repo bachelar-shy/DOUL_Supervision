@@ -420,3 +420,9 @@ textarea {
     font-size: 24px;
   }
 }
+
+
+/* Parallel UI/function development boundary. Keeps semantic page wrappers layout-neutral. */
+.ui-page-boundary {
+  display: contents;
+}

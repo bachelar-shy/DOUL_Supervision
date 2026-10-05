@@ -9,11 +9,13 @@
   ],
   "scripts": {
     "web": "npm run dev --workspace apps/web",
+    "web:mock": "npm run dev --workspace apps/web -- --mode ui-mock",
     "web:build": "npm run build --workspace apps/web",
     "mobile": "npm run start --workspace apps/mobile",
     "typecheck": "npm run typecheck --workspace apps/web && npm run typecheck --workspace apps/mobile",
     "test:contracts": "python3 scripts/validate_contracts.py && python3 -m unittest discover -s tests -q",
-    "test:api": ".venv/bin/python -m unittest discover -s tests_mvp -v"
+    "test:api": ".venv/bin/python -m unittest discover -s tests_mvp -v",
+    "check:ui-boundary": "python3 scripts/check_ui_boundary.py"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0"
