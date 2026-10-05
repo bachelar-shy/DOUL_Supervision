@@ -15,6 +15,7 @@ import {
   CapturePage,
   CommandModal,
   DocumentPage,
+  RegisterPage,
   TodayPage,
   WorkbenchPage,
 } from "../pages";
@@ -259,7 +260,9 @@ export function AppShell({ client }: { client: SupervisionClient }) {
             description={
               safeRoute === "today"
                 ? "확인이 필요한 업무부터, 증빙과 함께."
-                : "현장 기록 · 승인 기준 · 조치 이력을 하나로 확인합니다."
+                : safeRoute === "registers"
+                  ? "29개 표준 관리대장을 업무 원본의 읽기 전용 Projection으로 조회합니다."
+                  : "현장 기록 · 승인 기준 · 조치 이력을 하나로 확인합니다."
             }
             actions={
               <>
@@ -356,6 +359,9 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   online={online}
                   refresh={refresh}
                 />
+              )}
+              {safeRoute === "registers" && (
+                <RegisterPage client={client} workspace={workspace} />
               )}
               {safeRoute === "admin" && (
                 <AdminPage client={client} workspace={workspace} />

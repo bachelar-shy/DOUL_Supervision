@@ -9,6 +9,7 @@ export const routes: readonly UiRoute[] = [
   { id: "actions", label: "시정조치", icon: "tool" },
   { id: "owner", label: "발주처 보고·결정", icon: "report" },
   { id: "documents", label: "문서 작성", icon: "document" },
+  { id: "registers", label: "관리대장", icon: "table" },
   { id: "rfis", label: "설계질의", icon: "layers" },
   { id: "admin", label: "배치·권한", icon: "users" },
 ];

@@ -23,6 +23,7 @@ for (const width of [390, 768, 1440]) {
       "observations",
       "issues",
       "documents",
+      "registers",
     ]) {
       await page.goto("/#/" + route);
       await expect(page.locator("h1")).toBeVisible();
@@ -63,6 +64,28 @@ test("DOUL component catalog is mounted on representative surfaces", async ({ pa
     .first()
     .click();
   await expect(page.locator('[data-ui-component="action-gate"]')).toBeVisible();
+
+  await page.goto("/#/registers");
+  await expect(page.locator('[data-ui-component="filter-bar"]')).toBeVisible();
+  await expect(page.locator('[data-ui-component="register-table"]')).toBeVisible();
+  await page.getByRole("button", { name: "보기", exact: true }).first().click();
+  await expect(page.locator('[data-ui-component="detail-drawer"]')).toBeVisible();
+});
+
+test("29 register projections support selection, filtering, and detail", async ({ page }) => {
+  await page.goto("/#/registers");
+  await expect(page.getByText("29개 표준 관리대장", { exact: true })).toBeVisible();
+  await expect(page.locator('[data-ui-component="register-table"] tbody tr')).not.toHaveCount(0);
+
+  await page.getByPlaceholder("제목, 상태, 위치, ID 검색").fill("경량벽체");
+  await expect(page.getByText("경량벽체 은폐 전 검측", { exact: true })).toBeVisible();
+
+  await page.getByRole("combobox", { name: "관리대장 선택" }).click();
+  await page.getByRole("option", { name: "04 · 도면·개정" }).click();
+  await expect(
+    page.getByRole("combobox", { name: "관리대장 선택" }),
+  ).toContainText("04 · 도면·개정");
+  await expect(page.getByText("도면 예시 A-201", { exact: true })).toBeVisible();
 });
 
 test("mobile interactive controls keep 44px touch targets", async ({ page }) => {
