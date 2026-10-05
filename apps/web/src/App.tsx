@@ -12,6 +12,23 @@ import type {
   RecordDTO,
 } from "@doul/client";
 import { roles, states, commands, fields, reasonLabel } from "./labels";
+import {
+  ActionButton,
+  EmptyState,
+  KpiCard,
+  PageHeader,
+  Panel,
+  SectionHeader,
+  StatusBadge,
+} from "./ui";
+import {
+  CaptureTemplate,
+  DashboardTemplate,
+  DocumentWorkspaceTemplate,
+  OwnerReportTemplate,
+  RegisterTemplate,
+  WorkbenchTemplate,
+} from "./ui/templates";
 import "./App.css";
 
 const api = new ApiClient("/api");
@@ -101,22 +118,6 @@ function title(r: RecordDTO) {
     String(
       r.metadata?.name || machineLabels[r.mediaType || ""] || r.id.slice(0, 8),
     )
-  );
-}
-function Badge({ status }: { status?: string }) {
-  return (
-    <span
-      className={
-        "badge " +
-        (["failed", "hold", "rework_required"].includes(status || "")
-          ? "danger"
-          : status === "passed" || status === "closed"
-            ? "positive"
-            : "")
-      }
-    >
-      {states[status || ""] || status || "원본 보존"}
-    </span>
   );
 }
 function refFor(item: WorkItem): DomainRef {
@@ -366,33 +367,35 @@ export default function App() {
           </div>
         )}
         <main>
-          <div className="page-heading">
-            <div>
-              <span className="eyebrow">{roles[role]} 작업공간</span>
-              <h1>{routes.find((x) => x[0] === safeRoute)?.[1]}</h1>
-              <p>
-                {safeRoute === "today"
-                  ? "확인이 필요한 업무부터, 증빙과 함께."
-                  : "현장 기록 · 승인 기준 · 조치 이력을 하나로 확인합니다."}
-              </p>
-            </div>
-            <div className="heading-actions">
-              <button
-                className="secondary"
-                onClick={() => void refresh()}
-                disabled={loading || !online}
-              >
-                <Icon name="refresh" />
-                새로고침
-              </button>
-              {role === "SUP" && (
-                <button className="primary" onClick={() => nav("capture")}>
-                  <Icon name="camera" />
-                  현장 촬영
-                </button>
-              )}
-            </div>
-          </div>
+          <PageHeader
+            eyebrow={roles[role] + " 작업공간"}
+            title={routes.find((x) => x[0] === safeRoute)?.[1]}
+            description={
+              safeRoute === "today"
+                ? "확인이 필요한 업무부터, 증빙과 함께."
+                : "현장 기록 · 승인 기준 · 조치 이력을 하나로 확인합니다."
+            }
+            actions={
+              <>
+                <ActionButton
+                  onClick={() => void refresh()}
+                  disabled={loading || !online}
+                >
+                  <Icon name="refresh" />
+                  새로고침
+                </ActionButton>
+                {role === "SUP" && (
+                  <ActionButton
+                    variant="primary"
+                    onClick={() => nav("capture")}
+                  >
+                    <Icon name="camera" />
+                    현장 촬영
+                  </ActionButton>
+                )}
+              </>
+            }
+          />
           {error && (
             <div role="alert" className="error-box">
               <strong>처리되지 않았습니다.</strong> {error}
@@ -406,15 +409,19 @@ export default function App() {
               프로젝트와 유효 권한을 불러오고 있습니다…
             </div>
           ) : !workspace ? (
-            <div className="empty">
-              <h2>개발 API에 연결할 수 없습니다.</h2>
-              <p>localhost:8791의 API를 먼저 실행하십시오.</p>
-              <button onClick={() => void refresh()}>다시 연결</button>
-            </div>
+            <EmptyState
+              title="개발 API에 연결할 수 없습니다."
+              description="localhost:8791의 API를 먼저 실행하십시오."
+              action={
+                <ActionButton onClick={() => void refresh()}>
+                  다시 연결
+                </ActionButton>
+              }
+            />
           ) : (
             <>
               {safeRoute === "today" && (
-                <>
+                <DashboardTemplate>
                   <div className="kpi-grid">
                     {[
                       [
@@ -456,36 +463,34 @@ export default function App() {
                         "owner",
                       ],
                     ].map(([label, value, to], i) => (
-                      <button
+                      <KpiCard
                         key={String(label)}
-                        className={"kpi kpi-" + i}
+                        label={label}
+                        value={value}
+                        className={"kpi-" + i}
                         onClick={() =>
                           allowed.includes(String(to)) && nav(String(to))
                         }
-                      >
-                        <span>{label}</span>
-                        <b>
-                          {value}
-                          <small>건</small>
-                        </b>
-                        <em>
-                          현재 조회 권한 기준 <Icon name="arrow" />
-                        </em>
-                      </button>
+                        meta={
+                          <>
+                            현재 조회 권한 기준 <Icon name="arrow" />
+                          </>
+                        }
+                      />
                     ))}
                   </div>
                   <div className="work-grid">
-                    <section className="panel">
-                      <div className="section-heading">
-                        <h2>
-                          {role === "OWN"
+                    <Panel>
+                      <SectionHeader
+                        title={
+                          role === "OWN"
                             ? "보고·결정 대기"
                             : role === "DES"
                               ? "설계질의 대기"
-                              : "우선 확인할 업무"}
-                        </h2>
-                        <span>현재 상태</span>
-                      </div>
+                              : "우선 확인할 업무"
+                        }
+                        meta="현재 상태"
+                      />
                       <RecordList
                         items={items.filter((x) =>
                           role === "OWN"
@@ -507,9 +512,9 @@ export default function App() {
                           setSelected(x.record.id);
                         }}
                       />
-                    </section>
+                    </Panel>
                     <div className="right-stack">
-                      <section className="panel priority">
+                      <Panel className="priority">
                         <span className="eyebrow">진행 전 확인</span>
                         <h2>
                           적합 판정과
@@ -528,12 +533,9 @@ export default function App() {
                         >
                           선행조건 확인 <Icon name="arrow" />
                         </button>
-                      </section>
-                      <section className="panel">
-                        <div className="section-heading">
-                          <h2>최근 처리 이력</h2>
-                          <span>서버 기록</span>
-                        </div>
+                      </Panel>
+                      <Panel>
+                        <SectionHeader title="최근 처리 이력" meta="서버 기록" />
                         <div className="timeline">
                           {workspace.audit
                             .slice(-5)
@@ -552,13 +554,18 @@ export default function App() {
                               </div>
                             ))}
                         </div>
-                      </section>
+                      </Panel>
                     </div>
                   </div>
-                </>
+                </DashboardTemplate>
               )}
-              {machineForRoute[safeRoute] && (
-                <div className={"workbench " + (current ? "has-detail" : "")}>
+              {machineForRoute[safeRoute] && (() => {
+                  const WorkbenchLayout =
+                    safeRoute === "owner"
+                      ? OwnerReportTemplate
+                      : WorkbenchTemplate;
+                  return (
+                    <WorkbenchLayout hasDetail={!!current}>
                   <section className="panel list-pane">
                     <div className="section-heading">
                       <h2>
@@ -603,7 +610,11 @@ export default function App() {
                             {machineLabels[current.machine]} ·{" "}
                             {current.record.id.slice(0, 8)}
                           </span>
-                          <Badge status={current.record.status} />
+                          <StatusBadge status={current.record.status}>
+                            {states[current.record.status || ""] ||
+                              current.record.status ||
+                              "원본 보존"}
+                          </StatusBadge>
                         </div>
                         <h2 className="detail-title">
                           {title(current.record)}
@@ -779,15 +790,16 @@ export default function App() {
                         </details>
                       </>
                     ) : (
-                      <div className="empty">
-                        <Icon name="check" />
-                        <h2>확인할 업무를 선택하십시오.</h2>
-                        <p>목록과 원본, 허용된 동작을 함께 확인합니다.</p>
-                      </div>
+                      <EmptyState
+                        title="확인할 업무를 선택하십시오."
+                        description="목록과 원본, 허용된 동작을 함께 확인합니다."
+                        action={<Icon name="check" />}
+                      />
                     )}
                   </section>
-                </div>
-              )}
+                    </WorkbenchLayout>
+                  );
+                })()}
               {safeRoute === "capture" && (
                 <Capture
                   workspace={workspace}
@@ -897,7 +909,11 @@ function RecordList({
                   {machineLabels[x.machine] || x.machine} ·{" "}
                   {x.record.id.slice(0, 6)}
                 </small>
-                <Badge status={x.record.status} />
+                <StatusBadge status={x.record.status}>
+                  {states[x.record.status || ""] ||
+                    x.record.status ||
+                    "원본 보존"}
+                </StatusBadge>
               </div>
               <strong>{title(x.record)}</strong>
               <span>
@@ -1271,7 +1287,7 @@ function Capture({
     }
   }
   return (
-    <div className="work-grid">
+    <CaptureTemplate>
       <section className="panel">
         <div className="section-heading">
           <h2>현장 기록 가져오기</h2>
@@ -1377,7 +1393,7 @@ function Capture({
           </button>
         </section>
       </div>
-    </div>
+    </CaptureTemplate>
   );
 }
 function putPath(
@@ -1458,7 +1474,7 @@ function DocumentEditor({
     }
   }
   return (
-    <div className="document-workbench">
+    <DocumentWorkspaceTemplate>
       <section className="panel editor-pane">
         <h2>데이터 연결 문서</h2>
         <label>
@@ -1570,7 +1586,7 @@ function DocumentEditor({
           </small>
         )}
       </section>
-    </div>
+    </DocumentWorkspaceTemplate>
   );
 }
 function AdminPanel({ workspace }: { workspace: Workspace }) {
@@ -1582,15 +1598,17 @@ function AdminPanel({ workspace }: { workspace: Workspace }) {
       .catch(() => setRows([]));
   }, [workspace]);
   return (
-    <section className="panel">
-      <div className="section-heading">
-        <h2>프로젝트 역할배정</h2>
-        <span>현재 조회 전용</span>
-      </div>
-      <div className="notice">
-        관리자 계정은 기술승인·법정서명 권한을 자동으로 갖지 않습니다.
-        시험기관·외부검토기관은 자료 출처만 보존하고 로그인 대상에서 제외합니다.
-      </div>
+    <RegisterTemplate
+      header={
+        <SectionHeader title="프로젝트 역할배정" meta="현재 조회 전용" />
+      }
+      notice={
+        <div className="notice">
+          관리자 계정은 기술승인·법정서명 권한을 자동으로 갖지 않습니다.
+          시험기관·외부검토기관은 자료 출처만 보존하고 로그인 대상에서 제외합니다.
+        </div>
+      }
+    >
       <div className="table-scroll">
         <table>
           <thead>
@@ -1615,6 +1633,6 @@ function AdminPanel({ workspace }: { workspace: Workspace }) {
           </tbody>
         </table>
       </div>
-    </section>
+    </RegisterTemplate>
   );
 }

@@ -210,7 +210,7 @@ Stitch 결과는 다음 순서로 코드화한다.
 
 ## 10. 적용 단계
 
-### v1.0 — 이번 적용
+### v1.0 — 완료
 
 - 공식 토큰 작성
 - 기존 MVP CSS와 호환되는 디자인 시스템 계층 추가
@@ -218,11 +218,19 @@ Stitch 결과는 다음 순서로 코드화한다.
 - 테이블 sticky header, focus, 상태색, 밀도 기준 정규화
 - Stitch와 코드의 역할 분리 명문화
 
-### v1.1
+### v1.1 — 완료
 
-- 기존 `App.tsx`의 반복 UI를 공통 컴포넌트로 실제 치환
-- Register / Workbench / Report / Capture 템플릿 컴포넌트화
-- 29개 관리대장 화면 생성 규칙 연결
+- `App.tsx`의 PageHeader / Button / KPI / Panel / SectionHeader / StatusBadge / EmptyState를 공통 컴포넌트로 치환
+- `DashboardTemplate`, `WorkbenchTemplate`, `OwnerReportTemplate`, `RegisterTemplate`, `CaptureTemplate`, `DocumentWorkspaceTemplate` 적용
+- 발주처 보고·결정 화면은 Owner Report 전용 템플릿으로 분리
+- 관리형 표 화면은 Register Template으로 통일
+- 프리뷰용 Vite proxy가 외부 브라우저의 Origin을 개발 API 허용 Origin으로 정규화하도록 수정
+- 390 / 768 / 1440px 반응형 브라우저 시험 및 업무흐름 회귀시험 통과
+
+### v1.2
+
+- 29개 관리대장 각각을 Register Template과 Projection Map에 자동 연결
+- 컴포넌트 카탈로그 및 시각 회귀 스냅샷 추가
 
 ### v1.2
 
