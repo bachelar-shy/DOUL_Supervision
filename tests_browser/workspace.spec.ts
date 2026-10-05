@@ -1,6 +1,13 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
+
+async function expectTouchTarget(locator: Locator) {
+  const box = await locator.boundingBox();
+  expect(box, "interactive control should have a rendered hit area").not.toBeNull();
+  expect(box?.width ?? 0).toBeGreaterThanOrEqual(43.5);
+  expect(box?.height ?? 0).toBeGreaterThanOrEqual(43.5);
+}
 
 for (const width of [390, 768, 1440]) {
   test(`responsive workspace ${width}`, async ({ page }) => {
@@ -38,6 +45,92 @@ for (const width of [390, 768, 1440]) {
     });
   });
 }
+
+test("mobile interactive controls keep 44px touch targets", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 840 });
+  await page.goto("/#/inspections");
+  await expect(page.locator("h1")).toBeVisible();
+
+  await expectTouchTarget(
+    page.getByRole("button", { name: "현장 촬영", exact: true }),
+  );
+  await expectTouchTarget(
+    page.getByRole("button", { name: "메뉴 열기", exact: true }),
+  );
+  await expectTouchTarget(
+    page.getByRole("combobox", { name: "개발 역할 선택" }),
+  );
+  await expectTouchTarget(page.locator(".bottom-nav button").first());
+
+  await page
+    .getByRole("button")
+    .filter({ hasText: "경량벽체 은폐 전 검측" })
+    .first()
+    .click();
+  await page
+    .locator(".detail-pane")
+    .getByRole("button", { name: "시작", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expectTouchTarget(
+    dialog.getByRole("button", { name: "대화상자 닫기", exact: true }),
+  );
+  await dialog
+    .getByRole("button", { name: "대화상자 닫기", exact: true })
+    .click();
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth + 1,
+      ),
+    )
+    .toBeTruthy();
+});
+
+test("register table header remains visible during long internal scroll", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await page
+    .getByRole("combobox", { name: "개발 역할 선택" })
+    .selectOption("ADM");
+  await page.waitForResponse((response) =>
+    response.url().endsWith("/workspace") && response.ok(),
+  );
+  await page.goto("/#/admin");
+  const tableScroll = page.locator(".template-register .table-scroll");
+  await expect(tableScroll).toBeVisible();
+
+  await page.locator(".template-register tbody").evaluate((tbody) => {
+    const row = tbody.children[0];
+    if (!row) throw new Error("Expected at least one register row");
+    for (let i = 0; i < 100; i += 1) {
+      tbody.append(row.cloneNode(true));
+    }
+  });
+
+  await expect
+    .poll(() => tableScroll.evaluate((element) => element.scrollHeight > element.clientHeight))
+    .toBeTruthy();
+
+  await tableScroll.evaluate((element) => {
+    element.scrollTop = Math.min(600, element.scrollHeight - element.clientHeight);
+    element.dispatchEvent(new Event("scroll"));
+  });
+
+  const positions = await page.evaluate(() => ({
+    containerTop: document
+      .querySelector(".template-register .table-scroll")!
+      .getBoundingClientRect().top,
+    headerTop: document
+      .querySelector(".template-register thead th")!
+      .getBoundingClientRect().top,
+  }));
+  expect(Math.abs(positions.headerTop - positions.containerTop)).toBeLessThanOrEqual(2);
+});
 
 test("server command starts a scheduled inspection", async ({
   page,
