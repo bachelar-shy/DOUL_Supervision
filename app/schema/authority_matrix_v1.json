@@ -714,7 +714,7 @@
       "role_codes": [],
       "qualification_required": false,
       "official": true,
-      "contractor_organization_scope": false,
+      "contractor_organization_scope": true,
       "discipline_scope_required": true,
       "package_scope_required": true,
       "location_scope_required": true

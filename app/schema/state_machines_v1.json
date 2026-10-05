@@ -1,5 +1,5 @@
 {
-  "version": "2.0",
+  "version": "2.2",
   "schema_version": "command-transition/1",
   "compatibility": "Filename retained; v1 tuple transitions are superseded.",
   "common_guards": [
@@ -145,7 +145,11 @@
           "required_evidence": true,
           "payload_fields": [
             "requestedAt",
-            "requestedInspectionAt"
+            "requestedInspectionAt",
+            "selfInspectionComplete",
+            "precheck",
+            "requirementRefs",
+            "drawingRef"
           ],
           "failure_reasons": [
             "NOT_AUTHORIZED",
@@ -166,9 +170,7 @@
           "guards": [
             "assignment_authorized",
             "expected_version_matches",
-            "requirement_versions_current",
             "evidence_provenance_valid",
-            "drawing_revision_current",
             "upstream_hold_points_released"
           ],
           "required_evidence": false,
@@ -193,9 +195,7 @@
           "guards": [
             "assignment_authorized",
             "expected_version_matches",
-            "requirement_versions_current",
             "evidence_provenance_valid",
-            "drawing_revision_current",
             "upstream_hold_points_released",
             "reason_present"
           ],
@@ -231,7 +231,11 @@
           "required_evidence": true,
           "payload_fields": [
             "requestedAt",
-            "requestedInspectionAt"
+            "requestedInspectionAt",
+            "selfInspectionComplete",
+            "precheck",
+            "requirementRefs",
+            "drawingRef"
           ],
           "failure_reasons": [
             "NOT_AUTHORIZED",
@@ -1087,7 +1091,8 @@
             "requirement_versions_current",
             "evidence_provenance_valid",
             "drawing_revision_current",
-            "upstream_hold_points_released"
+            "upstream_hold_points_released",
+            "rfi_package_complete"
           ],
           "required_evidence": false,
           "payload_fields": [
@@ -1101,9 +1106,16 @@
             "REQUIREMENT_STALE",
             "EVIDENCE_INVALID",
             "DRAWING_STALE",
-            "HOLD_NOT_RELEASED"
+            "HOLD_NOT_RELEASED",
+            "COMMAND_FIELD_REQUIRED",
+            "RFI_PACKAGE_COMPLETE"
           ],
-          "audit_event": true
+          "audit_event": true,
+          "required_payload_fields": [
+            "question",
+            "references",
+            "dueAt"
+          ]
         },
         {
           "from": "submitted",
@@ -1170,12 +1182,14 @@
             "requirement_versions_current",
             "evidence_provenance_valid",
             "drawing_revision_current",
-            "upstream_hold_points_released"
+            "upstream_hold_points_released",
+            "rfi_package_complete"
           ],
           "required_evidence": false,
           "payload_fields": [
             "question",
-            "references"
+            "references",
+            "dueAt"
           ],
           "failure_reasons": [
             "NOT_AUTHORIZED",
@@ -1183,9 +1197,16 @@
             "REQUIREMENT_STALE",
             "EVIDENCE_INVALID",
             "DRAWING_STALE",
-            "HOLD_NOT_RELEASED"
+            "HOLD_NOT_RELEASED",
+            "COMMAND_FIELD_REQUIRED",
+            "RFI_PACKAGE_COMPLETE"
           ],
-          "audit_event": true
+          "audit_event": true,
+          "required_payload_fields": [
+            "question",
+            "references",
+            "dueAt"
+          ]
         },
         {
           "from": "supervisor_review",

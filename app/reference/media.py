@@ -22,13 +22,16 @@ def validate_analysis_outputs(run, sources):
     coverage=run.get('coverage',{}).get('sources')
     require(isinstance(coverage,list) and len(coverage)==len(sources),'COVERAGE_INVALID','Coverage is required separately for every source')
     require({c.get('sourceEvidenceId') for c in coverage}==set(originals),'COVERAGE_INVALID','No missing or duplicate source coverage')
-    frames={eid:[] for eid in originals}
+    frames={eid:[] for eid in originals};photo_results={eid:[] for eid in originals}
     for output in run.get('outputs',[]):
         require(output.get('sourceEvidenceId') in originals,'ANALYSIS_SOURCE_MISMATCH','Output must cite an original source')
         source=originals[output['sourceEvidenceId']];duration=source.get('durationMs',0)
         require(output.get('analysisRunId')==run['id'],'DERIVED_RUN_INVALID','Output cites this run')
         require(not set(output)&{'officialStatus','approved','nextWorkAllowed','closedBy'},'NONHUMAN_OFFICIAL_DENIED','Worker output cannot carry official workflow writes')
         kind=output.get('kind')
+        if source['mediaType']=='photo' and kind=='candidate':
+            require(any(g.get('evidenceId')==source['id'] and g.get('channel')=='visual' for g in output.get('grounding',[])), 'ANALYSIS_SOURCE_MISMATCH','Photo candidate must ground its own original photo')
+            photo_results[source['id']].append(output)
         if kind=='frame':
             index,pts=output.get('frameIndex'),output.get('ptsMs')
             require(type(index) is int and 0<=index<source.get('frameCount',0),'FRAME_INVALID','Frame outside decoded manifest')
@@ -37,6 +40,9 @@ def validate_analysis_outputs(run, sources):
             manifest=source.get('metadata',{}).get('framePtsMs',[])
             if manifest:require(len(manifest)==source['frameCount'] and manifest[index]==pts,'FRAME_INVALID','VFR PTS must match the decoder manifest')
             frames[source['id']].append(index)
+        elif kind=='photo_result':
+            require(source['mediaType']=='photo' and output.get('modelVersion')==run['model']['version'] and output.get('outcome')=='no_findings' and isinstance(output.get('summary'),str) and bool(output['summary'].strip()), 'PHOTO_RESULT_INVALID','No-findings result requires original photo, model version and review summary')
+            photo_results[source['id']].append(output)
         elif kind=='transcript':
             range_valid(output,duration)
             require(all(isinstance(output.get(k),str) and output[k].strip() for k in ['segmentId','speakerLabel','originalLanguage','originalText']), 'TRANSCRIPT_INVALID','Original text/language, global range and provisional speaker are required')
@@ -66,4 +72,5 @@ def validate_analysis_outputs(run, sources):
         elif source['mediaType']=='audio' and c['complete']:
             require(covers(c['audioProcessedRanges'],duration) and not c['missingRanges'],'COVERAGE_OVERCLAIM','Full audio coverage requires no unprocessed time ranges')
         elif source['mediaType']=='photo' and c['complete']:
-            require(bool(run.get('outputs')) and not c['missingRanges'],'COVERAGE_OVERCLAIM','Photo result cannot be absent')
+            require(bool(photo_results[source['id']]) and not c['missingRanges'],'COVERAGE_OVERCLAIM','Each complete photo needs its own candidate or explicit no-findings result')
+            require(not (any(o['kind']=='candidate' for o in photo_results[source['id']]) and any(o['kind']=='photo_result' for o in photo_results[source['id']])), 'PHOTO_RESULT_INVALID','Photo cannot claim no findings and emit a finding candidate')

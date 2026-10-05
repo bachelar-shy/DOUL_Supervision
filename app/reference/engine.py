@@ -143,16 +143,35 @@ class Engine:
         require(bool(eligible), 'QUALIFICATION_INVALID', 'Verified, current qualification in required discipline/rank is required')
         return eligible
 
-    def _common(self, record, role):
+    def authorize_read(self, record, party_id, role_id):
+        """Apply the same visibility rules to records and frozen document sources."""
+        if record.get('formId'):
+            role=self.get('RoleAssignment',role_id)
+            sources=record['sourcePayload']['sources']
+            require(bool(sources),'NOT_FOUND','Document has no readable source')
+            for source in sources:
+                require(source['record']['projectId']==record['projectId'],'PROJECT_MISMATCH','Document source project mismatch')
+                role=self.authorize_read(source['record'],party_id,role_id)
+            return role
+        role=self.authorize(record,'render_document',party_id,role_id)
+        if record.get('subtype')=='Report':
+            require(role['actorGroup'] in ['SUP','ADM'] or record['status'] not in ['draft','review'], 'NOT_FOUND','Internal report unavailable')
+            if role['actorGroup']=='OWN':
+                require(party_id in record['report']['recipients'],'NOT_FOUND','Report unavailable to this recipient')
+        if record.get('source') in ['ai','supervisor'] and record.get('status') in ['candidate','under_review']:
+            require(role['actorGroup'] in ['SUP','ADM'],'NOT_FOUND','Internal observation unavailable')
+        return role
+
+    def _common(self, record, role, *, allow_stale_baseline=False):
         requirements = record.get('requirementRefs', [])
         for check in record.get('checkResults', []):
             require(check['requirementRef'] in requirements, 'REQUIREMENT_STALE', 'Check must use the inspection baseline')
-        for reference in requirements:
+        for reference in ([] if allow_stale_baseline else requirements):
             r = self.resolve(reference, record['projectId'])
             current = self.get('Requirement', r['id'])
             require(reference['objectType']=='Requirement' and current['version']==reference['version'] and r['status']=='active', 'REQUIREMENT_STALE', r['id'])
             require(instant(r['effectiveFrom']) <= instant(self.at()) and ('effectiveTo' not in r or instant(self.at()) < instant(r['effectiveTo'])), 'REQUIREMENT_STALE', 'Requirement outside effective period')
-        if record.get('drawingRef'):
+        if record.get('drawingRef') and not allow_stale_baseline:
             drawing = self.resolve(record['drawingRef'],record['projectId'])
             current = self.get('InformationItem',drawing['id'])
             require(drawing.get('subtype')=='Drawing' and drawing.get('status')=='approved' and current['version']==drawing['version'], 'DRAWING_STALE', drawing['id'])
@@ -198,7 +217,7 @@ class Engine:
             require(bool(record.get('requirementRefs')) and bool(record.get('drawingRef')), 'INSPECTION_PACKAGE_COMPLETE', 'Inspection needs a requirement baseline and drawing')
             if record.get('relatedIssueId'):
                 issue=self.get('Issue',record['relatedIssueId'])
-                require(issue['projectId']==project_id and record.get('correctionCycle')==issue['correctionCycle'] and record.get('previousInspectionId') in issue['inspectionIds'], 'REINSPECTION_CYCLE_INVALID', 'Reinspection must link the same issue/cycle and preceding inspection')
+                self._verification_link(record,issue)
         if machine=='issue':
             require(record['correctionCycle']==0 and not set(record)&{'closedBy','closureEvidenceIds'}, 'IMMUTABLE_FIELD', 'Issue starts in correction cycle zero')
             require(bool(record['observationIds']), 'OBSERVATION_REQUIRED', 'Official issue needs a verified observation')
@@ -242,6 +261,7 @@ class Engine:
         require(len(options)==1,'TRANSITION_INVALID',f'{machine}/{record["status"]}/{command}')
         transition=options[0]
         require(not set(payload)-set(transition['payload_fields']),'COMMAND_FIELD_INVALID','Only command-specific fields are writable')
+        require(set(transition.get('required_payload_fields',[]))<=set(payload),'COMMAND_FIELD_REQUIRED','Required command fields are missing')
         proposed=deepcopy(record)
         target=proposed.setdefault('data',{}) if kind=='WorkItem' else proposed['report'] if machine=='report' else proposed
         for field,value in payload.items():
@@ -253,7 +273,7 @@ class Engine:
         proposed['evidenceIds']=list(dict.fromkeys(proposed.get('evidenceIds',[])+evidence_ids))
         validate(proposed,self.schemas[kind],self.schemas)
         role=self.authorize(proposed,transition['authority'],party_id,role_id)
-        self._common(proposed,role)
+        self._common(proposed,role,allow_stale_baseline=machine=='inspection' and command in ['receive','return'])
         if transition['required_evidence']:
             require(bool(proposed.get('evidenceIds')),'EVIDENCE_REQUIRED','Transition requires preserved evidence')
         for guard in transition['guards']:
@@ -343,6 +363,7 @@ class Engine:
             'action_issue_match':self._action_issue_match,
             'current_actions_verified':self._current_actions_verified,
             'decision_package_complete':self._decision_package_complete,
+            'rfi_package_complete':self._rfi_package_complete,
         }
         if name in checks:checks[name](r)
         else:
@@ -398,9 +419,12 @@ class Engine:
     def _signed_doc(self, inspection, expected_result):
         candidates=list(getattr(self,'documents',{}).values())
         if inspection.get('acceptanceDocumentId'):candidates=[d for d in candidates if d['id']==inspection['acceptanceDocumentId']]
-        doc=next((d for d in candidates if d['formId']=='FM-09' and d['status']=='signed' and dict(objectType='Inspection',objectId=inspection['id'],version=inspection['version']) in d['sourceDomainRefs']),None)
+        subject=dict(objectType='Inspection',objectId=inspection['id'],version=inspection['version'])
+        doc=next((d for d in candidates if d['formId']=='FM-09' and d['status']=='signed' and d.get('primarySourceRef')==subject),None)
         require(doc and doc['projectId']==inspection['projectId'] and doc['status']=='signed','ACCEPTANCE_SIGNED','All required acceptance signatures must be present')
-        require(doc['formId']=='FM-09' and any(x['objectType']=='Inspection' and x['objectId']==inspection['id'] and x['version']==inspection['version'] for x in doc['sourceDomainRefs']),'ACCEPTANCE_VERSION_MISMATCH','Acceptance signs this exact inspection result version')
+        require([x for x in doc['sourceDomainRefs'] if x['objectType']=='Inspection']==[subject], 'ACCEPTANCE_VERSION_MISMATCH','Acceptance has exactly one inspection subject at the result version')
+        data=doc['sourcePayload']['data']
+        require(data['inspection']['no']==inspection['id'] and data['result']['status']==expected_result,'ACCEPTANCE_VERSION_MISMATCH','Signed result must identify this inspection')
         require(inspection.get('resultStatus')==expected_result,'INSPECTION_RESULT_MISMATCH','Acceptance must match preserved result')
 
     def _acceptance_signed(self,r):self._signed_doc(r,'pass')
@@ -438,7 +462,23 @@ class Engine:
 
     def _new_reinspection_linked(self,r):
         inspection=self._latest_reinspection(r)
-        require(inspection.get('previousInspectionId') and inspection['id']!=inspection['previousInspectionId'],'NEW_REINSPECTION_LINKED','New inspection, not overwritten original')
+        prior={**r,'inspectionIds':[i for i in r['inspectionIds'] if i!=inspection['id']]}
+        self._verification_link(inspection,prior)
+
+    def _verification_link(self, inspection, issue):
+        require(inspection['projectId']==issue['projectId'] and inspection.get('correctionCycle')==issue['correctionCycle'], 'REINSPECTION_CYCLE_INVALID','Verification must use the same issue and correction cycle')
+        require(all(inspection.get(f)==issue.get(f) for f in ['packageId','locationId','discipline','responsibleOrganizationId']), 'REINSPECTION_CYCLE_INVALID','Verification must use the issue work scope')
+        previous=inspection.get('previousInspectionId')
+        if not issue['inspectionIds']:
+            require(issue['correctionCycle']==0 and previous is None,'REINSPECTION_CYCLE_INVALID','First verification has no invented predecessor')
+            return
+        require(previous==issue['inspectionIds'][-1] and previous!=inspection['id'],'REINSPECTION_CYCLE_INVALID','Reinspection must retain the immediately preceding inspection')
+        original=self.get('Inspection',previous)
+        require(original['projectId']==issue['projectId'] and all(original.get(f)==issue.get(f) for f in ['packageId','locationId','discipline','responsibleOrganizationId']) and original.get('relatedIssueId',issue['id'])==issue['id'], 'REINSPECTION_CYCLE_INVALID','Preceding inspection must belong to this issue work scope')
+
+    def _rfi_package_complete(self,r):
+        require(bool(r.get('question','').strip()) and bool(r.get('references')) and bool(r.get('dueAt')), 'RFI_PACKAGE_COMPLETE','RFI requires a question, source references and response deadline')
+        for reference in r['references']:self.resolve(reference,r['projectId'])
 
     def _reinspection_passed(self,r):
         inspection=self._latest_reinspection(r)
@@ -543,11 +583,8 @@ class Engine:
         output=[];visible={}
         for (kind,oid),record in self._records.items():
             try:
-                if kind=='DocumentSnapshot':
-                    for source in record['sourcePayload']['sources']:self.authorize(source['record'],'render_document',party_id,role_id)
-                else:self.authorize(record,'render_document',party_id,role_id)
+                self.authorize_read(record,party_id,role_id)
             except ContractError:continue
-            if kind=='InformationItem' and record.get('subtype')=='Report' and record.get('status') in ['draft','review'] and self.get('RoleAssignment',role_id)['actorGroup'] in ['CON','OWN','DES']:continue
             visible[(kind,oid)]=record
         for (kind,oid),record in visible.items():
             if not any(s['object_type']==kind and (s['subtype'] is None or record.get('subtype',record.get('kind'))==s['subtype']) for s in projection['sources']):continue

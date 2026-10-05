@@ -54,4 +54,20 @@ class DocumentHTTPTests(unittest.TestCase):
     def test_cross_project_render_reference_denied(self):
         self.body['sourceDomainRefs'][0]['objectId']=uid();self.assertEqual(self.preview().status_code,404)
 
+    def test_owner_cannot_read_or_render_snapshot_of_draft_report(self):
+        store=self.app.state.store
+        with store.transaction(True):
+            draft=store.engine.create('report',uid(),self.project,dict(**store.meta['scope'],title='Internal draft',revision='1',report=self.report['report']),self.s['actor']['partyId'],self.role,uid())['record']
+        self.body['sourceDomainRefs']=[dict(objectType='InformationItem',objectId=draft['id'],version=draft['version'])]
+        d=self.preview().json()
+        owner=self.client.post('/dev/sessions',json={'actorGroup':'OWN'}).json()
+        h={'Authorization':'Bearer '+owner['accessToken'],'X-RoleAssignment-Id':owner['actor']['roleAssignmentId'],'Idempotency-Key':uid()}
+        for path in ['/documents/'+d['id'],'/documents/'+d['id']+'/content','/owner-reports/'+draft['id']]:
+            self.assertEqual(self.client.get('/projects/'+self.project+path,headers=h).status_code,404)
+        rows=self.client.get('/projects/'+self.project+'/registers/11',headers=h).json()
+        self.assertFalse(any(row['data']['id']==d['id'] for row in rows))
+        body={**self.body,'roleAssignmentId':owner['actor']['roleAssignmentId']}
+        r=self.client.post('/projects/'+self.project+'/forms/FM-20/preview',headers=h,json=body)
+        self.assertEqual(r.status_code,404)
+
 if __name__=='__main__':unittest.main()

@@ -1,5 +1,5 @@
 {
-  "version": "2.1",
+  "version": "2.2",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "components": {
     "schemas": {
@@ -2135,13 +2135,16 @@
         "type": "object",
         "properties": {
           "question": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "references": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DomainRef"
-            }
+            },
+            "minItems": 1
           },
           "responsiblePartyId": {
             "type": "string",
@@ -2914,6 +2917,9 @@
           "version": {
             "type": "integer",
             "minimum": 1
+          },
+          "primarySourceRef": {
+            "$ref": "#/components/schemas/DomainRef"
           }
         },
         "required": [
@@ -2930,7 +2936,8 @@
           "renderedAt",
           "status",
           "signatureIds",
-          "version"
+          "version",
+          "primarySourceRef"
         ],
         "additionalProperties": false
       },

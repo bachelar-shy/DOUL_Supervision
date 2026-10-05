@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "DOUL Supervision Domain Command API",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "description": "Project-scoped contract. Executable in-memory reference covers workflow; HTTP/DB/auth/media/DOCX/PDF adapters are implementation work."
   },
   "security": [
@@ -11890,13 +11890,16 @@
         "type": "object",
         "properties": {
           "question": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "references": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DomainRef"
-            }
+            },
+            "minItems": 1
           },
           "responsiblePartyId": {
             "type": "string",
@@ -12669,6 +12672,9 @@
           "version": {
             "type": "integer",
             "minimum": 1
+          },
+          "primarySourceRef": {
+            "$ref": "#/components/schemas/DomainRef"
           }
         },
         "required": [
@@ -12685,7 +12691,8 @@
           "renderedAt",
           "status",
           "signatureIds",
-          "version"
+          "version",
+          "primarySourceRef"
         ],
         "additionalProperties": false
       },
@@ -13598,6 +13605,37 @@
               "payload": {
                 "type": "object",
                 "properties": {
+                  "drawingRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "precheck": {
+                    "type": "object",
+                    "properties": {
+                      "drawing": {
+                        "type": "boolean"
+                      },
+                      "material": {
+                        "type": "boolean"
+                      },
+                      "test": {
+                        "type": "boolean"
+                      },
+                      "previous": {
+                        "type": "boolean"
+                      },
+                      "change": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "drawing",
+                      "material",
+                      "test",
+                      "previous",
+                      "change"
+                    ],
+                    "additionalProperties": false
+                  },
                   "requestedAt": {
                     "type": "string",
                     "format": "date-time"
@@ -13605,6 +13643,15 @@
                   "requestedInspectionAt": {
                     "type": "string",
                     "format": "date-time"
+                  },
+                  "requirementRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "selfInspectionComplete": {
+                    "type": "boolean"
                   }
                 },
                 "additionalProperties": false
@@ -13667,6 +13714,37 @@
               "payload": {
                 "type": "object",
                 "properties": {
+                  "drawingRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "precheck": {
+                    "type": "object",
+                    "properties": {
+                      "drawing": {
+                        "type": "boolean"
+                      },
+                      "material": {
+                        "type": "boolean"
+                      },
+                      "test": {
+                        "type": "boolean"
+                      },
+                      "previous": {
+                        "type": "boolean"
+                      },
+                      "change": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "drawing",
+                      "material",
+                      "test",
+                      "previous",
+                      "change"
+                    ],
+                    "additionalProperties": false
+                  },
                   "requestedAt": {
                     "type": "string",
                     "format": "date-time"
@@ -13674,6 +13752,15 @@
                   "requestedInspectionAt": {
                     "type": "string",
                     "format": "date-time"
+                  },
+                  "requirementRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "selfInspectionComplete": {
+                    "type": "boolean"
                   }
                 },
                 "additionalProperties": false
@@ -14424,16 +14511,24 @@
                     "format": "date-time"
                   },
                   "question": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "\\S"
                   },
                   "references": {
                     "type": "array",
                     "items": {
                       "$ref": "#/components/schemas/DomainRef"
-                    }
+                    },
+                    "minItems": 1
                   }
                 },
-                "additionalProperties": false
+                "additionalProperties": false,
+                "required": [
+                  "dueAt",
+                  "question",
+                  "references"
+                ]
               }
             }
           }
@@ -14488,17 +14583,29 @@
               "payload": {
                 "type": "object",
                 "properties": {
+                  "dueAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
                   "question": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "\\S"
                   },
                   "references": {
                     "type": "array",
                     "items": {
                       "$ref": "#/components/schemas/DomainRef"
-                    }
+                    },
+                    "minItems": 1
                   }
                 },
-                "additionalProperties": false
+                "additionalProperties": false,
+                "required": [
+                  "dueAt",
+                  "question",
+                  "references"
+                ]
               }
             }
           }
@@ -14544,7 +14651,8 @@
                     "type": "array",
                     "items": {
                       "$ref": "#/components/schemas/DomainRef"
-                    }
+                    },
+                    "minItems": 1
                   },
                   "response": {
                     "type": "string"
