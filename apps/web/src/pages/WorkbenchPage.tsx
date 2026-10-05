@@ -6,6 +6,7 @@ import type {
 } from "../data/ui-contract";
 import { commands, reasonLabel, states } from "../labels";
 import { EmptyState, StatusBadge } from "../ui";
+import { ActionGate, DetailPane } from "../ui/catalog";
 import { OwnerReportTemplate, WorkbenchTemplate } from "../ui/templates";
 import { machineForRoute, machineLabels, routes } from "../app/routes";
 import { PageBoundary } from "./PageBoundary";
@@ -66,7 +67,7 @@ export function WorkbenchPage({
             onSelect={(item) => onSelect(item.record.id)}
           />
         </section>
-        <section className="panel detail-pane">
+        <DetailPane>
           {current ? (
             <>
               <button
@@ -198,35 +199,24 @@ export function WorkbenchPage({
               )}
 
               <h3 className="subheading">현재 가능한 업무</h3>
-              <div className="command-grid">
-                {current.actions.map((action) => (
-                  <div key={action.command} className="command-option">
-                    <button
-                      className={
-                        ["close", "pass", "issue", "decide"].includes(
-                          action.command,
-                        )
-                          ? "primary"
-                          : "secondary"
-                      }
-                      disabled={
-                        !online || (!action.ready && !action.requiresInput)
-                      }
-                      onClick={() => onOpenCommand(current, action)}
-                    >
-                      {commands[action.command] || action.command}
-                    </button>
-                    {action.blockedReason && !action.requiresInput && (
-                      <small>{reasonLabel(action.blockedReason.code)}</small>
-                    )}
-                    {action.requiresInput && (
-                      <small>
-                        입력 후 서버에서 선행조건을 다시 확인합니다.
-                      </small>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <ActionGate
+                actions={current.actions.map((action) => ({
+                  id: action.command,
+                  label: commands[action.command] || action.command,
+                  primary: ["close", "pass", "issue", "decide"].includes(
+                    action.command,
+                  ),
+                  disabled:
+                    !online || (!action.ready && !action.requiresInput),
+                  reason:
+                    action.blockedReason && !action.requiresInput
+                      ? reasonLabel(action.blockedReason.code)
+                      : action.requiresInput
+                        ? "입력 후 서버에서 선행조건을 다시 확인합니다."
+                        : undefined,
+                  onAction: () => onOpenCommand(current, action),
+                }))}
+              />
 
               {!current.actions.length && (
                 <p className="muted">
@@ -258,7 +248,7 @@ export function WorkbenchPage({
               action={<Icon name="check" />}
             />
           )}
-        </section>
+        </DetailPane>
       </WorkbenchLayout>
     </PageBoundary>
   );

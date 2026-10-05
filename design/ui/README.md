@@ -132,18 +132,19 @@ src/pages/**           (supervision UI)
 - `KpiCard`
 - `EmptyState`
 
-다음 단계에서 업무 컴포넌트로 확장한다.
+업무 컴포넌트 카탈로그:
 
-- `AppShell`
-- `ProjectHeader`
+- `NavigationList`
 - `FilterBar`
 - `RegisterTable`
-- `IssueDrawer`
-- `EvidencePanel`
-- `ActionGate`
+- `DetailPane`
+- `DetailDrawer`
+- `EvidenceViewer`
 - `AuditTimeline`
-- `ReportPreview`
-- `CapturePanel`
+- `ActionGate`
+- `DecisionPanel`
+
+상세 계약과 적용 현황은 `design/ui/COMPONENT_CATALOG.md`를 따른다.
 
 업무 컴포넌트는 Domain Object의 Projection만 표시하며 raw state를 직접 수정하지 않는다.
 
@@ -253,12 +254,12 @@ Stitch 결과는 다음 순서로 코드화한다.
 - 프리뷰용 Vite proxy가 외부 브라우저의 Origin을 개발 API 허용 Origin으로 정규화하도록 수정
 - 390 / 768 / 1440px 반응형 브라우저 시험 및 업무흐름 회귀시험 통과
 
-### v1.2
+### v1.2 — 진행 중
 
-- 29개 관리대장 각각을 Register Template과 Projection Map에 자동 연결
-- 컴포넌트 카탈로그 및 시각 회귀 스냅샷 추가
-
-### v1.2
-
-- 컴포넌트 카탈로그 및 시각 회귀 테스트
+- Tailwind v4 + shadcn/ui owned-source 기반 도입 완료
+- `NavigationList`, `FilterBar`, `RegisterTable`, `DetailPane`, `DetailDrawer`, `EvidenceViewer`, `AuditTimeline`, `ActionGate`, `DecisionPanel` 카탈로그 작성
+- Navigation / RegisterTable / DetailPane / EvidenceViewer / AuditTimeline / ActionGate / DecisionPanel을 실제 화면에 1차 적용
+- Timeline / Command Grid / 기본 Table 스타일을 Legacy CSS에서 Tailwind/공통 컴포넌트로 이전
 - 대표 역할별 화면을 390 / 768 / 1440px 기준으로 자동 검증
+- 남은 작업: 29개 관리대장을 Register Template + Projection Map에 연결
+- 남은 작업: FilterBar / DetailDrawer 실제 관리대장 적용과 시각 회귀 기준 확대

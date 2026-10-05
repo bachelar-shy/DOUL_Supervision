@@ -9,6 +9,7 @@ import type {
 import type { SupervisionClient } from "../data/supervision-client";
 import { roles } from "../labels";
 import { ActionButton, EmptyState, PageHeader } from "../ui";
+import { NavigationList } from "../ui/catalog";
 import {
   AdminPage,
   CapturePage,
@@ -169,31 +170,25 @@ export function AppShell({ client }: { client: SupervisionClient }) {
             <small>예시 데이터 · 개발용</small>
           </div>
         </div>
-        <nav aria-label="주 메뉴">
-          {routes
+        <NavigationList
+          activeId={safeRoute}
+          onNavigate={nav}
+          items={routes
             .filter((x) => allowed.includes(x.id))
-            .map(({ id, label, icon }) => (
-              <button
-                key={id}
-                className={safeRoute === id ? "active" : ""}
-                onClick={() => nav(id)}
-              >
-                <Icon name={icon} />
-                <span>{label}</span>
-                {id === "observations" && (
-                  <i>
-                    {
-                      items.filter(
-                        (x) =>
-                          x.machine === "observation" &&
-                          x.record.status !== "confirmed",
-                      ).length
-                    }
-                  </i>
-                )}
-              </button>
-            ))}
-        </nav>
+            .map(({ id, label, icon }) => ({
+              id,
+              label,
+              icon: <Icon name={icon} />,
+              badge:
+                id === "observations"
+                  ? items.filter(
+                      (item) =>
+                        item.machine === "observation" &&
+                        item.record.status !== "confirmed",
+                    ).length
+                  : undefined,
+            }))}
+        />
         <div className="side-bottom">
           <span className="dot" /> 참조 계약 v2.1
           <small>EXPLAIN · VERIFY · RECORD</small>

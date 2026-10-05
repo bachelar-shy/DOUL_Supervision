@@ -66,6 +66,7 @@ Page
 - shadcn 기본 색상·폰트·큰 radius를 그대로 사용하지 않고 DOUL semantic theme에 매핑한다.
 - 기존 `App.css`와 `design-system.css`는 점진적으로 제거하며 한 번에 전면 교체하지 않는다.
 - 업무 화면은 가능하면 `src/ui/**`의 DOUL Wrapper를 사용한다.
+- 업무 컴포넌트 계약과 적용 현황은 `design/ui/COMPONENT_CATALOG.md`를 따른다.
 
 ### shadcn component 추가
 

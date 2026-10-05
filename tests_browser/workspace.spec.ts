@@ -46,6 +46,25 @@ for (const width of [390, 768, 1440]) {
   });
 }
 
+test("DOUL component catalog is mounted on representative surfaces", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('[data-ui-component="navigation"]')).toBeVisible();
+  await expect(page.locator('[data-ui-component="decision-panel"]')).toBeVisible();
+  await expect(page.locator('[data-ui-component="audit-timeline"]')).toBeVisible();
+
+  await page.goto("/#/capture");
+  await expect(page.locator('[data-ui-component="evidence-viewer"]')).toBeVisible();
+
+  await page.goto("/#/inspections");
+  await expect(page.locator('[data-ui-component="detail-pane"]')).toBeVisible();
+  await page
+    .getByRole("button")
+    .filter({ hasText: "경량벽체 은폐 전 검측" })
+    .first()
+    .click();
+  await expect(page.locator('[data-ui-component="action-gate"]')).toBeVisible();
+});
+
 test("mobile interactive controls keep 44px touch targets", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 840 });
   await page.goto("/#/inspections");

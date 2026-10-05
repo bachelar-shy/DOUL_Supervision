@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
 import { CaptureTemplate } from "../ui/templates";
+import { EvidenceViewer } from "../ui/catalog";
 import { PageBoundary } from "./PageBoundary";
 import { FloorPlan, Icon } from "./shared";
 import { recordTitle } from "./record-utils";
@@ -230,23 +231,26 @@ export function CapturePage({
         </section>
         <section className="panel">
           <h2>서버 증빙</h2>
-          {workspace.items
-            .filter((x) => x.machine === "evidence")
-            .map((x) => (
-              <div className="evidence-row" key={x.record.id}>
-                <Icon name="document" />
-                <div>
-                  <strong>{recordTitle(x.record)}</strong>
-                  <small>
+          <EvidenceViewer
+            items={workspace.items
+              .filter((x) => x.machine === "evidence")
+              .map((x) => ({
+                id: x.record.id,
+                title: recordTitle(x.record),
+                meta: (
+                  <>
                     {x.record.mediaType} · 원본 /{" "}
                     {x.record.fileHash?.slice(0, 12)}…
-                  </small>
-                </div>
-              </div>
-            ))}
-          <button className="secondary wide" disabled>
-            AI 분석 · 서비스 미연결
-          </button>
+                  </>
+                ),
+                icon: <Icon name="document" />,
+              }))}
+            footer={
+              <button className="secondary wide" disabled>
+                AI 분석 · 서비스 미연결
+              </button>
+            }
+          />
         </section>
       </div>
       </CaptureTemplate>

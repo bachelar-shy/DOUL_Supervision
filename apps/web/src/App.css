@@ -561,39 +561,6 @@ strong {
   font-size: 11px;
   color: #7f8fa2;
 }
-.timeline {
-  margin-top: 24px;
-}
-.timeline > div {
-  position: relative;
-  padding: 0 0 23px 20px;
-  margin-left: 4px;
-  border-left: 1px solid #e3e8ee;
-}
-.timeline > div:last-child {
-  border: 0;
-  padding-bottom: 0;
-}
-.time-dot {
-  position: absolute;
-  left: -3.5px;
-  top: 4px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #8c9eb2;
-}
-.timeline strong {
-  font-size: 11px;
-  display: block;
-  color: #52667d;
-}
-.timeline small {
-  display: block;
-  color: #9da6b1;
-  font-size: 9px;
-  margin-top: 7px;
-}
 .app-footer {
   font-size: 9px;
   letter-spacing: 1px;
@@ -733,22 +700,6 @@ strong {
   border-top: 1px solid var(--border);
   padding-top: 22px;
   margin: 25px 0 14px;
-}
-.command-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-.command-option button {
-  width: 100%;
-  white-space: normal;
-}
-.command-option small {
-  display: block;
-  line-height: 1.7;
-  color: #8b97a5;
-  font-size: 9px;
-  padding: 7px 2px;
 }
 .technical {
   border-top: 1px solid var(--border);
@@ -1049,30 +1000,6 @@ strong {
   color: #7e8fa2;
   margin-top: 14px;
   overflow-wrap: anywhere;
-}
-.table-scroll {
-  overflow: auto;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-  white-space: nowrap;
-}
-th {
-  text-align: left;
-  color: #99a4b2;
-  font-size: 10px;
-  font-weight: 500;
-  background: #f8f9fb;
-}
-th,
-td {
-  padding: 15px 14px;
-  border-bottom: 1px solid #e8edf2;
-}
-td {
-  color: #5f7188;
 }
 .bottom-nav,
 .mobile-back {

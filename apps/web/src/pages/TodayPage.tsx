@@ -1,6 +1,7 @@
 import type { HumanRole, WorkItem, Workspace } from "../data/ui-contract";
 import { commands, states } from "../labels";
 import { KpiCard, Panel, SectionHeader } from "../ui";
+import { AuditTimeline, DecisionPanel } from "../ui/catalog";
 import { DashboardTemplate } from "../ui/templates";
 import { PageBoundary } from "./PageBoundary";
 import { Icon, RecordList } from "./shared";
@@ -100,44 +101,44 @@ export function TodayPage({
             <RecordList items={priorityItems} onSelect={onOpenItem} />
           </Panel>
           <div className="right-stack">
-            <Panel className="priority">
-              <span className="eyebrow">진행 전 확인</span>
-              <h2>
-                적합 판정과
-                <br />
-                후속공정 승인은 다릅니다.
-              </h2>
-              <p>
-                필수서명과 해당 Hold 승인이 완료되어야 다음 작업을 허용합니다.
-              </p>
-              <button
-                className="text-button"
-                onClick={() =>
-                  onNavigate(role === "OWN" ? "owner" : "inspections")
-                }
-              >
-                선행조건 확인 <Icon name="arrow" />
-              </button>
-            </Panel>
+            <DecisionPanel
+              eyebrow="진행 전 확인"
+              title={
+                <>
+                  적합 판정과
+                  <br />
+                  후속공정 승인은 다릅니다.
+                </>
+              }
+              description="필수서명과 해당 Hold 승인이 완료되어야 다음 작업을 허용합니다."
+              action={
+                <button
+                  className="text-button"
+                  onClick={() =>
+                    onNavigate(role === "OWN" ? "owner" : "inspections")
+                  }
+                >
+                  선행조건 확인 <Icon name="arrow" />
+                </button>
+              }
+            />
             <Panel>
               <SectionHeader title="최근 처리 이력" meta="서버 기록" />
-              <div className="timeline">
-                {workspace.audit
+              <AuditTimeline
+                entries={workspace.audit
                   .slice(-5)
                   .reverse()
-                  .map((x) => (
-                    <div key={x.id}>
-                      <span className="time-dot" />
-                      <strong>
-                        {commands[x.command.split(":")[1]] || x.command}
-                      </strong>
-                      <small>
+                  .map((x) => ({
+                    id: x.id,
+                    title: commands[x.command.split(":")[1]] || x.command,
+                    meta: (
+                      <>
                         {new Date(x.at).toLocaleTimeString("ko-KR")} ·{" "}
                         {states[x.afterState] || x.afterState}
-                      </small>
-                    </div>
-                  ))}
-              </div>
+                      </>
+                    ),
+                  }))}
+              />
             </Panel>
           </div>
         </div>
