@@ -33,7 +33,7 @@ from .application import (
     queue_media_analysis,
     start_media_analysis,
 )
-from .store import Store
+from .persistence import PersistencePort, create_local_persistence
 
 ROOT=Path(__file__).resolve().parents[2]
 SPEC=json.loads((ROOT/'app/api/openapi.yaml').read_text())
@@ -95,9 +95,11 @@ def sniff(data):
     raise ContractError('MIME_INVALID','Supported development formats: PNG/JPEG/GIF/WebP/MP4/WebM/WAV/MP3/PDF')
 
 
-def create_app(db_path=':memory:', demo=False):
+def create_app(db_path=':memory:', demo=False, persistence=None):
     if not demo:raise RuntimeError('Production auth is not configured. Explicit --demo is required; bind to loopback only.')
-    store=Store(db_path,demo=True)
+    if persistence is not None and not isinstance(persistence,PersistencePort):
+        raise TypeError('persistence must satisfy PersistencePort')
+    store=persistence or create_local_persistence(db_path,demo=True)
     app=FastAPI(title='DOUL MVP local development adapter',version='0.1.0',docs_url='/api-docs')
     app.state.store=store
     sessions={};session_lock=RLock()
@@ -186,7 +188,7 @@ def create_app(db_path=':memory:', demo=False):
         return results
 
     @app.get('/health')
-    def health():return dict(status='ok',mode='local-demo',baseCommit='1540acb',adapters={'database':'sqlite-development','workflow':'merged-reference-engine','authentication':'explicit-local-demo','mediaPipeline':'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
+    def health():return dict(status='ok',mode='local-demo',baseCommit='1540acb',adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo','mediaPipeline':'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
 
     @app.get('/dev/actors')
     def actors():
