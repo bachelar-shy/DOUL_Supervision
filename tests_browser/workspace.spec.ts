@@ -131,6 +131,29 @@ test("mobile interactive controls keep 44px touch targets", async ({ page }) => 
     .toBeTruthy();
 });
 
+test("mobile navigation follows the active role route map", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 840 });
+  await page.goto("/");
+  const mobileNav = page.locator('[data-ui-component="mobile-navigation"]');
+  await expect(mobileNav).toBeVisible();
+  await expect(mobileNav.getByRole("button")).toHaveCount(5);
+
+  await page
+    .getByRole("combobox", { name: "개발 역할 선택" })
+    .selectOption("DES");
+  await expect(mobileNav.getByRole("button", { name: "설계질의" })).toBeVisible();
+  await expect(mobileNav.getByRole("button", { name: "문서" })).toBeVisible();
+  await expect(mobileNav.getByRole("button", { name: "검측" })).toHaveCount(0);
+  await mobileNav.getByRole("button", { name: "설계질의" }).click();
+  await expect(page.locator("h1")).toHaveText("설계질의");
+
+  await page
+    .getByRole("combobox", { name: "개발 역할 선택" })
+    .selectOption("ADM");
+  await expect(mobileNav.getByRole("button", { name: "대장" })).toBeVisible();
+  await expect(mobileNav.getByRole("button", { name: "권한" })).toBeVisible();
+});
+
 test("register table header remains visible during long internal scroll", async ({
   page,
 }) => {

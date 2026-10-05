@@ -9,7 +9,7 @@ import type {
 import type { SupervisionClient } from "../data/supervision-client";
 import { roles } from "../labels";
 import { ActionButton, EmptyState, PageHeader } from "../ui";
-import { NavigationList } from "../ui/catalog";
+import { MobileNavigation, NavigationList } from "../ui/catalog";
 import {
   AdminPage,
   CapturePage,
@@ -20,7 +20,7 @@ import {
   WorkbenchPage,
 } from "../pages";
 import { Icon } from "../pages/shared";
-import { machineForRoute, roleRoutes, routes } from "./routes";
+import { machineForRoute, mobileRoutes, roleRoutes, routes } from "./routes";
 
 export function AppShell({ client }: { client: SupervisionClient }) {
   const [role, setRole] = useState<HumanRole>("SUP");
@@ -93,6 +93,9 @@ export function AppShell({ client }: { client: SupervisionClient }) {
   };
   const allowed = roleRoutes[role];
   const safeRoute = allowed.includes(route) ? route : "today";
+  const mobileItems = mobileRoutes[role].filter((item) =>
+    allowed.includes(item.id),
+  );
   const items = workspace?.items || [];
   const current = items.find((x) => x.record.id === selected) || null;
   async function perform(
@@ -373,35 +376,19 @@ export function AppShell({ client }: { client: SupervisionClient }) {
           DOUL INTERNATIONAL <span>업무 원본 · 증빙 · 검증 · 기록</span>
         </footer>
       </div>
-      <nav className="bottom-nav" aria-label="모바일 메뉴">
-        {(role === "OWN"
-          ? [
-              ["today", "오늘", "home"],
-              ["owner", "결정", "report"],
-              ["issues", "이슈", "flag"],
-              ["documents", "문서", "document"],
-            ]
-          : [
-              ["today", "오늘", "home"],
-              ["inspections", "검측", "check"],
-              ["capture", "촬영", "camera"],
-              ["issues", "이슈", "flag"],
-            ]
-        ).map(([id, label, icon]) => (
-          <button
-            key={id}
-            className={safeRoute === id ? "active" : ""}
-            onClick={() => nav(id)}
-          >
-            <Icon name={icon} />
-            {label}
-          </button>
-        ))}
-        <button onClick={() => setMenu(!menu)}>
-          <Icon name="layers" />
-          더보기
-        </button>
-      </nav>
+      <MobileNavigation
+        activeId={safeRoute}
+        items={mobileItems.map(({ id, label, icon }) => ({
+          id,
+          label,
+          icon: <Icon name={icon} />,
+        }))}
+        onNavigate={nav}
+        onMore={() => setMenu(!menu)}
+        moreOpen={menu}
+        moreActive={!mobileItems.some((item) => item.id === safeRoute)}
+        moreIcon={<Icon name="layers" />}
+      />
       {dialog && workspace && (
         <CommandModal
           dialog={dialog}

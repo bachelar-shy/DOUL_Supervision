@@ -32,10 +32,11 @@ Page / Template
 | 컴포넌트 | 역할 | 현재 적용 |
 |---|---|---|
 | `NavigationList` | 역할별 주 메뉴와 활성 상태, 배지 | Desktop AppShell |
-| `FilterBar` | 검색·필터·도구의 표준 행 | 준비 완료, 관리대장 연결 대기 |
-| `RegisterTable` | 관리대장 공통 표, sticky header | Admin 역할배정 |
+| `MobileNavigation` | 역할별 모바일 핵심 메뉴와 더보기 상태 | Mobile AppShell |
+| `FilterBar` | 검색·필터·도구의 표준 행 | 29개 관리대장 |
+| `RegisterTable` | 관리대장 공통 표, sticky header | 29개 관리대장 / Admin 역할배정 |
 | `DetailPane` | Workbench 상세영역 | Inspection / Issue / Action / Owner / RFI |
-| `DetailDrawer` | 좁은 화면 및 관리대장 상세 Sheet | 준비 완료, Projection 연결 대기 |
+| `DetailDrawer` | 좁은 화면 및 관리대장 상세 Sheet | 29개 관리대장 |
 | `EvidenceViewer` | 서버 증빙 목록 | Capture |
 | `AuditTimeline` | 서버 처리이력 | Today |
 | `ActionGate` | 서버가 허용한 Command 표시 | Workbench |
@@ -57,6 +58,20 @@ Page / Template
 - 접근 가능한 route를 자체 생성
 
 권한 필터는 AppShell / UI Contract가 제공한다.
+
+### MobileNavigation
+
+입력:
+- 역할에 따라 이미 필터된 핵심 route 목록
+- 활성 route
+- 이동 handler
+- 더보기 열림/활성 상태
+
+금지:
+- 컴포넌트 내부에서 역할별 접근권한 계산
+- 접근 가능한 route를 자체 생성
+
+역할별 모바일 route map은 `app/routes.ts`가 제공하고, AppShell은 `roleRoutes`와 다시 교차검증한 뒤 전달한다. 따라서 모바일 메뉴는 권한 Contract를 새로 정의하지 않는다.
 
 ### FilterBar
 
@@ -138,8 +153,7 @@ v1 첫 이전 범위:
 
 ## 다음 연결
 
-- 29개 관리대장 Projection Map → `RegisterTemplate + FilterBar + RegisterTable + DetailDrawer`
-- Mobile Bottom Navigation 표준화
 - Evidence 상세 Preview
 - Owner Decision 전용 panel
+- 관리대장 역할별 진입 UX 정리
 - 시각 회귀 기준 이미지 정리
