@@ -1,43 +1,44 @@
+import {
+  ArrowRight,
+  Camera,
+  ClipboardCheck,
+  Eye,
+  FileText,
+  Flag,
+  Home,
+  Layers,
+  RefreshCw,
+  Users,
+  Wrench,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+
 import type { WorkItem } from "../data/ui-contract";
 import { states } from "../labels";
 import { StatusBadge } from "../ui";
 import { machineLabels } from "../app/routes";
 import { recordTitle } from "./record-utils";
 
-const icons: Record<string, string> = {
-  home: "M3 10 12 3l9 7v11h-6v-7H9v7H3Z",
-  check: "M4 3h16v18H4z M8 8l2 2 5-5 M8 15h8",
-  camera:
-    "M3 7h4l2-3h6l2 3h4v14H3z M16 13a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
-  eye:
-    "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12 M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0",
-  flag: "M5 21V3h14l-3 5 3 5H5",
-  tool: "m4 20 7-7 M14 3a5 5 0 0 0 7 7l-4-1-2-3z",
-  report: "M4 21V3h16v18H4 M8 8h8 M8 12h8 M8 16h5",
-  document: "M5 3h10l4 4v14H5z M14 3v5h5 M8 12h8 M8 16h8",
-  layers: "m12 3 10 6-10 6L2 9z M2 13l10 6 10-6 M2 17l10 6 10-6",
-  users:
-    "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M18 4a4 4 0 0 1 0 8 M22 21v-2a4 4 0 0 0-3-4",
-  arrow: "M5 12h14 M13 6l6 6-6 6",
-  refresh:
-    "M20 7v5h-5 M4 17v-5h5 M5 7a8 8 0 0 1 14-2l1 2 M4 17l1 2a8 8 0 0 0 14-2",
-  close: "m5 5 14 14 M19 5 5 19",
+const icons: Record<string, LucideIcon> = {
+  home: Home,
+  check: ClipboardCheck,
+  camera: Camera,
+  eye: Eye,
+  flag: Flag,
+  tool: Wrench,
+  report: FileText,
+  document: FileText,
+  layers: Layers,
+  users: Users,
+  arrow: ArrowRight,
+  refresh: RefreshCw,
+  close: X,
 };
 
 export function Icon({ name }: { name: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d={icons[name] || icons.document} />
-    </svg>
-  );
+  const IconComponent = icons[name] || FileText;
+  return <IconComponent aria-hidden="true" strokeWidth={1.6} />;
 }
 export function RecordList({
   items,
