@@ -1,0 +1,68 @@
+name: platform-container-baseline
+
+on:
+  pull_request:
+    paths:
+      - ".dockerignore"
+      - "infra/**"
+      - "services/api/requirements.lock"
+      - "apps/web/**"
+      - "packages/client/**"
+      - "package.json"
+      - "package-lock.json"
+  push:
+    branches: [main]
+    paths:
+      - ".dockerignore"
+      - "infra/**"
+      - "services/api/requirements.lock"
+      - "apps/web/**"
+      - "packages/client/**"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+jobs:
+  compose-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Validate Compose model
+        run: docker compose -f infra/compose/compose.dev.yml config
+
+      - name: Build local development images
+        run: docker compose -f infra/compose/compose.dev.yml build
+
+      - name: Start baseline stack
+        run: docker compose -f infra/compose/compose.dev.yml up -d
+
+      - name: Smoke test API and Web
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8791/health >/tmp/api-health.json &&
+               curl --fail --silent http://127.0.0.1:5181/healthz >/tmp/web-health.txt &&
+               curl --fail --silent http://127.0.0.1:5181/api/health >/tmp/proxied-health.json; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              echo "Container baseline did not become healthy."
+              exit 1
+            fi
+            sleep 2
+          done
+          grep -q '"status":"ok"' /tmp/api-health.json
+          grep -q '"mode":"local-demo"' /tmp/proxied-health.json
+          grep -q '^ok$' /tmp/web-health.txt
+          docker compose -f infra/compose/compose.dev.yml ps
+
+      - name: Container logs
+        if: failure()
+        run: docker compose -f infra/compose/compose.dev.yml logs --no-color
+
+      - name: Stop baseline stack
+        if: always()
+        run: docker compose -f infra/compose/compose.dev.yml down -v --remove-orphans
