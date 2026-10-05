@@ -1,3 +1,153 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
 html {
   color-scheme: light;
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans:
+    "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Noto Sans", Arial, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-doul-primary: var(--doul-color-primary);
+  --color-doul-primary-muted: var(--doul-color-primary-muted);
+  --color-doul-primary-deep: var(--doul-color-primary-deep);
+  --color-doul-ink: var(--doul-color-ink);
+  --color-doul-success: var(--doul-color-success);
+  --color-doul-warning: var(--doul-color-warning);
+  --color-doul-danger: var(--doul-color-danger);
+
+  --radius-sm: var(--doul-radius-sm);
+  --radius-md: var(--doul-radius-md);
+  --radius-lg: var(--doul-radius-lg);
+  --radius-xl: var(--doul-radius-lg);
+  --radius-2xl: var(--doul-radius-lg);
+  --radius-3xl: var(--doul-radius-lg);
+  --radius-4xl: 999px;
+}
+
+:root {
+  /* DOUL source tokens mirrored here so Tailwind/shadcn can resolve them
+     before the legacy compatibility stylesheet is removed. */
+  --doul-color-primary: #0b2e91;
+  --doul-color-primary-muted: #33518d;
+  --doul-color-primary-deep: #061b5c;
+  --doul-color-ink: #030213;
+  --doul-color-slate-900: #0f172a;
+  --doul-color-slate-700: #334155;
+  --doul-color-slate-600: #475569;
+  --doul-color-slate-500: #64748b;
+  --doul-color-slate-300: #cbd5e1;
+  --doul-color-line: #e2e8f0;
+  --doul-color-surface: #ffffff;
+  --doul-color-surface-alt: #f8fafc;
+  --doul-color-surface-tint: #f3f6fb;
+  --doul-color-success: #127a4a;
+  --doul-color-warning: #b45309;
+  --doul-color-danger: #d4183d;
+
+  --doul-radius-sm: 4px;
+  --doul-radius-md: 6px;
+  --doul-radius-lg: 8px;
+
+  /* shadcn semantic layer mapped to DOUL. */
+  --background: var(--doul-color-surface-alt);
+  --foreground: var(--doul-color-slate-900);
+  --card: var(--doul-color-surface);
+  --card-foreground: var(--doul-color-slate-900);
+  --popover: var(--doul-color-surface);
+  --popover-foreground: var(--doul-color-slate-900);
+  --primary: var(--doul-color-primary);
+  --primary-foreground: #ffffff;
+  --secondary: var(--doul-color-surface-tint);
+  --secondary-foreground: var(--doul-color-slate-900);
+  --muted: var(--doul-color-surface-tint);
+  --muted-foreground: var(--doul-color-slate-500);
+  --accent: #eef3ff;
+  --accent-foreground: var(--doul-color-primary);
+  --destructive: var(--doul-color-danger);
+  --border: var(--doul-color-line);
+  --input: var(--doul-color-slate-300);
+  --ring: var(--doul-color-primary-muted);
+
+  --sidebar: var(--doul-color-surface);
+  --sidebar-foreground: var(--doul-color-slate-900);
+  --sidebar-primary: var(--doul-color-primary);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--doul-color-surface-tint);
+  --sidebar-accent-foreground: var(--doul-color-primary);
+  --sidebar-border: var(--doul-color-line);
+  --sidebar-ring: var(--doul-color-primary-muted);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+
+@layer components {
+  [data-slot="button"],
+  [data-slot="input"],
+  [data-slot="select-trigger"] {
+    min-height: 40px;
+  }
+
+  [data-slot="textarea"] {
+    min-height: 96px;
+  }
+}
+
+@media (max-width: 720px) {
+  [data-slot="button"],
+  [data-slot="input"],
+  [data-slot="select-trigger"] {
+    min-height: 44px;
+  }
+
+  [data-slot="button"][data-size^="icon"] {
+    min-width: 44px;
+  }
 }

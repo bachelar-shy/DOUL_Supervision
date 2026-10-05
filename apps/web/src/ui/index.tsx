@@ -4,9 +4,9 @@ import type {
   ReactNode,
 } from "react";
 
-function cx(...values: Array<string | false | null | undefined>) {
-  return values.filter(Boolean).join(" ");
-}
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export type ButtonVariant = "primary" | "secondary";
 
@@ -22,9 +22,10 @@ export function ActionButton({
   ...props
 }: ActionButtonProps) {
   return (
-    <button
+    <Button
       type={type}
-      className={cx(variant, className)}
+      variant={variant === "primary" ? "default" : "outline"}
+      className={cn(variant, className)}
       {...props}
     />
   );
@@ -34,7 +35,7 @@ export function Panel({
   className,
   ...props
 }: HTMLAttributes<HTMLElement>) {
-  return <section className={cx("panel", className)} {...props} />;
+  return <section className={cn("panel", className)} {...props} />;
 }
 
 export interface PageHeaderProps {
@@ -91,8 +92,9 @@ export function StatusBadge({
   className,
 }: StatusBadgeProps) {
   return (
-    <span
-      className={cx(
+    <Badge
+      variant="outline"
+      className={cn(
         "badge",
         dangerStates.has(status || "") && "danger",
         positiveStates.has(status || "") && "positive",
@@ -100,7 +102,7 @@ export function StatusBadge({
       )}
     >
       {children ?? status ?? "원본 보존"}
-    </span>
+    </Badge>
   );
 }
 
@@ -124,7 +126,7 @@ export function KpiCard({
   return (
     <button
       type={type}
-      className={cx("kpi", className)}
+      className={cn("kpi", className)}
       {...props}
     >
       <span>{label}</span>
@@ -151,7 +153,7 @@ export function EmptyState({
   compact = false,
 }: EmptyStateProps) {
   return (
-    <div className={cx("empty", compact && "compact")}>
+    <div className={cn("empty", compact && "compact")}>
       <h2>{title}</h2>
       {description ? <p>{description}</p> : null}
       {action}

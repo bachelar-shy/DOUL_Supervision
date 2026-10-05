@@ -13,3 +13,9 @@ This directory is the presentation layer for DOUL Supervision.
 - Run `npm run check:ui-boundary`, web typecheck/lint/build, and Playwright tests before merging UI changes.
 
 See `../../25_UI_Function_Parallel_Development.md` for the full ownership and merge rules.
+
+- Tailwind CSS v4 is the preferred styling utility for new UI work; keep DOUL tokens as the source of truth.
+- shadcn/ui owned source lives under `src/components/ui/**`. Customize those files to DOUL tokens/density instead of treating shadcn defaults as product design.
+- Pages should prefer DOUL wrappers in `src/ui/**` for product semantics. Use raw shadcn primitives when creating or extending those wrappers.
+- Use Lucide for general-purpose UI icons; do not add new hand-maintained SVG path maps unless the icon is DOUL-specific.
+- Do not remove legacy `App.css` wholesale. Migrate selectors incrementally and keep browser regression tests green.

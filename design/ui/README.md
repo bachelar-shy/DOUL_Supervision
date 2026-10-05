@@ -52,6 +52,32 @@ Stitch는 초안과 시각 설계 도구이며, 최종 구현은 위 토큰과 �
 
 ---
 
+
+### Web 구현 계층 — Tailwind v4 + shadcn/ui
+
+Web UI 구현은 다음 계층을 따른다.
+
+```
+design/ui/tokens.json
+        ↓
+src/index.css semantic theme
+        ↓
+Tailwind CSS v4
+        ↓
+src/components/ui/**   (shadcn owned source)
+        ↓
+src/ui/**              (DOUL primitives)
+        ↓
+src/pages/**           (supervision UI)
+```
+
+- Tailwind와 shadcn은 DOUL 디자인을 대체하지 않는다.
+- `#0B2E91` 등 DOUL Token을 semantic variable에 매핑한다.
+- shadcn 기본 Geist font는 사용하지 않고 Noto Sans KR/system font 체계를 유지한다.
+- 버튼 기본 높이는 Desktop 40px, Mobile 44px 이상을 유지한다.
+- Radius는 업무화면 기준 4–8px를 우선하며 과도한 카드·그림자 표현을 사용하지 않는다.
+- shadcn primitive의 접근성/상호작용 기반을 활용하고 감리업무 의미는 DOUL Component에서 정의한다.
+
 ## 4. 핵심 토큰
 
 ### 색상
