@@ -15,9 +15,9 @@ FROM alpine:3.21
 
 RUN apk add --no-cache ca-certificates curl \
     && addgroup -S -g 10001 objectstore \
-    && adduser -S -D -H -u 10001 -G objectstore objectstore \
-    && mkdir -p /data \
-    && chown -R objectstore:objectstore /data
+    && adduser -S -D -h /home/objectstore -u 10001 -G objectstore objectstore \
+    && mkdir -p /data /home/objectstore \
+    && chown -R objectstore:objectstore /data /home/objectstore
 
 COPY --from=build /go/bin/minio /usr/local/bin/minio
 COPY --from=build /go/bin/mc /usr/local/bin/mc
