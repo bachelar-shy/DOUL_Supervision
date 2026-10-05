@@ -60,6 +60,25 @@ test("mobile interactive controls keep 44px touch targets", async ({ page }) => 
   await expectTouchTarget(
     page.getByRole("combobox", { name: "개발 역할 선택" }),
   );
+  await expectTouchTarget(page.locator(".bottom-nav button").first());
+
+  await page
+    .getByRole("button")
+    .filter({ hasText: "경량벽체 은폐 전 검측" })
+    .first()
+    .click();
+  await page
+    .locator(".detail-pane")
+    .getByRole("button", { name: "시작", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expectTouchTarget(
+    dialog.getByRole("button", { name: "대화상자 닫기", exact: true }),
+  );
+  await dialog
+    .getByRole("button", { name: "대화상자 닫기", exact: true })
+    .click();
 
   await expect
     .poll(() =>
