@@ -1,5 +1,5 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "original_evidence_immutable": true,
   "official_issue_requires_human_confirmation": true,
   "nonhuman_actor": "AI",
@@ -120,7 +120,17 @@
     "audioProcessedRanges",
     "complete"
   ],
-  "retry_rule": "New run with retryOfId; retain prior outputs and model/prompt/policy versions.",
+  "inspection_context": {
+    "optional": true,
+    "field": "inspectionRef",
+    "rules": [
+      "The client selects an inspection ID; the server captures the current Inspection DomainRef and version.",
+      "Media and inspection scope must match package, location, discipline and responsible organization.",
+      "A retry preserves the original inspectionRef instead of silently rebinding to another inspection.",
+      "Issue creation resolves the current inspection state again; the request-time version is provenance, not an automatic decision."
+    ]
+  },
+  "retry_rule": "New run with retryOfId; retain prior outputs, inspection context and model/prompt/policy versions.",
   "offline_rule": "captureId deduplicates evidence; expectedVersion conflict goes to human resolution, never last-write-wins.",
   "privacy_rule": "Original access follows project/package/location/organization scope; redacted derivatives can be shared with source provenance retained.",
   "provider_adapter": "No model provider selected. Workers must return this normalized contract; model calls and media decoding are outside the reference runner.",

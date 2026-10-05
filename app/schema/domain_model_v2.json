@@ -153,6 +153,7 @@
     ],
     "AnalysisRun": [
       "Evidence",
+      "Inspection",
       "derived_outputs",
       "model_and_prompt_versions",
       "coverage_manifest"

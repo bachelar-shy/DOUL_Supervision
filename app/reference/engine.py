@@ -158,6 +158,8 @@ class Engine:
             require(role['actorGroup'] in ['SUP','ADM'] or record['status'] not in ['draft','review'], 'NOT_FOUND','Internal report unavailable')
             if role['actorGroup']=='OWN':
                 require(party_id in record['report']['recipients'],'NOT_FOUND','Report unavailable to this recipient')
+        if self._record_machines.get(('AnalysisRun',record['id']))=='analysis_run':
+            require(role['actorGroup'] in ['SUP','ADM'],'NOT_FOUND','Internal analysis run unavailable')
         if record.get('source') in ['ai','supervisor'] and record.get('status') in ['candidate','under_review']:
             require(role['actorGroup'] in ['SUP','ADM'],'NOT_FOUND','Internal observation unavailable')
         return role
@@ -211,6 +213,8 @@ class Engine:
         cached = self._replay(project_id,party_id,'create:'+machine,key,request)
         if cached is not None:return cached
         require((kind,object_id) not in self._records,'OBJECT_EXISTS',object_id)
+        if machine=='analysis_run':
+            self._analysis_inspection_context(record)
         self._common(record,role)
         if machine=='inspection':
             require(record['nextWorkAllowed'] is False and not set(record)&{'resultStatus','acceptanceDocumentId','approvalId'}, 'IMMUTABLE_FIELD', 'Inspection starts unreleased without result')
@@ -545,8 +549,21 @@ class Engine:
             require(decision['projectId']==r['projectId'] and decision.get('reportId')==r['id'] and decision['status']=='closed','REPORT_FOLLOWUP_CLOSED','Report decision incomplete')
         require(report['informationOnly'] or report['actionIds'] or report['decisionIds'],'REPORT_FOLLOWUP_CLOSED','Untracked report cannot close')
 
+    def _analysis_inspection_context(self,r):
+        ref=r.get('inspectionRef')
+        if not ref:return
+        require(ref.get('objectType')=='Inspection','INSPECTION_LINK_INVALID','Analysis inspectionRef must reference Inspection')
+        inspection=self.resolve(ref,r['projectId'])
+        for eid in r.get('sourceEvidenceIds',[]):
+            source=self.get('Evidence',eid)
+            require(source['projectId']==r['projectId'],'PROJECT_MISMATCH','Analysis evidence belongs to another project')
+            for field in ['packageId','locationId','discipline','responsibleOrganizationId']:
+                if source.get(field) is not None and inspection.get(field) is not None:
+                    require(source[field]==inspection[field],'ANALYSIS_SCOPE_MISMATCH','Analysis evidence scope must match inspectionRef')
+
     def _analysis_sources_ready(self,r):
         require(bool(r.get('sourceEvidenceIds')),'ANALYSIS_SOURCES_READY','Analysis needs verified source files')
+        self._analysis_inspection_context(r)
         for eid in r['sourceEvidenceIds']:
             e=self.get('Evidence',eid)
             require(e['projectId']==r['projectId'] and e['sourceType']=='original','ANALYSIS_SOURCES_READY','Analysis starts from preserved original')
@@ -573,6 +590,38 @@ class Engine:
         require(('Evidence',evidence_id) not in self._records,'EVIDENCE_IMMUTABLE','Original or derived evidence cannot be overwritten')
         self._save('Evidence',record)
         result=self._event(record,'evidence:create',party_id,role_id,key,request,None);self._remember(project_id,party_id,'evidence:create',key,request,result)
+        return result
+
+    def index_media_evidence(self, evidence_id, duration_ms, frame_pts_ms, metadata, party_id, role_id, key):
+        """Attach trusted decoder metadata without changing original evidence bytes/provenance."""
+        record=self.get('Evidence',evidence_id)
+        request=dict(id=evidence_id,durationMs=duration_ms,framePtsMs=frame_pts_ms,metadata=metadata,role=role_id)
+        self.authorize(record,'run_analysis',party_id,role_id)
+        cached=self._replay(record['projectId'],party_id,'evidence:index-media',key,request)
+        if cached is not None:return cached
+        require(record['sourceType']=='original' and record['mediaType'] in ['video','audio'],'MEDIA_INDEX_INVALID','Only original video/audio evidence is indexed')
+        require(type(duration_ms) is int and 0<duration_ms<=3600000,'MEDIA_INDEX_INVALID','Duration must be a positive millisecond value within the project media limit')
+        require(isinstance(metadata,dict),'MEDIA_INDEX_INVALID','Media metadata must be structured')
+        require('framePtsMs' not in metadata,'MEDIA_INDEX_INVALID','Frame PTS must use the trusted framePtsMs field')
+        proposed=deepcopy(record)
+        proposed['durationMs']=duration_ms
+        proposed['metadata']={**deepcopy(record.get('metadata',{})),**deepcopy(metadata)}
+        if record['mediaType']=='video':
+            require(isinstance(frame_pts_ms,list) and bool(frame_pts_ms),'MEDIA_INDEX_INVALID','Video indexing requires the decoder PTS manifest')
+            require(all(type(v) is int and 0<=v<=duration_ms for v in frame_pts_ms),'MEDIA_INDEX_INVALID','Frame PTS must stay inside original duration')
+            require(all(a<=b for a,b in zip(frame_pts_ms,frame_pts_ms[1:])),'MEDIA_INDEX_INVALID','Frame PTS must preserve decoder order')
+            proposed['frameCount']=len(frame_pts_ms)
+            proposed['metadata']['framePtsMs']=list(frame_pts_ms)
+        else:
+            require(frame_pts_ms in [None,[]],'MEDIA_INDEX_INVALID','Audio indexing does not accept video frame PTS')
+            proposed.pop('frameCount',None)
+            proposed['metadata'].pop('framePtsMs',None)
+        proposed['version']=record['version']+1
+        proposed['updatedAt']=self.at()
+        validate(proposed,self.schemas['Evidence'],self.schemas)
+        self._save('Evidence',proposed)
+        result=self._event(proposed,'evidence:index-media',party_id,role_id,key,request,record)
+        self._remember(record['projectId'],party_id,'evidence:index-media',key,request,result)
         return result
 
     def projections(self, register_id, party_id, role_id):

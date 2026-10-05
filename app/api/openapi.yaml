@@ -12914,6 +12914,9 @@
               "additionalProperties": true
             }
           },
+          "inspectionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
           "retryOfId": {
             "type": "string",
             "format": "uuid"
@@ -16468,6 +16471,9 @@
                   "required": [],
                   "additionalProperties": true
                 }
+              },
+              "inspectionRef": {
+                "$ref": "#/components/schemas/DomainRef"
               },
               "retryOfId": {
                 "type": "string",
