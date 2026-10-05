@@ -1,9 +1,8 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { Panel } from "./index";
 
-function cx(...values: Array<string | false | null | undefined>) {
-  return values.filter(Boolean).join(" ");
-}
+import { cn } from "@/lib/utils";
+
+import { Panel } from "./index";
 
 export interface DashboardTemplateProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -16,7 +15,7 @@ export function DashboardTemplate({
 }: DashboardTemplateProps) {
   return (
     <div
-      className={cx("template", "template-dashboard", className)}
+      className={cn("template", "template-dashboard", className)}
       data-ui-template="dashboard"
       {...props}
     >
@@ -38,7 +37,7 @@ export function WorkbenchTemplate({
 }: WorkbenchTemplateProps) {
   return (
     <div
-      className={cx(
+      className={cn(
         "template",
         "template-workbench",
         "workbench",
@@ -61,7 +60,7 @@ export function OwnerReportTemplate({
 }: WorkbenchTemplateProps) {
   return (
     <div
-      className={cx(
+      className={cn(
         "template",
         "template-owner-report",
         "workbench",
@@ -91,7 +90,7 @@ export function RegisterTemplate({
 }: RegisterTemplateProps) {
   return (
     <Panel
-      className={cx("template", "template-register", className)}
+      className={cn("template", "template-register", className)}
       data-ui-template="register"
     >
       {header}
@@ -112,7 +111,7 @@ export function CaptureTemplate({
 }: CaptureTemplateProps) {
   return (
     <div
-      className={cx("template", "template-capture", "work-grid", className)}
+      className={cn("template", "template-capture", "work-grid", className)}
       data-ui-template="capture"
       {...props}
     >
@@ -133,7 +132,7 @@ export function DocumentWorkspaceTemplate({
 }: DocumentWorkspaceTemplateProps) {
   return (
     <div
-      className={cx(
+      className={cn(
         "template",
         "template-document",
         "document-workbench",
