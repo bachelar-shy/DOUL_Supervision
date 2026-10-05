@@ -3,12 +3,14 @@ import type {
   Fields,
   HumanRole,
   RecordDTO,
+  RegisterProjectionRow,
   Session,
   WorkItem,
   Workspace,
 } from "./ui-contract";
 import type { SupervisionClient, UploadOptions } from "./supervision-client";
 import { createMockWorkspace } from "./mock-workspace";
+import { registerProjectionCatalog } from "./register-projection-catalog.generated";
 
 const previewOnly = () =>
   Promise.reject(
@@ -87,6 +89,42 @@ export class MockSupervisionClient implements SupervisionClient {
 
   async request<T>(_path: string, _init: RequestInit = {}): Promise<T> {
     if (_path.endsWith("/roles")) return [] as T;
+    const registerMatch = _path.match(/\/registers\/(\d{2})$/);
+    if (registerMatch) {
+      const definition = registerProjectionCatalog.find(
+        (item) => item.id === registerMatch[1],
+      );
+      if (!definition) return [] as T;
+      const source = definition.sources[0];
+      const calculated = Object.fromEntries(
+        definition.calculatedFields.map((field) => [field, null]),
+      );
+      const rows: RegisterProjectionRow[] = [
+        {
+          sourceDomainRefs: [
+            {
+              objectType: source.objectType,
+              objectId: `REG-${definition.id}-UI-MOCK`,
+              version: 1,
+            },
+          ],
+          data: {
+            id: `REG-${definition.id}-UI-MOCK`,
+            projectId: "UI-MOCK",
+            version: 1,
+            status: "preview",
+            title: `${definition.name} 예시 기록`,
+            subtype: source.subtype ?? undefined,
+            discipline: "ARCH",
+            locationId: "L02-ZONE-A",
+            packageId: "PKG-UI-MOCK",
+          },
+          calculated,
+          unavailableFields: [...definition.calculatedFields],
+        },
+      ];
+      return rows as T;
+    }
     throw new Error("UI Mock Preview에서 지원하지 않는 조회입니다.");
   }
 }
