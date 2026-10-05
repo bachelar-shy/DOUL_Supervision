@@ -338,7 +338,7 @@
         },
         "review.ncr_no": {
           "type": "string",
-          "required": true,
+          "required": false,
           "label_key": "review.ncr_no"
         }
       },
@@ -365,8 +365,7 @@
         "material.name",
         "material.approval_no",
         "material.delivery_date",
-        "review.status",
-        "review.ncr_no"
+        "review.status"
       ],
       "legal_mode": "doul_internal",
       "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"

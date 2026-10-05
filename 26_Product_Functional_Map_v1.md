@@ -212,9 +212,9 @@ read-only Register와 Maturity는 같은 의미가 아니다. Read-only Projecti
 | 05 | 문서송수신 | D2 | 기록 Projection | Notification / InformationItem | FM-01 | M1 | 송신·수신·접수·회신기한·공식전달 증빙의 업무 계약 필요 |
 | 06 | 시공사 제출자료 | D2 | 제출자료 Projection | F-01 Submission + Approval | FM-01, FM-02 | M3 | F-01에서 Revision 불변성, 완전성검토, 기술검토, 최종판정, 재제출, 배포까지 확정 |
 | 07 | 시공상세도 | D2/D4 | 설계·시공성 검토 | F-01 + Approval / RFI / Change | FM-03 | M3 | F-01에서 설계의도·다분야 간섭·RFI/Change 분기·Release/Supersede까지 확정 |
-| 08 | 자재승인 | D2/D3 | 승인 Projection | Approval 재사용 | FM-04 | M2 | 견본·인증·시험·동등성·조건부승인·대체품·반입 연결 규칙 상세화 |
-| 09 | 자재반입검사 | D3 | 실행형 | Inspection | FM-05 | M3 | 승인자재와 실제 Lot 추적, 불합격 시 Issue 연결 유지 |
-| 10 | 시험·계측 | D3 | 결과 Projection | Issue/Inspection과 연결 | FM-06 | M2 | 시험요청→시료→입회→Lab→결과→부적합→재시험의 체인 상세화 |
+| 08 | 자재승인 | D2/D3 | 승인 Projection | F-02 Material Approval | FM-04 | M3 | F-02에서 제품 Identity, Sample/Mock-up, 동등품, 승인 Scope·유효성까지 확정 |
+| 09 | 자재반입검사 | D3 | 실행형 | F-02 + Inspection | FM-05 | M3 | F-02에서 실제 Lot, Approval Match, Quarantine, 사용 Release까지 확정 |
+| 10 | 시험·계측 | D3 | 결과 Projection | F-02 Test Request + Issue | FM-06 | M3 | F-02에서 Sampling Chain, Lab, 시험판정, Failed Test, Retest까지 확정 |
 | 11 | 검측·검수 | D3 | 핵심 실행형 | Inspection | FM-07~10 | M3 | 현 상태 유지. 공종별 Gate/ITP 확장 |
 | 12 | 부적합·시정 | D3 | 핵심 실행형 | Issue + Action + Reinspection | FM-12, FM-13 | M3 | 반복 시정주기·발주처 보고 연계를 지속 검증 |
 | 13 | 기술질의 | D4 | 실행형 | RFI | FM-15 | M3 | 답변이 Change/Approval을 자동 대체하지 않는 원칙 유지 |
@@ -237,8 +237,8 @@ read-only Register와 Maturity는 같은 의미가 아니다. Read-only Projecti
 
 ### 8.1 현재 분포
 
-- M3: 8개 — 06, 07, 09, 11, 12, 13, 14, 22
-- M2: 13개 — 01, 03, 04, 08, 10, 15, 18, 20, 21, 23, 24, 25, 28
+- M3: 10개 — 06, 07, 08, 09, 10, 11, 12, 13, 14, 22
+- M2: 11개 — 01, 03, 04, 15, 18, 20, 21, 23, 24, 25, 28
 - M1: 7개 — 05, 16, 17, 19, 26, 27, 29
 - R: 1개 — 02
 
@@ -510,8 +510,8 @@ Platform Runtime
 Product / Functional의 다음 상세설계 순서는 다음으로 한다.
 
 1. **F-01 시공사 제출자료 / 시공상세도 — 상세계약 완료 (`27_Submission_Shop_Drawing_Functional_Contract.md`)**
-2. **F-02 자재승인 / 반입 / 시험 — 다음 상세설계**
-3. F-03 Safety Permit / Stop / Resume
+2. **F-02 자재승인 / 반입 / 시험 — 상세계약 완료 (`28_Material_Approval_Receiving_Test_Functional_Contract.md`)**
+3. **F-03 Safety Permit / Stop / Resume — 다음 상세설계**
 4. F-04 Schedule / Delay / Recovery
 5. F-05 Progress Measurement / Payment
 6. F-06 PCCC / Environment Compliance

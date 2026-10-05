@@ -38,6 +38,7 @@ PR #2 병합 커밋 `d13e744`의 계약·검증 엔진을 재사용한 반응형
 25. [UI · 기능 병렬개발 경계](./25_UI_Function_Parallel_Development.md)
 26. [Product / Functional Map v1.0](./26_Product_Functional_Map_v1.md)
 27. [시공사 제출자료 · 시공상세도 Functional Contract v1.0](./27_Submission_Shop_Drawing_Functional_Contract.md)
+28. [자재승인 · 반입검사 · 시험 Functional Contract v1.0](./28_Material_Approval_Receiving_Test_Functional_Contract.md)
 
 ### 현재 상태
 

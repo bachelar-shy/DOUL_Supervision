@@ -27,6 +27,8 @@
 
 자료가 불완전하면 정상 검측으로 접수하지 않는다.
 
+자재·시험의 공통 Product Gate는 `28_Material_Approval_Receiving_Test_Functional_Contract.md`를 따른다. 시험은 ITP별로 `pre_use`, `in_process`, `post_use_acceptance` 중 시점분류를 부여하며, 후속 결과시험이 있다는 이유만으로 모든 자재를 시공 전까지 일률적으로 보류하지 않는다.
+
 ## 3. 토목·기초·구조
 
 | 코드 | 항목 | 등급 | 검사시점 | 주요 확인 | 제출·시험자료 | 베트남 문서 | 진행조건 |
