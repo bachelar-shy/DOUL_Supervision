@@ -243,10 +243,14 @@ textarea {
     --doul-page-x: var(--doul-page-x-mobile);
   }
 
+  .heading-actions .primary,
+  .heading-actions .secondary,
   .primary,
   .secondary,
   .icon-button,
+  .role-picker select,
   .bottom-nav button {
+    min-width: var(--doul-control-height-touch);
     min-height: var(--doul-control-height-touch);
   }
 
@@ -337,6 +341,10 @@ textarea {
 
 .template-register .table-scroll {
   margin-top: var(--doul-space-4);
+  max-height: min(62vh, calc(100dvh - 260px));
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .template-capture > :first-child > .panel,
