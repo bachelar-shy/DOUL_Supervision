@@ -96,6 +96,15 @@ class ApiTests(unittest.TestCase):
         r=self.command('inspections',item,'start',{'status':'completed'})
         self.assertEqual(r.status_code,422);self.assertEqual(self.item('inspection','scheduled')['record']['version'],item['record']['version'])
 
+    def test_empty_rfi_submission_rejected_without_changing_draft(self):
+        self.login('CON');scope=self.workspace()['context']['scope']
+        created=self.client.post('/projects/'+self.project+'/rfis',headers={**self.headers,'Idempotency-Key':uid()},json=dict(roleAssignmentId=self.role,clientObjectId=uid(),payload=dict(**scope,title='Empty RFI',data={})))
+        self.assertEqual(created.status_code,201,created.text)
+        item={'record':created.json()['record']}
+        response=self.command('rfis',item,'submit')
+        self.assertEqual(response.status_code,422)
+        self.assertEqual(self.get('/rfis/'+item['record']['id']).json()['status'],'draft')
+
     def test_contractor_cannot_close_issue(self):
         self.login('CON');item=self.item('issue')
         self.assertNotIn('close',[x['command'] for x in item['actions']])

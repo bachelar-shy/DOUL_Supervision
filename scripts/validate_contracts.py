@@ -31,6 +31,7 @@ def validate_all():
             check(t['from'] in machine['states'] and t['to'] in machine['states'],name+' has unknown state')
             check(t['authority'] in policies,name+' has unknown authority')
             check(t['audit_event'] and t['failure_reasons'],name+' lacks failure/audit contract')
+            check(set(t.get('required_payload_fields',[]))<=set(t['payload_fields']),name+' requires fields outside writable payload')
             check(set(t['guards'])<=guard_keys|set(load('schema/state_machines_v1.json')['common_guards']),name+' has unimplemented guard')
     check([p['register_id'] for p in mapping['registers']]==[f'{i:02}' for i in range(1,30)],'29 projection mappings required')
     subtypes=load('schema/domain_model_v2.json')['subtypes']
@@ -47,6 +48,8 @@ def validate_all():
     check(len(forms)==25 and set(data)==set(bindings)=={f['id'] for f in forms},'25 form contracts and bindings required')
     for form in forms:
         check(set(form['registers'])<=identifiers,form['id']+' refers to unknown view')
+        primary=bindings[form['id']].get('primary_source')
+        if primary:check(primary['object_type'] in schemas and primary['cardinality']==1 and primary['binding']=='primarySourceRef','Invalid form primary subject contract')
         for conditional in data[form['id']]['conditional_signatures']:
             check(isinstance(conditional['when'],dict) and conditional['when']['operator']=='non_null','Unsafe conditional predicate')
     known={'$ref','$schema','type','enum','const','format','pattern','minLength','minimum','maximum','properties','required','additionalProperties','items','minItems','uniqueItems','allOf','oneOf','anyOf','if','then','else','description','title','default'}
@@ -61,6 +64,8 @@ def validate_all():
             if key in schema:walk(schema[key])
     for schema in schemas.values():walk(schema)
     api=json.loads((ROOT/'app/api/openapi.yaml').read_text());ops=0
+    from app.reference.documents import PRIMARY_SOURCES
+    check(PRIMARY_SOURCES=={f:(b['primary_source']['object_type'],b['primary_source']['subtype']) for f,b in bindings.items() if 'primary_source' in b},'Renderer primary subjects differ from the form contract')
     operation_ids=set()
     for path,item in api['paths'].items():
         check(path.startswith('/projects/{projectId}'),'Unscoped API route')

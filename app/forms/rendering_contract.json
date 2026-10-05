@@ -1,5 +1,5 @@
 {
-  "version": "2.0",
+  "version": "2.1",
   "placeholder_syntax": "{{path.to.value}}",
   "outputs": [
     "html_a4",
@@ -20,7 +20,8 @@
     "renderHash",
     "renderedAt",
     "status",
-    "signatureIds"
+    "signatureIds",
+    "primarySourceRef"
   ],
   "rules": [
     "Finalization validates form data schema, statutory language and signature roles.",
@@ -28,7 +29,10 @@
     "Historical source versions are retained and are valid for re-rendering even after live revisions change.",
     "Template bytes/hash/version and renderer version are preserved with the source payload.",
     "Repeat tables paginate with repeated headers and per-page DOUL footer.",
-    "Canonical payload hash is reproducible; output renderHash hashes actual output bytes, not source JSON."
+    "Canonical payload hash is reproducible; output renderHash hashes actual output bytes, not source JSON.",
+    "Result-bearing forms require exactly one typed primary source; ancillary references never authorize another subject.",
+    "Contractor signatures use the primary source responsibleOrganizationId. A conditional subcontractor role does not bypass organization scope; cross-organization delegation requires a future trusted participant assignment adapter.",
+    "Read, render and sign enforce visibility on every frozen source. Draft/review reports remain internal even if their current source is later issued."
   ],
   "reference_outputs": [
     "canonical_json",

@@ -1,5 +1,5 @@
 {
-  "version": "2.0",
+  "version": "2.1",
   "forms": {
     "FM-01": {
       "source_registers": [
@@ -721,7 +721,13 @@
           "required": true
         }
       },
-      "table_bindings": {}
+      "table_bindings": {},
+      "primary_source": {
+        "object_type": "Inspection",
+        "subtype": null,
+        "cardinality": 1,
+        "binding": "primarySourceRef"
+      }
     },
     "FM-08": {
       "source_registers": [
@@ -910,7 +916,13 @@
           "required": false
         }
       },
-      "table_bindings": {}
+      "table_bindings": {},
+      "primary_source": {
+        "object_type": "Inspection",
+        "subtype": null,
+        "cardinality": 1,
+        "binding": "primarySourceRef"
+      }
     },
     "FM-10": {
       "source_registers": [
@@ -1318,7 +1330,13 @@
           "required": true
         }
       },
-      "table_bindings": {}
+      "table_bindings": {},
+      "primary_source": {
+        "object_type": "Action",
+        "subtype": null,
+        "cardinality": 1,
+        "binding": "primarySourceRef"
+      }
     },
     "FM-14": {
       "source_registers": [
@@ -1528,7 +1546,13 @@
           "required": true
         }
       },
-      "table_bindings": {}
+      "table_bindings": {},
+      "primary_source": {
+        "object_type": "WorkItem",
+        "subtype": "RFI",
+        "cardinality": 1,
+        "binding": "primarySourceRef"
+      }
     },
     "FM-16": {
       "source_registers": [
@@ -2088,7 +2112,13 @@
           "required": true
         }
       },
-      "table_bindings": {}
+      "table_bindings": {},
+      "primary_source": {
+        "object_type": "InformationItem",
+        "subtype": "Report",
+        "cardinality": 1,
+        "binding": "primarySourceRef"
+      }
     },
     "FM-21": {
       "source_registers": [
@@ -2193,7 +2223,13 @@
           "required": true
         }
       },
-      "table_bindings": {}
+      "table_bindings": {},
+      "primary_source": {
+        "object_type": "Decision",
+        "subtype": null,
+        "cardinality": 1,
+        "binding": "primarySourceRef"
+      }
     },
     "FM-22": {
       "source_registers": [

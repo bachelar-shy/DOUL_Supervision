@@ -42,12 +42,14 @@ PR #2 병합 커밋 `d13e744`의 계약·검증 엔진을 재사용한 반응형
 - 구현계약: 10개 상태모델·98개 전이·51개 권한정책·29개 조회 대장
 - 사진·영상·발화: 원본·PTS·발화구간·처리범위·사람 확인 상세정의 및 결과 검증
 - 25개 A4 양식: 필드·서명·출처 계약 및 HTML 구조 검증. DOCX/PDF 시각 QA는 후속 작업
-- 참조 실행: Python 표준 라이브러리 기반 업무흐름·권한·문서 엔진, 79개 자동시험
+- 참조 실행: Python 표준 라이브러리 기반 업무흐름·권한·문서 엔진, 99개 자동시험
 - Mobile · Tablet · Responsive Web: 제품·화면 계약, 실제 앱 배포 전
 - Stitch: Presentation / UI Design Source, 업무권한·판정의 원본은 Domain/State/Authority
 - 다음 단계: 운영 DB·인증·업로드·미디어/AI·문서 어댑터 → 법정 원본서식 확인·탑재 → 현장 시범운영
 
 검증 방법은 [app README](./app/README.md)를 따른다. 계약과 참조 실행의 완료 범위는 [이슈 #1 검증서](./22_Issue_1_Resolution_Validation.md)에 명시했다.
+
+Context7 리뷰의 7개 결함 수정과 추가 회귀검증은 [리뷰 수정 검증서](./24_Context7_Review_Fixes.md)를 따른다.
 
 ---
 

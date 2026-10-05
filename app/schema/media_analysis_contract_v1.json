@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "original_evidence_immutable": true,
   "official_issue_requires_human_confirmation": true,
   "nonhuman_actor": "AI",
@@ -123,5 +123,24 @@
   "retry_rule": "New run with retryOfId; retain prior outputs and model/prompt/policy versions.",
   "offline_rule": "captureId deduplicates evidence; expectedVersion conflict goes to human resolution, never last-write-wins.",
   "privacy_rule": "Original access follows project/package/location/organization scope; redacted derivatives can be shared with source provenance retained.",
-  "provider_adapter": "No model provider selected. Workers must return this normalized contract; model calls and media decoding are outside the reference runner."
+  "provider_adapter": "No model provider selected. Workers must return this normalized contract; model calls and media decoding are outside the reference runner.",
+  "photo_result_output": {
+    "kind": "photo_result",
+    "required": [
+      "sourceEvidenceId",
+      "analysisRunId",
+      "modelVersion",
+      "outcome",
+      "summary"
+    ],
+    "outcome": [
+      "no_findings"
+    ],
+    "rules": [
+      "Original photo and exact run/model version are required.",
+      "A complete photo needs its own visually grounded candidate or explicit no_findings result.",
+      "Candidate and no_findings outcomes for the same photo conflict.",
+      "No-findings is a worker assessment, never an official acceptance result."
+    ]
+  }
 }

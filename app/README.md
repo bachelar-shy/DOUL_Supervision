@@ -1,4 +1,4 @@
-# DOUL 감리 앱 구현계약 v2.1
+# DOUL 감리 앱 구현계약 v2.2
 
 업무의 원본은 Core Domain Object다. 29개 관리대장은 조회용 Projection이며 상태를 직접 수정할 수 없다. 업무규칙의 우선순위는 **Domain → State → Authority → Requirement/Gate → API → UI/Stitch**다.
 
@@ -35,6 +35,8 @@ python -m unittest discover -s tests -v
 스키마·상태 계약을 수정했다면 `generate_api.py`, `generate_types.py`를 `--check` 없이 실행하고 검증한다. 정의 JSON은 편집 원본이고 API·타입은 생성물이다. JSON Schema 조건부 규칙은 런타임에서 검사한다. 참조 검증기는 사용하는 키워드만 지원하며 계약 검사에서 미지원 키워드를 거부한다.
 
 참조 엔진의 `bootstrap`, `_save`, `get`, `resolve`는 신뢰된 저장소·마이그레이션 어댑터용이다. HTTP에 그대로 노출하지 않는다. 인증된 Party ID는 인증 어댑터에서 공급하고 RoleAssignment는 서버 저장소에서 조회한다. 요청으로 권한객체를 만들거나 전달할 수 없다.
+
+읽기·문서 렌더링·서명은 `authorize_read`로 원본과 동결된 모든 출처의 공개 범위를 검사한다. 결과 양식의 `primarySourceRef`는 정확히 하나의 대상 버전을 식별한다. 검측의 보완, 최초 시정 검증, 사진별 완료 결과, RFI 필수 본문에 관한 추가 회귀검증은 [리뷰 수정 검증서](../24_Context7_Review_Fixes.md)를 따른다.
 
 ## 구현 범위
 

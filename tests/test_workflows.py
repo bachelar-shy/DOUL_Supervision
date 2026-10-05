@@ -72,7 +72,7 @@ class Workflows(unittest.TestCase):
         self.assertEqual(r['status'],'closed');self.assertFalse(any(k=='Approval' for k,i in self.e._records))
     def test_rfi_answer_marked_change_required_cannot_close_unrouted(self):
         r=self.f.create('rfi',dict(title='변경 필요 질의',data={'response':'변경 검토','responseInformationRefs':[self.f.ref('InformationItem',self.f.drawing)],'changeRequired':True}),'CON')
-        for cmd,payload,actor in [('submit',{'question':'변경 필요','references':[]},'CON'),('receive',{},'SUP'),('refer',{'responsiblePartyId':self.f.actors['DES'][0]},'SUP'),('answer',{'response':'검토','responseInformationRefs':[self.f.ref('InformationItem',self.f.drawing)],'changeRequired':True},'DES'),('review_response',{},'SUP')]:r=self.f.command('rfi',r,cmd,payload,actor)
+        for cmd,payload,actor in [('submit',{'question':'변경 필요','references':[self.f.ref('InformationItem',self.f.drawing)],'dueAt':DUE},'CON'),('receive',{},'SUP'),('refer',{'responsiblePartyId':self.f.actors['DES'][0]},'SUP'),('answer',{'response':'검토','responseInformationRefs':[self.f.ref('InformationItem',self.f.drawing)],'changeRequired':True},'DES'),('review_response',{},'SUP')]:r=self.f.command('rfi',r,cmd,payload,actor)
         self.denies('CHANGE_ROUTED_IF_REQUIRED',lambda:self.f.command('rfi',r,'accept_response'))
     def test_owner_decision_and_change_are_separate_versioned_records(self):
         report=self.f.issue_report(self.f.report());decision_id=uid()

@@ -36,7 +36,7 @@ def status_for(code):
     if code in ['ADAPTER_NOT_CONFIGURED']:return 501
     if code=='PAYLOAD_TOO_LARGE':return 413
     if code in ['MIME_INVALID']:return 415
-    if code.startswith(('SCHEMA','FORM_')) or code in ['INVALID_REQUEST','INVALID_DATETIME','COMMAND_FIELD_INVALID']:return 422
+    if code.startswith(('SCHEMA','FORM_')) or code in ['INVALID_REQUEST','INVALID_DATETIME','COMMAND_FIELD_INVALID','COMMAND_FIELD_REQUIRED','RFI_PACKAGE_COMPLETE']:return 422
     return 409
 
 
@@ -110,15 +110,7 @@ def create_app(db_path=':memory:', demo=False):
 
     def readable(record,session,role):
         require(record['projectId']==role['projectId'],'PROJECT_MISMATCH','Project unavailable')
-        group=role['actorGroup']
-        if record.get('subtype')=='Report':
-            require(group in ['SUP','ADM'] or record.get('status') not in ['draft','review'],'NOT_FOUND','Report unavailable')
-            if group=='OWN':require(session['partyId'] in record['report']['recipients'],'NOT_FOUND','Report unavailable')
-        if record.get('source') in ['ai','supervisor'] and record.get('status') in ['candidate','under_review']:
-            require(group in ['SUP','ADM'],'NOT_FOUND','Internal observation unavailable')
-        if record.get('formId'):
-            for source in record['sourcePayload']['sources']:readable(source['record'],session,role)
-        else:store.engine.authorize(record,'render_document',session['partyId'],role['id'])
+        store.engine.authorize_read(record,session['partyId'],role['id'])
 
     def machine_record(collection,oid,project,session,role):
         require(collection in COLLECTIONS,'NOT_FOUND','Unknown collection');valid_id(oid)

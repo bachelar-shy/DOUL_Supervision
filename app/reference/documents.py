@@ -36,6 +36,12 @@ BINDINGS={
     'FM-21':{'decision.no':('Decision','id'),'decision.due':('Decision','dueAt'),'decision.result':('Decision','decision'),'decision.decided_at':('Decision','decisionAt')},
 }
 
+PRIMARY_SOURCES={
+    'FM-07':('Inspection',None),'FM-09':('Inspection',None),
+    'FM-13':('Action',None),'FM-15':('WorkItem','RFI'),
+    'FM-20':('InformationItem','Report'),'FM-21':('Decision',None),
+}
+
 
 def put_path(data,path,value):
     parts=path.split('.');target=data
@@ -66,7 +72,13 @@ class Documents:
         records=[self.engine.resolve(r) for r in source_refs];project=records[0]['projectId']
         for record in records:
             require(record['projectId']==project,'PROJECT_MISMATCH','Snapshot sources must share a project')
-            self.engine.authorize(record,'render_document',party_id,role_id)
+            self.engine.authorize_read(record,party_id,role_id)
+        subject=0
+        if form in PRIMARY_SOURCES:
+            kind,subtype=PRIMARY_SOURCES[form]
+            subjects=[i for i,(ref,r) in enumerate(zip(source_refs,records)) if ref['objectType']==kind and (subtype is None or r.get('subtype')==subtype)]
+            require(len(subjects)==1,'FORM_SUBJECT_INVALID','Form requires exactly one '+kind+' subject'+(' of subtype '+subtype if subtype else ''))
+            subject=subjects[0]
         request=dict(form=form,refs=source_refs,data=data,language=language,final=final,supersedesId=supersedes_id,role=role_id)
         cache_key=(project,party_id,key)
         require(bool(key),'IDEMPOTENCY_REQUIRED','Render key required')
@@ -76,7 +88,8 @@ class Documents:
             return self.get(doc_id)
         template=self.templates[form];spec=self.schemas[form];frozen=deepcopy(data)
         for field,(kind,path) in BINDINGS.get(form,{}).items():
-            source=next((r for r,ref in zip(records,source_refs) if ref['objectType']==kind),None)
+            source=records[subject]
+            require(source_refs[subject]['objectType']==kind,'FORM_SOURCE_MISSING',kind+' source required')
             require(source is not None,'FORM_SOURCE_MISSING',kind+' source required')
             value=get_path(source,path)
             if value is not None:put_path(frozen,field,value if spec['scalar_fields'][field]['type']!='string' else str(value))
@@ -104,7 +117,7 @@ class Documents:
             require(old['projectId']==project and old['formId']==form,'SNAPSHOT_SUPERSESSION_INVALID','Supersession must remain in the same project/form')
         payload={'data':frozen,'sources':[{'ref':ref,'record':r} for ref,r in zip(source_refs,records)],'language':language,'requiredSignatureRoles':self._roles(form,frozen)}
         output=self._html(template,payload)
-        snapshot=dict(id=uid(),projectId=project,version=1,formId=form,templateVersion=template['version'],templateHash=digest(template),rendererVersion='reference-html/1',sourceDomainRefs=deepcopy(source_refs),sourcePayload=payload,sourcePayloadHash=digest(payload),renderHash=hashlib.sha256(output).hexdigest(),renderedAt=self.engine.at(),status='final' if final else 'draft',signatureIds=[])
+        snapshot=dict(id=uid(),projectId=project,version=1,formId=form,templateVersion=template['version'],templateHash=digest(template),rendererVersion='reference-html/1',primarySourceRef=deepcopy(source_refs[subject]),sourceDomainRefs=deepcopy(source_refs),sourcePayload=payload,sourcePayloadHash=digest(payload),renderHash=hashlib.sha256(output).hexdigest(),renderedAt=self.engine.at(),status='final' if final else 'draft',signatureIds=[])
         if supersedes_id:snapshot['supersedesId']=supersedes_id
         validate(snapshot,self.engine.schemas['DocumentSnapshot'],self.engine.schemas)
         self.engine._save('DocumentSnapshot',snapshot)
@@ -139,7 +152,9 @@ class Documents:
     def sign(self,doc_id,party_id,role_id,signer_role,method,receipt,key):
         doc=self.get(doc_id)
         require(doc['status'] in ['final','signed'],'DOCUMENT_NOT_FINAL','Draft cannot be signed')
-        primary=doc['sourcePayload']['sources'][0]['record']
+        self.engine.authorize_read(doc,party_id,role_id)
+        require(bool(doc.get('primarySourceRef')),'DOCUMENT_SUBJECT_REQUIRED','Legacy snapshot requires a new render with an explicit subject before signing')
+        primary=next(source['record'] for source in doc['sourcePayload']['sources'] if source['ref']==doc['primarySourceRef'])
         role=self.engine.authorize(primary,'sign_legal_document',party_id,role_id)
         require(signer_role in doc['sourcePayload']['requiredSignatureRoles'],'SIGNATURE_ROLE_INVALID',signer_role)
         group,codes=SIGNER_GROUPS[signer_role]

@@ -57,6 +57,8 @@ def generate():
             if name=='report':props={**props,**schemas['OwnerReportData']['properties']}
             if name in ['rfi','change']:props={**props,**schemas['RFIData' if name=='rfi' else 'ChangeData']['properties']}
             body={'allOf':[{'$ref':'#/components/schemas/CommandRequest'},{'type':'object','properties':{'payload':{'type':'object','properties':{f:deepcopy(props[f]) for f in sorted(fields)},'additionalProperties':False}}}]}
+            required=set(f for t in transitions for f in t.get('required_payload_fields',[]))
+            if required:body['allOf'][1]['properties']['payload']['required']=sorted(required)
             schema_name='Command_'+name+'_'+cmd
             schemas[schema_name]=body
             endpoint(root+'/'+plural[name]+'/{objectId}/'+cmd.replace('_','-'),'post',name+' / '+cmd,{'$ref':'#/components/schemas/'+schema_name}, {'$ref':'#/components/schemas/CommandResult_'+name},name+':'+cmd)
@@ -81,7 +83,7 @@ def generate():
     endpoint(root+'/documents/{documentId}','get','불변 문서와 서명 이력',response={'$ref':'#/components/schemas/DocumentSnapshot'})
     endpoint(root+'/notifications/{notificationId}/acknowledge','post','수신자 본인의 보고 수령 확인',{'$ref':'#/components/schemas/CommandRequest'}, {'$ref':'#/components/schemas/Notification'})
     endpoint(root+'/sync/conflicts','get','수동 해결을 기다리는 stale 업무명령',response={'type':'array','items':{'$ref':'#/components/schemas/CommandError'}})
-    return {'openapi':'3.1.0','info':{'title':'DOUL Supervision Domain Command API','version':'2.1.0','description':'Project-scoped contract. Executable in-memory reference covers workflow; HTTP/DB/auth/media/DOCX/PDF adapters are implementation work.'},
+    return {'openapi':'3.1.0','info':{'title':'DOUL Supervision Domain Command API','version':'2.2.0','description':'Project-scoped contract. Executable in-memory reference covers workflow; HTTP/DB/auth/media/DOCX/PDF adapters are implementation work.'},
         'security':[{'bearerAuth':[]}],'paths':paths,'components':{'securitySchemes':{'bearerAuth':{'type':'http','scheme':'bearer','bearerFormat':'JWT'}},'schemas':schemas,'responses':{'Error'+k:v for k,v in error_responses.items()}},
         'x-authority-contract':'../schema/authority_matrix_v1.json','x-state-contract':'../schema/state_machines_v1.json','x-client-state-write':'forbidden',
         'x-compatibility':'v2 unscoped skeleton endpoints replaced; no deployed clients exist in this repository.'}
