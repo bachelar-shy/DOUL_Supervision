@@ -33,11 +33,13 @@ DOUL 내부 목표기한(법정·계약기한이 없을 때):
 - 주요 공법·복합 상세도: 5근무일
 - 긴급 기술자료: 1근무일
 
+제출자료의 공식 제출·접수·완전성검토·Revision 불변성·Approval·재제출·현장배포 상세기준은 `27_Submission_Shop_Drawing_Functional_Contract.md`를 따른다.
+
 ## 4. 시공상세도
 
 시공사 작성 → 승인설계도면 연결 → 간섭·시공성 자체검토 → 감리 교차검토 → 설계의도 변경 여부 판단.
 
-설계변경이면 감리 승인으로 끝내지 않고 설계자 검토 및 발주처 결정 절차로 전환한다.
+설계변경이면 감리 승인으로 끝내지 않고 설계자 검토 및 발주처 결정 절차로 전환한다. 시공상세도는 승인된 정확한 Revision과 현장 Current Released Revision을 분리하여 추적하고, 대체된 Revision은 현장사용 대상에서 제외한다. 상세 상태·Gate는 `27_Submission_Shop_Drawing_Functional_Contract.md`를 따른다.
 
 ## 5. 자재·장비
 
