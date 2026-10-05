@@ -4,8 +4,10 @@ on:
   pull_request:
     paths:
       - ".dockerignore"
+      - ".github/workflows/platform-container.yml"
       - "infra/**"
-      - "services/api/requirements.lock"
+      - "app/**"
+      - "services/**"
       - "apps/web/**"
       - "packages/client/**"
       - "package.json"
@@ -14,8 +16,10 @@ on:
     branches: [main]
     paths:
       - ".dockerignore"
+      - ".github/workflows/platform-container.yml"
       - "infra/**"
-      - "services/api/requirements.lock"
+      - "app/**"
+      - "services/**"
       - "apps/web/**"
       - "packages/client/**"
       - "package.json"
