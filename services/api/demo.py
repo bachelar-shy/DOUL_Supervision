@@ -24,6 +24,29 @@ def seed(engine):
         engine.bootstrap('Qualification', dict(id=qualification, projectId=project, partyId=party, number='DEMO-NOT-A-CERTIFICATE', rank=1, disciplines=['architecture'], validFrom=start, validTo=end, verified=True, revoked=False))
         engine.bootstrap('RoleAssignment', dict(id=role, projectId=project, partyId=party, organizationId=organization, actorGroup=group, roleCode=role_code, authorityCodes=[k for k, p in engine.policies.items() if group in p['actor_groups']], disciplines=['architecture'], packageIds=[package], locationIds=[location], qualificationIds=[qualification], validFrom=start, validTo=end, active=True, approvedBy=party))
         actors[group] = dict(partyId=party, roleAssignmentId=role, name=names[group], actorGroup=group)
+    # Non-human service actors are explicit, scoped and never available to /dev/sessions.
+    service_actors = {}
+    for group, name in [('SYSTEM', '미디어 처리 시스템 · 예시'), ('AI', '분석 후보 생성기 · 예시')]:
+        party, role, organization = uid(), uid(), uid()
+        engine.bootstrap('Party', dict(id=party, projectId=project, kind='ORGANIZATION', name=name, loginEnabled=False, organizationId=organization))
+        engine.bootstrap('RoleAssignment', dict(
+            id=role,
+            projectId=project,
+            partyId=party,
+            organizationId=organization,
+            actorGroup=group,
+            roleCode='service_worker',
+            authorityCodes=[k for k, p in engine.policies.items() if group in p['actor_groups']],
+            disciplines=['architecture'],
+            packageIds=[package],
+            locationIds=[location],
+            qualificationIds=[],
+            validFrom=start,
+            validTo=end,
+            active=True,
+            approvedBy=actors['ADM']['partyId'],
+        ))
+        service_actors[group] = dict(partyId=party, roleAssignmentId=role, name=name, actorGroup=group)
     # Source organizations survive exclusion from login/user groups.
     for kind in ['TEST_LAB', 'EXTERNAL_REVIEWER']:
         engine.bootstrap('Party', dict(id=uid(), projectId=project, kind=kind, name='예시 자료 발행기관', loginEnabled=False))
@@ -69,4 +92,19 @@ def seed(engine):
     rfi=create('rfi',dict(title='벽체 기준 치수 질의 · 예시',data={}), 'CON')
     rfi=command('rfi',rfi,'submit',dict(question='A-201 치수 해석 확인',references=[ref('InformationItem',drawing)],dueAt=due),'CON')
     rfi=command('rfi',rfi,'receive');command('rfi',rfi,'refer',dict(responsiblePartyId=actors['DES']['partyId']))
-    return dict(projectId=project, actors=actors, scope=scope, requirementRef=ref('Requirement',requirement), drawingRef=ref('InformationItem',drawing), evidenceId=evidence, blobs={file_id:content})
+    analysis_profile = dict(
+        model=dict(provider='development-fixture', name='normalized-worker-contract', version='v1'),
+        promptVersion='media-prompt-v1',
+        policyVersion='1.1',
+    )
+    return dict(
+        projectId=project,
+        actors=actors,
+        serviceActors=service_actors,
+        analysisProfile=analysis_profile,
+        scope=scope,
+        requirementRef=ref('Requirement',requirement),
+        drawingRef=ref('InformationItem',drawing),
+        evidenceId=evidence,
+        blobs={file_id:content},
+    )

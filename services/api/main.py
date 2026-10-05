@@ -3,6 +3,8 @@
 Uses the PR #2 contracts directly. No client-supplied authority objects and no
 status PATCH endpoint. Run only on loopback using python -m services.api --demo.
 """
+import base64
+import binascii
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
@@ -18,6 +20,19 @@ from fastapi.responses import JSONResponse, Response
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from app.reference.engine import canonical, uid
 from app.reference.validation import ContractError, require, instant, validate
+from .application import (
+    add_derived_frame,
+    analysis_review_package,
+    build_inspection_case,
+    complete_media_analysis,
+    create_case_owner_report,
+    create_issue_package,
+    create_media_issue_package,
+    create_reinspection_request,
+    fail_media_analysis,
+    queue_media_analysis,
+    start_media_analysis,
+)
 from .store import Store
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -126,6 +141,36 @@ def create_app(db_path=':memory:', demo=False):
         require(bool(key.strip()) and len(key)<=160,'IDEMPOTENCY_REQUIRED','Provide Idempotency-Key, at most 160 characters')
         return key
 
+    def application_replay(operation,key,project_id,session,body):
+        request_key='application:'+project_id+':'+session['partyId']+':'+operation+':'+key
+        fingerprint=sha256(canonical(body)).hexdigest()
+        cached=store.requests.get(request_key)
+        if cached:
+            require(cached['hash']==fingerprint,'IDEMPOTENCY_CONFLICT','Application request changed')
+            return deepcopy(cached['result']),request_key,fingerprint
+        return None,request_key,fingerprint
+
+    def remember_application(request_key,fingerprint,result):
+        store.requests[request_key]=dict(hash=fingerprint,result=deepcopy(result))
+
+    def service_replay(operation,key,project_id,actor,body):
+        request_key='service:'+project_id+':'+actor['partyId']+':'+operation+':'+key
+        fingerprint=sha256(canonical(body)).hexdigest()
+        cached=store.requests.get(request_key)
+        if cached:
+            require(cached['hash']==fingerprint,'IDEMPOTENCY_CONFLICT','Service request changed')
+            return deepcopy(cached['result']),request_key,fingerprint
+        return None,request_key,fingerprint
+
+    def service_actor(group):
+        require(group in store.meta.get('serviceActors',{}),'ADAPTER_NOT_CONFIGURED','Service actor is not provisioned')
+        return deepcopy(store.meta['serviceActors'][group])
+
+    def dev_worker_operator(request):
+        session=identity(request)
+        require(session['actorGroup']=='ADM','NOT_AUTHORIZED','Local media worker ingress requires the demo administrator')
+        return session
+
     def preflight(machine,record,session,role,payload=None):
         results=[]
         for transition in store.engine.machines[machine]['transitions']:
@@ -141,7 +186,7 @@ def create_app(db_path=':memory:', demo=False):
         return results
 
     @app.get('/health')
-    def health():return dict(status='ok',mode='local-demo',baseCommit='d13e744',adapters={'database':'sqlite-development','workflow':'merged-reference-engine','authentication':'explicit-local-demo','ai':'not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
+    def health():return dict(status='ok',mode='local-demo',baseCommit='1540acb',adapters={'database':'sqlite-development','workflow':'merged-reference-engine','authentication':'explicit-local-demo','mediaPipeline':'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
 
     @app.get('/dev/actors')
     def actors():
@@ -172,7 +217,7 @@ def create_app(db_path=':memory:', demo=False):
                 items.append(dict(machine=machine or ('evidence' if kind=='Evidence' else 'document'),record=deepcopy(r),actions=preflight(machine,r,session,role) if machine else []))
             visible_ids={x['record']['id'] for x in items}
             audits=[x for x in store.engine.audit_events if x['projectId']==project_id and x['objectRef']['objectId'] in visible_ids][-50:]
-            return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context={k:v for k,v in store.meta.items() if k not in ['actors']},participants=[{k:a[k] for k in ['partyId','name','actorGroup']} for a in store.meta['actors'].values()],formSchemas=store.documents.schemas,demo=True)
+            return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context={k:v for k,v in store.meta.items() if k not in ['actors','serviceActors']},participants=[{k:a[k] for k in ['partyId','name','actorGroup']} for a in store.meta['actors'].values()],formSchemas=store.documents.schemas,demo=True)
 
     @app.get('/projects/{project_id}/roles')
     def roles(project_id:str,request:Request):
@@ -192,6 +237,459 @@ def create_app(db_path=':memory:', demo=False):
                 try:readable(row['data'],session,role);output.append(row)
                 except ContractError:pass
             return output
+
+
+
+    @app.post('/projects/{project_id}/media-analysis-runs')
+    async def request_media_analysis(project_id:str,request:Request):
+        """Queue analysis using a server-controlled model/prompt/policy profile."""
+        session=identity(request);body=await body_json(request);key=key_for(request)
+        allowed={'roleAssignmentId','clientObjectId','sourceEvidenceIds','mode','languages','inspectionId','retryOfId'}
+        required={'roleAssignmentId','clientObjectId','sourceEvidenceIds','mode','languages'}
+        require(required<=set(body)<=allowed,'INVALID_REQUEST','Unexpected or missing media-analysis request fields')
+        for value in [body['roleAssignmentId'],body['clientObjectId']]:valid_id(value)
+        if body.get('inspectionId'):valid_id(body['inspectionId'])
+        if body.get('retryOfId'):valid_id(body['retryOfId'])
+        require(isinstance(body['sourceEvidenceIds'],list) and bool(body['sourceEvidenceIds']),'INVALID_REQUEST','sourceEvidenceIds must be a non-empty array')
+        for value in body['sourceEvidenceIds']:valid_id(value)
+        with store.transaction(True):
+            role=role_for(session,project_id,body['roleAssignmentId'])
+            for evidence_id in body['sourceEvidenceIds']:
+                evidence=store.engine.get('Evidence',evidence_id);readable(evidence,session,role)
+            if body.get('inspectionId'):
+                inspection=store.engine.get('Inspection',body['inspectionId']);readable(inspection,session,role)
+            replay,request_key,fingerprint=application_replay('queue-media-analysis',key,project_id,session,body)
+            if replay is not None:return JSONResponse(replay,status_code=201)
+            run=queue_media_analysis(
+                store.engine,
+                body['clientObjectId'],
+                body['sourceEvidenceIds'],
+                body['mode'],
+                body['languages'],
+                store.meta['analysisProfile'],
+                session['partyId'],
+                role['id'],
+                key,
+                body.get('inspectionId'),
+                body.get('retryOfId'),
+            )
+            remember_application(request_key,fingerprint,run)
+            return JSONResponse(run,status_code=201)
+
+    @app.get('/projects/{project_id}/media-analysis-runs/{run_id}')
+    def media_analysis_review(project_id:str,run_id:str,request:Request):
+        """Return normalized worker outputs plus candidate observations for human review."""
+        session=identity(request);valid_id(run_id)
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            package=analysis_review_package(store.engine,run_id)
+            require(package['run']['projectId']==project_id,'PROJECT_MISMATCH','Analysis run unavailable')
+            readable(package['run'],session,role)
+            for source in package['sources']:readable(source,session,role)
+            candidates=[]
+            for record in package['candidates']:
+                try:
+                    readable(record,session,role)
+                    candidates.append(dict(machine='observation',record=record,actions=preflight('observation',record,session,role)))
+                except ContractError:
+                    pass
+            target_inspection=None
+            if package['targetInspection'] is not None:
+                readable(package['targetInspection'],session,role)
+                target_inspection=dict(
+                    machine='inspection',
+                    record=package['targetInspection'],
+                    actions=preflight('inspection',package['targetInspection'],session,role),
+                )
+            return dict(
+                run=dict(machine='analysis_run',record=package['run'],actions=preflight('analysis_run',package['run'],session,role)),
+                sources=package['sources'],
+                candidates=candidates,
+                targetInspection=target_inspection,
+                issueReadiness=package['issueReadiness'],
+                transcripts=package['transcripts'],
+                frames=package['frames'],
+                photoResults=package['photoResults'],
+                coverage=package['coverage'],
+            )
+
+    @app.post('/projects/{project_id}/media-analysis-runs/{run_id}/issues')
+    async def create_media_issue(project_id:str,run_id:str,request:Request):
+        """Create an official issue package from confirmed candidates of one explicitly linked media run."""
+        session=identity(request);body=await body_json(request);key=key_for(request);valid_id(run_id)
+        required={'roleAssignmentId','issueObjectId','actionObjectId','observationIds','subtype','title','actionTitle','responsiblePartyId','dueAt'}
+        require(set(body)==required,'INVALID_REQUEST','Unexpected or missing media issue-package fields')
+        for value in [body['roleAssignmentId'],body['issueObjectId'],body['actionObjectId'],body['responsiblePartyId']]:
+            valid_id(value)
+        require(isinstance(body['observationIds'],list) and bool(body['observationIds']),'INVALID_REQUEST','observationIds must be a non-empty array')
+        for value in body['observationIds']:valid_id(value)
+        require(all(isinstance(body[x],str) and body[x].strip() for x in ['subtype','title','actionTitle','dueAt']),'INVALID_REQUEST','Media issue package text fields are required')
+        instant(body['dueAt'])
+        with store.transaction(True):
+            role=role_for(session,project_id,body['roleAssignmentId'])
+            run=store.engine.get('AnalysisRun',run_id);readable(run,session,role)
+            for observation_id in body['observationIds']:
+                readable(store.engine.get('Observation',observation_id),session,role)
+            replay,request_key,fingerprint=application_replay('create-media-issue-package',key,project_id,session,body|{'runId':run_id})
+            if replay is not None:return JSONResponse(replay,status_code=201)
+            result=create_media_issue_package(
+                store.engine,
+                run_id,
+                body['issueObjectId'],
+                body['actionObjectId'],
+                body['observationIds'],
+                body['subtype'],
+                body['title'],
+                body['actionTitle'],
+                body['responsiblePartyId'],
+                body['dueAt'],
+                session['partyId'],
+                role['id'],
+                key,
+            )
+            remember_application(request_key,fingerprint,result)
+            return JSONResponse(result,status_code=201)
+
+    @app.post('/dev/media-worker/projects/{project_id}/evidence/{evidence_id}/index')
+    async def dev_media_index(project_id:str,evidence_id:str,request:Request):
+        """Demo-only normalized media index ingress. Not a production worker credential."""
+        session=dev_worker_operator(request);body=await body_json(request);key=key_for(request);valid_id(evidence_id)
+        require(set(body)=={'durationMs','framePtsMs','metadata'},'INVALID_REQUEST','Media index requires durationMs, framePtsMs and metadata')
+        with store.transaction(True):
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            evidence=store.engine.get('Evidence',evidence_id);readable(evidence,session,role)
+            system=service_actor('SYSTEM')
+            replay,request_key,fingerprint=service_replay('index-media',key,project_id,system,body|{'evidenceId':evidence_id})
+            if replay is not None:return replay
+            result=store.engine.index_media_evidence(
+                evidence_id,
+                body['durationMs'],
+                body['framePtsMs'],
+                body['metadata'],
+                system['partyId'],
+                system['roleAssignmentId'],
+                key,
+            )['record']
+            remember_application(request_key,fingerprint,result)
+            return result
+
+    @app.post('/dev/media-worker/projects/{project_id}/runs/{run_id}/start')
+    async def dev_media_start(project_id:str,run_id:str,request:Request):
+        """Demo-only worker claim/start ingress."""
+        session=dev_worker_operator(request);body=await body_json(request);key=key_for(request);valid_id(run_id)
+        require(body=={},'INVALID_REQUEST','Start body must be empty')
+        with store.transaction(True):
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            run=store.engine.get('AnalysisRun',run_id);readable(run,session,role)
+            system=service_actor('SYSTEM')
+            replay,request_key,fingerprint=service_replay('start-media-analysis',key,project_id,system,{'runId':run_id})
+            if replay is not None:return replay
+            result=start_media_analysis(store.engine,run_id,system,key)
+            remember_application(request_key,fingerprint,result)
+            return result
+
+    @app.post('/dev/media-worker/projects/{project_id}/runs/{run_id}/frames')
+    async def dev_media_frame(project_id:str,run_id:str,request:Request):
+        """Demo-only derived-frame ingress preserving exact decoder frame index and PTS."""
+        session=dev_worker_operator(request);body=await body_json(request);key=key_for(request);valid_id(run_id)
+        required={'frameObjectId','fileObjectId','sourceEvidenceId','frameIndex','ptsMs','mimeType','contentBase64'}
+        require(set(body)==required,'INVALID_REQUEST','Derived frame fields are incomplete')
+        for value in [body['frameObjectId'],body['fileObjectId'],body['sourceEvidenceId']]:valid_id(value)
+        require(type(body['frameIndex']) is int and type(body['ptsMs']) is int,'INVALID_REQUEST','frameIndex and ptsMs must be integers')
+        try:content=base64.b64decode(body['contentBase64'],validate=True)
+        except (binascii.Error,ValueError):raise ContractError('INVALID_REQUEST','contentBase64 is invalid')
+        require(bool(content) and len(content)<=MAX_CHUNK,'PAYLOAD_TOO_LARGE','Derived frame exceeds the development chunk limit')
+        with store.transaction(True):
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            run=store.engine.get('AnalysisRun',run_id);readable(run,session,role)
+            system=service_actor('SYSTEM')
+            fingerprint_body={k:v for k,v in body.items() if k!='contentBase64'}|{'contentHash':sha256(content).hexdigest()}
+            replay,request_key,fingerprint=service_replay('add-derived-frame',key,project_id,system,fingerprint_body|{'runId':run_id})
+            if replay is not None:return replay
+            result=add_derived_frame(
+                store.engine,
+                run_id,
+                body['frameObjectId'],
+                body['fileObjectId'],
+                body['sourceEvidenceId'],
+                body['frameIndex'],
+                body['ptsMs'],
+                content,
+                body['mimeType'],
+                system,
+                key,
+            )
+            store.put_blob(result['fileId'],content)
+            remember_application(request_key,fingerprint,result)
+            return JSONResponse(result,status_code=201)
+
+    @app.post('/dev/media-worker/projects/{project_id}/runs/{run_id}/complete')
+    async def dev_media_complete(project_id:str,run_id:str,request:Request):
+        """Demo-only normalized worker completion; creates AI observation candidates atomically."""
+        session=dev_worker_operator(request);body=await body_json(request);key=key_for(request);valid_id(run_id)
+        require(set(body)=={'outputs','coverage','completedAt'},'INVALID_REQUEST','Worker completion requires outputs, coverage and completedAt')
+        instant(body['completedAt'])
+        with store.transaction(True):
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            run=store.engine.get('AnalysisRun',run_id);readable(run,session,role)
+            system=service_actor('SYSTEM');ai=service_actor('AI')
+            replay,request_key,fingerprint=service_replay('complete-media-analysis',key,project_id,system,body|{'runId':run_id})
+            if replay is not None:return replay
+            result=complete_media_analysis(
+                store.engine,
+                run_id,
+                body['outputs'],
+                body['coverage'],
+                body['completedAt'],
+                system,
+                ai,
+                key,
+            )
+            remember_application(request_key,fingerprint,result)
+            return result
+
+    @app.post('/dev/media-worker/projects/{project_id}/runs/{run_id}/fail')
+    async def dev_media_fail(project_id:str,run_id:str,request:Request):
+        """Demo-only worker failure ingress retaining the run and reason."""
+        session=dev_worker_operator(request);body=await body_json(request);key=key_for(request);valid_id(run_id)
+        require(set(body)=={'reason'} and isinstance(body['reason'],str),'INVALID_REQUEST','Worker failure reason is required')
+        with store.transaction(True):
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            run=store.engine.get('AnalysisRun',run_id);readable(run,session,role)
+            system=service_actor('SYSTEM')
+            replay,request_key,fingerprint=service_replay('fail-media-analysis',key,project_id,system,body|{'runId':run_id})
+            if replay is not None:return replay
+            result=fail_media_analysis(store.engine,run_id,body['reason'],system,key)
+            remember_application(request_key,fingerprint,result)
+            return result
+
+    @app.get('/projects/{project_id}/inspection-cases/{inspection_id}')
+    def inspection_case(project_id:str,inspection_id:str,request:Request):
+        """Inspection-centered application read model for UI/workbench clients."""
+        session=identity(request)
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            valid_id(inspection_id)
+            graph=build_inspection_case(store.engine,inspection_id)
+            require(graph['projectId']==project_id,'PROJECT_MISMATCH','Project unavailable')
+            readable(graph['rootInspection'],session,role)
+
+            def item(machine,record):
+                readable(record,session,role)
+                return dict(machine=machine,record=deepcopy(record),actions=preflight(machine,record,session,role))
+
+            visible_ids={graph['rootInspection']['id']}
+            groups=[]
+            for group in graph['issues']:
+                try:issue=item('issue',group['issue'])
+                except ContractError:continue
+                visible_ids.add(issue['record']['id'])
+
+                def visible_items(machine,key):
+                    result=[]
+                    for record in group[key]:
+                        try:
+                            decorated=item(machine,record);result.append(decorated);visible_ids.add(record['id'])
+                        except ContractError:pass
+                    return result
+
+                owner_reports=visible_items('report','ownerReports')
+                visible_report_ids={record['record']['id'] for record in owner_reports}
+                readiness=deepcopy(group['readiness'])
+                closeout_ids=[
+                    report_id for report_id in readiness.get('closeoutReportIds',[])
+                    if report_id in visible_report_ids
+                ]
+                closeout_reports=[
+                    record['record'] for record in owner_reports
+                    if record['record']['id'] in closeout_ids
+                ]
+                readiness.update(
+                    closeoutReportIds=closeout_ids,
+                    ownerReportDraftReady=(
+                        issue['record'].get('status')=='closed' and not closeout_ids
+                    ),
+                    ownerReportIssuePending=(
+                        bool(closeout_reports)
+                        and not any(
+                            report.get('status') in ['issued','acknowledged','followup','verified','closed']
+                            for report in closeout_reports
+                        )
+                    ),
+                    ownerReceiptPending=any(
+                        report.get('status')=='issued' for report in closeout_reports
+                    ),
+                    ownerReceiptConfirmed=any(
+                        report.get('status') in ['acknowledged','followup','verified','closed']
+                        for report in closeout_reports
+                    ),
+                    ownerReportingComplete=any(
+                        report.get('status')=='closed' for report in closeout_reports
+                    ),
+                )
+                groups.append(dict(
+                    issue=issue,
+                    observations=visible_items('observation','observations'),
+                    correctiveActions=visible_items('action','correctiveActions'),
+                    inspections=visible_items('inspection','inspections'),
+                    ownerReports=owner_reports,
+                    readiness=readiness,
+                    currentCorrectionCycle=group['currentCorrectionCycle'],
+                ))
+
+            root=item('inspection',graph['rootInspection'])
+            owner_reports=[]
+            for record in graph['ownerReports']:
+                try:
+                    decorated=item('report',record);owner_reports.append(decorated);visible_ids.add(record['id'])
+                except ContractError:pass
+            timeline=[event for event in graph['timeline'] if event['objectRef']['objectId'] in visible_ids]
+            open_issues=[group['issue']['record']['id'] for group in groups if group['issue']['record'].get('status')!='closed']
+            reporting_pending=[
+                group['issue']['record']['id'] for group in groups
+                if group['issue']['record'].get('status')=='closed' and not group['readiness']['ownerReportingComplete']
+            ]
+            return dict(
+                caseId=graph['caseId'],
+                requestedInspectionId=graph['requestedInspectionId'],
+                projectId=project_id,
+                rootInspection=root,
+                issues=groups,
+                ownerReports=owner_reports,
+                readiness=dict(
+                    openIssueIds=open_issues,
+                    ownerReportingPendingIssueIds=reporting_pending,
+                    complete=bool(groups) and not open_issues and not reporting_pending,
+                ),
+                timeline=timeline,
+            )
+
+
+    @app.post('/projects/{project_id}/inspection-cases/{inspection_id}/issues')
+    async def create_case_issue(project_id:str,inspection_id:str,request:Request):
+        """Create/assign an Issue and its first corrective Action in one transaction."""
+        session=identity(request);body=await body_json(request);key=key_for(request)
+        required={'roleAssignmentId','issueObjectId','actionObjectId','observationIds','subtype','title','actionTitle','responsiblePartyId','dueAt'}
+        require(set(body)==required,'INVALID_REQUEST','Unexpected or missing issue-package fields')
+        for value in [inspection_id,body['roleAssignmentId'],body['issueObjectId'],body['actionObjectId'],body['responsiblePartyId']]:
+            valid_id(value)
+        require(isinstance(body['observationIds'],list) and bool(body['observationIds']),'INVALID_REQUEST','observationIds must be a non-empty array')
+        for value in body['observationIds']:valid_id(value)
+        require(all(isinstance(body[x],str) and body[x].strip() for x in ['subtype','title','actionTitle','dueAt']),'INVALID_REQUEST','Issue package text fields are required')
+        instant(body['dueAt'])
+        with store.transaction(True):
+            role=role_for(session,project_id,body['roleAssignmentId'])
+            replay,request_key,fingerprint=application_replay('create-issue-package',key,project_id,session,body)
+            if replay is not None:return JSONResponse(replay,status_code=201)
+            result=create_issue_package(
+                store.engine,
+                inspection_id,
+                body['issueObjectId'],
+                body['actionObjectId'],
+                body['observationIds'],
+                body['subtype'],
+                body['title'],
+                body['actionTitle'],
+                body['responsiblePartyId'],
+                body['dueAt'],
+                session['partyId'],
+                role['id'],
+                key,
+            )
+            remember_application(request_key,fingerprint,result)
+            return JSONResponse(result,status_code=201)
+
+    @app.post('/projects/{project_id}/inspection-cases/{inspection_id}/issues/{issue_id}/reinspections')
+    async def create_case_reinspection(project_id:str,inspection_id:str,issue_id:str,request:Request):
+        """Create, submit and link a reinspection request in one transaction."""
+        session=identity(request);body=await body_json(request);key=key_for(request)
+        required={'roleAssignmentId','reinspectionObjectId','workName','requestedInspectionAt','selfInspectionComplete','precheck','evidenceIds'}
+        require(set(body)==required,'INVALID_REQUEST','Unexpected or missing reinspection fields')
+        for value in [inspection_id,issue_id,body['roleAssignmentId'],body['reinspectionObjectId']]:
+            valid_id(value)
+        require(isinstance(body['workName'],str) and body['workName'].strip(),'INVALID_REQUEST','workName is required')
+        require(isinstance(body['requestedInspectionAt'],str),'INVALID_REQUEST','requestedInspectionAt is required')
+        instant(body['requestedInspectionAt'])
+        require(body['selfInspectionComplete'] is True,'SELF_INSPECTION_COMPLETE','Contractor self-inspection must be complete')
+        precheck=body['precheck']
+        require(isinstance(precheck,dict) and set(precheck)=={'drawing','material','test','previous','change'} and all(type(v) is bool for v in precheck.values()),'INVALID_REQUEST','precheck must contain five boolean checks')
+        require(isinstance(body['evidenceIds'],list) and bool(body['evidenceIds']),'INVALID_REQUEST','evidenceIds must be a non-empty array')
+        for value in body['evidenceIds']:valid_id(value)
+        with store.transaction(True):
+            role=role_for(session,project_id,body['roleAssignmentId'])
+            replay,request_key,fingerprint=application_replay('create-reinspection-request',key,project_id,session,body)
+            if replay is not None:return JSONResponse(replay,status_code=201)
+            result=create_reinspection_request(
+                store.engine,
+                inspection_id,
+                issue_id,
+                body['reinspectionObjectId'],
+                body['workName'],
+                body['requestedInspectionAt'],
+                body['selfInspectionComplete'],
+                precheck,
+                body['evidenceIds'],
+                session['partyId'],
+                role['id'],
+                key,
+            )
+            remember_application(request_key,fingerprint,result)
+            return JSONResponse(result,status_code=201)
+
+    @app.post('/projects/{project_id}/inspection-cases/{inspection_id}/issues/{issue_id}/owner-reports')
+    async def create_case_report(project_id:str,inspection_id:str,issue_id:str,request:Request):
+        """Create a closeout owner-report draft with exact case provenance."""
+        session=identity(request);body=await body_json(request);key=key_for(request)
+        required={
+            'roleAssignmentId','reportObjectId','title','revision','type','priority',
+            'recipientIds','facts','impact','recommendation','dueAt','receiptDueAt',
+        }
+        allowed=required|{'cause','immediateActions'}
+        require(required<=set(body)<=allowed,'INVALID_REQUEST','Unexpected or missing owner-report fields')
+        for value in [inspection_id,issue_id,body['roleAssignmentId'],body['reportObjectId']]:
+            valid_id(value)
+        require(isinstance(body['recipientIds'],list) and bool(body['recipientIds']),'INVALID_REQUEST','recipientIds must be a non-empty array')
+        for value in body['recipientIds']:valid_id(value)
+        require(all(isinstance(body[x],str) and body[x].strip() for x in ['title','revision','type','priority','facts','recommendation','dueAt','receiptDueAt']),'INVALID_REQUEST','Owner-report text fields are required')
+        require(isinstance(body['impact'],dict) and bool(body['impact']),'INVALID_REQUEST','impact must be a non-empty object')
+        for field in ['cause','immediateActions']:
+            if field in body:require(isinstance(body[field],str),'INVALID_REQUEST',field+' must be text')
+        instant(body['dueAt']);instant(body['receiptDueAt'])
+        with store.transaction(True):
+            role=role_for(session,project_id,body['roleAssignmentId'])
+            requested=store.engine.get('Inspection',inspection_id);readable(requested,session,role)
+            issue=store.engine.get('Issue',issue_id);readable(issue,session,role)
+            replay,request_key,fingerprint=application_replay(
+                'create-case-owner-report',
+                key,
+                project_id,
+                session,
+                body|{'inspectionId':inspection_id,'issueId':issue_id},
+            )
+            if replay is not None:return JSONResponse(replay,status_code=201)
+            result=create_case_owner_report(
+                store.engine,
+                inspection_id,
+                issue_id,
+                body['reportObjectId'],
+                body['title'],
+                body['revision'],
+                body['type'],
+                body['priority'],
+                body['recipientIds'],
+                body['facts'],
+                body.get('cause',''),
+                body['impact'],
+                body.get('immediateActions',''),
+                body['recommendation'],
+                body['dueAt'],
+                body['receiptDueAt'],
+                session['partyId'],
+                role['id'],
+                key,
+            )
+            remember_application(request_key,fingerprint,result)
+            return JSONResponse(result,status_code=201)
 
     @app.post('/projects/{project_id}/uploads')
     async def start_upload(project_id:str,request:Request):
