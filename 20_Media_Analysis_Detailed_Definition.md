@@ -1,6 +1,6 @@
 # 20. 사진·영상·발화 분석 상세정의
 
-기준일: 2026-10-05 · 버전: 1.1 · 범위: 제품·데이터·검증 계약
+기준일: 2026-10-06 · 버전: 1.2 · 범위: 제품·데이터·검증·실행 계약
 
 ## 1. 목적과 결과
 
@@ -82,4 +82,14 @@ SUP 촬영 화면은 업로드·동기화 상태를 보여준다. 분석 검토 
 
 자동검증은 가변 프레임률 PTS, 누락 프레임의 전체 분석 주장, 허위 처리 수, 원문 없는 번역, 범위 밖 발화, 음성 공백, 파생 원본 연결, 사람 확인 없는 공식 판정, 원본 덮어쓰기와 체크섬 오류를 거부한다. 실제 모델의 인식 성능·언어 정확도·현장 오탐률은 대표 현장 데이터셋으로 따로 평가한다.
 
-관련 구현: `app/schema/media_analysis_contract_v1.json`, `app/reference/media.py`, `app/reference/engine.py`, `tests/test_media_documents.py`. 참조 구현은 정규화된 작업자 결과의 계약 검증이며, 실제 디코더·모델·업로드 서버 구현을 의미하지 않는다.
+관련 구현: `app/schema/media_analysis_contract_v1.json`, `app/reference/media.py`, `app/reference/engine.py`, `services/api/application.py`, `services/api/main.py`, `tests/test_media_documents.py`, `tests_mvp/test_media_pipeline_http.py`, `tests_mvp/test_media_to_issue_http.py`.
+
+## 9. 현재 실행 구현 경계
+
+현재 Core Application은 SUP의 분석요청, AnalysisRun 상태관리, SYSTEM/AI 서비스 계정 분리, 영상·음성 미디어 인덱스, VFR PTS 기반 파생 프레임 Evidence, 정규화 Worker 결과 검증, transcript 보존, AI candidate Observation 생성, SUP Human Review 조회까지 실행한다. 원본·파생파일·분석작업·후보·사람 확인은 각각 별도 감사기록과 Idempotency-Key를 가진다.
+
+`POST /projects/{id}/media-analysis-runs`에서 모델·프롬프트·정책 버전은 서버가 지정하며 호출자가 변경하지 못한다. 선택적으로 `inspectionId`를 받으면 서버가 그 시점의 `inspectionRef(objectType/objectId/version)`를 보존하고 미디어와 Inspection의 package/location/discipline/responsible organization 범위를 검증한다. 재시도 run은 최초 inspectionRef를 그대로 계승한다. `GET /projects/{id}/media-analysis-runs/{runId}`의 원시 분석결과와 candidate는 SUP/ADM 내부검토 자료로 제한하며, 현재 연결 Inspection과 `issueReadiness`도 함께 반환한다. AI candidate는 `candidate` 상태로만 생성되며 SUP의 `begin_review → confirm/reject`를 자동 실행하지 않는다.
+
+`POST /projects/{id}/media-analysis-runs/{runId}/issues`는 해당 run이 명시적으로 연결한 Inspection과, 그 run에서 생성되어 SUP가 `confirmed`한 AI Observation만 사용해 기존 공식 Issue + 최초 Corrective Action 생성 절차를 호출한다. `issueReadiness`는 모든 confirmed 후보와 별도로 공식 Issue에 사용할 수 있는 `issueEligibleObservationIds`를 구분하며, 발화 또는 추정만 확인된 후보는 `CLAIM_UNCORROBORATED`로 준비완료 처리하지 않는다. 위치·공종이 같다는 이유로 다른 Inspection이나 다른 run의 후보를 자동 연결하지 않는다. AnalysisRun에 저장된 Inspection 버전은 요청시점 출처를 설명하기 위한 기록이며, Issue 생성 시점에는 현재 Inspection 상태를 다시 읽어 `failed/completed + resultStatus=fail`인지 검증한다. 따라서 분석 자체가 Inspection의 실패 판정이나 Issue 발행을 대신하지 않는다.
+
+로컬 개발환경에는 `/dev/media-worker/...` 정규화 ingress가 있어 SYSTEM 작업자의 `index/start/frame/complete/fail` 계약을 검증한다. 이는 실제 FFmpeg/ffprobe 실행, 음성인식·비전 모델 호출, 메시지 큐, 운영 Worker 인증 또는 외부 AI 공급자가 연결되었다는 뜻이 아니다. Generic `analysis-runs` 생성 경로는 실제 provider 미연결을 명확히 하기 위해 계속 501을 반환한다. 실제 공급자 어댑터는 이 정규화 ingress와 동일한 결과 계약을 만족해야 한다.

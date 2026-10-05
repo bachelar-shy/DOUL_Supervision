@@ -96,15 +96,23 @@ iOS 시뮬레이터는 Mac loopback 주소를 사용한다. Android 에뮬레이
 
 원본 OpenAPI는 업무 계약의 기준이다. 이번 HTTP 어댑터가 124개 계약 경로 전체의 운영 서비스를 구현했다고 보지 않는다.
 
-추가 개발용 읽기 API:
+추가 개발용 응용 API:
 - `GET /health`
 - `GET /dev/actors`
 - `POST /dev/sessions`
 - `GET /projects/{id}/workspace`
 - `GET /projects/{id}/roles`
+- `GET /projects/{id}/inspection-cases/{inspectionId}` — 최초 검측·Issue·시정조치·재검측·발주처 보고·감사이력을 명시적 링크로 집계하고 시정/재검측/종결/보고 readiness를 계산
+- `POST /projects/{id}/inspection-cases/{inspectionId}/issues` — 실패 검측 → 공식 Issue + 최초 Corrective Action 생성·배정(원자적 처리)
+- `POST /projects/{id}/inspection-cases/{inspectionId}/issues/{issueId}/reinspections` — 시정조치 제출 → 재검측 생성·요청·Issue 연결(원자적 처리)
+- `POST /projects/{id}/inspection-cases/{inspectionId}/issues/{issueId}/owner-reports` — 종결된 Issue → 정확한 Case 버전 출처를 가진 발주처 종결보고 draft 생성. 제출·발행·수령·후속검증·폐쇄는 독립 상태전이 유지
+- `POST /projects/{id}/media-analysis-runs` — SUP 분석요청 → 서버 고정 모델/프롬프트/정책 프로파일의 AnalysisRun 생성; 선택 Inspection은 요청시점 `inspectionRef`로 명시적 보존
+- `GET /projects/{id}/media-analysis-runs/{runId}` — SUP/ADM Human Review: 원본·처리범위·프레임·원문/번역·AI 후보·현재 Inspection·Issue 준비상태 조회
+- `POST /projects/{id}/media-analysis-runs/{runId}/issues` — 같은 run에서 SUP가 확정한 후보 + 현재 실패 판정된 명시적 Inspection → 공식 Issue + 최초 Corrective Action 생성
+- `/dev/media-worker/projects/{id}/...` — demo-only SYSTEM/AI 정규화 Worker ingress; 미디어 인덱스, 작업 시작, 파생 프레임, 완료/실패 검증
 - `GET /projects/{id}/{collection}/{id}/available-actions`
 
-계약의 생성·명령·증빙 업로드·문서 조회/HTML 출력 경로는 연결했다. 분석·전자서명·DOCX/PDF는 명시적으로 미연결 응답을 준다. UI가 명령을 숨기는 것과 별개로 서버가 다시 검증한다.
+계약의 생성·명령·증빙 업로드·문서 조회/HTML 출력 경로는 연결했다. Media Analysis는 실제 모델 제공자 호출 대신 정규화 Worker 계약과 Human Review 파이프라인까지 연결했으며, Generic `analysis-runs` 생성은 실제 provider 미연결을 나타내기 위해 계속 501이다. 전자서명·DOCX/PDF도 명시적으로 미연결 응답을 준다. UI가 명령을 숨기는 것과 별개로 서버가 다시 검증한다. `start`, `submit_results`, `pass/fail`, `verify`, `close`, `begin_review`, `confirm/reject`, 발주처 보고의 `submit/issue/acknowledge/dispatch/verify/close`처럼 독립된 사람의 판단·수령·감사기록을 의미하는 단일 객체 상태전이는 Application Service가 임의로 합치지 않는다. 여러 객체의 생성·연결이 하나의 유스케이스로 원자적이어야 할 때만 Application Service로 묶는다. Case 종결보고는 기존 즉시보고·의사결정보고를 대체하지 않으며, Issue 종결 후 최종 추적성을 완성하는 별도 보고다.
 
 ## 7. Stitch와 코드의 관계
 
