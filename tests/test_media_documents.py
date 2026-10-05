@@ -21,6 +21,37 @@ class Media(unittest.TestCase):
     def outputs(self,r,e,indices=(0,1,2),complete=True):
         frames=[dict(kind='frame',sourceEvidenceId=e['id'],derivedEvidenceId=uid(),analysisRunId=r['id'],modelVersion='v1',frameIndex=i,ptsMs=e['metadata']['framePtsMs'][i]) for i in indices]
         return dict(outputs=frames,coverage={'sources':[dict(sourceEvidenceId=e['id'],decodedFrameCount=3,analyzedFrameCount=len(indices),analyzedRanges=[{'startMs':0,'endMs':1000}],missingRanges=[] if complete else [{'startMs':360,'endMs':1000}],audioProcessedRanges=[],complete=complete)]},completedAt=DUE)
+    def test_analysis_inspection_context_is_domain_invariant(self):
+        inspection=self.f.inspection()
+        base=dict(
+            sourceEvidenceIds=[self.f.evidence],
+            mode='photo',
+            model={'provider':'fixture','name':'fixture','version':'v1'},
+            promptVersion='p1',
+            policyVersion='1',
+            languages=['ko'],
+        )
+        valid=self.f.create('analysis_run',base|{'inspectionRef':self.f.ref('Inspection',inspection['id'])})
+        self.assertEqual(valid['inspectionRef']['objectId'],inspection['id'])
+
+        self.denies(
+            'INSPECTION_LINK_INVALID',
+            lambda:self.f.create('analysis_run',base|{'inspectionRef':self.f.ref('Requirement',self.f.requirement)}),
+        )
+
+        other_location=uid()
+        self.e.bootstrap('Location',dict(id=other_location,projectId=self.f.project,name='2F B/2',semanticAnchor='building/2F/B-2'))
+        mismatched=deepcopy(self.e.get('Evidence',self.f.evidence))
+        mismatched.update(id=uid(),fileId=uid(),locationId=other_location)
+        mismatched_evidence=self.e.bootstrap('Evidence',mismatched)
+        self.denies(
+            'ANALYSIS_SCOPE_MISMATCH',
+            lambda:self.f.create(
+                'analysis_run',
+                base|{'sourceEvidenceIds':[mismatched_evidence['id']],'inspectionRef':self.f.ref('Inspection',inspection['id'])},
+            ),
+        )
+
     def test_vfr_frame_pts_preserved(self):
         r,e=self.analysis_fixture();payload=self.outputs(r,e)
         validate_analysis_outputs({**r,**payload},[e]);self.assertEqual(payload['outputs'][1]['ptsMs'],360)

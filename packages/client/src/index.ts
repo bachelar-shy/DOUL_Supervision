@@ -71,6 +71,136 @@ export interface WorkItem {
   record: RecordDTO;
   actions: CommandDescriptor[];
 }
+export interface IssueCaseReadiness {
+  stage: string;
+  correctionCycle: number;
+  currentActionIds: string[];
+  correctionSubmitted: boolean;
+  correctionVerified: boolean;
+  currentReinspectionId: string | null;
+  reinspectionPassed: boolean;
+  closeReady: boolean;
+  closeBlockedReasons: string[];
+  closeoutReportIds: string[];
+  ownerReportDraftReady: boolean;
+  ownerReportIssuePending: boolean;
+  ownerReceiptPending: boolean;
+  ownerReceiptConfirmed: boolean;
+  ownerReportingComplete: boolean;
+}
+export interface InspectionIssueCase {
+  issue: WorkItem;
+  observations: WorkItem[];
+  correctiveActions: WorkItem[];
+  inspections: WorkItem[];
+  ownerReports: WorkItem[];
+  readiness: IssueCaseReadiness;
+  currentCorrectionCycle: number;
+}
+export interface InspectionCase {
+  caseId: string;
+  requestedInspectionId: string;
+  projectId: string;
+  rootInspection: WorkItem;
+  issues: InspectionIssueCase[];
+  ownerReports: WorkItem[];
+  readiness: {
+    openIssueIds: string[];
+    ownerReportingPendingIssueIds: string[];
+    complete: boolean;
+  };
+  timeline: {
+    id: string;
+    command: string;
+    at: string;
+    beforeState: string;
+    afterState: string;
+    objectRef: DomainRef;
+    [key: string]: unknown;
+  }[];
+}
+export interface IssuePackageInput {
+  issueObjectId: string;
+  actionObjectId: string;
+  observationIds: string[];
+  subtype: string;
+  title: string;
+  actionTitle: string;
+  responsiblePartyId: string;
+  dueAt: string;
+}
+export interface IssuePackageResult {
+  issue: RecordDTO;
+  correctiveAction: RecordDTO;
+}
+export interface ReinspectionRequestInput {
+  reinspectionObjectId: string;
+  workName: string;
+  requestedInspectionAt: string;
+  selfInspectionComplete: true;
+  precheck: {
+    drawing: boolean;
+    material: boolean;
+    test: boolean;
+    previous: boolean;
+    change: boolean;
+  };
+  evidenceIds: string[];
+}
+export interface ReinspectionRequestResult {
+  issue: RecordDTO;
+  reinspection: RecordDTO;
+}
+export interface OwnerReportDraftInput {
+  reportObjectId: string;
+  title: string;
+  revision: string;
+  type: "regular" | "urgent";
+  priority: "P1" | "P2" | "P3" | "P4";
+  recipientIds: string[];
+  facts: string;
+  cause?: string;
+  impact: Record<string, unknown>;
+  immediateActions?: string;
+  recommendation: string;
+  dueAt: string;
+  receiptDueAt: string;
+}
+export interface OwnerReportDraftResult {
+  report: RecordDTO;
+}
+export type MediaAnalysisMode =
+  | "photo"
+  | "keyframes"
+  | "adaptive"
+  | "every_frame"
+  | "audio";
+export type MediaAnalysisLanguage = "ko" | "vi" | "en" | "auto";
+export interface MediaAnalysisRequestInput {
+  clientObjectId: string;
+  sourceEvidenceIds: string[];
+  mode: MediaAnalysisMode;
+  languages: MediaAnalysisLanguage[];
+  inspectionId?: string;
+  retryOfId?: string;
+}
+export interface MediaIssueReadiness {
+  ready: boolean;
+  confirmedObservationIds: string[];
+  issueEligibleObservationIds: string[];
+  blockedReasons: string[];
+}
+export interface MediaAnalysisReview {
+  run: WorkItem;
+  sources: RecordDTO[];
+  candidates: WorkItem[];
+  targetInspection: WorkItem | null;
+  issueReadiness: MediaIssueReadiness;
+  transcripts: Record<string, unknown>[];
+  frames: Record<string, unknown>[];
+  photoResults: Record<string, unknown>[];
+  coverage: Record<string, unknown>;
+}
 export interface Scope {
   discipline: string;
   packageId: string;
@@ -185,6 +315,93 @@ export class ApiClient {
   }
   workspace(): Promise<Workspace> {
     return this.request(this.path("/workspace"));
+  }
+  requestMediaAnalysis(
+    input: MediaAnalysisRequestInput,
+    key = newKey(),
+  ): Promise<RecordDTO> {
+    return this.request(this.path("/media-analysis-runs"), {
+      method: "POST",
+      headers: { "Idempotency-Key": key },
+      body: JSON.stringify({
+        roleAssignmentId: this.session!.actor.roleAssignmentId,
+        ...input,
+      }),
+    });
+  }
+  mediaAnalysisReview(runId: string): Promise<MediaAnalysisReview> {
+    return this.request(this.path(`/media-analysis-runs/${runId}`));
+  }
+  createMediaIssuePackage(
+    runId: string,
+    input: IssuePackageInput,
+    key = newKey(),
+  ): Promise<IssuePackageResult> {
+    return this.request(this.path(`/media-analysis-runs/${runId}/issues`), {
+      method: "POST",
+      headers: { "Idempotency-Key": key },
+      body: JSON.stringify({
+        roleAssignmentId: this.session!.actor.roleAssignmentId,
+        ...input,
+      }),
+    });
+  }
+  inspectionCase(inspectionId: string): Promise<InspectionCase> {
+    return this.request(this.path(`/inspection-cases/${inspectionId}`));
+  }
+  createIssuePackage(
+    inspectionId: string,
+    input: IssuePackageInput,
+    key = newKey(),
+  ): Promise<IssuePackageResult> {
+    return this.request(this.path(`/inspection-cases/${inspectionId}/issues`), {
+      method: "POST",
+      headers: { "Idempotency-Key": key },
+      body: JSON.stringify({
+        roleAssignmentId: this.session!.actor.roleAssignmentId,
+        ...input,
+      }),
+    });
+  }
+  requestReinspection(
+    inspectionId: string,
+    issueId: string,
+    input: ReinspectionRequestInput,
+    key = newKey(),
+  ): Promise<ReinspectionRequestResult> {
+    return this.request(
+      this.path(
+        `/inspection-cases/${inspectionId}/issues/${issueId}/reinspections`,
+      ),
+      {
+        method: "POST",
+        headers: { "Idempotency-Key": key },
+        body: JSON.stringify({
+          roleAssignmentId: this.session!.actor.roleAssignmentId,
+          ...input,
+        }),
+      },
+    );
+  }
+  createCaseOwnerReport(
+    inspectionId: string,
+    issueId: string,
+    input: OwnerReportDraftInput,
+    key = newKey(),
+  ): Promise<OwnerReportDraftResult> {
+    return this.request(
+      this.path(
+        `/inspection-cases/${inspectionId}/issues/${issueId}/owner-reports`,
+      ),
+      {
+        method: "POST",
+        headers: { "Idempotency-Key": key },
+        body: JSON.stringify({
+          roleAssignmentId: this.session!.actor.roleAssignmentId,
+          ...input,
+        }),
+      },
+    );
   }
   execute(
     item: WorkItem,

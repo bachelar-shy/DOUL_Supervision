@@ -3159,6 +3159,9 @@
               "additionalProperties": true
             }
           },
+          "inspectionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
           "retryOfId": {
             "type": "string",
             "format": "uuid"
