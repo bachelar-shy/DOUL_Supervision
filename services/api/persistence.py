@@ -1,8 +1,8 @@
 """Application-facing persistence boundary for the local HTTP adapter.
 
-The application depends on this port rather than on SQLite details. The current
-implementation remains the SQLite snapshot adapter; a later PostgreSQL adapter
-can satisfy the same boundary without changing Product/Functional contracts.
+The application depends on this port rather than on storage-specific details.
+SQLite and PostgreSQL snapshot adapters satisfy the same boundary without
+changing Product/Functional contracts; normalized production storage is later.
 """
 from contextlib import AbstractContextManager
 from typing import Any, MutableMapping, Protocol, runtime_checkable
@@ -37,7 +37,14 @@ class PersistencePort(Protocol):
 
 
 def create_local_persistence(path=':memory:', demo=True):
-    """Create the current local-development persistence adapter lazily."""
+    """Create the current local-development SQLite persistence adapter lazily."""
     from .store import SQLiteSnapshotAdapter
 
     return SQLiteSnapshotAdapter(path, demo=demo)
+
+
+def create_postgres_persistence(dsn, demo=True):
+    """Create the PostgreSQL snapshot adapter lazily."""
+    from .postgres_store import PostgresSnapshotAdapter
+
+    return PostgresSnapshotAdapter(dsn, demo=demo)
