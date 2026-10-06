@@ -227,7 +227,7 @@ export const registerProjectionCatalog = [
       { objectType: "InformationItem", subtype: "Report" },
     ],
     calculatedFields: ["planned_actual", "delay_days", "forecast_delay_days"],
-    mode: "read_only",
+    mode: "actionable",
     statusSource: "domain.state; resultStatus and nextWorkAllowed remain separate",
     rawStatusPatch: false,
   },
