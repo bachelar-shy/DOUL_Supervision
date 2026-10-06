@@ -31,7 +31,7 @@ permissions:
 jobs:
   compose-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
@@ -41,8 +41,19 @@ jobs:
       - name: Build local development images
         run: docker compose -f infra/compose/compose.dev.yml build
 
-      - name: Start baseline stack
+      - name: Start development stack
         run: docker compose -f infra/compose/compose.dev.yml up -d
+
+      - name: Verify data services
+        run: |
+          init_id="$(docker compose -f infra/compose/compose.dev.yml ps -aq object-storage-init)"
+          test -n "$init_id"
+          test "$(docker inspect -f '{{.State.ExitCode}}' "$init_id")" = "0"
+
+          docker compose -f infra/compose/compose.dev.yml exec -T postgres \
+            sh -ec 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+          docker compose -f infra/compose/compose.dev.yml exec -T redis redis-cli ping | grep -q '^PONG$'
+          curl --fail --silent http://127.0.0.1:9000/minio/health/ready >/dev/null
 
       - name: Smoke test API and Web
         run: |
@@ -61,12 +72,12 @@ jobs:
           grep -q '"status":"ok"' /tmp/api-health.json
           grep -q '"mode":"local-demo"' /tmp/proxied-health.json
           grep -q '^ok$' /tmp/web-health.txt
-          docker compose -f infra/compose/compose.dev.yml ps
+          docker compose -f infra/compose/compose.dev.yml ps -a
 
       - name: Container logs
         if: failure()
         run: docker compose -f infra/compose/compose.dev.yml logs --no-color
 
-      - name: Stop baseline stack
+      - name: Stop development stack
         if: always()
         run: docker compose -f infra/compose/compose.dev.yml down -v --remove-orphans
