@@ -15,6 +15,7 @@ from urllib.parse import unquote, urlsplit
 
 
 SCHEMA_VERSION = "1.0"
+STORAGE_HEALTH_PATHS = ("/health", "/minio/health/ready")
 
 
 def now_iso():
@@ -59,8 +60,10 @@ def probe_api(url):
         return event("api", "health", "error", 0.0, {"errorType": type(exc).__name__})
 
 
-def probe_object_storage(base_url):
-    paths = ("/health", "/minio/health/ready")
+def probe_object_storage(base_url, health_path=None):
+    if health_path is not None and health_path not in STORAGE_HEALTH_PATHS:
+        return event("object-storage", "health", "error", 0.0, {"errorType": "InvalidHealthPath"})
+    paths = (health_path,) if health_path is not None else STORAGE_HEALTH_PATHS
     started = time.monotonic()
     for path in paths:
         try:
@@ -74,6 +77,9 @@ def probe_object_storage(base_url):
                         {"healthPath": path},
                     )
         except urllib.error.HTTPError as exc:
+            # Only an absent endpoint is an automatic discovery fallback.
+            # Explicit selection handles S3 runtimes returning 403 for /health;
+            # never mask an authorization error or a failing readiness endpoint.
             if exc.code == 404:
                 continue
             return event(
@@ -157,6 +163,8 @@ def redis_command(stream, *parts):
 
 def probe_redis(raw_url, heartbeat_key):
     started = time.monotonic()
+    if not raw_url or not raw_url.strip():
+        return event("redis-worker", "health", "error", 0.0, {"errorType": "MissingRedisUrl"})
     try:
         settings = redis_settings(raw_url)
         sock = socket.create_connection((settings["host"], settings["port"]), timeout=5)
@@ -233,6 +241,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--api-url", default="http://127.0.0.1:8791/health")
     parser.add_argument("--object-storage-base", default="http://127.0.0.1:9000")
+    parser.add_argument("--object-storage-health-path", choices=STORAGE_HEALTH_PATHS)
     parser.add_argument("--postgres-host", default="127.0.0.1")
     parser.add_argument("--postgres-port", type=int, default=5432)
     parser.add_argument(
@@ -242,13 +251,10 @@ def main():
     args = parser.parse_args()
 
     redis_url = os.getenv("REDIS_URL", "").strip()
-    if not redis_url:
-        raise SystemExit("REDIS_URL is required; the value is never emitted")
-
     events = [
         probe_api(args.api_url),
         probe_postgres(args.postgres_host, args.postgres_port),
-        probe_object_storage(args.object_storage_base),
+        probe_object_storage(args.object_storage_base, args.object_storage_health_path),
         probe_redis(redis_url, args.worker_heartbeat_key),
     ]
     overall = "ok" if all(item["status"] == "ok" for item in events) else "error"
