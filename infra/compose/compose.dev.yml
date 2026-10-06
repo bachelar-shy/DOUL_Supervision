@@ -11,6 +11,7 @@ services:
       DOUL_API_HOST: 0.0.0.0
       DOUL_API_PORT: "8791"
       DOUL_API_LOG_LEVEL: ${DOUL_API_LOG_LEVEL:-info}
+      DOUL_API_ALLOWED_ORIGINS: "http://127.0.0.1:${DOUL_WEB_PORT_PUBLISHED:-5181},http://localhost:${DOUL_WEB_PORT_PUBLISHED:-5181},http://127.0.0.1:${DOUL_API_PORT_PUBLISHED:-8791},http://localhost:${DOUL_API_PORT_PUBLISHED:-8791}"
     ports:
       - "127.0.0.1:${DOUL_API_PORT_PUBLISHED:-8791}:8791"
     volumes:

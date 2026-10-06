@@ -9,9 +9,11 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import secrets
 from threading import RLock
+from urllib.parse import urlsplit
 from uuid import UUID
 
 from fastapi import FastAPI, Request
@@ -39,9 +41,23 @@ ROOT=Path(__file__).resolve().parents[2]
 SPEC=json.loads((ROOT/'app/api/openapi.yaml').read_text())
 SCHEMAS=SPEC['components']['schemas']
 COLLECTIONS={'observations':'observation','inspections':'inspection','issues':'issue','rfis':'rfi','changes':'change','approvals':'approval','actions':'action','owner-decisions':'decision','owner-reports':'report','analysis-runs':'analysis_run'}
-ORIGINS=['http://127.0.0.1:5181','http://localhost:5181','http://127.0.0.1:8791','http://localhost:8791']
+DEFAULT_ORIGINS=['http://127.0.0.1:5181','http://localhost:5181','http://127.0.0.1:8791','http://localhost:8791']
 MAX_FILE=64*1024*1024
 MAX_CHUNK=4*1024*1024
+
+
+def development_origins():
+    raw=os.getenv('DOUL_API_ALLOWED_ORIGINS','')
+    origins=[x.strip() for x in raw.split(',') if x.strip()] if raw else list(DEFAULT_ORIGINS)
+    if not origins:raise RuntimeError('At least one development origin is required')
+    result=[]
+    for origin in origins:
+        parsed=urlsplit(origin)
+        if parsed.scheme!='http' or parsed.hostname not in ['127.0.0.1','localhost'] or parsed.username or parsed.password or parsed.path not in ['', '/'] or parsed.query or parsed.fragment:
+            raise RuntimeError('DOUL_API_ALLOWED_ORIGINS accepts loopback HTTP origins only')
+        normalized=origin.rstrip('/')
+        if normalized not in result:result.append(normalized)
+    return result
 
 
 def status_for(code):
@@ -97,12 +113,14 @@ def sniff(data):
 
 def create_app(db_path=':memory:', demo=False):
     if not demo:raise RuntimeError('Production auth is not configured. Explicit --demo is required; bind to loopback only.')
+    origins=development_origins()
     store=Store(db_path,demo=True)
     app=FastAPI(title='DOUL MVP local development adapter',version='0.1.0',docs_url='/api-docs')
     app.state.store=store
+    app.state.allowed_origins=origins
     sessions={};session_lock=RLock()
     app.add_middleware(TrustedHostMiddleware,allowed_hosts=['127.0.0.1','localhost','testserver'])
-    app.add_middleware(CORSMiddleware,allow_origins=ORIGINS,allow_methods=['GET','POST','PUT'],allow_headers=['Authorization','Content-Type','X-RoleAssignment-Id','Idempotency-Key','Upload-Offset'])
+    app.add_middleware(CORSMiddleware,allow_origins=origins,allow_methods=['GET','POST','PUT'],allow_headers=['Authorization','Content-Type','X-RoleAssignment-Id','Idempotency-Key','Upload-Offset'])
 
     @app.exception_handler(ContractError)
     async def contract_error(request,exc):return JSONResponse(error_body(exc),status_code=status_for(exc.code))
@@ -195,7 +213,7 @@ def create_app(db_path=':memory:', demo=False):
     @app.post('/dev/sessions')
     async def login(request:Request):
         origin=request.headers.get('origin')
-        require(origin is None or origin in ORIGINS,'ORIGIN_DENIED','Development origin not allowed')
+        require(origin is None or origin in origins,'ORIGIN_DENIED','Development origin not allowed')
         body=await body_json(request)
         require(set(body)=={'actorGroup'} and body['actorGroup'] in ['SUP','CON','OWN','DES','ADM'],'INVALID_REQUEST','Choose one demo human role; service/source parties cannot log in')
         with store.transaction():a=deepcopy(store.meta['actors'][body['actorGroup']]);project=store.meta['projectId']
