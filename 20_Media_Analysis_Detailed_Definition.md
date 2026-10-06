@@ -93,3 +93,18 @@ SUP 촬영 화면은 업로드·동기화 상태를 보여준다. 분석 검토 
 `POST /projects/{id}/media-analysis-runs/{runId}/issues`는 해당 run이 명시적으로 연결한 Inspection과, 그 run에서 생성되어 SUP가 `confirmed`한 AI Observation만 사용해 기존 공식 Issue + 최초 Corrective Action 생성 절차를 호출한다. `issueReadiness`는 모든 confirmed 후보와 별도로 공식 Issue에 사용할 수 있는 `issueEligibleObservationIds`를 구분하며, 발화 또는 추정만 확인된 후보는 `CLAIM_UNCORROBORATED`로 준비완료 처리하지 않는다. 위치·공종이 같다는 이유로 다른 Inspection이나 다른 run의 후보를 자동 연결하지 않는다. AnalysisRun에 저장된 Inspection 버전은 요청시점 출처를 설명하기 위한 기록이며, Issue 생성 시점에는 현재 Inspection 상태를 다시 읽어 `failed/completed + resultStatus=fail`인지 검증한다. 따라서 분석 자체가 Inspection의 실패 판정이나 Issue 발행을 대신하지 않는다.
 
 로컬 개발환경에는 `/dev/media-worker/...` 정규화 ingress가 있어 SYSTEM 작업자의 `index/start/frame/complete/fail` 계약을 검증한다. 이는 실제 FFmpeg/ffprobe 실행, 음성인식·비전 모델 호출, 메시지 큐, 운영 Worker 인증 또는 외부 AI 공급자가 연결되었다는 뜻이 아니다. Generic `analysis-runs` 생성 경로는 실제 provider 미연결을 명확히 하기 위해 계속 501을 반환한다. 실제 공급자 어댑터는 이 정규화 ingress와 동일한 결과 계약을 만족해야 한다.
+
+
+## 10. 운영정책 보완
+
+기존 분석결과·처리범위·사람검토 계약은 유지하고, 자동 재처리·사용자 재분석·실패/취소·비용·외부반출·보존/Export의 운영 의미는 `52_Media_Analysis_Operations_Policy_v1.md`를 따른다.
+
+핵심 경계:
+- 자동 Retry와 사용자의 Reanalysis는 서로 다른 행위다.
+- Reanalysis는 새 AnalysisRun을 만들고 기존 결과·Human Review를 덮어쓰지 않는다.
+- `failed`/`cancelled`는 공식 Inspection/Issue 판정을 변경하지 않는다.
+- 부분결과가 존재해도 전체 Coverage 완료로 표시하지 않는다.
+- 비용한도 초과를 이유로 시스템이 임의로 분석모드를 낮추지 않는다.
+- 외부 모델 반출·보존기간·원본 Export 권한은 Project Configuration exact version을 따른다.
+
+기계계약은 `app/schema/media_analysis_contract_v1.json` v1.3의 `operations_policy`에 반영한다.
