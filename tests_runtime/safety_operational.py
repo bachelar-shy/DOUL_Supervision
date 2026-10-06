@@ -67,7 +67,7 @@ def seed_safety_fixture(store, issuer):
         }
 
         def active_permit(label):
-            return store.engine.bootstrap(
+            record = store.engine.bootstrap(
                 "WorkItem",
                 {
                     "id": str(uuid4()),
@@ -92,6 +92,10 @@ def seed_safety_fixture(store, issuer):
                     },
                 },
             )
+            # Trusted fixture setup must mirror the machine identity that normal
+            # Engine.create() records for HTTP-created SafetyPermit objects.
+            store.engine._record_machines[("WorkItem", record["id"])] = "safety_permit"
+            return record
 
         permit = active_permit("A")
         stale_target = active_permit("B")
