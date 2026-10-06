@@ -199,3 +199,14 @@ real TLS rehearsal also rejects a healthy server from a different release or
 environment. Existing authentication and server-side authority tests remain in
 the same CI path. PyJWT fixed-algorithm verification and redis-py URL precedence
 were cross-checked against their official documentation through Context7.
+
+### Fresh PostgreSQL rehearsal startup
+
+The disposable deployment rehearsal waits for an authenticated `SELECT 1` over
+the same host TCP DSN that the migration command will use. A socket-only
+`pg_isready` inside the container is insufficient: the official PostgreSQL image
+starts a temporary Unix-socket server for initialization, stops it, then starts
+the normal TCP server. CI deliberately delays that initialization phase to keep
+this race covered. Readiness has bounded connect/query/overall timeouts; failure
+stops the rehearsal without printing credentials. The migration itself is not
+retried and programming errors are not treated as successful readiness.
