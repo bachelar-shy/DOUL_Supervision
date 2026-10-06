@@ -473,6 +473,214 @@ class PostgresPersistenceIntegrationTests(unittest.TestCase):
         finally:
             reopened.close()
 
+    def test_schedule_baseline_persists_across_postgres_reopen(self):
+        adapter = PostgresSnapshotAdapter(DSN, demo=True)
+        baseline_id = uid()
+        activate_key = uid()
+        activate_body = None
+        project_id = adapter.meta["projectId"]
+        try:
+            app = create_app(demo=True, persistence=adapter)
+            with TestClient(app) as client:
+                def login(group):
+                    response = client.post("/dev/sessions", json={"actorGroup": group})
+                    self.assertEqual(response.status_code, 200, response.text)
+                    session = response.json()
+                    return session, {
+                        "Authorization": "Bearer " + session["accessToken"],
+                        "X-RoleAssignment-Id": session["actor"]["roleAssignmentId"],
+                    }
+
+                con, con_headers = login("CON")
+                sup, sup_headers = login("SUP")
+                workspace = client.get(
+                    f"/projects/{project_id}/workspace", headers=con_headers
+                )
+                self.assertEqual(workspace.status_code, 200, workspace.text)
+                scope = workspace.json()["context"]["scope"]
+                file_id = uid()
+                activity_id = uid()
+                with adapter.transaction(True):
+                    activity = adapter.engine.bootstrap(
+                        "WorkItem",
+                        {
+                            "id": activity_id,
+                            "projectId": project_id,
+                            "subtype": "ScheduleActivity",
+                            "status": "snapshot",
+                            "title": "PostgreSQL critical activity",
+                            "data": {
+                                "activityId": "A-PG",
+                                "wbsPath": "1.0",
+                                "activityName": "Critical",
+                                "percentComplete": 0,
+                                "critical": True,
+                                "sourceScheduleRef": {
+                                    "objectType": "InformationItem",
+                                    "objectId": baseline_id,
+                                    "version": 1,
+                                },
+                            },
+                            **scope,
+                        },
+                    )
+                critical_ref = {
+                    "objectType": "WorkItem",
+                    "objectId": activity["id"],
+                    "version": activity["version"],
+                }
+                quality = {
+                    key: True for key in [
+                        "contractDatesAligned", "wbsComplete", "activityIdsUnique",
+                        "calendarsDefined", "logicComplete", "openEndsIdentified",
+                        "constraintsReviewed", "durationOutliersReviewed",
+                        "criticalPathComputable", "floatOutliersReviewed",
+                        "interfacesReviewed", "sourceFilePreserved",
+                    ]
+                }
+                created = client.post(
+                    f"/projects/{project_id}/schedule-baselines",
+                    headers={**con_headers, "Idempotency-Key": uid()},
+                    json={
+                        "roleAssignmentId": con["actor"]["roleAssignmentId"],
+                        "clientObjectId": baseline_id,
+                        "payload": {
+                            **scope,
+                            "title": "PostgreSQL Baseline",
+                            "revision": "B0",
+                            "fileIds": [file_id],
+                            "evidenceIds": [adapter.meta["evidenceId"]],
+                            "schedule": {
+                                "scheduleNo": "BL-PG",
+                                "scheduleKind": "baseline",
+                                "revision": "B0",
+                                "sourceFileRef": file_id,
+                                "sourceFormat": "xer",
+                                "sourceFileHash": "0" * 64,
+                                "sourceFileVersion": "B0",
+                                "dataDate": "2026-01-01T00:00:00Z",
+                                "projectStartAt": "2026-01-01T00:00:00Z",
+                                "contractualCompletionAt": "2026-12-31T00:00:00Z",
+                                "forecastCompletionAt": "2026-12-31T00:00:00Z",
+                                "calendars": [{
+                                    "calendarId": "STD",
+                                    "name": "Standard",
+                                    "timezone": "Asia/Ho_Chi_Minh",
+                                    "workingDays": [1, 2, 3, 4, 5],
+                                    "hoursPerDay": 8,
+                                }],
+                                "wbsVersion": "1",
+                                "milestoneSet": [{
+                                    "milestoneId": "M1",
+                                    "name": "Completion",
+                                    "plannedAt": "2026-12-31T00:00:00Z",
+                                    "contractualAt": "2026-12-31T00:00:00Z",
+                                }],
+                                "criticalPathRef": critical_ref,
+                                "activityCount": 1,
+                                "scheduleQualitySummary": quality,
+                            },
+                        },
+                    },
+                )
+                self.assertEqual(created.status_code, 201, created.text)
+                baseline = created.json()["record"]
+
+                for command, headers, role in [
+                    ("submit-baseline", con_headers, con),
+                    ("receive-baseline", sup_headers, sup),
+                    ("start-baseline-review", sup_headers, sup),
+                    ("request-baseline-decision", sup_headers, sup),
+                ]:
+                    response = client.post(
+                        f"/projects/{project_id}/schedule-baselines/{baseline_id}/{command}",
+                        headers={**headers, "Idempotency-Key": uid()},
+                        json={
+                            "roleAssignmentId": role["actor"]["roleAssignmentId"],
+                            "expectedVersion": baseline["version"],
+                            "payload": {},
+                            "evidenceIds": [],
+                        },
+                    )
+                    self.assertEqual(response.status_code, 200, response.text)
+                    baseline = response.json()["record"]
+
+                with adapter.transaction(True):
+                    approval = adapter.engine.bootstrap(
+                        "Approval",
+                        {
+                            "id": uid(),
+                            "projectId": project_id,
+                            "status": "approved",
+                            "targetRef": {
+                                "objectType": "InformationItem",
+                                "objectId": baseline_id,
+                                "version": baseline["version"],
+                            },
+                            "requestedBy": con["actor"]["partyId"],
+                            "approvalKind": "technical",
+                            "approvedBy": sup["actor"]["partyId"],
+                            "approvedAt": "2026-10-06T10:00:00Z",
+                            **scope,
+                        },
+                    )
+                approval_ref = {
+                    "objectType": "Approval",
+                    "objectId": approval["id"],
+                    "version": approval["version"],
+                }
+                approved = client.post(
+                    f"/projects/{project_id}/schedule-baselines/{baseline_id}/approve-baseline",
+                    headers={**sup_headers, "Idempotency-Key": uid()},
+                    json={
+                        "roleAssignmentId": sup["actor"]["roleAssignmentId"],
+                        "expectedVersion": baseline["version"],
+                        "payload": {"approvalRef": approval_ref},
+                        "evidenceIds": [],
+                    },
+                )
+                self.assertEqual(approved.status_code, 200, approved.text)
+                baseline = approved.json()["record"]
+                activate_body = {
+                    "roleAssignmentId": sup["actor"]["roleAssignmentId"],
+                    "expectedVersion": baseline["version"],
+                    "payload": {},
+                    "evidenceIds": [],
+                }
+                activated = client.post(
+                    f"/projects/{project_id}/schedule-baselines/{baseline_id}/activate-baseline",
+                    headers={**sup_headers, "Idempotency-Key": activate_key},
+                    json=activate_body,
+                )
+                self.assertEqual(activated.status_code, 200, activated.text)
+                first_result = activated.json()
+                self.assertEqual(first_result["record"]["status"], "effective")
+        finally:
+            adapter.close()
+
+        reopened = PostgresSnapshotAdapter(DSN, demo=True)
+        try:
+            persisted = reopened.engine.get("InformationItem", baseline_id)
+            self.assertEqual(persisted["subtype"], "Schedule")
+            self.assertEqual(persisted["status"], "effective")
+            self.assertEqual(persisted["schedule"]["scheduleKind"], "baseline")
+            app = create_app(demo=True, persistence=reopened)
+            with TestClient(app) as client:
+                sup = client.post("/dev/sessions", json={"actorGroup": "SUP"}).json()
+                replay = client.post(
+                    f"/projects/{project_id}/schedule-baselines/{baseline_id}/activate-baseline",
+                    headers={
+                        "Authorization": "Bearer " + sup["accessToken"],
+                        "X-RoleAssignment-Id": sup["actor"]["roleAssignmentId"],
+                        "Idempotency-Key": activate_key,
+                    },
+                    json=activate_body,
+                )
+                self.assertEqual(replay.status_code, 200, replay.text)
+                self.assertEqual(replay.json()["record"]["status"], "effective")
+        finally:
+            reopened.close()
+
     def test_instances_reload_committed_state_and_http_uses_adapter(self):
         first = PostgresSnapshotAdapter(DSN, demo=True)
         second = PostgresSnapshotAdapter(DSN, demo=True)
