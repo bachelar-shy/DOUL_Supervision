@@ -62,6 +62,9 @@ def main():
             except InvalidTag: pass
             result = restore_bundle(bundle, encryption_key, client, dsn, boundary)
             assert result['verified'] and not result['promotionApproved']
+            assert result['bundleSha256'] == backup['bundleSha256']
+            assert result['backupCreatedAt'] == backup['createdAt']
+            assert result['composeProject'] == backup['composeProject'] == plan['composeProject']
             assert len(result['objects']['versionMapping']) == len(source_versions)
             assert inventory(client, bucket) == source_versions
             assert database_fingerprint(dsn, plan['database']) == original_fingerprint

@@ -10,6 +10,7 @@ from unittest.mock import patch
 import psycopg
 from fastapi.testclient import TestClient
 
+from app.reference.engine import uid
 from services.api.main import create_app
 from services.api.persistence import PersistencePort
 from services.api.postgres_store import (
@@ -337,6 +338,141 @@ class PostgresPersistenceIntegrationTests(unittest.TestCase):
         finally:
             adapter.close()
 
+    def _assert_safety_stop_package_persists_across_postgres_reopen(self):
+        adapter = PostgresSnapshotAdapter(DSN, demo=True)
+        project_id = adapter.meta["projectId"]
+        permit_id = uid()
+        stop_id = uid()
+        stop_key = uid()
+        try:
+            app = create_app(demo=True, persistence=adapter)
+            with TestClient(app) as client:
+                contractor = client.post(
+                    "/dev/sessions",
+                    json={"actorGroup": "CON"},
+                )
+                self.assertEqual(contractor.status_code, 200, contractor.text)
+                con = contractor.json()
+                con_headers = {
+                    "Authorization": "Bearer " + con["accessToken"],
+                    "X-RoleAssignment-Id": con["actor"]["roleAssignmentId"],
+                }
+                workspace = client.get(
+                    f"/projects/{project_id}/workspace",
+                    headers=con_headers,
+                )
+                self.assertEqual(workspace.status_code, 200, workspace.text)
+                scope = workspace.json()["context"]["scope"]
+
+                permit = client.post(
+                    f"/projects/{project_id}/safety-permits",
+                    headers={**con_headers, "Idempotency-Key": uid()},
+                    json={
+                        "roleAssignmentId": con["actor"]["roleAssignmentId"],
+                        "clientObjectId": permit_id,
+                        "payload": {
+                            **scope,
+                            "title": "PostgreSQL Safety Permit",
+                            "data": {},
+                        },
+                    },
+                )
+                self.assertEqual(permit.status_code, 201, permit.text)
+
+                with adapter.transaction(True):
+                    current = adapter.engine.get("WorkItem", permit_id)
+                    current["status"] = "active"
+                    current["data"]["workAuthorized"] = True
+                    adapter.engine._save("WorkItem", current)
+                    permit_ref = {
+                        "objectType": "WorkItem",
+                        "objectId": permit_id,
+                        "version": current["version"],
+                    }
+
+                supervisor = client.post(
+                    "/dev/sessions",
+                    json={"actorGroup": "SUP"},
+                )
+                self.assertEqual(supervisor.status_code, 200, supervisor.text)
+                sup = supervisor.json()
+                sup_headers = {
+                    "Authorization": "Bearer " + sup["accessToken"],
+                    "X-RoleAssignment-Id": sup["actor"]["roleAssignmentId"],
+                    "Idempotency-Key": stop_key,
+                }
+                stop = client.post(
+                    f"/projects/{project_id}/safety-stop-orders",
+                    headers=sup_headers,
+                    json={
+                        "roleAssignmentId": sup["actor"]["roleAssignmentId"],
+                        "clientObjectId": stop_id,
+                        "payload": {
+                            **scope,
+                            "title": "PostgreSQL Immediate Stop",
+                            "evidenceIds": [adapter.meta["evidenceId"]],
+                            "data": {
+                                "stopOrderNo": "STOP-PG-001",
+                                "stopScopeType": "permit",
+                                "stopReason": "immediate hazard",
+                                "observedAt": "2026-10-06T10:00:00Z",
+                                "effectiveAt": "2026-10-06T10:00:00Z",
+                                "affectedPermitRefs": [permit_ref],
+                            },
+                        },
+                    },
+                )
+                self.assertEqual(stop.status_code, 201, stop.text)
+                first_result = stop.json()
+
+                replay = client.post(
+                    f"/projects/{project_id}/safety-stop-orders",
+                    headers=sup_headers,
+                    json={
+                        "roleAssignmentId": sup["actor"]["roleAssignmentId"],
+                        "clientObjectId": stop_id,
+                        "payload": {
+                            **scope,
+                            "title": "PostgreSQL Immediate Stop",
+                            "evidenceIds": [adapter.meta["evidenceId"]],
+                            "data": {
+                                "stopOrderNo": "STOP-PG-001",
+                                "stopScopeType": "permit",
+                                "stopReason": "immediate hazard",
+                                "observedAt": "2026-10-06T10:00:00Z",
+                                "effectiveAt": "2026-10-06T10:00:00Z",
+                                "affectedPermitRefs": [permit_ref],
+                            },
+                        },
+                    },
+                )
+                self.assertEqual(replay.status_code, 201, replay.text)
+                self.assertEqual(replay.json(), first_result)
+        finally:
+            adapter.close()
+
+        reopened = PostgresSnapshotAdapter(DSN, demo=True)
+        try:
+            with reopened.transaction():
+                stop = reopened.engine.get("WorkItem", stop_id)
+                permit = reopened.engine.get("WorkItem", permit_id)
+                self.assertEqual(stop["subtype"], "SafetyStopOrder")
+                self.assertEqual(stop["status"], "issued")
+                self.assertEqual(permit["subtype"], "SafetyPermit")
+                self.assertEqual(permit["status"], "suspended")
+                self.assertFalse(permit["data"]["workAuthorized"])
+                self.assertEqual(permit["version"], 2)
+                self.assertEqual(
+                    permit["data"]["stopOrderRefs"],
+                    [{
+                        "objectType": "WorkItem",
+                        "objectId": stop_id,
+                        "version": 1,
+                    }],
+                )
+        finally:
+            reopened.close()
+
     def test_instances_reload_committed_state_and_http_uses_adapter(self):
         first = PostgresSnapshotAdapter(DSN, demo=True)
         second = PostgresSnapshotAdapter(DSN, demo=True)
@@ -377,6 +513,8 @@ class PostgresPersistenceIntegrationTests(unittest.TestCase):
         finally:
             first.close()
             second.close()
+
+        self._assert_safety_stop_package_persists_across_postgres_reopen()
 
 
 if __name__ == "__main__":

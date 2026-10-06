@@ -76,13 +76,28 @@ class Engine:
         source = self._history if version is not None else self._records
         key = (kind, object_id, version) if version is not None else (kind, object_id)
         require(key in source, 'OBJECT_NOT_FOUND', str(key))
-        return deepcopy(source[key])
+        value=deepcopy(source[key])
+        if version is None and kind=='WorkItem' and value.get('subtype')=='SafetyEquipmentInspection':
+            if value.get('data',{}).get('equipmentAvailable') is True and not self._equipment_documents_current(value):
+                value['data']['equipmentAvailable']=False
+        return value
 
     def resolve(self, reference, project_id=None):
         record = self.get(reference['objectType'], reference['objectId'], reference['version'])
         if project_id:
             require(record['projectId'] == project_id, 'PROJECT_MISMATCH', 'Reference belongs to another project')
         return record
+
+    def _current_reference(self, reference, project_id, *, object_type=None, subtype=None):
+        require(isinstance(reference, dict), 'REFERENCE_INVALID', 'Domain reference must be an object')
+        if object_type is not None:
+            require(reference.get('objectType') == object_type, 'REFERENCE_TYPE_INVALID', object_type)
+        resolved = self.resolve(reference, project_id)
+        current = self.get(reference['objectType'], reference['objectId'])
+        require(current['version'] == reference['version'], 'REFERENCE_STALE', reference['objectId'])
+        if subtype is not None:
+            require(resolved.get('subtype') == subtype, 'REFERENCE_TYPE_INVALID', subtype)
+        return current
 
     def _scope(self, values, target, location=False):
         if '*' in values:
@@ -243,12 +258,92 @@ class Engine:
             require(issue['projectId']==project_id and record.get('responsibleOrganizationId')==issue.get('responsibleOrganizationId'), 'ACTION_SCOPE_MISMATCH','Action belongs to the issue contractor')
             require('correctionCycle' not in record or record['correctionCycle']==issue['correctionCycle'],'ACTION_SCOPE_MISMATCH','Action belongs to current correction cycle')
             record['correctionCycle']=issue['correctionCycle']
+        if machine=='safety_permit':
+            for field in ['workAuthorized','receivedAt','reviewStartedAt','authorizedAt','activatedAt','suspendedAt','resumeRequestAt','completedAt']:
+                require(field not in record['data'], 'IMMUTABLE_FIELD', field+' is server-derived')
+            record['data']['workAuthorized']=False
+        if machine=='safety_stop_order':
+            for field in ['acknowledgedAt','resumeRequestAt','resumeGate','liftedAt','closedAt']:
+                require(field not in record['data'], 'IMMUTABLE_FIELD', field+' is server-derived')
+            require(bool(record.get('evidenceIds')), 'EVIDENCE_REQUIRED', 'A formal stop order requires preserved hazard evidence')
+        if machine=='safety_equipment_inspection':
+            for field in ['equipmentAvailable','requestedAt']:
+                require(field not in record['data'], 'IMMUTABLE_FIELD', field+' is server-derived')
+            record['data']['equipmentAvailable']=False
+        if machine in ['schedule_baseline','schedule_progress']:
+            schedule=record['schedule']
+            expected_kind='baseline' if machine=='schedule_baseline' else 'progress_update'
+            require(schedule.get('scheduleKind')==expected_kind,'SCHEDULE_KIND_INVALID',expected_kind)
+            require(schedule.get('revision')==record.get('revision'),'SCHEDULE_REVISION_MISMATCH','InformationItem and Schedule revisions must match')
+            for field in ['importedAt','submittedAt','reviewedAt','acceptedAt','effectiveAt','frozenAt','supersedesRef']:
+                require(field not in schedule,'IMMUTABLE_FIELD',field+' is server-derived')
+            require('variance' not in schedule,'IMMUTABLE_FIELD','Schedule variance is server-derived')
+            if machine=='schedule_baseline':
+                require(not any(field in schedule for field in ['approvalRef','ownerDecisionRef','actualsVerified','forecastVerified','criticalPathReviewed','varianceExplained']),'IMMUTABLE_FIELD','Baseline decisions and verification fields are command-derived')
+            else:
+                require(not any(field in schedule for field in ['approvalRef','ownerDecisionRef','actualsVerified','forecastVerified','criticalPathReviewed','varianceExplained']),'IMMUTABLE_FIELD','Progress verification fields are supervisor-derived')
+            schedule['importedAt']=self.at()
+            if machine=='schedule_progress':schedule['submittedAt']=self.at()
+        if machine=='delay_event':
+            for field in ['notifiedAt','assessmentStartedAt','impactAnalysisStartedAt','mitigationStartedAt','monitoringStartedAt','resolvedAt','transferredAt','closedAt']:
+                require(field not in record['data'],'IMMUTABLE_FIELD',field+' is server-derived')
+            require('reviewedAt' not in record['data'].get('impactAnalysis',{}),'IMMUTABLE_FIELD','Impact analysis reviewedAt is server-derived')
+        if machine=='recovery_plan':
+            for field in ['requestedAt','submittedAt','reviewedAt','acceptedAt','activatedAt','monitoringStartedAt','completedAt','effectivenessResult']:
+                require(field not in record['data'],'IMMUTABLE_FIELD',field+' is server-derived')
+            record['data']['requestedAt']=self.at()
         validate(record,self.schemas[kind],self.schemas)
+        if machine=='schedule_progress':self._schedule_progress_submission_complete(self._fields(record))
+        if machine=='delay_event':self._delay_event_create_ready(self._fields(record))
+        if machine=='recovery_plan':self._recovery_request_ready(self._fields(record))
+        if machine=='safety_stop_order':
+            return self._create_safety_stop_order(record,request,party_id,role_id,key)
         self._save(kind,record)
         self._record_machines[(kind,object_id)]=machine
         result=self._event(record,'create:'+machine,party_id,role_id,key,request,None)
         self._remember(project_id,party_id,'create:'+machine,key,request,result)
         return result
+
+    def _create_safety_stop_order(self, record, request, party_id, role_id, key):
+        stop_ref={'objectType':'WorkItem','objectId':record['id'],'version':record['version']}
+        now=self.at()
+        permit_updates=[]
+        seen=set()
+        for reference in record['data']['affectedPermitRefs']:
+            permit=self._current_reference(reference,record['projectId'],object_type='WorkItem',subtype='SafetyPermit')
+            require(permit['id'] not in seen,'REFERENCE_DUPLICATE',permit['id'])
+            seen.add(permit['id'])
+            updated=deepcopy(permit)
+            updated['data'].setdefault('stopOrderRefs',[]).append(deepcopy(stop_ref))
+            updated['data']['workAuthorized']=False
+            if updated['status'] in ['authorized','active']:
+                updated['status']='suspended'
+                updated['data']['suspendedAt']=now
+                updated['data']['suspensionReason']=record['data']['stopReason']
+            updated['version']=permit['version']+1
+            updated['updatedAt']=now
+            validate(updated,self.schemas['WorkItem'],self.schemas)
+            permit_updates.append((permit,updated))
+
+        snapshot=(
+            deepcopy(self._records),
+            deepcopy(self._history),
+            deepcopy(self._audit),
+            deepcopy(self._idempotency),
+            deepcopy(self._record_machines),
+        )
+        try:
+            self._save('WorkItem',record)
+            self._record_machines[('WorkItem',record['id'])]='safety_stop_order'
+            result=self._event(record,'create:safety_stop_order',party_id,role_id,key,request,None)
+            for before,updated in permit_updates:
+                self._save('WorkItem',updated)
+                self._event(updated,'safety_stop_order:issue_stop',party_id,role_id,key,request,before)
+            self._remember(record['projectId'],party_id,'create:safety_stop_order',key,request,result)
+            return result
+        except Exception:
+            self._records,self._history,self._audit,self._idempotency,self._record_machines=snapshot
+            raise
 
     def execute(self, machine, object_id, command, expected_version, payload, evidence_ids, party_id, role_id, key):
         require(machine in self.machines,'MACHINE_UNKNOWN',machine)
@@ -266,11 +361,18 @@ class Engine:
         require(len(options)==1,'TRANSITION_INVALID',f'{machine}/{record["status"]}/{command}')
         transition=options[0]
         require(not set(payload)-set(transition['payload_fields']),'COMMAND_FIELD_INVALID','Only command-specific fields are writable')
+        if machine=='delay_event' and command=='start_mitigation' and isinstance(payload.get('impactAnalysis'),dict):
+            require('reviewedAt' not in payload['impactAnalysis'],'IMMUTABLE_FIELD','Impact analysis reviewedAt is server-derived')
         require(set(transition.get('required_payload_fields',[]))<=set(payload),'COMMAND_FIELD_REQUIRED','Required command fields are missing')
         proposed=deepcopy(record)
-        target=proposed.setdefault('data',{}) if kind=='WorkItem' else proposed['report'] if machine=='report' else proposed
+        target=proposed.setdefault('data',{}) if kind=='WorkItem' else proposed['report'] if machine=='report' else proposed['schedule'] if machine in ['schedule_baseline','schedule_progress'] else proposed
         for field,value in payload.items():
-            destination=proposed if kind=='WorkItem' and field in self.schemas[kind]['properties'] else target
+            if machine in ['schedule_baseline','schedule_progress']:
+                if field=='revision':
+                    proposed['revision']=deepcopy(value);target['revision']=deepcopy(value);continue
+                destination=target if field in self.schemas['ScheduleData']['properties'] else proposed
+            else:
+                destination=proposed if kind=='WorkItem' and field in self.schemas[kind]['properties'] else target
             destination[field]=deepcopy(value)
         if machine=='issue':
             for field in ['inspectionIds','actionIds']:
@@ -287,6 +389,10 @@ class Engine:
         if machine=='report' and command=='acknowledge':require(party_id in record['report']['recipients'], 'RECIPIENT_MISMATCH', 'Only an issued recipient may acknowledge')
         self._effects(machine,command,proposed,party_id,role_id)
         proposed.update(status=transition['to'],version=record['version']+1,updatedAt=self.at())
+        if machine=='schedule_baseline' and command=='activate_baseline':
+            return self._activate_schedule_baseline(record,proposed,request,party_id,role_id,key)
+        if machine=='schedule_progress' and command=='freeze_progress':
+            return self._freeze_schedule_progress(record,proposed,request,party_id,role_id,key)
         validate(proposed,self.schemas[kind],self.schemas)
         self._save(kind,proposed)
         result=self._event(proposed,machine+':'+command,party_id,role_id,key,request,record)
@@ -369,6 +475,56 @@ class Engine:
             'current_actions_verified':self._current_actions_verified,
             'decision_package_complete':self._decision_package_complete,
             'rfi_package_complete':self._rfi_package_complete,
+            'permit_submission_complete':self._permit_submission_complete,
+            'permit_safety_review_complete':self._permit_safety_review_complete,
+            'permit_prestart_verified':self._permit_prestart_verified,
+            'permit_authorization_ready':self._permit_authorization_ready,
+            'safety_work_authorized':self._safety_work_authorized,
+            'safety_suspend_reason_present':self._safety_suspend_reason_present,
+            'stop_resume_request_ready':self._stop_resume_request_ready,
+            'safety_resume_gate_satisfied':self._safety_resume_gate_satisfied,
+            'safety_completion_ready':self._safety_completion_ready,
+            'permit_expired':self._permit_expired,
+            'stop_correction_started':self._stop_correction_started,
+            'stop_resume_verification_ready':self._stop_resume_verification_ready,
+            'stop_close_ready':self._stop_close_ready,
+            'equipment_inspection_request_complete':self._equipment_inspection_request_complete,
+            'equipment_schedule_present':self._equipment_schedule_present,
+            'equipment_result_present':self._equipment_result_present,
+            'equipment_pass_ready':self._equipment_pass_ready,
+            'equipment_fail_ready':self._equipment_fail_ready,
+            'equipment_restricted_ready':self._equipment_restricted_ready,
+            'equipment_reinspection_ready':self._equipment_reinspection_ready,
+            'equipment_expired':self._equipment_expired,
+            'schedule_baseline_submission_complete':self._schedule_baseline_submission_complete,
+            'schedule_baseline_completeness_passed':self._schedule_baseline_completeness_passed,
+            'schedule_baseline_review_passed':self._schedule_baseline_review_passed,
+            'schedule_baseline_approval_ready':self._schedule_baseline_approval_ready,
+            'schedule_baseline_activation_ready':self._schedule_baseline_activation_ready,
+            'schedule_replacement_effective':self._schedule_replacement_effective,
+            'schedule_progress_submission_complete':self._schedule_progress_submission_complete,
+            'schedule_progress_completeness_passed':self._schedule_progress_completeness_passed,
+            'schedule_progress_verification_passed':self._schedule_progress_verification_passed,
+            'schedule_progress_freeze_ready':self._schedule_progress_freeze_ready,
+            'schedule_replacement_frozen':self._schedule_replacement_frozen,
+            'delay_notification_ready':self._delay_notification_ready,
+            'delay_assessment_ready':self._delay_assessment_ready,
+            'delay_impact_scope_ready':self._delay_impact_scope_ready,
+            'delay_mitigation_ready':self._delay_mitigation_ready,
+            'delay_monitoring_ready':self._delay_monitoring_ready,
+            'delay_resolution_ready':self._delay_resolution_ready,
+            'delay_contract_transfer_ready':self._delay_contract_transfer_ready,
+            'delay_close_ready':self._delay_close_ready,
+            'recovery_submission_complete':self._recovery_submission_complete,
+            'recovery_completeness_passed':self._recovery_completeness_passed,
+            'recovery_decision_required':self._recovery_decision_required,
+            'recovery_acceptance_ready':self._recovery_acceptance_ready,
+            'recovery_decision_approved':self._recovery_decision_approved,
+            'recovery_activation_ready':self._recovery_activation_ready,
+            'recovery_monitoring_ready':self._recovery_monitoring_ready,
+            'recovery_effective_evidence':self._recovery_effective_evidence,
+            'recovery_ineffective_evidence':self._recovery_ineffective_evidence,
+            'recovery_completion_ready':self._recovery_completion_ready,
         }
         if name in checks:checks[name](r)
         else:
@@ -389,6 +545,613 @@ class Engine:
             if command=='issue':record['report']['issuedAt']=self.at()
             if command=='acknowledge':record['report'].update(acknowledgedAt=self.at(),acknowledgedBy=party_id)
             if command=='verify':record['report']['verifiedAt']=self.at()
+        if machine=='safety_permit':
+            data=record['data']
+            if command=='receive_permit':data['receivedAt']=self.at()
+            if command=='accept_for_safety_review':data['reviewStartedAt']=self.at()
+            if command=='authorize':data['authorizedAt']=self.at()
+            if command in ['activate','approve_resume']:
+                data['workAuthorized']=True
+                data['activatedAt']=self.at()
+            if command in ['suspend','self_suspend']:data['suspendedAt']=self.at()
+            if command=='request_resume':data['resumeRequestAt']=self.at()
+            if command in ['suspend','self_suspend','request_resume','return_resume','expire','cancel','complete_work']:
+                data['workAuthorized']=False
+            if command=='complete_work':data['completedAt']=self.at()
+        if machine=='safety_stop_order':
+            data=record['data']
+            if command=='acknowledge_stop':data['acknowledgedAt']=self.at()
+            if command=='request_resume':data['resumeRequestAt']=self.at()
+            if command in ['request_resume','start_resume_verification','return_resume','lift_stop']:
+                data['resumeGate']=self._derive_stop_resume_gate(record)
+            if command=='lift_stop':data['liftedAt']=self.at()
+            if command=='close_stop':data['closedAt']=self.at()
+        if machine=='safety_equipment_inspection':
+            if command in ['request_inspection','request_reinspection']:record['data']['requestedAt']=self.at()
+            if command=='pass':record['data']['equipmentAvailable']=True
+            if command in ['fail','restrict','require_reinspection','expire']:
+                record['data']['equipmentAvailable']=False
+        if machine=='schedule_baseline':
+            schedule=record['schedule']
+            if command in ['submit_baseline','resubmit_baseline']:schedule['submittedAt']=self.at()
+            if command in ['start_baseline_review','request_baseline_decision']:schedule['reviewedAt']=self.at()
+            if command=='approve_baseline':schedule['acceptedAt']=self.at()
+            if command=='activate_baseline':schedule['effectiveAt']=self.at()
+        if machine=='schedule_progress':
+            schedule=record['schedule']
+            if command=='resubmit_progress':schedule['submittedAt']=self.at()
+            if command in ['start_progress_verification','accept_progress_for_reporting']:schedule['reviewedAt']=self.at()
+            if command=='accept_progress_for_reporting':
+                schedule['acceptedAt']=self.at();schedule['variance']=self._derive_schedule_variance(record)
+            if command=='freeze_progress':schedule['frozenAt']=self.at()
+        if machine=='delay_event':
+            data=record['data'];stamp=self.at()
+            field={'notify':'notifiedAt','start_assessment':'assessmentStartedAt','start_impact_analysis':'impactAnalysisStartedAt','start_mitigation':'mitigationStartedAt','monitor':'monitoringStartedAt','resolve_event':'resolvedAt','transfer_contract_track':'transferredAt','close_delay_event':'closedAt'}.get(command)
+            if field:data[field]=stamp
+            if command=='start_mitigation' and data.get('impactAnalysis') is not None:data['impactAnalysis']['reviewedAt']=stamp
+        if machine=='recovery_plan':
+            data=record['data'];stamp=self.at()
+            field={'submit_recovery':'submittedAt','start_recovery_review':'reviewedAt','request_recovery_decision':'reviewedAt','accept_recovery':'acceptedAt','activate_recovery':'activatedAt','start_recovery_monitoring':'monitoringStartedAt','complete_recovery':'completedAt'}.get(command)
+            if field:data[field]=stamp
+            if command=='mark_recovery_effective':data['effectivenessResult']='effective'
+            if command=='mark_recovery_ineffective':data['effectivenessResult']='ineffective'
+
+    def _all_true(self, value, keys):
+        return isinstance(value,dict) and all(value.get(key) is True for key in keys)
+
+    def _safety_refs_current(self, record, field, *, object_type=None, subtype=None, allow_empty=True):
+        refs=record.get(field)
+        if refs is None:return allow_empty
+        if not isinstance(refs,list):return False
+        if not refs and not allow_empty:return False
+        for reference in refs:
+            if object_type and reference.get('objectType')!=object_type:return False
+            try:resolved=self.resolve(reference,record['projectId'])
+            except ContractError:return False
+            current=self.get(reference['objectType'],reference['objectId'])
+            if current['version']!=reference['version']:return False
+            if subtype and resolved.get('subtype')!=subtype:return False
+        return True
+
+    def _permit_submission_complete(self,r):
+        required=['permitNo','workType','riskLevel','responsiblePartyId','safetyResponsiblePartyId','methodStatementRef','riskAssessmentRef','emergencyPlanRef','validFrom','validTo']
+        require(all(r.get(x) not in [None,'',[]] for x in required),'PERMIT_SUBMISSION_COMPLETE','Permit identity, responsible persons, method/risk/emergency references and validity are required')
+        require(bool(r.get('responsibleOrganizationId')) and bool(r.get('requirementRefs')),'PERMIT_SUBMISSION_COMPLETE','Permit needs contractor organization and requirement baseline')
+        require(isinstance(r.get('equipmentRefs'),list) and isinstance(r.get('personnelQualificationRefs'),list),'PERMIT_SUBMISSION_COMPLETE','Permit needs explicit equipment and qualification lists')
+        require(instant(r['validFrom'])<instant(r['validTo']),'PERMIT_SUBMISSION_COMPLETE','Permit validity window is invalid')
+        for field in ['methodStatementRef','riskAssessmentRef','emergencyPlanRef']:
+            self.resolve(r[field],r['projectId'])
+        require(self._safety_refs_current(r,'equipmentRefs',object_type='Asset',subtype='Equipment'),'PERMIT_SUBMISSION_COMPLETE','Equipment references must be current Equipment assets')
+        require(self._safety_refs_current(r,'personnelQualificationRefs',object_type='Qualification'),'PERMIT_SUBMISSION_COMPLETE','Qualification references must be current')
+
+    def _permit_safety_review_complete(self,r):
+        keys=['methodStatementCurrent','riskAssessmentCurrent','personnelQualified','equipmentReady','controlMeasuresReady','emergencyReady']
+        require(r.get('safetyReviewComplete') is True and self._all_true(r.get('readiness'),keys),'PERMIT_SAFETY_REVIEW_COMPLETE','Safety review conditions are incomplete')
+
+    def _permit_prestart_verified(self,r):
+        require(r.get('prestartVerified') is True and bool(r.get('prestartVerificationRefs')) and bool(r.get('evidenceIds')),'PERMIT_PRESTART_VERIFIED','Pre-start verification and evidence are required')
+
+    def _permit_authorization_ready(self,r):
+        self._permit_safety_review_complete(r)
+        self._permit_prestart_verified(r)
+        require(instant(r['validFrom'])<instant(r['validTo']),'PERMIT_AUTHORIZATION_READY','Permit validity window is invalid')
+
+    def _linked_stop_orders_clear(self,r):
+        for reference in r.get('stopOrderRefs',[]):
+            require(reference.get('objectType')=='WorkItem','SAFETY_STOP_OPEN','Stop reference must identify a WorkItem')
+            stop=self.get('WorkItem',reference['objectId'])
+            require(stop['projectId']==r['projectId'] and stop.get('subtype')=='SafetyStopOrder','SAFETY_STOP_OPEN','Stop reference is invalid')
+            require(stop['status'] in ['lifted','closed','cancelled','superseded'],'SAFETY_STOP_OPEN','An active Safety Stop Order blocks work')
+
+    def _safety_work_authorized(self,r):
+        readiness=['methodStatementCurrent','riskAssessmentCurrent','personnelQualified','equipmentReady','controlMeasuresReady','emergencyReady','environmentalConditionsReady','noBlockingSafetyIssue']
+        require(self._all_true(r.get('readiness'),readiness),'SAFETY_WORK_AUTHORIZED','Safety readiness is incomplete')
+        require(not r.get('blockedReasons'),'SAFETY_WORK_AUTHORIZED','Blocking reasons remain')
+        require(bool(r.get('validFrom')) and bool(r.get('validTo')) and instant(r['validFrom'])<=instant(self.at())<instant(r['validTo']),'SAFETY_WORK_AUTHORIZED','Permit is outside its valid time window')
+        require(self._permit_equipment_ready(r),'SAFETY_WORK_AUTHORIZED','Equipment readiness is not current')
+        self._linked_stop_orders_clear(r)
+
+    def _safety_suspend_reason_present(self,r):
+        require(bool(r.get('suspensionReason','').strip()),'SAFETY_SUSPEND_REASON_PRESENT','Suspension reason is required')
+
+    def _stop_action_records(self,r):
+        records=[]
+        seen=set()
+        for reference in r.get('correctiveActionRefs',[]):
+            action=self._current_reference(reference,r['projectId'],object_type='Action')
+            require(action['id'] not in seen,'REFERENCE_DUPLICATE',action['id'])
+            seen.add(action['id'])
+            records.append(action)
+        return records
+
+    def _stop_verification_records(self,r):
+        records=[]
+        seen=set()
+        for reference in r.get('resumeVerificationRefs',[]):
+            inspection=self._current_reference(reference,r['projectId'],object_type='Inspection')
+            require(inspection['id'] not in seen,'REFERENCE_DUPLICATE',inspection['id'])
+            seen.add(inspection['id'])
+            records.append(inspection)
+        return records
+
+    def _affected_stop_permits(self,r):
+        records=[]
+        seen=set()
+        for reference in r.get('affectedPermitRefs',[]):
+            require(reference.get('objectType')=='WorkItem','SAFETY_PERMIT_REQUIRED','Affected permit must be a WorkItem')
+            permit=self.get('WorkItem',reference['objectId'])
+            require(permit['projectId']==r['projectId'] and permit.get('subtype')=='SafetyPermit','SAFETY_PERMIT_REQUIRED','Affected permit is invalid')
+            require(permit['id'] not in seen,'REFERENCE_DUPLICATE',permit['id'])
+            seen.add(permit['id'])
+            records.append(permit)
+        return records
+
+    def _stop_owner_reports_satisfied(self,r):
+        allowed={'issued','acknowledged','followup','verified','closed'}
+        for reference in r.get('ownerReportRefs',[]):
+            report=self._current_reference(reference,r['projectId'],object_type='InformationItem',subtype='Report')
+            if report['status'] not in allowed:
+                return False
+        return True
+
+    def _derive_stop_resume_gate(self,r):
+        r=self._fields(r)
+        actions=self._stop_action_records(r)
+        verifications=self._stop_verification_records(r)
+        permits=self._affected_stop_permits(r)
+        now=instant(self.at())
+        actions_complete=bool(actions) and all(action['status'] in ['verified','closed'] for action in actions)
+        reinspection_passed=bool(verifications) and all(
+            inspection.get('resultStatus')=='pass' and inspection['status'] in ['passed','completed']
+            for inspection in verifications
+        )
+        permit_valid=bool(permits)
+        if permit_valid:
+            for permit in permits:
+                data=permit['data']
+                permit_valid = permit_valid and permit['status']=='suspended'
+                permit_valid = permit_valid and bool(data.get('validFrom')) and bool(data.get('validTo'))
+                if permit_valid:
+                    permit_valid = instant(data['validFrom'])<=now<instant(data['validTo'])
+        readiness_fields=['methodStatementCurrent','riskAssessmentCurrent','equipmentReady','personnelQualified','controlMeasuresReady','environmentalConditionsReady']
+        readiness={field:bool(permits) and all(permit['data'].get('readiness',{}).get(field) is True for permit in permits) for field in readiness_fields}
+        return {
+            'causeIdentified':bool(actions) and all(bool(action.get('rootCause','').strip()) for action in actions),
+            'correctiveActionComplete':actions_complete,
+            'correctiveEvidencePresent':bool(r.get('resumeRequestAt')) and bool(r.get('evidenceIds')),
+            'issueActionsVerified':actions_complete,
+            'reinspectionPassed':reinspection_passed,
+            'permitValid':permit_valid,
+            'methodStatementCurrent':readiness['methodStatementCurrent'],
+            'riskAssessmentCurrent':readiness['riskAssessmentCurrent'],
+            'equipmentReady':readiness['equipmentReady'] and all(self._permit_equipment_ready(permit) for permit in permits),
+            'personnelQualified':readiness['personnelQualified'],
+            'controlMeasuresReady':readiness['controlMeasuresReady'],
+            'environmentalConditionsReady':readiness['environmentalConditionsReady'],
+            'reportingObligationsSatisfied':self._stop_owner_reports_satisfied(r),
+        }
+
+    def _stop_resume_request_ready(self,r):
+        require(bool(r.get('evidenceIds')),'STOP_RESUME_REQUEST_READY','Resume request needs corrective evidence')
+        if r.get('subtype')=='SafetyStopOrder':
+            actions=self._stop_action_records(r)
+            require(bool(actions),'STOP_RESUME_REQUEST_READY','Stop resume requires corrective action references')
+            require(all(action['status'] in ['verified','closed'] for action in actions),'STOP_RESUME_REQUEST_READY','Corrective actions must be verified before resume request')
+
+    def _resume_gate_complete(self,gate):
+        keys=['causeIdentified','correctiveActionComplete','correctiveEvidencePresent','issueActionsVerified','reinspectionPassed','permitValid','methodStatementCurrent','riskAssessmentCurrent','equipmentReady','personnelQualified','controlMeasuresReady','environmentalConditionsReady','reportingObligationsSatisfied']
+        return self._all_true(gate,keys)
+
+    def _safety_resume_gate_satisfied(self,r):
+        if r.get('subtype')=='SafetyStopOrder':
+            derived=self._derive_stop_resume_gate(r)
+            require(self._resume_gate_complete(derived),'SAFETY_RESUME_GATE_SATISFIED','Stop resume gate is incomplete')
+            return
+        self._safety_work_authorized(r)
+
+    def _safety_completion_ready(self,r):
+        require(r.get('completionConfirmed') is True and bool(r.get('evidenceIds')),'SAFETY_COMPLETION_READY','Permit completion requires confirmation and evidence')
+        self._linked_stop_orders_clear(r)
+
+    def _permit_expired(self,r):
+        require(bool(r.get('validTo')) and instant(self.at())>=instant(r['validTo']),'PERMIT_EXPIRED','Permit has not expired')
+
+    def _stop_correction_started(self,r):
+        actions=self._stop_action_records(r)
+        require(bool(actions),'STOP_CORRECTION_STARTED','Stop correction requires corrective action references')
+        require(all(action['status']!='cancelled' for action in actions),'STOP_CORRECTION_STARTED','Cancelled corrective actions cannot start correction')
+
+    def _stop_resume_verification_ready(self,r):
+        inspections=self._stop_verification_records(r)
+        require(bool(inspections),'STOP_RESUME_VERIFICATION_READY','Resume verification evidence references are required')
+        require(all(inspection.get('resultStatus')=='pass' and inspection['status'] in ['passed','completed'] for inspection in inspections),'STOP_RESUME_VERIFICATION_READY','Resume verification must reference passed inspections')
+
+    def _stop_close_ready(self,r):
+        require(bool(r.get('liftedAt')) and not r.get('blockedReasons'),'STOP_CLOSE_READY','Lifted stop with no unresolved blocker is required before close')
+
+    def _equipment_inspection_request_complete(self,r):
+        require(bool(r.get('equipmentRef')) and bool(r.get('inspectionKind')),'EQUIPMENT_INSPECTION_REQUEST_COMPLETE','Equipment inspection request is incomplete')
+        self._current_reference(r['equipmentRef'],r['projectId'],object_type='Asset',subtype='Equipment')
+
+    def _equipment_document_records(self,r,field,*,required,calibration):
+        refs=r.get(field,[])
+        if required:
+            require(bool(refs),'EQUIPMENT_DOCUMENT_INVALID',field+' is required for this equipment')
+        records=[]
+        now=instant(self.at())
+        for reference in refs:
+            document=self._current_reference(reference,r['projectId'],object_type='InformationItem',subtype='Certificate')
+            require(document.get('status')=='approved','EQUIPMENT_DOCUMENT_INVALID','Safety certificate/calibration must be approved')
+            if calibration:
+                require(document.get('certificateKind')=='calibration','EQUIPMENT_DOCUMENT_INVALID','Calibration reference must identify a calibration certificate')
+            else:
+                require(document.get('certificateKind') in ['safety','inspection','other'],'EQUIPMENT_DOCUMENT_INVALID','Certificate reference must identify a non-calibration certificate')
+            require(bool(document.get('validFrom')) and bool(document.get('validTo')),'EQUIPMENT_DOCUMENT_INVALID','Certificate validity period is required')
+            require(instant(document['validFrom'])<=now<instant(document['validTo']),'EQUIPMENT_DOCUMENT_INVALID','Certificate or calibration is expired or not yet valid')
+            records.append(document)
+        return records
+
+    def _require_equipment_documents_current(self,r):
+        r=self._fields(r)
+        equipment=self._current_reference(r['equipmentRef'],r['projectId'],object_type='Asset',subtype='Equipment')
+        self._equipment_document_records(
+            r,
+            'certificateRefs',
+            required=equipment.get('certificateRequired',True),
+            calibration=False,
+        )
+        self._equipment_document_records(
+            r,
+            'calibrationRefs',
+            required=equipment.get('calibrationRequired',False),
+            calibration=True,
+        )
+        now=instant(self.at())
+        if r.get('validFrom'):
+            require(instant(r['validFrom'])<=now,'EQUIPMENT_DOCUMENT_INVALID','Equipment inspection is not yet valid')
+        if r.get('validTo'):
+            require(now<instant(r['validTo']),'EQUIPMENT_DOCUMENT_INVALID','Equipment inspection validity has expired')
+        return True
+
+    def _equipment_documents_current(self,r):
+        try:
+            return self._require_equipment_documents_current(r)
+        except ContractError:
+            return False
+
+    def _permit_equipment_ready(self,r):
+        r=self._fields(r)
+        for reference in r.get('equipmentRefs',[]):
+            equipment=self._current_reference(reference,r['projectId'],object_type='Asset',subtype='Equipment')
+            available=False
+            for (kind,object_id),record in self._records.items():
+                if kind!='WorkItem' or record.get('subtype')!='SafetyEquipmentInspection' or record['projectId']!=r['projectId']:
+                    continue
+                target=record.get('data',{}).get('equipmentRef',{})
+                if target.get('objectId')!=equipment['id'] or record.get('status')!='passed':
+                    continue
+                current=self.get('WorkItem',object_id)
+                if current.get('data',{}).get('equipmentAvailable') is True:
+                    available=True
+                    break
+            if not available:
+                return False
+        return True
+
+    def _equipment_schedule_present(self,r):
+        require(bool(r.get('scheduledAt')),'EQUIPMENT_SCHEDULE_PRESENT','Equipment inspection schedule is required')
+
+    def _equipment_result_present(self,r):
+        require(bool(r.get('inspectedAt')) and bool(r.get('resultSummary','').strip()) and bool(r.get('evidenceIds')),'EQUIPMENT_RESULT_PRESENT','Equipment result needs inspection time, summary and evidence')
+
+    def _equipment_pass_ready(self,r):
+        require(bool(r.get('resultSummary','').strip()) and r.get('preUseCheckComplete') is True and not r.get('blockedReasons'),'EQUIPMENT_PASS_READY','Passed equipment must complete pre-use check with no blockers')
+        self._require_equipment_documents_current(r)
+
+    def _equipment_fail_ready(self,r):
+        require(bool(r.get('failureReason','').strip()),'EQUIPMENT_FAIL_READY','Failed equipment requires failure reason')
+
+    def _equipment_restricted_ready(self,r):
+        require(bool(r.get('restrictionConditions')),'EQUIPMENT_RESTRICTED_READY','Restricted equipment requires explicit conditions')
+
+    def _equipment_reinspection_ready(self,r):
+        require(bool(r.get('correctiveActionRefs')) and bool(r.get('reason','').strip()),'EQUIPMENT_REINSPECTION_READY','Reinspection requires corrective actions and reason')
+
+    def _equipment_expired(self,r):
+        require(bool(r.get('validTo')) and instant(self.at())>=instant(r['validTo']),'EQUIPMENT_EXPIRED','Equipment inspection has not expired')
+
+    def _schedule_scope_key(self, record):
+        return record.get('projectId'),record.get('packageId'),record.get('discipline')
+
+    def _current_schedule_reference(self, reference, project_id, *, kind=None, statuses=None):
+        schedule=self._current_reference(reference,project_id,object_type='InformationItem',subtype='Schedule')
+        data=schedule.get('schedule',{})
+        if kind is not None:require(data.get('scheduleKind')==kind,'SCHEDULE_KIND_INVALID',kind)
+        if statuses is not None:require(schedule.get('status') in statuses,'SCHEDULE_STATUS_INVALID',schedule.get('status',''))
+        return schedule
+
+    def _schedule_file_preserved(self, record):
+        schedule=record.get('schedule',{})
+        return bool(schedule.get('sourceFileRef')) and schedule['sourceFileRef'] in record.get('fileIds',[]) and bool(schedule.get('sourceFileHash'))
+
+    def _schedule_quality_keys(self):
+        return ['contractDatesAligned','wbsComplete','activityIdsUnique','calendarsDefined','logicComplete','openEndsIdentified','constraintsReviewed','durationOutliersReviewed','criticalPathComputable','floatOutliersReviewed','interfacesReviewed','sourceFilePreserved']
+
+    def _schedule_critical_path_ready(self,r):
+        reference=r.get('schedule',{}).get('criticalPathRef')
+        require(bool(reference),'SCHEDULE_CRITICAL_PATH_INVALID','Critical path reference is required')
+        activity=self._current_reference(reference,r['projectId'],object_type='WorkItem',subtype='ScheduleActivity')
+        source=activity.get('data',{}).get('sourceScheduleRef')
+        require(bool(source) and source.get('objectType')=='InformationItem' and source.get('objectId')==r['id'],'SCHEDULE_CRITICAL_PATH_INVALID','Critical path must belong to this Schedule object')
+        require(self._schedule_scope_key(activity)==self._schedule_scope_key(r),'SCHEDULE_CRITICAL_PATH_INVALID','Critical path activity scope mismatch')
+        return activity
+
+    def _schedule_baseline_submission_complete(self,r):
+        schedule=r.get('schedule',{})
+        require(schedule.get('scheduleKind')=='baseline','SCHEDULE_BASELINE_SUBMISSION_COMPLETE','Baseline Schedule kind required')
+        require(schedule.get('revision')==r.get('revision'),'SCHEDULE_BASELINE_SUBMISSION_COMPLETE','Schedule revision must match InformationItem revision')
+        required=['scheduleNo','sourceFileRef','sourceFormat','sourceFileHash','sourceFileVersion','projectStartAt','contractualCompletionAt','calendars','wbsVersion','milestoneSet','criticalPathRef','activityCount','scheduleQualitySummary']
+        require(all(schedule.get(x) not in [None,'',[]] for x in required),'SCHEDULE_BASELINE_SUBMISSION_COMPLETE','Baseline package is incomplete')
+        require(self._schedule_file_preserved(r),'SCHEDULE_BASELINE_SUBMISSION_COMPLETE','Original schedule source file must be preserved')
+        require(instant(schedule['projectStartAt'])<instant(schedule['contractualCompletionAt']),'SCHEDULE_BASELINE_SUBMISSION_COMPLETE','Contract dates are invalid')
+        require(schedule.get('activityCount',0)>0,'SCHEDULE_BASELINE_SUBMISSION_COMPLETE','Baseline needs activities')
+        self._schedule_critical_path_ready(r)
+
+    def _schedule_baseline_completeness_passed(self,r):
+        self._schedule_baseline_submission_complete(r)
+        quality=r['schedule'].get('scheduleQualitySummary',{})
+        require(all(k in quality for k in self._schedule_quality_keys()),'SCHEDULE_BASELINE_COMPLETENESS_PASSED','Baseline quality checklist is incomplete')
+
+    def _schedule_baseline_review_passed(self,r):
+        self._schedule_baseline_completeness_passed(r)
+        quality=r['schedule']['scheduleQualitySummary']
+        require(all(quality.get(k) is True for k in self._schedule_quality_keys()),'SCHEDULE_BASELINE_REVIEW_PASSED','Baseline quality review has unresolved checks')
+
+    def _approved_schedule_authority_ref(self, r, *, require_current_target=False):
+        schedule=r.get('schedule',{})
+        refs=[schedule.get('approvalRef'),schedule.get('ownerDecisionRef')]
+        for reference in refs:
+            if not reference:continue
+            obj=self._current_reference(reference,r['projectId'])
+            if reference['objectType']=='Approval' and obj.get('status')=='approved':
+                target=obj.get('targetRef')
+                if target and target.get('objectType')=='InformationItem' and target.get('objectId')==r['id']:
+                    if not require_current_target or target.get('version')==r['version']:return obj
+                    if target.get('version')==r['version']-1:return obj
+            if reference['objectType']=='Decision' and obj.get('decision')=='approved' and obj.get('status') in ['decided','executing','verified','closed']:
+                target=obj.get('targetRef')
+                if target and target.get('objectType')=='InformationItem' and target.get('objectId')==r['id']:
+                    if not require_current_target or target.get('version')==r['version']:return obj
+                    if target.get('version')==r['version']-1:return obj
+        return None
+
+    def _schedule_baseline_approval_ready(self,r):
+        self._schedule_baseline_review_passed(r)
+        require(self._approved_schedule_authority_ref(r,require_current_target=True) is not None,'SCHEDULE_BASELINE_APPROVAL_READY','Exact Schedule version needs approved Approval or Owner Decision')
+
+    def _effective_baselines(self,r,exclude_id=None):
+        key=self._schedule_scope_key(r);values=[]
+        for (kind,oid),record in self._records.items():
+            if kind!='InformationItem' or oid==exclude_id:continue
+            if self._record_machines.get((kind,oid))!='schedule_baseline':continue
+            if record.get('status')=='effective' and self._schedule_scope_key(record)==key:values.append(record)
+        return values
+
+    def _approved_schedule_revision_basis(self, reference, project_id):
+        if not reference:return False
+        try:obj=self._current_reference(reference,project_id)
+        except ContractError:return False
+        if reference['objectType']=='Decision':return obj.get('decision')=='approved' and obj.get('status') in ['decided','executing','verified','closed']
+        if reference['objectType']=='Approval':return obj.get('status')=='approved'
+        if reference['objectType']=='WorkItem':
+            return obj.get('subtype') in ['ChangeRequest','Variation','EOTRequest'] and obj.get('status') in ['approved','accepted','effective','decided','closed','completed']
+        return False
+
+    def _schedule_baseline_activation_ready(self,r):
+        require(self._approved_schedule_authority_ref(r) is not None,'SCHEDULE_BASELINE_ACTIVATION_READY','Approved Schedule authority reference is required')
+        prior=self._effective_baselines(r,exclude_id=r['id'])
+        require(len(prior)<=1,'SCHEDULE_BASELINE_ACTIVATION_READY','Multiple effective baselines exist in one scope')
+        if prior:require(self._approved_schedule_revision_basis(r['schedule'].get('revisionBasisRef'),r['projectId']),'SCHEDULE_BASELINE_ACTIVATION_READY','Baseline revision needs an approved revision basis')
+
+    def _schedule_replacement_effective(self,r):
+        replacement=r.get('schedule',{}).get('replacementRef') or r.get('replacementRef')
+        require(bool(replacement),'SCHEDULE_REPLACEMENT_EFFECTIVE','Replacement Schedule reference required')
+        self._current_schedule_reference(replacement,r['projectId'],kind='baseline',statuses=['effective'])
+
+    def _schedule_progress_submission_complete(self,r):
+        schedule=r.get('schedule',{})
+        require(schedule.get('scheduleKind')=='progress_update','SCHEDULE_PROGRESS_SUBMISSION_COMPLETE','Progress Schedule kind required')
+        require(schedule.get('revision')==r.get('revision'),'SCHEDULE_PROGRESS_SUBMISSION_COMPLETE','Schedule revision must match InformationItem revision')
+        required=['scheduleNo','sourceFileRef','sourceFormat','sourceFileHash','sourceFileVersion','dataDate','forecastCompletionAt','activityCount','baselineScheduleRef']
+        require(all(schedule.get(x) not in [None,'',[]] for x in required),'SCHEDULE_PROGRESS_SUBMISSION_COMPLETE','Progress update is incomplete')
+        require(self._schedule_file_preserved(r),'SCHEDULE_PROGRESS_SUBMISSION_COMPLETE','Original progress schedule file must be preserved')
+        require(instant(schedule['dataDate'])<=instant(self.at()),'SCHEDULE_PROGRESS_SUBMISSION_COMPLETE','Data Date cannot be in the future')
+        baseline=self._current_schedule_reference(schedule['baselineScheduleRef'],r['projectId'],kind='baseline',statuses=['effective'])
+        require(self._schedule_scope_key(baseline)==self._schedule_scope_key(r),'SCHEDULE_PROGRESS_SUBMISSION_COMPLETE','Baseline scope mismatch')
+        previous_ref=schedule.get('previousScheduleRef')
+        frozen=[]
+        for (kind,oid),record in self._records.items():
+            if kind=='InformationItem' and oid!=r['id'] and self._record_machines.get((kind,oid))=='schedule_progress' and record.get('status')=='frozen' and self._schedule_scope_key(record)==self._schedule_scope_key(r):frozen.append(record)
+        if previous_ref:
+            previous=self._current_schedule_reference(previous_ref,r['projectId'],kind='progress_update',statuses=['frozen'])
+            require(self._schedule_scope_key(previous)==self._schedule_scope_key(r),'SCHEDULE_PROGRESS_SUBMISSION_COMPLETE','Previous update scope mismatch')
+            prior_date=instant(previous['schedule']['dataDate']);current_date=instant(schedule['dataDate'])
+            require(current_date>=prior_date,'SCHEDULE_PROGRESS_SUBMISSION_COMPLETE','Data Date cannot move backward')
+            if current_date==prior_date:
+                require(bool(schedule.get('correctionReason')) and schedule.get('correctionOfRef')==previous_ref,'SCHEDULE_PROGRESS_SUBMISSION_COMPLETE','Same Data Date requires explicit correction linkage')
+        else:
+            require(not frozen,'SCHEDULE_PROGRESS_SUBMISSION_COMPLETE','A later progress update must reference the current frozen snapshot')
+
+    def _schedule_progress_completeness_passed(self,r):
+        self._schedule_progress_submission_complete(r)
+        require(bool(r['schedule'].get('milestoneSet')) and bool(r['schedule'].get('criticalPathRef')),'SCHEDULE_PROGRESS_COMPLETENESS_PASSED','Milestones and critical path are required')
+        self._schedule_critical_path_ready(r)
+
+    def _schedule_progress_verification_passed(self,r):
+        self._schedule_progress_completeness_passed(r)
+        schedule=r['schedule']
+        require(all(schedule.get(k) is True for k in ['actualsVerified','forecastVerified','criticalPathReviewed','varianceExplained']),'SCHEDULE_PROGRESS_VERIFICATION_PASSED','Progress verification is incomplete')
+        require(bool(r.get('evidenceIds')),'SCHEDULE_PROGRESS_VERIFICATION_PASSED','Verified progress needs preserved evidence')
+
+    def _schedule_progress_freeze_ready(self,r):
+        self._schedule_progress_verification_passed(r)
+        require(bool(r['schedule'].get('acceptedAt')),'SCHEDULE_PROGRESS_FREEZE_READY','Progress must be accepted before freeze')
+
+    def _schedule_replacement_frozen(self,r):
+        reference=r.get('schedule',{}).get('replacementRef')
+        require(bool(reference),'SCHEDULE_REPLACEMENT_FROZEN','Replacement progress reference required')
+        self._current_schedule_reference(reference,r['projectId'],kind='progress_update',statuses=['frozen'])
+
+    def _derive_schedule_variance(self,record):
+        schedule=record['schedule'];baseline=self.resolve(schedule['baselineScheduleRef'],record['projectId'])
+        planned=baseline['schedule'].get('contractualCompletionAt');forecast=schedule.get('forecastCompletionAt')
+        result={}
+        if planned and forecast:result['forecastCompletionVarianceDays']=(instant(forecast)-instant(planned)).total_seconds()/86400
+        return result
+
+    def _delay_event_create_ready(self,r):
+        require(bool(r.get('evidenceIds')),'DELAY_EVENT_CREATE_READY','Delay Event requires preserved evidence')
+        baseline=self._current_schedule_reference(r['baselineScheduleRef'],r['projectId'],kind='baseline',statuses=['effective'])
+        current=self._current_reference(r['currentScheduleRef'],r['projectId'],object_type='InformationItem',subtype='Schedule')
+        require(current.get('schedule',{}).get('scheduleKind') in ['baseline','progress_update'],'DELAY_EVENT_CREATE_READY','Delay current Schedule must be baseline or progress update')
+        require(current.get('status') in ['effective','accepted_for_reporting','frozen'],'DELAY_EVENT_CREATE_READY','Delay current Schedule must be verified/current')
+        require(self._schedule_scope_key(baseline)==self._schedule_scope_key(r)==self._schedule_scope_key(current),'DELAY_EVENT_CREATE_READY','Delay Schedule scope mismatch')
+
+    def _delay_notification_ready(self,r):
+        self._delay_event_create_ready(r)
+
+    def _delay_assessment_ready(self,r):
+        self._delay_event_create_ready(r)
+        require(bool(r.get('assignedPartyId')) and bool(r.get('causeCategory')),'DELAY_ASSESSMENT_READY','Delay assessment owner and factual cause are required')
+
+    def _delay_impact_scope_ready(self,r):
+        self._delay_assessment_ready(r)
+        require(bool(r.get('affectedActivityRefs')) or bool(r.get('affectedMilestoneIds')),'DELAY_IMPACT_SCOPE_READY','Delay impact scope is required')
+        require(r.get('currentForecastImpactDays') is not None or r.get('totalFloatImpact') is not None,'DELAY_IMPACT_SCOPE_READY','Preliminary schedule impact is required')
+
+    def _delay_mitigation_ready(self,r):
+        analysis=r.get('impactAnalysis')
+        require(isinstance(analysis,dict),'DELAY_MITIGATION_READY','Impact analysis is required')
+        self._current_schedule_reference(analysis['baselineScheduleRef'],r['projectId'],kind='baseline')
+        self._current_reference(analysis['scheduleRef'],r['projectId'],object_type='InformationItem',subtype='Schedule')
+        require(bool(r.get('mitigationActionRefs')) or bool(r.get('recoveryPlanRefs')),'DELAY_MITIGATION_READY','Mitigation Action or Recovery Plan linkage is required')
+
+    def _delay_monitoring_ready(self,r):
+        self._delay_mitigation_ready(r)
+
+    def _delay_resolution_ready(self,r):
+        require(bool(r.get('resolutionSummary','').strip()) and bool(r.get('eventEndAt')) and bool(r.get('evidenceIds')),'DELAY_RESOLUTION_READY','Delay resolution needs end date, evidence and summary')
+
+    def _delay_contract_transfer_ready(self,r):
+        refs=list(r.get('contractNoticeRefs',[]))+list(r.get('claimRefs',[]))
+        if r.get('eotDecisionRef'):refs.append(r['eotDecisionRef'])
+        require(bool(refs),'DELAY_CONTRACT_TRANSFER_READY','Contract Notice, Claim or EOT decision reference required')
+        for reference in refs:self.resolve(reference,r['projectId'])
+
+    def _delay_close_ready(self,r):
+        require(bool(r.get('closureSummary','').strip()),'DELAY_CLOSE_READY','Delay closure summary is required')
+        if r.get('status')=='transferred' or r.get('transferredAt'):self._delay_contract_transfer_ready(r)
+
+    def _recovery_request_ready(self,r):
+        refs=r.get('triggerDelayEventRefs',[])
+        require(bool(refs),'RECOVERY_REQUEST_READY','Recovery Plan needs at least one Delay Event')
+        for reference in refs:
+            event=self._current_reference(reference,r['projectId'],object_type='WorkItem',subtype='DelayEvent')
+            require(event.get('status') not in ['cancelled','closed'],'RECOVERY_REQUEST_READY','Closed/cancelled Delay Event cannot initiate a new Recovery Plan')
+
+    def _recovery_schedule_ready(self,r):
+        reference=r.get('recoveryScheduleRef')
+        require(bool(reference),'RECOVERY_SUBMISSION_COMPLETE','Recovery Schedule exact version is required')
+        schedule=self.resolve(reference,r['projectId'])
+        require(reference.get('objectType')=='InformationItem' and schedule.get('subtype')=='Schedule' and schedule.get('schedule',{}).get('scheduleKind')=='recovery','RECOVERY_SUBMISSION_COMPLETE','Recovery Schedule snapshot required')
+        current=self.get('InformationItem',reference['objectId'])
+        require(current['version']==reference['version'],'RECOVERY_SUBMISSION_COMPLETE','Recovery Schedule reference is stale')
+        require(self._schedule_scope_key(current)==self._schedule_scope_key(r),'RECOVERY_SUBMISSION_COMPLETE','Recovery Schedule scope mismatch')
+
+    def _recovery_submission_complete(self,r):
+        self._recovery_request_ready(r)
+        required=['recoveryPlanNo','targetCompletionAt','currentForecastCompletionAt','proposedForecastCompletionAt','strategy','qualityImpact','safetyImpact','costImpact','contractImpact','monitoringPeriod','monitoringKpis']
+        require(all(r.get(x) not in [None,'',[]] for x in required),'RECOVERY_SUBMISSION_COMPLETE','Recovery Plan package is incomplete')
+        require(r.get('qualityStandardsRelaxed') is False and r.get('safetyStandardsRelaxed') is False,'RECOVERY_SUBMISSION_COMPLETE','Recovery cannot relax quality or safety standards')
+        self._recovery_schedule_ready(r)
+
+    def _recovery_completeness_passed(self,r):
+        self._recovery_submission_complete(r)
+
+    def _recovery_decision_required(self,r):
+        self._recovery_submission_complete(r)
+        require(r.get('ownerDecisionRequired') is True,'RECOVERY_DECISION_REQUIRED','Recovery does not require Owner decision')
+
+    def _recovery_acceptance_ready(self,r):
+        self._recovery_submission_complete(r)
+        require(r.get('ownerDecisionRequired') is not True,'RECOVERY_ACCEPTANCE_READY','Owner decision is required before acceptance')
+
+    def _recovery_decision_approved(self,r):
+        self._recovery_submission_complete(r)
+        require(r.get('ownerDecisionRequired') is True,'RECOVERY_DECISION_APPROVED','Owner decision flag is required')
+        decisions=[]
+        for reference in r.get('decisionRefs',[]):
+            decision=self._current_reference(reference,r['projectId'],object_type='Decision')
+            if decision.get('decision')=='approved' and decision.get('status') in ['decided','executing','verified','closed']:decisions.append(decision)
+        require(bool(decisions),'RECOVERY_DECISION_APPROVED','Approved Owner Decision required')
+
+    def _recovery_activation_ready(self,r):
+        require(bool(r.get('acceptedAt')),'RECOVERY_ACTIVATION_READY','Recovery Plan must be accepted before activation')
+        self._recovery_schedule_ready(r)
+        require(r.get('qualityStandardsRelaxed') is False and r.get('safetyStandardsRelaxed') is False,'RECOVERY_ACTIVATION_READY','Recovery cannot relax quality or safety standards')
+
+    def _recovery_monitoring_ready(self,r):
+        require(bool(r.get('monitoringKpis')) and bool(r.get('monitoringPeriod')),'RECOVERY_MONITORING_READY','Recovery monitoring KPI and period are required')
+
+    def _recovery_effective_evidence(self,r):
+        require(bool(r.get('effectivenessSummary','').strip()) and bool(r.get('evidenceIds')),'RECOVERY_EFFECTIVE_EVIDENCE','Recovery effectiveness needs evidence and summary')
+
+    def _recovery_ineffective_evidence(self,r):
+        require(bool(r.get('effectivenessSummary','').strip()) and bool(r.get('evidenceIds')),'RECOVERY_INEFFECTIVE_EVIDENCE','Recovery ineffectiveness needs evidence and summary')
+        require(bool(r.get('followupPlanRef')) or bool(r.get('contractTrackRefs')),'RECOVERY_INEFFECTIVE_EVIDENCE','Ineffective Recovery needs follow-up or contract track')
+
+    def _recovery_completion_ready(self,r):
+        require(r.get('effectivenessResult') in ['effective','ineffective'] and bool(r.get('effectivenessSummary','').strip()),'RECOVERY_COMPLETION_READY','Recovery effectiveness decision required before completion')
+        if r.get('effectivenessResult')=='ineffective':require(bool(r.get('followupPlanRef')) or bool(r.get('contractTrackRefs')),'RECOVERY_COMPLETION_READY','Ineffective Recovery requires a follow-up path')
+
+    def _activate_schedule_baseline(self,before,proposed,request,party_id,role_id,key):
+        prior=self._effective_baselines(proposed,exclude_id=proposed['id'])
+        require(len(prior)<=1,'SCHEDULE_BASELINE_ACTIVATION_READY','Multiple effective baselines exist in one scope')
+        if prior:proposed['schedule']['supersedesRef']={'objectType':'InformationItem','objectId':prior[0]['id'],'version':prior[0]['version']}
+        validate(proposed,self.schemas['InformationItem'],self.schemas)
+        snapshot=(deepcopy(self._records),deepcopy(self._history),deepcopy(self._audit),deepcopy(self._idempotency),deepcopy(self._record_machines))
+        try:
+            self._save('InformationItem',proposed)
+            result=self._event(proposed,'schedule_baseline:activate_baseline',party_id,role_id,key,request,before)
+            if prior:
+                old=prior[0];updated=deepcopy(old);updated.update(status='superseded',version=old['version']+1,updatedAt=self.at())
+                validate(updated,self.schemas['InformationItem'],self.schemas);self._save('InformationItem',updated)
+                self._event(updated,'schedule_baseline:derived_supersede',party_id,role_id,key,request,old)
+            self._remember(proposed['projectId'],party_id,'schedule_baseline:activate_baseline',key,request,result)
+            return result
+        except Exception:
+            self._records,self._history,self._audit,self._idempotency,self._record_machines=snapshot
+            raise
+
+    def _freeze_schedule_progress(self,before,proposed,request,party_id,role_id,key):
+        reference=proposed['schedule'].get('previousScheduleRef');prior=None
+        if reference:
+            prior=self._current_schedule_reference(reference,proposed['projectId'],kind='progress_update',statuses=['frozen'])
+            proposed['schedule']['supersedesRef']={'objectType':'InformationItem','objectId':prior['id'],'version':prior['version']}
+        validate(proposed,self.schemas['InformationItem'],self.schemas)
+        snapshot=(deepcopy(self._records),deepcopy(self._history),deepcopy(self._audit),deepcopy(self._idempotency),deepcopy(self._record_machines))
+        try:
+            self._save('InformationItem',proposed)
+            result=self._event(proposed,'schedule_progress:freeze_progress',party_id,role_id,key,request,before)
+            if prior:
+                old=prior;updated=deepcopy(old);updated.update(status='superseded',version=old['version']+1,updatedAt=self.at())
+                validate(updated,self.schemas['InformationItem'],self.schemas);self._save('InformationItem',updated)
+                self._event(updated,'schedule_progress:derived_supersede',party_id,role_id,key,request,old)
+            self._remember(proposed['projectId'],party_id,'schedule_progress:freeze_progress',key,request,result)
+            return result
+        except Exception:
+            self._records,self._history,self._audit,self._idempotency,self._record_machines=snapshot
+            raise
 
     def _checks_complete(self,r):
         checks=r.get('checkResults',[])

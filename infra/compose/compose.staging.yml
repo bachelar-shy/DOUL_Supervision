@@ -1,0 +1,9 @@
+name: doul-supervision-staging
+services:
+  api:
+    environment: {DOUL_ENVIRONMENT: staging, DOUL_API_DEMO: "false"}
+  worker-runtime:
+    entrypoint: []
+    environment: {DOUL_ENVIRONMENT: staging, DOUL_QUEUE_NAMESPACE: "doul:staging:media", DOUL_WORKER_HEARTBEAT_KEY: "doul:staging:worker:heartbeat"}
+  monitor:
+    environment: {DOUL_ENVIRONMENT: staging, DOUL_QUEUE_NAMESPACE: "doul:staging:media"}

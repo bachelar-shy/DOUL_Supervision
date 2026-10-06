@@ -1,5 +1,5 @@
 {
-  "version": "2.0",
+  "version": "2.2",
   "default": "deny",
   "actor_groups": [
     "SUP",
@@ -780,6 +780,929 @@
       "role_codes": [],
       "qualification_required": false,
       "official": false,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.permit.create": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.permit.submit": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.permit.receive": {
+      "actor_groups": [
+        "SUP",
+        "ADM"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor",
+        "project_admin"
+      ],
+      "qualification_required": false,
+      "official": false,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.permit.review": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.permit.prestart_verify": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.permit.authorize": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.work.activate": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.work.suspend": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.work.self_stop": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.resume.request": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.resume.approve": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.permit.complete": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.permit.expire": {
+      "actor_groups": [
+        "SYSTEM"
+      ],
+      "role_codes": [],
+      "qualification_required": false,
+      "official": false,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.permit.cancel": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.permit.withdraw": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.permit.supersede": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.stop.issue": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.stop.acknowledge": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.stop.correct": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.stop.verify_resume": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.stop_lift": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.stop.close": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.stop.cancel": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.stop.supersede": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.equipment.create": {
+      "actor_groups": [
+        "SUP",
+        "ADM"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor",
+        "project_admin"
+      ],
+      "qualification_required": false,
+      "official": false,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.equipment.request": {
+      "actor_groups": [
+        "CON",
+        "SUP"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "contractor_quality",
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.equipment.schedule": {
+      "actor_groups": [
+        "SUP",
+        "ADM"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor",
+        "project_admin"
+      ],
+      "qualification_required": false,
+      "official": false,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.equipment.inspect": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.equipment.judge": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.equipment.expire": {
+      "actor_groups": [
+        "SYSTEM"
+      ],
+      "role_codes": [],
+      "qualification_required": false,
+      "official": false,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "safety.equipment.cancel": {
+      "actor_groups": [
+        "SUP",
+        "ADM"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor",
+        "project_admin"
+      ],
+      "qualification_required": false,
+      "official": false,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.baseline.create": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.baseline.submit": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.baseline.receive": {
+      "actor_groups": [
+        "SUP",
+        "ADM"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor",
+        "project_admin"
+      ],
+      "qualification_required": false,
+      "official": false,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.baseline.review": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.baseline.request_decision": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.baseline.approve": {
+      "actor_groups": [
+        "SUP",
+        "OWN"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "owner_decision_maker"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.baseline.activate": {
+      "actor_groups": [
+        "SUP",
+        "OWN"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "owner_decision_maker"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.baseline.withdraw": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.progress.submit": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.progress.receive": {
+      "actor_groups": [
+        "SUP",
+        "ADM"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor",
+        "project_admin"
+      ],
+      "qualification_required": false,
+      "official": false,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.progress.verify": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.progress.freeze": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.delay.create": {
+      "actor_groups": [
+        "SUP",
+        "CON"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor",
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.delay.notify": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.delay.assess": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.delay.mitigate": {
+      "actor_groups": [
+        "SUP",
+        "CON"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor",
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.delay.monitor": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.delay.transfer": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.delay.close": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.delay.cancel": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.recovery.request": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.recovery.submit": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "contractor_quality"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.recovery.review": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.recovery.request_decision": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.recovery.approve": {
+      "actor_groups": [
+        "SUP",
+        "OWN"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "owner_decision_maker"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.recovery.activate": {
+      "actor_groups": [
+        "SUP",
+        "CON"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor",
+        "contractor_technical_lead"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.recovery.monitor": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.recovery.close": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "discipline_supervisor",
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.recovery.supersede": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": true,
+      "package_scope_required": true,
+      "location_scope_required": true
+    },
+    "schedule.recovery.cancel": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": true,
+      "official": true,
       "contractor_organization_scope": false,
       "discipline_scope_required": true,
       "package_scope_required": true,

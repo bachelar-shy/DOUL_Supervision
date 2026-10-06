@@ -1,5 +1,5 @@
 {
-  "version": "2.2",
+  "version": "2.3",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "components": {
     "schemas": {
@@ -355,7 +355,68 @@
                 "manage_project_roles",
                 "notify_sla",
                 "refresh_projection",
-                "import_external_information"
+                "import_external_information",
+                "safety.permit.create",
+                "safety.permit.submit",
+                "safety.permit.receive",
+                "safety.permit.review",
+                "safety.permit.prestart_verify",
+                "safety.permit.authorize",
+                "safety.work.activate",
+                "safety.work.suspend",
+                "safety.work.self_stop",
+                "safety.resume.request",
+                "safety.resume.approve",
+                "safety.permit.complete",
+                "safety.permit.expire",
+                "safety.permit.cancel",
+                "safety.permit.withdraw",
+                "safety.permit.supersede",
+                "safety.stop.issue",
+                "safety.stop.acknowledge",
+                "safety.stop.correct",
+                "safety.stop.verify_resume",
+                "safety.stop_lift",
+                "safety.stop.close",
+                "safety.stop.cancel",
+                "safety.stop.supersede",
+                "safety.equipment.create",
+                "safety.equipment.request",
+                "safety.equipment.schedule",
+                "safety.equipment.inspect",
+                "safety.equipment.judge",
+                "safety.equipment.expire",
+                "safety.equipment.cancel",
+                "schedule.baseline.create",
+                "schedule.baseline.submit",
+                "schedule.baseline.receive",
+                "schedule.baseline.review",
+                "schedule.baseline.request_decision",
+                "schedule.baseline.approve",
+                "schedule.baseline.activate",
+                "schedule.baseline.withdraw",
+                "schedule.progress.submit",
+                "schedule.progress.receive",
+                "schedule.progress.verify",
+                "schedule.progress.freeze",
+                "schedule.delay.create",
+                "schedule.delay.notify",
+                "schedule.delay.assess",
+                "schedule.delay.mitigate",
+                "schedule.delay.monitor",
+                "schedule.delay.transfer",
+                "schedule.delay.close",
+                "schedule.delay.cancel",
+                "schedule.recovery.request",
+                "schedule.recovery.submit",
+                "schedule.recovery.review",
+                "schedule.recovery.request_decision",
+                "schedule.recovery.approve",
+                "schedule.recovery.activate",
+                "schedule.recovery.monitor",
+                "schedule.recovery.close",
+                "schedule.recovery.supersede",
+                "schedule.recovery.cancel"
               ]
             }
           },
@@ -1036,6 +1097,12 @@
           },
           "materialApprovalRef": {
             "$ref": "#/components/schemas/DomainRef"
+          },
+          "certificateRequired": {
+            "type": "boolean"
+          },
+          "calibrationRequired": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -1164,6 +1231,26 @@
           },
           "report": {
             "$ref": "#/components/schemas/OwnerReportData"
+          },
+          "certificateKind": {
+            "type": "string",
+            "enum": [
+              "safety",
+              "inspection",
+              "calibration",
+              "other"
+            ]
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/ScheduleData"
           }
         },
         "required": [
@@ -1178,7 +1265,23 @@
           "revision",
           "status"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "Schedule"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "schedule"
+              ]
+            }
+          }
+        ]
       },
       "Evidence": {
         "type": "object",
@@ -2138,6 +2241,102 @@
               "properties": {
                 "data": {
                   "$ref": "#/components/schemas/ChangeData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "SafetyPermit"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/SafetyPermitData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "SafetyStopOrder"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/SafetyStopOrderData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "SafetyEquipmentInspection"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/SafetyEquipmentInspectionData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "ScheduleActivity"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/ScheduleActivityData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "DelayEvent"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/DelayEventData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "RecoveryPlan"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/RecoveryPlanData"
                 }
               }
             }
@@ -3450,6 +3649,1285 @@
           "code",
           "message",
           "failedGuards"
+        ],
+        "additionalProperties": false
+      },
+      "SafetyReadiness": {
+        "type": "object",
+        "properties": {
+          "methodStatementCurrent": {
+            "type": "boolean"
+          },
+          "riskAssessmentCurrent": {
+            "type": "boolean"
+          },
+          "personnelQualified": {
+            "type": "boolean"
+          },
+          "equipmentReady": {
+            "type": "boolean"
+          },
+          "controlMeasuresReady": {
+            "type": "boolean"
+          },
+          "emergencyReady": {
+            "type": "boolean"
+          },
+          "environmentalConditionsReady": {
+            "type": "boolean"
+          },
+          "noBlockingSafetyIssue": {
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "SafetyResumeGate": {
+        "type": "object",
+        "properties": {
+          "causeIdentified": {
+            "type": "boolean"
+          },
+          "correctiveActionComplete": {
+            "type": "boolean"
+          },
+          "correctiveEvidencePresent": {
+            "type": "boolean"
+          },
+          "issueActionsVerified": {
+            "type": "boolean"
+          },
+          "reinspectionPassed": {
+            "type": "boolean"
+          },
+          "permitValid": {
+            "type": "boolean"
+          },
+          "methodStatementCurrent": {
+            "type": "boolean"
+          },
+          "riskAssessmentCurrent": {
+            "type": "boolean"
+          },
+          "equipmentReady": {
+            "type": "boolean"
+          },
+          "personnelQualified": {
+            "type": "boolean"
+          },
+          "controlMeasuresReady": {
+            "type": "boolean"
+          },
+          "environmentalConditionsReady": {
+            "type": "boolean"
+          },
+          "reportingObligationsSatisfied": {
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "SafetyPermitData": {
+        "type": "object",
+        "properties": {
+          "permitNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "workType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "riskLevel": {
+            "type": "string",
+            "minLength": 1
+          },
+          "responsiblePartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "safetyResponsiblePartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "methodStatementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "riskAssessmentRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "personnelQualificationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "equipmentRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "emergencyPlanRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reviewStartedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reviewNotes": {
+            "type": "string"
+          },
+          "safetyReviewComplete": {
+            "type": "boolean"
+          },
+          "prestartVerified": {
+            "type": "boolean"
+          },
+          "prestartVerificationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "authorizedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "activatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "suspendedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "suspensionReason": {
+            "type": "string"
+          },
+          "resumeRequestAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "resumeApprovalRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "completionConfirmed": {
+            "type": "boolean"
+          },
+          "readiness": {
+            "$ref": "#/components/schemas/SafetyReadiness"
+          },
+          "workAuthorized": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "blockedReasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "stopOrderRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "replacementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "SafetyStopOrderData": {
+        "type": "object",
+        "properties": {
+          "stopOrderNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stopScopeType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stopScopeDescription": {
+            "type": "string"
+          },
+          "stopReason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "hazardDescription": {
+            "type": "string"
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acknowledgedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "affectedPermitRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "issueRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "correctiveActionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "resumeRequestAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "resumeVerificationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "resumeGate": {
+            "$ref": "#/components/schemas/SafetyResumeGate",
+            "readOnly": true
+          },
+          "liftedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "ownerReportRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "replacementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "blockedReasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "stopOrderNo",
+          "stopScopeType",
+          "stopReason",
+          "observedAt",
+          "effectiveAt",
+          "affectedPermitRefs"
+        ],
+        "additionalProperties": false
+      },
+      "SafetyEquipmentInspectionData": {
+        "type": "object",
+        "properties": {
+          "inspectionNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "equipmentRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "inspectionKind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "inspectedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resultSummary": {
+            "type": "string"
+          },
+          "restrictionConditions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "failureReason": {
+            "type": "string"
+          },
+          "correctiveActionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "reinspectionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "certificateRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "calibrationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "preUseCheckComplete": {
+            "type": "boolean"
+          },
+          "equipmentAvailable": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "blockedReasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "equipmentRef",
+          "inspectionKind"
+        ],
+        "additionalProperties": false
+      },
+      "ScheduleCalendarData": {
+        "type": "object",
+        "properties": {
+          "calendarId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timezone": {
+            "type": "string",
+            "minLength": 1
+          },
+          "workingDays": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            },
+            "uniqueItems": true
+          },
+          "hoursPerDay": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 24
+          }
+        },
+        "required": [
+          "calendarId",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "ScheduleMilestoneData": {
+        "type": "object",
+        "properties": {
+          "milestoneId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "plannedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contractualAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "forecastAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "milestoneId",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "ScheduleQualitySummary": {
+        "type": "object",
+        "properties": {
+          "contractDatesAligned": {
+            "type": "boolean"
+          },
+          "wbsComplete": {
+            "type": "boolean"
+          },
+          "activityIdsUnique": {
+            "type": "boolean"
+          },
+          "calendarsDefined": {
+            "type": "boolean"
+          },
+          "logicComplete": {
+            "type": "boolean"
+          },
+          "openEndsIdentified": {
+            "type": "boolean"
+          },
+          "constraintsReviewed": {
+            "type": "boolean"
+          },
+          "durationOutliersReviewed": {
+            "type": "boolean"
+          },
+          "criticalPathComputable": {
+            "type": "boolean"
+          },
+          "floatOutliersReviewed": {
+            "type": "boolean"
+          },
+          "interfacesReviewed": {
+            "type": "boolean"
+          },
+          "sourceFilePreserved": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "ScheduleVarianceData": {
+        "type": "object",
+        "properties": {
+          "forecastCompletionVarianceDays": {
+            "type": "number",
+            "readOnly": true
+          },
+          "negativeFloat": {
+            "type": "number",
+            "readOnly": true
+          },
+          "criticalPathShifted": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "milestoneVarianceSummary": {
+            "type": "string",
+            "readOnly": true
+          },
+          "percentCompleteVarianceSummary": {
+            "type": "string",
+            "readOnly": true
+          },
+          "recoveryGapDays": {
+            "type": "number",
+            "readOnly": true
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "ScheduleData": {
+        "type": "object",
+        "properties": {
+          "scheduleNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scheduleKind": {
+            "type": "string",
+            "enum": [
+              "baseline",
+              "progress_update",
+              "recovery",
+              "lookahead"
+            ]
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceFileRef": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourceFormat": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceFileHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "sourceFileVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "importedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "dataDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "projectStartAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contractualCompletionAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "forecastCompletionAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "calendars": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleCalendarData"
+            }
+          },
+          "wbsVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "milestoneSet": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleMilestoneData"
+            }
+          },
+          "criticalPathRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "activityCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "scheduleQualitySummary": {
+            "$ref": "#/components/schemas/ScheduleQualitySummary"
+          },
+          "baselineScheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "previousScheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "correctionOfRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "correctionReason": {
+            "type": "string"
+          },
+          "logicChangeSummary": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "calendarChangeSummary": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "majorDelayReasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "lookaheadSummary": {
+            "type": "string"
+          },
+          "actualsVerified": {
+            "type": "boolean"
+          },
+          "forecastVerified": {
+            "type": "boolean"
+          },
+          "criticalPathReviewed": {
+            "type": "boolean"
+          },
+          "varianceExplained": {
+            "type": "boolean"
+          },
+          "variance": {
+            "$ref": "#/components/schemas/ScheduleVarianceData"
+          },
+          "approvalRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "ownerDecisionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "revisionBasisRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "supersedesRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "acceptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "frozenAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "scheduleNo",
+          "scheduleKind",
+          "revision",
+          "sourceFileRef",
+          "sourceFormat",
+          "sourceFileHash",
+          "sourceFileVersion"
+        ],
+        "additionalProperties": false
+      },
+      "ScheduleActivityData": {
+        "type": "object",
+        "properties": {
+          "activityId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "wbsPath": {
+            "type": "string",
+            "minLength": 1
+          },
+          "activityName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "plannedStartAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "plannedFinishAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actualStartAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actualFinishAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "forecastStartAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "forecastFinishAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "originalDuration": {
+            "type": "number",
+            "minimum": 0
+          },
+          "remainingDuration": {
+            "type": "number",
+            "minimum": 0
+          },
+          "percentComplete": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "totalFloat": {
+            "type": "number"
+          },
+          "critical": {
+            "type": "boolean"
+          },
+          "predecessorRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "successorRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "milestone": {
+            "type": "boolean"
+          },
+          "sourceScheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "baselineActivityRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "manualCorrectionReason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "activityId",
+          "wbsPath",
+          "activityName",
+          "sourceScheduleRef"
+        ],
+        "additionalProperties": false
+      },
+      "DelayImpactAnalysisData": {
+        "type": "object",
+        "properties": {
+          "baselineScheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "dataDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "affectedActivityRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "affectedMilestoneIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "criticalPathAffected": {
+            "type": "boolean"
+          },
+          "beforeForecastAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "afterForecastAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "floatChange": {
+            "type": "number"
+          },
+          "forecastImpactDays": {
+            "type": "number"
+          },
+          "actualImpactDays": {
+            "type": "number"
+          },
+          "mitigationIncluded": {
+            "type": "boolean"
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "analystPartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "baselineScheduleRef",
+          "dataDate",
+          "scheduleRef",
+          "beforeForecastAt",
+          "afterForecastAt"
+        ],
+        "additionalProperties": false
+      },
+      "DelayEventData": {
+        "type": "object",
+        "properties": {
+          "delayEventNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "eventType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "knownAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "eventStartAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "eventEndAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "causeCategory": {
+            "type": "string",
+            "enum": [
+              "design_information_late",
+              "owner_decision_late",
+              "contractor_productivity",
+              "procurement_delay",
+              "subcontractor_delay",
+              "authority_delay",
+              "weather_event",
+              "safety_stop",
+              "quality_rework",
+              "change_event",
+              "access_constraint",
+              "utility_interface",
+              "other"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "affectedActivityRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "affectedMilestoneIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "baselineScheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "currentScheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "initialForecastImpactDays": {
+            "type": "number"
+          },
+          "currentForecastImpactDays": {
+            "type": "number"
+          },
+          "criticalPathAffected": {
+            "type": "boolean"
+          },
+          "totalFloatImpact": {
+            "type": "number"
+          },
+          "impactAnalysis": {
+            "$ref": "#/components/schemas/DelayImpactAnalysisData"
+          },
+          "mitigationActionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "recoveryPlanRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "ownerReportRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "contractNoticeRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "claimRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "eotDecisionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "assignedPartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resolutionSummary": {
+            "type": "string"
+          },
+          "closureSummary": {
+            "type": "string"
+          },
+          "replacementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "notifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "assessmentStartedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "impactAnalysisStartedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "mitigationStartedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "monitoringStartedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "resolvedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "transferredAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "delayEventNo",
+          "eventType",
+          "observedAt",
+          "knownAt",
+          "description",
+          "baselineScheduleRef",
+          "currentScheduleRef"
+        ],
+        "additionalProperties": false
+      },
+      "RecoveryPlanData": {
+        "type": "object",
+        "properties": {
+          "recoveryPlanNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "triggerDelayEventRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "targetMilestoneIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "targetCompletionAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "currentForecastCompletionAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "proposedForecastCompletionAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "strategy": {
+            "type": "string",
+            "minLength": 1
+          },
+          "resequencing": {
+            "type": "string"
+          },
+          "additionalResources": {
+            "type": "string"
+          },
+          "shiftChanges": {
+            "type": "string"
+          },
+          "productivityAssumptions": {
+            "type": "string"
+          },
+          "procurementActions": {
+            "type": "string"
+          },
+          "designDecisionDependencies": {
+            "type": "string"
+          },
+          "qualityImpact": {
+            "type": "string"
+          },
+          "safetyImpact": {
+            "type": "string"
+          },
+          "costImpact": {
+            "type": "string"
+          },
+          "contractImpact": {
+            "type": "string"
+          },
+          "qualityStandardsRelaxed": {
+            "type": "boolean"
+          },
+          "safetyStandardsRelaxed": {
+            "type": "boolean"
+          },
+          "recoveryScheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "ownerDecisionRequired": {
+            "type": "boolean"
+          },
+          "approvalRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "decisionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "actionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "monitoringPeriod": {
+            "type": "string"
+          },
+          "monitoringKpis": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "effectivenessResult": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "effective",
+              "ineffective"
+            ],
+            "readOnly": true
+          },
+          "effectivenessSummary": {
+            "type": "string"
+          },
+          "followupPlanRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "contractTrackRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "replacementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "acceptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "activatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "monitoringStartedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "triggerDelayEventRefs"
         ],
         "additionalProperties": false
       }

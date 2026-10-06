@@ -20,6 +20,7 @@ def validate_all():
     mapping=load('schema/register_projection_map_v2.json');catalog=load('schema/register_catalog.json')
     forms=load('forms/form_catalog.json')['forms'];data=load('forms/form_data_schemas_v1.json')['forms'];bindings=load('forms/form_domain_bindings_v2.json')['forms'];templates=load('forms/form_templates_v1.json')['templates']
     check(authority['default']=='deny','Authority must default deny')
+    check(set(schemas['RoleAssignment']['properties']['authorityCodes']['items']['enum'])==set(policies),'RoleAssignment authorityCodes enum must match authority policies')
     for name,policy in policies.items():check(not policy['official'] or not set(policy['actor_groups'])&{'AI','SYSTEM','INTEGRATION'},name+' gives nonhuman official authority')
     tree=ast.parse((ROOT/'app/reference/engine.py').read_text());guard_keys=set()
     for node in ast.walk(tree):
@@ -27,6 +28,58 @@ def validate_all():
             guard_keys.update(k.value for k in node.value.keys if isinstance(k,ast.Constant))
     machine_bindings=load('reference/machine_bindings_v1.json')['machines']
     check(set(machine_bindings)==set(machines),'Backend machine bindings must match Product machines exactly')
+    safety_machines={
+        'safety_permit':'SafetyPermit',
+        'safety_stop_order':'SafetyStopOrder',
+        'safety_equipment_inspection':'SafetyEquipmentInspection',
+    }
+    check(set(safety_machines)<=set(machines),'Safety execution state machines are required')
+    for machine_name,subtype in safety_machines.items():
+        check(machines[machine_name]['object_type']=='WorkItem' and machines[machine_name]['subtype']==subtype,machine_name+' binding mismatch')
+    permit_activate=next((t for t in machines['safety_permit']['transitions'] if t['from']=='authorized' and t['command']=='activate'),None)
+    check(bool(permit_activate) and 'safety_work_authorized' in permit_activate['guards'],'Safety Permit activation must require work authorization gate')
+    stop_lift=next((t for t in machines['safety_stop_order']['transitions'] if t['from']=='verification' and t['command']=='lift_stop'),None)
+    check(bool(stop_lift) and stop_lift['authority']=='safety.stop_lift' and 'safety_resume_gate_satisfied' in stop_lift['guards'],'Safety Stop lift must be explicit and resume-gated')
+    check(policies['safety.stop_lift']['actor_groups']==['SUP'] and policies['safety.stop_lift']['role_codes']==['chief_supervisor'],'Safety Stop lift authority must remain human chief supervisor')
+    check(policies['safety.permit.expire']['actor_groups']==['SYSTEM'] and policies['safety.permit.expire']['official'] is False,'Permit expiry may be system-derived but not official human approval')
+    safety_execution=load('schema/safety_execution_contract_v1.json')
+    check(safety_execution['issue_stop_package']['atomic'] is True and safety_execution['issue_stop_package']['rollback_on_failure'] is True,'Safety Stop issuance must be atomic and rollback on failure')
+    check(safety_execution['resume_sequence']['issue_close_is_not_stop_lift'] is True and safety_execution['resume_sequence']['contractor_self_resume_forbidden'] is True,'Safety resume invariants changed')
+    safety_data_names=['SafetyPermitData','SafetyStopOrderData','SafetyEquipmentInspectionData']
+    readonly_fields={field for name in safety_data_names for field,spec in schemas[name]['properties'].items() if spec.get('readOnly') is True}
+    for machine_name in safety_machines:
+        for transition in machines[machine_name]['transitions']:
+            check(not (set(transition['payload_fields']) & readonly_fields),machine_name+' exposes server-derived safety fields in command payload')
+    check(schemas['SafetyPermitData']['properties']['workAuthorized'].get('readOnly') is True,'workAuthorized must be server-derived')
+    check(schemas['SafetyEquipmentInspectionData']['properties']['equipmentAvailable'].get('readOnly') is True,'equipmentAvailable must be server-derived')
+    schedule_machines={
+        'schedule_baseline':('InformationItem','Schedule'),
+        'schedule_progress':('InformationItem','Schedule'),
+        'delay_event':('WorkItem','DelayEvent'),
+        'recovery_plan':('WorkItem','RecoveryPlan'),
+    }
+    check(set(schedule_machines)<=set(machines),'F-04 Schedule execution state machines are required')
+    for machine_name,(object_type,subtype) in schedule_machines.items():
+        check(machines[machine_name]['object_type']==object_type and machines[machine_name]['subtype']==subtype,machine_name+' binding mismatch')
+    check(machines['schedule_baseline']['initial']=='draft' and machines['schedule_progress']['initial']=='submitted','Baseline and Progress lifecycle initials changed')
+    check(machines['delay_event']['initial']=='observed' and machines['recovery_plan']['initial']=='requested','Delay/Recovery lifecycle initials changed')
+    baseline_activate=next((t for t in machines['schedule_baseline']['transitions'] if t['from']=='approved' and t['command']=='activate_baseline'),None)
+    progress_freeze=next((t for t in machines['schedule_progress']['transitions'] if t['from']=='accepted_for_reporting' and t['command']=='freeze_progress'),None)
+    check(bool(baseline_activate) and baseline_activate['authority']=='schedule.baseline.activate' and 'schedule_baseline_activation_ready' in baseline_activate['guards'],'Baseline activation contract changed')
+    check(bool(progress_freeze) and progress_freeze['authority']=='schedule.progress.freeze' and 'schedule_progress_freeze_ready' in progress_freeze['guards'],'Progress freeze contract changed')
+    schedule_execution=load('schema/schedule_execution_contract_v1.json')
+    check(schedule_execution['baseline_activation']['atomic'] is True and schedule_execution['baseline_activation']['single_effective_per_scope'] is True,'Baseline activation must remain atomic with one effective baseline per scope')
+    check(schedule_execution['progress_freeze']['content_immutable_after_frozen'] is True and schedule_execution['progress_freeze']['correction_requires_new_schedule_record'] is True,'Frozen Progress must remain immutable with correction by new record')
+    check(schedule_execution['progress_freeze']['data_date_must_not_move_backward'] is True and schedule_execution['progress_freeze']['forecast_never_rewrites_baseline'] is True,'Data Date/Baseline invariants changed')
+    check(schedule_execution['delay_boundary']['delay_event_is_fact_not_entitlement'] is True and schedule_execution['delay_boundary']['delay_close_does_not_close_claim_or_eot'] is True,'Delay entitlement boundary changed')
+    check(schedule_execution['recovery_boundary']['accepted_recovery_does_not_revise_baseline'] is True and schedule_execution['recovery_boundary']['accepted_recovery_does_not_approve_eot_or_cost'] is True,'Recovery/Baseline/EOT boundary changed')
+    check(schedule_execution['activity_boundary']['percent_complete_100_does_not_change_inspection_or_handover'] is True,'Schedule Activity completion must not alter quality/handover state')
+    schedule_readonly={field for name in ['ScheduleData','RecoveryPlanData'] for field,spec in schemas[name]['properties'].items() if spec.get('readOnly') is True}
+    for machine_name in ['schedule_baseline','schedule_progress','recovery_plan']:
+        for transition in machines[machine_name]['transitions']:
+            check(not (set(transition['payload_fields']) & schedule_readonly),machine_name+' exposes server-managed schedule fields in command payload')
+    check(schemas['RecoveryPlanData']['properties']['effectivenessResult'].get('readOnly') is True,'Recovery effectiveness must be command-derived')
+    check(schemas['ScheduleData']['properties']['variance']['$ref']=='#/components/schemas/ScheduleVarianceData','Schedule variance schema binding changed')
     collections=set()
     for name,machine in machines.items():
         check(machine['object_type'] in schemas,name+' has unknown object type')
@@ -145,7 +198,7 @@ def validate_all():
         for condition in conditions:
             check(condition['when']=={'operator':'failed_inspection_has_issued_issue'},'Unsafe form requirement predicate')
             check(condition['any_of']==[{'field':'review.ncr_no'},{'source_object_type':'Issue'}],'Invalid NCR link alternatives')
-    known={'$ref','$schema','type','enum','const','format','pattern','minLength','minimum','maximum','properties','required','additionalProperties','items','minItems','uniqueItems','allOf','oneOf','anyOf','if','then','else','description','title','default'}
+    known={'$ref','$schema','type','enum','const','format','pattern','minLength','minimum','maximum','properties','required','additionalProperties','items','minItems','uniqueItems','allOf','oneOf','anyOf','if','then','else','description','title','default','readOnly'}
     def walk(schema):
         check(set(schema)<=known,'Unsupported validation keywords '+str(set(schema)-known))
         if '$ref' in schema:check(schema['$ref'].split('/')[-1] in schemas,'Unresolved schema reference')
