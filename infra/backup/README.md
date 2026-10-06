@@ -1,23 +1,12 @@
-# PostgreSQL Backup / Clean-Restore Slice
+# PostgreSQL Backup / New Clean-Target Restore
 
-이 디렉터리의 첫 번째 범위는 #46 중 **PostgreSQL clean restore 검증**만 담당한다.
-
-Object Storage backup/version recovery, Secret recovery, 전체 RPO/RTO는 후속 작은 작업으로 분리한다.
-
-## 원칙
-
-- `pg_dump -Fc` custom archive를 사용한다.
-- ownership/privilege를 dump에 고정하지 않는다.
-- dump와 SHA-256 sidecar를 함께 만든다.
-- restore 전에 sidecar가 있으면 hash를 검증한다.
-- clean restore는 별도 target database에만 허용한다.
-- 현재 Compose의 primary `POSTGRES_DB`에는 기본적으로 restore를 거부한다.
-- password나 전체 DSN을 명령행/출력에 쓰지 않는다.
-- 이 도구는 Product 상태·업무 종결·Audit 의미를 변경하지 않는다.
+This directory implements only the PostgreSQL slice of #46, tracked by #51.
+It does not complete object/version recovery, secret recovery, or the overall
+RPO/RTO and DB/object consistency strategy.
 
 ## Backup
 
-Development PostgreSQL이 실행 중일 때:
+From the repository root, with the development PostgreSQL service running:
 
 ```sh
 infra/backup/postgres_backup.sh \
@@ -25,51 +14,74 @@ infra/backup/postgres_backup.sh \
   .local-backups/postgres/doul_supervision.dump
 ```
 
-생성물:
+The dump uses `pg_dump -Fc --no-owner --no-privileges` and has a SHA-256 sidecar.
+Password prompts are disabled; passwords and full DSNs are not passed on the
+command line or printed.
 
-```text
-doul_supervision.dump
-doul_supervision.dump.sha256
-```
+Security properties:
 
-Sidecar는 dump bytes의 SHA-256 한 줄만 저장한다.
+- `umask 077` applies before creating any directory or temporary file.
+- New backup directories are 0700; temporary/final dump and sidecar are 0600.
+- An existing output directory must be owned by the caller and have no
+  group/other permissions. The script refuses it rather than silently chmodding
+  user directories. Review and restrict an existing directory explicitly first.
+- Directory/output/sidecar symlinks and non-regular destinations are refused.
+- A random exclusive temporary directory is used inside the private directory.
+- A per-output mkdir lock refuses concurrent writers. After an uncatchable kill,
+  inspect the stale lock before an operator removes it; there is no automatic
+  lock deletion belonging to another run.
+- Failure before publication leaves the previous pair unchanged and removes this
+  invocation's temporary files. Each publication rename is atomic, but the pair
+  is not one filesystem transaction. An interruption between renames is detected
+  by mandatory restore hash verification. Prefer a unique output name per backup.
 
-## Clean Restore Verification
-
-운영 primary를 직접 덮지 않고 별도 DB로 복구한다.
+## Restore without destroying an existing database
 
 ```sh
 infra/backup/postgres_restore_clean.sh \
   .local-backups/postgres/doul_supervision.dump \
-  doul_restore_verify
+  doul_restore_verify_20261006
 ```
 
-이 스크립트는 target DB가 있으면 제거하고 `template0`에서 다시 만든 뒤 `pg_restore --exit-on-error`를 실행한다.
+**The target must not exist.** Unlike the previous implementation, this command
+never drops or replaces a database and offers no force/overwrite option.
+`createdb` atomically rejects an existing target name. Use a new verification
+name on each run. Promotion/replacement is a separate approved operator action.
 
-따라서 **검증용 clean target**에만 사용한다.
+Before database creation, restore requires:
 
-실제 Pilot/Production 원복 절차는 #46에서 다음을 추가로 확정해야 한다.
+1. A non-empty regular dump and regular, mandatory 64-lowercase-hex SHA-256 sidecar.
+2. A private copy whose hash matches the sidecar; all later reads use those same bytes.
+3. A target other than the configured primary or PostgreSQL system databases,
+   with an ASCII identifier no longer than 63 bytes.
+4. Successful `pg_restore --list` (TOC) and full SQL generation to `/dev/null`.
 
-- 서비스 write 중지 또는 일관성 경계
-- Object Storage와의 복구 시점 정합
-- migration version
-- Secret/config recovery
-- RPO/RTO
-- 승인권자와 실행 담당
-- rollback/fallback
+Only then is a new `template0` target created and restored using
+`--single-transaction --exit-on-error --no-owner --no-privileges`.
+Archive preflight does not prove that all SQL will execute on the destination.
+A SQL restore failure rolls back the restore transaction and leaves the newly
+created empty database for explicit inspection/cleanup; existing databases are
+never deleted. Do not treat a failed run as restored business state.
 
-## CI 검증
+A checksum is not authentication or a malware check. Restore only trusted
+backups: PostgreSQL dumps can contain executable SQL. Source approval and
+Pilot/Production restoration authority remain part of #46.
 
-CI는 임시 PostgreSQL volume에서:
+## Verification
 
-1. source probe DB 생성
-2. deterministic row 저장
-3. custom-format backup 생성
-4. SHA-256 검증
-5. 별도 clean DB restore
-6. row 내용 검증
-7. 손상 dump hash 거부
-8. primary DB restore 거부
-9. volume 제거
+`test_postgres_backup.py` uses synthetic PostgreSQL/Docker doubles with real
+shell/file permissions. It covers missing/invalid/mismatched sidecars,
+non-archives, body preflight, existing/primary/system targets, SQL failure,
+permissions from file creation, symlinks, output replacement and cleanup.
 
-까지 수행한다.
+`platform-postgres-backup` CI additionally uses a disposable real PostgreSQL
+cluster: deterministic source row, custom-format dump, new-target restore,
+checksum/format/truncation rejection before target creation, private file modes,
+and preservation of an existing restored row. It removes only the CI volume.
+
+Before Pilot/Production, #46 still requires a DB/object consistency boundary,
+object-version recovery, migration/configuration versions, secret recovery,
+RPO/RTO, owner/operator approval, and promotion/rollback/fallback procedures.
+
+References: PostgreSQL 16 `pg_restore` documentation describes `--list`, SQL
+output without `--dbname`, `--single-transaction`, and the trusted-source warning.

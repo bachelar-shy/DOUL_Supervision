@@ -25,16 +25,17 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
-      - name: Validate backup scripts
+      - name: Validate scripts and isolated safety regressions
         run: |
           sh -n infra/backup/postgres_backup.sh
           sh -n infra/backup/postgres_restore_clean.sh
+          python3 infra/backup/test_postgres_backup.py -v
           docker compose -f infra/compose/compose.dev.yml config --quiet
 
       - name: Start PostgreSQL
         run: |
           docker compose -f infra/compose/compose.dev.yml \
-            up -d --wait --wait-timeout 60 postgres
+            up -d --build --wait --wait-timeout 60 postgres
 
       - name: Seed backup source database
         run: |
@@ -47,54 +48,29 @@ jobs:
                 -c "INSERT INTO platform_restore_probe (id, payload) VALUES (1, '"'"'snapshot-v1'"'"');"
             '
 
-      - name: Create and verify backup
+      - name: Create and verify private backup
         run: |
-          mkdir -p /tmp/doul-backup
+          install -d -m 700 /tmp/doul-backup
           infra/backup/postgres_backup.sh \
             doul_backup_probe \
             /tmp/doul-backup/probe.dump
-
           test -s /tmp/doul-backup/probe.dump
           test -s /tmp/doul-backup/probe.dump.sha256
           expected="$(cat /tmp/doul-backup/probe.dump.sha256)"
           actual="$(sha256sum /tmp/doul-backup/probe.dump | awk '{print $1}')"
           test "$expected" = "$actual"
 
-      - name: Restore into clean database
+      - name: Restore into new clean database
         run: |
           infra/backup/postgres_restore_clean.sh \
             /tmp/doul-backup/probe.dump \
             doul_restore_probe
-
           restored="$(docker compose -f infra/compose/compose.dev.yml exec -T postgres \
             sh -ec 'psql -At -U "$POSTGRES_USER" -d doul_restore_probe -c "SELECT payload FROM platform_restore_probe WHERE id=1"')"
           test "$restored" = "snapshot-v1"
 
-      - name: Reject corrupted dump and primary overwrite
-        run: |
-          cp /tmp/doul-backup/probe.dump /tmp/doul-backup/corrupt.dump
-          cp /tmp/doul-backup/probe.dump.sha256 /tmp/doul-backup/corrupt.dump.sha256
-          printf 'corrupt' >> /tmp/doul-backup/corrupt.dump
-
-          if infra/backup/postgres_restore_clean.sh \
-            /tmp/doul-backup/corrupt.dump \
-            doul_corrupt_probe; then
-            echo "corrupted dump must be rejected"
-            exit 1
-          fi
-
-          primary="$(docker compose -f infra/compose/compose.dev.yml exec -T postgres \
-            sh -ec 'printf "%s" "$POSTGRES_DB"')"
-          if infra/backup/postgres_restore_clean.sh \
-            /tmp/doul-backup/probe.dump \
-            "$primary"; then
-            echo "primary database clean restore must be refused"
-            exit 1
-          fi
-
-          exists="$(docker compose -f infra/compose/compose.dev.yml exec -T postgres \
-            sh -ec 'psql -At -U "$POSTGRES_USER" -d postgres -c "SELECT 1 FROM pg_database WHERE datname='"'"'doul_corrupt_probe'"'"'"')"
-          test -z "$exists"
+      - name: Verify live archive rejection and existing database preservation
+        run: python3 infra/backup/test_postgres_restore_live.py /tmp/doul-backup/probe.dump
 
       - name: PostgreSQL logs
         if: failure()
