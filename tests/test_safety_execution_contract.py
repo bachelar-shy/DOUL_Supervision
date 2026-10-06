@@ -1,7 +1,9 @@
+from copy import deepcopy
 import json
 import unittest
 from pathlib import Path
 
+from app.reference.engine import uid
 from app.reference.validation import ContractError
 from tests.fixtures import AT, Fixture
 
@@ -28,6 +30,17 @@ class SafetyExecutionContractTests(unittest.TestCase):
             values = [t for t in values if t['from'] == from_state]
         self.assertTrue(values, (machine, command, from_state))
         return values[0]
+
+    def set_permit_state(self, fixture, permit, state='active', work_authorized=True, readiness=None):
+        current = fixture.engine.get('WorkItem', permit['id'])
+        current['status'] = state
+        current['data']['workAuthorized'] = work_authorized
+        if readiness is not None:
+            current['data']['readiness'] = deepcopy(readiness)
+        key = ('WorkItem', permit['id'])
+        fixture.engine._records[key] = deepcopy(current)
+        fixture.engine._history[key + (current['version'],)] = deepcopy(current)
+        return current
 
     def test_three_safety_machines_are_explicit(self):
         expected = {
@@ -115,6 +128,7 @@ class SafetyExecutionContractTests(unittest.TestCase):
     def test_formal_stop_is_issued_at_creation_and_requires_evidence(self):
         fixture = Fixture()
         permit = fixture.create('safety_permit', {'title': '고위험 작업허가', 'data': {}}, actor='CON')
+        self.set_permit_state(fixture, permit)
         data = {
             'stopOrderNo': 'STOP-001',
             'stopScopeType': 'permit',
@@ -126,9 +140,41 @@ class SafetyExecutionContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ContractError, 'hazard evidence'):
             fixture.create('safety_stop_order', {'title': '즉시 작업중지', 'data': data, 'evidenceIds': []}, actor='SUP')
         stop = fixture.create('safety_stop_order', {'title': '즉시 작업중지', 'data': data, 'evidenceIds': [fixture.evidence]}, actor='SUP')
+        affected = fixture.engine.get('WorkItem', permit['id'])
         self.assertEqual(stop['status'], 'issued')
+        self.assertEqual(affected['status'], 'suspended')
+        self.assertFalse(affected['data']['workAuthorized'])
+        self.assertEqual(affected['data']['suspensionReason'], 'immediate hazard')
+        self.assertIn({'objectType': 'WorkItem', 'objectId': stop['id'], 'version': 1}, affected['data']['stopOrderRefs'])
         self.assertTrue(self.execution['issue_stop_package']['atomic'])
         self.assertTrue(self.execution['issue_stop_package']['rollback_on_failure'])
+
+    def test_issue_stop_rejects_stale_permit_ref_before_any_package_write(self):
+        fixture = Fixture()
+        first = fixture.create('safety_permit', {'title': '첫 번째 Permit', 'data': {}}, actor='CON')
+        second = fixture.create('safety_permit', {'title': '두 번째 Permit', 'data': {}}, actor='CON')
+        self.set_permit_state(fixture, first)
+        self.set_permit_state(fixture, second)
+        first_ref = fixture.ref('WorkItem', first['id'])
+        stale_second_ref = fixture.ref('WorkItem', second['id'])
+        second_current = fixture.engine.get('WorkItem', second['id'])
+        second_current['version'] += 1
+        second_current['updatedAt'] = fixture.engine.at()
+        fixture.engine._save('WorkItem', second_current)
+        first_before = fixture.engine.get('WorkItem', first['id'])
+        stop_id = uid()
+        data = {
+            'stopOrderNo': 'STOP-STALE',
+            'stopScopeType': 'permit',
+            'stopReason': 'stale reference probe',
+            'observedAt': AT,
+            'effectiveAt': AT,
+            'affectedPermitRefs': [first_ref, stale_second_ref],
+        }
+        with self.assertRaisesRegex(ContractError, second['id']):
+            fixture.create('safety_stop_order', {'title': '원자성 검증', 'data': data, 'evidenceIds': [fixture.evidence]}, actor='SUP', oid=stop_id)
+        self.assertEqual(fixture.engine.get('WorkItem', first['id']), first_before)
+        self.assertNotIn(('WorkItem', stop_id), fixture.engine._records)
 
     def test_project_config_can_activate_stop_lift_only_after_product_policy_exists(self):
         binding = next(x for x in self.config['authorityBindings'] if x['authorityCode'] == 'safety.stop_lift')

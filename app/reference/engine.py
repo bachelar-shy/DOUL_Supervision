@@ -84,6 +84,17 @@ class Engine:
             require(record['projectId'] == project_id, 'PROJECT_MISMATCH', 'Reference belongs to another project')
         return record
 
+    def _current_reference(self, reference, project_id, *, object_type=None, subtype=None):
+        require(isinstance(reference, dict), 'REFERENCE_INVALID', 'Domain reference must be an object')
+        if object_type is not None:
+            require(reference.get('objectType') == object_type, 'REFERENCE_TYPE_INVALID', object_type)
+        resolved = self.resolve(reference, project_id)
+        current = self.get(reference['objectType'], reference['objectId'])
+        require(current['version'] == reference['version'], 'REFERENCE_STALE', reference['objectId'])
+        if subtype is not None:
+            require(resolved.get('subtype') == subtype, 'REFERENCE_TYPE_INVALID', subtype)
+        return current
+
     def _scope(self, values, target, location=False):
         if '*' in values:
             return True
@@ -251,19 +262,59 @@ class Engine:
             for field in ['acknowledgedAt','resumeRequestAt','liftedAt','closedAt']:
                 require(field not in record['data'], 'IMMUTABLE_FIELD', field+' is server-derived')
             require(bool(record.get('evidenceIds')), 'EVIDENCE_REQUIRED', 'A formal stop order requires preserved hazard evidence')
-            for reference in record['data']['affectedPermitRefs']:
-                permit=self.resolve(reference,project_id)
-                require(permit.get('subtype')=='SafetyPermit', 'SAFETY_PERMIT_REQUIRED', 'Stop order must target SafetyPermit records')
         if machine=='safety_equipment_inspection':
             for field in ['equipmentAvailable','requestedAt']:
                 require(field not in record['data'], 'IMMUTABLE_FIELD', field+' is server-derived')
             record['data']['equipmentAvailable']=False
         validate(record,self.schemas[kind],self.schemas)
+        if machine=='safety_stop_order':
+            return self._create_safety_stop_order(record,request,party_id,role_id,key)
         self._save(kind,record)
         self._record_machines[(kind,object_id)]=machine
         result=self._event(record,'create:'+machine,party_id,role_id,key,request,None)
         self._remember(project_id,party_id,'create:'+machine,key,request,result)
         return result
+
+    def _create_safety_stop_order(self, record, request, party_id, role_id, key):
+        stop_ref={'objectType':'WorkItem','objectId':record['id'],'version':record['version']}
+        now=self.at()
+        permit_updates=[]
+        seen=set()
+        for reference in record['data']['affectedPermitRefs']:
+            permit=self._current_reference(reference,record['projectId'],object_type='WorkItem',subtype='SafetyPermit')
+            require(permit['id'] not in seen,'REFERENCE_DUPLICATE',permit['id'])
+            seen.add(permit['id'])
+            updated=deepcopy(permit)
+            updated['data'].setdefault('stopOrderRefs',[]).append(deepcopy(stop_ref))
+            updated['data']['workAuthorized']=False
+            if updated['status'] in ['authorized','active']:
+                updated['status']='suspended'
+                updated['data']['suspendedAt']=now
+                updated['data']['suspensionReason']=record['data']['stopReason']
+            updated['version']=permit['version']+1
+            updated['updatedAt']=now
+            validate(updated,self.schemas['WorkItem'],self.schemas)
+            permit_updates.append((permit,updated))
+
+        snapshot=(
+            deepcopy(self._records),
+            deepcopy(self._history),
+            deepcopy(self._audit),
+            deepcopy(self._idempotency),
+            deepcopy(self._record_machines),
+        )
+        try:
+            self._save('WorkItem',record)
+            self._record_machines[('WorkItem',record['id'])]='safety_stop_order'
+            result=self._event(record,'create:safety_stop_order',party_id,role_id,key,request,None)
+            for before,updated in permit_updates:
+                self._save('WorkItem',updated)
+                self._event(updated,'safety_stop_order:issue_stop',party_id,role_id,key,request,before)
+            self._remember(record['projectId'],party_id,'create:safety_stop_order',key,request,result)
+            return result
+        except Exception:
+            self._records,self._history,self._audit,self._idempotency,self._record_machines=snapshot
+            raise
 
     def execute(self, machine, object_id, command, expected_version, payload, evidence_ids, party_id, role_id, key):
         require(machine in self.machines,'MACHINE_UNKNOWN',machine)
