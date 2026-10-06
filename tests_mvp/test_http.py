@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from services.api.main import create_app
 from app.reference.engine import uid
@@ -56,6 +57,27 @@ class ApiTests(unittest.TestCase):
 
     def test_bad_origin_login(self):
         self.assertEqual(self.client.post('/dev/sessions',headers={'Origin':'https://untrusted.example'},json={'actorGroup':'SUP'}).status_code,403)
+
+    def test_configured_loopback_origins_allow_alternate_web_port(self):
+        configured='http://127.0.0.1:5182,http://localhost:5182,http://127.0.0.1:8791,http://localhost:8791'
+        with patch.dict('os.environ',{'DOUL_API_ALLOWED_ORIGINS':configured}):
+            app=create_app(':memory:',demo=True);client=TestClient(app)
+        try:
+            for origin in ['http://127.0.0.1:5182','http://localhost:5182']:
+                with self.subTest(origin=origin):
+                    session=client.post('/dev/sessions',headers={'Origin':origin},json={'actorGroup':'SUP'})
+                    self.assertEqual(session.status_code,200,session.text)
+                    payload=session.json();headers={'Origin':origin,'Authorization':'Bearer '+payload['accessToken'],'X-RoleAssignment-Id':payload['actor']['roleAssignmentId']}
+                    workspace=client.get('/projects/'+payload['projectId']+'/workspace',headers=headers)
+                    self.assertEqual(workspace.status_code,200,workspace.text)
+                    self.assertEqual(workspace.headers.get('access-control-allow-origin'),origin)
+            denied=client.post('/dev/sessions',headers={'Origin':'https://untrusted.example'},json={'actorGroup':'SUP'})
+            self.assertEqual(denied.status_code,403)
+        finally:client.close();app.state.store.close()
+
+    def test_configured_origin_rejects_non_loopback_hosts(self):
+        with patch.dict('os.environ',{'DOUL_API_ALLOWED_ORIGINS':'https://untrusted.example'}):
+            with self.assertRaises(RuntimeError):create_app(':memory:',demo=True)
 
     def test_source_and_service_parties_cannot_login(self):
         for role in ['TEST_LAB','EXTERNAL_REVIEWER','AI','SYSTEM','SYS','INTEGRATION']:

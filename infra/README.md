@@ -76,6 +76,12 @@ Expected loopback endpoints:
 
 All published development ports bind to loopback only.
 
+The API development Origin allowlist is derived from the published Web/API
+ports. Changing `DOUL_WEB_PORT_PUBLISHED` therefore updates login/CORS
+validation for both `127.0.0.1` and `localhost`; arbitrary external origins
+remain rejected. Direct non-Compose API runs can set a comma-separated
+`DOUL_API_ALLOWED_ORIGINS`, but only loopback HTTP origins are accepted.
+
 ## Development service contract
 
 The example file publishes the planned Backend/Platform interface names:
