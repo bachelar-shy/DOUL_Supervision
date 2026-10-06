@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CalendarDays } from "lucide-react";
 import type {
   CommandDescriptor,
   Fields,
@@ -24,8 +25,24 @@ import {
 import { Icon } from "../pages/shared";
 import { machineForRoute, mobileRoutes, roleRoutes, routes } from "./routes";
 
+function formatTodayDate(value: Date) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  }).format(value);
+}
+
+function millisecondsUntilNextLocalDay(now: Date) {
+  const next = new Date(now);
+  next.setHours(24, 0, 0, 50);
+  return Math.max(1000, next.getTime() - now.getTime());
+}
+
 export function AppShell({ client }: { client: SupervisionClient }) {
   const [role, setRole] = useState<HumanRole>("SUP");
+  const [todayDate, setTodayDate] = useState(() => formatTodayDate(new Date()));
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [route, setRoute] = useState(location.hash.slice(2) || "today");
   const [selected, setSelected] = useState<string | null>(null);
@@ -65,6 +82,18 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         if (n === sequence.current) setLoading(false);
       });
   }, [client, role]);
+  useEffect(() => {
+    let timer = 0;
+    const scheduleDateRefresh = () => {
+      const now = new Date();
+      timer = window.setTimeout(() => {
+        setTodayDate(formatTodayDate(new Date()));
+        scheduleDateRefresh();
+      }, millisecondsUntilNextLocalDay(now));
+    };
+    scheduleDateRefresh();
+    return () => window.clearTimeout(timer);
+  }, []);
   useEffect(() => {
     const net = () => setOnline(navigator.onLine);
     const hash = () => {
@@ -271,6 +300,16 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   : safeRoute === "safety"
                     ? "작업허가, 작업중지, 재개 Gate와 장비 안전상태를 서버 원본 기준으로 확인합니다."
                     : "현장 기록 · 승인 기준 · 조치 이력을 하나로 확인합니다."
+            }
+            details={
+              safeRoute === "today" ? (
+                <div className="heading-context">
+                  <span data-ui-component="today-date-context">
+                    <CalendarDays aria-hidden="true" />
+                    {todayDate}
+                  </span>
+                </div>
+              ) : null
             }
             actions={
               <>

@@ -313,6 +313,32 @@ strong {
   font-size: 12px;
   margin-top: 5px;
 }
+.page-heading-details {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+.heading-context {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  color: #5c6978;
+  font-size: 12px;
+}
+.heading-context span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+}
+.heading-context span:first-child svg {
+  width: 15px;
+  height: 15px;
+  color: #7a8796;
+}
 .heading-actions {
   display: flex;
   align-items: center;
@@ -1201,6 +1227,16 @@ strong {
   .page-heading {
     margin-bottom: 20px;
     align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .page-heading-details {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+  .heading-context {
+    justify-content: flex-start;
+    gap: 14px;
   }
   .page-heading .eyebrow {
     font-size: 9px;
