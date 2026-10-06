@@ -15,6 +15,7 @@ import {
   CapturePage,
   CommandModal,
   DocumentPage,
+  OwnerGovernancePage,
   RegisterPage,
   TodayPage,
   WorkbenchPage,
@@ -332,7 +333,17 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   }}
                 />
               )}
-              {machineForRoute[safeRoute] && (
+              {safeRoute === "owner" && (
+                <OwnerGovernancePage
+                  workspace={workspace}
+                  selected={selected}
+                  current={current}
+                  online={online}
+                  onSelect={setSelected}
+                  onOpenCommand={(item, action) => setDialog({ item, action })}
+                />
+              )}
+              {safeRoute !== "owner" && machineForRoute[safeRoute] && (
                 <WorkbenchPage
                   route={safeRoute}
                   role={role}
