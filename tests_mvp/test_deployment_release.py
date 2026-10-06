@@ -52,8 +52,10 @@ class ReleaseExecutionTests(unittest.TestCase):
     def test_backup_and_restore_must_reference_same_encrypted_bundle(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);backup=root/'backup.json';restored=root/'restore.json'
-            backup.write_text(json.dumps({'encrypted':True,'bundleSha256':'a'*64}))
-            restored.write_text(json.dumps({'verified':True,'bundleSha256':'a'*64,'targets':{'rpoSeconds':3600,'status':'draft'}}))
+            from datetime import datetime, timezone
+            created=datetime.now(timezone.utc).isoformat()
+            backup.write_text(json.dumps({'encrypted':True,'bundleSha256':'a'*64,'createdAt':created,'composeProject':'doul-supervision-staging'}))
+            restored.write_text(json.dumps({'verified':True,'bundleSha256':'a'*64,'backupCreatedAt':created,'composeProject':'doul-supervision-staging','targets':{'rpoSeconds':3600,'status':'draft'}}))
             plan={'environment':'staging','recovery':{'backupReport':str(backup),'restoreReport':str(restored)}}
             verify_recovery(plan)
             restored.write_text(json.dumps({'verified':True,'bundleSha256':'b'*64,'targets':{'rpoSeconds':3600,'status':'draft'}}))

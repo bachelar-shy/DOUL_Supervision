@@ -45,7 +45,16 @@ def verify_recovery(plan):
     rpo = target.get('rpoSeconds')
     if type(rpo) is not int or rpo <= 0:
         raise ValueError('Explicit recovery-point target required')
-    age = time.time() - Path(plan['recovery']['backupReport']).stat().st_mtime
+    created = backup.get('createdAt')
+    if not isinstance(created, str) or restored.get('backupCreatedAt') != created:
+        raise ValueError('Backup creation time must match the verified archive manifest')
+    timestamp = datetime.fromisoformat(created.replace('Z', '+00:00'))
+    if timestamp.tzinfo is None:
+        raise ValueError('Backup creation time must include a timezone')
+    project = 'doul-supervision-' + plan['environment']
+    if backup.get('composeProject') != project or restored.get('composeProject') != project:
+        raise ValueError('Recovery evidence belongs to a different deployment environment')
+    age = time.time() - timestamp.timestamp()
     if age < -30 or age > rpo:
         raise ValueError('Backup evidence is outside its declared recovery-point target')
     if plan['environment'] == 'pilot' and target.get('status') != 'approved':
@@ -60,12 +69,18 @@ def compose_command(stage, env_file):
             '-f', str(ROOT/('infra/compose/compose.'+stage+'.yml'))]
 
 
+def verify_checkout(release_sha):
+    if run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD']).decode().strip() != release_sha:
+        raise ValueError('Use the exact approved release checkout; do not deploy a moving branch')
+    # A plain git diff misses staged changes; status also catches untracked inputs.
+    if run(['git', '-C', str(ROOT), 'status', '--porcelain', '--untracked-files=all']).strip():
+        raise ValueError('Release checkout has staged, unstaged or untracked changes')
+
+
 def preflight(plan, env_file):
     stage = plan['environment']
     validate_release_plan(plan, stage)
-    if run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD']).decode().strip() != plan['releaseSha']:
-        raise ValueError('Use the exact approved release checkout; do not deploy a moving branch')
-    run(['git', '-C', str(ROOT), 'diff', '--exit-code', '--', 'infra/compose', 'infra/docker', 'services/deployment'])
+    verify_checkout(plan['releaseSha'])
     verify_recovery(plan)
     command = compose_command(stage, env_file)
     model = json.loads(run(command + ['config', '--format', 'json']))
@@ -91,8 +106,8 @@ def preflight(plan, env_file):
             info = os.fstat(file.fileno())
             if name == 'service-ca-bundle':
                 if info.st_mode & 0o022: raise ValueError('Public CA trust bundle must not be group/world writable')
-            elif info.st_mode & 0o007:
-                raise ValueError('Operational secret files must deny other-user access')
+            elif info.st_mode & 0o027:
+                raise ValueError('Operational secret files must deny other-user access and group writes')
     return command, model
 
 
@@ -100,9 +115,13 @@ def verify_https(plan, ca_file=None):
     context = ssl.create_default_context(cafile=ca_file)
     from services.observability.alerts import NoRedirect
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect(), urllib.request.HTTPSHandler(context=context))
-    with opener.open(plan['publicUrl'].rstrip('/') + '/api/ready', timeout=10) as response:
-        if response.status != 200 or json.loads(response.read(65536)).get('status') != 'ok':
-            raise RuntimeError('Authenticated TLS endpoint readiness check failed')
+    for endpoint in ('ready', 'health'):
+        with opener.open(plan['publicUrl'].rstrip('/') + '/api/' + endpoint, timeout=10) as response:
+            payload = json.loads(response.read(65536))
+            if response.status != 200 or payload.get('status') != 'ok':
+                raise RuntimeError('Verified TLS endpoint readiness check failed')
+            if endpoint == 'health' and (payload.get('mode') != plan['environment'] or payload.get('baseCommit') != plan['releaseSha']):
+                raise RuntimeError('Running environment or release differs from the approved deployment')
     # This is transport/readiness verification, not an invented user acceptance.
 
 

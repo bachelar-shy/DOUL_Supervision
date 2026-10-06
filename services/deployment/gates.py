@@ -52,23 +52,10 @@ def validate_store(store, stage):
 
 
 def validate_connections(stage):
-    import psycopg.conninfo
-    dsn = secret('DATABASE_URL')
-    db = psycopg.conninfo.conninfo_to_dict(dsn)
-    redis = secret('REDIS_URL')
-    parsed = urlsplit(redis)
-    if not db.get('host') or not db.get('dbname') or not db.get('user') or not db.get('password'):
-        raise ValueError('Explicit database identity required')
-    if not parsed.hostname or not parsed.password:
-        raise ValueError('Authenticated Redis URL required')
-    for value in (db['password'], parsed.password):
-        if value in {'local-postgres-only', 'local-redis-only', 'disposable-ci-only', 'password', 'changeme'}:
-            raise ValueError('Development/default credentials prohibited')
+    from services.runtime_config import validate_database_dsn, validate_redis_url
+    dsn = validate_database_dsn(secret('DATABASE_URL'), stage)
+    redis = validate_redis_url(secret('REDIS_URL'), stage)
     if stage == 'pilot':
-        if db.get('sslmode') != 'verify-full' or not db.get('sslrootcert'):
-            raise ValueError('Pilot PostgreSQL requires verify-full TLS and trusted CA')
-        if parsed.scheme != 'rediss':
-            raise ValueError('Pilot Redis requires TLS')
         service_url(os.environ['OBJECT_STORAGE_ENDPOINT'])
         if os.getenv('DOUL_DOCUMENT_RUNTIME') != 'local':
             raise ValueError('Verified document runtime required for pilot')

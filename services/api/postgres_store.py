@@ -40,6 +40,12 @@ class PostgresSnapshotAdapter:
         if pool_min_size < 1 or pool_max_size < pool_min_size:
             raise ValueError("Invalid PostgreSQL pool size")
 
+        from services.runtime_config import environment, validate_database_dsn
+        stage = environment()
+        if demo and stage != 'development':
+            raise ValueError('Demo persistence cannot initialize an operational environment')
+        validate_database_dsn(dsn, stage)
+
         self.lock = RLock()
         self._local = local()
         self.pool = ConnectionPool(
@@ -63,17 +69,6 @@ class PostgresSnapshotAdapter:
         self.requests = {}
         self.conflicts = []
 
-        from services.runtime_config import environment
-        stage=environment()
-        if demo and stage!='development':
-            self.pool.close()
-            raise ValueError('Demo persistence cannot initialize an operational environment')
-        if stage=='pilot':
-            from psycopg.conninfo import conninfo_to_dict
-            settings=conninfo_to_dict(dsn)
-            if settings.get('sslmode')!='verify-full' or not settings.get('sslrootcert'):
-                self.pool.close()
-                raise ValueError('Pilot database connections require verified TLS')
         if stage=='development':
             self._ensure_schema()
         else:

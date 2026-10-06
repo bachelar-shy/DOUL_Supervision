@@ -75,7 +75,8 @@ def main():
             # Ownership changes are confined to newly-created disposable CI files.
             command(['sudo','chown','10001:10001',str(db_file),str(redis_file),str(public)])
             command(['sudo','chown','101:101',str(certificate),str(private)])
-            variables={'DOUL_ENVIRONMENT':'staging','DOUL_API_DEMO':'false',
+            release_sha=command(['git','rev-parse','HEAD']).stdout.decode().strip()
+            variables={'DOUL_ENVIRONMENT':'staging','DOUL_API_DEMO':'false','DOUL_RELEASE_SHA':release_sha,
                 'DATABASE_URL_FILE':'/run/secrets/api-database-url','REDIS_URL_FILE':'/run/secrets/api-redis-url',
                 'DOUL_AUTH_PUBLIC_KEY_FILE':'/run/secrets/auth-public-key','DOUL_AUTH_ISSUER':issuer,
                 'DOUL_AUTH_AUDIENCE':'doul-supervision','DOUL_AUTH_KEY_ID':'test-key-1',
@@ -116,6 +117,16 @@ def main():
             assert status==200 and all(r['actorGroup']=='SUP' for r in json.loads(body)), 'Token claims widened server authority'
             assert request('/api/projects/'+project+'/roles','invalid-token')[0]==401
             status,body=request('/api/health');assert status==200 and json.loads(body)['mode']=='staging'
+            from services.deployment.release import verify_https
+            plan=dict(publicUrl='https://localhost:8443',environment='staging',releaseSha=release_sha)
+            verify_https(plan, str(ca_file))
+            for wrong in (dict(plan,releaseSha='0'*40),dict(plan,environment='pilot')):
+                try:
+                    verify_https(wrong, str(ca_file))
+                except RuntimeError:
+                    pass
+                else:
+                    raise AssertionError('A different running release/environment was accepted')
             logs=command(['docker','logs',names[0]]).stdout.decode()
             assert password not in logs and token not in logs,'Runtime emitted a credential'
             # A pilot process with a staging/synthetic store must not start.
