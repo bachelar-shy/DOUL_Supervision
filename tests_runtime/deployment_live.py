@@ -29,6 +29,26 @@ def command(args, env=None, ok=True, timeout=120):
     return result
 
 
+def wait_for_database(dsn, timeout=45):
+    """Probe the exact authenticated TCP endpoint, not initdb's temporary socket."""
+    import psycopg
+    if timeout <= 0:
+        raise ValueError('Positive readiness timeout required')
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            with psycopg.connect(dsn, connect_timeout=2, options='-c statement_timeout=2000') as connection:
+                if connection.execute('SELECT 1').fetchone() != (1,):
+                    raise RuntimeError('Unexpected database readiness response')
+                return
+        except psycopg.OperationalError:
+            if time.monotonic() >= deadline:
+                break
+            time.sleep(0.25)
+    # Do not echo a credential-bearing DSN or an underlying connection error.
+    raise RuntimeError('Disposable TCP database did not become ready before timeout') from None
+
+
 def pem_key(path,key):
     path.write_bytes(key.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption()));path.chmod(0o600)
 
@@ -53,17 +73,19 @@ def main():
         private=root/'tls-private-key';pem_key(private,tls_key)
         db_file=root/'api-database-url';db_file.write_text('postgresql://integration:'+password+'@postgres:5432/staging_test');db_file.chmod(0o600)
         redis_file=root/'api-redis-url';redis_file.write_text('redis://:'+secrets.token_urlsafe(24)+'@unused-redis:6379/0');redis_file.chmod(0o600)
+        # Keep the temporary socket-only initialization phase observable in CI.
+        # The old pg_isready-without-host probe can succeed during this pause.
+        init_delay=root/'99-readiness-delay.sh'
+        init_delay.write_text('#!/bin/sh\nsleep 3\n');init_delay.chmod(0o555)
         try:
             command(['docker','network','create',network])
             env=dict(os.environ,POSTGRES_USER='integration',POSTGRES_PASSWORD=password,POSTGRES_DB='staging_test')
             command(['docker','run','-d','--name',names[2],'--network',network,'--network-alias','postgres',
                      '-p','127.0.0.1:55432:5432','-e','POSTGRES_USER','-e','POSTGRES_PASSWORD','-e','POSTGRES_DB',
+                     '-v',str(init_delay)+':/docker-entrypoint-initdb.d/99-readiness-delay.sh:ro',
                      'postgres:16.15-alpine3.24'],env=env)
-            for _ in range(40):
-                ready=command(['docker','exec',names[2],'pg_isready','-U','integration','-d','staging_test'],ok=False)
-                if not ready.returncode:break
-                time.sleep(0.5)
             dsn='postgresql://integration:'+password+'@127.0.0.1:55432/staging_test'
+            wait_for_database(dsn)
             migrate_v1(dsn)
             store=create_postgres_persistence(dsn,demo=True)
             try:
