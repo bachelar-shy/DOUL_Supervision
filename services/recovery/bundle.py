@@ -212,7 +212,7 @@ def restore_bundle(bundle, key, client, dsn, boundary, target_encryption=None):
         if database_fingerprint(target_dsn, target) != manifest['databaseFingerprint']:
             raise RuntimeError('Restored database snapshot/blob fingerprint mismatch')
         objects = restore_objects(client, root / 'objects', target_encryption=target_encryption)
-        return dict(schemaVersion=1, verified=True, targetDatabase=target, objects=objects,
+        return dict(schemaVersion=1, verified=True, bundleSha256=digest_file(bundle), targetDatabase=target, objects=objects,
                     sourceReleaseSha=manifest['plan']['releaseSha'], configuration=manifest['configuration'],
                     secretRecovery=manifest['plan']['secretRecovery'], targets=manifest['plan']['targets'],
                     durationSeconds=round(time.monotonic()-started,3),

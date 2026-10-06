@@ -63,10 +63,29 @@ class PostgresSnapshotAdapter:
         self.requests = {}
         self.conflicts = []
 
-        self._ensure_schema()
+        from services.runtime_config import environment
+        stage=environment()
+        if demo and stage!='development':
+            self.pool.close()
+            raise ValueError('Demo persistence cannot initialize an operational environment')
+        if stage=='pilot':
+            from psycopg.conninfo import conninfo_to_dict
+            settings=conninfo_to_dict(dsn)
+            if settings.get('sslmode')!='verify-full' or not settings.get('sslrootcert'):
+                self.pool.close()
+                raise ValueError('Pilot database connections require verified TLS')
+        if stage=='development':
+            self._ensure_schema()
+        else:
+            try:
+                version=self._fetchone('SELECT version FROM doul_schema_version WHERE id=1')
+                if version is None or version[0]!=1:raise RuntimeError('Unsupported migration version')
+            except Exception:
+                self.pool.close()
+                raise RuntimeError('Explicit database migration/provisioning is required')
         with self.lock:
             with self._transaction_connection():
-                loaded = self._load(lock=True)
+                loaded = self._load(lock=demo)
                 if not loaded:
                     if not demo:
                         raise RuntimeError(
