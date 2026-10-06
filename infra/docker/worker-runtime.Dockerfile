@@ -6,7 +6,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/opt/doul-supervision
 
-RUN groupadd --gid 10002 doul-worker \
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 10002 doul-worker \
     && useradd --uid 10002 --gid 10002 --no-create-home --shell /usr/sbin/nologin doul-worker
 
 WORKDIR /opt/doul-supervision
