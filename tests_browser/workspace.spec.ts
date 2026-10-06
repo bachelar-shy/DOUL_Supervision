@@ -22,6 +22,7 @@ for (const width of [390, 768, 1440]) {
       "capture",
       "observations",
       "issues",
+      "schedule",
       "safety",
       "owner",
       "documents",
@@ -48,6 +49,121 @@ for (const width of [390, 768, 1440]) {
     });
   });
 }
+
+test("schedule normalized source import preserves original Schedule v1 and Activity snapshots", async ({ page }) => {
+  const suffix = randomUUID().slice(0, 8);
+  const title = `UI 원본입력 ${suffix}`;
+  const scheduleNo = `UI-BL-${suffix}`;
+  const criticalName = `Critical Activity ${suffix}`;
+  const nextName = `Next Activity ${suffix}`;
+  const source = {
+    schedule: {
+      scheduleNo,
+      scheduleKind: "baseline",
+      revision: "R0",
+      sourceFormat: "normalized_json",
+      sourceFileVersion: `ui-e2e-${suffix}`,
+      dataDate: "2026-01-01T00:00:00Z",
+      projectStartAt: "2026-01-01T00:00:00Z",
+      contractualCompletionAt: "2026-12-31T00:00:00Z",
+      forecastCompletionAt: "2026-12-31T00:00:00Z",
+      wbsVersion: "1",
+    },
+    activities: [
+      {
+        data: {
+          activityId: "A-100",
+          wbsPath: "1",
+          activityName: criticalName,
+          plannedStartAt: "2026-01-01T00:00:00Z",
+          plannedFinishAt: "2026-06-30T00:00:00Z",
+          percentComplete: 0,
+          totalFloat: 0,
+          critical: true,
+        },
+        successorActivityIds: ["A-200"],
+      },
+      {
+        data: {
+          activityId: "A-200",
+          wbsPath: "1.1",
+          activityName: nextName,
+          plannedStartAt: "2026-07-01T00:00:00Z",
+          plannedFinishAt: "2026-12-31T00:00:00Z",
+          percentComplete: 0,
+          totalFloat: 10,
+          critical: false,
+        },
+        predecessorActivityIds: ["A-100"],
+      },
+    ],
+    criticalActivityId: "A-100",
+  };
+
+  await page.goto("/");
+  const workspaceResponse = page.waitForResponse(
+    (response) => response.url().endsWith("/workspace") && response.ok(),
+  );
+  await page
+    .getByRole("combobox", { name: "개발 역할 선택" })
+    .selectOption("CON");
+  await workspaceResponse;
+  await page.goto("/#/schedule");
+
+  const importButton = page.getByRole("button", {
+    name: "정규화 JSON 원본 입력",
+    exact: true,
+  });
+  await expect(importButton).toBeEnabled();
+  await importButton.click();
+
+  const dialog = page.getByRole("dialog", { name: "공정 원본 입력" });
+  await expect(dialog).toContainText(
+    "normalized_json · doul-normalized-json-v1",
+  );
+  await expect(dialog).toContainText(
+    "XER / MSP / CSV 직접 파서는 아직 지원하지 않습니다.",
+  );
+  await dialog.getByLabel("제목 *").fill(title);
+  await dialog.getByLabel("공정 원본 JSON").setInputFiles({
+    name: `schedule-source-${suffix}.json`,
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(source), "utf8"),
+  });
+
+  const preview = dialog.locator(
+    '[data-ui-component="schedule-source-preview"]',
+  );
+  await expect(preview).toContainText("기준공정 원본");
+  await expect(preview).toContainText(scheduleNo);
+  await expect(preview).toContainText("2건");
+  await expect(preview).toContainText("A-100");
+
+  await dialog.getByRole("button", { name: "원본 입력", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+
+  const sourceTab = page.getByRole("tab", { name: "원본입력", exact: true });
+  await expect(sourceTab).toHaveAttribute("data-state", "active");
+  const detail = page.locator(".detail-pane");
+  await expect(detail).toContainText(title);
+  await expect(detail).toContainText("보존 원본 Schedule v1");
+  await expect(detail).toContainText("Activity 스냅샷");
+  await expect(detail).toContainText(criticalName);
+  await expect(detail).toContainText(nextName);
+  await expect(detail).toContainText("normalized_json");
+  await expect(detail).toContainText("doul-normalized-json-v1");
+
+  await page.getByRole("tab", { name: "기준공정", exact: true }).click();
+  await page
+    .getByRole("button")
+    .filter({ hasText: title })
+    .first()
+    .click();
+  await expect(page.locator(".detail-head")).toContainText(title);
+  await expect(page.locator(".detail-section").last()).toContainText(
+    "가능한 업무 명령",
+  );
+});
 
 test.describe("today heading date", () => {
   test.use({ timezoneId: "Asia/Bangkok" });
