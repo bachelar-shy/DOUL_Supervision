@@ -2,27 +2,39 @@
 
 프로젝트: **DOUL Supervision MVP** (`11486949689509673114`)
 
-16종 리소스를 생성·조회했다. 캔버스 크기까지 확인한 것은 13종이다. 모바일 3종은 390px용 보정 리소스가 있지만 기존 캔버스 프레임은 아직 1280px이므로 교체 확인을 완료로 표시하지 않는다. 기존 사용자 화면 2개는 보존했다.
+## 현재 Frontend 동기화 기준
 
-| 코드 | 사용자 | 환경 | 리소스 조회 | 캔버스 확인 | Screen ID |
+현재 React Frontend의 desktop 주요 route **11개**를 Stitch의 `React 동기화` 화면과 대응시켰다.
+동기화 검증 기준은 `main` **`b298cd5`**이며, UI 소스는 `ddaa662` 이후 변경이 없어 현재 화면과 동일하다.
+
+Stitch MCP에는 별도의 내부 Prototype link 편집 API가 노출되어 있지 않으므로, 각 화면의 메뉴와 업무 이동 요소는 실제 실행 중인 Frontend hash route를 **HTML `<a target="_self">`** 로 연결한다. 따라서 Stitch 화면에서 메뉴를 클릭하면 해당 실제 Frontend 페이지로 이동한다. 이 링크는 화면 권한을 부여하지 않으며, 실제 접근 범위는 애플리케이션의 역할·서버 권한을 따른다.
+
+| Route | 대표 역할 | Stitch 화면 | Screen ID | 클릭 이동 | Frontend |
 |---|---|---|---|---|---|
-| ADM-ROLES-W | ADM | desktop | 확인 | 확인 | `995f7161f0624738bd8c6bc5e16cab74` |
-| CON-CORRECTION-M | CON | mobile | 확인 | **보정본 반영 미확인** | `b9a29a02f53d4f85b71190b8fb39523f` |
-| CON-CORRECTION-W | CON | desktop | 확인 | 확인 | `ccb31a1e70f749c7a1263b91e7cfd17e` |
-| DES-RFI-W | DES | desktop | 확인 | 확인 | `b7cdc0de938c48d4bfbf2ff45ae9afbe` |
-| DOC-AUTHOR-W | SUP | desktop | 확인 | 확인 | `5e3f034ede7441a0af230b8c01070b39` |
-| OWN-DECISION-M | OWN | mobile | 확인 | 확인 | `e74e223cace443e88008068f742971cb` |
-| OWN-DECISION-W | OWN | desktop | 확인 | 확인 | `8d2da76d8c0c420d8372ad51c560cf50` |
-| SUP-CAPTURE-M | SUP | mobile | 확인 | **보정본 반영 미확인** | `6fbf64fc3c6148a3952927f0d4ef3d40` |
-| SUP-INSPECTION-M | SUP | mobile | 확인 | **보정본 반영 미확인** | `1ecce73fe9c24d0f9574ed6e8ccb30ed` |
-| SUP-INSPECTION-W | SUP | desktop | 확인 | 확인 | `b6c695d6480b45f08ceb7e7be5e17131` |
-| SUP-MEDIA-W | SUP | desktop | 확인 | 확인 | `ec2af7e3bd704abba9f49d3dbef0a8e0` |
-| SUP-OBSERVATION-M | SUP | mobile | 확인 | 확인 | `78b537abef944823bfac65a6e86fca72` |
-| SUP-OBSERVATION-W | SUP | desktop | 확인 | 확인 | `0659fbf32911408fadfb8d879c67beec` |
-| SUP-REINSPECTION-M | SUP | mobile | 확인 | 확인 | `b9e022497daa44acb63daecd6a5ec8c0` |
-| SUP-REINSPECTION-W | SUP | desktop | 확인 | 확인 | `68726af599ff4212ba9d29d87b6c96f1` |
-| SUP-TODAY-W | SUP | desktop | 확인 | 확인 | `2c9210cdb973447ba93cb83ee014b930` |
+| today | SUP | SUP-TODAY-W | 감리 업무현황 (React 동기화) | `9cfcdca7cee24bd3b4bcfa2b56f44dc0` | 확인 | `http://100.68.153.58:5174/#/today` |
+| inspections | SUP | SUP-INSPECTION-W | 검측·검수 (React 동기화) | `451810a781cb430e9e28e5b401c0aaa3` | 확인 | `http://100.68.153.58:5174/#/inspections` |
+| capture | SUP | SUP-MEDIA-W | 현장·증빙 (React 동기화) | `34a012cd08274530b6746690d096e73c` | 확인 | `http://100.68.153.58:5174/#/capture` |
+| observations | SUP | SUP-OBSERVATION-W | 관찰 후보 (React 동기화) | `a3fdbdb99a4a4de090885fdebccb4aaf` | 확인 | `http://100.68.153.58:5174/#/observations` |
+| issues | SUP | SUP-REINSPECTION-W | 부적합·이슈 (React 동기화) | `7ee421fa511c4df6819abe1a5d56f28c` | 확인 | `http://100.68.153.58:5174/#/issues` |
+| actions | CON | CON-CORRECTION-W | 시정조치 (React 동기화) | `fd6ce199d34842cba5617dffb4626b85` | 확인 | `http://100.68.153.58:5174/#/actions` |
+| owner | OWN | OWN-DECISION-W | 발주처 보고·결정 (React 동기화) | `d71403f944234f8aa8aa71a8e154c23f` | 확인 | `http://100.68.153.58:5174/#/owner` |
+| documents | SUP | DOC-AUTHOR-W | 문서 작성 (React 동기화) | `ac115ffe4db8436c9253d919e58d1e81` | 확인 | `http://100.68.153.58:5174/#/documents` |
+| registers | SUP | SUP-REGISTERS-W | 관리대장 (React 동기화) | `2cac65491b4640aca4c1acbdd77ce075` | 확인 | `http://100.68.153.58:5174/#/registers` |
+| rfis | DES | DES-RFI-W | 설계질의 (React 동기화) | `0ffb870122fa49a987c836f7a4a612df` | 확인 | `http://100.68.153.58:5174/#/rfis` |
+| admin | ADM | ADM-ROLES-W | 배치·권한 (React 동기화) | `47e48fc436bc498f982875bfeee1030a` | 확인 | `http://100.68.153.58:5174/#/admin` |
 
-생성된 화면은 사용자 승인 전 초안이다. `screens.json`은 실제 코드 경로 및 기존 상태모델 명령과 연결한다. 원시 생성 응답·임시 자산 URL은 `.local/stitch/`에만 보관한다.
+검증 결과:
 
-MCP 편집 응답의 DOM 변경 이벤트만으로는 서버 캔버스 크기가 변경됐다고 판단하지 않는다. `get_project`로 재조회한 실제 인스턴스와 비교한다.
+- Screen readback: **11/11**
+- Project canvas instance: **11/11**
+- `list_screens` 확인: **11/11**
+- 역할별 navigation href: **11/11**
+- Live Frontend base: `http://100.68.153.58:5174/#`
+
+상세 검증값은 `frontend-page-sync.json`, 최종 채택 Screen ID는 `screens.json`에서 관리한다. 페이지 동기화는 `scripts/stitch_sync_frontend_pages.py`가 route별로 **순차 실행**하며, 원시 응답과 임시 HTML은 `.local/stitch/`에만 보관한다.
+
+## 기존 Mobile / Historical 화면
+
+기존 모바일 보정 화면과 과거 Stitch draft는 삭제하지 않고 reference/history로 보존한다. 현재 11개 React Frontend 동기화 화면의 Screen ID를 canonical desktop review set으로 사용한다. 모바일 전용 Stitch 재동기화는 별도 작업으로 관리한다.
+
+생성·편집된 Stitch 화면은 사용자 디자인 승인 전 초안이다. MCP 편집 응답만으로 완료를 판단하지 않고 `get_project`, `list_screens`, `get_screen` 및 생성 HTML 링크를 다시 검증한다.
