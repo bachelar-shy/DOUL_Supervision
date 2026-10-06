@@ -216,6 +216,7 @@ class Engine:
 
     def create(self, machine, object_id, project_id, payload, party_id, role_id, key):
         require(machine in self.machines, 'MACHINE_UNKNOWN', machine)
+        require('sourceImport' not in payload.get('metadata',{}), 'IMMUTABLE_FIELD', 'Source import provenance is server-managed')
         require(not set(payload)&{'id','projectId','version','createdAt','updatedAt','createdBy','status'}, 'IMMUTABLE_FIELD', 'Server-managed fields cannot be supplied')
         kind = self.machines[machine]['object_type']
         request = dict(machine=machine,id=object_id,projectId=project_id,payload=payload,role=role_id)
@@ -364,6 +365,11 @@ class Engine:
         if machine=='delay_event' and command=='start_mitigation' and isinstance(payload.get('impactAnalysis'),dict):
             require('reviewedAt' not in payload['impactAnalysis'],'IMMUTABLE_FIELD','Impact analysis reviewedAt is server-derived')
         require(set(transition.get('required_payload_fields',[]))<=set(payload),'COMMAND_FIELD_REQUIRED','Required command fields are missing')
+        if record.get('metadata',{}).get('sourceImport'):
+            source_contract=load('schema/schedule_source_import_contract_v1.json')
+            for field in source_contract['immutability']['source_content_fields']:
+                if field in payload:
+                    require(payload[field]==record['schedule'].get(field), 'IMMUTABLE_FIELD', 'Imported source content requires a new source package: '+field)
         proposed=deepcopy(record)
         target=proposed.setdefault('data',{}) if kind=='WorkItem' else proposed['report'] if machine=='report' else proposed['schedule'] if machine in ['schedule_baseline','schedule_progress'] else proposed
         for field,value in payload.items():

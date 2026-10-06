@@ -11,6 +11,147 @@
     }
   ],
   "paths": {
+    "/projects/{projectId}/schedule-source-imports": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_schedule_source_imports",
+        "summary": "원본 Schedule·Activity 불변 일괄 입력",
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleSourceImportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleSourceImportPackage"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/schedule-source-imports/{objectId}": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "get_projects_projectId_schedule_source_imports_objectId",
+        "summary": "원본 입력버전 및 Activity Snapshot 조회",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleSourceImportDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-RoleAssignment-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
     "/projects/{projectId}/observations": {
       "parameters": [
         {
@@ -22196,6 +22337,432 @@
         "required": [
           "triggerDelayEventRefs"
         ],
+        "additionalProperties": false
+      },
+      "ScheduleSourceImportScope": {
+        "type": "object",
+        "properties": {
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string",
+            "minLength": 1
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "packageId",
+          "locationId",
+          "discipline",
+          "responsibleOrganizationId"
+        ],
+        "additionalProperties": false
+      },
+      "ScheduleSourceImportActivityData": {
+        "type": "object",
+        "properties": {
+          "activityId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "wbsPath": {
+            "type": "string",
+            "minLength": 1
+          },
+          "activityName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "responsibleOrganizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "plannedStartAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "plannedFinishAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actualStartAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actualFinishAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "forecastStartAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "forecastFinishAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "originalDuration": {
+            "type": "number",
+            "minimum": 0
+          },
+          "remainingDuration": {
+            "type": "number",
+            "minimum": 0
+          },
+          "percentComplete": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "totalFloat": {
+            "type": "number"
+          },
+          "critical": {
+            "type": "boolean"
+          },
+          "milestone": {
+            "type": "boolean"
+          },
+          "baselineActivityRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "manualCorrectionReason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "activityId",
+          "wbsPath",
+          "activityName"
+        ],
+        "additionalProperties": false
+      },
+      "ScheduleSourceImportScheduleData": {
+        "type": "object",
+        "properties": {
+          "scheduleNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scheduleKind": {
+            "type": "string",
+            "enum": [
+              "baseline",
+              "progress_update",
+              "recovery"
+            ]
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceFileRef": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourceFormat": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceFileHash": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+          },
+          "sourceFileVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dataDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "projectStartAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contractualCompletionAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "forecastCompletionAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "calendars": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleCalendarData"
+            }
+          },
+          "wbsVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "milestoneSet": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleMilestoneData"
+            }
+          },
+          "scheduleQualitySummary": {
+            "$ref": "#/components/schemas/ScheduleQualitySummary"
+          },
+          "baselineScheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "previousScheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "correctionOfRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "correctionReason": {
+            "type": "string"
+          },
+          "logicChangeSummary": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "calendarChangeSummary": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "majorDelayReasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "lookaheadSummary": {
+            "type": "string"
+          },
+          "revisionBasisRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          }
+        },
+        "required": [
+          "scheduleNo",
+          "scheduleKind",
+          "revision",
+          "sourceFileRef",
+          "sourceFormat",
+          "sourceFileHash",
+          "sourceFileVersion"
+        ],
+        "additionalProperties": false
+      },
+      "ScheduleSourceImportActivity": {
+        "type": "object",
+        "properties": {
+          "clientObjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ScheduleSourceImportActivityData"
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "predecessorActivityIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "successorActivityIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "clientObjectId",
+          "data"
+        ],
+        "additionalProperties": false
+      },
+      "ScheduleSourceImportPackage": {
+        "type": "object",
+        "properties": {
+          "roleAssignmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientObjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ScheduleSourceImportScope"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceEvidenceRef": {
+            "$ref": "#/components/schemas/ScheduleSourceEvidenceRef"
+          },
+          "inputMode": {
+            "type": "string",
+            "enum": [
+              "normalized_json"
+            ]
+          },
+          "parserVersion": {
+            "type": "string",
+            "enum": [
+              "doul-normalized-json-v1"
+            ]
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/ScheduleSourceImportScheduleData"
+          },
+          "activities": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/ScheduleSourceImportActivity"
+            }
+          },
+          "criticalActivityId": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "roleAssignmentId",
+          "clientObjectId",
+          "scope",
+          "title",
+          "sourceEvidenceRef",
+          "inputMode",
+          "parserVersion",
+          "schedule",
+          "activities",
+          "criticalActivityId"
+        ],
+        "additionalProperties": false
+      },
+      "ScheduleSourceEvidenceRef": {
+        "type": "object",
+        "properties": {
+          "objectType": {
+            "type": "string",
+            "const": "Evidence"
+          },
+          "objectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "objectType",
+          "objectId",
+          "version"
+        ],
+        "additionalProperties": false
+      },
+      "ScheduleSourceImportResult": {
+        "type": "object",
+        "required": [
+          "record",
+          "auditEvent",
+          "sourceScheduleRef",
+          "activityRefs",
+          "activityAuditEvents"
+        ],
+        "properties": {
+          "record": {
+            "$ref": "#/components/schemas/InformationItem"
+          },
+          "auditEvent": {
+            "$ref": "#/components/schemas/AuditEvent"
+          },
+          "sourceScheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "activityRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "activityAuditEvents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEvent"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ScheduleSourceImportDetail": {
+        "type": "object",
+        "required": [
+          "record",
+          "activities",
+          "sourceScheduleRef",
+          "activityRefs"
+        ],
+        "properties": {
+          "record": {
+            "$ref": "#/components/schemas/InformationItem"
+          },
+          "activities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkItem"
+            }
+          },
+          "sourceScheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "activityRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          }
+        },
         "additionalProperties": false
       },
       "Create_observation": {

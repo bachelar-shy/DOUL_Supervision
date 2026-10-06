@@ -13,6 +13,7 @@ def load(path):
 
 def generate():
     schemas = deepcopy(load('app/schema/domain_schemas_v2.json')['components']['schemas'])
+    schemas.update(deepcopy(load('app/schema/schedule_source_import_contract_v1.json')['schemas']))
     machines = load('app/schema/state_machines_v1.json')['machines']
     bindings = load('app/reference/machine_bindings_v1.json')['machines']
     workitem_data_schemas={}
@@ -37,6 +38,15 @@ def generate():
         if path not in paths:paths[path]={'parameters':[parameter(p) for p in re.findall(r'\{([^}]+)\}',path)]}
         paths[path][method]=op
     root='/projects/{projectId}'
+    schemas['ScheduleSourceImportResult']={'type':'object','required':['record','auditEvent','sourceScheduleRef','activityRefs','activityAuditEvents'],'properties':{
+        'record':{'$ref':'#/components/schemas/InformationItem'},'auditEvent':{'$ref':'#/components/schemas/AuditEvent'},
+        'sourceScheduleRef':{'$ref':'#/components/schemas/DomainRef'},'activityRefs':{'type':'array','items':{'$ref':'#/components/schemas/DomainRef'}},
+        'activityAuditEvents':{'type':'array','items':{'$ref':'#/components/schemas/AuditEvent'}}},'additionalProperties':False}
+    schemas['ScheduleSourceImportDetail']={'type':'object','required':['record','activities','sourceScheduleRef','activityRefs'],'properties':{
+        'record':{'$ref':'#/components/schemas/InformationItem'},'activities':{'type':'array','items':{'$ref':'#/components/schemas/WorkItem'}},
+        'sourceScheduleRef':{'$ref':'#/components/schemas/DomainRef'},'activityRefs':{'type':'array','items':{'$ref':'#/components/schemas/DomainRef'}}},'additionalProperties':False}
+    endpoint(root+'/schedule-source-imports','post','원본 Schedule·Activity 불변 일괄 입력',{'$ref':'#/components/schemas/ScheduleSourceImportPackage'},response={'$ref':'#/components/schemas/ScheduleSourceImportResult'},code=201)
+    endpoint(root+'/schedule-source-imports/{objectId}','get','원본 입력버전 및 Activity Snapshot 조회',response={'$ref':'#/components/schemas/ScheduleSourceImportDetail'})
     for name,m in machines.items():
         payload_schema=deepcopy(schemas[m['object_type']])
         managed={'id','projectId','version','createdAt','updatedAt','createdBy','status'}
