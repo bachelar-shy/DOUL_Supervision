@@ -784,11 +784,13 @@
             "drawing_revision_current",
             "upstream_hold_points_released",
             "reinspection_passed",
-            "closure_evidence_present",
+            "closure_evidence_valid",
             "current_actions_verified"
           ],
           "required_evidence": true,
-          "payload_fields": [],
+          "payload_fields": [
+            "closureEvidenceIds"
+          ],
           "failure_reasons": [
             "NOT_AUTHORIZED",
             "VERSION_CONFLICT",
@@ -797,10 +799,16 @@
             "DRAWING_STALE",
             "HOLD_NOT_RELEASED",
             "REINSPECTION_PASSED",
-            "CLOSURE_EVIDENCE_PRESENT",
-            "CURRENT_ACTIONS_VERIFIED"
+            "CURRENT_ACTIONS_VERIFIED",
+            "CLOSURE_EVIDENCE_REQUIRED",
+            "CLOSURE_ACTION_EVIDENCE_REQUIRED",
+            "CLOSURE_REINSPECTION_EVIDENCE_REQUIRED",
+            "CLOSURE_EVIDENCE_SCOPE_INVALID"
           ],
-          "audit_event": true
+          "audit_event": true,
+          "required_payload_fields": [
+            "closureEvidenceIds"
+          ]
         },
         {
           "from": "reinspection",

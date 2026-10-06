@@ -130,7 +130,7 @@ class ApiTests(unittest.TestCase):
     def test_contractor_cannot_close_issue(self):
         self.login('CON');item=self.item('issue')
         self.assertNotIn('close',[x['command'] for x in item['actions']])
-        r=self.command('issues',item,'close');self.assertEqual(r.status_code,403,r.text)
+        r=self.command('issues',item,'close',{'closureEvidenceIds':item['record'].get('evidenceIds',[])});self.assertEqual(r.status_code,403,r.text)
 
     def test_pass_does_not_release_hold(self):
         item=self.item('inspection','passed');self.assertFalse(item['record']['nextWorkAllowed'])
