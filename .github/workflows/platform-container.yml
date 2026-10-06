@@ -42,13 +42,24 @@ jobs:
         run: docker compose -f infra/compose/compose.dev.yml build
 
       - name: Start development stack
-        run: docker compose -f infra/compose/compose.dev.yml up -d
+        run: |
+          docker compose -f infra/compose/compose.dev.yml up -d --wait --wait-timeout 120 api web postgres redis object-storage
+          docker compose -f infra/compose/compose.dev.yml up -d object-storage-init
 
       - name: Verify data services
         run: |
           init_id="$(docker compose -f infra/compose/compose.dev.yml ps -aq object-storage-init)"
           test -n "$init_id"
-          test "$(docker inspect -f '{{.State.ExitCode}}' "$init_id")" = "0"
+          init_exit_code="$(timeout 90s docker wait "$init_id")"
+          test "$init_exit_code" = "0"
+          test "$(docker inspect -f '{{.State.Status}}' "$init_id")" = "exited"
+
+          bucket="$(docker compose -f infra/compose/compose.dev.yml config --format json | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["object-storage-init"]["environment"]["OBJECT_STORAGE_BUCKET"])')"
+          docker compose -f infra/compose/compose.dev.yml exec -T -e "OBJECT_STORAGE_BUCKET=$bucket" object-storage \
+            sh -ec 'mc alias set verify http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" && mc stat "verify/$OBJECT_STORAGE_BUCKET"'
+          anonymous_status="$(curl --silent --output /tmp/anonymous-bucket.xml --write-out '%{http_code}' \
+            "http://127.0.0.1:9000/$bucket?list-type=2")"
+          test "$anonymous_status" = "403"
 
           docker compose -f infra/compose/compose.dev.yml exec -T postgres \
             sh -ec 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
