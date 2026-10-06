@@ -313,6 +313,36 @@ strong {
   font-size: 12px;
   margin-top: 5px;
 }
+.page-heading-details {
+  margin-top: 12px;
+}
+.heading-context {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #5c6978;
+  font-size: 12px;
+}
+.heading-context span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+}
+.heading-context span:last-child {
+  padding: 0 10px;
+  border: 1px solid #e1e6ec;
+  border-radius: 999px;
+  color: #738091;
+  background: #fff;
+}
+.heading-context svg {
+  width: 15px;
+  height: 15px;
+  color: #7a8796;
+  stroke-width: 1.7;
+}
 .heading-actions {
   display: flex;
   align-items: center;

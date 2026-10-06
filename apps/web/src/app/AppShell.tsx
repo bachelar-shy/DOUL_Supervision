@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CalendarDays, CloudSun } from "lucide-react";
 import type {
   CommandDescriptor,
   Fields,
@@ -22,6 +23,13 @@ import {
 } from "../pages";
 import { Icon } from "../pages/shared";
 import { machineForRoute, mobileRoutes, roleRoutes, routes } from "./routes";
+
+const todayDate = new Intl.DateTimeFormat("ko-KR", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  weekday: "long",
+}).format(new Date());
 
 export function AppShell({ client }: { client: SupervisionClient }) {
   const [role, setRole] = useState<HumanRole>("SUP");
@@ -267,6 +275,20 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                 : safeRoute === "registers"
                   ? "역할별 추천에서 시작해 29개 표준 관리대장을 서버 권한 범위에서 조회합니다."
                   : "현장 기록 · 승인 기준 · 조치 이력을 하나로 확인합니다."
+            }
+            details={
+              safeRoute === "today" ? (
+                <div className="heading-context">
+                  <span>
+                    <CalendarDays aria-hidden="true" />
+                    {todayDate}
+                  </span>
+                  <span>
+                    <CloudSun aria-hidden="true" />
+                    날씨 정보 미연동
+                  </span>
+                </div>
+              ) : null
             }
             actions={
               <>
