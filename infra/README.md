@@ -8,11 +8,11 @@ application workflow.
 
 - Web: Vite build served by an unprivileged Nginx runtime
 - API: existing FastAPI local-demo adapter
-- PostgreSQL 16: development database runtime
-- Redis 7.4: development queue/cache runtime
-- S3-compatible object storage: development-only MinIO runtime
-- Object-storage bootstrap: creates the configured bucket and explicitly keeps
-  anonymous access disabled
+- PostgreSQL 16.15: non-root development database runtime
+- Redis 7.4.11: development queue/cache runtime
+- S3-compatible object storage: RustFS 1.0.1 development runtime
+- Object-storage bootstrap: creates the configured bucket and explicitly restores
+  private anonymous-access policy
 
 The application boundary remains unchanged in this phase:
 
@@ -35,14 +35,18 @@ Product/Functional contracts.
 
 ## Object-storage implementation note
 
-MinIO upstream was archived in 2026. For local S3-compatibility testing this
-repository builds the final upstream security release directly from source
-(`RELEASE.2025-10-15T17-29-55Z`) instead of pinning the earlier prebuilt
-container release. The development image also builds the last upstream `mc`
-client release for bucket bootstrap.
+The development S3-compatible runtime uses RustFS 1.0.1 and the pinned
+RustFS rc v0.1.36 client. The server runs as non-root UID/GID 10001, while
+one-shot permission helpers prepare named volumes before PostgreSQL and RustFS
+start.
 
-This is a development test dependency, not a Production object-storage
-selection.
+The bucket bootstrap is idempotent and explicitly applies private anonymous
+access on every run. CI also creates a public-download policy deliberately and
+verifies that rerunning the bootstrap removes that exposure without deleting
+the authenticated object.
+
+The Backend/Platform interface remains generic `OBJECT_STORAGE_*`. Using
+RustFS in Development does not select the Production object-storage service.
 
 ## Prerequisite
 
@@ -117,7 +121,7 @@ docker compose --env-file infra/compose/.env -f infra/compose/compose.dev.yml ex
 docker compose --env-file infra/compose/.env -f infra/compose/compose.dev.yml exec redis \
   redis-cli ping
 
-curl -fsS http://127.0.0.1:9000/minio/health/ready
+curl -fsS http://127.0.0.1:9000/health
 ```
 
 The one-shot `object-storage-init` service creates the configured bucket with
@@ -156,3 +160,13 @@ This stack is Development Foundation only.
 - the object-storage bucket is not anonymous/public
 - production credentials, real-site data and production service accounts must
   not be used in this stack
+
+The container workflows enforce the current Phase 1 image-security baseline:
+
+- API, Web, PostgreSQL, Worker and RustFS runtime images must declare non-root
+  users.
+- Development runtime images are scanned for HIGH and CRITICAL vulnerabilities.
+- Fixable CRITICAL findings and end-of-life operating-system images fail CI.
+- Unfixed findings remain visible for review and are not silently allowlisted.
+- Production digest pinning, signing/SBOM, secret management and release
+  approval remain separate Production-hardening work.

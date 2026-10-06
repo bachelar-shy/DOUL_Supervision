@@ -58,6 +58,13 @@ PR #2 병합 커밋 `d13e744`의 계약·검증 엔진을 재사용한 반응형
 45. [Role End-to-End Journeys v1.0](./45_Role_End_to_End_Journeys_v1.md)
 46. [Product / Functional Baseline v1.0 Validation](./46_Product_Functional_Baseline_v1_Validation.md)
 47. [Product Baseline v1.0 — Implementation Handoff Backlog](./47_Product_Implementation_Handoff_Backlog_v1.md)
+48. [Product Baseline Change Control v1.0](./48_Product_Baseline_Change_Control_v1.md)
+49. [Implementation Acceptance Scenarios v1.0](./49_Implementation_Acceptance_Scenarios_v1.md)
+50. [Project Configuration Pack v1.0](./50_Project_Configuration_Pack_v1.md)
+51. [Owner Reporting Trigger Matrix v1.0](./51_Owner_Reporting_Trigger_Matrix_v1.md)
+52. [Media Analysis Operations Policy v1.0](./52_Media_Analysis_Operations_Policy_v1.md)
+53. [Field Pilot Acceptance Plan v1.0](./53_Field_Pilot_Acceptance_Plan_v1.md)
+54. [Implementation Progress Stage Ledger v1.0](./54_Implementation_Progress_Stage_Ledger_v1.md)
 
 ### 현재 상태
 
@@ -69,7 +76,7 @@ PR #2 병합 커밋 `d13e744`의 계약·검증 엔진을 재사용한 반응형
 - Mobile · Tablet · Responsive Web: 제품·화면 계약, 실제 앱 배포 전
 - Stitch: Presentation / UI Design Source, 업무권한·판정의 원본은 Domain/State/Authority
 - Product Baseline: 28개 관리대장 M3 + 계약·업무범위 Reference 1개
-- 다음 단계: Backend/UI 구현 backlog → Project-specific configuration pack → 현장 시범운영
+- 다음 단계: Backend/UI 구현과 Project Configuration Pack 병행 → 통합 인수사례 누적 → 현장 시범운영
 
 검증 방법은 [app README](./app/README.md)를 따른다. 계약과 참조 실행의 완료 범위는 [이슈 #1 검증서](./22_Issue_1_Resolution_Validation.md)에 명시했다.
 

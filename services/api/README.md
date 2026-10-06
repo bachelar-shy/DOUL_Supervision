@@ -3,6 +3,7 @@
 `python -m services.api --demo`로만 실행한다. loopback 8791 포트와 합성자료를 사용한다.
 
 - 기존 PR #2 `Engine`과 `Documents` 계약 재사용
+- Product `state_machines_v1.json`의 업무 의미는 그대로 유지하고, Backend의 machine → HTTP collection / 생성권한 연결은 `app/reference/machine_bindings_v1.json` 한 곳에서 관리한다. Validator가 Product machine과 1:1 대응, collection 중복, 존재하지 않는 권한 참조를 fail-closed로 차단한다.
 - 기본 저장소는 개발용 `SQLiteSnapshotAdapter`다. `PostgresSnapshotAdapter`도 같은 snapshot 의미와 `PersistencePort`를 구현하며 Psycopg `ConnectionPool`로 연결 수명·재사용을 관리한다. 다만 단일 in-memory snapshot 모델 자체는 `RLock`으로 직렬화하므로 아직 normalized PostgreSQL domain schema나 병렬 domain mutation을 뜻하지 않는다.
 - HTTP Application은 `PersistencePort`에만 의존한다. `create_app(..., persistence=...)`로 어댑터를 주입할 수 있으며, 로컬 CLI는 `DATABASE_URL` 또는 `--database-url`이 있으면 PostgreSQL snapshot adapter를 선택한다. 업무 Contract는 저장소 선택과 독립적이다.
 - Dev session은 실제 사용자 인증이 아니다.

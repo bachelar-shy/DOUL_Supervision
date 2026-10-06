@@ -1,0 +1,321 @@
+{
+  "schemaVersion": "1.0",
+  "configVersion": 1,
+  "baselineVersion": "1.0",
+  "projectId": "PROJECT-DEMO",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "effectiveFrom": "2026-10-06T00:00:00+07:00",
+  "organizations": [
+    {
+      "organizationId": "ORG-SUP",
+      "actorGroup": "SUP",
+      "packageIds": [
+        "PKG-01"
+      ],
+      "locationIds": [
+        "SITE"
+      ]
+    },
+    {
+      "organizationId": "ORG-CON",
+      "actorGroup": "CON",
+      "packageIds": [
+        "PKG-01"
+      ],
+      "locationIds": [
+        "SITE"
+      ]
+    },
+    {
+      "organizationId": "ORG-OWN",
+      "actorGroup": "OWN",
+      "packageIds": [
+        "PKG-01"
+      ],
+      "locationIds": [
+        "SITE"
+      ]
+    },
+    {
+      "organizationId": "ORG-DES",
+      "actorGroup": "DES",
+      "packageIds": [
+        "PKG-01"
+      ],
+      "locationIds": [
+        "SITE"
+      ]
+    },
+    {
+      "organizationId": "ORG-ADM",
+      "actorGroup": "ADM",
+      "packageIds": [
+        "PKG-01"
+      ],
+      "locationIds": [
+        "SITE"
+      ]
+    }
+  ],
+  "roleAssignments": [
+    {
+      "partyId": "P-SUP-CHIEF",
+      "organizationId": "ORG-SUP",
+      "actorGroup": "SUP",
+      "roleCode": "chief_supervisor",
+      "disciplineIds": [
+        "architecture"
+      ],
+      "packageIds": [
+        "PKG-01"
+      ],
+      "locationIds": [
+        "SITE"
+      ],
+      "qualificationRefs": [
+        "Q-SUP-01"
+      ]
+    },
+    {
+      "partyId": "P-CON-QA",
+      "organizationId": "ORG-CON",
+      "actorGroup": "CON",
+      "roleCode": "contractor_quality",
+      "disciplineIds": [
+        "architecture"
+      ],
+      "packageIds": [
+        "PKG-01"
+      ],
+      "locationIds": [
+        "SITE"
+      ]
+    },
+    {
+      "partyId": "P-OWN-01",
+      "organizationId": "ORG-OWN",
+      "actorGroup": "OWN",
+      "roleCode": "owner_decision_maker",
+      "disciplineIds": [
+        "architecture"
+      ],
+      "packageIds": [
+        "PKG-01"
+      ],
+      "locationIds": [
+        "SITE"
+      ]
+    },
+    {
+      "partyId": "P-DES-01",
+      "organizationId": "ORG-DES",
+      "actorGroup": "DES",
+      "roleCode": "designer",
+      "disciplineIds": [
+        "architecture"
+      ],
+      "packageIds": [
+        "PKG-01"
+      ],
+      "locationIds": [
+        "SITE"
+      ],
+      "qualificationRefs": [
+        "Q-DES-01"
+      ]
+    },
+    {
+      "partyId": "P-ADM-01",
+      "organizationId": "ORG-ADM",
+      "actorGroup": "ADM",
+      "roleCode": "project_admin",
+      "packageIds": [
+        "PKG-01"
+      ],
+      "locationIds": [
+        "SITE"
+      ]
+    }
+  ],
+  "qualificationRules": [
+    {
+      "roleCode": "chief_supervisor",
+      "minimumRank": 3,
+      "requiredKinds": [
+        "supervision"
+      ],
+      "validityRequired": true
+    },
+    {
+      "roleCode": "designer",
+      "minimumRank": 1,
+      "requiredKinds": [
+        "design"
+      ],
+      "validityRequired": true
+    }
+  ],
+  "scopes": {
+    "disciplines": [
+      "architecture"
+    ],
+    "packages": [
+      "PKG-01"
+    ],
+    "locations": [
+      "SITE"
+    ]
+  },
+  "authorityBindings": [
+    {
+      "authorityCode": "close_issue",
+      "implementationStatus": "active",
+      "actorGroups": [
+        "SUP"
+      ],
+      "roleCodes": [
+        "chief_supervisor"
+      ],
+      "disciplineRequired": true,
+      "packageRequired": true,
+      "locationRequired": true
+    },
+    {
+      "authorityCode": "owner_decide",
+      "implementationStatus": "active",
+      "actorGroups": [
+        "OWN"
+      ],
+      "roleCodes": [
+        "owner_decision_maker"
+      ],
+      "disciplineRequired": true,
+      "packageRequired": true,
+      "locationRequired": true
+    },
+    {
+      "authorityCode": "safety.stop_lift",
+      "implementationStatus": "planned",
+      "actorGroups": [
+        "SUP"
+      ],
+      "roleCodes": [
+        "chief_supervisor"
+      ],
+      "disciplineRequired": true,
+      "packageRequired": true,
+      "locationRequired": true
+    }
+  ],
+  "deadlineRules": [
+    {
+      "code": "owner.report.p2.issue",
+      "source": "internal",
+      "calculation": "hours",
+      "value": 24,
+      "timezone": "Asia/Ho_Chi_Minh"
+    },
+    {
+      "code": "inspection.response",
+      "source": "contract",
+      "calculation": "hours",
+      "value": 24,
+      "timezone": "Asia/Ho_Chi_Minh"
+    }
+  ],
+  "ownerReporting": {
+    "priorities": [
+      {
+        "priority": "P1",
+        "receiptDueMinutes": 30,
+        "decisionDueMinutes": 60,
+        "recipientRoleCodes": [
+          "owner_decision_maker"
+        ]
+      },
+      {
+        "priority": "P2",
+        "receiptDueMinutes": 240,
+        "decisionDueMinutes": 1440,
+        "recipientRoleCodes": [
+          "owner_decision_maker"
+        ]
+      },
+      {
+        "priority": "P3",
+        "receiptDueMinutes": 1440,
+        "decisionDueMinutes": 4320,
+        "recipientRoleCodes": [
+          "owner_decision_maker"
+        ]
+      },
+      {
+        "priority": "P4",
+        "receiptDueMinutes": 4320,
+        "decisionDueMinutes": 10080,
+        "recipientRoleCodes": [
+          "owner_decision_maker"
+        ]
+      }
+    ],
+    "periodicCadences": [
+      {
+        "reportType": "weekly_supervision",
+        "cadence": "weekly",
+        "recipientRoleCodes": [
+          "owner_decision_maker"
+        ]
+      }
+    ]
+  },
+  "forms": {
+    "applicableFormIds": [
+      "FM-07",
+      "FM-12",
+      "FM-17",
+      "FM-19",
+      "FM-20",
+      "FM-21"
+    ],
+    "statutoryOriginals": []
+  },
+  "thresholds": {
+    "schedule.criticalDelayDays": 7,
+    "payment.reportVariancePercent": 10,
+    "safety.majorStopHours": 4
+  },
+  "mediaPolicy": {
+    "enabled": true,
+    "allowedModes": [
+      "photo",
+      "keyframes",
+      "adaptive",
+      "audio"
+    ],
+    "autoRetry": {
+      "maxAttempts": 2,
+      "backoffSeconds": [
+        30,
+        120
+      ]
+    },
+    "userReanalysisAllowed": true,
+    "externalTransferPolicy": "approved_only",
+    "retentionDays": 3650,
+    "redactionRequiredForSharing": true,
+    "originalExportAllowed": false,
+    "perRunCostLimit": 50,
+    "monthlyCostLimit": 1000,
+    "costCurrency": "USD",
+    "providerRegionRule": "project-approved-region-only"
+  },
+  "acceptanceScenarioIds": [
+    "AC-Q-01",
+    "AC-S-01",
+    "AC-MEDIA-01",
+    "AC-AUTH-01",
+    "AC-VERSION-01",
+    "AC-IDEMP-01",
+    "AC-REPORT-01"
+  ]
+}

@@ -8,7 +8,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN groupadd --gid 10001 doul \
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 10001 doul \
     && useradd --uid 10001 --gid 10001 --no-create-home --shell /usr/sbin/nologin doul
 
 COPY services/api/requirements.lock /tmp/requirements.lock

@@ -1,0 +1,46 @@
+{
+  "version": "1.0",
+  "purpose": "Backend binding from Product machine names to HTTP collections and create authorities.",
+  "machines": {
+    "observation": {
+      "collection": "observations",
+      "create_authority": "create_observation"
+    },
+    "inspection": {
+      "collection": "inspections",
+      "create_authority": "submit_inspection_request"
+    },
+    "issue": {
+      "collection": "issues",
+      "create_authority": "issue_official_issue"
+    },
+    "rfi": {
+      "collection": "rfis",
+      "create_authority": "submit_rfi"
+    },
+    "change": {
+      "collection": "changes",
+      "create_authority": "propose_change"
+    },
+    "approval": {
+      "collection": "approvals",
+      "create_authority": "request_approval"
+    },
+    "action": {
+      "collection": "actions",
+      "create_authority": "create_action"
+    },
+    "decision": {
+      "collection": "owner-decisions",
+      "create_authority": "request_owner_decision"
+    },
+    "report": {
+      "collection": "owner-reports",
+      "create_authority": "author_report"
+    },
+    "analysis_run": {
+      "collection": "analysis-runs",
+      "create_authority": "create_analysis_run"
+    }
+  }
+}

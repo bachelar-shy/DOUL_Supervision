@@ -60,6 +60,35 @@ jobs:
           esac
           echo "worker runtime user: $runtime_user"
 
+      - name: Scan worker runtime image
+        env:
+          TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.75.0
+        run: |
+          mkdir -p "$RUNNER_TEMP/trivy-cache"
+          docker pull "$TRIVY_IMAGE"
+
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$RUNNER_TEMP/trivy-cache:/root/.cache/" \
+            "$TRIVY_IMAGE" image \
+            --scanners vuln \
+            --no-progress \
+            --severity HIGH,CRITICAL \
+            --exit-code 0 \
+            doul-supervision-worker-runtime:dev
+
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$RUNNER_TEMP/trivy-cache:/root/.cache/" \
+            "$TRIVY_IMAGE" image \
+            --scanners vuln \
+            --no-progress \
+            --ignore-unfixed \
+            --severity CRITICAL \
+            --exit-on-eol 1 \
+            --exit-code 1 \
+            doul-supervision-worker-runtime:dev
+
       - name: Start Redis and worker runtime
         run: |
           docker compose \

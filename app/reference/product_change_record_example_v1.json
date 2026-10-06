@@ -1,0 +1,27 @@
+{
+  "changeId": "PCR-2026-001",
+  "baselineFrom": "1.0",
+  "baselineTo": "1.1",
+  "changeClass": "C1",
+  "reason": "Project Configuration Pack and media operations policy are clarified without changing existing workflow authority.",
+  "requestedBy": "Product/Functional",
+  "decidedBy": "Product/Functional Owner",
+  "impactedContracts": [
+    "20_Media_Analysis_Detailed_Definition.md",
+    "21_Owner_Report_Closure_Contract.md",
+    "47_Product_Implementation_Handoff_Backlog_v1.md"
+  ],
+  "impactedRegisters": [],
+  "impactedForms": [],
+  "impactedApiSurfaces": [],
+  "compatibility": "backward_compatible",
+  "migrationRequired": false,
+  "effectiveFrom": "2026-10-06T00:00:00+07:00",
+  "acceptanceScenarioIds": [
+    "AC-MEDIA-01",
+    "AC-REPORT-01",
+    "AC-VERSION-01"
+  ],
+  "decision": "approved",
+  "notes": "Validation example only. It does not activate Product Baseline 1.1 unless an approved change record is adopted by an actual release."
+}
