@@ -52,6 +52,14 @@ def validate_all():
         if primary:check(primary['object_type'] in schemas and primary['cardinality']==1 and primary['binding']=='primarySourceRef','Invalid form primary subject contract')
         for conditional in data[form['id']]['conditional_signatures']:
             check(isinstance(conditional['when'],dict) and conditional['when']['operator']=='non_null','Unsafe conditional predicate')
+        spec=data[form['id']];binding=bindings[form['id']]
+        for field,rule in spec['scalar_fields'].items():
+            check(binding['field_bindings'][field]['required']==rule['required'],form['id']+' has inconsistent required field '+field)
+        conditions=spec.get('conditional_requirements',[])
+        check(conditions==binding.get('conditional_requirements',[]),form['id']+' has inconsistent conditional requirements')
+        for condition in conditions:
+            check(condition['when']=={'operator':'failed_inspection_has_issued_issue'},'Unsafe form requirement predicate')
+            check(condition['any_of']==[{'field':'review.ncr_no'},{'source_object_type':'Issue'}],'Invalid NCR link alternatives')
     known={'$ref','$schema','type','enum','const','format','pattern','minLength','minimum','maximum','properties','required','additionalProperties','items','minItems','uniqueItems','allOf','oneOf','anyOf','if','then','else','description','title','default'}
     def walk(schema):
         check(set(schema)<=known,'Unsupported validation keywords '+str(set(schema)-known))

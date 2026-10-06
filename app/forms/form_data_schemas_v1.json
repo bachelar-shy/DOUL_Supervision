@@ -338,7 +338,7 @@
         },
         "review.ncr_no": {
           "type": "string",
-          "required": true,
+          "required": false,
           "label_key": "review.ncr_no"
         }
       },
@@ -365,11 +365,25 @@
         "material.name",
         "material.approval_no",
         "material.delivery_date",
-        "review.status",
-        "review.ncr_no"
+        "review.status"
       ],
       "legal_mode": "doul_internal",
-      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"
+      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary",
+      "conditional_requirements": [
+        {
+          "when": {
+            "operator": "failed_inspection_has_issued_issue"
+          },
+          "any_of": [
+            {
+              "field": "review.ncr_no"
+            },
+            {
+              "source_object_type": "Issue"
+            }
+          ]
+        }
+      ]
     },
     "FM-06": {
       "scalar_fields": {
