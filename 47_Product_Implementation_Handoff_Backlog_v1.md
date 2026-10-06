@@ -234,7 +234,7 @@ OpenAPI / TypeScript / web register catalog가 source contract와 current여야 
 
 ## 6. Product Change Control
 
-구현 중 다음이 발견되면 Product Baseline v1.x 변경요청으로 전환한다.
+상세 변경관리 계약은 `48_Product_Baseline_Change_Control_v1.md`와 `app/schema/product_change_record_contract_v1.json`을 따른다. 구현 중 다음이 발견되면 Product Baseline v1.x 변경요청으로 전환한다.
 
 - 새 Actor/Decision Right 필요
 - 새로운 official state 필요
@@ -258,6 +258,12 @@ Product / Functional 인계는 다음이 충족되면 완료다.
 - 36 DOUL internal form contracts aligned
 - OpenAPI / TypeScript / register catalog current
 - Role E2E journeys documented
+- Implementation Acceptance Scenario catalog established (`49_Implementation_Acceptance_Scenarios_v1.md`)
+- Project Configuration Pack contract established (`50_Project_Configuration_Pack_v1.md`)
+- Owner Reporting Trigger Matrix established (`51_Owner_Reporting_Trigger_Matrix_v1.md`)
+- Media operations policy gaps resolved without rewriting the analysis contract (`52_Media_Analysis_Operations_Policy_v1.md`)
+- Field Pilot acceptance plan established (`53_Field_Pilot_Acceptance_Plan_v1.md`)
+- Implementation progress tracked by evidence stages, not percentages (`54_Implementation_Progress_Stage_Ledger_v1.md`)
 - Backend/UI/Platform backlog separated
 - Business semantic changes routed back to Product
 

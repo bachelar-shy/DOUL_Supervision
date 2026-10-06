@@ -1,0 +1,122 @@
+{
+  "version": "1.0",
+  "kind": "platform-storage-operations-baseline",
+  "status": "development-baseline",
+  "source_contracts": [
+    "47_Product_Implementation_Handoff_Backlog_v1.md",
+    "app/schema/domain_model_v2.json",
+    "app/schema/media_analysis_contract_v1.json",
+    "app/forms/rendering_contract.json"
+  ],
+  "does_not_define": [
+    "business_retention_period",
+    "legal_retention_period",
+    "business_workflow_state",
+    "actor_authority",
+    "issue_completion_rule",
+    "production_storage_vendor"
+  ],
+  "object_classes": {
+    "original_evidence": {
+      "immutable": true,
+      "physical_delete": false,
+      "version_binding_required": true,
+      "hash_algorithm": "sha256",
+      "quarantine_before_finalize": true,
+      "server_hash_verification": true
+    },
+    "derived_evidence": {
+      "immutable_parent_required": true,
+      "source_range_required": true,
+      "hash_algorithm": "sha256",
+      "version_binding_required": true
+    },
+    "legal_original": {
+      "immutable": true,
+      "physical_delete": false,
+      "source_version_required": true,
+      "checksum_required": true
+    },
+    "generated_snapshot": {
+      "source_object_version_required": true,
+      "source_payload_hash_required": true,
+      "render_hash_required": true
+    }
+  },
+  "access": {
+    "default_private": true,
+    "anonymous_public_access_prohibited": true,
+    "direct_object_access_requires_authorization": true,
+    "cross_project_access_prohibited": true,
+    "service_credentials_separate_from_user_credentials": true,
+    "ci_negative_public_policy_test_allowed": true,
+    "ci_negative_public_policy_test_must_restore_private": true
+  },
+  "retention": {
+    "period_days": null,
+    "platform_must_not_invent_period": true,
+    "configured_by_project_or_governance_policy": true,
+    "policy_version_must_be_recorded": true,
+    "official_record_physical_delete_prohibited": true,
+    "expired_non_official_object_disposition_requires_explicit_policy": true
+  },
+  "ingest": {
+    "stages": [
+      "quarantine",
+      "verify_hash_and_mime",
+      "security_scan",
+      "finalize_object",
+      "commit_metadata",
+      "reconcile"
+    ],
+    "quarantine_not_available_as_official_evidence": true,
+    "security_scan_required_before_pilot": true,
+    "security_scan_provider": null,
+    "hash_mismatch_must_fail_finalize": true,
+    "failed_finalize_must_not_create_official_success": true
+  },
+  "consistency": {
+    "database_and_object_storage_not_assumed_atomic": true,
+    "staging_finalize_required": true,
+    "idempotent_finalize_required": true,
+    "orphan_detection_required": true,
+    "reconciliation_required": true,
+    "reconciliation_must_not_invent_domain_success": true
+  },
+  "encryption": {
+    "transport": {
+      "development": "loopback-only-or-tls",
+      "validation": "tls-required",
+      "pilot": "tls-required",
+      "production": "tls-required"
+    },
+    "at_rest": {
+      "development": "runtime-dependent",
+      "validation": "required",
+      "pilot": "required",
+      "production": "required"
+    },
+    "key_material_must_not_be_committed": true
+  },
+  "backup_recovery": {
+    "database_and_objects_must_be_recoverable_together": true,
+    "object_version_recovery_required": true,
+    "restore_test_required_before_pilot": true,
+    "integrity_recheck_after_restore": true,
+    "rpo_rto_values_defined_outside_this_policy": true
+  },
+  "observability": {
+    "required_events": [
+      "integrity_failure",
+      "quarantine_failure",
+      "finalize_failure",
+      "access_denied",
+      "public_policy_detected",
+      "orphan_detected",
+      "reconciliation_failure",
+      "capacity_threshold"
+    ],
+    "system_log_separate_from_business_audit": true,
+    "secrets_and_full_credentials_must_not_be_logged": true
+  }
+}

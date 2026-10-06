@@ -41,6 +41,58 @@ jobs:
       - name: Build local development images
         run: docker compose -f infra/compose/compose.dev.yml build
 
+      - name: Verify runtime images declare non-root users
+        run: |
+          docker pull rustfs/rustfs:1.0.1
+          for image in \
+            doul-supervision-dev-api \
+            doul-supervision-dev-web \
+            doul-supervision-postgres-dev:16.15 \
+            rustfs/rustfs:1.0.1; do
+            runtime_user="$(docker image inspect "$image" --format '{{.Config.User}}')"
+            case "$runtime_user" in
+              ""|"0"|"root"|"0:0")
+                echo "$image must declare a non-root runtime user"
+                exit 1
+                ;;
+            esac
+            echo "$image runtime user: $runtime_user"
+          done
+
+      - name: Scan development runtime images
+        env:
+          TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.75.0
+        run: |
+          mkdir -p "$RUNNER_TEMP/trivy-cache"
+          docker pull "$TRIVY_IMAGE"
+          mapfile -t images < <(docker compose -f infra/compose/compose.dev.yml config --images | sort -u)
+
+          for image in "${images[@]}"; do
+            echo "::group::Security report: $image"
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v "$RUNNER_TEMP/trivy-cache:/root/.cache/" \
+              "$TRIVY_IMAGE" image \
+              --scanners vuln \
+              --no-progress \
+              --severity HIGH,CRITICAL \
+              --exit-code 0 \
+              "$image"
+            echo "::endgroup::"
+
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v "$RUNNER_TEMP/trivy-cache:/root/.cache/" \
+              "$TRIVY_IMAGE" image \
+              --scanners vuln \
+              --no-progress \
+              --ignore-unfixed \
+              --severity CRITICAL \
+              --exit-on-eol 1 \
+              --exit-code 1 \
+              "$image"
+          done
+
       - name: Configure PostgreSQL adapter integration
         id: postgres_adapter
         run: |
@@ -117,13 +169,14 @@ jobs:
 
           bucket="$(docker compose -f infra/compose/compose.dev.yml config --format json | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["object-storage-init"]["environment"]["OBJECT_STORAGE_BUCKET"])')"
           probe_object=".platform-private-policy-probe"
-          docker compose -f infra/compose/compose.dev.yml exec -T \
-            -e "OBJECT_STORAGE_BUCKET=$bucket" -e "PROBE_OBJECT=$probe_object" object-storage \
-            sh -ec '
-              mc alias set verify http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
-              printf "private-policy-probe" | mc pipe "verify/$OBJECT_STORAGE_BUCKET/$PROBE_OBJECT"
-              mc anonymous set download "verify/$OBJECT_STORAGE_BUCKET"
-              mc stat "verify/$OBJECT_STORAGE_BUCKET/$PROBE_OBJECT"
+          docker compose -f infra/compose/compose.dev.yml run --rm --no-deps \
+            -e "OBJECT_STORAGE_BUCKET=$bucket" -e "PROBE_OBJECT=$probe_object" \
+            --entrypoint /bin/sh object-storage-init -ec '
+              rc alias set verify http://object-storage:9000 "$RUSTFS_ACCESS_KEY" "$RUSTFS_SECRET_KEY"
+              printf "private-policy-probe" >"/tmp/$PROBE_OBJECT"
+              rc cp "/tmp/$PROBE_OBJECT" "verify/$OBJECT_STORAGE_BUCKET/"
+              rc anonymous set download "verify/$OBJECT_STORAGE_BUCKET"
+              rc stat "verify/$OBJECT_STORAGE_BUCKET/$PROBE_OBJECT"
             '
 
           public_get_status="$(curl --silent --output /tmp/public-policy-probe.txt --write-out '%{http_code}' \
@@ -140,18 +193,18 @@ jobs:
           test "$anonymous_list_status" = "403"
           test "$anonymous_get_status" = "403"
 
-          docker compose -f infra/compose/compose.dev.yml exec -T \
-            -e "OBJECT_STORAGE_BUCKET=$bucket" -e "PROBE_OBJECT=$probe_object" object-storage \
-            sh -ec '
-              mc alias set verify http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
-              mc stat "verify/$OBJECT_STORAGE_BUCKET/$PROBE_OBJECT"
-              mc rm "verify/$OBJECT_STORAGE_BUCKET/$PROBE_OBJECT"
+          docker compose -f infra/compose/compose.dev.yml run --rm --no-deps \
+            -e "OBJECT_STORAGE_BUCKET=$bucket" -e "PROBE_OBJECT=$probe_object" \
+            --entrypoint /bin/sh object-storage-init -ec '
+              rc alias set verify http://object-storage:9000 "$RUSTFS_ACCESS_KEY" "$RUSTFS_SECRET_KEY"
+              rc stat "verify/$OBJECT_STORAGE_BUCKET/$PROBE_OBJECT"
+              rc rm "verify/$OBJECT_STORAGE_BUCKET/$PROBE_OBJECT"
             '
 
           docker compose -f infra/compose/compose.dev.yml exec -T postgres \
             sh -ec 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
           docker compose -f infra/compose/compose.dev.yml exec -T redis redis-cli ping | grep -q '^PONG$'
-          curl --fail --silent http://127.0.0.1:9000/minio/health/ready >/dev/null
+          curl --fail --silent http://127.0.0.1:9000/health >/dev/null
 
       - name: Smoke test API, Web and default Origins
         run: |
