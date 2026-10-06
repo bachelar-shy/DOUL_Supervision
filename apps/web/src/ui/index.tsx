@@ -77,8 +77,8 @@ export function SectionHeader({ title, meta }: SectionHeaderProps) {
   );
 }
 
-const dangerStates = new Set(["failed", "hold", "rework_required"]);
-const positiveStates = new Set(["passed", "closed"]);
+const dangerStates = new Set(["failed", "hold", "rework_required", "suspended", "restricted", "expired"]);
+const positiveStates = new Set(["passed", "closed", "active", "authorized", "lifted"]);
 
 export interface StatusBadgeProps {
   status?: string;

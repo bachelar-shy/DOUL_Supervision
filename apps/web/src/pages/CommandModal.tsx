@@ -10,7 +10,32 @@ import { ApiError } from "../data/supervision-client";
 import { commands, fields, reasonLabel, roles } from "../labels";
 import { Icon } from "./shared";
 
+const booleanFields = new Set([
+  "changeRequired",
+  "safetyReviewComplete",
+  "prestartVerified",
+  "completionConfirmed",
+  "preUseCheckComplete",
+]);
+
+const jsonFields = new Set([
+  "checkResults",
+  "verificationGrounding",
+  "conditions",
+  "readiness",
+  "blockedReasons",
+  "restrictionConditions",
+]);
+
 function fieldDefault(field: string, w: Workspace, item: WorkItem): string {
+  const existing =
+    item.record.data?.[field] ??
+    (item.record[field] as Json | undefined);
+  if (existing !== undefined && existing !== null) {
+    return typeof existing === "object"
+      ? JSON.stringify(existing, null, 2)
+      : String(existing);
+  }
   if (field.endsWith("At"))
     return new Date(
       Date.now() + (field === "dueAt" ? 86400000 : 0),
@@ -32,7 +57,7 @@ function fieldDefault(field: string, w: Workspace, item: WorkItem): string {
     );
   if (field === "responseInformationRefs" || field === "references")
     return JSON.stringify([w.context.drawingRef], null, 2);
-  if (field === "changeRequired") return "false";
+  if (booleanFields.has(field)) return "false";
   if (field === "decision") return "approved";
   if (field === "selectedOption") return "A";
   if (field === "responsibleOrganizationId")
@@ -72,14 +97,12 @@ export function CommandModal({
       for (const f of dialog.action.fields) {
         const v = values[f];
         if (!v?.trim()) continue;
-        payload[f] =
-          f === "changeRequired"
-            ? v === "true"
-            : /Ids$|Refs$|^references$|^checkResults$|^verificationGrounding$|^conditions$|^replacementRef$/.test(
-                  f,
-                )
-              ? (JSON.parse(v) as Json)
-              : v;
+        payload[f] = booleanFields.has(f)
+          ? v === "true"
+          : jsonFields.has(f) ||
+              /Ids$|Refs$|Ref$|^references$/.test(f)
+            ? (JSON.parse(v) as Json)
+            : v;
       }
       await onSubmit(payload);
     } catch (e) {
@@ -138,6 +161,16 @@ export function CommandModal({
                 >
                   <option value="false">필요 없음</option>
                   <option value="true">설계변경 필요</option>
+                </select>
+              ) : booleanFields.has(f) ? (
+                <select
+                  value={values[f]}
+                  onChange={(e) =>
+                    setValues({ ...values, [f]: e.target.value })
+                  }
+                >
+                  <option value="false">아니오</option>
+                  <option value="true">예</option>
                 </select>
               ) : f === "responsiblePartyId" ? (
                 <select
