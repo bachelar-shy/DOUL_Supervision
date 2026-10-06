@@ -33,8 +33,22 @@ services:
       - "127.0.0.1:${DOUL_WEB_PORT_PUBLISHED:-5181}:8080"
     restart: unless-stopped
 
+  postgres-permissions:
+    image: alpine:3.24.1
+    user: root
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    command: ["sh", "-ec", "chown -R 70:70 /var/lib/postgresql/data"]
+    restart: "no"
+
   postgres:
-    image: postgres:16-alpine
+    image: doul-supervision-postgres-dev:16.15
+    build:
+      context: ../..
+      dockerfile: infra/docker/postgres-dev.Dockerfile
+    depends_on:
+      postgres-permissions:
+        condition: service_completed_successfully
     environment:
       POSTGRES_DB: ${DOUL_POSTGRES_DB:-doul_supervision}
       POSTGRES_USER: ${DOUL_POSTGRES_USER:-doul_dev}
@@ -54,7 +68,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:7.4-alpine
+    image: redis:7.4.11-alpine3.21
     environment:
       REDISCLI_AUTH: ${DOUL_REDIS_PASSWORD:-local-redis-only}
     command:
@@ -75,42 +89,60 @@ services:
       start_period: 5s
     restart: unless-stopped
 
+  object-storage-permissions:
+    image: alpine:3.24.1
+    user: root
+    volumes:
+      - object-storage-rustfs-data:/data
+    command: ["sh", "-ec", "chown -R 10001:10001 /data"]
+    restart: "no"
+
   object-storage:
-    image: doul-supervision-minio-dev:2025-10-15
-    build:
-      context: ../..
-      dockerfile: infra/docker/minio-dev.Dockerfile
+    image: rustfs/rustfs:1.0.1
+    depends_on:
+      object-storage-permissions:
+        condition: service_completed_successfully
     environment:
-      MINIO_ROOT_USER: ${DOUL_OBJECT_STORAGE_ACCESS_KEY:-doul-dev}
-      MINIO_ROOT_PASSWORD: ${DOUL_OBJECT_STORAGE_SECRET_KEY:-local-minio-only}
-    command: ["server", "/data", "--address", ":9000", "--console-address", ":9001"]
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_ACCESS_KEY: ${DOUL_OBJECT_STORAGE_ACCESS_KEY:-doul-dev}
+      RUSTFS_SECRET_KEY: ${DOUL_OBJECT_STORAGE_SECRET_KEY:-local-minio-only}
+      RUSTFS_OBS_LOGGER_LEVEL: error
     ports:
       - "127.0.0.1:${DOUL_OBJECT_STORAGE_PORT_PUBLISHED:-9000}:9000"
       - "127.0.0.1:${DOUL_OBJECT_STORAGE_CONSOLE_PORT_PUBLISHED:-9001}:9001"
     volumes:
-      - object-storage-data:/data
+      - object-storage-rustfs-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
     restart: unless-stopped
 
   object-storage-init:
-    image: doul-supervision-minio-dev:2025-10-15
+    image: rustfs/rc:v0.1.36
     depends_on:
       object-storage:
         condition: service_healthy
     environment:
-      MINIO_ROOT_USER: ${DOUL_OBJECT_STORAGE_ACCESS_KEY:-doul-dev}
-      MINIO_ROOT_PASSWORD: ${DOUL_OBJECT_STORAGE_SECRET_KEY:-local-minio-only}
+      RUSTFS_ACCESS_KEY: ${DOUL_OBJECT_STORAGE_ACCESS_KEY:-doul-dev}
+      RUSTFS_SECRET_KEY: ${DOUL_OBJECT_STORAGE_SECRET_KEY:-local-minio-only}
       OBJECT_STORAGE_BUCKET: ${DOUL_OBJECT_STORAGE_BUCKET:-doul-supervision-dev}
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
-        mc alias set local http://object-storage:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
-        mc mb --ignore-existing "local/$$OBJECT_STORAGE_BUCKET"
-        mc anonymous set none "local/$$OBJECT_STORAGE_BUCKET"
-        mc stat "local/$$OBJECT_STORAGE_BUCKET"
+        rc alias set local http://object-storage:9000 "$$RUSTFS_ACCESS_KEY" "$$RUSTFS_SECRET_KEY"
+        rc mb --ignore-existing "local/$$OBJECT_STORAGE_BUCKET"
+        rc anonymous set private "local/$$OBJECT_STORAGE_BUCKET"
+        rc ls "local/$$OBJECT_STORAGE_BUCKET"
     restart: "no"
 
 volumes:
   api-data:
   postgres-data:
   redis-data:
-  object-storage-data:
+  object-storage-rustfs-data:
