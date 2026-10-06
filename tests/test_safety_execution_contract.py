@@ -1,4 +1,5 @@
 from copy import deepcopy
+from datetime import datetime, timezone
 import json
 import unittest
 from pathlib import Path
@@ -321,6 +322,187 @@ class SafetyExecutionContractTests(unittest.TestCase):
 
     def _all_gate_values(self, gate):
         return set(gate) == set(self.schemas['SafetyResumeGate']['properties']) and all(gate.values())
+
+    def test_equipment_pass_requires_current_certificate_and_flagged_calibration(self):
+        fixture = Fixture()
+        equipment_id = uid()
+        equipment = fixture.engine.bootstrap(
+            'Asset',
+            {
+                'id': equipment_id,
+                'projectId': fixture.project,
+                'subtype': 'Equipment',
+                'name': 'Tower Crane',
+                'certificateRequired': True,
+                'calibrationRequired': True,
+            },
+        )
+        equipment_ref = fixture.ref('Asset', equipment['id'])
+
+        missing = fixture.create(
+            'safety_equipment_inspection',
+            {'title': '장비 사용전 검사', 'data': {'equipmentRef': equipment_ref, 'inspectionKind': 'pre_use'}},
+            actor='SUP',
+        )
+        missing = fixture.command('safety_equipment_inspection', missing, 'request_inspection', actor='SUP', evidence=[])
+        missing = fixture.command('safety_equipment_inspection', missing, 'schedule_inspection', {'scheduledAt': AT}, actor='SUP', evidence=[])
+        missing = fixture.command('safety_equipment_inspection', missing, 'start_inspection', {'inspectedAt': AT}, actor='SUP', evidence=[])
+        missing = fixture.command(
+            'safety_equipment_inspection',
+            missing,
+            'submit_result',
+            {'resultSummary': 'visual pass', 'preUseCheckComplete': True, 'validTo': '2028-01-01T00:00:00Z'},
+            actor='SUP',
+            evidence=[fixture.evidence],
+        )
+        with self.assertRaisesRegex(ContractError, 'certificateRefs'):
+            fixture.command('safety_equipment_inspection', missing, 'pass', actor='SUP', evidence=[fixture.evidence])
+
+        certificate = fixture.engine.bootstrap(
+            'InformationItem',
+            {
+                'id': uid(),
+                'projectId': fixture.project,
+                'subtype': 'Certificate',
+                'title': 'Safety Certificate',
+                'revision': '1',
+                'status': 'approved',
+                'certificateKind': 'safety',
+                'validFrom': BEFORE,
+                'validTo': AFTER,
+            },
+        )
+        calibration = fixture.engine.bootstrap(
+            'InformationItem',
+            {
+                'id': uid(),
+                'projectId': fixture.project,
+                'subtype': 'Certificate',
+                'title': 'Calibration Certificate',
+                'revision': '1',
+                'status': 'approved',
+                'certificateKind': 'calibration',
+                'validFrom': BEFORE,
+                'validTo': AFTER,
+            },
+        )
+        inspection = fixture.create(
+            'safety_equipment_inspection',
+            {'title': '장비 사용전 검사 2', 'data': {'equipmentRef': equipment_ref, 'inspectionKind': 'pre_use'}},
+            actor='SUP',
+        )
+        inspection = fixture.command('safety_equipment_inspection', inspection, 'request_inspection', actor='SUP', evidence=[])
+        inspection = fixture.command('safety_equipment_inspection', inspection, 'schedule_inspection', {'scheduledAt': AT}, actor='SUP', evidence=[])
+        inspection = fixture.command('safety_equipment_inspection', inspection, 'start_inspection', {'inspectedAt': AT}, actor='SUP', evidence=[])
+        inspection = fixture.command(
+            'safety_equipment_inspection',
+            inspection,
+            'submit_result',
+            {
+                'resultSummary': 'all current',
+                'certificateRefs': [fixture.ref('InformationItem', certificate['id'])],
+                'calibrationRefs': [fixture.ref('InformationItem', calibration['id'])],
+                'preUseCheckComplete': True,
+                'validTo': '2028-01-01T00:00:00Z',
+            },
+            actor='SUP',
+            evidence=[fixture.evidence],
+        )
+        inspection = fixture.command('safety_equipment_inspection', inspection, 'pass', actor='SUP', evidence=[fixture.evidence])
+        self.assertTrue(inspection['data']['equipmentAvailable'])
+
+        permit = fixture.create('safety_permit', {'title': '장비 연계 Permit', 'data': {}}, actor='CON')
+        readiness = {
+            'methodStatementCurrent': True,
+            'riskAssessmentCurrent': True,
+            'personnelQualified': True,
+            'equipmentReady': True,
+            'controlMeasuresReady': True,
+            'emergencyReady': True,
+            'environmentalConditionsReady': True,
+            'noBlockingSafetyIssue': True,
+        }
+        self.set_permit_state(
+            fixture,
+            permit,
+            state='authorized',
+            work_authorized=False,
+            readiness=readiness,
+            validFrom=BEFORE,
+            validTo='2028-01-01T00:00:00Z',
+            equipmentRefs=[equipment_ref],
+        )
+        current_permit = fixture.engine.get('WorkItem', permit['id'])
+        self.assertTrue(fixture.engine._permit_equipment_ready(current_permit))
+        fixture.clock = datetime(2027, 1, 2, tzinfo=timezone.utc)
+        self.assertFalse(fixture.engine.get('WorkItem', inspection['id'])['data']['equipmentAvailable'])
+        self.assertFalse(fixture.engine._permit_equipment_ready(current_permit))
+
+    def test_equipment_pass_rejects_stale_or_wrong_kind_certificate_refs(self):
+        fixture = Fixture()
+        equipment = fixture.engine.bootstrap(
+            'Asset',
+            {
+                'id': uid(),
+                'projectId': fixture.project,
+                'subtype': 'Equipment',
+                'name': 'Calibrated Gauge',
+                'certificateRequired': True,
+                'calibrationRequired': True,
+            },
+        )
+        certificate = fixture.engine.bootstrap(
+            'InformationItem',
+            {
+                'id': uid(),
+                'projectId': fixture.project,
+                'subtype': 'Certificate',
+                'title': 'Safety Certificate',
+                'revision': '1',
+                'status': 'approved',
+                'certificateKind': 'safety',
+                'validFrom': BEFORE,
+                'validTo': AFTER,
+            },
+        )
+        certificate_ref = fixture.ref('InformationItem', certificate['id'])
+        inspection = fixture.create(
+            'safety_equipment_inspection',
+            {'title': 'stale ref probe', 'data': {'equipmentRef': fixture.ref('Asset', equipment['id']), 'inspectionKind': 'pre_use'}},
+            actor='SUP',
+        )
+        inspection = fixture.command('safety_equipment_inspection', inspection, 'request_inspection', actor='SUP', evidence=[])
+        inspection = fixture.command('safety_equipment_inspection', inspection, 'schedule_inspection', {'scheduledAt': AT}, actor='SUP', evidence=[])
+        inspection = fixture.command('safety_equipment_inspection', inspection, 'start_inspection', {'inspectedAt': AT}, actor='SUP', evidence=[])
+        inspection = fixture.command(
+            'safety_equipment_inspection',
+            inspection,
+            'submit_result',
+            {
+                'resultSummary': 'probe',
+                'certificateRefs': [certificate_ref],
+                'calibrationRefs': [certificate_ref],
+                'preUseCheckComplete': True,
+                'validTo': '2028-01-01T00:00:00Z',
+            },
+            actor='SUP',
+            evidence=[fixture.evidence],
+        )
+        certificate_current = fixture.engine.get('InformationItem', certificate['id'])
+        certificate_current['version'] += 1
+        certificate_current['updatedAt'] = fixture.engine.at()
+        fixture.engine._save('InformationItem', certificate_current)
+        with self.assertRaisesRegex(ContractError, certificate['id']):
+            fixture.command('safety_equipment_inspection', inspection, 'pass', actor='SUP', evidence=[fixture.evidence])
+
+        current = fixture.engine.get('WorkItem', inspection['id'])
+        current['data']['certificateRefs'] = [fixture.ref('InformationItem', certificate['id'])]
+        current['data']['calibrationRefs'] = [fixture.ref('InformationItem', certificate['id'])]
+        key = ('WorkItem', inspection['id'])
+        fixture.engine._records[key] = deepcopy(current)
+        fixture.engine._history[key + (current['version'],)] = deepcopy(current)
+        with self.assertRaisesRegex(ContractError, 'Calibration reference'):
+            fixture.command('safety_equipment_inspection', current, 'pass', actor='SUP', evidence=[fixture.evidence])
 
     def test_project_config_can_activate_stop_lift_only_after_product_policy_exists(self):
         binding = next(x for x in self.config['authorityBindings'] if x['authorityCode'] == 'safety.stop_lift')

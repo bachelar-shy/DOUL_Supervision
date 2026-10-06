@@ -57,6 +57,10 @@
   },
   "equipment_readiness": {
     "failure_or_expiry_recalculates_permit_readiness": true,
-    "passed_inspection_does_not_override_certificate_or_calibration_expiry": true
+    "passed_inspection_does_not_override_certificate_or_calibration_expiry": true,
+    "safety_certificate_required_by_default": true,
+    "calibration_required_when_equipment_flagged": true,
+    "certificate_and_calibration_refs_must_be_current_approved_and_unexpired": true,
+    "permit_equipment_ready_rechecks_current_equipment_availability": true
   }
 }

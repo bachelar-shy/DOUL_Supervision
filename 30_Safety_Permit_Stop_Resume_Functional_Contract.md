@@ -128,6 +128,14 @@ Stop Order는 Permit 자체가 아니라 어떤 작업범위를 중지시켰는�
 
 Equipment 자체와 검사·인증·교정 기록을 분리한다.
 
+장비의 `equipmentAvailable`은 검사 PASS 자체로 확정하지 않는다.
+
+- 안전 인증서는 기본적으로 현재 유효한 `InformationItem / Certificate`를 요구한다.
+- 교정이 필요한 장비는 `Asset.calibrationRequired=true`로 지정하고 현재 유효한 교정 Certificate를 추가로 요구한다.
+- Certificate/Calibration은 승인 상태, 현재 버전, 유효기간을 서버가 확인한다.
+- 인증·교정 또는 장비검사 유효기간이 만료되면 `equipmentAvailable=false`로 재평가한다.
+- Permit의 `equipmentReady`와 `workAuthorized`는 저장된 boolean만 신뢰하지 않고 연결된 장비의 현재 사용가능 상태를 다시 확인한다.
+
 ---
 
 ## 4. Actor와 Decision Right

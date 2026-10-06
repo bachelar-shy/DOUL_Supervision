@@ -76,7 +76,11 @@ class Engine:
         source = self._history if version is not None else self._records
         key = (kind, object_id, version) if version is not None else (kind, object_id)
         require(key in source, 'OBJECT_NOT_FOUND', str(key))
-        return deepcopy(source[key])
+        value=deepcopy(source[key])
+        if version is None and kind=='WorkItem' and value.get('subtype')=='SafetyEquipmentInspection':
+            if value.get('data',{}).get('equipmentAvailable') is True and not self._equipment_documents_current(value):
+                value['data']['equipmentAvailable']=False
+        return value
 
     def resolve(self, reference, project_id=None):
         record = self.get(reference['objectType'], reference['objectId'], reference['version'])
@@ -555,6 +559,7 @@ class Engine:
         require(self._all_true(r.get('readiness'),readiness),'SAFETY_WORK_AUTHORIZED','Safety readiness is incomplete')
         require(not r.get('blockedReasons'),'SAFETY_WORK_AUTHORIZED','Blocking reasons remain')
         require(bool(r.get('validFrom')) and bool(r.get('validTo')) and instant(r['validFrom'])<=instant(self.at())<instant(r['validTo']),'SAFETY_WORK_AUTHORIZED','Permit is outside its valid time window')
+        require(self._permit_equipment_ready(r),'SAFETY_WORK_AUTHORIZED','Equipment readiness is not current')
         self._linked_stop_orders_clear(r)
 
     def _safety_suspend_reason_present(self,r):
@@ -630,7 +635,7 @@ class Engine:
             'permitValid':permit_valid,
             'methodStatementCurrent':readiness['methodStatementCurrent'],
             'riskAssessmentCurrent':readiness['riskAssessmentCurrent'],
-            'equipmentReady':readiness['equipmentReady'],
+            'equipmentReady':readiness['equipmentReady'] and all(self._permit_equipment_ready(permit) for permit in permits),
             'personnelQualified':readiness['personnelQualified'],
             'controlMeasuresReady':readiness['controlMeasuresReady'],
             'environmentalConditionsReady':readiness['environmentalConditionsReady'],
@@ -677,8 +682,72 @@ class Engine:
 
     def _equipment_inspection_request_complete(self,r):
         require(bool(r.get('equipmentRef')) and bool(r.get('inspectionKind')),'EQUIPMENT_INSPECTION_REQUEST_COMPLETE','Equipment inspection request is incomplete')
-        equipment=self.resolve(r['equipmentRef'],r['projectId'])
-        require(r['equipmentRef']['objectType']=='Asset' and equipment.get('subtype')=='Equipment','EQUIPMENT_INSPECTION_REQUEST_COMPLETE','Equipment reference must identify Equipment asset')
+        self._current_reference(r['equipmentRef'],r['projectId'],object_type='Asset',subtype='Equipment')
+
+    def _equipment_document_records(self,r,field,*,required,calibration):
+        refs=r.get(field,[])
+        if required:
+            require(bool(refs),'EQUIPMENT_DOCUMENT_INVALID',field+' is required for this equipment')
+        records=[]
+        now=instant(self.at())
+        for reference in refs:
+            document=self._current_reference(reference,r['projectId'],object_type='InformationItem',subtype='Certificate')
+            require(document.get('status')=='approved','EQUIPMENT_DOCUMENT_INVALID','Safety certificate/calibration must be approved')
+            if calibration:
+                require(document.get('certificateKind')=='calibration','EQUIPMENT_DOCUMENT_INVALID','Calibration reference must identify a calibration certificate')
+            else:
+                require(document.get('certificateKind') in ['safety','inspection','other'],'EQUIPMENT_DOCUMENT_INVALID','Certificate reference must identify a non-calibration certificate')
+            require(bool(document.get('validFrom')) and bool(document.get('validTo')),'EQUIPMENT_DOCUMENT_INVALID','Certificate validity period is required')
+            require(instant(document['validFrom'])<=now<instant(document['validTo']),'EQUIPMENT_DOCUMENT_INVALID','Certificate or calibration is expired or not yet valid')
+            records.append(document)
+        return records
+
+    def _require_equipment_documents_current(self,r):
+        r=self._fields(r)
+        equipment=self._current_reference(r['equipmentRef'],r['projectId'],object_type='Asset',subtype='Equipment')
+        self._equipment_document_records(
+            r,
+            'certificateRefs',
+            required=equipment.get('certificateRequired',True),
+            calibration=False,
+        )
+        self._equipment_document_records(
+            r,
+            'calibrationRefs',
+            required=equipment.get('calibrationRequired',False),
+            calibration=True,
+        )
+        now=instant(self.at())
+        if r.get('validFrom'):
+            require(instant(r['validFrom'])<=now,'EQUIPMENT_DOCUMENT_INVALID','Equipment inspection is not yet valid')
+        if r.get('validTo'):
+            require(now<instant(r['validTo']),'EQUIPMENT_DOCUMENT_INVALID','Equipment inspection validity has expired')
+        return True
+
+    def _equipment_documents_current(self,r):
+        try:
+            return self._require_equipment_documents_current(r)
+        except ContractError:
+            return False
+
+    def _permit_equipment_ready(self,r):
+        r=self._fields(r)
+        for reference in r.get('equipmentRefs',[]):
+            equipment=self._current_reference(reference,r['projectId'],object_type='Asset',subtype='Equipment')
+            available=False
+            for (kind,object_id),record in self._records.items():
+                if kind!='WorkItem' or record.get('subtype')!='SafetyEquipmentInspection' or record['projectId']!=r['projectId']:
+                    continue
+                target=record.get('data',{}).get('equipmentRef',{})
+                if target.get('objectId')!=equipment['id'] or record.get('status')!='passed':
+                    continue
+                current=self.get('WorkItem',object_id)
+                if current.get('data',{}).get('equipmentAvailable') is True:
+                    available=True
+                    break
+            if not available:
+                return False
+        return True
 
     def _equipment_schedule_present(self,r):
         require(bool(r.get('scheduledAt')),'EQUIPMENT_SCHEDULE_PRESENT','Equipment inspection schedule is required')
@@ -688,7 +757,7 @@ class Engine:
 
     def _equipment_pass_ready(self,r):
         require(bool(r.get('resultSummary','').strip()) and r.get('preUseCheckComplete') is True and not r.get('blockedReasons'),'EQUIPMENT_PASS_READY','Passed equipment must complete pre-use check with no blockers')
-        if r.get('validTo'):require(instant(self.at())<instant(r['validTo']),'EQUIPMENT_PASS_READY','Equipment inspection validity has expired')
+        self._require_equipment_documents_current(r)
 
     def _equipment_fail_ready(self,r):
         require(bool(r.get('failureReason','').strip()),'EQUIPMENT_FAIL_READY','Failed equipment requires failure reason')

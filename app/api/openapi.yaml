@@ -14489,6 +14489,12 @@
           },
           "materialApprovalRef": {
             "$ref": "#/components/schemas/DomainRef"
+          },
+          "certificateRequired": {
+            "type": "boolean"
+          },
+          "calibrationRequired": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -14617,6 +14623,23 @@
           },
           "report": {
             "$ref": "#/components/schemas/OwnerReportData"
+          },
+          "certificateKind": {
+            "type": "string",
+            "enum": [
+              "safety",
+              "inspection",
+              "calibration",
+              "other"
+            ]
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [
@@ -20341,6 +20364,23 @@
               },
               "report": {
                 "$ref": "#/components/schemas/OwnerReportData"
+              },
+              "certificateKind": {
+                "type": "string",
+                "enum": [
+                  "safety",
+                  "inspection",
+                  "calibration",
+                  "other"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "validTo": {
+                "type": "string",
+                "format": "date-time"
               }
             },
             "required": [
