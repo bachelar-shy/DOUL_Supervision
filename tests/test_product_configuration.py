@@ -47,7 +47,7 @@ class ProductConfigurationContractTests(unittest.TestCase):
 
     def test_change_references_known_acceptance_scenarios(self):
         change = copy.deepcopy(self.change)
-        change['acceptanceScenarioIds'] = ['AC-NOT-REAL-99']
+        change['acceptanceScenarioIds'] = ['AC-UNKNOWN-99']
         with self.assertRaisesRegex(AssertionError, 'unknown acceptance scenario'):
             validate_change_record(change)
 

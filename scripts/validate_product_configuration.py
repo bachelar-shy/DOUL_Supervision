@@ -9,6 +9,10 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from scripts.product_schema_validation import validate_schema
+
 ALLOWED_ACTORS = {'SUP', 'CON', 'OWN', 'DES', 'ADM'}
 ALLOWED_PRIORITIES = {'P1', 'P2', 'P3', 'P4'}
 ALLOWED_MEDIA_MODES = {'photo', 'keyframes', 'adaptive', 'every_frame', 'audio'}
@@ -33,10 +37,12 @@ def parse_datetime(value: str):
 
 def validate_project_config(instance):
     schema = load('app/schema/project_configuration_contract_v1.json')
+    require(isinstance(instance, dict), 'project config must be an object')
     required = set(schema['required'])
     allowed = set(schema['properties'])
     require(required <= set(instance), 'project config missing required root fields')
     require(set(instance) <= allowed, 'project config contains unknown root fields: ' + str(set(instance) - allowed))
+    validate_schema(instance, schema)
     require(instance['schemaVersion'] == '1.0', 'unsupported project config schemaVersion')
     require(isinstance(instance['configVersion'], int) and instance['configVersion'] >= 1, 'configVersion must be positive integer')
     require(re.fullmatch(r'1\.[0-9]+', instance['baselineVersion']) is not None, 'baselineVersion must be v1.x')
@@ -108,10 +114,12 @@ def validate_project_config(instance):
 
 def validate_change_record(instance):
     schema = load('app/schema/product_change_record_contract_v1.json')
+    require(isinstance(instance, dict), 'change record must be an object')
     required = set(schema['required'])
     allowed = set(schema['properties'])
     require(required <= set(instance), 'change record missing required fields')
     require(set(instance) <= allowed, 'change record contains unknown fields')
+    validate_schema(instance, schema)
     require(re.fullmatch(r'PCR-[0-9]{4}-[0-9]{3,}', instance['changeId']) is not None, 'invalid changeId')
     require(instance['changeClass'] in {'C0', 'C1', 'C2', 'C3'}, 'invalid change class')
     require(instance['compatibility'] in {'no_semantic_change', 'backward_compatible', 'migration_required', 'breaking'}, 'invalid compatibility')
