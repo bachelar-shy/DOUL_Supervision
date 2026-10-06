@@ -42,6 +42,7 @@ export interface PageHeaderProps {
   eyebrow?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
+  details?: ReactNode;
   actions?: ReactNode;
 }
 
@@ -49,6 +50,7 @@ export function PageHeader({
   eyebrow,
   title,
   description,
+  details,
   actions,
 }: PageHeaderProps) {
   return (
@@ -58,6 +60,7 @@ export function PageHeader({
         <h1>{title}</h1>
         {description ? <p>{description}</p> : null}
       </div>
+      {details ? <div className="page-heading-details">{details}</div> : null}
       {actions ? <div className="heading-actions">{actions}</div> : null}
     </div>
   );
