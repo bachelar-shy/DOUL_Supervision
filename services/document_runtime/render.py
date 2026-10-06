@@ -265,7 +265,7 @@ class LocalDocumentRuntime:
                     docx.write_bytes(make_docx(snapshot,preserved_html)); docx.chmod(0o600)
                     home=work/'home'; home.mkdir(mode=0o700)
                     profile=work/'lo-profile'
-                    env=dict(os.environ,HOME=str(home),TZ='UTC',LANG='C.UTF-8',LC_ALL='C.UTF-8',SAL_USE_VCLPLUGIN='gen')
+                    env=dict(os.environ,HOME=str(home),TZ='UTC',LANG='C.UTF-8',LC_ALL='C.UTF-8',SAL_USE_VCLPLUGIN='svp')
                     result=subprocess.run([self.soffice,'-env:UserInstallation='+profile.as_uri(),
                         '--headless','--nologo','--nodefault','--norestore','--convert-to','pdf:writer_pdf_Export',
                         '--outdir',str(work),str(docx)],stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,timeout=90)
