@@ -934,3 +934,46 @@ F-04 Product / Functional Design은 다음을 정의했으므로 관리대장 16
 F-04의 업무 의미는 `app/schema/schedule_execution_contract_v1.json`과 상기 State/Authority/Schema 계약으로 실행 가능하게 구조화했다. Backend B-P3 구현 인수 전까지 진척단계는 `contract_confirmed`로 유지한다.
 
 다음 Product 상세설계는 F-05 Progress Measurement / Payment로 진행한다.
+
+---
+
+## 33. Schedule 원본과 Activity 원자적 입력 실행계약
+
+Source of Truth: `app/schema/schedule_source_import_contract_v1.json`.
+상태: **Product 계약 정의, Backend/API 미구현**. Proposed endpoint는 실제 사용 가능한 API가 아니다.
+
+### 33.1 입력과 권한
+
+원본 공정 하나와 그 원본에서 정규화한 전체 Activity를 `import_schedule_source_package` 한 요청으로 입력한다. Baseline은 기존 `schedule.baseline.create`, Progress는 `schedule.progress.submit`, supporting Recovery Schedule은 `schedule.recovery.submit` 권한을 그대로 소비한다. 프로젝트·패키지·분야·위치·책임 조직과 유효 배치를 모두 검증한다. SUP/OWN/ADM 또는 SYSTEM에 시공사 원본 제출권한을 추가하지 않는다.
+
+Baseline은 `draft`, Progress는 `submitted`로 시작하고 이후 기존 F-04 명령·검토·승인 절차를 따른다. Recovery 원본은 기존 `snapshot` supporting record이며 회복계획 수락·기준공정 승인 상태를 얻지 않는다. Lookahead 입력과 XER/MS Project 자동 파서는 후속 범위다. v1은 보존된 정규화 JSON 원본만 지원한다.
+
+### 33.2 원본 증빙과 식별
+
+원본 Evidence의 정확한 ID/version, fileId, 보존된 bytes의 SHA-256, 파일 버전과 parser version을 검증한다. Evidence가 다른 프로젝트·권한 범위이면 입력을 거부한다. 파일이 읽히지 않거나 해시·정규화 내용이 요청 Schedule/Activity와 다르면 저장을 성공으로 확정하지 않는다. source fileId/hash를 임의 문자열로 입력했다는 사실만으로 원본 보존을 인정하지 않는다.
+
+Activity의 `sourceScheduleRef`는 서버가 신규 Schedule의 **최초 원본 version 1**로 생성한다. 사용자는 이를 주입할 수 없다. Activity ID는 해당 원본 내에서 고유하며 객체 ID 충돌을 거부한다. 선후행 관계는 같은 원본의 정확한 Activity 참조로 검증한다. 주공정 Activity ID가 해당 원본에 있어야 하며 서버가 `criticalPathRef`와 `activityCount`를 만든다.
+
+### 33.3 원자성·불변성·정정
+
+Schedule, 모든 Activity, Audit, 중복요청 결과를 하나의 transaction으로 저장한다. 일부 Activity·파일 검증·저장 실패 시 전부 rollback한다. 고아 Activity와 부분 성공은 허용하지 않는다. 동일 Idempotency-Key/동일 본문은 재시작 후에도 최초 결과를 재현하고, 동일 키/다른 본문은 거부한다.
+
+입력 완료된 원본 Schedule 내용과 Activity는 immutable이다. 접수·검토·승인 등 workflow version이 증가해도 Activity의 최초 source version을 현재 version으로 다시 연결하지 않는다. source ref와 critical Activity가 가리키는 최초 원본을 역사 조회로 재현할 수 있어야 한다.
+
+입력된 원본의 파일·날짜·작업·예측 내용 정정은 새 Schedule/Activity 원본 객체로 만든다. imported record의 일반 workflow payload로 원본 내용을 교체하지 않는다. 검토 체크리스트·승인 참조·검증 결과·업무 timestamp는 기존 명령에서 관리한다. 기존 legacy 기록의 참조를 자동 재해석하거나 다시 연결하지 않는다.
+
+Progress는 effective Baseline, 이전 frozen Snapshot과 필요한 정정 사유를 exact version으로 검증하고 기존 Data Date 역행·동일 Data Date 정정조건을 적용한다. Baseline Activity mapping은 해당 기준공정의 원본 버전에 속해야 한다. 실제 시작/종료가 Data Date보다 미래이거나 종료가 시작보다 빠른 입력을 거부한다.
+
+### 33.4 인수
+
+계약 JSON의 acceptance 목록을 Backend/UI/Platform 통합시험에서 증명한다. Product schema 검증 통과는 저장/API 구현 인수가 아니다. Baseline → 승인·적용 → Progress → 검증·확정을 실제 입력 경로로 연결하고, Baseline 보존·정정 이력·중복요청·재시작·권한·파일 장애·부분 transaction 실패를 검증한다. 100% 진도는 검측/인수 합격 또는 EOT 승인이 아니며 발주처 후속조치 종결도 별도이다.
+
+### 33.5 정규화 원본의 비교 경계
+
+v1 정규화 JSON 원본은 `schedule`, `activities`, `criticalActivityId`를 갖는다. `schedule` 내용 비교에서 sourceFileRef/sourceFileHash는 제외한다. 이 값들은 원본 파일을 저장·해시 계산한 후의 외부 식별자이므로 파일 내용 자체에 SHA-256을 포함시켜 자기참조하도록 요구하지 않는다. 역할·객체 생성 ID·증빙 연결 ID 등 요청 envelope도 원본 내용 비교에서 제외한다.
+
+원본 작업 관계는 predecessorActivityIds/successorActivityIds라는 원본 내 Activity ID 목록으로 입력한다. 서버가 동일 원본의 실제 WorkItem ID/version 1 참조로 변환하며, 사용자는 predecessorRefs/successorRefs를 주입하지 않는다. 없는 작업·다른 원본 관계·중복 작업 ID를 거부한다. 선정한 주공정 작업은 critical=true여야 한다. 사용자 객체 ID는 원본 비교와 분리하되 요청 내 고유성을 검사한다.
+
+기존 명령 폼이 동일 원본 값을 재전송하는 것은 내용 수정이 아니므로 허용할 수 있다. 값이 실제로 달라지는 경우에만 새 원본 입력을 요구한다. 이 조건은 imported source에 적용하며 과거 legacy workflow를 임의 변경하지 않는다.
+
+서버는 Schedule.metadata.sourceImport에 contractVersion, parserVersion, inputMode, sourceEvidenceRef, 최초 sourceScheduleRef와 전체 activityRefs를 보존한다. 이 provenance 표시는 사용자가 생성/변경하지 않는다. Activity의 프로젝트·패키지·위치·분야·책임 조직은 부모 Schedule 범위를 상속하며, 증빙 권한은 각 참조에 대해 다시 검사한다.

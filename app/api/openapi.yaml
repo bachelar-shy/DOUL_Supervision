@@ -18477,6 +18477,47 @@
           },
           "schedule": {
             "$ref": "#/components/schemas/ScheduleData"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "sourceImport": {
+                "type": "object",
+                "properties": {
+                  "contractVersion": {
+                    "type": "string"
+                  },
+                  "parserVersion": {
+                    "type": "string"
+                  },
+                  "inputMode": {
+                    "type": "string"
+                  },
+                  "sourceEvidenceRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "sourceScheduleRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "activityRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  }
+                },
+                "required": [
+                  "contractVersion",
+                  "parserVersion",
+                  "inputMode",
+                  "sourceEvidenceRef",
+                  "sourceScheduleRef",
+                  "activityRefs"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
           }
         },
         "required": [
@@ -25147,6 +25188,47 @@
               },
               "schedule": {
                 "$ref": "#/components/schemas/ScheduleData"
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "sourceImport": {
+                    "type": "object",
+                    "properties": {
+                      "contractVersion": {
+                        "type": "string"
+                      },
+                      "parserVersion": {
+                        "type": "string"
+                      },
+                      "inputMode": {
+                        "type": "string"
+                      },
+                      "sourceEvidenceRef": {
+                        "$ref": "#/components/schemas/DomainRef"
+                      },
+                      "sourceScheduleRef": {
+                        "$ref": "#/components/schemas/DomainRef"
+                      },
+                      "activityRefs": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/DomainRef"
+                        }
+                      }
+                    },
+                    "required": [
+                      "contractVersion",
+                      "parserVersion",
+                      "inputMode",
+                      "sourceEvidenceRef",
+                      "sourceScheduleRef",
+                      "activityRefs"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
               }
             },
             "required": [
@@ -27198,6 +27280,47 @@
                     }
                   }
                 ]
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "sourceImport": {
+                    "type": "object",
+                    "properties": {
+                      "contractVersion": {
+                        "type": "string"
+                      },
+                      "parserVersion": {
+                        "type": "string"
+                      },
+                      "inputMode": {
+                        "type": "string"
+                      },
+                      "sourceEvidenceRef": {
+                        "$ref": "#/components/schemas/DomainRef"
+                      },
+                      "sourceScheduleRef": {
+                        "$ref": "#/components/schemas/DomainRef"
+                      },
+                      "activityRefs": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/DomainRef"
+                        }
+                      }
+                    },
+                    "required": [
+                      "contractVersion",
+                      "parserVersion",
+                      "inputMode",
+                      "sourceEvidenceRef",
+                      "sourceScheduleRef",
+                      "activityRefs"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
               }
             },
             "required": [
@@ -27714,6 +27837,47 @@
                     }
                   }
                 ]
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "sourceImport": {
+                    "type": "object",
+                    "properties": {
+                      "contractVersion": {
+                        "type": "string"
+                      },
+                      "parserVersion": {
+                        "type": "string"
+                      },
+                      "inputMode": {
+                        "type": "string"
+                      },
+                      "sourceEvidenceRef": {
+                        "$ref": "#/components/schemas/DomainRef"
+                      },
+                      "sourceScheduleRef": {
+                        "$ref": "#/components/schemas/DomainRef"
+                      },
+                      "activityRefs": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/DomainRef"
+                        }
+                      }
+                    },
+                    "required": [
+                      "contractVersion",
+                      "parserVersion",
+                      "inputMode",
+                      "sourceEvidenceRef",
+                      "sourceScheduleRef",
+                      "activityRefs"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
               }
             },
             "required": [

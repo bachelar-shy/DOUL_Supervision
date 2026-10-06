@@ -74,6 +74,25 @@ def validate_all():
     check(schedule_execution['delay_boundary']['delay_event_is_fact_not_entitlement'] is True and schedule_execution['delay_boundary']['delay_close_does_not_close_claim_or_eot'] is True,'Delay entitlement boundary changed')
     check(schedule_execution['recovery_boundary']['accepted_recovery_does_not_revise_baseline'] is True and schedule_execution['recovery_boundary']['accepted_recovery_does_not_approve_eot_or_cost'] is True,'Recovery/Baseline/EOT boundary changed')
     check(schedule_execution['activity_boundary']['percent_complete_100_does_not_change_inspection_or_handover'] is True,'Schedule Activity completion must not alter quality/handover state')
+    source_import=load('schema/schedule_source_import_contract_v1.json')
+    check(source_import['status']=='contract_defined_backend_not_implemented','Source import implementation must not be claimed without acceptance')
+    check(source_import['atomicity']['schedule_and_all_activities_and_audit_and_idempotency_in_one_transaction'] and source_import['atomicity']['no_orphan_activity'],'Schedule import must be atomic')
+    check(source_import['activity_snapshot']['sourceScheduleRef_server_generated'] and source_import['activity_snapshot']['immutable'],'Activity source identity must be server-owned and immutable')
+    check(source_import['immutability']['workflow_versions_do_not_rebind_activity_source_ref'],'Workflow versions must preserve original Activity source refs')
+    check(source_import['source_identity']['normalized_json_content_matches_package'] and source_import['source_identity']['storage_content_must_be_readable_before_commit'],'Source import requires real preserved content')
+    for kind,binding in source_import['kinds'].items():
+        check(binding['authority'] in policies and policies[binding['authority']]['actor_groups']==['CON'],'Source import must consume existing contractor authority')
+        if binding['machine']:
+            check(binding['initial_state']==machines[binding['machine']]['initial'],'Source import initial state differs from workflow')
+        else:
+            check(kind=='recovery' and binding['supporting_only'] and binding['initial_state']=='snapshot','Supporting Schedule must not gain workflow authority')
+    check('sourceScheduleRef' not in source_import['schemas']['ScheduleSourceImportActivityData']['properties'],'Clients cannot forge Activity source refs')
+    imported_activity=source_import['schemas']['ScheduleSourceImportActivityData']
+    for name,spec in imported_activity['properties'].items():
+        check(spec==schemas['ScheduleActivityData']['properties'][name],'Imported Activity schema drift: '+name)
+    for name,spec in source_import['schemas']['ScheduleSourceImportScheduleData']['properties'].items():
+        if name not in ['scheduleKind','sourceFileHash']:
+            check(spec==schemas['ScheduleData']['properties'][name],'Imported Schedule schema drift: '+name)
     schedule_readonly={field for name in ['ScheduleData','RecoveryPlanData'] for field,spec in schemas[name]['properties'].items() if spec.get('readOnly') is True}
     for machine_name in ['schedule_baseline','schedule_progress','recovery_plan']:
         for transition in machines[machine_name]['transitions']:
