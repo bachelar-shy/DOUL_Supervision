@@ -25,7 +25,8 @@ jobs:
       - name: Start disposable integrated runtime
         run: |
           docker compose -f infra/compose/compose.dev.yml -f infra/compose/compose.worker.yml \
-            up -d --build --wait --wait-timeout 120 postgres redis api worker-runtime object-storage object-storage-init
+            up -d --build --wait --wait-timeout 120 postgres redis api worker-runtime object-storage
+          docker compose -f infra/compose/compose.dev.yml -f infra/compose/compose.worker.yml run --rm --no-deps object-storage-init
       - name: Verify live capacity, queue, worker and API signals
         env:
           DATABASE_URL: postgresql://doul_dev:local-postgres-only@127.0.0.1:5432/doul_supervision
