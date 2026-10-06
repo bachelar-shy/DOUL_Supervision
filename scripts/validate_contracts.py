@@ -7,6 +7,7 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from app.reference.engine import load
+from scripts.validate_product_configuration import validate_examples as validate_product_configuration_examples
 
 
 def check(condition,message):
@@ -24,8 +25,19 @@ def validate_all():
     for node in ast.walk(tree):
         if isinstance(node,ast.Assign) and isinstance(node.value,ast.Dict) and any(isinstance(t,ast.Name) and t.id in ['predicates','checks'] for t in node.targets):
             guard_keys.update(k.value for k in node.value.keys if isinstance(k,ast.Constant))
+    machine_bindings=load('reference/machine_bindings_v1.json')['machines']
+    check(set(machine_bindings)==set(machines),'Backend machine bindings must match Product machines exactly')
+    collections=set()
     for name,machine in machines.items():
-        check(machine['object_type'] in schemas,name+' has unknown object type');seen=set()
+        check(machine['object_type'] in schemas,name+' has unknown object type')
+        binding=machine_bindings[name]
+        check(set(binding)=={'collection','create_authority'},name+' has invalid backend machine binding fields')
+        collection=binding['collection']
+        check(isinstance(collection,str) and re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*',collection),name+' has invalid API collection')
+        check(collection not in collections,name+' has duplicate API collection')
+        collections.add(collection)
+        check(binding['create_authority'] in policies,name+' has unknown create authority')
+        seen=set()
         for t in machine['transitions']:
             signature=t['from'],t['command'];check(signature not in seen,name+' has ambiguous command');seen.add(signature)
             check(t['from'] in machine['states'] and t['to'] in machine['states'],name+' has unknown state')
@@ -64,6 +76,48 @@ def validate_all():
         check('Backend' in text,contract.name+' lacks backend handoff boundary')
     check((ROOT/'45_Role_End_to_End_Journeys_v1.md').exists(),'Role E2E journey contract missing')
     check((ROOT/'46_Product_Functional_Baseline_v1_Validation.md').exists(),'Product baseline validation document missing')
+    product_ops_docs=[
+        '48_Product_Baseline_Change_Control_v1.md',
+        '49_Implementation_Acceptance_Scenarios_v1.md',
+        '50_Project_Configuration_Pack_v1.md',
+        '51_Owner_Reporting_Trigger_Matrix_v1.md',
+        '52_Media_Analysis_Operations_Policy_v1.md',
+        '53_Field_Pilot_Acceptance_Plan_v1.md',
+        '54_Implementation_Progress_Stage_Ledger_v1.md',
+    ]
+    for name in product_ops_docs:check((ROOT/name).exists(),name+' missing from Product implementation handoff')
+    change_contract=load('schema/product_change_record_contract_v1.json')
+    project_config=load('schema/project_configuration_contract_v1.json')
+    acceptance=load('schema/implementation_acceptance_catalog_v1.json')
+    check(change_contract.get('$schema')=='https://json-schema.org/draft/2020-12/schema','Product change contract must use JSON Schema 2020-12')
+    check(project_config.get('$schema')=='https://json-schema.org/draft/2020-12/schema','Project configuration contract must use JSON Schema 2020-12')
+    check(project_config.get('additionalProperties') is False,'Project configuration must fail closed on unknown root keys')
+    required_config={'schemaVersion','configVersion','baselineVersion','projectId','timezone','effectiveFrom','organizations','roleAssignments','qualificationRules','scopes','authorityBindings','deadlineRules','ownerReporting','forms','thresholds','mediaPolicy','acceptanceScenarioIds'}
+    check(required_config<=set(project_config.get('required',[])),'Project configuration required fields incomplete')
+    scenario_ids=[x['id'] for x in acceptance.get('scenarios',[])]
+    check(len(scenario_ids)==len(set(scenario_ids)) and len(scenario_ids)>=15,'Acceptance scenario IDs must be unique and complete')
+    check({'AC-Q-01','AC-S-01','AC-SCH-01','AC-PAY-01','AC-HO-01','AC-MEDIA-01','AC-AUTH-01','AC-WORKER-01','AC-REPORT-01'}<=set(scenario_ids),'Required E2E/failure acceptance scenarios missing')
+    validate_product_configuration_examples()
+    progress=load('reference/implementation_progress_ledger_v1.json')
+    expected_stages=['contract_confirmed','backend_api_implemented','ui_connected','integration_passed','pilot_verified']
+    check(progress.get('stageOrder')==expected_stages,'Implementation progress stage order changed')
+    progress_ids=[x['functionId'] for x in progress.get('functions',[])]
+    check(progress_ids==[f'F-{i:02}' for i in range(1,18)],'Implementation progress ledger must cover F-01 through F-17')
+    check(all(x['currentStage'] in expected_stages and x.get('evidenceRefs') for x in progress['functions']),'Implementation stage requires valid stage and evidence')
+    check(all(x.get('countsAsFunctionStage') is False for x in progress.get('foundationTracks',[])),'Foundation tracks must not imply business function completion')
+    owner_trigger_catalog=load('schema/owner_reporting_trigger_catalog_v1.json')
+    owner_contract=load('schema/owner_reporting_contract_v1.json')
+    trigger_ids=[x['functionId'] for x in owner_trigger_catalog.get('functions',[])]
+    check(trigger_ids==[f'F-{i:02}' for i in range(1,18)],'Owner reporting trigger catalog must cover F-01 through F-17 in order')
+    check(all(x.get('closureSeparationRequired') is True for x in owner_trigger_catalog['functions']),'Every functional owner-report trigger must preserve Domain/Report closure separation')
+    check(owner_trigger_catalog['semantics']['receipt_is_not_approval'] is True,'Owner receipt must remain distinct from approval')
+    check(owner_contract.get('version')=='1.1','Owner reporting contract v1.1 required')
+    check(owner_contract.get('trigger_catalog_ref')=='app/schema/owner_reporting_trigger_catalog_v1.json','Owner reporting trigger catalog ref missing')
+    check(owner_contract.get('project_configuration_ref')=='app/schema/project_configuration_contract_v1.json','Owner reporting project config ref missing')
+    media_contract=load('schema/media_analysis_contract_v1.json')
+    check(media_contract.get('version')=='1.3' and 'operations_policy' in media_contract,'Media operations policy contract v1.3 required')
+    check(media_contract['operations_policy']['user_reanalysis']['new_analysis_run_required'] is True,'Reanalysis must create a new AnalysisRun')
+    check(media_contract['operations_policy']['cost_control']['silent_mode_downgrade_forbidden'] is True,'Media cost policy must forbid silent mode downgrade')
     subtypes=load('schema/domain_model_v2.json')['subtypes']
     all_commands={name+':'+t['command'] for name,m in machines.items() for t in m['transitions']}
     for projection in mapping['registers']:

@@ -143,10 +143,24 @@ Baseline v1.0은 다음 항목을 모두 검증해 PASS로 확정한다.
 
 따라서 Product / Functional Baseline v1.0 검증결과는 **PASS**다.
 
+### 11.2 구현 인계 운영계약 검증
+
+- Project Configuration / Product Change example validation: PASS
+- Product configuration authority widening tests: PASS
+- Owner Reporting F-01~F-17 Trigger catalog: PASS
+- Media operations contract: v1.3, 기존 분석판정 의미 유지
+- Core tests: 114 PASS
+- HTTP/Application tests: 72 run — 69 PASS, 3 PostgreSQL live-integration tests skipped locally when DSN is absent
+- OpenAPI / TypeScript / Web register catalog: current
+- `git diff --check`: PASS
+
+이 검증은 Baseline v1.0의 업무 의미를 재정의하지 않고 구현 인계·설정·인수·운영정책을 보완한 결과다.
+
 ## 12. 다음 단계
 
-Baseline v1.0 이후는 Product 의미를 임의 확장하지 않고 다음 순서로 진행한다.
-1. `47_Product_Implementation_Handoff_Backlog_v1.md` 기준 Backend/UI/Platform 구현
-2. Project-specific configuration packs
-3. Pilot project validation
-4. Baseline v1.x change control
+Baseline v1.0 이후는 Product 의미를 임의 확장하지 않고 다음 원칙으로 진행한다.
+1. Baseline v1.x 변경관리는 계속 유지한다 (`48_Product_Baseline_Change_Control_v1.md`).
+2. `47_Product_Implementation_Handoff_Backlog_v1.md`의 Backend/UI 구현과 Project Configuration Pack을 병렬로 진행한다 (`50_Project_Configuration_Pack_v1.md`).
+3. 업무 API/UI가 나오는 단위마다 동일한 인수사례를 누적한다 (`49_Implementation_Acceptance_Scenarios_v1.md`).
+4. 진척도는 `contract_confirmed → backend_api_implemented → ui_connected → integration_passed → pilot_verified`로 기록한다 (`54_Implementation_Progress_Stage_Ledger_v1.md`).
+5. 시범운영은 `53_Field_Pilot_Acceptance_Plan_v1.md`의 착수·완료 Gate를 따른다.

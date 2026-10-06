@@ -37,6 +37,7 @@ class Engine:
     def __init__(self, now=None):
         self.now = now or (lambda: datetime.now(timezone.utc))
         self.machines = load('schema/state_machines_v1.json')['machines']
+        self.machine_bindings = load('reference/machine_bindings_v1.json')['machines']
         self.policies = load('schema/authority_matrix_v1.json')['policies']
         self.schemas = load('schema/domain_schemas_v2.json')['components']['schemas']
         self._records = {}
@@ -206,7 +207,7 @@ class Engine:
         record = dict(deepcopy(payload),id=object_id,projectId=project_id,version=1,createdAt=self.at(),updatedAt=self.at(),createdBy=party_id,status=self.machines[machine]['initial'])
         if self.machines[machine]['subtype']:
             record['subtype']=self.machines[machine]['subtype']
-        authority = {'observation':'create_observation','inspection':'submit_inspection_request','issue':'issue_official_issue','rfi':'submit_rfi','change':'propose_change','approval':'request_approval','action':'create_action','decision':'request_owner_decision','report':'author_report','analysis_run':'create_analysis_run'}[machine]
+        authority = self.machine_bindings[machine]['create_authority']
         validate(record,self.schemas[kind],self.schemas)
         if kind=='WorkItem':require(not set(record['data']) & set(record), 'IMMUTABLE_FIELD', 'WorkItem data cannot shadow identity or state')
         role = self.authorize(record,authority,party_id,role_id)

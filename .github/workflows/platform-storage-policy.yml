@@ -1,0 +1,37 @@
+name: platform-storage-policy
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/platform-storage-policy.yml"
+      - "infra/storage_policy_v1.json"
+      - "infra/storage-operations.md"
+      - "infra/ci/validate_storage_policy.py"
+      - "app/schema/domain_model_v2.json"
+      - "app/schema/media_analysis_contract_v1.json"
+      - "app/forms/rendering_contract.json"
+      - "47_Product_Implementation_Handoff_Backlog_v1.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/platform-storage-policy.yml"
+      - "infra/storage_policy_v1.json"
+      - "infra/storage-operations.md"
+      - "infra/ci/validate_storage_policy.py"
+      - "app/schema/domain_model_v2.json"
+      - "app/schema/media_analysis_contract_v1.json"
+      - "app/forms/rendering_contract.json"
+      - "47_Product_Implementation_Handoff_Backlog_v1.md"
+
+permissions:
+  contents: read
+
+jobs:
+  storage-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Validate storage operations baseline
+        run: python3 infra/ci/validate_storage_policy.py

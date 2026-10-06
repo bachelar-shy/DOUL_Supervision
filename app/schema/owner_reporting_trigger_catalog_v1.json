@@ -1,0 +1,264 @@
+{
+  "version": "1.0",
+  "source": "51_Owner_Reporting_Trigger_Matrix_v1.md",
+  "semantics": {
+    "trigger_is_not_issue": "A trigger is a basis for draft/notification intent, not automatic report issuance.",
+    "receipt_is_not_approval": true,
+    "domain_close_is_not_report_close": true,
+    "priority_and_deadline_source": "Project Configuration Pack exact version"
+  },
+  "functions": [
+    {
+      "functionId": "F-01",
+      "domain": "submission_shop_drawing",
+      "immediateTriggerCandidates": [
+        "critical_approval_delay",
+        "unsafe_field_use_risk"
+      ],
+      "periodicTopics": [
+        "submission_approval_status"
+      ],
+      "decisionRequestCandidates": [
+        "major_design_or_sequence_choice"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-02",
+      "domain": "material_test",
+      "immediateTriggerCandidates": [
+        "critical_material_failure",
+        "installed_material_test_failure"
+      ],
+      "periodicTopics": [
+        "material_approval_receiving_test_status"
+      ],
+      "decisionRequestCandidates": [
+        "substitute_material_or_impact_decision"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-03",
+      "domain": "safety",
+      "immediateTriggerCandidates": [
+        "major_hazard",
+        "stop_order",
+        "accident_or_major_near_miss"
+      ],
+      "periodicTopics": [
+        "permit_stop_trend"
+      ],
+      "decisionRequestCandidates": [
+        "long_stop_cost_or_schedule_impact"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-04",
+      "domain": "schedule",
+      "immediateTriggerCandidates": [
+        "critical_milestone_delay",
+        "completion_forecast_delay"
+      ],
+      "periodicTopics": [
+        "variance_forecast_recovery"
+      ],
+      "decisionRequestCandidates": [
+        "recovery_option_acceleration_owner_blocker"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-05",
+      "domain": "payment",
+      "immediateTriggerCandidates": [
+        "material_claim_variance",
+        "critical_payment_hold",
+        "contract_value_risk"
+      ],
+      "periodicTopics": [
+        "claim_recommendation_payment"
+      ],
+      "decisionRequestCandidates": [
+        "approval_adjustment_dispute"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-06",
+      "domain": "fire_environment",
+      "immediateTriggerCandidates": [
+        "integrated_test_failure",
+        "environmental_exceedance_or_incident",
+        "critical_statutory_delay"
+      ],
+      "periodicTopics": [
+        "compliance_status"
+      ],
+      "decisionRequestCandidates": [
+        "operation_handover_schedule_impact"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-07",
+      "domain": "handover_warranty",
+      "immediateTriggerCandidates": [
+        "handover_date_risk",
+        "major_commissioning_failure",
+        "operational_warranty_defect"
+      ],
+      "periodicTopics": [
+        "readiness_punch_warranty"
+      ],
+      "decisionRequestCandidates": [
+        "conditional_or_partial_handover"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-08",
+      "domain": "notice_claim_eot",
+      "immediateTriggerCandidates": [
+        "notice_deadline_risk",
+        "material_time_or_cost_exposure"
+      ],
+      "periodicTopics": [
+        "open_claim_eot"
+      ],
+      "decisionRequestCandidates": [
+        "entitlement_time_cost_decision"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-09",
+      "domain": "regulatory_permit",
+      "immediateTriggerCandidates": [
+        "permit_rejection",
+        "permit_expiry",
+        "critical_approval_delay"
+      ],
+      "periodicTopics": [
+        "permit_status"
+      ],
+      "decisionRequestCandidates": [
+        "design_or_schedule_response"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-10",
+      "domain": "site_instruction",
+      "immediateTriggerCandidates": [
+        "emergency_safety_or_quality_instruction",
+        "material_change_potential"
+      ],
+      "periodicTopics": [
+        "open_overdue_instruction"
+      ],
+      "decisionRequestCandidates": [
+        "cost_time_design_change"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-11",
+      "domain": "risk_audit",
+      "immediateTriggerCandidates": [
+        "critical_risk",
+        "critical_audit_finding"
+      ],
+      "periodicTopics": [
+        "top_risk_audit_status"
+      ],
+      "decisionRequestCandidates": [
+        "residual_risk_acceptance"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-12",
+      "domain": "insurance_guarantee",
+      "immediateTriggerCandidates": [
+        "expiry_risk",
+        "call_or_release_risk"
+      ],
+      "periodicTopics": [
+        "instrument_validity"
+      ],
+      "decisionRequestCandidates": [
+        "waiver_release_call"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-13",
+      "domain": "lesson_learned",
+      "immediateTriggerCandidates": [],
+      "periodicTopics": [
+        "recurring_root_causes_and_improvement"
+      ],
+      "decisionRequestCandidates": [
+        "standard_change"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-14",
+      "domain": "document_transmittal",
+      "immediateTriggerCandidates": [
+        "critical_delivery_failure"
+      ],
+      "periodicTopics": [
+        "overdue_response"
+      ],
+      "decisionRequestCandidates": [
+        "formal_response_required"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-15",
+      "domain": "personnel",
+      "immediateTriggerCandidates": [
+        "critical_qualification_expiry",
+        "mandatory_staff_gap"
+      ],
+      "periodicTopics": [
+        "deployment_status"
+      ],
+      "decisionRequestCandidates": [
+        "critical_replacement"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-16",
+      "domain": "drawing_revision",
+      "immediateTriggerCandidates": [
+        "obsolete_drawing_used_in_field"
+      ],
+      "periodicTopics": [
+        "revision_distribution_status"
+      ],
+      "decisionRequestCandidates": [
+        "material_revision_or_change"
+      ],
+      "closureSeparationRequired": true
+    },
+    {
+      "functionId": "F-17",
+      "domain": "daily_record",
+      "immediateTriggerCandidates": [
+        "material_fact_routes_to_source_domain"
+      ],
+      "periodicTopics": [
+        "daily_weekly_source_summary"
+      ],
+      "decisionRequestCandidates": [],
+      "closureSeparationRequired": true
+    }
+  ]
+}
