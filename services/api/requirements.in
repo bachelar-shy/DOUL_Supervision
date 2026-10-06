@@ -4,3 +4,4 @@ httpx
 
 redis
 boto3
+cryptography
