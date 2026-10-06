@@ -108,9 +108,10 @@ class CaseEndToEnd(unittest.TestCase):
         self.assertTrue(group['readiness']['reinspectionPassed'])
         self.assertTrue(group['readiness']['closeReady'])
         self.assertEqual(group['readiness']['closeBlockedReasons'],[])
+        self.assertEqual(group['readiness']['closureEvidenceCandidateIds'],[self.f.evidence])
 
         issue=self.e.get('Issue',issue['id'])
-        issue=self.f.command('issue',issue,'close')
+        issue=self.f.command('issue',issue,'close',{'closureEvidenceIds':[self.f.evidence]})
         graph,group=self.group(root['id'],issue['id'])
         self.assertEqual(issue['status'],'closed')
         self.assertTrue(group['readiness']['ownerReportDraftReady'])

@@ -276,11 +276,24 @@ def _issue_readiness(engine, issue):
         and latest_reinspection.get('status')=='completed'
         and latest_reinspection.get('nextWorkAllowed') is True
     )
+    action_evidence_ids=sorted({
+        evidence_id
+        for action in current_actions if action.get('status') in ['verified','closed']
+        for evidence_id in action.get('evidenceIds',[])
+    })
+    reinspection_evidence_ids=[]
+    if latest_reinspection:
+        reinspection_evidence_ids=list(latest_reinspection.get('evidenceIds',[]))
+        for result in latest_reinspection.get('checkResults',[]):
+            reinspection_evidence_ids.extend(result.get('evidenceIds',[]))
+        reinspection_evidence_ids=sorted(set(reinspection_evidence_ids))
+    closure_evidence_candidate_ids=sorted(set(action_evidence_ids)|set(reinspection_evidence_ids))
     close_blocked=[]
     if issue.get('status')!='reinspection':close_blocked.append('ISSUE_NOT_IN_REINSPECTION')
     if not correction_verified:close_blocked.append('CURRENT_ACTIONS_NOT_VERIFIED')
     if not reinspection_passed:close_blocked.append('REINSPECTION_NOT_PASSED')
-    if not issue.get('evidenceIds'):close_blocked.append('CLOSURE_EVIDENCE_REQUIRED')
+    if not action_evidence_ids:close_blocked.append('CLOSURE_ACTION_EVIDENCE_REQUIRED')
+    if not reinspection_evidence_ids:close_blocked.append('CLOSURE_REINSPECTION_EVIDENCE_REQUIRED')
     stage={
         'assigned':'corrective_action',
         'in_progress':'reinspection_request' if correction_submitted else 'corrective_action',
@@ -297,6 +310,7 @@ def _issue_readiness(engine, issue):
         correctionVerified=correction_verified,
         currentReinspectionId=latest_reinspection['id'] if latest_reinspection else None,
         reinspectionPassed=reinspection_passed,
+        closureEvidenceCandidateIds=closure_evidence_candidate_ids,
         closeReady=not close_blocked,
         closeBlockedReasons=close_blocked,
         ownerReportDraftReady=issue.get('status')=='closed',
