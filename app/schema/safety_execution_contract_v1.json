@@ -9,6 +9,10 @@
     "SafetyEquipmentInspection.data.equipmentAvailable": {
       "client_writable": false,
       "rule": "true only after passed equipment judgment and false on fail/restrict/reinspection_due/expiry"
+    },
+    "SafetyStopOrder.data.resumeGate": {
+      "client_writable": false,
+      "rule": "server snapshot derived from current corrective actions, passed resume inspections, affected permit readiness/validity, and owner-report status"
     }
   },
   "server_timestamps": [

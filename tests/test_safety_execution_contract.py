@@ -5,7 +5,7 @@ from pathlib import Path
 
 from app.reference.engine import uid
 from app.reference.validation import ContractError
-from tests.fixtures import AT, Fixture
+from tests.fixtures import AFTER, AT, BEFORE, Fixture
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,12 +31,13 @@ class SafetyExecutionContractTests(unittest.TestCase):
         self.assertTrue(values, (machine, command, from_state))
         return values[0]
 
-    def set_permit_state(self, fixture, permit, state='active', work_authorized=True, readiness=None):
+    def set_permit_state(self, fixture, permit, state='active', work_authorized=True, readiness=None, **data_changes):
         current = fixture.engine.get('WorkItem', permit['id'])
         current['status'] = state
         current['data']['workAuthorized'] = work_authorized
         if readiness is not None:
             current['data']['readiness'] = deepcopy(readiness)
+        current['data'].update(deepcopy(data_changes))
         key = ('WorkItem', permit['id'])
         fixture.engine._records[key] = deepcopy(current)
         fixture.engine._history[key + (current['version'],)] = deepcopy(current)
@@ -175,6 +176,151 @@ class SafetyExecutionContractTests(unittest.TestCase):
             fixture.create('safety_stop_order', {'title': '원자성 검증', 'data': data, 'evidenceIds': [fixture.evidence]}, actor='SUP', oid=stop_id)
         self.assertEqual(fixture.engine.get('WorkItem', first['id']), first_before)
         self.assertNotIn(('WorkItem', stop_id), fixture.engine._records)
+
+    def test_stop_lift_uses_current_domain_records_not_client_gate_booleans(self):
+        fixture = Fixture()
+        readiness = {
+            'methodStatementCurrent': True,
+            'riskAssessmentCurrent': True,
+            'personnelQualified': True,
+            'equipmentReady': True,
+            'controlMeasuresReady': True,
+            'emergencyReady': True,
+            'environmentalConditionsReady': True,
+            'noBlockingSafetyIssue': True,
+        }
+        permit = fixture.create('safety_permit', {'title': '재개 검증 Permit', 'data': {}}, actor='CON')
+        self.set_permit_state(
+            fixture,
+            permit,
+            readiness=readiness,
+            validFrom=BEFORE,
+            validTo=AFTER,
+        )
+        stop = fixture.create(
+            'safety_stop_order',
+            {
+                'title': '즉시 작업중지',
+                'data': {
+                    'stopOrderNo': 'STOP-RESUME-001',
+                    'stopScopeType': 'permit',
+                    'stopReason': '추락 위험',
+                    'observedAt': AT,
+                    'effectiveAt': AT,
+                    'affectedPermitRefs': [fixture.ref('WorkItem', permit['id'])],
+                },
+                'evidenceIds': [fixture.evidence],
+            },
+            actor='SUP',
+        )
+        action = fixture.complete_action(fixture.action())
+        stop = fixture.command(
+            'safety_stop_order',
+            stop,
+            'start_correction',
+            {'correctiveActionRefs': [fixture.ref('Action', action['id'])]},
+            actor='CON',
+            evidence=[],
+        )
+        stop = fixture.command('safety_stop_order', stop, 'request_resume', actor='CON', evidence=[fixture.evidence])
+        inspection = fixture.inspect(fixture.inspection())
+        stop = fixture.command(
+            'safety_stop_order',
+            stop,
+            'start_resume_verification',
+            {'resumeVerificationRefs': [fixture.ref('Inspection', inspection['id'])]},
+            actor='SUP',
+            evidence=[],
+        )
+        with self.assertRaisesRegex(ContractError, 'command-specific fields'):
+            fixture.command(
+                'safety_stop_order',
+                stop,
+                'lift_stop',
+                {'resumeGate': {key: True for key in self.schemas['SafetyResumeGate']['properties']}},
+                actor='SUP',
+                evidence=[fixture.evidence],
+            )
+        stop = fixture.command('safety_stop_order', stop, 'lift_stop', actor='SUP', evidence=[fixture.evidence])
+        self.assertEqual(stop['status'], 'lifted')
+        self.assertTrue(self._all_gate_values(stop['data']['resumeGate']))
+
+    def test_stop_resume_rejects_nonexistent_or_stale_action_and_verification_refs(self):
+        fixture = Fixture()
+        readiness = {
+            'methodStatementCurrent': True,
+            'riskAssessmentCurrent': True,
+            'personnelQualified': True,
+            'equipmentReady': True,
+            'controlMeasuresReady': True,
+            'emergencyReady': True,
+            'environmentalConditionsReady': True,
+            'noBlockingSafetyIssue': True,
+        }
+        permit = fixture.create('safety_permit', {'title': '참조 검증 Permit', 'data': {}}, actor='CON')
+        self.set_permit_state(fixture, permit, readiness=readiness, validFrom=BEFORE, validTo=AFTER)
+        stop = fixture.create(
+            'safety_stop_order',
+            {
+                'title': '참조 검증 Stop',
+                'data': {
+                    'stopOrderNo': 'STOP-REF-001',
+                    'stopScopeType': 'permit',
+                    'stopReason': '참조 검증',
+                    'observedAt': AT,
+                    'effectiveAt': AT,
+                    'affectedPermitRefs': [fixture.ref('WorkItem', permit['id'])],
+                },
+                'evidenceIds': [fixture.evidence],
+            },
+            actor='SUP',
+        )
+        with self.assertRaises(ContractError):
+            fixture.command(
+                'safety_stop_order',
+                stop,
+                'start_correction',
+                {'correctiveActionRefs': [{'objectType': 'Action', 'objectId': uid(), 'version': 1}]},
+                actor='CON',
+                evidence=[],
+            )
+        action = fixture.complete_action(fixture.action())
+        action_ref = fixture.ref('Action', action['id'])
+        action_current = fixture.engine.get('Action', action['id'])
+        action_current['version'] += 1
+        action_current['updatedAt'] = fixture.engine.at()
+        fixture.engine._save('Action', action_current)
+        with self.assertRaisesRegex(ContractError, action['id']):
+            fixture.command(
+                'safety_stop_order',
+                stop,
+                'start_correction',
+                {'correctiveActionRefs': [action_ref]},
+                actor='CON',
+                evidence=[],
+            )
+        action_ref = fixture.ref('Action', action['id'])
+        stop = fixture.command(
+            'safety_stop_order',
+            stop,
+            'start_correction',
+            {'correctiveActionRefs': [action_ref]},
+            actor='CON',
+            evidence=[],
+        )
+        stop = fixture.command('safety_stop_order', stop, 'request_resume', actor='CON', evidence=[fixture.evidence])
+        with self.assertRaises(ContractError):
+            fixture.command(
+                'safety_stop_order',
+                stop,
+                'start_resume_verification',
+                {'resumeVerificationRefs': [{'objectType': 'Inspection', 'objectId': uid(), 'version': 1}]},
+                actor='SUP',
+                evidence=[],
+            )
+
+    def _all_gate_values(self, gate):
+        return set(gate) == set(self.schemas['SafetyResumeGate']['properties']) and all(gate.values())
 
     def test_project_config_can_activate_stop_lift_only_after_product_policy_exists(self):
         binding = next(x for x in self.config['authorityBindings'] if x['authorityCode'] == 'safety.stop_lift')

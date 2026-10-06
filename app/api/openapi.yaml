@@ -17235,7 +17235,8 @@
             }
           },
           "resumeGate": {
-            "$ref": "#/components/schemas/SafetyResumeGate"
+            "$ref": "#/components/schemas/SafetyResumeGate",
+            "readOnly": true
           },
           "liftedAt": {
             "type": "string",
@@ -21652,21 +21653,8 @@
             "properties": {
               "payload": {
                 "type": "object",
-                "properties": {
-                  "resumeGate": {
-                    "$ref": "#/components/schemas/SafetyResumeGate"
-                  },
-                  "resumeVerificationRefs": {
-                    "type": "array",
-                    "items": {
-                      "$ref": "#/components/schemas/DomainRef"
-                    }
-                  }
-                },
-                "additionalProperties": false,
-                "required": [
-                  "resumeGate"
-                ]
+                "properties": {},
+                "additionalProperties": false
               }
             }
           }
@@ -21683,9 +21671,6 @@
               "payload": {
                 "type": "object",
                 "properties": {
-                  "resumeGate": {
-                    "$ref": "#/components/schemas/SafetyResumeGate"
-                  },
                   "resumeVerificationRefs": {
                     "type": "array",
                     "items": {
@@ -21723,9 +21708,6 @@
                   },
                   "reason": {
                     "type": "string"
-                  },
-                  "resumeGate": {
-                    "$ref": "#/components/schemas/SafetyResumeGate"
                   }
                 },
                 "additionalProperties": false,
@@ -21753,15 +21735,9 @@
                     "items": {
                       "$ref": "#/components/schemas/DomainRef"
                     }
-                  },
-                  "resumeGate": {
-                    "$ref": "#/components/schemas/SafetyResumeGate"
                   }
                 },
-                "additionalProperties": false,
-                "required": [
-                  "resumeGate"
-                ]
+                "additionalProperties": false
               }
             }
           }

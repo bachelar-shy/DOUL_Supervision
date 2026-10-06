@@ -4286,13 +4286,8 @@
             "stop_resume_request_ready"
           ],
           "required_evidence": true,
-          "payload_fields": [
-            "resumeGate",
-            "resumeVerificationRefs"
-          ],
-          "required_payload_fields": [
-            "resumeGate"
-          ],
+          "payload_fields": [],
+          "required_payload_fields": [],
           "failure_reasons": [
             "NOT_AUTHORIZED",
             "VERSION_CONFLICT",
@@ -4320,8 +4315,7 @@
           ],
           "required_evidence": false,
           "payload_fields": [
-            "resumeVerificationRefs",
-            "resumeGate"
+            "resumeVerificationRefs"
           ],
           "required_payload_fields": [
             "resumeVerificationRefs"
@@ -4354,7 +4348,6 @@
           "required_evidence": false,
           "payload_fields": [
             "reason",
-            "resumeGate",
             "blockedReasons"
           ],
           "required_payload_fields": [
@@ -4387,12 +4380,9 @@
           ],
           "required_evidence": true,
           "payload_fields": [
-            "resumeGate",
             "ownerReportRefs"
           ],
-          "required_payload_fields": [
-            "resumeGate"
-          ],
+          "required_payload_fields": [],
           "failure_reasons": [
             "NOT_AUTHORIZED",
             "VERSION_CONFLICT",

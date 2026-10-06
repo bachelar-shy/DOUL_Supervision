@@ -3813,7 +3813,8 @@
             }
           },
           "resumeGate": {
-            "$ref": "#/components/schemas/SafetyResumeGate"
+            "$ref": "#/components/schemas/SafetyResumeGate",
+            "readOnly": true
           },
           "liftedAt": {
             "type": "string",

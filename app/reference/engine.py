@@ -259,7 +259,7 @@ class Engine:
                 require(field not in record['data'], 'IMMUTABLE_FIELD', field+' is server-derived')
             record['data']['workAuthorized']=False
         if machine=='safety_stop_order':
-            for field in ['acknowledgedAt','resumeRequestAt','liftedAt','closedAt']:
+            for field in ['acknowledgedAt','resumeRequestAt','resumeGate','liftedAt','closedAt']:
                 require(field not in record['data'], 'IMMUTABLE_FIELD', field+' is server-derived')
             require(bool(record.get('evidenceIds')), 'EVIDENCE_REQUIRED', 'A formal stop order requires preserved hazard evidence')
         if machine=='safety_equipment_inspection':
@@ -493,6 +493,8 @@ class Engine:
             data=record['data']
             if command=='acknowledge_stop':data['acknowledgedAt']=self.at()
             if command=='request_resume':data['resumeRequestAt']=self.at()
+            if command in ['request_resume','start_resume_verification','return_resume','lift_stop']:
+                data['resumeGate']=self._derive_stop_resume_gate(record)
             if command=='lift_stop':data['liftedAt']=self.at()
             if command=='close_stop':data['closedAt']=self.at()
         if machine=='safety_equipment_inspection':
@@ -558,10 +560,89 @@ class Engine:
     def _safety_suspend_reason_present(self,r):
         require(bool(r.get('suspensionReason','').strip()),'SAFETY_SUSPEND_REASON_PRESENT','Suspension reason is required')
 
+    def _stop_action_records(self,r):
+        records=[]
+        seen=set()
+        for reference in r.get('correctiveActionRefs',[]):
+            action=self._current_reference(reference,r['projectId'],object_type='Action')
+            require(action['id'] not in seen,'REFERENCE_DUPLICATE',action['id'])
+            seen.add(action['id'])
+            records.append(action)
+        return records
+
+    def _stop_verification_records(self,r):
+        records=[]
+        seen=set()
+        for reference in r.get('resumeVerificationRefs',[]):
+            inspection=self._current_reference(reference,r['projectId'],object_type='Inspection')
+            require(inspection['id'] not in seen,'REFERENCE_DUPLICATE',inspection['id'])
+            seen.add(inspection['id'])
+            records.append(inspection)
+        return records
+
+    def _affected_stop_permits(self,r):
+        records=[]
+        seen=set()
+        for reference in r.get('affectedPermitRefs',[]):
+            require(reference.get('objectType')=='WorkItem','SAFETY_PERMIT_REQUIRED','Affected permit must be a WorkItem')
+            permit=self.get('WorkItem',reference['objectId'])
+            require(permit['projectId']==r['projectId'] and permit.get('subtype')=='SafetyPermit','SAFETY_PERMIT_REQUIRED','Affected permit is invalid')
+            require(permit['id'] not in seen,'REFERENCE_DUPLICATE',permit['id'])
+            seen.add(permit['id'])
+            records.append(permit)
+        return records
+
+    def _stop_owner_reports_satisfied(self,r):
+        allowed={'issued','acknowledged','followup','verified','closed'}
+        for reference in r.get('ownerReportRefs',[]):
+            report=self._current_reference(reference,r['projectId'],object_type='InformationItem',subtype='Report')
+            if report['status'] not in allowed:
+                return False
+        return True
+
+    def _derive_stop_resume_gate(self,r):
+        r=self._fields(r)
+        actions=self._stop_action_records(r)
+        verifications=self._stop_verification_records(r)
+        permits=self._affected_stop_permits(r)
+        now=instant(self.at())
+        actions_complete=bool(actions) and all(action['status'] in ['verified','closed'] for action in actions)
+        reinspection_passed=bool(verifications) and all(
+            inspection.get('resultStatus')=='pass' and inspection['status'] in ['passed','completed']
+            for inspection in verifications
+        )
+        permit_valid=bool(permits)
+        if permit_valid:
+            for permit in permits:
+                data=permit['data']
+                permit_valid = permit_valid and permit['status']=='suspended'
+                permit_valid = permit_valid and bool(data.get('validFrom')) and bool(data.get('validTo'))
+                if permit_valid:
+                    permit_valid = instant(data['validFrom'])<=now<instant(data['validTo'])
+        readiness_fields=['methodStatementCurrent','riskAssessmentCurrent','equipmentReady','personnelQualified','controlMeasuresReady','environmentalConditionsReady']
+        readiness={field:bool(permits) and all(permit['data'].get('readiness',{}).get(field) is True for permit in permits) for field in readiness_fields}
+        return {
+            'causeIdentified':bool(actions) and all(bool(action.get('rootCause','').strip()) for action in actions),
+            'correctiveActionComplete':actions_complete,
+            'correctiveEvidencePresent':bool(r.get('resumeRequestAt')) and bool(r.get('evidenceIds')),
+            'issueActionsVerified':actions_complete,
+            'reinspectionPassed':reinspection_passed,
+            'permitValid':permit_valid,
+            'methodStatementCurrent':readiness['methodStatementCurrent'],
+            'riskAssessmentCurrent':readiness['riskAssessmentCurrent'],
+            'equipmentReady':readiness['equipmentReady'],
+            'personnelQualified':readiness['personnelQualified'],
+            'controlMeasuresReady':readiness['controlMeasuresReady'],
+            'environmentalConditionsReady':readiness['environmentalConditionsReady'],
+            'reportingObligationsSatisfied':self._stop_owner_reports_satisfied(r),
+        }
+
     def _stop_resume_request_ready(self,r):
         require(bool(r.get('evidenceIds')),'STOP_RESUME_REQUEST_READY','Resume request needs corrective evidence')
         if r.get('subtype')=='SafetyStopOrder':
-            require(bool(r.get('correctiveActionRefs')),'STOP_RESUME_REQUEST_READY','Stop resume requires corrective action references')
+            actions=self._stop_action_records(r)
+            require(bool(actions),'STOP_RESUME_REQUEST_READY','Stop resume requires corrective action references')
+            require(all(action['status'] in ['verified','closed'] for action in actions),'STOP_RESUME_REQUEST_READY','Corrective actions must be verified before resume request')
 
     def _resume_gate_complete(self,gate):
         keys=['causeIdentified','correctiveActionComplete','correctiveEvidencePresent','issueActionsVerified','reinspectionPassed','permitValid','methodStatementCurrent','riskAssessmentCurrent','equipmentReady','personnelQualified','controlMeasuresReady','environmentalConditionsReady','reportingObligationsSatisfied']
@@ -569,12 +650,8 @@ class Engine:
 
     def _safety_resume_gate_satisfied(self,r):
         if r.get('subtype')=='SafetyStopOrder':
-            require(self._resume_gate_complete(r.get('resumeGate')),'SAFETY_RESUME_GATE_SATISFIED','Stop resume gate is incomplete')
-            for reference in r.get('affectedPermitRefs',[]):
-                permit=self.get('WorkItem',reference['objectId'])
-                require(permit['projectId']==r['projectId'] and permit.get('subtype')=='SafetyPermit','SAFETY_RESUME_GATE_SATISFIED','Affected permit is invalid')
-                data=permit['data']
-                require(permit['status'] not in ['expired','cancelled','superseded','rejected','withdrawn'] and instant(self.at())<instant(data['validTo']),'SAFETY_RESUME_GATE_SATISFIED','Affected permit is not valid for resume')
+            derived=self._derive_stop_resume_gate(r)
+            require(self._resume_gate_complete(derived),'SAFETY_RESUME_GATE_SATISFIED','Stop resume gate is incomplete')
             return
         self._safety_work_authorized(r)
 
@@ -586,10 +663,14 @@ class Engine:
         require(bool(r.get('validTo')) and instant(self.at())>=instant(r['validTo']),'PERMIT_EXPIRED','Permit has not expired')
 
     def _stop_correction_started(self,r):
-        require(bool(r.get('correctiveActionRefs')),'STOP_CORRECTION_STARTED','Stop correction requires corrective action references')
+        actions=self._stop_action_records(r)
+        require(bool(actions),'STOP_CORRECTION_STARTED','Stop correction requires corrective action references')
+        require(all(action['status']!='cancelled' for action in actions),'STOP_CORRECTION_STARTED','Cancelled corrective actions cannot start correction')
 
     def _stop_resume_verification_ready(self,r):
-        require(bool(r.get('resumeVerificationRefs')),'STOP_RESUME_VERIFICATION_READY','Resume verification evidence references are required')
+        inspections=self._stop_verification_records(r)
+        require(bool(inspections),'STOP_RESUME_VERIFICATION_READY','Resume verification evidence references are required')
+        require(all(inspection.get('resultStatus')=='pass' and inspection['status'] in ['passed','completed'] for inspection in inspections),'STOP_RESUME_VERIFICATION_READY','Resume verification must reference passed inspections')
 
     def _stop_close_ready(self,r):
         require(bool(r.get('liftedAt')) and not r.get('blockedReasons'),'STOP_CLOSE_READY','Lifted stop with no unresolved blocker is required before close')
