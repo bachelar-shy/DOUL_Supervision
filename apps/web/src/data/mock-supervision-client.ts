@@ -83,6 +83,22 @@ export class MockSupervisionClient implements SupervisionClient {
     return previewOnly();
   }
 
+  async evidenceContent(evidenceId: string): Promise<Blob> {
+    if (!evidenceId.startsWith("EVD-UI-")) {
+      throw new Error("UI Mock Preview에서 찾을 수 없는 증빙입니다.");
+    }
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+        <rect width="1200" height="800" fill="#f3f5f7"/>
+        <rect x="120" y="120" width="960" height="560" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+        <path d="M210 560 L410 350 L560 490 L720 300 L990 560" fill="none" stroke="#64748b" stroke-width="14"/>
+        <circle cx="845" cy="260" r="56" fill="#cbd5e1"/>
+        <text x="160" y="185" font-family="sans-serif" font-size="34" fill="#0f172a">DOUL Evidence UI Preview</text>
+        <text x="160" y="635" font-family="monospace" font-size="24" fill="#64748b">${evidenceId}</text>
+      </svg>`;
+    return new Blob([svg], { type: "image/svg+xml" });
+  }
+
   path(suffix: string) {
     return `/projects/UI-MOCK${suffix}`;
   }

@@ -55,7 +55,13 @@ test("DOUL component catalog is mounted on representative surfaces", async ({ pa
   await expect(page.locator('[data-ui-component="audit-timeline"]')).toBeVisible();
 
   await page.goto("/#/capture");
-  await expect(page.locator('[data-ui-component="evidence-viewer"]')).toBeVisible();
+  const evidenceViewer = page.locator('[data-ui-component="evidence-viewer"]');
+  await expect(evidenceViewer).toBeVisible();
+  await evidenceViewer.getByRole("button").first().click();
+  await expect(
+    page.locator('[data-ui-component="evidence-detail-sheet"]'),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "닫기", exact: true }).click();
 
   await page.goto("/#/inspections");
   await expect(page.locator('[data-ui-component="detail-pane"]')).toBeVisible();
@@ -215,6 +221,23 @@ test("mobile interactive controls keep 44px touch targets", async ({ page }) => 
   await dialog
     .getByRole("button", { name: "대화상자 닫기", exact: true })
     .click();
+
+  await page.goto("/#/capture");
+  const mobileEvidence = page
+    .locator('[data-ui-component="evidence-viewer"]')
+    .getByRole("button")
+    .first();
+  await expectTouchTarget(mobileEvidence);
+  await mobileEvidence.click();
+  const evidenceSheet = page.locator('[data-ui-component="evidence-detail-sheet"]');
+  await expect(evidenceSheet).toBeVisible();
+  await expectTouchTarget(
+    page.getByRole("button", { name: "닫기", exact: true }),
+  );
+  await expectTouchTarget(
+    evidenceSheet.getByRole("tab", { name: "기본정보", exact: true }),
+  );
+  await page.getByRole("button", { name: "닫기", exact: true }).click();
 
   await expect
     .poll(() =>
@@ -520,4 +543,21 @@ test("offline evidence stays local until explicit upload", async ({
   ).toBeEnabled();
   await page.getByRole("button", { name: "서버 전송", exact: true }).click();
   await expect(page.locator(".toast")).toContainText("서버 해시 확인");
+
+  const uploadedEvidence = page.getByRole("button", {
+    name: "offline-test.png 상세보기",
+    exact: true,
+  }).last();
+  await expect(uploadedEvidence).toBeVisible();
+  await uploadedEvidence.click();
+
+  const sheet = page.locator('[data-ui-component="evidence-detail-sheet"]');
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByText("원본 증빙", { exact: true }).first()).toBeVisible();
+  await expect(sheet.locator('img[alt="offline-test.png"]')).toBeVisible();
+  await sheet.getByRole("tab", { name: "기술정보", exact: true }).click();
+  await expect(sheet).toContainText(
+    "d126d616641d42ac8b0a07ec302c9fa1ec049f86200931a0a60c8f3080284b77",
+  );
+  await page.getByRole("button", { name: "닫기", exact: true }).click();
 });

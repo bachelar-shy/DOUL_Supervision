@@ -54,6 +54,7 @@ export interface SupervisionClient {
     language?: string,
   ): Promise<RecordDTO>;
   documentHtml(documentId: string): Promise<string>;
+  evidenceContent(evidenceId: string): Promise<Blob>;
   path(suffix: string): string;
   request<T>(path: string, init?: RequestInit): Promise<T>;
 }
@@ -61,8 +62,10 @@ export interface SupervisionClient {
 class HttpSupervisionClient implements SupervisionClient {
   readonly kind = "http" as const;
   private readonly client: ApiClient;
+  private readonly baseUrl: string;
 
   constructor(baseUrl = "/api") {
+    this.baseUrl = baseUrl.replace(/\/$/, "");
     this.client = new ApiClient(baseUrl);
   }
 
@@ -112,6 +115,24 @@ class HttpSupervisionClient implements SupervisionClient {
 
   documentHtml(documentId: string) {
     return this.client.documentHtml(documentId);
+  }
+
+  async evidenceContent(evidenceId: string) {
+    const session = this.client.session;
+    if (!session) throw new Error("로그인이 필요합니다.");
+    const response = await fetch(
+      this.baseUrl + this.client.path(`/evidence/${evidenceId}/content`),
+      {
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+          "X-RoleAssignment-Id": session.actor.roleAssignmentId,
+        },
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`증빙 원본을 불러오지 못했습니다. (${response.status})`);
+    }
+    return response.blob();
   }
 
   path(suffix: string) {

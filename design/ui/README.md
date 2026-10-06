@@ -264,4 +264,6 @@ Stitch 결과는 다음 순서로 코드화한다.
 - 29개 관리대장을 `RegisterTemplate + FilterBar + RegisterTable + DetailDrawer`로 연결 완료
 - 역할별 Mobile Navigation 공통화 완료
 - 발주처 보고·결정 전용 Owner Governance 화면과 `OwnerDecisionPanel` 적용
-- 남은 작업: Evidence 상세 Preview, 관리대장 역할별 진입 UX, 시각 회귀 기준 확대
+- Evidence 원본/파생 상세 Preview와 `EvidenceDetailSheet` 적용
+- 증빙 원본·출처·파생범위·해시를 분리 표시하고 판정과 증빙을 구분
+- 남은 작업: 관리대장 역할별 진입 UX, 시각 회귀 기준 확대

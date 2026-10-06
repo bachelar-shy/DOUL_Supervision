@@ -1458,3 +1458,25 @@ strong {
     scroll-behavior: auto !important;
   }
 }
+
+.evidence-row-button {
+  appearance: none;
+  min-height: 44px;
+  border: 0;
+  border-bottom: 1px solid #edf0f4;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.evidence-row-button:hover {
+  background: #f8fafc;
+}
+.evidence-row-button.selected {
+  background: #f3f6fb;
+  box-shadow: inset 2px 0 0 var(--doul-color-primary, #193d8f);
+}
+.evidence-row-button:focus-visible {
+  outline: 2px solid var(--doul-color-primary, #193d8f);
+  outline-offset: 2px;
+}

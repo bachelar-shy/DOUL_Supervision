@@ -18,8 +18,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { Search } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 
 export interface NavigationItemSpec {
   id: string;
@@ -302,6 +308,9 @@ export interface EvidenceViewerItem {
   title: ReactNode;
   meta?: ReactNode;
   icon?: ReactNode;
+  ariaLabel?: string;
+  selected?: boolean;
+  onSelect?: () => void;
 }
 
 export function EvidenceViewer({
@@ -316,20 +325,109 @@ export function EvidenceViewer({
   return (
     <div data-ui-component="evidence-viewer">
       {items.length ? (
-        items.map((item) => (
-          <div className="evidence-row" key={item.id}>
-            {item.icon}
-            <div>
-              <strong>{item.title}</strong>
-              {item.meta ? <small>{item.meta}</small> : null}
+        items.map((item) => {
+          const content = (
+            <>
+              {item.icon}
+              <span className="min-w-0 flex-1">
+                <strong className="block truncate">{item.title}</strong>
+                {item.meta ? <small>{item.meta}</small> : null}
+              </span>
+              {item.onSelect ? (
+                <ChevronRight aria-hidden="true" className="ml-auto size-4 shrink-0" />
+              ) : null}
+            </>
+          );
+          return item.onSelect ? (
+            <button
+              type="button"
+              className={cn(
+                "evidence-row evidence-row-button w-full items-start text-left",
+                item.selected && "selected",
+              )}
+              aria-label={item.ariaLabel}
+              aria-pressed={item.selected || undefined}
+              key={item.id}
+              onClick={item.onSelect}
+            >
+              {content}
+            </button>
+          ) : (
+            <div className="evidence-row" key={item.id}>
+              {content}
             </div>
-          </div>
-        ))
+          );
+        })
       ) : (
         <div className="empty compact">{emptyMessage}</div>
       )}
       {footer}
     </div>
+  );
+}
+
+export function EvidenceDetailSheet({
+  open,
+  onOpenChange,
+  title,
+  description,
+  preview,
+  summary,
+  provenance,
+  technical,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: ReactNode;
+  description?: ReactNode;
+  preview: ReactNode;
+  summary: ReactNode;
+  provenance: ReactNode;
+  technical: ReactNode;
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="gap-0 data-[side=right]:w-[96vw] data-[side=right]:max-w-[860px] data-[side=right]:sm:max-w-[860px]"
+        data-ui-component="evidence-detail-sheet"
+      >
+        <SheetHeader className="border-b border-border pr-14">
+          <SheetTitle>{title}</SheetTitle>
+          {description ? (
+            <SheetDescription>{description}</SheetDescription>
+          ) : null}
+        </SheetHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="border-b border-border bg-slate-50 p-4">{preview}</div>
+          <Tabs defaultValue="summary" className="gap-0">
+            <TabsList
+              variant="line"
+              className="sticky top-0 z-10 w-full justify-start gap-5 border-b border-border bg-background px-4 py-2"
+            >
+              <TabsTrigger value="summary" className="min-h-11 flex-none px-1.5 text-xs">
+                기본정보
+              </TabsTrigger>
+              <TabsTrigger value="provenance" className="min-h-11 flex-none px-1.5 text-xs">
+                출처·연결
+              </TabsTrigger>
+              <TabsTrigger value="technical" className="min-h-11 flex-none px-1.5 text-xs">
+                기술정보
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="summary" className="p-4">
+              {summary}
+            </TabsContent>
+            <TabsContent value="provenance" className="p-4">
+              {provenance}
+            </TabsContent>
+            <TabsContent value="technical" className="p-4">
+              {technical}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
