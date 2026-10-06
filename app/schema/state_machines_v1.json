@@ -1,5 +1,5 @@
 {
-  "version": "2.2",
+  "version": "2.3",
   "schema_version": "command-transition/1",
   "compatibility": "Filename retained; v1 tuple transitions are superseded.",
   "common_guards": [
@@ -2958,6 +2958,2191 @@
           ],
           "required_evidence": false,
           "payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        }
+      ]
+    },
+    "safety_permit": {
+      "object_type": "WorkItem",
+      "subtype": "SafetyPermit",
+      "initial": "draft",
+      "states": [
+        "draft",
+        "submitted",
+        "completeness_review",
+        "safety_review",
+        "prestart_verification",
+        "authorization_pending",
+        "authorized",
+        "active",
+        "suspended",
+        "resume_review",
+        "completed",
+        "expired",
+        "rejected",
+        "withdrawn",
+        "cancelled",
+        "superseded"
+      ],
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "submitted",
+          "command": "submit_permit",
+          "authority": "safety.permit.submit",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "permit_submission_complete"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "permitNo",
+            "workType",
+            "riskLevel",
+            "responsiblePartyId",
+            "safetyResponsiblePartyId",
+            "methodStatementRef",
+            "riskAssessmentRef",
+            "personnelQualificationRefs",
+            "equipmentRefs",
+            "emergencyPlanRef",
+            "validFrom",
+            "validTo",
+            "readiness",
+            "blockedReasons"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "PERMIT_SUBMISSION_COMPLETE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "completeness_review",
+          "command": "receive_permit",
+          "authority": "safety.permit.receive",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "completeness_review",
+          "to": "draft",
+          "command": "return_incomplete",
+          "authority": "safety.permit.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "completeness_review",
+          "to": "safety_review",
+          "command": "accept_for_safety_review",
+          "authority": "safety.permit.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "permit_submission_complete"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "PERMIT_SUBMISSION_COMPLETE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "safety_review",
+          "to": "prestart_verification",
+          "command": "request_prestart_verification",
+          "authority": "safety.permit.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "permit_safety_review_complete"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "safetyReviewComplete",
+            "readiness",
+            "reviewNotes"
+          ],
+          "required_payload_fields": [
+            "safetyReviewComplete",
+            "readiness"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "PERMIT_SAFETY_REVIEW_COMPLETE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "prestart_verification",
+          "to": "authorization_pending",
+          "command": "request_authorization",
+          "authority": "safety.permit.prestart_verify",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "permit_prestart_verified"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "prestartVerified",
+            "prestartVerificationRefs",
+            "readiness"
+          ],
+          "required_payload_fields": [
+            "prestartVerified",
+            "prestartVerificationRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "PERMIT_PRESTART_VERIFIED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "authorization_pending",
+          "to": "authorized",
+          "command": "authorize",
+          "authority": "safety.permit.authorize",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "permit_authorization_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "validFrom",
+            "validTo",
+            "blockedReasons"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "PERMIT_AUTHORIZATION_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "authorization_pending",
+          "to": "rejected",
+          "command": "reject_permit",
+          "authority": "safety.permit.authorize",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "authorized",
+          "to": "active",
+          "command": "activate",
+          "authority": "safety.work.activate",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "safety_work_authorized"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "readiness",
+            "blockedReasons"
+          ],
+          "required_payload_fields": [
+            "readiness"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "SAFETY_WORK_AUTHORIZED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "authorized",
+          "to": "suspended",
+          "command": "suspend",
+          "authority": "safety.work.suspend",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "safety_suspend_reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "suspensionReason",
+            "stopOrderRefs",
+            "blockedReasons"
+          ],
+          "required_payload_fields": [
+            "suspensionReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "SAFETY_SUSPEND_REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "active",
+          "to": "suspended",
+          "command": "suspend",
+          "authority": "safety.work.suspend",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "safety_suspend_reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "suspensionReason",
+            "stopOrderRefs",
+            "blockedReasons"
+          ],
+          "required_payload_fields": [
+            "suspensionReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "SAFETY_SUSPEND_REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "active",
+          "to": "suspended",
+          "command": "self_suspend",
+          "authority": "safety.work.self_stop",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "safety_suspend_reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "suspensionReason",
+            "blockedReasons"
+          ],
+          "required_payload_fields": [
+            "suspensionReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "SAFETY_SUSPEND_REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "suspended",
+          "to": "resume_review",
+          "command": "request_resume",
+          "authority": "safety.resume.request",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "stop_resume_request_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "readiness",
+            "blockedReasons"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "STOP_RESUME_REQUEST_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "resume_review",
+          "to": "active",
+          "command": "approve_resume",
+          "authority": "safety.resume.approve",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "safety_resume_gate_satisfied"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "resumeApprovalRef",
+            "readiness",
+            "blockedReasons"
+          ],
+          "required_payload_fields": [
+            "readiness"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "SAFETY_RESUME_GATE_SATISFIED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "resume_review",
+          "to": "suspended",
+          "command": "return_resume",
+          "authority": "safety.permit.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason",
+            "blockedReasons"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "active",
+          "to": "completed",
+          "command": "complete_work",
+          "authority": "safety.permit.complete",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "safety_completion_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "completionConfirmed"
+          ],
+          "required_payload_fields": [
+            "completionConfirmed"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "SAFETY_COMPLETION_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "authorized",
+          "to": "expired",
+          "command": "expire",
+          "authority": "safety.permit.expire",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "permit_expired"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "blockedReasons"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "PERMIT_EXPIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "active",
+          "to": "expired",
+          "command": "expire",
+          "authority": "safety.permit.expire",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "permit_expired"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "blockedReasons"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "PERMIT_EXPIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "suspended",
+          "to": "expired",
+          "command": "expire",
+          "authority": "safety.permit.expire",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "permit_expired"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "blockedReasons"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "PERMIT_EXPIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "resume_review",
+          "to": "expired",
+          "command": "expire",
+          "authority": "safety.permit.expire",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "permit_expired"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "blockedReasons"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "PERMIT_EXPIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "draft",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "safety.permit.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "safety.permit.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "completeness_review",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "safety.permit.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "safety_review",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "safety.permit.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "prestart_verification",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "safety.permit.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "authorization_pending",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "safety.permit.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "authorized",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "safety.permit.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "active",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "safety.permit.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "suspended",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "safety.permit.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "resume_review",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "safety.permit.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "draft",
+          "to": "withdrawn",
+          "command": "withdraw",
+          "authority": "safety.permit.withdraw",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "withdrawn",
+          "command": "withdraw",
+          "authority": "safety.permit.withdraw",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "authorized",
+          "to": "superseded",
+          "command": "supersede",
+          "authority": "safety.permit.supersede",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "replacement_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "required_payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPLACEMENT_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "active",
+          "to": "superseded",
+          "command": "supersede",
+          "authority": "safety.permit.supersede",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "replacement_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "required_payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPLACEMENT_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "suspended",
+          "to": "superseded",
+          "command": "supersede",
+          "authority": "safety.permit.supersede",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "replacement_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "required_payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPLACEMENT_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "resume_review",
+          "to": "superseded",
+          "command": "supersede",
+          "authority": "safety.permit.supersede",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "replacement_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "required_payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPLACEMENT_PRESENT"
+          ],
+          "audit_event": true
+        }
+      ]
+    },
+    "safety_stop_order": {
+      "object_type": "WorkItem",
+      "subtype": "SafetyStopOrder",
+      "initial": "issued",
+      "states": [
+        "issued",
+        "acknowledged",
+        "corrective_action",
+        "resume_requested",
+        "verification",
+        "lifted",
+        "closed",
+        "superseded",
+        "cancelled"
+      ],
+      "transitions": [
+        {
+          "from": "issued",
+          "to": "acknowledged",
+          "command": "acknowledge_stop",
+          "authority": "safety.stop.acknowledge",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "issued",
+          "to": "corrective_action",
+          "command": "start_correction",
+          "authority": "safety.stop.correct",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "stop_correction_started"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "correctiveActionRefs"
+          ],
+          "required_payload_fields": [
+            "correctiveActionRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "STOP_CORRECTION_STARTED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "acknowledged",
+          "to": "corrective_action",
+          "command": "start_correction",
+          "authority": "safety.stop.correct",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "stop_correction_started"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "correctiveActionRefs"
+          ],
+          "required_payload_fields": [
+            "correctiveActionRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "STOP_CORRECTION_STARTED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "corrective_action",
+          "to": "resume_requested",
+          "command": "request_resume",
+          "authority": "safety.resume.request",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "stop_resume_request_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "STOP_RESUME_REQUEST_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "resume_requested",
+          "to": "verification",
+          "command": "start_resume_verification",
+          "authority": "safety.stop.verify_resume",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "stop_resume_verification_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "resumeVerificationRefs"
+          ],
+          "required_payload_fields": [
+            "resumeVerificationRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "STOP_RESUME_VERIFICATION_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "verification",
+          "to": "corrective_action",
+          "command": "return_resume",
+          "authority": "safety.stop.verify_resume",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason",
+            "blockedReasons"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "verification",
+          "to": "lifted",
+          "command": "lift_stop",
+          "authority": "safety.stop_lift",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "safety_resume_gate_satisfied"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "ownerReportRefs"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "SAFETY_RESUME_GATE_SATISFIED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "lifted",
+          "to": "closed",
+          "command": "close_stop",
+          "authority": "safety.stop.close",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "stop_close_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "STOP_CLOSE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "issued",
+          "to": "cancelled",
+          "command": "cancel_stop",
+          "authority": "safety.stop.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "acknowledged",
+          "to": "cancelled",
+          "command": "cancel_stop",
+          "authority": "safety.stop.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "issued",
+          "to": "superseded",
+          "command": "supersede_stop",
+          "authority": "safety.stop.supersede",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "replacement_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "required_payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPLACEMENT_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "acknowledged",
+          "to": "superseded",
+          "command": "supersede_stop",
+          "authority": "safety.stop.supersede",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "replacement_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "required_payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPLACEMENT_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "corrective_action",
+          "to": "superseded",
+          "command": "supersede_stop",
+          "authority": "safety.stop.supersede",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "replacement_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "required_payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPLACEMENT_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "resume_requested",
+          "to": "superseded",
+          "command": "supersede_stop",
+          "authority": "safety.stop.supersede",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "replacement_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "required_payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPLACEMENT_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "verification",
+          "to": "superseded",
+          "command": "supersede_stop",
+          "authority": "safety.stop.supersede",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "replacement_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "required_payload_fields": [
+            "replacementRef",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REPLACEMENT_PRESENT"
+          ],
+          "audit_event": true
+        }
+      ]
+    },
+    "safety_equipment_inspection": {
+      "object_type": "WorkItem",
+      "subtype": "SafetyEquipmentInspection",
+      "initial": "due",
+      "states": [
+        "due",
+        "requested",
+        "scheduled",
+        "inspecting",
+        "result_pending",
+        "passed",
+        "failed",
+        "restricted",
+        "reinspection_due",
+        "expired",
+        "cancelled"
+      ],
+      "transitions": [
+        {
+          "from": "due",
+          "to": "requested",
+          "command": "request_inspection",
+          "authority": "safety.equipment.request",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "equipment_inspection_request_complete"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "EQUIPMENT_INSPECTION_REQUEST_COMPLETE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "requested",
+          "to": "scheduled",
+          "command": "schedule_inspection",
+          "authority": "safety.equipment.schedule",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "equipment_schedule_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "scheduledAt"
+          ],
+          "required_payload_fields": [
+            "scheduledAt"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "EQUIPMENT_SCHEDULE_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "scheduled",
+          "to": "inspecting",
+          "command": "start_inspection",
+          "authority": "safety.equipment.inspect",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "inspectedAt"
+          ],
+          "required_payload_fields": [
+            "inspectedAt"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "inspecting",
+          "to": "result_pending",
+          "command": "submit_result",
+          "authority": "safety.equipment.inspect",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "equipment_result_present"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "resultSummary",
+            "certificateRefs",
+            "calibrationRefs",
+            "validFrom",
+            "validTo",
+            "preUseCheckComplete",
+            "restrictionConditions",
+            "failureReason",
+            "blockedReasons"
+          ],
+          "required_payload_fields": [
+            "resultSummary"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "EQUIPMENT_RESULT_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "result_pending",
+          "to": "passed",
+          "command": "pass",
+          "authority": "safety.equipment.judge",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "equipment_pass_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "blockedReasons"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "EQUIPMENT_PASS_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "result_pending",
+          "to": "failed",
+          "command": "fail",
+          "authority": "safety.equipment.judge",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "equipment_fail_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "failureReason",
+            "blockedReasons"
+          ],
+          "required_payload_fields": [
+            "failureReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "EQUIPMENT_FAIL_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "result_pending",
+          "to": "restricted",
+          "command": "restrict",
+          "authority": "safety.equipment.judge",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "equipment_restricted_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "restrictionConditions",
+            "blockedReasons"
+          ],
+          "required_payload_fields": [
+            "restrictionConditions"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "EQUIPMENT_RESTRICTED_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "failed",
+          "to": "reinspection_due",
+          "command": "require_reinspection",
+          "authority": "safety.equipment.judge",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "equipment_reinspection_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "correctiveActionRefs",
+            "reason"
+          ],
+          "required_payload_fields": [
+            "correctiveActionRefs",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "EQUIPMENT_REINSPECTION_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "restricted",
+          "to": "reinspection_due",
+          "command": "require_reinspection",
+          "authority": "safety.equipment.judge",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "equipment_reinspection_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "correctiveActionRefs",
+            "reason"
+          ],
+          "required_payload_fields": [
+            "correctiveActionRefs",
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "EQUIPMENT_REINSPECTION_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "reinspection_due",
+          "to": "requested",
+          "command": "request_reinspection",
+          "authority": "safety.equipment.request",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "equipment_inspection_request_complete"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "reinspectionRefs"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "EQUIPMENT_INSPECTION_REQUEST_COMPLETE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "passed",
+          "to": "expired",
+          "command": "expire",
+          "authority": "safety.equipment.expire",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "equipment_expired"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "blockedReasons"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "EQUIPMENT_EXPIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "restricted",
+          "to": "expired",
+          "command": "expire",
+          "authority": "safety.equipment.expire",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "equipment_expired"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "blockedReasons"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "EQUIPMENT_EXPIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "due",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "safety.equipment.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "requested",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "safety.equipment.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "scheduled",
+          "to": "cancelled",
+          "command": "cancel",
+          "authority": "safety.equipment.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
             "reason"
           ],
           "failure_reasons": [

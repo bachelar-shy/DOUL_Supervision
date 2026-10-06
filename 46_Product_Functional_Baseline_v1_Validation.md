@@ -128,7 +128,7 @@ Baseline v1.0은 다음 항목을 모두 검증해 PASS로 확정한다.
 - role journey invariants consistent
 
 
-### 11.1 2026-10-06 검증 결과
+### 11.1 2026-10-06 최초 Baseline 검증 결과 (historical)
 
 - Contract validator: PASS — 10 machines / 98 transitions / 51 policies / 29 registers / 36 forms / 124 API operations
 - OpenAPI generation: current
@@ -155,6 +155,24 @@ Baseline v1.0은 다음 항목을 모두 검증해 PASS로 확정한다.
 - `git diff --check`: PASS
 
 이 검증은 Baseline v1.0의 업무 의미를 재정의하지 않고 구현 인계·설정·인수·운영정책을 보완한 결과다.
+
+### 11.3 F-03 Safety 실행계약 승격 검증
+
+`30_Safety_Permit_Stop_Resume_Functional_Contract.md`의 상세정의를 실행 가능한 Product Contract로 승격했다.
+
+- Safety typed data: `SafetyPermitData`, `SafetyStopOrderData`, `SafetyEquipmentInspectionData`, `SafetyReadiness`, `SafetyResumeGate`
+- State Machine: `safety_permit`, `safety_stop_order`, `safety_equipment_inspection`
+- Authority: `safety.*` 31개 정책 추가, `safety.stop_lift`는 SUP `chief_supervisor` 공식권한
+- SYSTEM은 Permit/Equipment 만료의 `official=false` 파생전이만 수행하며 Permit 승인·Resume 승인·Stop Lift 권한 없음
+- 관리대장 18·19: Safety domain command projection 적용, 19번을 actionable로 승격
+- `workAuthorized` / `equipmentAvailable`: client 입력이 아닌 서버 파생값
+- Contract validator: PASS — 13 machines / 164 transitions / 82 policies / 29 registers / 36 forms / 169 API operations
+- OpenAPI / TypeScript / Web register catalog: current
+- Core tests: 141 PASS
+- HTTP/Application tests: 83 run — 80 PASS, 3 PostgreSQL live-integration tests skipped locally when DSN is absent
+- `git diff --check`: PASS
+
+이 변경은 F-03의 업무 의미를 새로 만드는 것이 아니라 이미 확정된 Safety 상세정의를 State/Authority/Schema/API 실행계약으로 구조화한 것이다. Backend는 이 계약을 소비하며 별도 상태·권한 의미를 재정의하지 않는다.
 
 ## 12. 다음 단계
 

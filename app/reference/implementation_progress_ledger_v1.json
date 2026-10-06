@@ -32,9 +32,12 @@
       "currentStage": "contract_confirmed",
       "stageStatus": "accepted",
       "evidenceRefs": [
-        "46_Product_Functional_Baseline_v1_Validation.md"
+        "46_Product_Functional_Baseline_v1_Validation.md",
+        "30_Safety_Permit_Stop_Resume_Functional_Contract.md",
+        "app/schema/state_machines_v1.json",
+        "app/schema/authority_matrix_v1.json"
       ],
-      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+      "note": "Product execution contract is machine-backed; remain contract_confirmed until Backend API implementation acceptance evidence exists."
     },
     {
       "functionId": "F-04",

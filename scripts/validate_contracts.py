@@ -20,6 +20,7 @@ def validate_all():
     mapping=load('schema/register_projection_map_v2.json');catalog=load('schema/register_catalog.json')
     forms=load('forms/form_catalog.json')['forms'];data=load('forms/form_data_schemas_v1.json')['forms'];bindings=load('forms/form_domain_bindings_v2.json')['forms'];templates=load('forms/form_templates_v1.json')['templates']
     check(authority['default']=='deny','Authority must default deny')
+    check(set(schemas['RoleAssignment']['properties']['authorityCodes']['items']['enum'])==set(policies),'RoleAssignment authorityCodes enum must match authority policies')
     for name,policy in policies.items():check(not policy['official'] or not set(policy['actor_groups'])&{'AI','SYSTEM','INTEGRATION'},name+' gives nonhuman official authority')
     tree=ast.parse((ROOT/'app/reference/engine.py').read_text());guard_keys=set()
     for node in ast.walk(tree):
@@ -27,6 +28,30 @@ def validate_all():
             guard_keys.update(k.value for k in node.value.keys if isinstance(k,ast.Constant))
     machine_bindings=load('reference/machine_bindings_v1.json')['machines']
     check(set(machine_bindings)==set(machines),'Backend machine bindings must match Product machines exactly')
+    safety_machines={
+        'safety_permit':'SafetyPermit',
+        'safety_stop_order':'SafetyStopOrder',
+        'safety_equipment_inspection':'SafetyEquipmentInspection',
+    }
+    check(set(safety_machines)<=set(machines),'Safety execution state machines are required')
+    for machine_name,subtype in safety_machines.items():
+        check(machines[machine_name]['object_type']=='WorkItem' and machines[machine_name]['subtype']==subtype,machine_name+' binding mismatch')
+    permit_activate=next((t for t in machines['safety_permit']['transitions'] if t['from']=='authorized' and t['command']=='activate'),None)
+    check(bool(permit_activate) and 'safety_work_authorized' in permit_activate['guards'],'Safety Permit activation must require work authorization gate')
+    stop_lift=next((t for t in machines['safety_stop_order']['transitions'] if t['from']=='verification' and t['command']=='lift_stop'),None)
+    check(bool(stop_lift) and stop_lift['authority']=='safety.stop_lift' and 'safety_resume_gate_satisfied' in stop_lift['guards'],'Safety Stop lift must be explicit and resume-gated')
+    check(policies['safety.stop_lift']['actor_groups']==['SUP'] and policies['safety.stop_lift']['role_codes']==['chief_supervisor'],'Safety Stop lift authority must remain human chief supervisor')
+    check(policies['safety.permit.expire']['actor_groups']==['SYSTEM'] and policies['safety.permit.expire']['official'] is False,'Permit expiry may be system-derived but not official human approval')
+    safety_execution=load('schema/safety_execution_contract_v1.json')
+    check(safety_execution['issue_stop_package']['atomic'] is True and safety_execution['issue_stop_package']['rollback_on_failure'] is True,'Safety Stop issuance must be atomic and rollback on failure')
+    check(safety_execution['resume_sequence']['issue_close_is_not_stop_lift'] is True and safety_execution['resume_sequence']['contractor_self_resume_forbidden'] is True,'Safety resume invariants changed')
+    safety_data_names=['SafetyPermitData','SafetyStopOrderData','SafetyEquipmentInspectionData']
+    readonly_fields={field for name in safety_data_names for field,spec in schemas[name]['properties'].items() if spec.get('readOnly') is True}
+    for machine_name in safety_machines:
+        for transition in machines[machine_name]['transitions']:
+            check(not (set(transition['payload_fields']) & readonly_fields),machine_name+' exposes server-derived safety fields in command payload')
+    check(schemas['SafetyPermitData']['properties']['workAuthorized'].get('readOnly') is True,'workAuthorized must be server-derived')
+    check(schemas['SafetyEquipmentInspectionData']['properties']['equipmentAvailable'].get('readOnly') is True,'equipmentAvailable must be server-derived')
     collections=set()
     for name,machine in machines.items():
         check(machine['object_type'] in schemas,name+' has unknown object type')
@@ -145,7 +170,7 @@ def validate_all():
         for condition in conditions:
             check(condition['when']=={'operator':'failed_inspection_has_issued_issue'},'Unsafe form requirement predicate')
             check(condition['any_of']==[{'field':'review.ncr_no'},{'source_object_type':'Issue'}],'Invalid NCR link alternatives')
-    known={'$ref','$schema','type','enum','const','format','pattern','minLength','minimum','maximum','properties','required','additionalProperties','items','minItems','uniqueItems','allOf','oneOf','anyOf','if','then','else','description','title','default'}
+    known={'$ref','$schema','type','enum','const','format','pattern','minLength','minimum','maximum','properties','required','additionalProperties','items','minItems','uniqueItems','allOf','oneOf','anyOf','if','then','else','description','title','default','readOnly'}
     def walk(schema):
         check(set(schema)<=known,'Unsupported validation keywords '+str(set(schema)-known))
         if '$ref' in schema:check(schema['$ref'].split('/')[-1] in schemas,'Unresolved schema reference')

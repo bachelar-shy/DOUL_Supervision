@@ -1,0 +1,66 @@
+{
+  "version": "1.0",
+  "source": "30_Safety_Permit_Stop_Resume_Functional_Contract.md",
+  "derived_fields": {
+    "SafetyPermit.data.workAuthorized": {
+      "client_writable": false,
+      "rule": "true only when permit is active and every work-authorization gate is currently satisfied"
+    },
+    "SafetyEquipmentInspection.data.equipmentAvailable": {
+      "client_writable": false,
+      "rule": "true only after passed equipment judgment and false on fail/restrict/reinspection_due/expiry"
+    },
+    "SafetyStopOrder.data.resumeGate": {
+      "client_writable": false,
+      "rule": "server snapshot derived from current corrective actions, passed resume inspections, affected permit readiness/validity, and owner-report status"
+    }
+  },
+  "server_timestamps": [
+    "SafetyPermit.data.receivedAt",
+    "SafetyPermit.data.reviewStartedAt",
+    "SafetyPermit.data.authorizedAt",
+    "SafetyPermit.data.activatedAt",
+    "SafetyPermit.data.suspendedAt",
+    "SafetyPermit.data.resumeRequestAt",
+    "SafetyPermit.data.completedAt",
+    "SafetyStopOrder.data.acknowledgedAt",
+    "SafetyStopOrder.data.resumeRequestAt",
+    "SafetyStopOrder.data.liftedAt",
+    "SafetyStopOrder.data.closedAt",
+    "SafetyEquipmentInspection.data.requestedAt"
+  ],
+  "issue_stop_package": {
+    "command": "issue_stop",
+    "create_machine": "safety_stop_order",
+    "initial_state": "issued",
+    "atomic": true,
+    "rollback_on_failure": true,
+    "effects": [
+      "create SafetyStopOrder with preserved hazard evidence",
+      "link current SafetyStopOrder reference into every affected SafetyPermit.stopOrderRefs",
+      "transition every affected authorized/active SafetyPermit to suspended when not already non-working",
+      "set every affected SafetyPermit.workAuthorized=false"
+    ]
+  },
+  "resume_sequence": {
+    "required_order": [
+      "contractor correction evidence",
+      "contractor request_resume",
+      "SUP resume verification",
+      "authorized lift_stop",
+      "affected permit resume review",
+      "authorized permit approve_resume/workAuthorized recalculation"
+    ],
+    "issue_close_is_not_stop_lift": true,
+    "stop_lift_is_not_permit_revival": true,
+    "contractor_self_resume_forbidden": true
+  },
+  "equipment_readiness": {
+    "failure_or_expiry_recalculates_permit_readiness": true,
+    "passed_inspection_does_not_override_certificate_or_calibration_expiry": true,
+    "safety_certificate_required_by_default": true,
+    "calibration_required_when_equipment_flagged": true,
+    "certificate_and_calibration_refs_must_be_current_approved_and_unexpired": true,
+    "permit_equipment_ready_rechecks_current_equipment_availability": true
+  }
+}

@@ -355,7 +355,38 @@
                 "manage_project_roles",
                 "notify_sla",
                 "refresh_projection",
-                "import_external_information"
+                "import_external_information",
+                "safety.permit.create",
+                "safety.permit.submit",
+                "safety.permit.receive",
+                "safety.permit.review",
+                "safety.permit.prestart_verify",
+                "safety.permit.authorize",
+                "safety.work.activate",
+                "safety.work.suspend",
+                "safety.work.self_stop",
+                "safety.resume.request",
+                "safety.resume.approve",
+                "safety.permit.complete",
+                "safety.permit.expire",
+                "safety.permit.cancel",
+                "safety.permit.withdraw",
+                "safety.permit.supersede",
+                "safety.stop.issue",
+                "safety.stop.acknowledge",
+                "safety.stop.correct",
+                "safety.stop.verify_resume",
+                "safety.stop_lift",
+                "safety.stop.close",
+                "safety.stop.cancel",
+                "safety.stop.supersede",
+                "safety.equipment.create",
+                "safety.equipment.request",
+                "safety.equipment.schedule",
+                "safety.equipment.inspect",
+                "safety.equipment.judge",
+                "safety.equipment.expire",
+                "safety.equipment.cancel"
               ]
             }
           },
@@ -1036,6 +1067,12 @@
           },
           "materialApprovalRef": {
             "$ref": "#/components/schemas/DomainRef"
+          },
+          "certificateRequired": {
+            "type": "boolean"
+          },
+          "calibrationRequired": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -1164,6 +1201,23 @@
           },
           "report": {
             "$ref": "#/components/schemas/OwnerReportData"
+          },
+          "certificateKind": {
+            "type": "string",
+            "enum": [
+              "safety",
+              "inspection",
+              "calibration",
+              "other"
+            ]
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [
@@ -2138,6 +2192,54 @@
               "properties": {
                 "data": {
                   "$ref": "#/components/schemas/ChangeData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "SafetyPermit"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/SafetyPermitData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "SafetyStopOrder"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/SafetyStopOrderData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "SafetyEquipmentInspection"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/SafetyEquipmentInspectionData"
                 }
               }
             }
@@ -3450,6 +3552,423 @@
           "code",
           "message",
           "failedGuards"
+        ],
+        "additionalProperties": false
+      },
+      "SafetyReadiness": {
+        "type": "object",
+        "properties": {
+          "methodStatementCurrent": {
+            "type": "boolean"
+          },
+          "riskAssessmentCurrent": {
+            "type": "boolean"
+          },
+          "personnelQualified": {
+            "type": "boolean"
+          },
+          "equipmentReady": {
+            "type": "boolean"
+          },
+          "controlMeasuresReady": {
+            "type": "boolean"
+          },
+          "emergencyReady": {
+            "type": "boolean"
+          },
+          "environmentalConditionsReady": {
+            "type": "boolean"
+          },
+          "noBlockingSafetyIssue": {
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "SafetyResumeGate": {
+        "type": "object",
+        "properties": {
+          "causeIdentified": {
+            "type": "boolean"
+          },
+          "correctiveActionComplete": {
+            "type": "boolean"
+          },
+          "correctiveEvidencePresent": {
+            "type": "boolean"
+          },
+          "issueActionsVerified": {
+            "type": "boolean"
+          },
+          "reinspectionPassed": {
+            "type": "boolean"
+          },
+          "permitValid": {
+            "type": "boolean"
+          },
+          "methodStatementCurrent": {
+            "type": "boolean"
+          },
+          "riskAssessmentCurrent": {
+            "type": "boolean"
+          },
+          "equipmentReady": {
+            "type": "boolean"
+          },
+          "personnelQualified": {
+            "type": "boolean"
+          },
+          "controlMeasuresReady": {
+            "type": "boolean"
+          },
+          "environmentalConditionsReady": {
+            "type": "boolean"
+          },
+          "reportingObligationsSatisfied": {
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "SafetyPermitData": {
+        "type": "object",
+        "properties": {
+          "permitNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "workType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "riskLevel": {
+            "type": "string",
+            "minLength": 1
+          },
+          "responsiblePartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "safetyResponsiblePartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "methodStatementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "riskAssessmentRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "personnelQualificationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "equipmentRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "emergencyPlanRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reviewStartedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reviewNotes": {
+            "type": "string"
+          },
+          "safetyReviewComplete": {
+            "type": "boolean"
+          },
+          "prestartVerified": {
+            "type": "boolean"
+          },
+          "prestartVerificationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "authorizedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "activatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "suspendedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "suspensionReason": {
+            "type": "string"
+          },
+          "resumeRequestAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "resumeApprovalRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "completionConfirmed": {
+            "type": "boolean"
+          },
+          "readiness": {
+            "$ref": "#/components/schemas/SafetyReadiness"
+          },
+          "workAuthorized": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "blockedReasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "stopOrderRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "replacementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "SafetyStopOrderData": {
+        "type": "object",
+        "properties": {
+          "stopOrderNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stopScopeType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stopScopeDescription": {
+            "type": "string"
+          },
+          "stopReason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "hazardDescription": {
+            "type": "string"
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "acknowledgedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "affectedPermitRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "issueRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "correctiveActionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "resumeRequestAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "resumeVerificationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "resumeGate": {
+            "$ref": "#/components/schemas/SafetyResumeGate",
+            "readOnly": true
+          },
+          "liftedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "ownerReportRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "replacementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "blockedReasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "stopOrderNo",
+          "stopScopeType",
+          "stopReason",
+          "observedAt",
+          "effectiveAt",
+          "affectedPermitRefs"
+        ],
+        "additionalProperties": false
+      },
+      "SafetyEquipmentInspectionData": {
+        "type": "object",
+        "properties": {
+          "inspectionNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "equipmentRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "inspectionKind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "inspectedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resultSummary": {
+            "type": "string"
+          },
+          "restrictionConditions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "failureReason": {
+            "type": "string"
+          },
+          "correctiveActionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "reinspectionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "certificateRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "calibrationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "preUseCheckComplete": {
+            "type": "boolean"
+          },
+          "equipmentAvailable": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "blockedReasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "equipmentRef",
+          "inspectionKind"
         ],
         "additionalProperties": false
       }

@@ -76,13 +76,28 @@ class Engine:
         source = self._history if version is not None else self._records
         key = (kind, object_id, version) if version is not None else (kind, object_id)
         require(key in source, 'OBJECT_NOT_FOUND', str(key))
-        return deepcopy(source[key])
+        value=deepcopy(source[key])
+        if version is None and kind=='WorkItem' and value.get('subtype')=='SafetyEquipmentInspection':
+            if value.get('data',{}).get('equipmentAvailable') is True and not self._equipment_documents_current(value):
+                value['data']['equipmentAvailable']=False
+        return value
 
     def resolve(self, reference, project_id=None):
         record = self.get(reference['objectType'], reference['objectId'], reference['version'])
         if project_id:
             require(record['projectId'] == project_id, 'PROJECT_MISMATCH', 'Reference belongs to another project')
         return record
+
+    def _current_reference(self, reference, project_id, *, object_type=None, subtype=None):
+        require(isinstance(reference, dict), 'REFERENCE_INVALID', 'Domain reference must be an object')
+        if object_type is not None:
+            require(reference.get('objectType') == object_type, 'REFERENCE_TYPE_INVALID', object_type)
+        resolved = self.resolve(reference, project_id)
+        current = self.get(reference['objectType'], reference['objectId'])
+        require(current['version'] == reference['version'], 'REFERENCE_STALE', reference['objectId'])
+        if subtype is not None:
+            require(resolved.get('subtype') == subtype, 'REFERENCE_TYPE_INVALID', subtype)
+        return current
 
     def _scope(self, values, target, location=False):
         if '*' in values:
@@ -243,12 +258,67 @@ class Engine:
             require(issue['projectId']==project_id and record.get('responsibleOrganizationId')==issue.get('responsibleOrganizationId'), 'ACTION_SCOPE_MISMATCH','Action belongs to the issue contractor')
             require('correctionCycle' not in record or record['correctionCycle']==issue['correctionCycle'],'ACTION_SCOPE_MISMATCH','Action belongs to current correction cycle')
             record['correctionCycle']=issue['correctionCycle']
+        if machine=='safety_permit':
+            for field in ['workAuthorized','receivedAt','reviewStartedAt','authorizedAt','activatedAt','suspendedAt','resumeRequestAt','completedAt']:
+                require(field not in record['data'], 'IMMUTABLE_FIELD', field+' is server-derived')
+            record['data']['workAuthorized']=False
+        if machine=='safety_stop_order':
+            for field in ['acknowledgedAt','resumeRequestAt','resumeGate','liftedAt','closedAt']:
+                require(field not in record['data'], 'IMMUTABLE_FIELD', field+' is server-derived')
+            require(bool(record.get('evidenceIds')), 'EVIDENCE_REQUIRED', 'A formal stop order requires preserved hazard evidence')
+        if machine=='safety_equipment_inspection':
+            for field in ['equipmentAvailable','requestedAt']:
+                require(field not in record['data'], 'IMMUTABLE_FIELD', field+' is server-derived')
+            record['data']['equipmentAvailable']=False
         validate(record,self.schemas[kind],self.schemas)
+        if machine=='safety_stop_order':
+            return self._create_safety_stop_order(record,request,party_id,role_id,key)
         self._save(kind,record)
         self._record_machines[(kind,object_id)]=machine
         result=self._event(record,'create:'+machine,party_id,role_id,key,request,None)
         self._remember(project_id,party_id,'create:'+machine,key,request,result)
         return result
+
+    def _create_safety_stop_order(self, record, request, party_id, role_id, key):
+        stop_ref={'objectType':'WorkItem','objectId':record['id'],'version':record['version']}
+        now=self.at()
+        permit_updates=[]
+        seen=set()
+        for reference in record['data']['affectedPermitRefs']:
+            permit=self._current_reference(reference,record['projectId'],object_type='WorkItem',subtype='SafetyPermit')
+            require(permit['id'] not in seen,'REFERENCE_DUPLICATE',permit['id'])
+            seen.add(permit['id'])
+            updated=deepcopy(permit)
+            updated['data'].setdefault('stopOrderRefs',[]).append(deepcopy(stop_ref))
+            updated['data']['workAuthorized']=False
+            if updated['status'] in ['authorized','active']:
+                updated['status']='suspended'
+                updated['data']['suspendedAt']=now
+                updated['data']['suspensionReason']=record['data']['stopReason']
+            updated['version']=permit['version']+1
+            updated['updatedAt']=now
+            validate(updated,self.schemas['WorkItem'],self.schemas)
+            permit_updates.append((permit,updated))
+
+        snapshot=(
+            deepcopy(self._records),
+            deepcopy(self._history),
+            deepcopy(self._audit),
+            deepcopy(self._idempotency),
+            deepcopy(self._record_machines),
+        )
+        try:
+            self._save('WorkItem',record)
+            self._record_machines[('WorkItem',record['id'])]='safety_stop_order'
+            result=self._event(record,'create:safety_stop_order',party_id,role_id,key,request,None)
+            for before,updated in permit_updates:
+                self._save('WorkItem',updated)
+                self._event(updated,'safety_stop_order:issue_stop',party_id,role_id,key,request,before)
+            self._remember(record['projectId'],party_id,'create:safety_stop_order',key,request,result)
+            return result
+        except Exception:
+            self._records,self._history,self._audit,self._idempotency,self._record_machines=snapshot
+            raise
 
     def execute(self, machine, object_id, command, expected_version, payload, evidence_ids, party_id, role_id, key):
         require(machine in self.machines,'MACHINE_UNKNOWN',machine)
@@ -369,6 +439,27 @@ class Engine:
             'current_actions_verified':self._current_actions_verified,
             'decision_package_complete':self._decision_package_complete,
             'rfi_package_complete':self._rfi_package_complete,
+            'permit_submission_complete':self._permit_submission_complete,
+            'permit_safety_review_complete':self._permit_safety_review_complete,
+            'permit_prestart_verified':self._permit_prestart_verified,
+            'permit_authorization_ready':self._permit_authorization_ready,
+            'safety_work_authorized':self._safety_work_authorized,
+            'safety_suspend_reason_present':self._safety_suspend_reason_present,
+            'stop_resume_request_ready':self._stop_resume_request_ready,
+            'safety_resume_gate_satisfied':self._safety_resume_gate_satisfied,
+            'safety_completion_ready':self._safety_completion_ready,
+            'permit_expired':self._permit_expired,
+            'stop_correction_started':self._stop_correction_started,
+            'stop_resume_verification_ready':self._stop_resume_verification_ready,
+            'stop_close_ready':self._stop_close_ready,
+            'equipment_inspection_request_complete':self._equipment_inspection_request_complete,
+            'equipment_schedule_present':self._equipment_schedule_present,
+            'equipment_result_present':self._equipment_result_present,
+            'equipment_pass_ready':self._equipment_pass_ready,
+            'equipment_fail_ready':self._equipment_fail_ready,
+            'equipment_restricted_ready':self._equipment_restricted_ready,
+            'equipment_reinspection_ready':self._equipment_reinspection_ready,
+            'equipment_expired':self._equipment_expired,
         }
         if name in checks:checks[name](r)
         else:
@@ -389,6 +480,296 @@ class Engine:
             if command=='issue':record['report']['issuedAt']=self.at()
             if command=='acknowledge':record['report'].update(acknowledgedAt=self.at(),acknowledgedBy=party_id)
             if command=='verify':record['report']['verifiedAt']=self.at()
+        if machine=='safety_permit':
+            data=record['data']
+            if command=='receive_permit':data['receivedAt']=self.at()
+            if command=='accept_for_safety_review':data['reviewStartedAt']=self.at()
+            if command=='authorize':data['authorizedAt']=self.at()
+            if command in ['activate','approve_resume']:
+                data['workAuthorized']=True
+                data['activatedAt']=self.at()
+            if command in ['suspend','self_suspend']:data['suspendedAt']=self.at()
+            if command=='request_resume':data['resumeRequestAt']=self.at()
+            if command in ['suspend','self_suspend','request_resume','return_resume','expire','cancel','complete_work']:
+                data['workAuthorized']=False
+            if command=='complete_work':data['completedAt']=self.at()
+        if machine=='safety_stop_order':
+            data=record['data']
+            if command=='acknowledge_stop':data['acknowledgedAt']=self.at()
+            if command=='request_resume':data['resumeRequestAt']=self.at()
+            if command in ['request_resume','start_resume_verification','return_resume','lift_stop']:
+                data['resumeGate']=self._derive_stop_resume_gate(record)
+            if command=='lift_stop':data['liftedAt']=self.at()
+            if command=='close_stop':data['closedAt']=self.at()
+        if machine=='safety_equipment_inspection':
+            if command in ['request_inspection','request_reinspection']:record['data']['requestedAt']=self.at()
+            if command=='pass':record['data']['equipmentAvailable']=True
+            if command in ['fail','restrict','require_reinspection','expire']:
+                record['data']['equipmentAvailable']=False
+
+    def _all_true(self, value, keys):
+        return isinstance(value,dict) and all(value.get(key) is True for key in keys)
+
+    def _safety_refs_current(self, record, field, *, object_type=None, subtype=None, allow_empty=True):
+        refs=record.get(field)
+        if refs is None:return allow_empty
+        if not isinstance(refs,list):return False
+        if not refs and not allow_empty:return False
+        for reference in refs:
+            if object_type and reference.get('objectType')!=object_type:return False
+            try:resolved=self.resolve(reference,record['projectId'])
+            except ContractError:return False
+            current=self.get(reference['objectType'],reference['objectId'])
+            if current['version']!=reference['version']:return False
+            if subtype and resolved.get('subtype')!=subtype:return False
+        return True
+
+    def _permit_submission_complete(self,r):
+        required=['permitNo','workType','riskLevel','responsiblePartyId','safetyResponsiblePartyId','methodStatementRef','riskAssessmentRef','emergencyPlanRef','validFrom','validTo']
+        require(all(r.get(x) not in [None,'',[]] for x in required),'PERMIT_SUBMISSION_COMPLETE','Permit identity, responsible persons, method/risk/emergency references and validity are required')
+        require(bool(r.get('responsibleOrganizationId')) and bool(r.get('requirementRefs')),'PERMIT_SUBMISSION_COMPLETE','Permit needs contractor organization and requirement baseline')
+        require(isinstance(r.get('equipmentRefs'),list) and isinstance(r.get('personnelQualificationRefs'),list),'PERMIT_SUBMISSION_COMPLETE','Permit needs explicit equipment and qualification lists')
+        require(instant(r['validFrom'])<instant(r['validTo']),'PERMIT_SUBMISSION_COMPLETE','Permit validity window is invalid')
+        for field in ['methodStatementRef','riskAssessmentRef','emergencyPlanRef']:
+            self.resolve(r[field],r['projectId'])
+        require(self._safety_refs_current(r,'equipmentRefs',object_type='Asset',subtype='Equipment'),'PERMIT_SUBMISSION_COMPLETE','Equipment references must be current Equipment assets')
+        require(self._safety_refs_current(r,'personnelQualificationRefs',object_type='Qualification'),'PERMIT_SUBMISSION_COMPLETE','Qualification references must be current')
+
+    def _permit_safety_review_complete(self,r):
+        keys=['methodStatementCurrent','riskAssessmentCurrent','personnelQualified','equipmentReady','controlMeasuresReady','emergencyReady']
+        require(r.get('safetyReviewComplete') is True and self._all_true(r.get('readiness'),keys),'PERMIT_SAFETY_REVIEW_COMPLETE','Safety review conditions are incomplete')
+
+    def _permit_prestart_verified(self,r):
+        require(r.get('prestartVerified') is True and bool(r.get('prestartVerificationRefs')) and bool(r.get('evidenceIds')),'PERMIT_PRESTART_VERIFIED','Pre-start verification and evidence are required')
+
+    def _permit_authorization_ready(self,r):
+        self._permit_safety_review_complete(r)
+        self._permit_prestart_verified(r)
+        require(instant(r['validFrom'])<instant(r['validTo']),'PERMIT_AUTHORIZATION_READY','Permit validity window is invalid')
+
+    def _linked_stop_orders_clear(self,r):
+        for reference in r.get('stopOrderRefs',[]):
+            require(reference.get('objectType')=='WorkItem','SAFETY_STOP_OPEN','Stop reference must identify a WorkItem')
+            stop=self.get('WorkItem',reference['objectId'])
+            require(stop['projectId']==r['projectId'] and stop.get('subtype')=='SafetyStopOrder','SAFETY_STOP_OPEN','Stop reference is invalid')
+            require(stop['status'] in ['lifted','closed','cancelled','superseded'],'SAFETY_STOP_OPEN','An active Safety Stop Order blocks work')
+
+    def _safety_work_authorized(self,r):
+        readiness=['methodStatementCurrent','riskAssessmentCurrent','personnelQualified','equipmentReady','controlMeasuresReady','emergencyReady','environmentalConditionsReady','noBlockingSafetyIssue']
+        require(self._all_true(r.get('readiness'),readiness),'SAFETY_WORK_AUTHORIZED','Safety readiness is incomplete')
+        require(not r.get('blockedReasons'),'SAFETY_WORK_AUTHORIZED','Blocking reasons remain')
+        require(bool(r.get('validFrom')) and bool(r.get('validTo')) and instant(r['validFrom'])<=instant(self.at())<instant(r['validTo']),'SAFETY_WORK_AUTHORIZED','Permit is outside its valid time window')
+        require(self._permit_equipment_ready(r),'SAFETY_WORK_AUTHORIZED','Equipment readiness is not current')
+        self._linked_stop_orders_clear(r)
+
+    def _safety_suspend_reason_present(self,r):
+        require(bool(r.get('suspensionReason','').strip()),'SAFETY_SUSPEND_REASON_PRESENT','Suspension reason is required')
+
+    def _stop_action_records(self,r):
+        records=[]
+        seen=set()
+        for reference in r.get('correctiveActionRefs',[]):
+            action=self._current_reference(reference,r['projectId'],object_type='Action')
+            require(action['id'] not in seen,'REFERENCE_DUPLICATE',action['id'])
+            seen.add(action['id'])
+            records.append(action)
+        return records
+
+    def _stop_verification_records(self,r):
+        records=[]
+        seen=set()
+        for reference in r.get('resumeVerificationRefs',[]):
+            inspection=self._current_reference(reference,r['projectId'],object_type='Inspection')
+            require(inspection['id'] not in seen,'REFERENCE_DUPLICATE',inspection['id'])
+            seen.add(inspection['id'])
+            records.append(inspection)
+        return records
+
+    def _affected_stop_permits(self,r):
+        records=[]
+        seen=set()
+        for reference in r.get('affectedPermitRefs',[]):
+            require(reference.get('objectType')=='WorkItem','SAFETY_PERMIT_REQUIRED','Affected permit must be a WorkItem')
+            permit=self.get('WorkItem',reference['objectId'])
+            require(permit['projectId']==r['projectId'] and permit.get('subtype')=='SafetyPermit','SAFETY_PERMIT_REQUIRED','Affected permit is invalid')
+            require(permit['id'] not in seen,'REFERENCE_DUPLICATE',permit['id'])
+            seen.add(permit['id'])
+            records.append(permit)
+        return records
+
+    def _stop_owner_reports_satisfied(self,r):
+        allowed={'issued','acknowledged','followup','verified','closed'}
+        for reference in r.get('ownerReportRefs',[]):
+            report=self._current_reference(reference,r['projectId'],object_type='InformationItem',subtype='Report')
+            if report['status'] not in allowed:
+                return False
+        return True
+
+    def _derive_stop_resume_gate(self,r):
+        r=self._fields(r)
+        actions=self._stop_action_records(r)
+        verifications=self._stop_verification_records(r)
+        permits=self._affected_stop_permits(r)
+        now=instant(self.at())
+        actions_complete=bool(actions) and all(action['status'] in ['verified','closed'] for action in actions)
+        reinspection_passed=bool(verifications) and all(
+            inspection.get('resultStatus')=='pass' and inspection['status'] in ['passed','completed']
+            for inspection in verifications
+        )
+        permit_valid=bool(permits)
+        if permit_valid:
+            for permit in permits:
+                data=permit['data']
+                permit_valid = permit_valid and permit['status']=='suspended'
+                permit_valid = permit_valid and bool(data.get('validFrom')) and bool(data.get('validTo'))
+                if permit_valid:
+                    permit_valid = instant(data['validFrom'])<=now<instant(data['validTo'])
+        readiness_fields=['methodStatementCurrent','riskAssessmentCurrent','equipmentReady','personnelQualified','controlMeasuresReady','environmentalConditionsReady']
+        readiness={field:bool(permits) and all(permit['data'].get('readiness',{}).get(field) is True for permit in permits) for field in readiness_fields}
+        return {
+            'causeIdentified':bool(actions) and all(bool(action.get('rootCause','').strip()) for action in actions),
+            'correctiveActionComplete':actions_complete,
+            'correctiveEvidencePresent':bool(r.get('resumeRequestAt')) and bool(r.get('evidenceIds')),
+            'issueActionsVerified':actions_complete,
+            'reinspectionPassed':reinspection_passed,
+            'permitValid':permit_valid,
+            'methodStatementCurrent':readiness['methodStatementCurrent'],
+            'riskAssessmentCurrent':readiness['riskAssessmentCurrent'],
+            'equipmentReady':readiness['equipmentReady'] and all(self._permit_equipment_ready(permit) for permit in permits),
+            'personnelQualified':readiness['personnelQualified'],
+            'controlMeasuresReady':readiness['controlMeasuresReady'],
+            'environmentalConditionsReady':readiness['environmentalConditionsReady'],
+            'reportingObligationsSatisfied':self._stop_owner_reports_satisfied(r),
+        }
+
+    def _stop_resume_request_ready(self,r):
+        require(bool(r.get('evidenceIds')),'STOP_RESUME_REQUEST_READY','Resume request needs corrective evidence')
+        if r.get('subtype')=='SafetyStopOrder':
+            actions=self._stop_action_records(r)
+            require(bool(actions),'STOP_RESUME_REQUEST_READY','Stop resume requires corrective action references')
+            require(all(action['status'] in ['verified','closed'] for action in actions),'STOP_RESUME_REQUEST_READY','Corrective actions must be verified before resume request')
+
+    def _resume_gate_complete(self,gate):
+        keys=['causeIdentified','correctiveActionComplete','correctiveEvidencePresent','issueActionsVerified','reinspectionPassed','permitValid','methodStatementCurrent','riskAssessmentCurrent','equipmentReady','personnelQualified','controlMeasuresReady','environmentalConditionsReady','reportingObligationsSatisfied']
+        return self._all_true(gate,keys)
+
+    def _safety_resume_gate_satisfied(self,r):
+        if r.get('subtype')=='SafetyStopOrder':
+            derived=self._derive_stop_resume_gate(r)
+            require(self._resume_gate_complete(derived),'SAFETY_RESUME_GATE_SATISFIED','Stop resume gate is incomplete')
+            return
+        self._safety_work_authorized(r)
+
+    def _safety_completion_ready(self,r):
+        require(r.get('completionConfirmed') is True and bool(r.get('evidenceIds')),'SAFETY_COMPLETION_READY','Permit completion requires confirmation and evidence')
+        self._linked_stop_orders_clear(r)
+
+    def _permit_expired(self,r):
+        require(bool(r.get('validTo')) and instant(self.at())>=instant(r['validTo']),'PERMIT_EXPIRED','Permit has not expired')
+
+    def _stop_correction_started(self,r):
+        actions=self._stop_action_records(r)
+        require(bool(actions),'STOP_CORRECTION_STARTED','Stop correction requires corrective action references')
+        require(all(action['status']!='cancelled' for action in actions),'STOP_CORRECTION_STARTED','Cancelled corrective actions cannot start correction')
+
+    def _stop_resume_verification_ready(self,r):
+        inspections=self._stop_verification_records(r)
+        require(bool(inspections),'STOP_RESUME_VERIFICATION_READY','Resume verification evidence references are required')
+        require(all(inspection.get('resultStatus')=='pass' and inspection['status'] in ['passed','completed'] for inspection in inspections),'STOP_RESUME_VERIFICATION_READY','Resume verification must reference passed inspections')
+
+    def _stop_close_ready(self,r):
+        require(bool(r.get('liftedAt')) and not r.get('blockedReasons'),'STOP_CLOSE_READY','Lifted stop with no unresolved blocker is required before close')
+
+    def _equipment_inspection_request_complete(self,r):
+        require(bool(r.get('equipmentRef')) and bool(r.get('inspectionKind')),'EQUIPMENT_INSPECTION_REQUEST_COMPLETE','Equipment inspection request is incomplete')
+        self._current_reference(r['equipmentRef'],r['projectId'],object_type='Asset',subtype='Equipment')
+
+    def _equipment_document_records(self,r,field,*,required,calibration):
+        refs=r.get(field,[])
+        if required:
+            require(bool(refs),'EQUIPMENT_DOCUMENT_INVALID',field+' is required for this equipment')
+        records=[]
+        now=instant(self.at())
+        for reference in refs:
+            document=self._current_reference(reference,r['projectId'],object_type='InformationItem',subtype='Certificate')
+            require(document.get('status')=='approved','EQUIPMENT_DOCUMENT_INVALID','Safety certificate/calibration must be approved')
+            if calibration:
+                require(document.get('certificateKind')=='calibration','EQUIPMENT_DOCUMENT_INVALID','Calibration reference must identify a calibration certificate')
+            else:
+                require(document.get('certificateKind') in ['safety','inspection','other'],'EQUIPMENT_DOCUMENT_INVALID','Certificate reference must identify a non-calibration certificate')
+            require(bool(document.get('validFrom')) and bool(document.get('validTo')),'EQUIPMENT_DOCUMENT_INVALID','Certificate validity period is required')
+            require(instant(document['validFrom'])<=now<instant(document['validTo']),'EQUIPMENT_DOCUMENT_INVALID','Certificate or calibration is expired or not yet valid')
+            records.append(document)
+        return records
+
+    def _require_equipment_documents_current(self,r):
+        r=self._fields(r)
+        equipment=self._current_reference(r['equipmentRef'],r['projectId'],object_type='Asset',subtype='Equipment')
+        self._equipment_document_records(
+            r,
+            'certificateRefs',
+            required=equipment.get('certificateRequired',True),
+            calibration=False,
+        )
+        self._equipment_document_records(
+            r,
+            'calibrationRefs',
+            required=equipment.get('calibrationRequired',False),
+            calibration=True,
+        )
+        now=instant(self.at())
+        if r.get('validFrom'):
+            require(instant(r['validFrom'])<=now,'EQUIPMENT_DOCUMENT_INVALID','Equipment inspection is not yet valid')
+        if r.get('validTo'):
+            require(now<instant(r['validTo']),'EQUIPMENT_DOCUMENT_INVALID','Equipment inspection validity has expired')
+        return True
+
+    def _equipment_documents_current(self,r):
+        try:
+            return self._require_equipment_documents_current(r)
+        except ContractError:
+            return False
+
+    def _permit_equipment_ready(self,r):
+        r=self._fields(r)
+        for reference in r.get('equipmentRefs',[]):
+            equipment=self._current_reference(reference,r['projectId'],object_type='Asset',subtype='Equipment')
+            available=False
+            for (kind,object_id),record in self._records.items():
+                if kind!='WorkItem' or record.get('subtype')!='SafetyEquipmentInspection' or record['projectId']!=r['projectId']:
+                    continue
+                target=record.get('data',{}).get('equipmentRef',{})
+                if target.get('objectId')!=equipment['id'] or record.get('status')!='passed':
+                    continue
+                current=self.get('WorkItem',object_id)
+                if current.get('data',{}).get('equipmentAvailable') is True:
+                    available=True
+                    break
+            if not available:
+                return False
+        return True
+
+    def _equipment_schedule_present(self,r):
+        require(bool(r.get('scheduledAt')),'EQUIPMENT_SCHEDULE_PRESENT','Equipment inspection schedule is required')
+
+    def _equipment_result_present(self,r):
+        require(bool(r.get('inspectedAt')) and bool(r.get('resultSummary','').strip()) and bool(r.get('evidenceIds')),'EQUIPMENT_RESULT_PRESENT','Equipment result needs inspection time, summary and evidence')
+
+    def _equipment_pass_ready(self,r):
+        require(bool(r.get('resultSummary','').strip()) and r.get('preUseCheckComplete') is True and not r.get('blockedReasons'),'EQUIPMENT_PASS_READY','Passed equipment must complete pre-use check with no blockers')
+        self._require_equipment_documents_current(r)
+
+    def _equipment_fail_ready(self,r):
+        require(bool(r.get('failureReason','').strip()),'EQUIPMENT_FAIL_READY','Failed equipment requires failure reason')
+
+    def _equipment_restricted_ready(self,r):
+        require(bool(r.get('restrictionConditions')),'EQUIPMENT_RESTRICTED_READY','Restricted equipment requires explicit conditions')
+
+    def _equipment_reinspection_ready(self,r):
+        require(bool(r.get('correctiveActionRefs')) and bool(r.get('reason','').strip()),'EQUIPMENT_REINSPECTION_READY','Reinspection requires corrective actions and reason')
+
+    def _equipment_expired(self,r):
+        require(bool(r.get('validTo')) and instant(self.at())>=instant(r['validTo']),'EQUIPMENT_EXPIRED','Equipment inspection has not expired')
 
     def _checks_complete(self,r):
         checks=r.get('checkResults',[])

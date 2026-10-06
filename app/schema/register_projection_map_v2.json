@@ -1481,7 +1481,8 @@
       ],
       "calculated_fields": [
         "permit_valid",
-        "stop_resume_status"
+        "stop_resume_status",
+        "work_authorized"
       ],
       "mode": "actionable",
       "allowed_commands": [
@@ -1501,7 +1502,6 @@
         "inspection:release_next_work",
         "inspection:record_failure",
         "inspection:cancel",
-        "inspection:cancel",
         "issue:assign",
         "issue:start_correction",
         "issue:request_reinspection",
@@ -1510,13 +1510,36 @@
         "issue:reject_reinspection",
         "issue:restart_correction",
         "issue:cancel",
-        "issue:cancel",
-        "issue:cancel",
-        "issue:cancel",
         "issue:supersede",
-        "issue:supersede",
-        "issue:supersede",
-        "issue:link_actions"
+        "issue:link_actions",
+        "safety_permit:submit_permit",
+        "safety_permit:receive_permit",
+        "safety_permit:return_incomplete",
+        "safety_permit:accept_for_safety_review",
+        "safety_permit:request_prestart_verification",
+        "safety_permit:request_authorization",
+        "safety_permit:authorize",
+        "safety_permit:reject_permit",
+        "safety_permit:activate",
+        "safety_permit:suspend",
+        "safety_permit:self_suspend",
+        "safety_permit:request_resume",
+        "safety_permit:approve_resume",
+        "safety_permit:return_resume",
+        "safety_permit:complete_work",
+        "safety_permit:expire",
+        "safety_permit:cancel",
+        "safety_permit:withdraw",
+        "safety_permit:supersede",
+        "safety_stop_order:acknowledge_stop",
+        "safety_stop_order:start_correction",
+        "safety_stop_order:request_resume",
+        "safety_stop_order:start_resume_verification",
+        "safety_stop_order:return_resume",
+        "safety_stop_order:lift_stop",
+        "safety_stop_order:close_stop",
+        "safety_stop_order:cancel_stop",
+        "safety_stop_order:supersede_stop"
       ],
       "raw_status_patch": false,
       "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
@@ -1564,6 +1587,13 @@
             "status"
           ],
           "missing_value": null
+        },
+        "work_authorized": {
+          "operator": "coalesce",
+          "paths": [
+            "data.workAuthorized"
+          ],
+          "missing_value": false
         }
       }
     },
@@ -1594,8 +1624,20 @@
         "certificate_expiry",
         "equipment_available"
       ],
-      "mode": "read_only",
-      "allowed_commands": [],
+      "mode": "actionable",
+      "allowed_commands": [
+        "safety_equipment_inspection:request_inspection",
+        "safety_equipment_inspection:schedule_inspection",
+        "safety_equipment_inspection:start_inspection",
+        "safety_equipment_inspection:submit_result",
+        "safety_equipment_inspection:pass",
+        "safety_equipment_inspection:fail",
+        "safety_equipment_inspection:restrict",
+        "safety_equipment_inspection:require_reinspection",
+        "safety_equipment_inspection:request_reinspection",
+        "safety_equipment_inspection:expire",
+        "safety_equipment_inspection:cancel"
+      ],
       "raw_status_patch": false,
       "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
       "joins": [
