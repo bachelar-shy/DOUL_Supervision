@@ -120,6 +120,8 @@
 | SAF-07 | 안전검사 대상장비 | A | 사용 전 | 유효 검사증 |
 | SAF-08 | 중대위험 발견 | A | 즉시 | 작업중지·시정·재개승인 |
 
+SAF-01~08의 실제 작업개시 여부는 단순 Checklist 완료가 아니라 F-03의 Safety Permit, Pre-start Verification, Equipment Readiness, Open SafetyStopOrder를 함께 평가한다. Permit 만료·장비검사 만료·Stop Order 발행 시 관련 작업은 재평가하며, Issue 종결만으로 자동 재개하지 않는다. 상세 기준은 `30_Safety_Permit_Stop_Resume_Functional_Contract.md`를 따른다.
+
 ## 9. 종합 검수
 
 분야별 A등급 종결 → 기능시험 → 공종별 단계검수 → MEP 통합시험 → PCCC 종합연동 → 완료검수 → 준공서류 편철.

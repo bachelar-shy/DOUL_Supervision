@@ -102,7 +102,7 @@ class Snapshots(unittest.TestCase):
     def denies(self,code,fn):
         with self.assertRaises(ContractError) as caught:fn()
         self.assertEqual(caught.exception.code,code)
-    def test_all_25_forms_validate_populated_dto_and_html_structure(self):
+    def test_all_36_forms_validate_populated_dto_and_html_structure(self):
         for form in self.docs.templates:
             with self.subTest(form=form):
                 kind,oid={'FM-07':('Inspection',None),'FM-09':('Inspection',None),'FM-13':('Action',None),'FM-15':('WorkItem',None),'FM-20':('InformationItem',None),'FM-21':('Decision',None)}.get(form,('Requirement',self.f.requirement))

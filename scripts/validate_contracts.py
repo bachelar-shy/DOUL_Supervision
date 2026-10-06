@@ -17,7 +17,7 @@ def validate_all():
     schemas=load('schema/domain_schemas_v2.json')['components']['schemas']
     machines=load('schema/state_machines_v1.json')['machines'];authority=load('schema/authority_matrix_v1.json');policies=authority['policies']
     mapping=load('schema/register_projection_map_v2.json');catalog=load('schema/register_catalog.json')
-    forms=load('forms/form_catalog.json')['forms'];data=load('forms/form_data_schemas_v1.json')['forms'];bindings=load('forms/form_domain_bindings_v2.json')['forms']
+    forms=load('forms/form_catalog.json')['forms'];data=load('forms/form_data_schemas_v1.json')['forms'];bindings=load('forms/form_domain_bindings_v2.json')['forms'];templates=load('forms/form_templates_v1.json')['templates']
     check(authority['default']=='deny','Authority must default deny')
     for name,policy in policies.items():check(not policy['official'] or not set(policy['actor_groups'])&{'AI','SYSTEM','INTEGRATION'},name+' gives nonhuman official authority')
     tree=ast.parse((ROOT/'app/reference/engine.py').read_text());guard_keys=set()
@@ -34,6 +34,36 @@ def validate_all():
             check(set(t.get('required_payload_fields',[]))<=set(t['payload_fields']),name+' requires fields outside writable payload')
             check(set(t['guards'])<=guard_keys|set(load('schema/state_machines_v1.json')['common_guards']),name+' has unimplemented guard')
     check([p['register_id'] for p in mapping['registers']]==[f'{i:02}' for i in range(1,30)],'29 projection mappings required')
+    product_map=(ROOT/'26_Product_Functional_Map_v1.md').read_text(encoding='utf-8')
+    maturity={}
+    for line in product_map.splitlines():
+        match=re.match(r'^\| (\d{2}) \|.*\| (M3|M2|M1|R) \|',line)
+        if match:maturity[match.group(1)]=match.group(2)
+    check(list(maturity)==[f'{i:02}' for i in range(1,30)],'Product map must declare maturity for registers 01-29 in order')
+    check(maturity.get('02')=='R' and all(maturity.get(f'{i:02}')=='M3' for i in range(1,30) if i!=2),'Product baseline requires 28 M3 registers plus register 02 Reference')
+    detailed_contracts=[ROOT/f'{n:02}_{name}' for n,name in [
+        (33,'Fire_Environment_Compliance_Functional_Contract.md'),
+        (34,'Commissioning_Handover_Warranty_Functional_Contract.md'),
+        (35,'Contract_Notice_Claim_EOT_Functional_Contract.md'),
+        (36,'Regulatory_Permit_Lifecycle_Functional_Contract.md'),
+        (37,'Site_Instruction_Functional_Contract.md'),
+        (38,'Risk_Assurance_Audit_Functional_Contract.md'),
+        (39,'Insurance_Guarantee_Functional_Contract.md'),
+        (40,'Lesson_Learned_Functional_Contract.md'),
+        (41,'Document_Transmittal_Functional_Contract.md'),
+        (42,'Personnel_Qualification_Deployment_Functional_Contract.md'),
+        (43,'Drawing_Revision_Field_Distribution_Functional_Contract.md'),
+        (44,'Daily_Record_Evidence_Functional_Contract.md'),
+    ]]
+    for contract in detailed_contracts:
+        check(contract.exists(),contract.name+' missing from Product baseline')
+        text=contract.read_text(encoding='utf-8')
+        check('Command Contract' in text,contract.name+' lacks explicit command contract')
+        check(('Actor / Decision Right' in text or 'Decision Right' in text),contract.name+' lacks actor/decision-right contract')
+        check('Completion' in text,contract.name+' lacks completion criteria')
+        check('Backend' in text,contract.name+' lacks backend handoff boundary')
+    check((ROOT/'45_Role_End_to_End_Journeys_v1.md').exists(),'Role E2E journey contract missing')
+    check((ROOT/'46_Product_Functional_Baseline_v1_Validation.md').exists(),'Product baseline validation document missing')
     subtypes=load('schema/domain_model_v2.json')['subtypes']
     all_commands={name+':'+t['command'] for name,m in machines.items() for t in m['transitions']}
     for projection in mapping['registers']:
@@ -45,7 +75,8 @@ def validate_all():
             kind=source['object_type'];check(kind in schemas,'Unknown projection source')
             if source['subtype']:check(source['subtype'] in (subtypes.get(kind,[]) or schemas[kind]['properties'].get('kind',{}).get('enum',[])),'Unknown subtype '+str(source))
     identifiers={p['register_id'] for p in mapping['registers']}|{v['id'] for v in catalog['views']}
-    check(len(forms)==25 and set(data)==set(bindings)=={f['id'] for f in forms},'25 form contracts and bindings required')
+    form_ids={f['id'] for f in forms};template_ids={t['id'] for t in templates}
+    check(len(forms)==36 and len(templates)==36 and set(data)==set(bindings)==form_ids==template_ids,'36 form catalog/data/binding/template contracts required')
     for form in forms:
         check(set(form['registers'])<=identifiers,form['id']+' refers to unknown view')
         primary=bindings[form['id']].get('primary_source')
@@ -100,6 +131,6 @@ def validate_all():
     legal=load('forms/legal_form_registry.json')['official_fixed'];check(len({x['id'] for x in legal})==len(legal),'Duplicate legal template')
     for entry in legal:
         if entry['render_enabled']:check(all(entry.get(k) for k in ['template_file','template_sha256','effective_from','verified_source_url']),'Unverified legal template enabled')
-    return dict(machines=len(machines),transitions=sum(len(m['transitions']) for m in machines.values()),policies=len(policies),registers=29,forms=25,api_paths=len(api['paths']),api_operations=ops)
+    return dict(machines=len(machines),transitions=sum(len(m['transitions']) for m in machines.values()),policies=len(policies),registers=29,forms=36,api_paths=len(api['paths']),api_operations=ops)
 
 if __name__=='__main__':print(json.dumps(validate_all(),ensure_ascii=False))

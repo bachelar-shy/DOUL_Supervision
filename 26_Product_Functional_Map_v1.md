@@ -205,11 +205,11 @@ read-only Register와 Maturity는 같은 의미가 아니다. Read-only Projecti
 
 | No. | 관리대장 | Domain | 현재 역할 | 연결 Workflow | 양식 | 성숙도 | 다음 Product / Functional 과제 |
 |---|---|---|---|---|---|---|---|
-| 01 | 법령·인허가 | D1 | 기준+상태 Projection | Requirement 중심 | - | M2 | 인허가 적용성, 제출, 보완, 승인, 만료, 변경 영향의 업무 Gate 정규화 |
+| 01 | 법령·인허가 | D1 | 기준+상태 Projection | F-09 RegulatoryPermit + Requirement | FM-30 | M3 | 적용성·제출·보완·승인·조건·변경·갱신 lifecycle 확정 |
 | 02 | 계약·업무범위 | D1 | 기준정보 | 변경은 14/26으로 분리 | - | R | 기준선·유효기간·업무범위 참조 유지. 별도 상태머신 불필요 |
-| 03 | 인력·자격 | D1 | 기준+배치 Projection | RoleAssignment / Qualification | - | M2 | 배치요청·검증·승인·대체·만료/철수 절차 명확화 |
-| 04 | 도면·개정 | D2 | 버전 Projection | Change / Approval과 연결 | FM-03 | M2 | 발행·수령·현재본·폐기도면·대체본·현장배포 Gate 명확화 |
-| 05 | 문서송수신 | D2 | 기록 Projection | Notification / InformationItem | FM-01 | M1 | 송신·수신·접수·회신기한·공식전달 증빙의 업무 계약 필요 |
+| 03 | 인력·자격 | D1 | 기준+배치 Projection | F-15 PersonnelDeployment + RoleAssignment / Qualification | FM-35 | M3 | 자격검증·배치승인·만료·대체·철수 lifecycle 확정 |
+| 04 | 도면·개정 | D2 | 버전 Projection | F-16 Drawing + Approval + DocumentTransmittal | FM-03, FM-36 | M3 | current revision·field release·supersede·배포 Gate 확정 |
+| 05 | 문서송수신 | D2 | 기록 Projection | F-14 DocumentTransmittal + InformationItem | FM-01, FM-34 | M3 | 전달·수령·회신기한·공식전달 증빙 lifecycle 확정 |
 | 06 | 시공사 제출자료 | D2 | 제출자료 Projection | F-01 Submission + Approval | FM-01, FM-02 | M3 | F-01에서 Revision 불변성, 완전성검토, 기술검토, 최종판정, 재제출, 배포까지 확정 |
 | 07 | 시공상세도 | D2/D4 | 설계·시공성 검토 | F-01 + Approval / RFI / Change | FM-03 | M3 | F-01에서 설계의도·다분야 간섭·RFI/Change 분기·Release/Supersede까지 확정 |
 | 08 | 자재승인 | D2/D3 | 승인 Projection | F-02 Material Approval | FM-04 | M3 | F-02에서 제품 Identity, Sample/Mock-up, 동등품, 승인 Scope·유효성까지 확정 |
@@ -219,32 +219,32 @@ read-only Register와 Maturity는 같은 의미가 아니다. Read-only Projecti
 | 12 | 부적합·시정 | D3 | 핵심 실행형 | Issue + Action + Reinspection | FM-12, FM-13 | M3 | 반복 시정주기·발주처 보고 연계를 지속 검증 |
 | 13 | 기술질의 | D4 | 실행형 | RFI | FM-15 | M3 | 답변이 Change/Approval을 자동 대체하지 않는 원칙 유지 |
 | 14 | 설계변경 | D4 | 실행형 | Change + Approval + Decision | FM-03, FM-16 | M3 | 기술승인과 계약/비용/공기 결정 권한 분리 유지 |
-| 15 | 현장지시 | D4 | 실행형 | Action 재사용 | FM-14 | M2 | 지시 발행권한, 수령확인, 이의/질의, 완료확인, 설계변경 전환조건 상세화 |
-| 16 | 공정·지연 | D6 | 현황 Projection | Report / Decision과 연결 | FM-19 | M1 | Baseline→실적→지연→원인→회복계획→승인→검증 Workflow 필요 |
-| 17 | 물량·기성 | D6 | 현황 Projection | Inspection / Approval 참조 | - | M1 | 물량근거→검수완료→기성신청→감리확인→조정→추천/승인 구조 필요 |
-| 18 | 안전·고위험작업 | D5 | 실행형 | Inspection + Issue | FM-02, FM-17 | M2 | 작업허가, 작업중지, 재개승인, Permit 유효시간 및 책임자 Gate 필요 |
-| 19 | 안전검사 장비·기계 | D5 | 자격/검사 Projection | Certificate 참조 | FM-17 | M1 | 검사유효기간·교정·사용중지·재검사·만료 알림 Workflow 필요 |
-| 20 | PCCC(소방) | D5 | 실행형 | Requirement + Inspection | - | M2 | 설계/시공/시험/자체검수/관할기관 단계와 법정문서 Gate 상세화 |
-| 21 | 환경 | D5 | 실행형 | Issue 중심 | - | M2 | 환경조건·측정·위반·시정·대관보고·재확인 Workflow 정규화 |
+| 15 | 현장지시 | D4 | 실행형 | F-10 SiteInstruction + Action | FM-14 | M3 | 발행·수령·이의/질의·이행·검증·Change 분기 확정 |
+| 16 | 공정·지연 | D6 | 현황 Projection | F-04 Schedule + DelayEvent + RecoveryPlan | FM-19 | M3 | F-04에서 Baseline, Data Date, Progress Update, Delay Impact, Recovery, EOT 경계까지 확정 |
+| 17 | 물량·기성 | D6 | 현황 Projection | F-05 ContractBOQ + QuantityMeasurement + PaymentClaim | FM-26 | M3 | F-05에서 BOQ, 수량검증, 지급적격성, 추천, 발주처승인, 실제지급까지 확정 |
+| 18 | 안전·고위험작업 | D5 | 실행형 | F-03 SafetyPermit + SafetyStopOrder + Issue | FM-02, FM-17 | M3 | F-03에서 Permit 상태, Pre-start Gate, 작업중지, 재개승인, workAuthorized까지 확정 |
+| 19 | 안전검사 장비·기계 | D5 | 자격/검사 Projection | F-03 SafetyEquipmentInspection + Certificate | FM-17 | M3 | F-03에서 검사·인증·교정·사용중지·재검사·Equipment Readiness까지 확정 |
+| 20 | PCCC(소방) | D5 | 실행형 | F-06 FireCompliance + Inspection + Issue | FM-27 | M3 | 설계·설치·시험·통합시험·법정/계약 수용 Gate 확정 |
+| 21 | 환경 | D5 | 실행형 | F-06 EnvironmentalControl + Issue | FM-28 | M3 | 조건·측정·초과·사고·시정·재확인·대관보고 확정 |
 | 22 | 회의·발주처 보고·결정 | D7 | 핵심 실행형 | Report + Decision + Action + Approval | FM-16, FM-19~21 | M3 | 정기·즉시·의사결정·수령·후속검증의 독립성 유지 |
-| 23 | 일일기록·사진증빙 | D10 | Evidence Projection | Evidence + AnalysisRun | FM-18 | M2 | 일일기록 완료/서명 기준과 사진·영상·발화 분석결과의 공식 반영경계 명확화 |
-| 24 | 준공·인수·하자 | D9 | 실행형 | Inspection + Issue 재사용 | FM-11, FM-23~25 | M2 | Commissioning/Handover/Warranty Package별 전용 상태·Gate 상세화 |
-| 25 | 위험·기회 | D8 | 실행형 | Decision 재사용 | FM-20 | M2 | 식별→평가→대응→잔여위험→모니터링→종결의 Risk Workflow 정규화 |
-| 26 | 계약통지·클레임·공기연장 | D6 | 실행형 Projection | Decision 재사용 | - | M1 | Notice 기한, entitlement, substantiation, 검토, 결정, EOT/비용 반영 Workflow 필요 |
-| 27 | 보험·보증 | D6 | 기준/만료 Projection | Certificate 참조 | - | M1 | 제출·적합성확인·만료·갱신·보증금 반환조건과 알림 계약 필요 |
-| 28 | 내부감사·준수점검 | D8 | 실행형 | Issue + Action 재사용 | - | M2 | Audit 계획→수행→Finding→시정→독립검증→종결 구조 상세화 |
-| 29 | 경험·교훈 | D8 | 지식 Projection | Requirement / Decision 참조 | - | M1 | Lesson 후보→검토→채택→표준/Checklist 반영→효과확인의 학습 Loop 필요 |
+| 23 | 일일기록·사진증빙 | D10 | Evidence Projection | F-17 DailyRecord + Evidence + AnalysisRun | FM-18 | M3 | 작성·검토·서명·freeze·revision과 AI 경계 확정 |
+| 24 | 준공·인수·하자 | D9 | 실행형 | F-07 CommissioningPackage + HandoverPackage + WarrantyClaim | FM-11, FM-23~25 | M3 | 시운전·부분/최종인수·Punch·Warranty closeout 확정 |
+| 25 | 위험·기회 | D8 | 실행형 | F-11 Risk + Decision | FM-20, FM-31 | M3 | 평가·대응·잔여위험·수용·모니터링 lifecycle 확정 |
+| 26 | 계약통지·클레임·공기연장 | D6 | 실행형 Projection | F-08 ContractNotice + Claim + EOTRequest | FM-29 | M3 | Notice·substantiation·entitlement·time/cost·decision 경계 확정 |
+| 27 | 보험·보증 | D6 | 기준/만료 Projection | F-12 InsuranceGuarantee + Certificate | FM-32 | M3 | 제출·적합성·갱신·만료·release/call 조건 확정 |
+| 28 | 내부감사·준수점검 | D8 | 실행형 | F-11 ComplianceAudit + Issue + Action | FM-31 | M3 | 계획·Finding·시정·독립검증·종결 확정 |
+| 29 | 경험·교훈 | D8 | 지식 Projection | F-13 Lesson + Requirement + Decision | FM-33 | M3 | 후보·검증·채택·표준반영·효과확인 Loop 확정 |
 
 ### 8.1 현재 분포
 
-- M3: 10개 — 06, 07, 08, 09, 10, 11, 12, 13, 14, 22
-- M2: 11개 — 01, 03, 04, 15, 18, 20, 21, 23, 24, 25, 28
-- M1: 7개 — 05, 16, 17, 19, 26, 27, 29
+- M3: 28개 — 01, 03~29
+- M2: 0개
+- M1: 0개
 - R: 1개 — 02
 
 핵심 판단:
 
-> Inspection / Issue / RFI / Change / Owner Governance는 깊게 정의됐으나, 제출·자재·시험·공정·기성·안전허가·Claim/EOT·준공 Package는 동일한 깊이의 Functional Contract가 아직 부족하다.
+> Product / Functional Baseline v1.0 기준으로 Workflow가 필요한 28개 관리대장은 M3에 도달했고, 02 계약·업무범위는 의도적 Reference(R)로 유지한다.
 
 ---
 
@@ -507,17 +507,12 @@ Platform Runtime
 
 ## 16. 다음 작업
 
-Product / Functional의 다음 상세설계 순서는 다음으로 한다.
+Product / Functional Baseline v1.0 상세설계는 완료 상태로 한다.
 
-1. **F-01 시공사 제출자료 / 시공상세도 — 상세계약 완료 (`27_Submission_Shop_Drawing_Functional_Contract.md`)**
-2. **F-02 자재승인 / 반입 / 시험 — 상세계약 완료 (`28_Material_Approval_Receiving_Test_Functional_Contract.md`)**
-3. **F-03 Safety Permit / Stop / Resume — 다음 상세설계**
-4. F-04 Schedule / Delay / Recovery
-5. F-05 Progress Measurement / Payment
-6. F-06 PCCC / Environment Compliance
-7. F-07 Commissioning / Handover / Warranty
-8. F-08 Contract Notice / Claim / EOT
-9. 역할별 End-to-End Journey
-10. Product / Functional Baseline v1.0 최종검증
+1. F-01~F-17 Functional Contract 완료
+2. 역할별 End-to-End Journey 완료 (`45_Role_End_to_End_Journeys_v1.md`)
+3. Baseline v1.0 최종검증 완료 (`46_Product_Functional_Baseline_v1_Validation.md`)
+4. Backend/UI/Platform 구현 인계 Backlog 완료 (`47_Product_Implementation_Handoff_Backlog_v1.md`)
+5. 다음 단계는 각 구현축의 Product Contract 소비 및 Project-specific configuration pack으로 전환
 
-이 순서는 단순 관리대장 번호순이 아니라 현장 착공 전 승인 → 현장 품질 → 리스크 → 공정/비용 → 준공의 의존관계를 기준으로 한다.
+업무 Contract 변경은 이후 Baseline v1.x change control을 통해 Product / Functional에서 먼저 확정한다.

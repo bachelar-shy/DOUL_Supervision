@@ -1134,7 +1134,10 @@
               "Certificate",
               "MeetingRecord",
               "Manual",
-              "GeneralDocument"
+              "GeneralDocument",
+              "Schedule",
+              "ContractBOQ",
+              "DailyRecord"
             ]
           },
           "title": {
@@ -2043,8 +2046,12 @@
               "ChangeRequest",
               "Variation",
               "ScheduleActivity",
+              "DelayEvent",
+              "RecoveryPlan",
+              "QuantityMeasurement",
               "PaymentClaim",
               "SafetyPermit",
+              "SafetyStopOrder",
               "OwnerDecisionRequest",
               "CommissioningPackage",
               "HandoverPackage",
@@ -2057,7 +2064,13 @@
               "ContractNotice",
               "InsuranceGuarantee",
               "ComplianceAudit",
-              "Lesson"
+              "Lesson",
+              "FireCompliance",
+              "Claim",
+              "EOTRequest",
+              "RegulatoryPermit",
+              "DocumentTransmittal",
+              "PersonnelDeployment"
             ]
           },
           "status": {

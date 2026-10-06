@@ -235,6 +235,106 @@
       ],
       "legal_mode": "doul_internal",
       "template_version": "2.0"
+    },
+    {
+      "id": "FM-26",
+      "title": "물량·기성 검토·추천서",
+      "registers": [
+        "17"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "2.0"
+    },
+    {
+      "id": "FM-27",
+      "title": "소방 적합성·시험·수용 검토서",
+      "registers": [
+        "20"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "2.0"
+    },
+    {
+      "id": "FM-28",
+      "title": "환경 준수·측정 검토서",
+      "registers": [
+        "21"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "2.0"
+    },
+    {
+      "id": "FM-29",
+      "title": "계약통지·Claim·EOT 검토서",
+      "registers": [
+        "26"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "2.0"
+    },
+    {
+      "id": "FM-30",
+      "title": "인허가 적용성·상태 검토서",
+      "registers": [
+        "01"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "2.0"
+    },
+    {
+      "id": "FM-31",
+      "title": "Risk·Assurance·Audit 검토서",
+      "registers": [
+        "25",
+        "28"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "2.0"
+    },
+    {
+      "id": "FM-32",
+      "title": "보험·보증 적합성 검토서",
+      "registers": [
+        "27"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "2.0"
+    },
+    {
+      "id": "FM-33",
+      "title": "경험·교훈 검토서",
+      "registers": [
+        "29"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "2.0"
+    },
+    {
+      "id": "FM-34",
+      "title": "문서송수신표지",
+      "registers": [
+        "05"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "2.0"
+    },
+    {
+      "id": "FM-35",
+      "title": "인력·자격 배치 검토서",
+      "registers": [
+        "03"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "2.0"
+    },
+    {
+      "id": "FM-36",
+      "title": "도면 Revision·현장배포 확인서",
+      "registers": [
+        "04"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "2.0"
     }
   ],
   "view_id_schema": "V-01|V-02|V-03|V-04"

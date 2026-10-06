@@ -1720,6 +1720,10 @@
           "subtype": "SafetyPermit"
         },
         {
+          "object_type": "WorkItem",
+          "subtype": "SafetyStopOrder"
+        },
+        {
           "object_type": "Inspection",
           "subtype": null
         },
@@ -1910,8 +1914,20 @@
       ],
       "domain_sources": [
         {
+          "object_type": "InformationItem",
+          "subtype": "Schedule"
+        },
+        {
           "object_type": "WorkItem",
           "subtype": "ScheduleActivity"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "DelayEvent"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "RecoveryPlan"
         },
         {
           "object_type": "InformationItem",
@@ -2519,6 +2535,1024 @@
             "owner",
             "due",
             "recheck",
+            "status"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-26": {
+      "source_registers": [
+        "17"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "InformationItem",
+          "subtype": "ContractBOQ"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "QuantityMeasurement"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "PaymentClaim"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "Variation"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-26",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.claim_no": {
+          "dto_path": "payment.claim_no",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.period": {
+          "dto_path": "payment.period",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.boq_revision": {
+          "dto_path": "payment.boq_revision",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.currency": {
+          "dto_path": "payment.currency",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.claimed_amount": {
+          "dto_path": "payment.claimed_amount",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.verified_amount": {
+          "dto_path": "payment.verified_amount",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.recommended_amount": {
+          "dto_path": "payment.recommended_amount",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.approved_variation": {
+          "dto_path": "payment.approved_variation",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.material_on_site": {
+          "dto_path": "payment.material_on_site",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.retention": {
+          "dto_path": "payment.retention",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.advance_recovery": {
+          "dto_path": "payment.advance_recovery",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.other_deduction": {
+          "dto_path": "payment.other_deduction",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.tax": {
+          "dto_path": "payment.tax",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.blocked_disputed_amount": {
+          "dto_path": "payment.blocked_disputed_amount",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.recommendation_comment": {
+          "dto_path": "payment.recommendation_comment",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.owner_status": {
+          "dto_path": "payment.owner_status",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": false
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "boq_item",
+            "description",
+            "unit",
+            "contract_qty",
+            "claimed_qty",
+            "verified_qty",
+            "previous_certified_qty",
+            "cumulative_verified_qty",
+            "verified_amount",
+            "variation_ref",
+            "basis_note"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-27": {
+      "source_registers": [
+        "20"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "FireCompliance"
+        },
+        {
+          "object_type": "Requirement",
+          "subtype": null
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Issue",
+          "subtype": "Fire"
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-27",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "fire.system": {
+          "dto_path": "fire.system",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "fire.location": {
+          "dto_path": "fire.location",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "fire.stage": {
+          "dto_path": "fire.stage",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "fire.design_approval": {
+          "dto_path": "fire.design_approval",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "fire.test_status": {
+          "dto_path": "fire.test_status",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "fire.acceptance": {
+          "dto_path": "fire.acceptance",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "fire.issue_status": {
+          "dto_path": "fire.issue_status",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "requirement",
+            "source",
+            "status",
+            "note"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-28": {
+      "source_registers": [
+        "21"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "EnvironmentalControl"
+        },
+        {
+          "object_type": "Requirement",
+          "subtype": null
+        },
+        {
+          "object_type": "Issue",
+          "subtype": "Environmental"
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-28",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "environment.condition": {
+          "dto_path": "environment.condition",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "environment.monitoring_date": {
+          "dto_path": "environment.monitoring_date",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "environment.result": {
+          "dto_path": "environment.result",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "environment.criterion": {
+          "dto_path": "environment.criterion",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "environment.status": {
+          "dto_path": "environment.status",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "environment.action": {
+          "dto_path": "environment.action",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "point",
+            "method",
+            "result",
+            "criterion",
+            "status"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-29": {
+      "source_registers": [
+        "26"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "ContractNotice"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "Claim"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "EOTRequest"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "DelayEvent"
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-29",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "contract.event": {
+          "dto_path": "contract.event",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "contract.notice_no": {
+          "dto_path": "contract.notice_no",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "contract.notice_due": {
+          "dto_path": "contract.notice_due",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "contract.claim_status": {
+          "dto_path": "contract.claim_status",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "contract.time_impact": {
+          "dto_path": "contract.time_impact",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "contract.cost_impact": {
+          "dto_path": "contract.cost_impact",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "contract.recommendation": {
+          "dto_path": "contract.recommendation",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "event",
+            "notice",
+            "evidence",
+            "assessment",
+            "decision"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-30": {
+      "source_registers": [
+        "01"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "RegulatoryPermit"
+        },
+        {
+          "object_type": "Requirement",
+          "subtype": null
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "GeneralDocument"
+        }
+      ],
+      "payload_schema": "FM-30",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "permit.type": {
+          "dto_path": "permit.type",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "permit.authority": {
+          "dto_path": "permit.authority",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "permit.status": {
+          "dto_path": "permit.status",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "permit.submitted_at": {
+          "dto_path": "permit.submitted_at",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "permit.valid_to": {
+          "dto_path": "permit.valid_to",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "permit.condition": {
+          "dto_path": "permit.condition",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "requirement",
+            "submission",
+            "response",
+            "condition",
+            "status"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-31": {
+      "source_registers": [
+        "25",
+        "28"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "Risk"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "ComplianceAudit"
+        },
+        {
+          "object_type": "Issue",
+          "subtype": null
+        },
+        {
+          "object_type": "Action",
+          "subtype": null
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-31",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "assurance.type": {
+          "dto_path": "assurance.type",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "assurance.scope": {
+          "dto_path": "assurance.scope",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "assurance.risk_rating": {
+          "dto_path": "assurance.risk_rating",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "assurance.finding": {
+          "dto_path": "assurance.finding",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "assurance.action": {
+          "dto_path": "assurance.action",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "assurance.verification": {
+          "dto_path": "assurance.verification",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "item",
+            "owner",
+            "due",
+            "status",
+            "evidence"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-32": {
+      "source_registers": [
+        "27"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "InsuranceGuarantee"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "Certificate"
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-32",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "guarantee.type": {
+          "dto_path": "guarantee.type",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "guarantee.issuer": {
+          "dto_path": "guarantee.issuer",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "guarantee.no": {
+          "dto_path": "guarantee.no",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "guarantee.amount": {
+          "dto_path": "guarantee.amount",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "guarantee.valid_to": {
+          "dto_path": "guarantee.valid_to",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "guarantee.status": {
+          "dto_path": "guarantee.status",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "requirement",
+            "value",
+            "status",
+            "note"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-33": {
+      "source_registers": [
+        "29"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "Lesson"
+        },
+        {
+          "object_type": "Requirement",
+          "subtype": null
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-33",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "lesson.source": {
+          "dto_path": "lesson.source",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "lesson.context": {
+          "dto_path": "lesson.context",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "lesson.statement": {
+          "dto_path": "lesson.statement",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "lesson.applicability": {
+          "dto_path": "lesson.applicability",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "lesson.decision": {
+          "dto_path": "lesson.decision",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "lesson.effectiveness": {
+          "dto_path": "lesson.effectiveness",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "source",
+            "lesson",
+            "action",
+            "owner",
+            "status"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-34": {
+      "source_registers": [
+        "05"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "DocumentTransmittal"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": null
+        },
+        {
+          "object_type": "Notification",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-34",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "transmittal.no": {
+          "dto_path": "transmittal.no",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "transmittal.sender": {
+          "dto_path": "transmittal.sender",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "transmittal.recipient": {
+          "dto_path": "transmittal.recipient",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "transmittal.purpose": {
+          "dto_path": "transmittal.purpose",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "transmittal.issued_at": {
+          "dto_path": "transmittal.issued_at",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "transmittal.response_due": {
+          "dto_path": "transmittal.response_due",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "transmittal.status": {
+          "dto_path": "transmittal.status",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "title",
+            "no_rev",
+            "purpose",
+            "receipt",
+            "response"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-35": {
+      "source_registers": [
+        "03"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "WorkItem",
+          "subtype": "PersonnelDeployment"
+        },
+        {
+          "object_type": "Party",
+          "subtype": null
+        },
+        {
+          "object_type": "RoleAssignment",
+          "subtype": null
+        },
+        {
+          "object_type": "Qualification",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-35",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "personnel.name": {
+          "dto_path": "personnel.name",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "personnel.role": {
+          "dto_path": "personnel.role",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "personnel.qualification": {
+          "dto_path": "personnel.qualification",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "personnel.valid_to": {
+          "dto_path": "personnel.valid_to",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "personnel.deployment": {
+          "dto_path": "personnel.deployment",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "personnel.status": {
+          "dto_path": "personnel.status",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "qualification",
+            "issuer",
+            "valid_to",
+            "status",
+            "note"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-36": {
+      "source_registers": [
+        "04"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "InformationItem",
+          "subtype": "Drawing"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "DocumentTransmittal"
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "ChangeRequest"
+        }
+      ],
+      "payload_schema": "FM-36",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "drawing.no": {
+          "dto_path": "drawing.no",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "drawing.revision": {
+          "dto_path": "drawing.revision",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "drawing.issued_for": {
+          "dto_path": "drawing.issued_for",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "drawing.approval_status": {
+          "dto_path": "drawing.approval_status",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "drawing.release_status": {
+          "dto_path": "drawing.release_status",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "drawing.distribution_status": {
+          "dto_path": "drawing.distribution_status",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "recipient",
+            "revision",
+            "issued_at",
+            "receipt",
             "status"
           ],
           "source": "reviewed_projection_dto"

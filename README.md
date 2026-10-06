@@ -39,17 +39,37 @@ PR #2 병합 커밋 `d13e744`의 계약·검증 엔진을 재사용한 반응형
 26. [Product / Functional Map v1.0](./26_Product_Functional_Map_v1.md)
 27. [시공사 제출자료 · 시공상세도 Functional Contract v1.0](./27_Submission_Shop_Drawing_Functional_Contract.md)
 28. [자재승인 · 반입검사 · 시험 Functional Contract v1.0](./28_Material_Approval_Receiving_Test_Functional_Contract.md)
+29. [Issue 종결증빙 Functional Contract v1.0](./29_Issue_Closure_Evidence_Functional_Contract.md)
+30. [Safety Permit / Stop / Resume Functional Contract v1.0](./30_Safety_Permit_Stop_Resume_Functional_Contract.md)
+31. [Schedule / Delay / Recovery Functional Contract v1.0](./31_Schedule_Delay_Recovery_Functional_Contract.md)
+32. [Progress Measurement / Payment Functional Contract v1.0](./32_Progress_Measurement_Payment_Functional_Contract.md)
+33. [Fire / Environment Compliance Functional Contract v1.0](./33_Fire_Environment_Compliance_Functional_Contract.md)
+34. [Commissioning / Handover / Warranty Functional Contract v1.0](./34_Commissioning_Handover_Warranty_Functional_Contract.md)
+35. [Contract Notice / Claim / EOT Functional Contract v1.0](./35_Contract_Notice_Claim_EOT_Functional_Contract.md)
+36. [Regulatory Permit Lifecycle Functional Contract v1.0](./36_Regulatory_Permit_Lifecycle_Functional_Contract.md)
+37. [Site Instruction Functional Contract v1.0](./37_Site_Instruction_Functional_Contract.md)
+38. [Risk / Assurance / Audit Functional Contract v1.0](./38_Risk_Assurance_Audit_Functional_Contract.md)
+39. [Insurance / Guarantee Functional Contract v1.0](./39_Insurance_Guarantee_Functional_Contract.md)
+40. [Lesson Learned Functional Contract v1.0](./40_Lesson_Learned_Functional_Contract.md)
+41. [Document Transmittal Functional Contract v1.0](./41_Document_Transmittal_Functional_Contract.md)
+42. [Personnel Qualification / Deployment Functional Contract v1.0](./42_Personnel_Qualification_Deployment_Functional_Contract.md)
+43. [Drawing Revision / Field Distribution Functional Contract v1.0](./43_Drawing_Revision_Field_Distribution_Functional_Contract.md)
+44. [Daily Record / Evidence Functional Contract v1.0](./44_Daily_Record_Evidence_Functional_Contract.md)
+45. [Role End-to-End Journeys v1.0](./45_Role_End_to_End_Journeys_v1.md)
+46. [Product / Functional Baseline v1.0 Validation](./46_Product_Functional_Baseline_v1_Validation.md)
+47. [Product Baseline v1.0 — Implementation Handoff Backlog](./47_Product_Implementation_Handoff_Backlog_v1.md)
 
 ### 현재 상태
 
 - 체계·법령·현장절차: 기존 기준서 유지, 프로젝트별 적용성·원문 검토 필요
 - 구현계약: 10개 상태모델·98개 전이·51개 권한정책·29개 조회 대장
 - 사진·영상·발화: 원본·PTS·발화구간·처리범위·사람 확인 상세정의 및 결과 검증
-- 25개 A4 양식: 필드·서명·출처 계약 및 HTML 구조 검증. DOCX/PDF 시각 QA는 후속 작업
-- 참조 실행: Python 표준 라이브러리 기반 업무흐름·권한·문서 엔진, 99개 자동시험
+- 36개 A4 양식: 필드·서명·출처 계약 및 HTML 구조 검증. DOCX/PDF 시각 QA는 후속 작업
+- 참조 실행 검증: Core 108개 + HTTP/Application 66개 자동시험 PASS
 - Mobile · Tablet · Responsive Web: 제품·화면 계약, 실제 앱 배포 전
 - Stitch: Presentation / UI Design Source, 업무권한·판정의 원본은 Domain/State/Authority
-- 다음 단계: 운영 DB·인증·업로드·미디어/AI·문서 어댑터 → 법정 원본서식 확인·탑재 → 현장 시범운영
+- Product Baseline: 28개 관리대장 M3 + 계약·업무범위 Reference 1개
+- 다음 단계: Backend/UI 구현 backlog → Project-specific configuration pack → 현장 시범운영
 
 검증 방법은 [app README](./app/README.md)를 따른다. 계약과 참조 실행의 완료 범위는 [이슈 #1 검증서](./22_Issue_1_Resolution_Validation.md)에 명시했다.
 
