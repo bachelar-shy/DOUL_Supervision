@@ -382,7 +382,7 @@ class Engine:
         role=self.authorize(proposed,transition['authority'],party_id,role_id)
         self._common(proposed,role,allow_stale_baseline=machine=='inspection' and command in ['receive','return'])
         if transition['required_evidence']:
-            require(bool(proposed.get('evidenceIds')),'EVIDENCE_REQUIRED','Transition requires preserved evidence')
+            require(bool(evidence_ids),'EVIDENCE_REQUIRED','Transition requires current command evidence')
         for guard in transition['guards']:
             if guard not in ['assignment_authorized','expected_version_matches','requirement_versions_current','evidence_provenance_valid','drawing_revision_current','upstream_hold_points_released']:
                 self._guard(guard,proposed,payload,party_id)

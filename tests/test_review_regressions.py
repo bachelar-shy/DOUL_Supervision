@@ -168,7 +168,7 @@ class ReviewRegressions(unittest.TestCase):
         self.f.acceptance(inspection)
         inspection=self.f.command('inspection',inspection,'release_next_work',evidence=[closure_evidence])
         self.denies('COMMAND_FIELD_REQUIRED',lambda:self.f.command('issue',issue,'close',evidence=[]))
-        self.denies('CLOSURE_ACTION_EVIDENCE_REQUIRED',lambda:self.f.command('issue',issue,'close',{'closureEvidenceIds':[self.f.evidence]},evidence=[]))
+        self.denies('CLOSURE_ACTION_EVIDENCE_REQUIRED',lambda:self.f.command('issue',issue,'close',{'closureEvidenceIds':[self.f.evidence]},evidence=[self.f.evidence]))
         closed=self.f.command('issue',issue,'close',{'closureEvidenceIds':[closure_evidence]},evidence=[closure_evidence])
         self.assertEqual(closed['status'],'closed')
         self.assertEqual(closed['closureEvidenceIds'],[closure_evidence])

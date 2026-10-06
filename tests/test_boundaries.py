@@ -85,7 +85,7 @@ class Boundaries(unittest.TestCase):
         r=self.f.inspection();key=uid();self.f.command('inspection',r,'request',dict(requestedAt=DUE,requestedInspectionAt=DUE),'CON',key=key)
         self.denies('IDEMPOTENCY_CONFLICT',lambda:self.e.execute('inspection',r['id'],'request',r['version'],dict(requestedAt='2026-10-06T12:00:00Z'),[],*self.f.actors['CON'],key))
     def test_idempotent_replay_does_not_bypass_expired_role(self):
-        r=self.f.inspection();key=uid();args=('inspection',r['id'],'request',r['version'],dict(requestedAt=DUE),[],*self.f.actors['CON'],key)
+        r=self.f.inspection();key=uid();args=('inspection',r['id'],'request',r['version'],dict(requestedAt=DUE),[self.f.evidence],*self.f.actors['CON'],key)
         self.e.execute(*args);self.f.clock+=timedelta(days=100)
         self.denies('ASSIGNMENT_EXPIRED',lambda:self.e.execute(*args))
     def test_caller_cannot_patch_raw_status_or_release_flag(self):

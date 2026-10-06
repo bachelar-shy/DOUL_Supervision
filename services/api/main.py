@@ -249,7 +249,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             try:preview.execute(machine,record['id'],transition['command'],record['version'],payload or {},[],session['partyId'],role['id'],uid())
             except ContractError as exc:failure=error_body(exc)
             fields=transition['payload_fields']
-            results.append(dict(command=transition['command'],to=transition['to'],authority=transition['authority'],fields=fields,requiresEvidence=transition['required_evidence'],ready=failure is None,requiresInput=bool(fields),blockedReason=failure,expectedVersion=record['version']))
+            results.append(dict(command=transition['command'],to=transition['to'],authority=transition['authority'],fields=fields,requiresEvidence=transition['required_evidence'],ready=failure is None,requiresInput=bool(fields) or transition['required_evidence'],blockedReason=failure,expectedVersion=record['version']))
         return results
 
     @app.get('/ready')
