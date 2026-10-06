@@ -137,8 +137,8 @@ services:
       - |
         rc alias set local http://object-storage:9000 "$$RUSTFS_ACCESS_KEY" "$$RUSTFS_SECRET_KEY"
         rc mb --ignore-existing "local/$$OBJECT_STORAGE_BUCKET"
-        rc anonymous set private "local/$OBJECT_STORAGE_BUCKET"
-        rc ls "local/$OBJECT_STORAGE_BUCKET"
+        rc anonymous set private "local/$$OBJECT_STORAGE_BUCKET"
+        rc ls "local/$$OBJECT_STORAGE_BUCKET"
     restart: "no"
 
 volumes:
