@@ -1,0 +1,28 @@
+name: platform-observability
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/platform-observability.yml"
+      - "infra/observability/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/platform-observability.yml"
+      - "infra/observability/**"
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-health-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Compile runtime health snapshot
+        run: python3 -m py_compile infra/observability/runtime_snapshot.py
+
+      - name: Verify structured and secret-safe signals
+        run: python3 infra/observability/test_runtime_snapshot.py -v
