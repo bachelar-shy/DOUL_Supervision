@@ -797,7 +797,18 @@ Backend는 다음 Product 의미를 변경하지 않는다.
 - Contract Notice / Claim / EOT refs
 - Audit / source file hash
 
-현재 WorkItem.data로 일부 필드를 임시 표현할 수 있으나 Product 의미를 축약하지 않는다.
+Product 실행계약은 다음 기계계약으로 확정한다.
+
+- `app/schema/domain_schemas_v2.json`: `ScheduleData`, `ScheduleActivityData`, `DelayEventData`, `DelayImpactAnalysisData`, `RecoveryPlanData` 및 Schedule 품질/Variance 하위 Schema
+- `app/schema/state_machines_v1.json`: `schedule_baseline`, `schedule_progress`, `delay_event`, `recovery_plan`
+- `app/schema/authority_matrix_v1.json`: `schedule.*` 권한정책
+- `app/schema/schedule_execution_contract_v1.json`: Baseline activation, Progress freeze/correction, Delay entitlement 경계, Recovery/Baseline/EOT 경계
+- `app/reference/machine_bindings_v1.json`: Schedule/Delay/Recovery API collection과 create authority
+- 관리대장 16의 command projection
+
+Backend는 위 계약을 구현하며 별도 상태·권한·필드 의미를 재정의하지 않는다. `variance`, `effectivenessResult`, workflow timestamp는 사용자 임의입력이 아니라 검증/명령 결과로 계산되는 서버 관리값이다.
+
+Baseline activation은 동일 Project/Package/Discipline 범위에서 exact approved Schedule 하나만 effective가 되도록 원자적으로 처리하고, 기존 effective Baseline은 삭제하지 않고 `superseded`로 보존한다. Progress `frozen` Snapshot은 수정하지 않으며 정정은 새 Schedule record + reason + supersedes chain으로 처리한다.
 
 ---
 
@@ -914,5 +925,12 @@ F-04 Product / Functional Design은 다음을 정의했으므로 관리대장 16
 - Register Projection
 - Completion Criteria
 - Backend/UI Handoff
+- Baseline / Progress / Delay / Recovery 실행 State Machine·Authority·Guard
+- immutable Schedule source/hash/version 및 server-managed timestamp
+- Baseline activation / Progress correction atomicity
+- Delay Event와 entitlement 분리
+- Recovery acceptance와 Baseline/EOT/Cost 승인 분리
+
+F-04의 업무 의미는 `app/schema/schedule_execution_contract_v1.json`과 상기 State/Authority/Schema 계약으로 실행 가능하게 구조화했다. Backend B-P3 구현 인수 전까지 진척단계는 `contract_confirmed`로 유지한다.
 
 다음 Product 상세설계는 F-05 Progress Measurement / Payment로 진행한다.

@@ -59,16 +59,28 @@ Acceptance:
 
 ### B-P3. Schedule / Delay / Recovery
 
-구현:
-- Schedule immutable version/snapshot
-- Data Date
-- DelayEvent state/command
-- RecoveryPlan state/command
+Product 실행계약 Source of Truth:
+- `state_machines_v1.json`: `schedule_baseline`, `schedule_progress`, `delay_event`, `recovery_plan`
+- `authority_matrix_v1.json`: `schedule.*` 정책
+- `domain_schemas_v2.json`: Schedule/Activity/Delay/Impact/Recovery typed data
+- `schedule_execution_contract_v1.json`: Baseline/Progress/Delay/Recovery cross-object invariants
+
+Backend 구현:
+- Schedule immutable version/snapshot + source file/hash 보존
+- Data Date와 frozen Progress correction chain
+- Baseline activation 시 기존 effective Baseline을 원자적으로 supersede
+- DelayEvent state/command + factual impact analysis
+- RecoveryPlan state/command + effectiveness tracking
 - Baseline/Forecast 분리
+- F-08 EOT/Claim/Notice는 refs로 연결하되 Schedule에서 entitlement를 판정하지 않음
 
 Acceptance:
 - Progress Update가 Baseline을 덮어쓰지 않음
+- 과거 frozen Progress Snapshot 직접 수정 금지
+- Data Date 역행 금지; 동일 Data Date 정정은 reason + new record 필요
 - DelayEvent가 EOT를 자동승인하지 않음
+- Recovery 승인/실행이 Baseline revision·EOT·Cost 승인으로 해석되지 않음
+- Activity 100%가 Inspection/Handover 상태를 변경하지 않음
 
 ### B-P4. Measurement / Payment
 
