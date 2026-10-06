@@ -283,7 +283,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                     <CalendarDays aria-hidden="true" />
                     {todayDate}
                   </span>
-                  <span>
+                  <span className="weather-context">
                     <CloudSun aria-hidden="true" />
                     날씨 정보 미연동
                   </span>

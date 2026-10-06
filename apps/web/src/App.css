@@ -330,18 +330,20 @@ strong {
   gap: 7px;
   min-height: 30px;
 }
-.heading-context span:last-child {
-  padding: 0 10px;
-  border: 1px solid #e1e6ec;
-  border-radius: 999px;
-  color: #738091;
-  background: #fff;
-}
-.heading-context svg {
+.heading-context span:first-child svg {
   width: 15px;
   height: 15px;
   color: #7a8796;
-  stroke-width: 1.7;
+}
+.heading-context .weather-context {
+  gap: 9px;
+  color: #5c6978;
+}
+.heading-context .weather-context svg {
+  width: 42px;
+  height: 42px;
+  color: #d99b2b;
+  stroke-width: 1.5;
 }
 .heading-actions {
   display: flex;
