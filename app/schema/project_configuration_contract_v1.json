@@ -1,0 +1,590 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://doul.example/schema/project_configuration_contract_v1.json",
+  "title": "DOUL Project Configuration Pack v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "configVersion",
+    "baselineVersion",
+    "projectId",
+    "timezone",
+    "effectiveFrom",
+    "organizations",
+    "roleAssignments",
+    "qualificationRules",
+    "scopes",
+    "authorityBindings",
+    "deadlineRules",
+    "ownerReporting",
+    "forms",
+    "thresholds",
+    "mediaPolicy",
+    "acceptanceScenarioIds"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "configVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "baselineVersion": {
+      "type": "string",
+      "pattern": "^1\\.[0-9]+$"
+    },
+    "projectId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1
+    },
+    "effectiveFrom": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "organizations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organizationId",
+          "actorGroup"
+        ],
+        "properties": {
+          "organizationId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "actorGroup": {
+            "type": "string",
+            "enum": [
+              "SUP",
+              "CON",
+              "OWN",
+              "DES",
+              "ADM"
+            ]
+          },
+          "packageIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "locationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "roleAssignments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "partyId",
+          "organizationId",
+          "actorGroup",
+          "roleCode"
+        ],
+        "properties": {
+          "partyId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "organizationId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "actorGroup": {
+            "type": "string",
+            "enum": [
+              "SUP",
+              "CON",
+              "OWN",
+              "DES",
+              "ADM"
+            ]
+          },
+          "roleCode": {
+            "type": "string",
+            "minLength": 1
+          },
+          "disciplineIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "packageIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "locationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "qualificationRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "qualificationRules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "roleCode",
+          "validityRequired"
+        ],
+        "properties": {
+          "roleCode": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minimumRank": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "requiredKinds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "validityRequired": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "scopes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "disciplines",
+        "packages",
+        "locations"
+      ],
+      "properties": {
+        "disciplines": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "packages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "locations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "authorityBindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "authorityCode",
+          "implementationStatus",
+          "actorGroups",
+          "roleCodes"
+        ],
+        "properties": {
+          "authorityCode": {
+            "type": "string",
+            "minLength": 1
+          },
+          "actorGroups": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "SUP",
+                "CON",
+                "OWN",
+                "DES",
+                "ADM"
+              ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "roleCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "disciplineRequired": {
+            "type": "boolean"
+          },
+          "packageRequired": {
+            "type": "boolean"
+          },
+          "locationRequired": {
+            "type": "boolean"
+          },
+          "implementationStatus": {
+            "type": "string",
+            "enum": [
+              "planned",
+              "active"
+            ]
+          }
+        }
+      }
+    },
+    "deadlineRules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "source",
+          "calculation"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "legal",
+              "contract",
+              "owner_requirement",
+              "internal"
+            ]
+          },
+          "calculation": {
+            "type": "string",
+            "enum": [
+              "hours",
+              "calendar_days",
+              "business_days",
+              "fixed_datetime"
+            ]
+          },
+          "value": {
+            "type": "number",
+            "minimum": 0
+          },
+          "fixedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "calendarRef": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "value"
+            ]
+          },
+          {
+            "required": [
+              "fixedAt"
+            ]
+          }
+        ]
+      }
+    },
+    "ownerReporting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "priorities",
+        "periodicCadences"
+      ],
+      "properties": {
+        "priorities": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "priority",
+              "recipientRoleCodes"
+            ],
+            "properties": {
+              "priority": {
+                "type": "string",
+                "enum": [
+                  "P1",
+                  "P2",
+                  "P3",
+                  "P4"
+                ]
+              },
+              "receiptDueMinutes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "decisionDueMinutes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "recipientRoleCodes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              }
+            }
+          },
+          "uniqueItems": true
+        },
+        "periodicCadences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "reportType",
+              "cadence",
+              "recipientRoleCodes"
+            ],
+            "properties": {
+              "reportType": {
+                "type": "string",
+                "minLength": 1
+              },
+              "cadence": {
+                "type": "string",
+                "enum": [
+                  "daily",
+                  "weekly",
+                  "monthly",
+                  "custom"
+                ]
+              },
+              "customRule": {
+                "type": "string"
+              },
+              "recipientRoleCodes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "forms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "applicableFormIds",
+        "statutoryOriginals"
+      ],
+      "properties": {
+        "applicableFormIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^FM-[0-9]{2}$"
+          },
+          "uniqueItems": true
+        },
+        "statutoryOriginals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "title",
+              "sourceAuthority",
+              "versionRef",
+              "required"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "sourceAuthority": {
+                "type": "string"
+              },
+              "versionRef": {
+                "type": "string"
+              },
+              "required": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "number",
+          "string",
+          "boolean"
+        ]
+      }
+    },
+    "mediaPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "allowedModes",
+        "autoRetry",
+        "userReanalysisAllowed",
+        "externalTransferPolicy",
+        "retentionDays",
+        "redactionRequiredForSharing",
+        "originalExportAllowed"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "allowedModes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "photo",
+              "keyframes",
+              "adaptive",
+              "every_frame",
+              "audio"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "autoRetry": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "maxAttempts",
+            "backoffSeconds"
+          ],
+          "properties": {
+            "maxAttempts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "backoffSeconds": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "userReanalysisAllowed": {
+          "type": "boolean"
+        },
+        "externalTransferPolicy": {
+          "type": "string",
+          "enum": [
+            "forbidden",
+            "approved_only",
+            "allowed_under_contract"
+          ]
+        },
+        "retentionDays": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "redactionRequiredForSharing": {
+          "type": "boolean"
+        },
+        "originalExportAllowed": {
+          "type": "boolean"
+        },
+        "perRunCostLimit": {
+          "type": "number",
+          "minimum": 0
+        },
+        "monthlyCostLimit": {
+          "type": "number",
+          "minimum": 0
+        },
+        "costCurrency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "providerRegionRule": {
+          "type": "string"
+        }
+      }
+    },
+    "acceptanceScenarioIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^AC-[A-Z]+-[0-9]{2}$"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

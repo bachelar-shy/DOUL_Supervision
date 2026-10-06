@@ -1,0 +1,193 @@
+{
+  "version": "1.0",
+  "baselineVersion": "1.0",
+  "stageOrder": [
+    "contract_confirmed",
+    "backend_api_implemented",
+    "ui_connected",
+    "integration_passed",
+    "pilot_verified"
+  ],
+  "functions": [
+    {
+      "functionId": "F-01",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-02",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-03",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-04",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-05",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-06",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-07",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-08",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-09",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-10",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-11",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-12",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-13",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-14",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-15",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-16",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    },
+    {
+      "functionId": "F-17",
+      "currentStage": "contract_confirmed",
+      "stageStatus": "accepted",
+      "evidenceRefs": [
+        "46_Product_Functional_Baseline_v1_Validation.md"
+      ],
+      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+    }
+  ],
+  "foundationTracks": [
+    {
+      "trackId": "queue_worker",
+      "status": "foundation_in_progress",
+      "countsAsFunctionStage": false
+    },
+    {
+      "trackId": "object_storage",
+      "status": "foundation_in_progress",
+      "countsAsFunctionStage": false
+    },
+    {
+      "trackId": "authentication_authorization",
+      "status": "planned_or_in_progress",
+      "countsAsFunctionStage": false
+    },
+    {
+      "trackId": "document_generation",
+      "status": "planned_or_in_progress",
+      "countsAsFunctionStage": false
+    },
+    {
+      "trackId": "notification_delivery",
+      "status": "planned_or_in_progress",
+      "countsAsFunctionStage": false
+    }
+  ]
+}

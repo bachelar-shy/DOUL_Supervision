@@ -33,3 +33,10 @@ P1은 즉시 현장 안전조치와 보고가 우선이다. 구체적인 분 단
 보고의 sourceDomainRefs는 대상 객체·ID·버전을 보존한다. 공정지연 보고는 해당 Baseline Schedule, current Progress Update, DelayEvent, RecoveryPlan의 정확한 version을 참조하며 Forecast 변경을 Baseline 변경이나 EOT 승인으로 표현하지 않는다. 출력 시점에는 DocumentSnapshot으로 원본 데이터와 양식 버전을 고정한다. 기존 문서를 현재 대장의 데이터로 다시 계산하지 않는다.
 
 관련 계약·시험: `owner_reporting_contract_v1.json`, `state_machines_v1.json`의 report/decision/action, `test_workflows.py`, `test_contracts_reporting.py`.
+
+
+## 6. 업무별 Trigger Matrix와 프로젝트 설정
+
+F-01~F-17의 즉시보고·정기보고·Decision Request·후속조치 종결 조건은 `51_Owner_Reporting_Trigger_Matrix_v1.md`를 기준으로 전수 확인한다.
+
+P1~P4의 구체 수령/결정 기한, 수신 Role, 정기보고 주기는 `50_Project_Configuration_Pack_v1.md`와 `app/schema/project_configuration_contract_v1.json`의 exact config version에서 확정한다. Trigger는 보고 초안/알림의도 생성 근거이며 자동 발행·자동승인·자동종결을 의미하지 않는다.
