@@ -41,6 +41,18 @@
     "analysis_run": {
       "collection": "analysis-runs",
       "create_authority": "create_analysis_run"
+    },
+    "safety_permit": {
+      "collection": "safety-permits",
+      "create_authority": "safety.permit.create"
+    },
+    "safety_stop_order": {
+      "collection": "safety-stop-orders",
+      "create_authority": "safety.stop.issue"
+    },
+    "safety_equipment_inspection": {
+      "collection": "safety-equipment-inspections",
+      "create_authority": "safety.equipment.create"
     }
   }
 }

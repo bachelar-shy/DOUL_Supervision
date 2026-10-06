@@ -195,7 +195,7 @@
     },
     {
       "authorityCode": "safety.stop_lift",
-      "implementationStatus": "planned",
+      "implementationStatus": "active",
       "actorGroups": [
         "SUP"
       ],

@@ -191,17 +191,20 @@ authorized와 active를 구분한다.
 | safety_review | request_prestart_verification | SUP | prestart_verification | 문서검토 통과 |
 | prestart_verification | request_authorization | SUP | authorization_pending | 현장 Gate 충족 |
 | authorization_pending | authorize | 권한자 | authorized | 승인권한·유효기간 |
+| authorization_pending | reject_permit | 권한자 | rejected | 반려사유 |
 | authorized | activate | SUP | active | 작업시작 직전 조건 재확인 |
-| active/authorized | suspend | SUP/SYSTEM derived | suspended | Stop 또는 유효조건 상실 |
+| authorized/active | suspend | SUP | suspended | Stop 또는 유효조건 상실 |
+| active | self_suspend | CON | suspended | 시공사 자체 작업중지·사유 |
 | suspended | request_resume | CON | resume_review | 시정완료 근거 |
-| resume_review | approve_resume | 권한자 | active | Resume Gate 전부 충족 |
+| resume_review | approve_resume | chief_supervisor 기본 | active | Resume Gate 전부 충족 |
 | resume_review | return_resume | SUP | suspended | 미충족 사유 |
-| active | complete_work | CON/SUP 확인 | completed | 작업종료·현장안전 |
-| authorized/active/suspended | expire | SYSTEM | expired | validTo 초과 |
+| active | complete_work | SUP | completed | 시공사 완료근거 + 감리 확인 |
+| authorized/active/suspended/resume_review | expire | SYSTEM derived | expired | validTo 초과 |
 | nonterminal | cancel | 권한자 | cancelled | 취소사유 |
 | draft/submitted | withdraw | CON | withdrawn | 철회사유 |
+| authorized/active/suspended/resume_review | supersede | 권한자 | superseded | 대체 Permit 명시 |
 
-기한초과나 알림만으로 승인·재개되지 않는다.
+기한초과나 알림만으로 승인·재개되지 않는다. `SYSTEM`의 만료 처리는 `official=false`인 파생 상태전이이며 Permit 승인·Stop 해제·Resume 승인은 반드시 사람의 공식 권한으로 수행한다.
 
 ---
 
@@ -379,7 +382,7 @@ AI 위험감지는 경고 Candidate만 생성하며 Stop 권한을 행사하지 
 
 | From | Command | Actor | To | 핵심 Gate |
 |---|---|---|---|---|
-| - | issue_stop | 권한 있는 SUP | issued | 위험·Scope·Evidence |
+| 생성(create / issue_stop) | issue_stop | 권한 있는 SUP | issued | 위험·Scope·Evidence |
 | issued | acknowledge_stop | CON | acknowledged | 수령시각 |
 | issued/acknowledged | start_correction | CON | corrective_action | 책임자 |
 | corrective_action | request_resume | CON | resume_requested | 시정증빙 |
@@ -387,6 +390,8 @@ AI 위험감지는 경고 Candidate만 생성하며 Stop 권한을 행사하지 
 | verification | return_resume | SUP | corrective_action | 미해결 위험 |
 | verification | lift_stop | 권한자 | lifted | Resume Gate 충족 |
 | lifted | close_stop | SUP | closed | 통보·Audit 완료 |
+
+`SafetyStopOrder`는 즉시위험 작업중지를 지연시키지 않기 위해 생성과 동시에 `issued` 상태가 되는 원자적 `issue_stop`으로 취급한다. Draft를 거쳐야만 효력이 생기는 구조로 만들지 않는다.
 
 CON은 SUP가 발행한 Stop Order를 스스로 해제할 수 없다.
 
@@ -751,9 +756,16 @@ Backend는 다음 Product 의미를 변경하지 않는다.
 - Owner Reporting trigger
 - immutable Audit
 
-현재 WorkItem.data로 일부 필드를 임시 표현할 수 있으나 Product 필드 의미를 축약하지 않는다.
+Product 실행계약은 다음 기계계약으로 확정한다.
 
-SafetyStopOrder subtype 및 전용 State Machine/Command는 Backend 구현 전에 Product 계약 기준으로 추가한다.
+- `app/schema/domain_schemas_v2.json`: `SafetyPermitData`, `SafetyStopOrderData`, `SafetyEquipmentInspectionData`, `SafetyReadiness`, `SafetyResumeGate`
+- `app/schema/state_machines_v1.json`: `safety_permit`, `safety_stop_order`, `safety_equipment_inspection`
+- `app/schema/authority_matrix_v1.json`: `safety.*` 권한정책
+- `app/schema/safety_execution_contract_v1.json`: 서버파생 필드·서버시각·원자적 `issue_stop`·Resume 순서·장비 readiness 경계
+- `app/reference/machine_bindings_v1.json`: Safety API collection / create authority binding
+- 관리대장 18·19의 command projection
+
+Backend는 위 계약을 구현하며 별도 상태·권한·필드 의미를 재정의하지 않는다. `workAuthorized`와 `equipmentAvailable`은 사용자 입력값이 아니라 Gate 결과로 계산되는 파생값이다. `issue_stop`은 Stop Order 생성, affected Permit 연결, 해당 Permit의 작업중지·`workAuthorized=false` 반영을 하나의 트랜잭션으로 처리하고 중간 실패 시 전체를 rollback해야 한다.
 
 ---
 

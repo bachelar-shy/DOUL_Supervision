@@ -15,6 +15,11 @@ def generate():
     schemas = deepcopy(load('app/schema/domain_schemas_v2.json')['components']['schemas'])
     machines = load('app/schema/state_machines_v1.json')['machines']
     bindings = load('app/reference/machine_bindings_v1.json')['machines']
+    workitem_data_schemas={}
+    for condition in schemas['WorkItem'].get('allOf',[]):
+        subtype=condition.get('if',{}).get('properties',{}).get('subtype',{}).get('const')
+        reference=condition.get('then',{}).get('properties',{}).get('data',{}).get('$ref')
+        if subtype and reference:workitem_data_schemas[subtype]=reference.split('/')[-1]
     paths = {}
     parameter = lambda name: {'name': name, 'in':'path', 'required':True, 'schema':{'type':'string', 'format':'uuid'} if name.endswith('Id') and name not in ['registerId','viewId','formId','legalFormId'] else {'type':'string'}}
     error_responses = {str(code): {'description':description,'content':{'application/json':{'schema':{'$ref':'#/components/schemas/CommandError'}}}} for code,description in [(400,'잘못된 요청'),(401,'인증 필요'),(403,'권한·자격·배치범위 불충족'),(404,'대상 없음 또는 범위 밖'),(409,'상태·버전·중복요청·선행조건 충돌'),(422,'필수자료·법정필드 미비'),(429,'요청량 초과')]}
@@ -39,9 +44,9 @@ def generate():
         if m['subtype']:
             payload_schema['properties']['subtype']={'const':m['subtype']}
             payload_schema['required'].remove('subtype')
-        if name in ['rfi','change']:
+        if m['object_type']=='WorkItem' and m['subtype'] in workitem_data_schemas:
             payload_schema.pop('allOf',None)
-            payload_schema['properties']['data']={'$ref':'#/components/schemas/'+('RFIData' if name=='rfi' else 'ChangeData')}
+            payload_schema['properties']['data']={'$ref':'#/components/schemas/'+workitem_data_schemas[m['subtype']]}
         if name=='report' and 'report' not in payload_schema['required']:payload_schema['required'].append('report')
         schemas['Create_'+name]={'type':'object','required':['roleAssignmentId','clientObjectId','payload'],
             'properties':{'roleAssignmentId':{'type':'string','format':'uuid'},'clientObjectId':{'type':'string','format':'uuid'},'payload':payload_schema},'additionalProperties':False}
@@ -55,7 +60,8 @@ def generate():
             fields=set(f for t in transitions for f in t['payload_fields'])
             props=schemas[m['object_type']]['properties']
             if name=='report':props={**props,**schemas['OwnerReportData']['properties']}
-            if name in ['rfi','change']:props={**props,**schemas['RFIData' if name=='rfi' else 'ChangeData']['properties']}
+            if m['object_type']=='WorkItem' and m['subtype'] in workitem_data_schemas:
+                props={**props,**schemas[workitem_data_schemas[m['subtype']]]['properties']}
             body={'allOf':[{'$ref':'#/components/schemas/CommandRequest'},{'type':'object','properties':{'payload':{'type':'object','properties':{f:deepcopy(props[f]) for f in sorted(fields)},'additionalProperties':False}}}]}
             required=set(f for t in transitions for f in t.get('required_payload_fields',[]))
             if required:body['allOf'][1]['properties']['payload']['required']=sorted(required)
