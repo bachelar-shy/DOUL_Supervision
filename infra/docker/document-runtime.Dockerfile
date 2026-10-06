@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 FROM python:3.12-slim-bookworm@sha256:7753c33391fc9f01d1984375bf375eb6686d52ba10db6043a86634a5ccf90dcf
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 SAL_USE_VCLPLUGIN=gen
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 SAL_USE_VCLPLUGIN=svp
 WORKDIR /app
 # Immutable Debian snapshot keeps LO, Poppler and font package versions stable.
 # Package signatures remain enabled; only timestamp freshness is bypassed.
