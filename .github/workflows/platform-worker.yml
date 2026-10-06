@@ -1,0 +1,129 @@
+name: platform-worker-runtime
+
+on:
+  pull_request:
+    paths:
+      - ".dockerignore"
+      - ".github/workflows/platform-worker.yml"
+      - "infra/compose/compose.dev.yml"
+      - "infra/compose/compose.worker.yml"
+      - "infra/docker/worker-runtime.Dockerfile"
+      - "infra/docker/worker_runtime.py"
+      - "infra/worker-runtime.md"
+      - "app/**"
+      - "services/**"
+  push:
+    branches: [main]
+    paths:
+      - ".dockerignore"
+      - ".github/workflows/platform-worker.yml"
+      - "infra/compose/compose.dev.yml"
+      - "infra/compose/compose.worker.yml"
+      - "infra/docker/worker-runtime.Dockerfile"
+      - "infra/docker/worker_runtime.py"
+      - "infra/worker-runtime.md"
+      - "app/**"
+      - "services/**"
+
+permissions:
+  contents: read
+
+jobs:
+  worker-runtime-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Validate worker Compose overlay
+        run: |
+          docker compose \
+            -f infra/compose/compose.dev.yml \
+            -f infra/compose/compose.worker.yml \
+            config --quiet
+
+      - name: Build worker runtime image
+        run: |
+          docker compose \
+            -f infra/compose/compose.dev.yml \
+            -f infra/compose/compose.worker.yml \
+            build worker-runtime
+
+      - name: Verify worker image declares non-root user
+        run: |
+          runtime_user="$(docker image inspect doul-supervision-worker-runtime:dev --format '{{.Config.User}}')"
+          case "$runtime_user" in
+            ""|"0"|"root"|"0:0")
+              echo "worker runtime image must declare a non-root user"
+              exit 1
+              ;;
+          esac
+          echo "worker runtime user: $runtime_user"
+
+      - name: Start Redis and worker runtime
+        run: |
+          docker compose \
+            -f infra/compose/compose.dev.yml \
+            -f infra/compose/compose.worker.yml \
+            up -d --wait --wait-timeout 60 redis worker-runtime
+
+      - name: Verify Redis connectivity and worker heartbeat
+        run: |
+          compose() {
+            docker compose \
+              -f infra/compose/compose.dev.yml \
+              -f infra/compose/compose.worker.yml "$@"
+          }
+
+          compose exec -T redis redis-cli ping | grep -q '^PONG$'
+          compose exec -T worker-runtime \
+            python /opt/doul-platform/worker_runtime.py --check | \
+            grep -q '^worker-runtime-check-ok$'
+
+          heartbeat_key="doul:worker:runtime:heartbeat"
+          first="$(compose exec -T redis redis-cli --raw GET "$heartbeat_key")"
+          test -n "$first"
+
+          compose restart worker-runtime
+          for attempt in $(seq 1 30); do
+            container_id="$(compose ps -q worker-runtime)"
+            health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$container_id")"
+            if [ "$health" = "healthy" ]; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              echo "worker runtime did not become healthy after restart"
+              exit 1
+            fi
+            sleep 2
+          done
+
+          for attempt in $(seq 1 15); do
+            second="$(compose exec -T redis redis-cli --raw GET "$heartbeat_key")"
+            if [ -n "$second" ] && [ "$second" != "$first" ]; then
+              break
+            fi
+            if [ "$attempt" -eq 15 ]; then
+              echo "worker heartbeat did not resume after restart"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          compose ps -a
+
+      - name: Worker runtime logs
+        if: failure()
+        run: |
+          docker compose \
+            -f infra/compose/compose.dev.yml \
+            -f infra/compose/compose.worker.yml \
+            logs --no-color redis worker-runtime
+
+      - name: Stop worker runtime stack
+        if: always()
+        run: |
+          docker compose \
+            -f infra/compose/compose.dev.yml \
+            -f infra/compose/compose.worker.yml \
+            down -v --remove-orphans
