@@ -16,16 +16,22 @@ application workflow.
 
 The application boundary remains unchanged in this phase:
 
-- the API still uses the SQLite development Store
-- PostgreSQL is available but is not yet the API persistence adapter
+- when the Backend PostgreSQL snapshot adapter is present and `DATABASE_URL`
+  is configured, the Compose API uses PostgreSQL for snapshot state and blobs
+- when the Backend PostgreSQL adapter is not yet present, the development
+  entrypoint safely keeps the SQLite fallback even if `DATABASE_URL` is configured;
+  once the adapter is present, the same configuration selects PostgreSQL
+- when `DATABASE_URL` is empty, the existing SQLite development adapter remains
+  available for direct local/test fallback
+- the Compose API waits for the PostgreSQL healthcheck before starting
 - Redis is available but no production queue producer/consumer is connected
-- S3-compatible storage is available but uploads still use the current SQLite
-  blob adapter
+- S3-compatible storage is available but uploads remain on the selected snapshot
+  persistence adapter until a separate object-storage adapter is connected
 - no production authentication, AI provider, legal signature or PDF/DOCX
   adapter is configured
 
-Those integrations belong to Backend interface work and later Platform
-integration PRs.
+The persistence selection is deployment configuration only and does not change
+Product/Functional contracts.
 
 ## Object-storage implementation note
 
@@ -84,7 +90,7 @@ remain rejected. Direct non-Compose API runs can set a comma-separated
 
 ## Development service contract
 
-The example file publishes the planned Backend/Platform interface names:
+The example file publishes the Backend/Platform interface names:
 
 ```text
 DATABASE_URL
@@ -96,8 +102,11 @@ OBJECT_STORAGE_SECRET_KEY
 OBJECT_STORAGE_REGION
 ```
 
-These values describe how future Backend adapters can reach the services from
-inside Compose. The current API does not consume them yet.
+These values describe how Backend adapters reach the services from inside
+Compose. `DATABASE_URL` selects the PostgreSQL snapshot adapter when that
+Backend adapter is available. Before that adapter lands, the development
+entrypoint keeps the SQLite fallback so the Platform change can be integrated
+independently; leaving `DATABASE_URL` empty also preserves the SQLite fallback.
 
 ## Verify data services
 
