@@ -11,6 +11,7 @@ services:
       DOUL_API_HOST: 0.0.0.0
       DOUL_API_PORT: "8791"
       DOUL_API_LOG_LEVEL: ${DOUL_API_LOG_LEVEL:-info}
+      DOUL_API_ALLOWED_ORIGINS: "http://127.0.0.1:${DOUL_WEB_PORT_PUBLISHED:-5181},http://localhost:${DOUL_WEB_PORT_PUBLISHED:-5181},http://127.0.0.1:${DOUL_API_PORT_PUBLISHED:-8791},http://localhost:${DOUL_API_PORT_PUBLISHED:-8791}"
     ports:
       - "127.0.0.1:${DOUL_API_PORT_PUBLISHED:-8791}:8791"
     volumes:
@@ -28,5 +29,84 @@ services:
       - "127.0.0.1:${DOUL_WEB_PORT_PUBLISHED:-5181}:8080"
     restart: unless-stopped
 
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DOUL_POSTGRES_DB:-doul_supervision}
+      POSTGRES_USER: ${DOUL_POSTGRES_USER:-doul_dev}
+      POSTGRES_PASSWORD: ${DOUL_POSTGRES_PASSWORD:-local-postgres-only}
+    ports:
+      - "127.0.0.1:${DOUL_POSTGRES_PORT_PUBLISHED:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    environment:
+      REDISCLI_AUTH: ${DOUL_REDIS_PASSWORD:-local-redis-only}
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - ${DOUL_REDIS_PASSWORD:-local-redis-only}
+    ports:
+      - "127.0.0.1:${DOUL_REDIS_PORT_PUBLISHED:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  object-storage:
+    image: doul-supervision-minio-dev:2025-10-15
+    build:
+      context: ../..
+      dockerfile: infra/docker/minio-dev.Dockerfile
+    environment:
+      MINIO_ROOT_USER: ${DOUL_OBJECT_STORAGE_ACCESS_KEY:-doul-dev}
+      MINIO_ROOT_PASSWORD: ${DOUL_OBJECT_STORAGE_SECRET_KEY:-local-minio-only}
+    command: ["server", "/data", "--address", ":9000", "--console-address", ":9001"]
+    ports:
+      - "127.0.0.1:${DOUL_OBJECT_STORAGE_PORT_PUBLISHED:-9000}:9000"
+      - "127.0.0.1:${DOUL_OBJECT_STORAGE_CONSOLE_PORT_PUBLISHED:-9001}:9001"
+    volumes:
+      - object-storage-data:/data
+    restart: unless-stopped
+
+  object-storage-init:
+    image: doul-supervision-minio-dev:2025-10-15
+    depends_on:
+      object-storage:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${DOUL_OBJECT_STORAGE_ACCESS_KEY:-doul-dev}
+      MINIO_ROOT_PASSWORD: ${DOUL_OBJECT_STORAGE_SECRET_KEY:-local-minio-only}
+      OBJECT_STORAGE_BUCKET: ${DOUL_OBJECT_STORAGE_BUCKET:-doul-supervision-dev}
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        mc alias set local http://object-storage:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+        mc mb --ignore-existing "local/$$OBJECT_STORAGE_BUCKET"
+        mc anonymous set none "local/$$OBJECT_STORAGE_BUCKET"
+        mc stat "local/$$OBJECT_STORAGE_BUCKET"
+    restart: "no"
+
 volumes:
   api-data:
+  postgres-data:
+  redis-data:
+  object-storage-data:

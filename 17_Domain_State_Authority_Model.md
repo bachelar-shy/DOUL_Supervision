@@ -187,7 +187,7 @@ R15 승인 필요 변경은 Approval 전 실행 불가
 
 검측의 `status`, `resultStatus`, `nextWorkAllowed`를 분리한다. `completed`만으로 합격이나 후속공정 허용을 해석하지 않는다. 합격은 정확한 결과 버전의 작업검수 서명, Hold Point는 추가 기술승인 후 `release_next_work` 명령을 실행한다. 불합격 결과도 서명 기록을 남기되 후속공정은 허용하지 않는다.
 
-각 재검측은 새 Inspection이며 이전 검측·Issue·correctionCycle을 참조한다. 실패하면 주기를 증가시키고 새 시정 Action과 새 재검측을 연결한다. 과거 검측과 조치를 목록에서 제거할 수 없다. 이슈 종결에는 현재 주기 조치 검증, 서명·승인된 합격 재검측, 종결증빙이 필요하다.
+각 재검측은 새 Inspection이며 이전 검측·Issue·correctionCycle을 참조한다. 실패하면 주기를 증가시키고 새 시정 Action과 새 재검측을 연결한다. 과거 검측과 조치를 목록에서 제거할 수 없다. 이슈 종결에는 현재 주기 조치 검증, 서명·승인된 합격 재검측, 명시적으로 선택된 `closureEvidenceIds`가 필요하다. `closureEvidenceIds`는 일반 `evidenceIds` 전체를 복사하지 않으며 현재 correctionCycle의 검증된 Action Evidence와 합격 Reinspection Evidence를 모두 포함해야 한다. 상세 기준은 `29_Issue_Closure_Evidence_Functional_Contract.md`를 따른다.
 
 RoleAssignment 검사는 인증된 Party·프로젝트·활성 배치·분야·패키지·위치·조직·roleCode·authorityCode와 검증된 자격·등급·유효기간을 함께 확인한다. 숫자 등급 1이 상위이며 현장 기준이 허용하는 등급 범위를 적용한다. 자격 증빙의 적법성·분야 분류는 프로젝트 기준선에서 확인한다. 최소 등급은 신뢰된 Project.qualificationRules에서 계산하며 요청자가 더 낮은 요건을 입력해도 프로젝트 요건을 완화하지 않는다. 기술승인은 요청에 적힌 범위와 실제 승인대상의 범위를 함께 검사한다. 명시적으로 승인된 `*` 범위만 광역 권한이며 SUP라는 그룹만으로 검사·종결권한을 부여하지 않는다.
 

@@ -41,12 +41,16 @@ class SQLiteSnapshotAdapter:
         with self.lock:
             self.db.execute('BEGIN IMMEDIATE')
             try:
-                if not self._load():
+                loaded=self._load()
+                if not loaded:
                     if not demo:raise RuntimeError('No production provisioning/authentication adapter configured')
                     from .demo import seed
                     data=seed(self.engine)
                     for fid,content in data.pop('blobs').items():self.put_blob(fid,content)
                     self.meta=data;self._save()
+                elif demo:
+                    from .demo import ensure_media_demo_support
+                    if ensure_media_demo_support(self.engine,self.meta):self._save()
                 self.db.execute('COMMIT')
             except BaseException:
                 self.db.execute('ROLLBACK');raise

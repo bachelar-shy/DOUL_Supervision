@@ -1,5 +1,6 @@
 import unittest
 from contextlib import contextmanager
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -49,6 +50,25 @@ class RecordingPersistence:
 
 
 class PersistenceBoundaryTests(unittest.TestCase):
+    def test_falsey_persistence_is_used_without_creating_another_store(self):
+        class EmptyPersistence(RecordingPersistence):
+            def __len__(self):return 0
+
+        persistence=EmptyPersistence()
+        self.assertIsInstance(persistence,PersistencePort)
+        self.assertFalse(persistence)
+        try:
+            with patch('services.api.main.create_local_persistence') as factory:
+                app=create_app(demo=True,persistence=persistence)
+                factory.assert_not_called()
+            self.assertIs(app.state.store,persistence)
+            with TestClient(app) as client:
+                health=client.get('/health')
+                self.assertEqual(health.json()['adapters']['database'],persistence.adapter_name)
+                self.assertEqual(client.get('/dev/actors').status_code,200)
+            self.assertTrue(persistence.transactions)
+        finally:persistence.close()
+
     def test_sqlite_adapter_satisfies_application_port(self):
         adapter=SQLiteSnapshotAdapter(':memory:',demo=True)
         try:self.assertIsInstance(adapter,PersistencePort)

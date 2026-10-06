@@ -1,10 +1,100 @@
-"""Synthetic development data only. Not a migration or real site record."""
+"""Synthetic development data and compatibility helpers. Never real site records."""
+from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from app.reference.engine import uid
 
 HUMANS = {'SUP': 'chief_supervisor', 'CON': 'contractor_technical_lead',
           'OWN': 'owner_decision_maker', 'DES': 'designer', 'ADM': 'project_admin'}
+SERVICE_ACTOR_NAMES = {
+    'SYSTEM': '미디어 처리 시스템 · 예시',
+    'AI': '분석 후보 생성기 · 예시',
+}
+ANALYSIS_PROFILE = dict(
+    model=dict(provider='development-fixture', name='normalized-worker-contract', version='v1'),
+    promptVersion='media-prompt-v1',
+    policyVersion='1.1',
+)
+
+
+def ensure_media_demo_support(engine, meta):
+    """Backfill media-only demo support into snapshots created before that feature."""
+    changed = False
+    if 'analysisProfile' not in meta:
+        meta['analysisProfile'] = deepcopy(ANALYSIS_PROFILE)
+        changed = True
+
+    service_actors = dict(meta.get('serviceActors') or {})
+    project = meta['projectId']
+    scope = meta['scope']
+    admin = meta['actors']['ADM']
+    admin_role = engine.get('RoleAssignment', admin['roleAssignmentId'])
+
+    for group, name in SERVICE_ACTOR_NAMES.items():
+        current = service_actors.get(group)
+        if current:
+            party_key = ('Party', current.get('partyId'))
+            role_key = ('RoleAssignment', current.get('roleAssignmentId'))
+            if party_key in engine._records and role_key in engine._records:
+                continue
+
+        existing_role = next((
+            record for (kind, _), record in engine._records.items()
+            if kind == 'RoleAssignment'
+            and record.get('projectId') == project
+            and record.get('actorGroup') == group
+            and record.get('roleCode') == 'service_worker'
+            and ('Party', record.get('partyId')) in engine._records
+        ), None)
+        if existing_role:
+            party = engine.get('Party', existing_role['partyId'])
+            service_actors[group] = dict(
+                partyId=party['id'],
+                roleAssignmentId=existing_role['id'],
+                name=party['name'],
+                actorGroup=group,
+            )
+            changed = True
+            continue
+
+        party, role, organization = uid(), uid(), uid()
+        engine.bootstrap('Party', dict(
+            id=party,
+            projectId=project,
+            kind='ORGANIZATION',
+            name=name,
+            loginEnabled=False,
+            organizationId=organization,
+        ))
+        engine.bootstrap('RoleAssignment', dict(
+            id=role,
+            projectId=project,
+            partyId=party,
+            organizationId=organization,
+            actorGroup=group,
+            roleCode='service_worker',
+            authorityCodes=[code for code, policy in engine.policies.items() if group in policy['actor_groups']],
+            disciplines=[scope['discipline']],
+            packageIds=[scope['packageId']],
+            locationIds=[scope['locationId']],
+            qualificationIds=[],
+            validFrom=admin_role['validFrom'],
+            validTo=admin_role['validTo'],
+            active=True,
+            approvedBy=admin['partyId'],
+        ))
+        service_actors[group] = dict(
+            partyId=party,
+            roleAssignmentId=role,
+            name=name,
+            actorGroup=group,
+        )
+        changed = True
+
+    if meta.get('serviceActors') != service_actors:
+        meta['serviceActors'] = service_actors
+        changed = True
+    return changed
 
 
 def seed(engine):
@@ -26,7 +116,7 @@ def seed(engine):
         actors[group] = dict(partyId=party, roleAssignmentId=role, name=names[group], actorGroup=group)
     # Non-human service actors are explicit, scoped and never available to /dev/sessions.
     service_actors = {}
-    for group, name in [('SYSTEM', '미디어 처리 시스템 · 예시'), ('AI', '분석 후보 생성기 · 예시')]:
+    for group, name in SERVICE_ACTOR_NAMES.items():
         party, role, organization = uid(), uid(), uid()
         engine.bootstrap('Party', dict(id=party, projectId=project, kind='ORGANIZATION', name=name, loginEnabled=False, organizationId=organization))
         engine.bootstrap('RoleAssignment', dict(
@@ -92,11 +182,7 @@ def seed(engine):
     rfi=create('rfi',dict(title='벽체 기준 치수 질의 · 예시',data={}), 'CON')
     rfi=command('rfi',rfi,'submit',dict(question='A-201 치수 해석 확인',references=[ref('InformationItem',drawing)],dueAt=due),'CON')
     rfi=command('rfi',rfi,'receive');command('rfi',rfi,'refer',dict(responsiblePartyId=actors['DES']['partyId']))
-    analysis_profile = dict(
-        model=dict(provider='development-fixture', name='normalized-worker-contract', version='v1'),
-        promptVersion='media-prompt-v1',
-        policyVersion='1.1',
-    )
+    analysis_profile = deepcopy(ANALYSIS_PROFILE)
     return dict(
         projectId=project,
         actors=actors,

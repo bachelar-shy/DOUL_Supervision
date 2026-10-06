@@ -14302,8 +14302,19 @@
             "properties": {
               "payload": {
                 "type": "object",
-                "properties": {},
-                "additionalProperties": false
+                "properties": {
+                  "closureEvidenceIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "closureEvidenceIds"
+                ]
               }
             }
           }
