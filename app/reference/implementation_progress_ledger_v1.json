@@ -41,16 +41,21 @@
     },
     {
       "functionId": "F-04",
-      "currentStage": "contract_confirmed",
+      "currentStage": "backend_api_implemented",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "46_Product_Functional_Baseline_v1_Validation.md",
         "31_Schedule_Delay_Recovery_Functional_Contract.md",
         "app/schema/schedule_execution_contract_v1.json",
         "app/schema/state_machines_v1.json",
-        "app/schema/authority_matrix_v1.json"
+        "app/schema/authority_matrix_v1.json",
+        "tests_mvp/test_schedule_http.py",
+        "tests_mvp/test_postgres_persistence.py",
+        "services/api/README.md",
+        "services/api/persistence.py",
+        "services/api/postgres_store.py"
       ],
-      "note": "Product execution contract is machine-backed; remain contract_confirmed until Backend B-P3 persistence/API acceptance evidence exists."
+      "note": "B-P3 HTTP/persistence acceptance completed for Schedule Baseline, Progress, DelayEvent and RecoveryPlan. UI connection, cross-workstream integration and pilot verification remain."
     },
     {
       "functionId": "F-05",
