@@ -1,81 +1,36 @@
 # Development Worker Runtime
 
-This is the Platform-owned development runtime scaffold for the future
-asynchronous worker. It deliberately does not define queue payloads, retry
-semantics, AnalysisRun transitions, worker authorization, AI-provider calls or
-Product/Functional rules.
+The Platform bootstrap verifies Redis connectivity and executes the Backend
+command. The connected implementation is documented in
+`services/worker/README.md` (QueuePort, durable outbox, attempts, fencing and
+service-actor boundaries).
 
-## Boundary
-
-The runtime currently provides:
-
-- a separate non-root worker container
-- the existing locked API Python dependencies and application code
-- Redis connectivity through `REDIS_URL`
-- a Redis heartbeat for runtime observability
-- pass-through PostgreSQL and object-storage configuration for a future Backend
-  worker command
-- a bootstrap that checks Redis before executing a Backend-supplied command
-
-The default command is an idle heartbeat loop. It does **not** consume
-`AnalysisRun` jobs and must not be described as a connected media worker.
-
-Backend owns the queue port/adapter, queue message schema, idempotency, retries,
-claiming, job transitions and application worker command. Product/Functional
-owns user-visible workflow meaning.
-
-## Start with the development stack
-
-From the repository root:
+## Start
 
 ```sh
-docker compose \
-  --env-file infra/compose/.env \
-  -f infra/compose/compose.dev.yml \
-  -f infra/compose/compose.worker.yml \
-  up --build
+docker compose -f infra/compose/compose.dev.yml -f infra/compose/compose.worker.yml up --build
 ```
 
-The worker has no published host port.
+The development overlay enables the API outbox and supplies the same PostgreSQL
+DATABASE_URL to API and worker. It explicitly executes
+`python -m services.worker --demo`. The image default executes the same Backend
+module without demo; it requires an already provisioned shared persistence
+store. The `--idle` bootstrap remains an explicit diagnostic only, not the
+normal worker command.
 
-## Runtime signals
+The worker has no published host port, runs as non-root UID 10002, and handles
+SIGTERM/SIGINT. It writes a short-lived heartbeat to
+`doul:worker:runtime:heartbeat` plus its own consumer key. Heartbeat is runtime
+availability, never analysis completion or a business decision.
 
-The default runtime writes a short-lived heartbeat key to Redis:
+The default analysis provider is deliberately unconfigured. It produces an
+explicit failed job rather than fabricated analysis. Synthetic integration
+fixtures require both `--demo` and `--fixture` and are not for site records.
+Model/provider selection and external-transfer authorization remain explicit
+project decisions. Domain completion still goes through the existing Product
+contract and service actors; no human login token is used by this process.
 
-```text
-doul:worker:runtime:heartbeat
-```
-
-This heartbeat means only that the worker container is alive and can reach
-Redis. It does not mean the business queue is healthy or that media analysis is
-being processed.
-
-The default environment is:
-
-```text
-DOUL_WORKER_QUEUE=media-analysis
-DOUL_WORKER_CONCURRENCY=1
-DOUL_WORKER_HEARTBEAT_KEY=doul:worker:runtime:heartbeat
-DOUL_WORKER_HEARTBEAT_INTERVAL=5
-DOUL_WORKER_HEARTBEAT_TTL=30
-```
-
-These are Platform runtime defaults, not Product/Functional contract fields.
-
-## Backend handoff
-
-Once Backend provides an executable worker command, the container can use the
-same bootstrap as an entrypoint. Container arguments other than `--idle` and
-`--check` are executed only after Redis PING succeeds.
-
-Example shape only:
-
-```text
-worker-runtime entrypoint
-  -> validate REDIS_URL
-  -> Redis PING
-  -> exec Backend-owned worker command
-```
-
-The actual Backend module/command must be supplied by the Backend branch rather
-than guessed in Platform code.
+CI verifies real Redis/PostgreSQL delivery, process failure/recovery, cancellation,
+idempotent result commit and graceful termination, as well as the existing image
+security and restart/heartbeat gates. See issue #43 and
+`.github/workflows/backend-worker-integration.yml`.

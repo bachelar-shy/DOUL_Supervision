@@ -28,4 +28,4 @@ HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=5 \
     CMD ["python", "/opt/doul-platform/worker_runtime.py", "--check"]
 
 ENTRYPOINT ["python", "/opt/doul-platform/worker_runtime.py"]
-CMD ["--idle"]
+CMD ["python", "-m", "services.worker"]
