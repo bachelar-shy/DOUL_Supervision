@@ -13,6 +13,7 @@ from services.api.persistence import create_local_persistence, create_postgres_p
 from .jobs import dispatch, process_message
 from .providers import FixtureProvider, UnconfiguredProvider
 from .queue import RedisQueue
+from services.telemetry import emit, configure_logging
 
 
 def run(store, queue, provider, stop, consumer=None):
@@ -40,8 +41,7 @@ def run(store, queue, provider, stop, consumer=None):
                 break  # Leave the delivery pending for another worker.
             if message:
                 state = process_message(store, queue, provider, message)
-                print(json.dumps({'schemaVersion': '1.0', 'component': 'worker',
-                                  'event': 'job-result', 'state': state}), flush=True)
+                emit('worker', 'job-result', state=state, jobId=message[1].get('jobId'))
         if heartbeat_error:
             raise ConnectionError('Worker heartbeat transport failed')
     finally:
@@ -50,6 +50,7 @@ def run(store, queue, provider, stop, consumer=None):
 
 
 def main():
+    configure_logging()
     parser = argparse.ArgumentParser()
     parser.add_argument('--demo', action='store_true')
     parser.add_argument('--fixture', action='store_true')
@@ -69,12 +70,11 @@ def main():
         queue = RedisQueue(os.environ['REDIS_URL'], os.getenv('DOUL_QUEUE_NAMESPACE', 'doul:media'))
         provider = FixtureProvider(demo=True) if args.fixture else UnconfiguredProvider()
         run(store, queue, provider, stop)
-        print(json.dumps({'schemaVersion': '1.0', 'component': 'worker', 'event': 'graceful-stop'}), flush=True)
+        emit('worker', 'graceful-stop')
         return 0
     except Exception as exc:
         # Never log raw exception text, command arguments, DSNs or credentials.
-        print(json.dumps({'schemaVersion': '1.0', 'component': 'worker',
-                          'event': 'runtime-failure', 'errorType': type(exc).__name__}), flush=True)
+        emit('worker', 'runtime-failure', errorType=type(exc).__name__)
         return 1
     finally:
         if queue is not None:
