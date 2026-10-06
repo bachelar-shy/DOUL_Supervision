@@ -157,6 +157,7 @@ def create_bundle(plan, output, key, client, dsn, boundary=None):
     with tempfile.TemporaryDirectory(prefix='.recovery-source-', dir=output.parent) as temp:
         root = Path(temp)
         with boundary:
+            recovery_point = datetime.now(timezone.utc).isoformat()
             before = database_fingerprint(dsn, plan['database'])
             database = root / 'database'
             database.mkdir(mode=0o700)
@@ -165,7 +166,7 @@ def create_bundle(plan, output, key, client, dsn, boundary=None):
             config = configuration_inventory(plan, root)
             after = database_fingerprint(dsn, plan['database'])
             if before != after: raise RuntimeError('Database changed during supposedly quiescent backup')
-            manifest = dict(schemaVersion=1, createdAt=datetime.now(timezone.utc).isoformat(),
+            manifest = dict(schemaVersion=1, createdAt=recovery_point,
                 plan=plan, planSha256=sha256(canonical(plan)).hexdigest(), configuration=config,
                 databaseSha256=digest_file(database / 'snapshot.dump'), databaseFingerprint=before,
                 objectManifestSha256=digest_file(root / 'objects/manifest.json'),
@@ -174,6 +175,7 @@ def create_bundle(plan, output, key, client, dsn, boundary=None):
             (root / 'manifest.json').write_bytes(canonical(manifest))
             encrypted_hash = encrypt_directory(root, output, key)
         return dict(bundleSha256=encrypted_hash, encrypted=True,
+                    createdAt=manifest['createdAt'], composeProject=plan['composeProject'],
                     durationSeconds=round(time.monotonic()-started,3), objectVersionCount=manifest['objectVersionCount'])
 
 
@@ -212,7 +214,8 @@ def restore_bundle(bundle, key, client, dsn, boundary, target_encryption=None):
         if database_fingerprint(target_dsn, target) != manifest['databaseFingerprint']:
             raise RuntimeError('Restored database snapshot/blob fingerprint mismatch')
         objects = restore_objects(client, root / 'objects', target_encryption=target_encryption)
-        return dict(schemaVersion=1, verified=True, targetDatabase=target, objects=objects,
+        return dict(schemaVersion=1, verified=True, bundleSha256=digest_file(bundle), targetDatabase=target, objects=objects,
+                    backupCreatedAt=manifest['createdAt'], composeProject=manifest['plan']['composeProject'],
                     sourceReleaseSha=manifest['plan']['releaseSha'], configuration=manifest['configuration'],
                     secretRecovery=manifest['plan']['secretRecovery'], targets=manifest['plan']['targets'],
                     durationSeconds=round(time.monotonic()-started,3),

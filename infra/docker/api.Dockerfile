@@ -20,6 +20,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 COPY app ./app
 COPY services ./services
+COPY scripts ./scripts
 COPY infra/docker/api_entrypoint.py ./infra/docker/api_entrypoint.py
 
 RUN mkdir -p /data \

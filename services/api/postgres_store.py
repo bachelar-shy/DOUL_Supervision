@@ -40,6 +40,12 @@ class PostgresSnapshotAdapter:
         if pool_min_size < 1 or pool_max_size < pool_min_size:
             raise ValueError("Invalid PostgreSQL pool size")
 
+        from services.runtime_config import environment, validate_database_dsn
+        stage = environment()
+        if demo and stage != 'development':
+            raise ValueError('Demo persistence cannot initialize an operational environment')
+        validate_database_dsn(dsn, stage)
+
         self.lock = RLock()
         self._local = local()
         self.pool = ConnectionPool(
@@ -63,10 +69,18 @@ class PostgresSnapshotAdapter:
         self.requests = {}
         self.conflicts = []
 
-        self._ensure_schema()
+        if stage=='development':
+            self._ensure_schema()
+        else:
+            try:
+                version=self._fetchone('SELECT version FROM doul_schema_version WHERE id=1')
+                if version is None or version[0]!=1:raise RuntimeError('Unsupported migration version')
+            except Exception:
+                self.pool.close()
+                raise RuntimeError('Explicit database migration/provisioning is required')
         with self.lock:
             with self._transaction_connection():
-                loaded = self._load(lock=True)
+                loaded = self._load(lock=demo)
                 if not loaded:
                     if not demo:
                         raise RuntimeError(

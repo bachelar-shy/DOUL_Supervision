@@ -1,0 +1,29 @@
+name: platform-operational-environments
+on:
+  pull_request:
+    paths: ['services/deployment/**', 'services/recovery/**', 'services/api/**', 'services/runtime_config.py', 'services/worker/**', 'infra/compose/compose.operational.yml', 'infra/compose/compose.staging.yml', 'infra/compose/compose.pilot.yml', 'infra/docker/operational*', 'tests_mvp/test_deployment*.py', 'tests_runtime/deployment*.py', '.github/workflows/platform-deployment.yml']
+  push:
+    branches: [main]
+    paths: ['services/deployment/**', 'services/recovery/**', 'services/api/**', 'services/runtime_config.py', 'services/worker/**', 'infra/compose/compose.operational.yml', 'infra/compose/compose.staging.yml', 'infra/compose/compose.pilot.yml', 'infra/docker/operational*', 'tests_mvp/test_deployment*.py', 'tests_runtime/deployment*.py', '.github/workflows/platform-deployment.yml']
+permissions:
+  contents: read
+jobs:
+  verify-operational-boundaries:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install locked runtime and verify negative authentication cases
+        run: |
+          pip install -r services/api/requirements.lock
+          python -m unittest discover -s tests_mvp -p 'test_deployment*.py' -v
+          python -m tests_runtime.deployment_profiles
+      - name: Build non-root API and TLS Web proxy
+        run: |
+          docker build -f infra/docker/api.Dockerfile -t doul-operational-api:test .
+          docker build -f infra/docker/operational-proxy.Dockerfile -t doul-operational-proxy:test .
+      - name: Real HTTPS, non-demo identity and pilot refusal rehearsal
+        run: python -m tests_runtime.deployment_live

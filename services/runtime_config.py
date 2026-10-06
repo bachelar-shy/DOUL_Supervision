@@ -66,3 +66,46 @@ def object_storage_client():
                       retries={'mode': 'standard', 'max_attempts': 2},
                       s3={'addressing_style': 'path'},
                       request_checksum_calculation='when_required', response_checksum_validation='when_required'))
+
+
+DEFAULT_PASSWORDS = {'local-postgres-only', 'local-redis-only', 'disposable-ci-only', 'password', 'changeme'}
+
+
+def validate_database_dsn(dsn, stage=None):
+    """Validate operational credentials/TLS before a pool can open a socket."""
+    from psycopg.conninfo import conninfo_to_dict
+    stage = stage or environment()
+    if stage == 'development':
+        return dsn
+    if stage not in {'staging', 'pilot'}:
+        raise ValueError('Unknown database environment')
+    settings = conninfo_to_dict(dsn)
+    if not all(settings.get(key) for key in ('host', 'dbname', 'user', 'password')):
+        raise ValueError('Explicit database identity required')
+    if settings['password'] in DEFAULT_PASSWORDS:
+        raise ValueError('Development/default database credentials prohibited')
+    if stage == 'pilot' and (settings.get('sslmode') != 'verify-full' or not settings.get('sslrootcert')):
+        raise ValueError('Pilot database connections require verified TLS')
+    return dsn
+
+
+def validate_redis_url(url, stage=None):
+    """Use the client's parsed settings: URL options override keyword defaults."""
+    from redis.connection import parse_url
+    stage = stage or environment()
+    if stage == 'development':
+        return url
+    if stage not in {'staging', 'pilot'}:
+        raise ValueError('Unknown Redis environment')
+    parsed = urlsplit(url)
+    settings = parse_url(url)
+    if parsed.scheme not in {'redis', 'rediss'} or not settings.get('host') or not settings.get('password'):
+        raise ValueError('Authenticated Redis URL required')
+    if settings['password'] in DEFAULT_PASSWORDS:
+        raise ValueError('Development/default Redis credentials prohibited')
+    if stage == 'pilot':
+        if parsed.scheme != 'rediss':
+            raise ValueError('Pilot Redis connections require TLS')
+        if settings.get('ssl_cert_reqs', 'required') != 'required' or settings.get('ssl_check_hostname', True) is not True:
+            raise ValueError('Pilot Redis certificate and hostname verification cannot be disabled')
+    return url

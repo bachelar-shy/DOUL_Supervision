@@ -1,0 +1,141 @@
+name: doul-supervision-${DOUL_ENVIRONMENT:?Select staging or pilot}
+
+x-runtime: &runtime
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  tmpfs: [/tmp:rw,nosuid,size=512m]
+  logging:
+    driver: json-file
+    options: {max-size: 10m, max-file: "5"}
+
+services:
+  api:
+    <<: *runtime
+    image: ${DOUL_API_IMAGE:?Digest-pinned document-enabled API image required}
+    user: "10001:10001"
+    command: [python, -m, services.deployment.api_runtime]
+    environment:
+      DOUL_ENVIRONMENT: ${DOUL_ENVIRONMENT:?}
+      DOUL_API_DEMO: "false"
+      DOUL_RELEASE_SHA: ${DOUL_RELEASE_SHA:?}
+      DOUL_API_ALLOWED_ORIGINS: ${DOUL_PUBLIC_ORIGIN:?}
+      DOUL_API_ALLOWED_HOSTS: ${DOUL_PUBLIC_HOSTNAME:?},api,localhost,127.0.0.1
+      DATABASE_URL_FILE: /run/secrets/api-database-url
+      REDIS_URL_FILE: /run/secrets/api-redis-url
+      DOUL_AUTH_PUBLIC_KEY_FILE: /run/secrets/auth-public-key
+      DOUL_AUTH_ISSUER: ${DOUL_AUTH_ISSUER:?}
+      DOUL_AUTH_AUDIENCE: ${DOUL_AUTH_AUDIENCE:?}
+      DOUL_AUTH_KEY_ID: ${DOUL_AUTH_KEY_ID:?}
+      DOUL_QUEUE_ENABLED: "true"
+      DOUL_DOCUMENT_RUNTIME: local
+      DOUL_DOCUMENT_CACHE: /data/document-artifacts
+      OBJECT_STORAGE_ENDPOINT: ${DOUL_OBJECT_STORAGE_ENDPOINT:?}
+      DOUL_ALERT_ENDPOINT: ${DOUL_ALERT_ENDPOINT:?}
+      DOUL_ALERT_TOKEN_FILE: /run/secrets/api-alert-token
+      SSL_CERT_FILE: /run/secrets/service-ca-bundle
+      AWS_CA_BUNDLE: /run/secrets/service-ca-bundle
+      TZ: UTC
+    secrets: [api-database-url, api-redis-url, auth-public-key, api-alert-token, service-ca-bundle]
+    volumes: [api-artifacts:/data]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8791/ready',timeout=5)"]
+      interval: 15s
+      timeout: 7s
+      retries: 4
+      start_period: 15s
+
+  worker-runtime:
+    <<: *runtime
+    image: ${DOUL_WORKER_IMAGE:?Digest-pinned worker image required}
+    user: "10002:10002"
+    command: [python, -m, services.deployment.worker_runtime]
+    stop_grace_period: 70s
+    environment:
+      DOUL_ENVIRONMENT: ${DOUL_ENVIRONMENT:?}
+      DATABASE_URL_FILE: /run/secrets/worker-database-url
+      REDIS_URL_FILE: /run/secrets/worker-redis-url
+      DOUL_QUEUE_NAMESPACE: doul:${DOUL_ENVIRONMENT:?}:media
+      DOUL_WORKER_HEARTBEAT_KEY: doul:${DOUL_ENVIRONMENT:?}:worker:heartbeat
+      SSL_CERT_FILE: /run/secrets/service-ca-bundle
+      AWS_CA_BUNDLE: /run/secrets/service-ca-bundle
+      TZ: UTC
+    secrets: [worker-database-url, worker-redis-url, service-ca-bundle]
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, "import os,redis; from services.runtime_config import secret; r=redis.Redis.from_url(secret('REDIS_URL'),socket_timeout=5); assert r.ttl(os.environ['DOUL_WORKER_HEARTBEAT_KEY'])>0"]
+      interval: 10s
+      timeout: 7s
+      retries: 4
+      start_period: 15s
+
+  monitor:
+    <<: *runtime
+    image: ${DOUL_MONITOR_IMAGE:?Digest-pinned monitor image required}
+    user: "10001:10001"
+    command: [python, -m, services.observability, --interval, "30"]
+    environment:
+      DOUL_ENVIRONMENT: ${DOUL_ENVIRONMENT:?}
+      DATABASE_URL_FILE: /run/secrets/monitor-database-url
+      REDIS_URL_FILE: /run/secrets/monitor-redis-url
+      OBJECT_STORAGE_ENDPOINT: ${DOUL_OBJECT_STORAGE_ENDPOINT:?}
+      OBJECT_STORAGE_BUCKET: ${DOUL_OBJECT_STORAGE_BUCKET:?}
+      OBJECT_STORAGE_ACCESS_KEY_FILE: /run/secrets/monitor-storage-access
+      OBJECT_STORAGE_SECRET_KEY_FILE: /run/secrets/monitor-storage-secret
+      DOUL_ALERT_ENDPOINT: ${DOUL_ALERT_ENDPOINT:?}
+      DOUL_ALERT_TOKEN_FILE: /run/secrets/monitor-alert-token
+      DOUL_API_HEALTH_URL: ${DOUL_PUBLIC_ORIGIN:?}/api/ready
+      DOUL_QUEUE_NAMESPACE: doul:${DOUL_ENVIRONMENT:?}:media
+      DOUL_EXPECTED_WORKERS: "1"
+      DOUL_DATABASE_CAPACITY_BYTES: ${DOUL_DATABASE_CAPACITY_BYTES:?}
+      DOUL_OBJECT_CAPACITY_BYTES: ${DOUL_OBJECT_CAPACITY_BYTES:?}
+      DOUL_MONITOR_STATE_DIR: /data/monitor
+      SSL_CERT_FILE: /run/secrets/service-ca-bundle
+      AWS_CA_BUNDLE: /run/secrets/service-ca-bundle
+      TZ: UTC
+    secrets: [monitor-database-url, monitor-redis-url, monitor-storage-access, monitor-storage-secret, monitor-alert-token, service-ca-bundle]
+    volumes: [monitor-data:/data]
+    depends_on:
+      worker-runtime: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, "import json,time; x=json.load(open('/data/monitor/health.json')); assert x['status']=='ok' and time.time()-x['observedAtEpoch']<120"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+  proxy:
+    <<: *runtime
+    image: ${DOUL_PROXY_IMAGE:?Digest-pinned TLS and Web image required}
+    user: "101:101"
+    ports: ["${DOUL_BIND_ADDRESS:-127.0.0.1}:${DOUL_HTTPS_PORT:-8443}:8443"]
+    secrets: [tls-certificate, tls-private-key]
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, nginx, -t]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+secrets:
+  service-ca-bundle: {file: "${DOUL_SECRETS_DIR:?}/service-ca-bundle"}
+  api-database-url: {file: "${DOUL_SECRETS_DIR:?}/api-database-url"}
+  api-redis-url: {file: "${DOUL_SECRETS_DIR:?}/api-redis-url"}
+  auth-public-key: {file: "${DOUL_SECRETS_DIR:?}/auth-public-key"}
+  api-alert-token: {file: "${DOUL_SECRETS_DIR:?}/api-alert-token"}
+  worker-database-url: {file: "${DOUL_SECRETS_DIR:?}/worker-database-url"}
+  worker-redis-url: {file: "${DOUL_SECRETS_DIR:?}/worker-redis-url"}
+  monitor-database-url: {file: "${DOUL_SECRETS_DIR:?}/monitor-database-url"}
+  monitor-redis-url: {file: "${DOUL_SECRETS_DIR:?}/monitor-redis-url"}
+  monitor-storage-access: {file: "${DOUL_SECRETS_DIR:?}/monitor-storage-access"}
+  monitor-storage-secret: {file: "${DOUL_SECRETS_DIR:?}/monitor-storage-secret"}
+  monitor-alert-token: {file: "${DOUL_SECRETS_DIR:?}/monitor-alert-token"}
+  tls-certificate: {file: "${DOUL_SECRETS_DIR:?}/tls-certificate"}
+  tls-private-key: {file: "${DOUL_SECRETS_DIR:?}/tls-private-key"}
+
+volumes:
+  api-artifacts:
+  monitor-data:

@@ -20,6 +20,7 @@ RUN pip install --no-cache-dir --requirement /tmp/requirements.lock \
 
 COPY app ./app
 COPY services ./services
+COPY scripts ./scripts
 COPY infra/docker/worker_runtime.py /opt/doul-platform/worker_runtime.py
 
 USER doul-worker
