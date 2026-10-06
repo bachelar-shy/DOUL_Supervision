@@ -64,7 +64,7 @@ export interface CommandDescriptor {
   ready: boolean;
   blockedReason?: Failure | null;
   expectedVersion: number;
-  requiresEvidence: unknown;
+  requiresEvidence: boolean;
 }
 export interface WorkItem {
   machine: string;
@@ -422,7 +422,7 @@ export class ApiClient {
           roleAssignmentId: this.session.actor.roleAssignmentId,
           expectedVersion: item.record.version,
           payload,
-          evidenceIds: evidenceIds ?? item.record.evidenceIds ?? [],
+          evidenceIds: evidenceIds ?? [],
         }),
       },
     );
