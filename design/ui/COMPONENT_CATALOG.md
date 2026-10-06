@@ -37,7 +37,8 @@ Page / Template
 | `RegisterTable` | 관리대장 공통 표, sticky header | 29개 관리대장 / Admin 역할배정 |
 | `DetailPane` | Workbench 상세영역 | Inspection / Issue / Action / Owner / RFI |
 | `DetailDrawer` | 좁은 화면 및 관리대장 상세 Sheet | 29개 관리대장 |
-| `EvidenceViewer` | 서버 증빙 목록 | Capture |
+| `EvidenceViewer` | 서버 증빙 목록·상세 선택 | Capture |
+| `EvidenceDetailSheet` | 원본 미리보기, 출처·파생 연결, 기술정보 | Capture |
 | `AuditTimeline` | 서버 처리이력 | Today |
 | `ActionGate` | 서버가 허용한 Command 표시 | Workbench |
 | `DecisionPanel` | 판단·선행조건 강조 | Today |
@@ -104,9 +105,19 @@ Sticky Header의 스크롤 기준은 외부 `table-scroll` 하나로 유지한�
 
 업무 상태 변경은 별도 ActionGate 또는 Page command handler를 사용한다.
 
-### EvidenceViewer
+### EvidenceViewer / EvidenceDetailSheet
 
-원본/서버 증빙의 제목과 메타데이터를 표시한다. 업로드 완료 여부, AI 분석 결과의 공식성 등 업무 의미를 자체 추론하지 않는다.
+`EvidenceViewer`는 서버 증빙의 제목·미디어 유형·원본/파생 구분·해시 요약을 표시하고, 선택 가능한 항목은 상세 Sheet를 여는 진입점으로 사용한다. 업로드 완료 여부, AI 분석 결과의 공식성 등 업무 의미를 자체 추론하지 않는다.
+
+`EvidenceDetailSheet`는 shadcn/Radix Sheet + Tabs를 사용한 표시 전용 상세 패널이다.
+
+- 원본 파일은 읽기 권한이 있는 기존 Evidence content endpoint를 통해서만 미리보기한다.
+- 사진·영상·음성·PDF·텍스트만 안전한 방식으로 미리보기하고, 알 수 없는 형식은 메타데이터만 표시한다.
+- `sourceType=original`과 `sourceType=derived`를 텍스트로 명확히 구분한다.
+- 파생 증빙은 `originalEvidenceId`, `derivationRunId`, `sourceRange / PTS / frameIndex`를 표시한다.
+- 파일 전체 SHA-256, file ID, MIME, version, 서버 metadata를 기술정보로 분리한다.
+- 증빙 등록 또는 분석 성공을 검측 합격·승인·이슈 종결로 해석하지 않는다.
+- Sheet 닫기, 탭, 증빙 목록 버튼은 모바일 44px 이상 터치영역을 유지한다.
 
 ### AuditTimeline
 
@@ -164,6 +175,5 @@ v1 첫 이전 범위:
 
 ## 다음 연결
 
-- Evidence 상세 Preview
 - 관리대장 역할별 진입 UX 정리
 - 시각 회귀 기준 이미지 정리
