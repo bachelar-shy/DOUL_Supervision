@@ -1,0 +1,23 @@
+services:
+  worker-runtime:
+    image: doul-supervision-worker-runtime:dev
+    build:
+      context: ../..
+      dockerfile: infra/docker/worker-runtime.Dockerfile
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://:local-redis-only@redis:6379/0}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://doul_dev:local-postgres-only@postgres:5432/doul_supervision}
+      OBJECT_STORAGE_ENDPOINT: ${OBJECT_STORAGE_ENDPOINT:-http://object-storage:9000}
+      OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-doul-supervision-dev}
+      OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:-doul-dev}
+      OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:-local-minio-only}
+      OBJECT_STORAGE_REGION: ${OBJECT_STORAGE_REGION:-us-east-1}
+      DOUL_WORKER_QUEUE: ${DOUL_WORKER_QUEUE:-media-analysis}
+      DOUL_WORKER_CONCURRENCY: ${DOUL_WORKER_CONCURRENCY:-1}
+      DOUL_WORKER_HEARTBEAT_KEY: ${DOUL_WORKER_HEARTBEAT_KEY:-doul:worker:runtime:heartbeat}
+      DOUL_WORKER_HEARTBEAT_INTERVAL: ${DOUL_WORKER_HEARTBEAT_INTERVAL:-5}
+      DOUL_WORKER_HEARTBEAT_TTL: ${DOUL_WORKER_HEARTBEAT_TTL:-30}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
