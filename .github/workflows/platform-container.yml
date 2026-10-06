@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
       - name: Validate Compose model
-        run: docker compose -f infra/compose/compose.dev.yml config
+        run: docker compose -f infra/compose/compose.dev.yml config --quiet
 
       - name: Build local development images
         run: docker compose -f infra/compose/compose.dev.yml build
