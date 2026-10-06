@@ -33,9 +33,9 @@
 
 ### 주요 하위유형
 
-- InformationItem: Drawing, Specification, Method Statement, Checklist Template, Report, Certificate, Meeting Record, Manual, General Document
+- InformationItem: Drawing, Specification, Method Statement, Checklist Template, Report, Certificate, Meeting Record, Manual, General Document, Schedule, Contract BOQ
 - Asset: Building Element, Equipment, System, Material, Material Lot, Installed Component
-- WorkItem: Contractor Submission, Inspection Request, Material Submittal, Test Request, RFI, Change Request, Variation, Schedule Activity, Payment Claim, Safety Permit, Owner Decision Request, Commissioning Package, Handover Package, Warranty Claim
+- WorkItem: Contractor Submission, Inspection Request, Material Submittal, Test Request, RFI, Change Request, Variation, Schedule Activity, Delay Event, Recovery Plan, Quantity Measurement, Payment Claim, Safety Permit, Safety Stop Order, Owner Decision Request, Commissioning Package, Handover Package, Warranty Claim
 - Issue: Defect, NCR, Safety, Environmental, Material, Fire, Punch, Schedule, Design
 
 NCR와 RFI는 별도 Root Object로 두지 않는다. NCR는 Issue subtype, RFI는 WorkItem subtype이다.
@@ -49,6 +49,9 @@ Evidence → Observation
 Observation → authorized verification → Issue
 Issue → Action → Reinspection → Closure
 WorkItem / Issue → Decision → Approval → Action
+Safety Permit → Safety Stop Order → Safety Issue / Action → Resume Verification
+Schedule → Schedule Activity / Delay Event → Recovery Plan → Owner Report / Decision → Contract Track
+Contract BOQ → Quantity Measurement → Payment Claim → Recommendation → Owner Approval → Payment Record
 Project → 모든 상위 객체
 
 ## 4. Evidence 원칙

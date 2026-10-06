@@ -39,13 +39,17 @@ PR #2 병합 커밋 `d13e744`의 계약·검증 엔진을 재사용한 반응형
 26. [Product / Functional Map v1.0](./26_Product_Functional_Map_v1.md)
 27. [시공사 제출자료 · 시공상세도 Functional Contract v1.0](./27_Submission_Shop_Drawing_Functional_Contract.md)
 28. [자재승인 · 반입검사 · 시험 Functional Contract v1.0](./28_Material_Approval_Receiving_Test_Functional_Contract.md)
+29. [Issue 종결증빙 Functional Contract v1.0](./29_Issue_Closure_Evidence_Functional_Contract.md)
+30. [Safety Permit / Stop / Resume Functional Contract v1.0](./30_Safety_Permit_Stop_Resume_Functional_Contract.md)
+31. [Schedule / Delay / Recovery Functional Contract v1.0](./31_Schedule_Delay_Recovery_Functional_Contract.md)
+32. [Progress Measurement / Payment Functional Contract v1.0](./32_Progress_Measurement_Payment_Functional_Contract.md)
 
 ### 현재 상태
 
 - 체계·법령·현장절차: 기존 기준서 유지, 프로젝트별 적용성·원문 검토 필요
 - 구현계약: 10개 상태모델·98개 전이·51개 권한정책·29개 조회 대장
 - 사진·영상·발화: 원본·PTS·발화구간·처리범위·사람 확인 상세정의 및 결과 검증
-- 25개 A4 양식: 필드·서명·출처 계약 및 HTML 구조 검증. DOCX/PDF 시각 QA는 후속 작업
+- 26개 A4 양식: 필드·서명·출처 계약 및 HTML 구조 검증. DOCX/PDF 시각 QA는 후속 작업
 - 참조 실행: Python 표준 라이브러리 기반 업무흐름·권한·문서 엔진, 99개 자동시험
 - Mobile · Tablet · Responsive Web: 제품·화면 계약, 실제 앱 배포 전
 - Stitch: Presentation / UI Design Source, 업무권한·판정의 원본은 Domain/State/Authority

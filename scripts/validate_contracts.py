@@ -45,7 +45,7 @@ def validate_all():
             kind=source['object_type'];check(kind in schemas,'Unknown projection source')
             if source['subtype']:check(source['subtype'] in (subtypes.get(kind,[]) or schemas[kind]['properties'].get('kind',{}).get('enum',[])),'Unknown subtype '+str(source))
     identifiers={p['register_id'] for p in mapping['registers']}|{v['id'] for v in catalog['views']}
-    check(len(forms)==25 and set(data)==set(bindings)=={f['id'] for f in forms},'25 form contracts and bindings required')
+    check(len(forms)==26 and set(data)==set(bindings)=={f['id'] for f in forms},'26 form contracts and bindings required')
     for form in forms:
         check(set(form['registers'])<=identifiers,form['id']+' refers to unknown view')
         primary=bindings[form['id']].get('primary_source')
@@ -100,6 +100,6 @@ def validate_all():
     legal=load('forms/legal_form_registry.json')['official_fixed'];check(len({x['id'] for x in legal})==len(legal),'Duplicate legal template')
     for entry in legal:
         if entry['render_enabled']:check(all(entry.get(k) for k in ['template_file','template_sha256','effective_from','verified_source_url']),'Unverified legal template enabled')
-    return dict(machines=len(machines),transitions=sum(len(m['transitions']) for m in machines.values()),policies=len(policies),registers=29,forms=25,api_paths=len(api['paths']),api_operations=ops)
+    return dict(machines=len(machines),transitions=sum(len(m['transitions']) for m in machines.values()),policies=len(policies),registers=29,forms=26,api_paths=len(api['paths']),api_operations=ops)
 
 if __name__=='__main__':print(json.dumps(validate_all(),ensure_ascii=False))

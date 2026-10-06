@@ -235,6 +235,15 @@
       ],
       "legal_mode": "doul_internal",
       "template_version": "2.0"
+    },
+    {
+      "id": "FM-26",
+      "title": "물량·기성 검토·추천서",
+      "registers": [
+        "17"
+      ],
+      "legal_mode": "doul_internal",
+      "template_version": "2.0"
     }
   ],
   "view_id_schema": "V-01|V-02|V-03|V-04"

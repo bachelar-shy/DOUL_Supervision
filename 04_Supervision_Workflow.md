@@ -116,21 +116,27 @@ DOUL 내부 목표기한(법정·계약기한이 없을 때):
 
 시공사의 Biện pháp bảo đảm an toàn(시공안전조치)가 승인된 시공방법과 함께 준비되었는지 확인한다.
 
+고위험작업은 작업계획·위험성평가 → Safety Permit 요청 → 현장 Pre-start 확인 → 승인 → 작업수행 순으로 관리한다. Permit 승인과 실제 작업가능상태는 분리하며, 장비검사·작업자 자격·유효시간·통제조건·Open Stop Order를 함께 확인하여 `workAuthorized`를 판단한다.
+
 감리는:
 - 위험작업계획
 - 고소·굴착·양중·철골·화기·밀폐공간
 - 인접시설
 - 안전계측
 - 시공사 안전인력·교육
+- 장비 검사증·교정·사용적격성
+- Permit 유효범위와 작업 전 현장조건
 을 확인한다.
 
-즉시 위험이 있으면 감리단장에게 즉시 보고하고 필요한 시정·작업중지 절차로 전환한다.
+즉시 위험이 있으면 기록완료를 기다리지 않고 작업을 먼저 중지할 수 있으며, 이후 SafetyStopOrder와 필요한 Safety Issue를 공식 기록으로 전환한다. Issue 종결이나 발주처 수령확인만으로 작업중지가 자동 해제되지 않으며, 현장 재검증과 명시적 `lift_stop` 이후 Permit 유효성을 재확인해야 한다. 상세 기준은 `30_Safety_Permit_Stop_Resume_Functional_Contract.md`를 따른다.
 
 ## 12. 공정·물량·기성
 
-시공사 실적 제출 → 감리 현장확인 → 기준공정 대비 → 지연원인 분석 → 회복계획 검토.
+공정은 승인 Baseline → 주기별 Progress Update → Data Date 기준 실적검증 → Baseline 대비 Variance → Delay Event → 영향분석 → Recovery Plan → 효과검증 순으로 관리한다. Forecast 변경은 Baseline 변경이나 EOT 승인으로 해석하지 않으며, 계약상 권리·책임 판단은 Contract Notice / Claim / EOT 절차로 분리한다.
 
-물량·기성은 승인도면·검수완료·실제시공량을 근거로 확인하며, 변경물량은 설계변경 승인과 연결한다.
+공정실적은 Inspection·자재반입·시험·일일기록 등 Evidence와 정합성을 확인하며, frozen Progress Snapshot은 과거값을 조용히 수정하지 않는다. 상세기준은 `31_Schedule_Delay_Recovery_Functional_Contract.md`를 따른다.
+
+물량·기성은 Contract BOQ exact version → Quantity Measurement → Inspection/Test/Material 지급적격성 → Payment Claim → 감리 수량·금액검토 → 지급추천 → 발주처 승인/조정 → 실제 지급기록으로 관리한다. 청구·검증·추천·발주처승인·실제지급 금액을 서로 분리하고, 변경물량은 승인된 Change/Variation 근거와 연결한다. 상세기준은 `32_Progress_Measurement_Payment_Functional_Contract.md`를 따른다.
 
 ## 13. 발주처 보고
 

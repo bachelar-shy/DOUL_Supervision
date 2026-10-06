@@ -28,7 +28,9 @@
       "Certificate",
       "MeetingRecord",
       "Manual",
-      "GeneralDocument"
+      "GeneralDocument",
+      "Schedule",
+      "ContractBOQ"
     ],
     "Asset": [
       "BuildingElement",
@@ -47,8 +49,12 @@
       "ChangeRequest",
       "Variation",
       "ScheduleActivity",
+      "DelayEvent",
+      "RecoveryPlan",
+      "QuantityMeasurement",
       "PaymentClaim",
       "SafetyPermit",
+      "SafetyStopOrder",
       "OwnerDecisionRequest",
       "CommissioningPackage",
       "HandoverPackage",

@@ -1212,8 +1212,20 @@
       "register_id": "16",
       "sources": [
         {
+          "object_type": "InformationItem",
+          "subtype": "Schedule"
+        },
+        {
           "object_type": "WorkItem",
           "subtype": "ScheduleActivity"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "DelayEvent"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "RecoveryPlan"
         },
         {
           "object_type": "InformationItem",
@@ -1229,7 +1241,8 @@
       ],
       "calculated_fields": [
         "planned_actual",
-        "delay_days"
+        "delay_days",
+        "forecast_delay_days"
       ],
       "mode": "read_only",
       "allowed_commands": [],
@@ -1269,6 +1282,12 @@
           "start_path": "data.plannedFinishAt",
           "end_path": "data.actualFinishAt",
           "missing_value": null
+        },
+        "forecast_delay_days": {
+          "operator": "elapsed_days",
+          "start_path": "data.plannedFinishAt",
+          "end_path": "data.forecastFinishAt",
+          "missing_value": null
         }
       }
     },
@@ -1276,8 +1295,20 @@
       "register_id": "17",
       "sources": [
         {
+          "object_type": "InformationItem",
+          "subtype": "ContractBOQ"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "QuantityMeasurement"
+        },
+        {
           "object_type": "WorkItem",
           "subtype": "PaymentClaim"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "Variation"
         },
         {
           "object_type": "Inspection",
@@ -1285,6 +1316,10 @@
         },
         {
           "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "Decision",
           "subtype": null
         }
       ],
@@ -1297,7 +1332,13 @@
       ],
       "calculated_fields": [
         "verified_quantity",
-        "approved_variation"
+        "claimed_amount",
+        "verified_amount",
+        "recommended_amount",
+        "owner_approved_amount",
+        "paid_amount",
+        "approved_variation",
+        "disputed_amount"
       ],
       "mode": "read_only",
       "allowed_commands": [],
@@ -1332,10 +1373,52 @@
           ],
           "missing_value": null
         },
+        "claimed_amount": {
+          "operator": "coalesce",
+          "paths": [
+            "data.claimedGrossAmount"
+          ],
+          "missing_value": null
+        },
+        "verified_amount": {
+          "operator": "coalesce",
+          "paths": [
+            "data.verifiedGrossAmount"
+          ],
+          "missing_value": null
+        },
+        "recommended_amount": {
+          "operator": "coalesce",
+          "paths": [
+            "data.recommendedNetAmount"
+          ],
+          "missing_value": null
+        },
+        "owner_approved_amount": {
+          "operator": "coalesce",
+          "paths": [
+            "data.ownerApprovedAmount"
+          ],
+          "missing_value": null
+        },
+        "paid_amount": {
+          "operator": "coalesce",
+          "paths": [
+            "data.paidAmount"
+          ],
+          "missing_value": null
+        },
         "approved_variation": {
           "operator": "coalesce",
           "paths": [
             "data.approvedVariation"
+          ],
+          "missing_value": null
+        },
+        "disputed_amount": {
+          "operator": "coalesce",
+          "paths": [
+            "data.disputedAmount"
           ],
           "missing_value": null
         }
@@ -1347,6 +1430,10 @@
         {
           "object_type": "WorkItem",
           "subtype": "SafetyPermit"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "SafetyStopOrder"
         },
         {
           "object_type": "Inspection",

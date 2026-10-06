@@ -220,10 +220,10 @@ read-only Register와 Maturity는 같은 의미가 아니다. Read-only Projecti
 | 13 | 기술질의 | D4 | 실행형 | RFI | FM-15 | M3 | 답변이 Change/Approval을 자동 대체하지 않는 원칙 유지 |
 | 14 | 설계변경 | D4 | 실행형 | Change + Approval + Decision | FM-03, FM-16 | M3 | 기술승인과 계약/비용/공기 결정 권한 분리 유지 |
 | 15 | 현장지시 | D4 | 실행형 | Action 재사용 | FM-14 | M2 | 지시 발행권한, 수령확인, 이의/질의, 완료확인, 설계변경 전환조건 상세화 |
-| 16 | 공정·지연 | D6 | 현황 Projection | Report / Decision과 연결 | FM-19 | M1 | Baseline→실적→지연→원인→회복계획→승인→검증 Workflow 필요 |
-| 17 | 물량·기성 | D6 | 현황 Projection | Inspection / Approval 참조 | - | M1 | 물량근거→검수완료→기성신청→감리확인→조정→추천/승인 구조 필요 |
-| 18 | 안전·고위험작업 | D5 | 실행형 | Inspection + Issue | FM-02, FM-17 | M2 | 작업허가, 작업중지, 재개승인, Permit 유효시간 및 책임자 Gate 필요 |
-| 19 | 안전검사 장비·기계 | D5 | 자격/검사 Projection | Certificate 참조 | FM-17 | M1 | 검사유효기간·교정·사용중지·재검사·만료 알림 Workflow 필요 |
+| 16 | 공정·지연 | D6 | 현황 Projection | F-04 Schedule + DelayEvent + RecoveryPlan | FM-19 | M3 | F-04에서 Baseline, Data Date, Progress Update, Delay Impact, Recovery, EOT 경계까지 확정 |
+| 17 | 물량·기성 | D6 | 현황 Projection | F-05 ContractBOQ + QuantityMeasurement + PaymentClaim | FM-26 | M3 | F-05에서 BOQ, 수량검증, 지급적격성, 추천, 발주처승인, 실제지급까지 확정 |
+| 18 | 안전·고위험작업 | D5 | 실행형 | F-03 SafetyPermit + SafetyStopOrder + Issue | FM-02, FM-17 | M3 | F-03에서 Permit 상태, Pre-start Gate, 작업중지, 재개승인, workAuthorized까지 확정 |
+| 19 | 안전검사 장비·기계 | D5 | 자격/검사 Projection | F-03 SafetyEquipmentInspection + Certificate | FM-17 | M3 | F-03에서 검사·인증·교정·사용중지·재검사·Equipment Readiness까지 확정 |
 | 20 | PCCC(소방) | D5 | 실행형 | Requirement + Inspection | - | M2 | 설계/시공/시험/자체검수/관할기관 단계와 법정문서 Gate 상세화 |
 | 21 | 환경 | D5 | 실행형 | Issue 중심 | - | M2 | 환경조건·측정·위반·시정·대관보고·재확인 Workflow 정규화 |
 | 22 | 회의·발주처 보고·결정 | D7 | 핵심 실행형 | Report + Decision + Action + Approval | FM-16, FM-19~21 | M3 | 정기·즉시·의사결정·수령·후속검증의 독립성 유지 |
@@ -237,9 +237,9 @@ read-only Register와 Maturity는 같은 의미가 아니다. Read-only Projecti
 
 ### 8.1 현재 분포
 
-- M3: 10개 — 06, 07, 08, 09, 10, 11, 12, 13, 14, 22
-- M2: 11개 — 01, 03, 04, 15, 18, 20, 21, 23, 24, 25, 28
-- M1: 7개 — 05, 16, 17, 19, 26, 27, 29
+- M3: 14개 — 06, 07, 08, 09, 10, 11, 12, 13, 14, 16, 17, 18, 19, 22
+- M2: 10개 — 01, 03, 04, 15, 20, 21, 23, 24, 25, 28
+- M1: 4개 — 05, 26, 27, 29
 - R: 1개 — 02
 
 핵심 판단:
@@ -511,10 +511,10 @@ Product / Functional의 다음 상세설계 순서는 다음으로 한다.
 
 1. **F-01 시공사 제출자료 / 시공상세도 — 상세계약 완료 (`27_Submission_Shop_Drawing_Functional_Contract.md`)**
 2. **F-02 자재승인 / 반입 / 시험 — 상세계약 완료 (`28_Material_Approval_Receiving_Test_Functional_Contract.md`)**
-3. **F-03 Safety Permit / Stop / Resume — 다음 상세설계**
-4. F-04 Schedule / Delay / Recovery
-5. F-05 Progress Measurement / Payment
-6. F-06 PCCC / Environment Compliance
+3. **F-03 Safety Permit / Stop / Resume — 상세계약 완료 (`30_Safety_Permit_Stop_Resume_Functional_Contract.md`)**
+4. **F-04 Schedule / Delay / Recovery — 상세계약 완료 (`31_Schedule_Delay_Recovery_Functional_Contract.md`)**
+5. **F-05 Progress Measurement / Payment — 상세계약 완료 (`32_Progress_Measurement_Payment_Functional_Contract.md`)**
+6. **F-06 PCCC / Environment Compliance — 다음 상세설계**
 7. F-07 Commissioning / Handover / Warranty
 8. F-08 Contract Notice / Claim / EOT
 9. 역할별 End-to-End Journey

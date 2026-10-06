@@ -1012,6 +1012,77 @@
         }
       ],
       "legal_mode": "doul_internal"
+    },
+    {
+      "id": "FM-26",
+      "title": "물량·기성 검토·추천서",
+      "version": "2.0",
+      "layout": "DOUL_A4",
+      "sections": [
+        {
+          "type": "kv_compact",
+          "fields": [
+            "project.name",
+            "contract.package",
+            "payment.claim_no",
+            "payment.period",
+            "payment.boq_revision",
+            "payment.currency"
+          ]
+        },
+        {
+          "type": "summary",
+          "fields": [
+            "payment.claimed_amount",
+            "payment.verified_amount",
+            "payment.recommended_amount",
+            "payment.blocked_disputed_amount"
+          ]
+        },
+        {
+          "type": "repeat_table",
+          "source": "items",
+          "columns": [
+            "boq_item",
+            "description",
+            "unit",
+            "contract_qty",
+            "claimed_qty",
+            "verified_qty",
+            "previous_certified_qty",
+            "cumulative_verified_qty",
+            "verified_amount",
+            "variation_ref",
+            "basis_note"
+          ]
+        },
+        {
+          "type": "kv",
+          "fields": [
+            "payment.approved_variation",
+            "payment.material_on_site",
+            "payment.retention",
+            "payment.advance_recovery",
+            "payment.other_deduction",
+            "payment.tax"
+          ]
+        },
+        {
+          "type": "text",
+          "fields": [
+            "payment.recommendation_comment",
+            "payment.owner_status"
+          ]
+        },
+        {
+          "type": "signatures",
+          "roles": [
+            "quantity_cost_reviewer",
+            "chief_supervisor"
+          ]
+        }
+      ],
+      "legal_mode": "doul_internal"
     }
   ],
   "data_contract": "form_data_schemas_v1.json"

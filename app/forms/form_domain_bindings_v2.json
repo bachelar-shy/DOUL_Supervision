@@ -1720,6 +1720,10 @@
           "subtype": "SafetyPermit"
         },
         {
+          "object_type": "WorkItem",
+          "subtype": "SafetyStopOrder"
+        },
+        {
           "object_type": "Inspection",
           "subtype": null
         },
@@ -1910,8 +1914,20 @@
       ],
       "domain_sources": [
         {
+          "object_type": "InformationItem",
+          "subtype": "Schedule"
+        },
+        {
           "object_type": "WorkItem",
           "subtype": "ScheduleActivity"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "DelayEvent"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "RecoveryPlan"
         },
         {
           "object_type": "InformationItem",
@@ -2520,6 +2536,177 @@
             "due",
             "recheck",
             "status"
+          ],
+          "source": "reviewed_projection_dto"
+        }
+      }
+    },
+    "FM-26": {
+      "source_registers": [
+        "17"
+      ],
+      "domain_sources": [
+        {
+          "object_type": "InformationItem",
+          "subtype": "ContractBOQ"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "QuantityMeasurement"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "PaymentClaim"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "Variation"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "Decision",
+          "subtype": null
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
+        }
+      ],
+      "payload_schema": "FM-26",
+      "field_mapping_policy": "Explicit projection DTO uses paths declared in form_data_schemas_v1; never read live state when re-rendering a snapshot.",
+      "source_version_required": true,
+      "field_bindings": {
+        "project.name": {
+          "dto_path": "project.name",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "contract.package": {
+          "dto_path": "contract.package",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.claim_no": {
+          "dto_path": "payment.claim_no",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.period": {
+          "dto_path": "payment.period",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.boq_revision": {
+          "dto_path": "payment.boq_revision",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.currency": {
+          "dto_path": "payment.currency",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.claimed_amount": {
+          "dto_path": "payment.claimed_amount",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.verified_amount": {
+          "dto_path": "payment.verified_amount",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.recommended_amount": {
+          "dto_path": "payment.recommended_amount",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.approved_variation": {
+          "dto_path": "payment.approved_variation",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.material_on_site": {
+          "dto_path": "payment.material_on_site",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.retention": {
+          "dto_path": "payment.retention",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.advance_recovery": {
+          "dto_path": "payment.advance_recovery",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.other_deduction": {
+          "dto_path": "payment.other_deduction",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.tax": {
+          "dto_path": "payment.tax",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.blocked_disputed_amount": {
+          "dto_path": "payment.blocked_disputed_amount",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.recommendation_comment": {
+          "dto_path": "payment.recommendation_comment",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": true
+        },
+        "payment.owner_status": {
+          "dto_path": "payment.owner_status",
+          "source": "reviewed_projection_dto",
+          "type": "string",
+          "required": false
+        }
+      },
+      "table_bindings": {
+        "items": {
+          "dto_path": "items",
+          "columns": [
+            "boq_item",
+            "description",
+            "unit",
+            "contract_qty",
+            "claimed_qty",
+            "verified_qty",
+            "previous_certified_qty",
+            "cumulative_verified_qty",
+            "verified_amount",
+            "variation_ref",
+            "basis_note"
           ],
           "source": "reviewed_projection_dto"
         }

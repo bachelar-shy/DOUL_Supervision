@@ -10889,7 +10889,9 @@
               "Certificate",
               "MeetingRecord",
               "Manual",
-              "GeneralDocument"
+              "GeneralDocument",
+              "Schedule",
+              "ContractBOQ"
             ]
           },
           "title": {
@@ -11798,8 +11800,12 @@
               "ChangeRequest",
               "Variation",
               "ScheduleActivity",
+              "DelayEvent",
+              "RecoveryPlan",
+              "QuantityMeasurement",
               "PaymentClaim",
               "SafetyPermit",
+              "SafetyStopOrder",
               "OwnerDecisionRequest",
               "CommissioningPackage",
               "HandoverPackage",
