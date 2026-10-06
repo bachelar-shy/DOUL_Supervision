@@ -1,0 +1,548 @@
+{
+  "version": "1.0",
+  "source": "31_Schedule_Delay_Recovery_Functional_Contract.md",
+  "status": "contract_defined_backend_not_implemented",
+  "operation": "import_schedule_source_package",
+  "proposed_transport": {
+    "method": "POST",
+    "path": "/projects/{projectId}/schedule-source-imports",
+    "idempotency_header": "Idempotency-Key",
+    "implemented": false
+  },
+  "kinds": {
+    "baseline": {
+      "authority": "schedule.baseline.create",
+      "machine": "schedule_baseline",
+      "initial_state": "draft"
+    },
+    "progress_update": {
+      "authority": "schedule.progress.submit",
+      "machine": "schedule_progress",
+      "initial_state": "submitted"
+    },
+    "recovery": {
+      "authority": "schedule.recovery.submit",
+      "machine": null,
+      "initial_state": "snapshot",
+      "supporting_only": true
+    }
+  },
+  "deferred_kinds": [
+    "lookahead"
+  ],
+  "atomicity": {
+    "schedule_and_all_activities_and_audit_and_idempotency_in_one_transaction": true,
+    "rollback_all_on_validation_storage_or_partial_failure": true,
+    "no_orphan_activity": true
+  },
+  "activity_snapshot": {
+    "object_type": "WorkItem",
+    "subtype": "ScheduleActivity",
+    "state": "snapshot",
+    "workflow_machine": null,
+    "immutable": true,
+    "sourceScheduleRef_server_generated": true,
+    "sourceScheduleRef_version": 1,
+    "clientObjectId_unique_across_package": true,
+    "activityId_unique_within_source": true,
+    "predecessor_successor_refs_within_same_package": true,
+    "critical_ref_server_generated_from_activity_id": true,
+    "activity_count_server_derived": true,
+    "no_independent_approval": true,
+    "logic_refs_server_generated_from_activity_ids": true,
+    "critical_activity_requires_critical_true": true
+  },
+  "source_identity": {
+    "resolve_sourceEvidenceRef_exact_version": true,
+    "same_project_and_assigned_scope_required": true,
+    "sourceFileRef_equals_resolved_evidence_fileId": true,
+    "sourceFileHash_equals_verified_raw_file_sha256": true,
+    "storage_content_must_be_readable_before_commit": true,
+    "normalized_json_content_matches_package": true,
+    "parser_version_recorded": true,
+    "unsupported_parser_fails_without_records": true,
+    "normalized_document": {
+      "format": "doul-normalized-json-v1",
+      "properties": [
+        "schedule",
+        "activities",
+        "criticalActivityId"
+      ],
+      "schedule_excludes": [
+        "sourceFileRef",
+        "sourceFileHash"
+      ],
+      "activities_include": [
+        "data",
+        "predecessorActivityIds",
+        "successorActivityIds"
+      ],
+      "activities_exclude": [
+        "clientObjectId",
+        "evidenceIds"
+      ],
+      "missing_logic_arrays_mean_empty": true,
+      "comparison": "compare normalized content, not request-envelope metadata; compute raw file hash separately"
+    }
+  },
+  "immutability": {
+    "source_content_fields": [
+      "scheduleNo",
+      "scheduleKind",
+      "revision",
+      "sourceFileRef",
+      "sourceFormat",
+      "sourceFileHash",
+      "sourceFileVersion",
+      "dataDate",
+      "periodStart",
+      "periodEnd",
+      "projectStartAt",
+      "contractualCompletionAt",
+      "forecastCompletionAt",
+      "calendars",
+      "wbsVersion",
+      "milestoneSet",
+      "criticalPathRef",
+      "activityCount",
+      "baselineScheduleRef",
+      "previousScheduleRef",
+      "correctionOfRef",
+      "correctionReason",
+      "logicChangeSummary",
+      "calendarChangeSummary",
+      "majorDelayReasons",
+      "lookaheadSummary",
+      "revisionBasisRef"
+    ],
+    "imported_source_update_requires_new_schedule_object": true,
+    "workflow_versions_do_not_rebind_activity_source_ref": true,
+    "exact_initial_source_version_retained": true,
+    "lifecycle_review_fields_remain_command_managed": true,
+    "legacy_records_not_silently_rebound": true,
+    "same_value_source_field_resubmission_allowed": true
+  },
+  "validation": {
+    "existing_domain_and_authority_guards_apply": true,
+    "progress_references_effective_baseline": true,
+    "same_scope_required": true,
+    "data_date_and_correction_chain_guards_apply": true,
+    "baseline_activity_mapping_exact_version_same_baseline_required": true,
+    "activity_actual_dates_not_after_data_date": true,
+    "actual_finish_requires_actual_start": true,
+    "activity_start_not_after_finish": true,
+    "source_submission_not_review_approval": true,
+    "no_inspection_handover_or_entitlement_state_effect": true
+  },
+  "concurrency": {
+    "new_schedule_initial_version": 1,
+    "referenced_existing_objects_require_exact_current_version": true,
+    "historical_source_ref_explicit_read_only": true,
+    "same_key_same_package_replays_original_result": true,
+    "same_key_different_package_rejected": true,
+    "object_id_collision_rejected": true,
+    "physical_delete_forbidden": true
+  },
+  "read_contract": {
+    "exact_schedule_ref_and_activity_refs_returned": true,
+    "role_and_project_scope_enforced": true,
+    "historical_import_source_queryable": true,
+    "workspace_activity_binding_is_projection_not_new_workflow": true
+  },
+  "acceptance_required_before_backend_acceptance": [
+    "valid_baseline_bundle_atomic_create",
+    "baseline_submit_review_approve_activate_unchanged",
+    "valid_progress_bundle_receive_verify_freeze",
+    "progress_keeps_baseline_unchanged",
+    "progress_correction_new_source_preserves_old",
+    "duplicate_activity_id_rejected",
+    "source_ref_forgery_rejected",
+    "dangling_or_cross_source_critical_logic_ref_rejected",
+    "foreign_project_or_expired_role_rejected",
+    "source_hash_content_or_storage_failure_rolls_back",
+    "partial_activity_insert_failure_rolls_back",
+    "duplicate_request_and_restart_replay",
+    "stale_baseline_or_previous_snapshot_rejected",
+    "source_update_via_workflow_payload_rejected",
+    "supporting_recovery_snapshot_cannot_activate_baseline",
+    "domain_and_owner_followup_closure_remain_separate"
+  ],
+  "schemas": {
+    "ScheduleSourceImportScope": {
+      "type": "object",
+      "properties": {
+        "packageId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "locationId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "discipline": {
+          "type": "string",
+          "minLength": 1
+        },
+        "responsibleOrganizationId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "packageId",
+        "locationId",
+        "discipline",
+        "responsibleOrganizationId"
+      ],
+      "additionalProperties": false
+    },
+    "ScheduleSourceImportActivityData": {
+      "type": "object",
+      "properties": {
+        "activityId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "wbsPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "activityName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "responsibleOrganizationId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "plannedStartAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "plannedFinishAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actualStartAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actualFinishAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "forecastStartAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "forecastFinishAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "originalDuration": {
+          "type": "number",
+          "minimum": 0
+        },
+        "remainingDuration": {
+          "type": "number",
+          "minimum": 0
+        },
+        "percentComplete": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "totalFloat": {
+          "type": "number"
+        },
+        "critical": {
+          "type": "boolean"
+        },
+        "milestone": {
+          "type": "boolean"
+        },
+        "baselineActivityRef": {
+          "$ref": "#/components/schemas/DomainRef"
+        },
+        "manualCorrectionReason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "activityId",
+        "wbsPath",
+        "activityName"
+      ],
+      "additionalProperties": false
+    },
+    "ScheduleSourceImportScheduleData": {
+      "type": "object",
+      "properties": {
+        "scheduleNo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scheduleKind": {
+          "type": "string",
+          "enum": [
+            "baseline",
+            "progress_update",
+            "recovery"
+          ]
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceFileRef": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sourceFormat": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceFileHash": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "sourceFileVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dataDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "periodStart": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "periodEnd": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "projectStartAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "contractualCompletionAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "forecastCompletionAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "calendars": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/ScheduleCalendarData"
+          }
+        },
+        "wbsVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "milestoneSet": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/ScheduleMilestoneData"
+          }
+        },
+        "scheduleQualitySummary": {
+          "$ref": "#/components/schemas/ScheduleQualitySummary"
+        },
+        "baselineScheduleRef": {
+          "$ref": "#/components/schemas/DomainRef"
+        },
+        "previousScheduleRef": {
+          "$ref": "#/components/schemas/DomainRef"
+        },
+        "correctionOfRef": {
+          "$ref": "#/components/schemas/DomainRef"
+        },
+        "correctionReason": {
+          "type": "string"
+        },
+        "logicChangeSummary": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "calendarChangeSummary": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "majorDelayReasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "lookaheadSummary": {
+          "type": "string"
+        },
+        "revisionBasisRef": {
+          "$ref": "#/components/schemas/DomainRef"
+        }
+      },
+      "required": [
+        "scheduleNo",
+        "scheduleKind",
+        "revision",
+        "sourceFileRef",
+        "sourceFormat",
+        "sourceFileHash",
+        "sourceFileVersion"
+      ],
+      "additionalProperties": false
+    },
+    "ScheduleSourceImportActivity": {
+      "type": "object",
+      "properties": {
+        "clientObjectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "data": {
+          "$ref": "#/components/schemas/ScheduleSourceImportActivityData"
+        },
+        "evidenceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "predecessorActivityIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "successorActivityIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "clientObjectId",
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    "ScheduleSourceImportPackage": {
+      "type": "object",
+      "properties": {
+        "roleAssignmentId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "clientObjectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "scope": {
+          "$ref": "#/components/schemas/ScheduleSourceImportScope"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceEvidenceRef": {
+          "$ref": "#/components/schemas/ScheduleSourceEvidenceRef"
+        },
+        "inputMode": {
+          "type": "string",
+          "enum": [
+            "normalized_json"
+          ]
+        },
+        "parserVersion": {
+          "type": "string",
+          "enum": [
+            "doul-normalized-json-v1"
+          ]
+        },
+        "schedule": {
+          "$ref": "#/components/schemas/ScheduleSourceImportScheduleData"
+        },
+        "activities": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/components/schemas/ScheduleSourceImportActivity"
+          }
+        },
+        "criticalActivityId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "roleAssignmentId",
+        "clientObjectId",
+        "scope",
+        "title",
+        "sourceEvidenceRef",
+        "inputMode",
+        "parserVersion",
+        "schedule",
+        "activities",
+        "criticalActivityId"
+      ],
+      "additionalProperties": false
+    },
+    "ScheduleSourceEvidenceRef": {
+      "type": "object",
+      "properties": {
+        "objectType": {
+          "type": "string",
+          "const": "Evidence"
+        },
+        "objectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "objectType",
+        "objectId",
+        "version"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "provenance_storage": {
+    "schedule_metadata_key": "sourceImport",
+    "immutable_fields": [
+      "contractVersion",
+      "parserVersion",
+      "inputMode",
+      "sourceEvidenceRef",
+      "sourceScheduleRef",
+      "activityRefs"
+    ],
+    "activity_scope_inherits_schedule_scope": true,
+    "raw_source_evidence_preserved": true,
+    "sourceImport_marker_is_server_managed": true
+  }
+}

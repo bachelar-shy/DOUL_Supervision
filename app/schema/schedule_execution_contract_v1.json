@@ -74,5 +74,6 @@
     "requestedAt",
     "activatedAt",
     "completedAt"
-  ]
+  ],
+  "source_import_contract": "schedule_source_import_contract_v1.json"
 }

@@ -72,6 +72,9 @@ Backend 구현:
 - DelayEvent state/command + factual impact analysis
 - RecoveryPlan state/command + effectiveness tracking
 - Baseline/Forecast 분리
+- `schedule_source_import_contract_v1.json` Product 보완계약 병합 후 원본 Schedule + Activity package의 입력/조회 경로 구현
+- 보존된 정규화 JSON 원본 bytes/hash와 요청 내용 확인; Activity 관계/원본 참조는 서버 생성
+- 전체 package·Audit·Idempotency 원자적 저장, 최초 원본 version 보존, 부분실패 rollback
 - F-08 EOT/Claim/Notice는 refs로 연결하되 Schedule에서 entitlement를 판정하지 않음
 
 Acceptance:
