@@ -93,7 +93,7 @@ services:
     image: alpine:3.24.1
     user: root
     volumes:
-      - object-storage-data:/data
+      - object-storage-rustfs-data:/data
     command: ["sh", "-ec", "chown -R 10001:10001 /data"]
     restart: "no"
 
@@ -114,7 +114,7 @@ services:
       - "127.0.0.1:${DOUL_OBJECT_STORAGE_PORT_PUBLISHED:-9000}:9000"
       - "127.0.0.1:${DOUL_OBJECT_STORAGE_CONSOLE_PORT_PUBLISHED:-9001}:9001"
     volumes:
-      - object-storage-data:/data
+      - object-storage-rustfs-data:/data
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/health"]
       interval: 10s
@@ -145,4 +145,4 @@ volumes:
   api-data:
   postgres-data:
   redis-data:
-  object-storage-data:
+  object-storage-rustfs-data:
