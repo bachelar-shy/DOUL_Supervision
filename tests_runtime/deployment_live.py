@@ -20,7 +20,7 @@ from cryptography.x509.oid import NameOID
 
 from services.api.persistence import create_postgres_persistence
 from services.deployment.migrate import migrate_v1
-from services.deployment.auth import subject_key
+from tests_runtime.safety_operational import seed_safety_fixture, run_safety_operational_e2e
 
 
 def command(args, env=None, ok=True, timeout=120):
@@ -89,10 +89,8 @@ def main():
             migrate_v1(dsn)
             store=create_postgres_persistence(dsn,demo=True)
             try:
-                with store.transaction(True):
-                    actor=store.meta['actors']['SUP'];project=store.meta['projectId']
-                    store.meta['provisioning']=dict(environment='staging',snapshotFormat=1,approvedBy='SYNTHETIC-CI',approvalRef='disposable-test-only',syntheticData=True)
-                    store.meta['identityBindings']={subject_key(issuer,'synthetic-supervisor'):dict(active=True,partyId=actor['partyId'],defaultRoleAssignmentId=actor['roleAssignmentId'],validAfter=0)}
+                fixture=seed_safety_fixture(store,issuer)
+                actor=store.meta['actors']['SUP'];project=fixture['projectId']
             finally:store.close()
             # Ownership changes are confined to newly-created disposable CI files.
             command(['sudo','chown','10001:10001',str(db_file),str(redis_file),str(public)])
@@ -118,25 +116,36 @@ def main():
             command(proxy)
             context=ssl.create_default_context(cafile=ca_file)
             opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),urllib.request.HTTPSHandler(context=context))
-            def request(path,token=None,method='GET',data=None):
-                headers={'Authorization':'Bearer '+token} if token else {}
-                req=urllib.request.Request('https://localhost:8443'+path,headers=headers,method=method,data=data)
+            def request(path,token=None,method='GET',data=None,headers=None):
+                request_headers=dict(headers or {})
+                if token:
+                    request_headers['Authorization']='Bearer '+token
+                req=urllib.request.Request('https://localhost:8443'+path,headers=request_headers,method=method,data=data)
                 try:
                     with opener.open(req,timeout=5) as response:return response.status,response.read()
                 except urllib.error.HTTPError as exc:return exc.code,exc.read()
-            for _ in range(60):
-                try:
-                    if request('/api/ready')[0]==200:break
-                except Exception:pass
-                time.sleep(0.5)
+            def wait_ready():
+                for _ in range(60):
+                    try:
+                        if request('/api/ready')[0]==200:return
+                    except Exception:pass
+                    time.sleep(0.5)
+                raise AssertionError('TLS API readiness did not pass')
+            def restart_api():
+                command(['docker','restart',names[0]])
+                wait_ready()
+            wait_ready()
             assert request('/api/ready')[0]==200,'TLS API readiness did not pass'
             assert request('/')[0]==200,'TLS web shell did not serve'
             assert request('/api/dev/sessions',method='POST',data=b'{}')[0]==404
             assert request('/api/projects/'+project+'/roles')[0]==401
             epoch=int(time.time())
-            token=jwt.encode(dict(sub='synthetic-supervisor',iss=issuer,aud='doul-supervision',iat=epoch,nbf=epoch,exp=epoch+300,roles=['ADM']),signing,algorithm='RS256',headers={'kid':'test-key-1','typ':'at+jwt'})
+            token=jwt.encode(dict(sub='synthetic-supervisor',iss=issuer,aud='doul-supervision',iat=epoch,nbf=epoch,exp=epoch+900,roles=['ADM']),signing,algorithm='RS256',headers={'kid':'test-key-1','typ':'at+jwt'})
+            con_token=jwt.encode(dict(sub='synthetic-contractor',iss=issuer,aud='doul-supervision',iat=epoch,nbf=epoch,exp=epoch+900,roles=['SUP']),signing,algorithm='RS256',headers={'kid':'test-key-1','typ':'at+jwt'})
             status,body=request('/api/projects/'+project+'/roles',token)
-            assert status==200 and all(r['actorGroup']=='SUP' for r in json.loads(body)), 'Token claims widened server authority'
+            assert status==200 and all(r['actorGroup']=='SUP' for r in json.loads(body)), 'Token claims widened supervisor authority'
+            status,body=request('/api/projects/'+project+'/roles',con_token)
+            assert status==200 and all(r['actorGroup']=='CON' for r in json.loads(body)), 'Token claims widened contractor authority'
             assert request('/api/projects/'+project+'/roles','invalid-token')[0]==401
             status,body=request('/api/health');assert status==200 and json.loads(body)['mode']=='staging'
             from services.deployment.release import verify_https
@@ -149,8 +158,9 @@ def main():
                     pass
                 else:
                     raise AssertionError('A different running release/environment was accepted')
+            safety_result=run_safety_operational_e2e(request,restart_api,fixture,token,con_token)
             logs=command(['docker','logs',names[0]]).stdout.decode()
-            assert password not in logs and token not in logs,'Runtime emitted a credential'
+            assert password not in logs and token not in logs and con_token not in logs,'Runtime emitted a credential'
             # A pilot process with a staging/synthetic store must not start.
             negative=api[:];negative[negative.index('-d')]='--rm'
             negative[negative.index('--name')+1]='doul-ci-pilot-negative'
@@ -159,7 +169,7 @@ def main():
             assert result.returncode!=0,'Unapproved pilot runtime started'
             print(json.dumps(dict(result='staging-tls-nondemo-ok',certificateVerified=True,devEndpointsAbsent=True,
                                   unverifiedTokenRejected=True,serverRolePreserved=True,unapprovedPilotRefused=True,
-                                  actualPilotDeployed=False),sort_keys=True))
+                                  safetyOperationalE2E=safety_result,actualPilotDeployed=False),sort_keys=True))
         finally:
             for name in names+['doul-ci-pilot-negative']:command(['docker','rm','-f',name],ok=False)
             command(['docker','network','rm',network],ok=False)

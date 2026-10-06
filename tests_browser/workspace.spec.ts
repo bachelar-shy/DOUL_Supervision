@@ -22,6 +22,7 @@ for (const width of [390, 768, 1440]) {
       "capture",
       "observations",
       "issues",
+      "safety",
       "owner",
       "documents",
       "registers",
@@ -117,6 +118,262 @@ test("DOUL component catalog is mounted on representative surfaces", async ({ pa
   await expect(page.locator('[data-ui-component="register-table"]')).toBeVisible();
   await page.getByRole("button", { name: "보기", exact: true }).first().click();
   await expect(page.locator('[data-ui-component="detail-drawer"]')).toBeVisible();
+});
+
+test("safety workspace keeps permit, stop, resume gate, and equipment states separate", async ({
+  page,
+}) => {
+  await page.route("**/workspace", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    body.items = [
+      {
+        machine: "safety_permit",
+        record: {
+          id: "SP-UI-PW-001",
+          projectId: body.project.id,
+          version: 6,
+          subtype: "SafetyPermit",
+          status: "suspended",
+          title: "브라우저 작업허가",
+          evidenceIds: [],
+          data: {
+            permitNo: "PTW-PW-001",
+            workType: "Hot Work",
+            riskLevel: "high",
+            workAuthorized: false,
+            stopOrderRefs: [
+              {
+                objectType: "WorkItem",
+                objectId: "STOP-UI-PW-001",
+                version: 4,
+              },
+            ],
+            blockedReasons: ["SAFETY_STOP_OPEN"],
+          },
+        },
+        actions: [],
+      },
+      {
+        machine: "safety_stop_order",
+        record: {
+          id: "STOP-UI-PW-001",
+          projectId: body.project.id,
+          version: 4,
+          subtype: "SafetyStopOrder",
+          status: "verification",
+          title: "브라우저 작업중지",
+          evidenceIds: [],
+          data: {
+            stopOrderNo: "STOP-PW-001",
+            stopReason: "추락방지 조치 확인",
+            resumeRequestAt: "2026-10-06T14:10:00+07:00",
+            resumeGate: {
+              causeIdentified: true,
+              correctiveActionComplete: true,
+              correctiveEvidencePresent: true,
+              issueActionsVerified: true,
+              reinspectionPassed: true,
+              permitValid: true,
+              methodStatementCurrent: true,
+              riskAssessmentCurrent: true,
+              equipmentReady: true,
+              personnelQualified: true,
+              controlMeasuresReady: true,
+              environmentalConditionsReady: false,
+              reportingObligationsSatisfied: true,
+            },
+          },
+        },
+        actions: [],
+      },
+      {
+        machine: "safety_stop_order",
+        record: {
+          id: "STOP-UI-CMD",
+          projectId: body.project.id,
+          version: 1,
+          subtype: "SafetyStopOrder",
+          status: "issued",
+          title: "중지 수령 시험",
+          evidenceIds: [],
+          data: {
+            stopOrderNo: "STOP-PW-002",
+            stopReason: "Command routing test",
+          },
+        },
+        actions: [
+          {
+            command: "acknowledge_stop",
+            to: "acknowledged",
+            authority: "safety.stop.acknowledge",
+            fields: [],
+            requiresEvidence: false,
+            ready: true,
+            requiresInput: false,
+            blockedReason: null,
+            expectedVersion: 1,
+          },
+          {
+            command: "lift_stop",
+            to: "lifted",
+            authority: "safety.stop_lift",
+            fields: [],
+            requiresEvidence: true,
+            ready: true,
+            requiresInput: false,
+            blockedReason: null,
+            expectedVersion: 1,
+          },
+        ],
+      },
+      {
+        machine: "safety_equipment_inspection",
+        record: {
+          id: "SEI-UI-PW-001",
+          projectId: body.project.id,
+          version: 3,
+          subtype: "SafetyEquipmentInspection",
+          status: "result_pending",
+          title: "브라우저 장비 안전검사",
+          evidenceIds: [],
+          data: {
+            inspectionKind: "pre-use",
+            equipmentAvailable: false,
+            resultSummary: "점검 완료 · 판정 대기",
+          },
+        },
+        actions: [],
+      },
+      ...body.items,
+    ];
+    await route.fulfill({ response, json: body });
+  });
+
+  await page.goto("/");
+  await page
+    .getByRole("combobox", { name: "개발 역할 선택" })
+    .selectOption("CON");
+  await page.waitForResponse((response) =>
+    response.url().endsWith("/workspace") && response.ok(),
+  );
+  await page.goto("/#/safety");
+
+  const workspace = page.locator('[data-ui-component="safety-workspace"]');
+  await expect(workspace).toBeVisible();
+  await expect(workspace.getByRole("tab")).toHaveCount(3);
+
+  await page
+    .getByRole("button")
+    .filter({ hasText: "브라우저 작업허가" })
+    .first()
+    .click();
+  const permitBoundary = page.locator(
+    '[data-ui-component="status-boundary-group"]',
+  );
+  await expect(permitBoundary).toContainText("Permit 상태");
+  await expect(permitBoundary).toContainText("Work Authorized");
+  await expect(permitBoundary).toContainText("작업 미허용");
+  await expect(permitBoundary).toContainText("연결 Stop");
+
+  await workspace.getByRole("tab", { name: "작업중지", exact: true }).click();
+  await page
+    .getByRole("button")
+    .filter({ hasText: "브라우저 작업중지" })
+    .first()
+    .click();
+  const resumeGate = page.locator('[data-ui-component="safety-resume-gate"]');
+  await expect(resumeGate).toContainText("재개 Gate");
+  await expect(resumeGate).toContainText("환경조건 적합");
+  await expect(resumeGate).toContainText("미충족");
+
+  let commandBody: any = null;
+  await page.route("**/safety-stop-orders/STOP-UI-CMD/acknowledge-stop", async (route) => {
+    commandBody = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        record: {
+          id: "STOP-UI-CMD",
+          projectId: "ignored",
+          version: 2,
+          subtype: "SafetyStopOrder",
+          status: "acknowledged",
+          data: {},
+        },
+      }),
+    });
+  });
+  await page
+    .getByRole("button")
+    .filter({ hasText: "중지 수령 시험" })
+    .first()
+    .click();
+  await page
+    .locator('[data-ui-component="action-gate"]')
+    .getByRole("button", { name: "중지 수령 확인", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "확인 후 실행", exact: true })
+    .click();
+  await expect.poll(() => commandBody?.expectedVersion).toBe(1);
+  expect(commandBody.payload).toEqual({});
+  expect(commandBody.evidenceIds).toEqual([]);
+
+  let evidenceCommandBody: any = null;
+  await page.route("**/safety-stop-orders/STOP-UI-CMD/lift-stop", async (route) => {
+    evidenceCommandBody = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        record: {
+          id: "STOP-UI-CMD",
+          projectId: "ignored",
+          version: 2,
+          subtype: "SafetyStopOrder",
+          status: "lifted",
+          data: {},
+        },
+      }),
+    });
+  });
+  await page
+    .locator('[data-ui-component="action-gate"]')
+    .getByRole("button", { name: "작업중지 해제", exact: true })
+    .click();
+  const evidenceDialog = page.getByRole("dialog");
+  await evidenceDialog
+    .getByRole("button", { name: "확인 후 실행", exact: true })
+    .click();
+  await expect(evidenceDialog.getByRole("alert")).toContainText(
+    "현재 단계의 증빙 ID가 필요합니다",
+  );
+  expect(evidenceCommandBody).toBeNull();
+  await evidenceDialog
+    .getByRole("textbox", { name: "명령 증빙 ID" })
+    .fill("EVD-COMMAND-001, EVD-COMMAND-002");
+  await evidenceDialog
+    .getByRole("button", { name: "확인 후 실행", exact: true })
+    .click();
+  await expect.poll(() => evidenceCommandBody?.evidenceIds).toEqual([
+    "EVD-COMMAND-001",
+    "EVD-COMMAND-002",
+  ]);
+
+  await workspace.getByRole("tab", { name: "장비 안전검사", exact: true }).click();
+  await page
+    .getByRole("button")
+    .filter({ hasText: "브라우저 장비 안전검사" })
+    .first()
+    .click();
+  const equipmentBoundary = page.locator(
+    '[data-ui-component="status-boundary-group"]',
+  );
+  await expect(equipmentBoundary).toContainText("Equipment Available");
+  await expect(equipmentBoundary).toContainText("사용 불가");
 });
 
 test("29 register projections support selection, filtering, and detail", async ({ page }) => {
