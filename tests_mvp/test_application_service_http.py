@@ -142,6 +142,26 @@ class ApplicationServiceHTTPTests(unittest.TestCase):
         self.assertEqual(conflict.status_code,409,conflict.text)
         self.assertEqual(conflict.json()['code'],'IDEMPOTENCY_CONFLICT')
 
+        other=next(
+            x['record'] for x in self.workspace()['items']
+            if x['machine']=='inspection' and x['record']['id']!=inspection['id']
+        )
+        other_parent=self.client.post(
+            f'/projects/{self.project}/inspection-cases/{other["id"]}/issues',
+            headers={**self.headers,'Idempotency-Key':key},
+            json=body,
+        )
+        self.assertEqual(other_parent.status_code,409,other_parent.text)
+        self.assertEqual(other_parent.json()['code'],'IDEMPOTENCY_CONFLICT')
+
+        missing_parent=self.client.post(
+            f'/projects/{self.project}/inspection-cases/{uid()}/issues',
+            headers={**self.headers,'Idempotency-Key':key},
+            json=body,
+        )
+        self.assertEqual(missing_parent.status_code,404,missing_parent.text)
+        self.assertEqual(missing_parent.json()['code'],'OBJECT_NOT_FOUND')
+
     def test_issue_package_does_not_expand_contractor_authority(self):
         inspection=self.fail_scheduled_inspection()
         body=self.issue_package_body(inspection)
@@ -336,6 +356,42 @@ class ApplicationServiceHTTPTests(unittest.TestCase):
         )
         self.assertEqual(replay.status_code,201,replay.text)
         self.assertEqual(replay.json(),result)
+
+        changed=self.client.post(
+            f'/projects/{self.project}/inspection-cases/{root["id"]}/issues/{issue["id"]}/reinspections',
+            headers={**self.headers,'Idempotency-Key':key},
+            json={**body,'workName':'같은 키로 변경된 재검측 작업'},
+        )
+        self.assertEqual(changed.status_code,409,changed.text)
+        self.assertEqual(changed.json()['code'],'IDEMPOTENCY_CONFLICT')
+
+        other=next(
+            x['record'] for x in self.workspace()['items']
+            if x['machine']=='inspection' and x['record']['id'] not in issue['inspectionIds']
+        )
+        other_parent=self.client.post(
+            f'/projects/{self.project}/inspection-cases/{other["id"]}/issues/{issue["id"]}/reinspections',
+            headers={**self.headers,'Idempotency-Key':key},
+            json=body,
+        )
+        self.assertEqual(other_parent.status_code,409,other_parent.text)
+        self.assertEqual(other_parent.json()['code'],'IDEMPOTENCY_CONFLICT')
+
+        missing_inspection=self.client.post(
+            f'/projects/{self.project}/inspection-cases/{uid()}/issues/{issue["id"]}/reinspections',
+            headers={**self.headers,'Idempotency-Key':key},
+            json=body,
+        )
+        self.assertEqual(missing_inspection.status_code,404,missing_inspection.text)
+        self.assertEqual(missing_inspection.json()['code'],'OBJECT_NOT_FOUND')
+
+        missing_issue=self.client.post(
+            f'/projects/{self.project}/inspection-cases/{root["id"]}/issues/{uid()}/reinspections',
+            headers={**self.headers,'Idempotency-Key':key},
+            json=body,
+        )
+        self.assertEqual(missing_issue.status_code,404,missing_issue.text)
+        self.assertEqual(missing_issue.json()['code'],'OBJECT_NOT_FOUND')
 
     def test_reinspection_service_rolls_back_when_corrective_action_not_submitted(self):
         self.login('CON')

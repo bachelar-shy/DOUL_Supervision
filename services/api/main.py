@@ -597,7 +597,10 @@ def create_app(db_path=':memory:', demo=False):
         instant(body['dueAt'])
         with store.transaction(True):
             role=role_for(session,project_id,body['roleAssignmentId'])
-            replay,request_key,fingerprint=application_replay('create-issue-package',key,project_id,session,body)
+            inspection=store.engine.get('Inspection',inspection_id);readable(inspection,session,role)
+            replay,request_key,fingerprint=application_replay(
+                'create-issue-package',key,project_id,session,body|{'inspectionId':inspection_id}
+            )
             if replay is not None:return JSONResponse(replay,status_code=201)
             result=create_issue_package(
                 store.engine,
@@ -635,7 +638,15 @@ def create_app(db_path=':memory:', demo=False):
         for value in body['evidenceIds']:valid_id(value)
         with store.transaction(True):
             role=role_for(session,project_id,body['roleAssignmentId'])
-            replay,request_key,fingerprint=application_replay('create-reinspection-request',key,project_id,session,body)
+            inspection=store.engine.get('Inspection',inspection_id);readable(inspection,session,role)
+            issue=store.engine.get('Issue',issue_id);readable(issue,session,role)
+            replay,request_key,fingerprint=application_replay(
+                'create-reinspection-request',
+                key,
+                project_id,
+                session,
+                body|{'inspectionId':inspection_id,'issueId':issue_id},
+            )
             if replay is not None:return JSONResponse(replay,status_code=201)
             result=create_reinspection_request(
                 store.engine,
