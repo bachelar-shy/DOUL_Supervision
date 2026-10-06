@@ -14,6 +14,7 @@ def load(path):
 def generate():
     schemas = deepcopy(load('app/schema/domain_schemas_v2.json')['components']['schemas'])
     machines = load('app/schema/state_machines_v1.json')['machines']
+    bindings = load('app/reference/machine_bindings_v1.json')['machines']
     paths = {}
     parameter = lambda name: {'name': name, 'in':'path', 'required':True, 'schema':{'type':'string', 'format':'uuid'} if name.endswith('Id') and name not in ['registerId','viewId','formId','legalFormId'] else {'type':'string'}}
     error_responses = {str(code): {'description':description,'content':{'application/json':{'schema':{'$ref':'#/components/schemas/CommandError'}}}} for code,description in [(400,'잘못된 요청'),(401,'인증 필요'),(403,'권한·자격·배치범위 불충족'),(404,'대상 없음 또는 범위 밖'),(409,'상태·버전·중복요청·선행조건 충돌'),(422,'필수자료·법정필드 미비'),(429,'요청량 초과')]}
@@ -30,7 +31,6 @@ def generate():
         if path not in paths:paths[path]={'parameters':[parameter(p) for p in re.findall(r'\{([^}]+)\}',path)]}
         paths[path][method]=op
     root='/projects/{projectId}'
-    plural={'observation':'observations','inspection':'inspections','issue':'issues','rfi':'rfis','change':'changes','approval':'approvals','action':'actions','decision':'owner-decisions','report':'owner-reports','analysis_run':'analysis-runs'}
     for name,m in machines.items():
         payload_schema=deepcopy(schemas[m['object_type']])
         managed={'id','projectId','version','createdAt','updatedAt','createdBy','status'}
@@ -47,8 +47,8 @@ def generate():
             'properties':{'roleAssignmentId':{'type':'string','format':'uuid'},'clientObjectId':{'type':'string','format':'uuid'},'payload':payload_schema},'additionalProperties':False}
         schemas['CommandResult_'+name]={'type':'object','required':['record','auditEvent'],
             'properties':{'record':{'$ref':'#/components/schemas/'+m['object_type']},'auditEvent':{'$ref':'#/components/schemas/AuditEvent'}},'additionalProperties':False}
-        endpoint(root+'/'+plural[name],'post',name+' 생성',{'$ref':'#/components/schemas/Create_'+name}, {'$ref':'#/components/schemas/CommandResult_'+name},code=201)
-        endpoint(root+'/'+plural[name]+'/{objectId}','get',name+' 상세',response={'$ref':'#/components/schemas/'+m['object_type']})
+        endpoint(root+'/'+bindings[name]['collection'],'post',name+' 생성',{'$ref':'#/components/schemas/Create_'+name}, {'$ref':'#/components/schemas/CommandResult_'+name},code=201)
+        endpoint(root+'/'+bindings[name]['collection']+'/{objectId}','get',name+' 상세',response={'$ref':'#/components/schemas/'+m['object_type']})
         grouped={}
         for transition in m['transitions']:grouped.setdefault(transition['command'],[]).append(transition)
         for cmd,transitions in grouped.items():
@@ -61,7 +61,7 @@ def generate():
             if required:body['allOf'][1]['properties']['payload']['required']=sorted(required)
             schema_name='Command_'+name+'_'+cmd
             schemas[schema_name]=body
-            endpoint(root+'/'+plural[name]+'/{objectId}/'+cmd.replace('_','-'),'post',name+' / '+cmd,{'$ref':'#/components/schemas/'+schema_name}, {'$ref':'#/components/schemas/CommandResult_'+name},name+':'+cmd)
+            endpoint(root+'/'+bindings[name]['collection']+'/{objectId}/'+cmd.replace('_','-'),'post',name+' / '+cmd,{'$ref':'#/components/schemas/'+schema_name}, {'$ref':'#/components/schemas/CommandResult_'+name},name+':'+cmd)
     endpoint(root+'/registers/{registerId}','get','읽기 전용 관리대장 Projection',response={'type':'array','items':{'type':'object'}})
     endpoint(root+'/views/{viewId}','get','통합현황 V-01~04',response={'type':'array','items':{'type':'object'}})
     endpoint(root+'/roles','get','현재 프로젝트 RoleAssignment',response={'type':'array','items':{'$ref':'#/components/schemas/RoleAssignment'}})

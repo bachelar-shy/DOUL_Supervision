@@ -40,7 +40,8 @@ from .persistence import PersistencePort, create_local_persistence
 ROOT=Path(__file__).resolve().parents[2]
 SPEC=json.loads((ROOT/'app/api/openapi.yaml').read_text())
 SCHEMAS=SPEC['components']['schemas']
-COLLECTIONS={'observations':'observation','inspections':'inspection','issues':'issue','rfis':'rfi','changes':'change','approvals':'approval','actions':'action','owner-decisions':'decision','owner-reports':'report','analysis-runs':'analysis_run'}
+MACHINE_BINDINGS=json.loads((ROOT/'app/reference/machine_bindings_v1.json').read_text())['machines']
+COLLECTIONS={binding['collection']:name for name,binding in MACHINE_BINDINGS.items()}
 DEFAULT_ORIGINS=['http://127.0.0.1:5181','http://localhost:5181','http://127.0.0.1:8791','http://localhost:8791']
 MAX_FILE=64*1024*1024
 MAX_CHUNK=4*1024*1024
