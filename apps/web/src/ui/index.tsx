@@ -59,8 +59,8 @@ export function PageHeader({
         {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
         <h1>{title}</h1>
         {description ? <p>{description}</p> : null}
-        {details ? <div className="page-heading-details">{details}</div> : null}
       </div>
+      {details ? <div className="page-heading-details">{details}</div> : null}
       {actions ? <div className="heading-actions">{actions}</div> : null}
     </div>
   );

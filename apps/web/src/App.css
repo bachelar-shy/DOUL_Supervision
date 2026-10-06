@@ -314,13 +314,17 @@ strong {
   margin-top: 5px;
 }
 .page-heading-details {
-  margin-top: 12px;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
 }
 .heading-context {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 18px;
   color: #5c6978;
   font-size: 12px;
 }
@@ -1233,6 +1237,16 @@ strong {
   .page-heading {
     margin-bottom: 20px;
     align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .page-heading-details {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+  .heading-context {
+    justify-content: flex-start;
+    gap: 14px;
   }
   .page-heading .eyebrow {
     font-size: 9px;
