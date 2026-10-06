@@ -65,9 +65,10 @@ export const roleRoutes: Record<HumanRole, readonly string[]> = {
     "actions",
     "rfis",
     "documents",
+    "registers",
   ],
-  OWN: ["today", "owner", "issues", "documents"],
-  DES: ["today", "rfis", "capture", "documents"],
+  OWN: ["today", "owner", "issues", "documents", "registers"],
+  DES: ["today", "rfis", "capture", "documents", "registers"],
   ADM: allRouteIds,
 };
 

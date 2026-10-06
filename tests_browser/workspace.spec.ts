@@ -55,7 +55,13 @@ test("DOUL component catalog is mounted on representative surfaces", async ({ pa
   await expect(page.locator('[data-ui-component="audit-timeline"]')).toBeVisible();
 
   await page.goto("/#/capture");
-  await expect(page.locator('[data-ui-component="evidence-viewer"]')).toBeVisible();
+  const evidenceViewer = page.locator('[data-ui-component="evidence-viewer"]');
+  await expect(evidenceViewer).toBeVisible();
+  await evidenceViewer.getByRole("button").first().click();
+  await expect(
+    page.locator('[data-ui-component="evidence-detail-sheet"]'),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "닫기", exact: true }).click();
 
   await page.goto("/#/inspections");
   await expect(page.locator('[data-ui-component="detail-pane"]')).toBeVisible();
@@ -80,6 +86,7 @@ test("DOUL component catalog is mounted on representative surfaces", async ({ pa
   ).toBeVisible();
 
   await page.goto("/#/registers");
+  await expect(page.locator('[data-ui-component="register-navigator"]')).toBeVisible();
   await expect(page.locator('[data-ui-component="filter-bar"]')).toBeVisible();
   await expect(page.locator('[data-ui-component="register-table"]')).toBeVisible();
   await page.getByRole("button", { name: "보기", exact: true }).first().click();
@@ -94,12 +101,61 @@ test("29 register projections support selection, filtering, and detail", async (
   await page.getByPlaceholder("제목, 상태, 위치, ID 검색").fill("경량벽체");
   await expect(page.getByText("경량벽체 은폐 전 검측", { exact: true })).toBeVisible();
 
-  await page.getByRole("combobox", { name: "관리대장 선택" }).click();
-  await page.getByRole("option", { name: "04 · 도면·개정" }).click();
+  const registerNavigator = page.locator('[data-ui-component="register-navigator"]');
+  await registerNavigator
+    .getByRole("tab", { name: "전체 29개", exact: true })
+    .click();
+  await expect(registerNavigator.getByRole("button", { name: / 열기$/ })).toHaveCount(
+    29,
+  );
   await expect(
-    page.getByRole("combobox", { name: "관리대장 선택" }),
-  ).toContainText("04 · 도면·개정");
+    registerNavigator.locator('section[aria-labelledby^="register-group-"]'),
+  ).toHaveCount(6);
+  await registerNavigator
+    .getByPlaceholder("관리대장 이름 또는 번호 검색")
+    .fill("도면");
+  const drawingRegister = registerNavigator.getByRole("button", {
+    name: "04 도면·개정 열기",
+    exact: true,
+  });
+  await drawingRegister.click();
+  await expect(drawingRegister).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("도면 예시 A-201", { exact: true })).toBeVisible();
+});
+
+test("register entry adapts to the active human role without defining authority", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const rolePicker = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const cases = [
+    { role: "CON", label: "시공사", id: "11", name: "검측·검수" },
+    { role: "OWN", label: "발주처", id: "22", name: "회의·발주처 보고·결정" },
+    { role: "DES", label: "설계자", id: "13", name: "기술질의" },
+    { role: "ADM", label: "관리자", id: "03", name: "인력·자격" },
+  ] as const;
+
+  for (const item of cases) {
+    await rolePicker.selectOption(item.role);
+    await expect(
+      page.getByText(`${item.label} 작업공간`, { exact: true }),
+    ).toBeVisible();
+    await page.goto("/#/registers");
+
+    const registerNavigator = page.locator(
+      '[data-ui-component="register-navigator"]',
+    );
+    await expect(registerNavigator).toHaveAttribute("data-role-preset", item.label);
+    await expect(
+      registerNavigator.getByRole("button", {
+        name: `${item.id} ${item.name} 열기`,
+        exact: true,
+      }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(registerNavigator).toContainText(
+      "추천은 진입 편의용 · 실제 조회 범위는 서버 권한 기준",
+    );
+  }
 });
 
 test("stale register refresh cannot overwrite a newer register selection", async ({
@@ -159,8 +215,15 @@ test("stale register refresh cannot overwrite a newer register selection", async
   await refreshButton.click();
   await refreshStarted;
 
-  await page.getByRole("combobox", { name: "관리대장 선택" }).click();
-  await page.getByRole("option", { name: "04 · 도면·개정" }).click();
+  const registerNavigator = page.locator('[data-ui-component="register-navigator"]');
+  await registerNavigator
+    .getByRole("tab", { name: "전체 29개", exact: true })
+    .click();
+  const drawingRegister = registerNavigator.getByRole("button", {
+    name: "04 도면·개정 열기",
+    exact: true,
+  });
+  await drawingRegister.click();
   await expect(page.getByText("도면 예시 A-201", { exact: true })).toBeVisible();
 
   const staleResponse = page.waitForResponse(
@@ -170,9 +233,7 @@ test("stale register refresh cannot overwrite a newer register selection", async
   releaseRefresh();
   await staleResponse;
 
-  await expect(
-    page.getByRole("combobox", { name: "관리대장 선택" }),
-  ).toContainText("04 · 도면·개정");
+  await expect(drawingRegister).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("도면 예시 A-201", { exact: true })).toBeVisible();
   await expect(page.getByText("STALE REGISTER 11 ROW", { exact: true })).toHaveCount(
     0,
@@ -215,6 +276,36 @@ test("mobile interactive controls keep 44px touch targets", async ({ page }) => 
   await dialog
     .getByRole("button", { name: "대화상자 닫기", exact: true })
     .click();
+
+  await page.goto("/#/capture");
+  const mobileEvidence = page
+    .locator('[data-ui-component="evidence-viewer"]')
+    .getByRole("button")
+    .first();
+  await expectTouchTarget(mobileEvidence);
+  await mobileEvidence.click();
+  const evidenceSheet = page.locator('[data-ui-component="evidence-detail-sheet"]');
+  await expect(evidenceSheet).toBeVisible();
+  await expectTouchTarget(
+    page.getByRole("button", { name: "닫기", exact: true }),
+  );
+  await expectTouchTarget(
+    evidenceSheet.getByRole("tab", { name: "기본정보", exact: true }),
+  );
+  await page.getByRole("button", { name: "닫기", exact: true }).click();
+
+  await page.goto("/#/registers");
+  const registerNavigator = page.locator('[data-ui-component="register-navigator"]');
+  await expect(registerNavigator).toBeVisible();
+  await expectTouchTarget(
+    registerNavigator.getByRole("tab", { name: "내 역할 추천", exact: true }),
+  );
+  await expectTouchTarget(
+    registerNavigator.getByRole("button", {
+      name: "11 검측·검수 열기",
+      exact: true,
+    }),
+  );
 
   await expect
     .poll(() =>
@@ -520,4 +611,21 @@ test("offline evidence stays local until explicit upload", async ({
   ).toBeEnabled();
   await page.getByRole("button", { name: "서버 전송", exact: true }).click();
   await expect(page.locator(".toast")).toContainText("서버 해시 확인");
+
+  const uploadedEvidence = page.getByRole("button", {
+    name: "offline-test.png 상세보기",
+    exact: true,
+  }).last();
+  await expect(uploadedEvidence).toBeVisible();
+  await uploadedEvidence.click();
+
+  const sheet = page.locator('[data-ui-component="evidence-detail-sheet"]');
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByText("원본 증빙", { exact: true }).first()).toBeVisible();
+  await expect(sheet.locator('img[alt="offline-test.png"]')).toBeVisible();
+  await sheet.getByRole("tab", { name: "기술정보", exact: true }).click();
+  await expect(sheet).toContainText(
+    "d126d616641d42ac8b0a07ec302c9fa1ec049f86200931a0a60c8f3080284b77",
+  );
+  await page.getByRole("button", { name: "닫기", exact: true }).click();
 });

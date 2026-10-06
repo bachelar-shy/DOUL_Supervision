@@ -6,6 +6,8 @@ import { EvidenceViewer } from "../ui/catalog";
 import { PageBoundary } from "./PageBoundary";
 import { FloorPlan, Icon } from "./shared";
 import { recordTitle } from "./record-utils";
+import { EvidenceDetailPreview } from "./EvidenceDetailPreview";
+import { evidenceMediaLabel, evidenceSourceLabel } from "./evidence-utils";
 
 interface LocalCapture {
   id: string;
@@ -17,6 +19,7 @@ interface LocalCapture {
   hash: string;
   capturedAt: string;
 }
+
 async function captures(
   action: "list" | "put" | "delete",
   value?: LocalCapture | string,
@@ -44,6 +47,7 @@ async function captures(
     };
   });
 }
+
 export function CapturePage({
   client,
   workspace,
@@ -60,6 +64,12 @@ export function CapturePage({
   const [pending, setPending] = useState<LocalCapture[]>([]);
   const [progress, setProgress] = useState("");
   const [error, setError] = useState("");
+  const [selectedEvidenceId, setSelectedEvidenceId] = useState<string | null>(null);
+
+  const evidenceItems = workspace.items.filter((item) => item.machine === "evidence");
+  const selectedEvidence =
+    evidenceItems.find((item) => item.record.id === selectedEvidenceId)?.record ?? null;
+
   const load = useCallback(async () => {
     setPending(
       (await captures("list")).filter(
@@ -69,6 +79,7 @@ export function CapturePage({
       ),
     );
   }, [client, workspace.project.id]);
+
   useEffect(() => {
     let active = true;
     captures("list")
@@ -89,6 +100,7 @@ export function CapturePage({
       active = false;
     };
   }, [client, workspace.project.id]);
+
   async function intake(file: File) {
     try {
       if (file.size > 64 * 1024 * 1024)
@@ -115,6 +127,7 @@ export function CapturePage({
       setError(String(e));
     }
   }
+
   async function send(p: LocalCapture) {
     setError("");
     setProgress("전송 시작");
@@ -142,118 +155,137 @@ export function CapturePage({
       setProgress("");
     }
   }
+
   return (
     <PageBoundary name="capture">
       <CaptureTemplate>
-      <section className="panel">
-        <div className="section-heading">
-          <h2>현장 기록 가져오기</h2>
-          <span>원본 보존</span>
-        </div>
-        <div className="capture-drop">
-          <Icon name="camera" />
-          <h2>사진·영상·음성을 기록합니다.</h2>
-          <p>
-            촬영 위치는 수동 선택값입니다. 자동 측위·AI 판정은 실행하지
-            않습니다.
-          </p>
-          <label className="primary upload-label">
-            파일 선택
-            <input
-              aria-label="증빙 파일 선택"
-              type="file"
-              accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,audio/mpeg,audio/wav,application/pdf"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void intake(f);
-                e.target.value = "";
-              }}
-            />
-          </label>
-          <label className="secondary upload-label">
-            카메라 촬영
-            <input
-              aria-label="카메라 사진 촬영"
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void intake(f);
-              }}
-            />
-          </label>
-        </div>
-        <h3>기기 저장 · 제출 대기 {pending.length}건</h3>
-        {pending.map((p) => (
-          <div className="pending-row" key={p.id}>
-            <div>
-              <strong>{p.name}</strong>
-              <small>
-                {(p.bytes.byteLength / 1024).toFixed(0)} KB · SHA256{" "}
-                {p.hash.slice(0, 12)}…
-              </small>
-            </div>
-            <button
-              className="secondary"
-              disabled={!online || !!progress}
-              onClick={() => void send(p)}
-            >
-              서버 전송
-            </button>
-          </div>
-        ))}
-        {progress && <p role="status">{progress}</p>}
-        {error && (
-          <div role="alert" className="error-box">
-            {error}
-          </div>
-        )}
-      </section>
-      <div className="right-stack">
         <section className="panel">
-          <h2>현재 촬영 맥락</h2>
-          <div className="meta-grid">
-            <div>
-              <small>건물 / 층</small>
-              <b>A동 / 2층</b>
-            </div>
-            <div>
-              <small>위치 방식</small>
-              <b>수동 지정</b>
-            </div>
+          <div className="section-heading">
+            <h2>현장 기록 가져오기</h2>
+            <span>원본 보존</span>
           </div>
-          <FloorPlan />
-          <div className="notice">
-            기기에 저장된 파일은 전송 버튼을 누르기 전까지 서버 증빙이 아닙니다.
-            재연결 시 자동 승인·종결하지 않습니다.
+          <div className="capture-drop">
+            <Icon name="camera" />
+            <h2>사진·영상·음성을 기록합니다.</h2>
+            <p>
+              촬영 위치는 수동 선택값입니다. 자동 측위·AI 판정은 실행하지
+              않습니다.
+            </p>
+            <label className="primary upload-label">
+              파일 선택
+              <input
+                aria-label="증빙 파일 선택"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,audio/mpeg,audio/wav,application/pdf"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void intake(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <label className="secondary upload-label">
+              카메라 촬영
+              <input
+                aria-label="카메라 사진 촬영"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void intake(f);
+                }}
+              />
+            </label>
           </div>
+
+          <h3>기기 저장 · 제출 대기 {pending.length}건</h3>
+          {pending.map((p) => (
+            <div className="pending-row" key={p.id}>
+              <div>
+                <strong>{p.name}</strong>
+                <small>
+                  {(p.bytes.byteLength / 1024).toFixed(0)} KB · SHA256{" "}
+                  {p.hash.slice(0, 12)}…
+                </small>
+              </div>
+              <button
+                className="secondary"
+                disabled={!online || !!progress}
+                onClick={() => void send(p)}
+              >
+                서버 전송
+              </button>
+            </div>
+          ))}
+          {progress && <p role="status">{progress}</p>}
+          {error && (
+            <div role="alert" className="error-box">
+              {error}
+            </div>
+          )}
         </section>
-        <section className="panel">
-          <h2>서버 증빙</h2>
-          <EvidenceViewer
-            items={workspace.items
-              .filter((x) => x.machine === "evidence")
-              .map((x) => ({
-                id: x.record.id,
-                title: recordTitle(x.record),
+
+        <div className="right-stack">
+          <section className="panel">
+            <h2>현재 촬영 맥락</h2>
+            <div className="meta-grid">
+              <div>
+                <small>건물 / 층</small>
+                <b>A동 / 2층</b>
+              </div>
+              <div>
+                <small>위치 방식</small>
+                <b>수동 지정</b>
+              </div>
+            </div>
+            <FloorPlan />
+            <div className="notice">
+              기기에 저장된 파일은 전송 버튼을 누르기 전까지 서버 증빙이 아닙니다.
+              재연결 시 자동 승인·종결하지 않습니다.
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="section-heading">
+              <h2>서버 증빙</h2>
+              <span>{evidenceItems.length}건</span>
+            </div>
+            <EvidenceViewer
+              items={evidenceItems.map((item) => ({
+                id: item.record.id,
+                title: recordTitle(item.record),
                 meta: (
                   <>
-                    {x.record.mediaType} · 원본 /{" "}
-                    {x.record.fileHash?.slice(0, 12)}…
+                    {evidenceMediaLabel(item.record.mediaType)} ·{" "}
+                    {evidenceSourceLabel(item.record.sourceType)} ·{" "}
+                    {item.record.fileHash?.slice(0, 12) || "해시 없음"}…
                   </>
                 ),
                 icon: <Icon name="document" />,
+                ariaLabel: `${recordTitle(item.record)} 상세보기`,
+                selected: item.record.id === selectedEvidenceId,
+                onSelect: () => setSelectedEvidenceId(item.record.id),
               }))}
-            footer={
-              <button className="secondary wide" disabled>
-                AI 분석 · 서비스 미연결
-              </button>
-            }
-          />
-        </section>
-      </div>
+              footer={
+                <button className="secondary wide" disabled>
+                  AI 분석 · 서비스 미연결
+                </button>
+              }
+            />
+          </section>
+        </div>
       </CaptureTemplate>
+
+      {selectedEvidence ? (
+        <EvidenceDetailPreview
+          client={client}
+          workspace={workspace}
+          evidence={selectedEvidence}
+          allEvidence={evidenceItems.map((item) => item.record)}
+          onClose={() => setSelectedEvidenceId(null)}
+        />
+      ) : null}
     </PageBoundary>
   );
 }
