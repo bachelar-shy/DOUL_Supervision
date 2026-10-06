@@ -1,0 +1,52 @@
+name: platform-observability
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/platform-observability.yml"
+      - "infra/observability/**"
+      - "infra/compose/compose.dev.yml"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/platform-observability.yml"
+      - "infra/observability/**"
+      - "infra/compose/compose.dev.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-health-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Compile runtime health snapshot
+        run: python3 -m py_compile infra/observability/runtime_snapshot.py
+
+      - name: Verify structured and secret-safe signals
+        run: python3 -m unittest discover -s infra/observability -p 'test_*.py' -v
+
+      - name: Start current development object storage
+        run: |
+          docker compose -f infra/compose/compose.dev.yml \
+            up -d --build --wait --wait-timeout 90 object-storage
+
+      - name: Verify live configured storage health
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path('infra/observability').resolve()))
+          from runtime_snapshot import probe_object_storage
+          result = probe_object_storage('http://127.0.0.1:9000')
+          print(json.dumps(result, sort_keys=True))
+          assert result['status'] == 'ok', 'configured storage health probe failed'
+          PY
+
+      - name: Stop disposable storage
+        if: always()
+        run: docker compose -f infra/compose/compose.dev.yml down -v --remove-orphans
