@@ -17,6 +17,7 @@ import {
   DocumentPage,
   OwnerGovernancePage,
   RegisterPage,
+  SafetyPage,
   TodayPage,
   WorkbenchPage,
 } from "../pages";
@@ -103,12 +104,13 @@ export function AppShell({ client }: { client: SupervisionClient }) {
     item: WorkItem,
     command: string,
     payload: Fields = {},
+    evidenceIds: string[] = [],
   ) {
     if (!online)
       throw new Error(
         "오프라인입니다. 공식 제출은 연결 복구 후 다시 확인하십시오.",
       );
-    await client.execute(item, command, payload);
+    await client.execute(item, command, payload, evidenceIds);
     setToast("서버에서 처리했습니다.");
     await refresh();
   }
@@ -266,7 +268,9 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                 ? "확인이 필요한 업무부터, 증빙과 함께."
                 : safeRoute === "registers"
                   ? "역할별 추천에서 시작해 29개 표준 관리대장을 서버 권한 범위에서 조회합니다."
-                  : "현장 기록 · 승인 기준 · 조치 이력을 하나로 확인합니다."
+                  : safeRoute === "safety"
+                    ? "작업허가, 작업중지, 재개 Gate와 장비 안전상태를 서버 원본 기준으로 확인합니다."
+                    : "현장 기록 · 승인 기준 · 조치 이력을 하나로 확인합니다."
             }
             actions={
               <>
@@ -333,6 +337,16 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   }}
                 />
               )}
+              {safeRoute === "safety" && (
+                <SafetyPage
+                  workspace={workspace}
+                  selected={selected}
+                  current={current}
+                  online={online}
+                  onSelect={setSelected}
+                  onOpenCommand={(item, action) => setDialog({ item, action })}
+                />
+              )}
               {safeRoute === "owner" && (
                 <OwnerGovernancePage
                   workspace={workspace}
@@ -343,7 +357,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   onOpenCommand={(item, action) => setDialog({ item, action })}
                 />
               )}
-              {safeRoute !== "owner" && machineForRoute[safeRoute] && (
+              {!["owner", "safety"].includes(safeRoute) && machineForRoute[safeRoute] && (
                 <WorkbenchPage
                   route={safeRoute}
                   role={role}
@@ -405,8 +419,8 @@ export function AppShell({ client }: { client: SupervisionClient }) {
           dialog={dialog}
           workspace={workspace}
           onClose={() => setDialog(null)}
-          onSubmit={async (p) => {
-            await perform(dialog.item, dialog.action.command, p);
+          onSubmit={async (p, evidenceIds) => {
+            await perform(dialog.item, dialog.action.command, p, evidenceIds);
             setDialog(null);
           }}
         />

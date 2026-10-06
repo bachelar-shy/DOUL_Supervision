@@ -1,4 +1,4 @@
-import type { HumanRole, Workspace } from "./ui-contract";
+import type { HumanRole, WorkItem, Workspace } from "./ui-contract";
 
 const scope = {
   discipline: "ARCH",
@@ -7,6 +7,260 @@ const scope = {
   responsibleOrganizationId: "ORG-CON",
   minimumQualificationRank: 1,
 };
+
+
+function action(
+  command: string,
+  to: string,
+  authority: string,
+  fields: string[] = [],
+  options: {
+    ready?: boolean;
+    requiresEvidence?: boolean;
+    blockedCode?: string;
+  } = {},
+) {
+  return {
+    command,
+    to,
+    authority,
+    fields,
+    requiresEvidence: options.requiresEvidence ?? false,
+    ready: options.ready ?? true,
+    requiresInput: fields.length > 0,
+    blockedReason: options.blockedCode
+      ? {
+          code: options.blockedCode,
+          message: options.blockedCode,
+          failedGuards: [options.blockedCode],
+        }
+      : null,
+    expectedVersion: 1,
+  };
+}
+
+function safetyPreviewItems(role: HumanRole): WorkItem[] {
+  const readiness = {
+    methodStatementCurrent: true,
+    riskAssessmentCurrent: true,
+    personnelQualified: true,
+    equipmentReady: true,
+    controlMeasuresReady: true,
+    emergencyReady: true,
+    environmentalConditionsReady: true,
+    noBlockingSafetyIssue: true,
+  };
+  const resumeGate = {
+    causeIdentified: true,
+    correctiveActionComplete: true,
+    correctiveEvidencePresent: true,
+    issueActionsVerified: true,
+    reinspectionPassed: true,
+    permitValid: true,
+    methodStatementCurrent: true,
+    riskAssessmentCurrent: true,
+    equipmentReady: true,
+    personnelQualified: true,
+    controlMeasuresReady: true,
+    environmentalConditionsReady: false,
+    reportingObligationsSatisfied: true,
+  };
+
+  return [
+    {
+      machine: "safety_permit",
+      record: {
+        id: "SP-UI-001",
+        projectId: "UI-MOCK",
+        version: 6,
+        subtype: "SafetyPermit",
+        status: "suspended",
+        title: "화기작업 허가 · A동 2층",
+        discipline: "ARCH",
+        packageId: scope.packageId,
+        locationId: scope.locationId,
+        responsibleOrganizationId: scope.responsibleOrganizationId,
+        evidenceIds: ["EVD-UI-001"],
+        data: {
+          permitNo: "PTW-UI-001",
+          workType: "Hot Work",
+          riskLevel: "high",
+          workAuthorized: false,
+          validFrom: "2026-10-06T08:00:00+07:00",
+          validTo: "2026-10-06T22:00:00+07:00",
+          readiness,
+          blockedReasons: ["SAFETY_STOP_OPEN"],
+          stopOrderRefs: [
+            {
+              objectType: "WorkItem",
+              objectId: "STOP-UI-001",
+              version: 4,
+            },
+          ],
+          suspendedAt: "2026-10-06T13:10:00+07:00",
+        },
+      },
+      actions:
+        role === "CON"
+          ? [
+              action(
+                "request_resume",
+                "resume_review",
+                "safety.resume.request",
+                ["readiness", "blockedReasons"],
+                {
+                  ready: false,
+                  requiresEvidence: true,
+                  blockedCode: "STOP_RESUME_REQUEST_READY",
+                },
+              ),
+            ]
+          : [],
+    },
+    {
+      machine: "safety_permit",
+      record: {
+        id: "SP-UI-002",
+        projectId: "UI-MOCK",
+        version: 8,
+        subtype: "SafetyPermit",
+        status: "resume_review",
+        title: "고소작업 허가 · B동 외벽",
+        discipline: "ARCH",
+        packageId: scope.packageId,
+        locationId: "L04-ZONE-B",
+        responsibleOrganizationId: scope.responsibleOrganizationId,
+        evidenceIds: ["EVD-UI-001"],
+        data: {
+          permitNo: "PTW-UI-002",
+          workType: "Work at Height",
+          riskLevel: "high",
+          workAuthorized: false,
+          validFrom: "2026-10-06T08:00:00+07:00",
+          validTo: "2026-10-07T18:00:00+07:00",
+          readiness,
+          blockedReasons: [],
+          stopOrderRefs: [],
+          resumeRequestAt: "2026-10-06T14:20:00+07:00",
+        },
+      },
+      actions:
+        role === "SUP"
+          ? [
+              action(
+                "approve_resume",
+                "active",
+                "safety.resume.approve",
+                ["resumeApprovalRef", "readiness", "blockedReasons"],
+                { requiresEvidence: true },
+              ),
+              action(
+                "return_resume",
+                "suspended",
+                "safety.permit.review",
+                ["reason", "blockedReasons"],
+              ),
+            ]
+          : [],
+    },
+    {
+      machine: "safety_stop_order",
+      record: {
+        id: "STOP-UI-001",
+        projectId: "UI-MOCK",
+        version: 4,
+        subtype: "SafetyStopOrder",
+        status: "verification",
+        title: "추락방지시설 보완 작업중지",
+        discipline: "ARCH",
+        packageId: scope.packageId,
+        locationId: scope.locationId,
+        responsibleOrganizationId: scope.responsibleOrganizationId,
+        evidenceIds: ["EVD-UI-001"],
+        data: {
+          stopOrderNo: "STOP-UI-001",
+          stopScopeType: "permit",
+          stopReason: "추락방지 난간 미설치",
+          observedAt: "2026-10-06T13:05:00+07:00",
+          effectiveAt: "2026-10-06T13:10:00+07:00",
+          affectedPermitRefs: [
+            {
+              objectType: "WorkItem",
+              objectId: "SP-UI-001",
+              version: 6,
+            },
+          ],
+          correctiveActionRefs: [
+            { objectType: "Action", objectId: "ACT-UI-001", version: 3 },
+          ],
+          resumeVerificationRefs: [
+            { objectType: "Inspection", objectId: "INS-UI-001", version: 4 },
+          ],
+          resumeRequestAt: "2026-10-06T14:10:00+07:00",
+          resumeGate,
+        },
+      },
+      actions:
+        role === "SUP"
+          ? [
+              action("lift_stop", "lifted", "safety.stop_lift", [], {
+                ready: false,
+                requiresEvidence: true,
+                blockedCode: "SAFETY_RESUME_GATE_SATISFIED",
+              }),
+            ]
+          : [],
+    },
+    {
+      machine: "safety_equipment_inspection",
+      record: {
+        id: "SEI-UI-001",
+        projectId: "UI-MOCK",
+        version: 3,
+        subtype: "SafetyEquipmentInspection",
+        status: "result_pending",
+        title: "고소작업대 사용 전 안전검사",
+        discipline: "ARCH",
+        packageId: scope.packageId,
+        locationId: scope.locationId,
+        responsibleOrganizationId: scope.responsibleOrganizationId,
+        evidenceIds: ["EVD-UI-001"],
+        data: {
+          inspectionKind: "pre-use",
+          resultSummary: "점검 완료 · 판정 대기",
+          equipmentAvailable: false,
+          validFrom: "2026-10-06T09:00:00+07:00",
+          validTo: "2026-11-06T09:00:00+07:00",
+          certificateRefs: [],
+          calibrationRefs: [],
+          blockedReasons: [],
+        },
+      },
+      actions:
+        role === "SUP"
+          ? [
+              action("pass", "passed", "safety.equipment.judge", ["blockedReasons"], {
+                requiresEvidence: true,
+              }),
+              action(
+                "fail",
+                "failed",
+                "safety.equipment.judge",
+                ["failureReason", "blockedReasons"],
+                { requiresEvidence: true },
+              ),
+              action(
+                "restrict",
+                "restricted",
+                "safety.equipment.judge",
+                ["restrictionConditions", "blockedReasons"],
+                { requiresEvidence: true },
+              ),
+            ]
+          : [],
+    },
+  ];
+}
 
 export function createMockWorkspace(role: HumanRole): Workspace {
   return {
@@ -53,6 +307,7 @@ export function createMockWorkspace(role: HumanRole): Workspace {
       },
     ],
     items: [
+      ...safetyPreviewItems(role),
       {
         machine: "evidence",
         record: {

@@ -1,4 +1,4 @@
-import { ApiClient, ApiError } from "@doul/client";
+import { ApiClient, ApiError, newKey } from "@doul/client";
 import type {
   DomainRef,
   Fields,
@@ -12,6 +12,12 @@ import type {
 import { MockSupervisionClient } from "./mock-supervision-client";
 
 export { ApiError };
+
+const safetyCollections: Record<string, string> = {
+  safety_permit: "safety-permits",
+  safety_stop_order: "safety-stop-orders",
+  safety_equipment_inspection: "safety-equipment-inspections",
+};
 
 export interface UploadOptions {
   name: string;
@@ -88,7 +94,27 @@ class HttpSupervisionClient implements SupervisionClient {
     evidenceIds?: string[],
     key?: string,
   ) {
-    return this.client.execute(item, command, payload, evidenceIds, key);
+    const collection = safetyCollections[item.machine];
+    if (!collection) {
+      return this.client.execute(item, command, payload, evidenceIds, key);
+    }
+    const session = this.client.session;
+    if (!session) throw new Error("로그인이 필요합니다.");
+    return this.client.request<{ record: RecordDTO }>(
+      this.client.path(
+        `/${collection}/${item.record.id}/${command.replace(/_/g, "-")}`,
+      ),
+      {
+        method: "POST",
+        headers: { "Idempotency-Key": key || newKey() },
+        body: JSON.stringify({
+          roleAssignmentId: session.actor.roleAssignmentId,
+          expectedVersion: item.record.version,
+          payload,
+          evidenceIds: evidenceIds ?? [],
+        }),
+      },
+    );
   }
 
   create(machine: string, payload: object, clientObjectId?: string, key?: string) {

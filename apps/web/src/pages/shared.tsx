@@ -8,6 +8,7 @@ import {
   Home,
   Layers,
   RefreshCw,
+  ShieldCheck,
   Table2,
   Users,
   Wrench,
@@ -34,6 +35,7 @@ const icons: Record<string, LucideIcon> = {
   users: Users,
   arrow: ArrowRight,
   refresh: RefreshCw,
+  shield: ShieldCheck,
   table: Table2,
   close: X,
 };
