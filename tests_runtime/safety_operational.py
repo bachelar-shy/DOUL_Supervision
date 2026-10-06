@@ -7,6 +7,7 @@ JWT authentication, the TLS proxy, the running API, and PostgreSQL persistence.
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from services.deployment.auth import subject_key
@@ -22,7 +23,20 @@ READINESS = {
     "environmentalConditionsReady": True,
     "noBlockingSafetyIssue": True,
 }
-AT = "2026-10-06T10:00:00Z"
+
+
+def _rfc3339(value):
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def safety_window(now=None):
+    now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    return {
+        "validFrom": _rfc3339(now - timedelta(days=1)),
+        "validTo": _rfc3339(now + timedelta(days=365)),
+        "observedAt": _rfc3339(now - timedelta(minutes=5)),
+        "effectiveAt": _rfc3339(now),
+    }
 
 
 def ref(record):
@@ -41,6 +55,7 @@ def seed_safety_fixture(store, issuer):
         project = store.meta["projectId"]
         scope = dict(store.meta["scope"])
         evidence_id = store.meta["evidenceId"]
+        window = safety_window()
         sup = store.meta["actors"]["SUP"]
         con = store.meta["actors"]["CON"]
 
@@ -83,8 +98,8 @@ def seed_safety_fixture(store, issuer):
                         "riskLevel": "high",
                         "responsiblePartyId": con["partyId"],
                         "safetyResponsiblePartyId": sup["partyId"],
-                        "validFrom": "2026-01-01T00:00:00Z",
-                        "validTo": "2027-01-01T00:00:00Z",
+                        "validFrom": window["validFrom"],
+                        "validTo": window["validTo"],
                         "readiness": dict(READINESS),
                         "workAuthorized": True,
                         "blockedReasons": [],
@@ -144,6 +159,8 @@ def seed_safety_fixture(store, issuer):
                 "objectId": inspection["id"],
                 "version": inspection["version"],
             },
+            "observedAt": window["observedAt"],
+            "effectiveAt": window["effectiveAt"],
         }
 
 
@@ -186,8 +203,8 @@ def run_safety_operational_e2e(request, restart_api, fixture, sup_token, con_tok
                     "stopOrderNo": number,
                     "stopScopeType": "permit",
                     "stopReason": "synthetic immediate hazard",
-                    "observedAt": AT,
-                    "effectiveAt": AT,
+                    "observedAt": fixture["observedAt"],
+                    "effectiveAt": fixture["effectiveAt"],
                     "affectedPermitRefs": refs,
                 },
             },
