@@ -1,4 +1,4 @@
-"""SQLite development adapter around the merged reference engine.
+"""SQLite snapshot implementation of the application persistence port.
 
 The snapshot format is explicit JSON, never pickle. BEGIN IMMEDIATE serializes
 commands across instances. Audit, history, idempotency and blobs commit together.
@@ -26,7 +26,9 @@ def decode_map(value):
     return {tuple(key) if isinstance(key,list) else key:item for key,item in value}
 
 
-class Store:
+class SQLiteSnapshotAdapter:
+    adapter_name='sqlite-development'
+
     def __init__(self, path=':memory:', demo=True):
         if path != ':memory:':Path(path).parent.mkdir(parents=True,exist_ok=True)
         self.lock=RLock()

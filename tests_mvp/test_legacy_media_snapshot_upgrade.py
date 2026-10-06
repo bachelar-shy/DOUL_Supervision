@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from app.reference.engine import uid
 from services.api.main import create_app
-from services.api.store import Store
+from services.api.store import SQLiteSnapshotAdapter
 
 
 PNG = base64.b64decode(
@@ -35,7 +35,7 @@ class LegacyMediaSnapshotUpgradeTests(unittest.TestCase):
                 engine._history.pop(key)
 
     def create_legacy_snapshot(self):
-        store = Store(self.path, demo=True)
+        store = SQLiteSnapshotAdapter(self.path, demo=True)
         with store.transaction(True):
             evidence = deepcopy(store.engine.get('Evidence', store.meta['evidenceId']))
             audit = deepcopy(store.engine.audit_events)
