@@ -25,8 +25,19 @@ def validate_all():
     for node in ast.walk(tree):
         if isinstance(node,ast.Assign) and isinstance(node.value,ast.Dict) and any(isinstance(t,ast.Name) and t.id in ['predicates','checks'] for t in node.targets):
             guard_keys.update(k.value for k in node.value.keys if isinstance(k,ast.Constant))
+    machine_bindings=load('reference/machine_bindings_v1.json')['machines']
+    check(set(machine_bindings)==set(machines),'Backend machine bindings must match Product machines exactly')
+    collections=set()
     for name,machine in machines.items():
-        check(machine['object_type'] in schemas,name+' has unknown object type');seen=set()
+        check(machine['object_type'] in schemas,name+' has unknown object type')
+        binding=machine_bindings[name]
+        check(set(binding)=={'collection','create_authority'},name+' has invalid backend machine binding fields')
+        collection=binding['collection']
+        check(isinstance(collection,str) and re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*',collection),name+' has invalid API collection')
+        check(collection not in collections,name+' has duplicate API collection')
+        collections.add(collection)
+        check(binding['create_authority'] in policies,name+' has unknown create authority')
+        seen=set()
         for t in machine['transitions']:
             signature=t['from'],t['command'];check(signature not in seen,name+' has ambiguous command');seen.add(signature)
             check(t['from'] in machine['states'] and t['to'] in machine['states'],name+' has unknown state')
