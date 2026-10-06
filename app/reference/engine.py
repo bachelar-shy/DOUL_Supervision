@@ -333,7 +333,7 @@ class Engine:
             'conditional_allowed':lambda:not r.get('holdPoint') and bool(r.get('conditions')),
             'failure_identified':lambda:any(c['result']=='fail' for c in r.get('checkResults',[])) and bool(r.get('failureReason')),
             'conditions_resolved':lambda:bool(r.get('evidenceIds')),
-            'closure_evidence_present':lambda:bool(r.get('evidenceIds')),
+            'closure_evidence_valid':lambda:self._closure_evidence_valid(r,payload),
             'rfi_response_present':lambda:bool(r.get('response')) and bool(r.get('responseInformationRefs')),
             'change_routed_if_required':lambda:not r.get('changeRequired') or any(x.get('objectType')=='WorkItem' and self.resolve(x,r['projectId']).get('subtype')=='ChangeRequest' for x in r.get('references',[])),
             'impact_complete':lambda:all(x in r.get('impact',{}) for x in ['quality','schedule','cost','permit']),
@@ -381,7 +381,7 @@ class Engine:
             if result:record['resultStatus']=result
             if command=='release_next_work':record['nextWorkAllowed']=True
             if command=='record_failure':record['nextWorkAllowed']=False
-        if machine=='issue' and command=='close':record.update(closedBy=party_id,closureEvidenceIds=list(record['evidenceIds']))
+        if machine=='issue' and command=='close':record.update(closedBy=party_id)
         if machine=='issue' and command=='reject_reinspection':record['correctionCycle']+=1
         if machine=='approval' and command=='approve':record.update(approvedBy=party_id,approvedAt=self.at())
         if machine=='report':
@@ -458,6 +458,32 @@ class Engine:
         self._corrective_action_submitted(r)
         actions=[self.get('Action',aid) for aid in r['actionIds']]
         require(all(a['status'] in ['verified','closed'] for a in actions if a.get('correctionCycle')==r['correctionCycle']),'CURRENT_ACTIONS_VERIFIED','Current cycle corrective actions must be verified')
+
+    def _closure_evidence_valid(self,r,payload):
+        closure_ids=payload.get('closureEvidenceIds')
+        require(isinstance(closure_ids,list) and bool(closure_ids),'CLOSURE_EVIDENCE_REQUIRED','Issue closure must explicitly select closure evidence')
+        require(len(closure_ids)==len(set(closure_ids)),'CLOSURE_EVIDENCE_SCOPE_INVALID','Closure evidence references must be unique')
+        actions=[self.get('Action',aid) for aid in r.get('actionIds',[])]
+        current_actions=[action for action in actions if action.get('correctionCycle')==r['correctionCycle']]
+        action_evidence={
+            eid for action in current_actions if action.get('status') in ['verified','closed']
+            for eid in action.get('evidenceIds',[])
+        }
+        reinspection=self._latest_reinspection(r)
+        reinspection_evidence=set(reinspection.get('evidenceIds',[]))
+        for result in reinspection.get('checkResults',[]):
+            reinspection_evidence.update(result.get('evidenceIds',[]))
+        selected=set(closure_ids)
+        require(bool(selected & action_evidence),'CLOSURE_ACTION_EVIDENCE_REQUIRED','Closure evidence must include current-cycle verified corrective-action evidence')
+        require(bool(selected & reinspection_evidence),'CLOSURE_REINSPECTION_EVIDENCE_REQUIRED','Closure evidence must include current-cycle passed-reinspection evidence')
+        require(selected <= action_evidence | reinspection_evidence,'CLOSURE_EVIDENCE_SCOPE_INVALID','Closure evidence must come from the current correction cycle')
+        for eid in closure_ids:
+            evidence=self.get('Evidence',eid)
+            require(evidence['projectId']==r['projectId'],'CLOSURE_EVIDENCE_SCOPE_INVALID','Closure evidence belongs to another project')
+            for field in ['packageId','locationId','discipline','responsibleOrganizationId']:
+                if evidence.get(field) is not None and r.get(field) is not None:
+                    require(evidence[field]==r[field],'CLOSURE_EVIDENCE_SCOPE_INVALID','Closure evidence must match the issue work scope')
+        return True
 
     def _decision_package_complete(self,r):
         require(len(r.get('options',[]))>=1 and bool(r.get('impact')) and bool(r.get('recommendation')) and bool(r.get('dueAt')) and bool(r.get('reportId')),'DECISION_PACKAGE_COMPLETE','Decision requires options, impact, recommendation, deadline and issued report')

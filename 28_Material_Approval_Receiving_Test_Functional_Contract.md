@@ -973,6 +973,10 @@ NCR 번호는 모든 반입검사에서 필수가 아니다.
 - hold: 사유에 따라 Issue/NCR 미생성 가능
 - fail로 공식 Material Issue/NCR을 발행한 경우: NCR/Issue Ref 필수
 
+FM-05 최종본은 위 조건을 렌더링 시 검증한다. 정확한 불합격 Inspection에 연결된 공식 Material Issue/NCR이 존재하면, `review.ncr_no` 또는 해당 Issue의 정확한 Source Ref가 필요하다. 관련 없는 Issue Ref로는 충족할 수 없으며, DTO의 상태를 pass로 바꾸어도 원본 Inspection의 불합격 사실을 우회할 수 없다. Issue Ref를 선택하면 출력의 NCR 번호에 해당 Issue ID를 보존한다. 발행된 NCR이 없는 불합격 건과 검토 중 초안에는 NCR 번호를 일괄 강제하지 않는다.
+
+조건부 필수 규칙은 Form Data Schema와 Domain Binding에 동일하게 선언하고, 계약 검증에서 두 정의의 일치를 확인한다.
+
 ### FM-06 시험·검사 요청·결과기록
 
 기존 필드와 함께 다음을 명시한다.

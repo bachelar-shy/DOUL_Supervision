@@ -468,7 +468,7 @@
           "dto_path": "review.ncr_no",
           "source": "reviewed_context",
           "type": "string",
-          "required": true
+          "required": false
         }
       },
       "table_bindings": {
@@ -483,7 +483,22 @@
           ],
           "source": "reviewed_projection_dto"
         }
-      }
+      },
+      "conditional_requirements": [
+        {
+          "when": {
+            "operator": "failed_inspection_has_issued_issue"
+          },
+          "any_of": [
+            {
+              "field": "review.ncr_no"
+            },
+            {
+              "source_object_type": "Issue"
+            }
+          ]
+        }
+      ]
     },
     "FM-06": {
       "source_registers": [

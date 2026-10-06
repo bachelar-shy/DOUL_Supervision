@@ -16,6 +16,45 @@ export const routes: readonly UiRoute[] = [
 
 const allRouteIds = routes.map((route) => route.id);
 
+export interface MobileRouteSpec {
+  id: string;
+  label: string;
+  icon: string;
+}
+
+export const mobileRoutes: Record<HumanRole, readonly MobileRouteSpec[]> = {
+  SUP: [
+    { id: "today", label: "오늘", icon: "home" },
+    { id: "inspections", label: "검측", icon: "check" },
+    { id: "capture", label: "촬영", icon: "camera" },
+    { id: "issues", label: "이슈", icon: "flag" },
+  ],
+  CON: [
+    { id: "today", label: "오늘", icon: "home" },
+    { id: "inspections", label: "검측", icon: "check" },
+    { id: "capture", label: "촬영", icon: "camera" },
+    { id: "issues", label: "이슈", icon: "flag" },
+  ],
+  OWN: [
+    { id: "today", label: "오늘", icon: "home" },
+    { id: "owner", label: "결정", icon: "report" },
+    { id: "issues", label: "이슈", icon: "flag" },
+    { id: "documents", label: "문서", icon: "document" },
+  ],
+  DES: [
+    { id: "today", label: "오늘", icon: "home" },
+    { id: "rfis", label: "설계질의", icon: "layers" },
+    { id: "capture", label: "촬영", icon: "camera" },
+    { id: "documents", label: "문서", icon: "document" },
+  ],
+  ADM: [
+    { id: "today", label: "오늘", icon: "home" },
+    { id: "registers", label: "대장", icon: "table" },
+    { id: "documents", label: "문서", icon: "document" },
+    { id: "admin", label: "권한", icon: "users" },
+  ],
+};
+
 export const roleRoutes: Record<HumanRole, readonly string[]> = {
   SUP: allRouteIds.filter((id) => id !== "admin"),
   CON: [

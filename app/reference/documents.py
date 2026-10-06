@@ -66,6 +66,31 @@ class Documents:
             if get_path(data,when['path']) is not None:roles.append(conditional['role'])
         return roles
 
+    def _conditional_requirements(self,spec,source_refs,records,data):
+        for rule in spec.get('conditional_requirements',[]):
+            require(rule['when']=={'operator':'failed_inspection_has_issued_issue'},'CONDITIONAL_RULE_INVALID','Unsupported form requirement predicate')
+            failed_ids={record['id'] for ref,record in zip(source_refs,records) if ref['objectType']=='Inspection' and record.get('resultStatus')=='fail'}
+            review_failed=str(get_path(data,'review.status') or '').strip().casefold()=='fail'
+            issued_ids={
+                record['id'] for (kind,_),record in self.engine._records.items()
+                if kind=='Issue' and record.get('subtype') in ['NCR','Material']
+                and record['projectId']==records[0]['projectId']
+                and failed_ids.intersection(record.get('inspectionIds',[]))
+            }
+            # A direct Issue source also supplies the official link when the
+            # receiving record currently uses a reviewed form DTO.
+            if review_failed and not failed_ids:
+                issued_ids.update(record['id'] for ref,record in zip(source_refs,records) if ref['objectType']=='Issue' and record.get('subtype') in ['NCR','Material'])
+            if not issued_ids:continue
+            field_present=any(
+                str(get_path(data,choice['field']) or '').strip()
+                for choice in rule['any_of'] if 'field' in choice
+            )
+            issue_refs=[ref for ref in source_refs if ref['objectType']=='Issue' and ref['objectId'] in issued_ids]
+            reference_present=bool(issue_refs) and any(choice.get('source_object_type')=='Issue' for choice in rule['any_of'])
+            require(field_present or reference_present,'FORM_NCR_LINK_REQUIRED','Failed receiving inspection with an issued NCR needs its NCR number or exact Issue source reference')
+            if reference_present and not field_present:put_path(data,'review.ncr_no',issue_refs[0]['objectId'])
+
     def render(self,form,source_refs,data,party_id,role_id,key,language='vi',final=True,supersedes_id=None):
         require(form in self.templates,'FORM_UNKNOWN',form)
         require(bool(source_refs),'SOURCE_VERSION_REQUIRED','At least one exact source version is required')
@@ -93,6 +118,7 @@ class Documents:
             require(source is not None,'FORM_SOURCE_MISSING',kind+' source required')
             value=get_path(source,path)
             if value is not None:put_path(frozen,field,value if spec['scalar_fields'][field]['type']!='string' else str(value))
+        if final:self._conditional_requirements(spec,source_refs,records,frozen)
         for field,rule in spec['scalar_fields'].items():
             value=get_path(frozen,field)
             if final and rule['required']:require(value is not None and value!='','FORM_FIELD_MISSING',field)

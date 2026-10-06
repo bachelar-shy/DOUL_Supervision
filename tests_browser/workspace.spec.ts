@@ -88,6 +88,83 @@ test("29 register projections support selection, filtering, and detail", async (
   await expect(page.getByText("도면 예시 A-201", { exact: true })).toBeVisible();
 });
 
+test("stale register refresh cannot overwrite a newer register selection", async ({
+  page,
+}) => {
+  let releaseRefresh!: () => void;
+  let markRefreshStarted!: () => void;
+  const refreshGate = new Promise<void>((resolve) => {
+    releaseRefresh = resolve;
+  });
+  const refreshStarted = new Promise<void>((resolve) => {
+    markRefreshStarted = resolve;
+  });
+
+  await page.goto("/#/registers");
+  await expect(
+    page.locator('[data-ui-component="register-table"] tbody tr'),
+  ).not.toHaveCount(0);
+
+  const refreshButton = page
+    .locator('[data-ui-component="filter-bar"]')
+    .getByRole("button", { name: "새로고침", exact: true });
+  await expect(refreshButton).toBeEnabled();
+
+  await page.route("**/registers/11", async (route) => {
+    markRefreshStarted();
+    await refreshGate;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          sourceDomainRefs: [
+            {
+              objectType: "Inspection",
+              objectId: "STALE-REGISTER-11",
+              version: 99,
+            },
+          ],
+          data: {
+            id: "STALE-REGISTER-11",
+            projectId: "UI-RACE-TEST",
+            version: 99,
+            status: "scheduled",
+            title: "STALE REGISTER 11 ROW",
+          },
+          calculated: {
+            result_status: "pass",
+            next_work_allowed: true,
+          },
+          unavailableFields: [],
+        },
+      ]),
+    });
+  });
+
+  await refreshButton.click();
+  await refreshStarted;
+
+  await page.getByRole("combobox", { name: "관리대장 선택" }).click();
+  await page.getByRole("option", { name: "04 · 도면·개정" }).click();
+  await expect(page.getByText("도면 예시 A-201", { exact: true })).toBeVisible();
+
+  const staleResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/registers/11") && response.status() === 200,
+  );
+  releaseRefresh();
+  await staleResponse;
+
+  await expect(
+    page.getByRole("combobox", { name: "관리대장 선택" }),
+  ).toContainText("04 · 도면·개정");
+  await expect(page.getByText("도면 예시 A-201", { exact: true })).toBeVisible();
+  await expect(page.getByText("STALE REGISTER 11 ROW", { exact: true })).toHaveCount(
+    0,
+  );
+});
+
 test("mobile interactive controls keep 44px touch targets", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 840 });
   await page.goto("/#/inspections");
@@ -129,6 +206,29 @@ test("mobile interactive controls keep 44px touch targets", async ({ page }) => 
       ),
     )
     .toBeTruthy();
+});
+
+test("mobile navigation follows the active role route map", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 840 });
+  await page.goto("/");
+  const mobileNav = page.locator('[data-ui-component="mobile-navigation"]');
+  await expect(mobileNav).toBeVisible();
+  await expect(mobileNav.getByRole("button")).toHaveCount(5);
+
+  await page
+    .getByRole("combobox", { name: "개발 역할 선택" })
+    .selectOption("DES");
+  await expect(mobileNav.getByRole("button", { name: "설계질의" })).toBeVisible();
+  await expect(mobileNav.getByRole("button", { name: "문서" })).toBeVisible();
+  await expect(mobileNav.getByRole("button", { name: "검측" })).toHaveCount(0);
+  await mobileNav.getByRole("button", { name: "설계질의" }).click();
+  await expect(page.locator("h1")).toHaveText("설계질의");
+
+  await page
+    .getByRole("combobox", { name: "개발 역할 선택" })
+    .selectOption("ADM");
+  await expect(mobileNav.getByRole("button", { name: "대장" })).toBeVisible();
+  await expect(mobileNav.getByRole("button", { name: "권한" })).toBeVisible();
 });
 
 test("register table header remains visible during long internal scroll", async ({

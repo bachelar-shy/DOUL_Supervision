@@ -4,8 +4,10 @@ on:
   pull_request:
     paths:
       - ".dockerignore"
+      - ".github/workflows/platform-container.yml"
       - "infra/**"
-      - "services/api/requirements.lock"
+      - "app/**"
+      - "services/**"
       - "apps/web/**"
       - "packages/client/**"
       - "package.json"
@@ -14,8 +16,10 @@ on:
     branches: [main]
     paths:
       - ".dockerignore"
+      - ".github/workflows/platform-container.yml"
       - "infra/**"
-      - "services/api/requirements.lock"
+      - "app/**"
+      - "services/**"
       - "apps/web/**"
       - "packages/client/**"
       - "package.json"
@@ -27,7 +31,7 @@ permissions:
 jobs:
   compose-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
@@ -37,10 +41,21 @@ jobs:
       - name: Build local development images
         run: docker compose -f infra/compose/compose.dev.yml build
 
-      - name: Start baseline stack
+      - name: Start development stack
         run: docker compose -f infra/compose/compose.dev.yml up -d
 
-      - name: Smoke test API and Web
+      - name: Verify data services
+        run: |
+          init_id="$(docker compose -f infra/compose/compose.dev.yml ps -aq object-storage-init)"
+          test -n "$init_id"
+          test "$(docker inspect -f '{{.State.ExitCode}}' "$init_id")" = "0"
+
+          docker compose -f infra/compose/compose.dev.yml exec -T postgres \
+            sh -ec 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+          docker compose -f infra/compose/compose.dev.yml exec -T redis redis-cli ping | grep -q '^PONG$'
+          curl --fail --silent http://127.0.0.1:9000/minio/health/ready >/dev/null
+
+      - name: Smoke test API, Web and default Origins
         run: |
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:8791/health >/tmp/api-health.json &&
@@ -57,12 +72,88 @@ jobs:
           grep -q '"status":"ok"' /tmp/api-health.json
           grep -q '"mode":"local-demo"' /tmp/proxied-health.json
           grep -q '^ok$' /tmp/web-health.txt
-          docker compose -f infra/compose/compose.dev.yml ps
+
+          login_and_workspace() {
+            origin="$1"
+            port="$2"
+            session="$(curl --fail --silent \
+              -H "Origin: $origin" \
+              -H 'Content-Type: application/json' \
+              --data '{"actorGroup":"SUP"}' \
+              "http://127.0.0.1:$port/api/dev/sessions")"
+            access_token="$(printf '%s' "$session" | python3 -c 'import json,sys; print(json.load(sys.stdin)["accessToken"])')"
+            project_id="$(printf '%s' "$session" | python3 -c 'import json,sys; print(json.load(sys.stdin)["projectId"])')"
+            role_id="$(printf '%s' "$session" | python3 -c 'import json,sys; print(json.load(sys.stdin)["actor"]["roleAssignmentId"])')"
+            curl --fail --silent --dump-header /tmp/workspace-headers \
+              -H "Origin: $origin" \
+              -H "Authorization: Bearer $access_token" \
+              -H "X-RoleAssignment-Id: $role_id" \
+              "http://127.0.0.1:$port/api/projects/$project_id/workspace" >/tmp/workspace.json
+            tr -d '\r' </tmp/workspace-headers | grep -qi "^access-control-allow-origin: $origin$"
+          }
+
+          login_and_workspace "http://127.0.0.1:5181" 5181
+          login_and_workspace "http://localhost:5181" 5181
+
+          denied_status="$(curl --silent --output /tmp/untrusted-origin.json --write-out '%{http_code}' \
+            -H 'Origin: https://untrusted.example' \
+            -H 'Content-Type: application/json' \
+            --data '{"actorGroup":"SUP"}' \
+            http://127.0.0.1:5181/api/dev/sessions)"
+          test "$denied_status" = "403"
+          docker compose -f infra/compose/compose.dev.yml ps -a
+
+      - name: Restart with alternate Web port
+        run: |
+          docker compose -f infra/compose/compose.dev.yml down -v --remove-orphans
+          DOUL_WEB_PORT_PUBLISHED=5182 docker compose -f infra/compose/compose.dev.yml up -d
+
+      - name: Smoke test alternate Web Origins
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:5182/healthz >/tmp/web-alt-health.txt &&
+               curl --fail --silent http://127.0.0.1:5182/api/health >/tmp/proxied-alt-health.json; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              echo "Alternate-port Web stack did not become healthy."
+              exit 1
+            fi
+            sleep 2
+          done
+
+          login_and_workspace() {
+            origin="$1"
+            session="$(curl --fail --silent \
+              -H "Origin: $origin" \
+              -H 'Content-Type: application/json' \
+              --data '{"actorGroup":"SUP"}' \
+              http://127.0.0.1:5182/api/dev/sessions)"
+            access_token="$(printf '%s' "$session" | python3 -c 'import json,sys; print(json.load(sys.stdin)["accessToken"])')"
+            project_id="$(printf '%s' "$session" | python3 -c 'import json,sys; print(json.load(sys.stdin)["projectId"])')"
+            role_id="$(printf '%s' "$session" | python3 -c 'import json,sys; print(json.load(sys.stdin)["actor"]["roleAssignmentId"])')"
+            curl --fail --silent --dump-header /tmp/workspace-alt-headers \
+              -H "Origin: $origin" \
+              -H "Authorization: Bearer $access_token" \
+              -H "X-RoleAssignment-Id: $role_id" \
+              "http://127.0.0.1:5182/api/projects/$project_id/workspace" >/tmp/workspace-alt.json
+            tr -d '\r' </tmp/workspace-alt-headers | grep -qi "^access-control-allow-origin: $origin$"
+          }
+
+          login_and_workspace "http://127.0.0.1:5182"
+          login_and_workspace "http://localhost:5182"
+
+          denied_status="$(curl --silent --output /tmp/untrusted-alt-origin.json --write-out '%{http_code}' \
+            -H 'Origin: https://untrusted.example' \
+            -H 'Content-Type: application/json' \
+            --data '{"actorGroup":"SUP"}' \
+            http://127.0.0.1:5182/api/dev/sessions)"
+          test "$denied_status" = "403"
 
       - name: Container logs
         if: failure()
         run: docker compose -f infra/compose/compose.dev.yml logs --no-color
 
-      - name: Stop baseline stack
+      - name: Stop development stack
         if: always()
         run: docker compose -f infra/compose/compose.dev.yml down -v --remove-orphans

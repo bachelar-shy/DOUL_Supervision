@@ -76,6 +76,61 @@ export function NavigationList({
   );
 }
 
+export interface MobileNavigationProps {
+  items: readonly NavigationItemSpec[];
+  activeId?: string | null;
+  onNavigate: (id: string) => void;
+  onMore: () => void;
+  moreOpen?: boolean;
+  moreActive?: boolean;
+  moreIcon?: ReactNode;
+  moreLabel?: ReactNode;
+  ariaLabel?: string;
+}
+
+export function MobileNavigation({
+  items,
+  activeId,
+  onNavigate,
+  onMore,
+  moreOpen = false,
+  moreActive = false,
+  moreIcon,
+  moreLabel = "더보기",
+  ariaLabel = "모바일 메뉴",
+}: MobileNavigationProps) {
+  return (
+    <nav
+      className="bottom-nav"
+      aria-label={ariaLabel}
+      data-ui-component="mobile-navigation"
+    >
+      {items.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          className={activeId === item.id ? "active" : ""}
+          aria-current={activeId === item.id ? "page" : undefined}
+          disabled={item.disabled}
+          onClick={() => onNavigate(item.id)}
+        >
+          {item.icon}
+          <span>{item.label}</span>
+        </button>
+      ))}
+      <button
+        type="button"
+        className={moreActive ? "active" : ""}
+        aria-expanded={moreOpen}
+        onClick={onMore}
+      >
+        {moreIcon}
+        <span>{moreLabel}</span>
+      </button>
+    </nav>
+  );
+}
+
 export interface FilterBarProps extends HTMLAttributes<HTMLDivElement> {
   query?: string;
   onQueryChange?: (value: string) => void;

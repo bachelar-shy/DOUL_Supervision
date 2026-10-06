@@ -368,7 +368,22 @@
         "review.status"
       ],
       "legal_mode": "doul_internal",
-      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"
+      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary",
+      "conditional_requirements": [
+        {
+          "when": {
+            "operator": "failed_inspection_has_issued_issue"
+          },
+          "any_of": [
+            {
+              "field": "review.ncr_no"
+            },
+            {
+              "source_object_type": "Issue"
+            }
+          ]
+        }
+      ]
     },
     "FM-06": {
       "scalar_fields": {
