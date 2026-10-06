@@ -405,6 +405,19 @@ export function DecisionPanel({
   );
 }
 
+export function OwnerDecisionPanel({
+  className,
+  ...props
+}: HTMLAttributes<HTMLElement>) {
+  return (
+    <section
+      className={cn("panel detail-pane", className)}
+      data-ui-component="owner-decision-panel"
+      {...props}
+    />
+  );
+}
+
 export function DetailPane({
   className,
   ...props

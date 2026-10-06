@@ -22,6 +22,7 @@ for (const width of [390, 768, 1440]) {
       "capture",
       "observations",
       "issues",
+      "owner",
       "documents",
       "registers",
     ]) {
@@ -64,6 +65,19 @@ test("DOUL component catalog is mounted on representative surfaces", async ({ pa
     .first()
     .click();
   await expect(page.locator('[data-ui-component="action-gate"]')).toBeVisible();
+
+  await page.goto("/#/owner");
+  await expect(
+    page.locator('[data-ui-component="owner-governance-summary"]'),
+  ).toBeVisible();
+  await page
+    .getByRole("button")
+    .filter({ hasText: "발주처 즉시보고" })
+    .first()
+    .click();
+  await expect(
+    page.locator('[data-ui-component="owner-decision-panel"]'),
+  ).toBeVisible();
 
   await page.goto("/#/registers");
   await expect(page.locator('[data-ui-component="filter-bar"]')).toBeVisible();
@@ -186,6 +200,9 @@ test("mobile interactive controls keep 44px touch targets", async ({ page }) => 
     .filter({ hasText: "경량벽체 은폐 전 검측" })
     .first()
     .click();
+  await expectTouchTarget(
+    page.locator(".detail-pane").getByRole("button", { name: "← 목록" }),
+  );
   await page
     .locator(".detail-pane")
     .getByRole("button", { name: "시작", exact: true })
@@ -416,8 +433,24 @@ test("owner and designer role surfaces", async ({ page }) => {
     location.hash = "/owner";
   });
   await expect(
+    page.locator('[data-ui-component="owner-governance-flow"]'),
+  ).toContainText("보고 발행 → 수령 확인 → 결정·조치 → 이행 검증 → 종결");
+  await expect(
     page.getByRole("button").filter({ hasText: "발주처 즉시보고" }).first(),
   ).toBeVisible();
+  await page
+    .getByRole("button")
+    .filter({ hasText: "발주처 즉시보고" })
+    .first()
+    .click();
+  const ownerPanel = page.locator('[data-ui-component="owner-decision-panel"]');
+  await expect(ownerPanel).toContainText("수령 확인은 승인이나 결정이 아닙니다.");
+  await expect(
+    ownerPanel.getByRole("button", { name: "수령 확인", exact: true }),
+  ).toBeVisible();
+  await expect(
+    ownerPanel.getByRole("button", { name: "결정 제출", exact: true }),
+  ).toHaveCount(0);
   await page.screenshot({
     path: ".local/screenshots/owner-web.png",
     fullPage: true,

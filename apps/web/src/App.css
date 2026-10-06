@@ -1289,6 +1289,9 @@ strong {
   }
   .mobile-back {
     display: inline-flex;
+    min-width: var(--doul-control-height-touch);
+    min-height: var(--doul-control-height-touch);
+    align-items: center;
     margin-bottom: 17px;
   }
   .detail-title {

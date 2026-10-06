@@ -41,6 +41,7 @@ Page / Template
 | `AuditTimeline` | 서버 처리이력 | Today |
 | `ActionGate` | 서버가 허용한 Command 표시 | Workbench |
 | `DecisionPanel` | 판단·선행조건 강조 | Today |
+| `OwnerDecisionPanel` | 발주처 보고·결정 상세, 서버 허용 업무 표시 | Owner Governance |
 
 ## 컴포넌트 계약
 
@@ -126,6 +127,16 @@ Sticky Header의 스크롤 기준은 외부 `table-scroll` 하나로 유지한�
 
 사용자가 결정을 내리기 전에 반드시 확인해야 할 선행조건, 영향, 경고를 강조한다. 실제 승인 여부는 서버 Gate가 결정한다.
 
+### OwnerDecisionPanel
+
+발주처 보고·결정 상세를 위한 전용 상세 패널이다.
+
+- 보고와 결정의 현재 상태는 서버 상태를 그대로 표시한다.
+- 수령/결정/검증/종결 가능 여부는 `WorkItem.actions`의 서버 허용 Command만 사용한다.
+- 수령 확인을 승인으로, 기한 초과를 자동승인으로 해석하지 않는다.
+- 보고의 사실·원인·영향·권고와 결정의 대안·영향·권고를 분리해 표시한다.
+- 실제 Command 실행은 기존 `ActionGate`와 AppShell command handler를 사용한다.
+
 ## 스타일 원칙
 
 - DOUL Blue는 브랜드·선택·주요 행동에 제한적으로 사용
@@ -154,6 +165,5 @@ v1 첫 이전 범위:
 ## 다음 연결
 
 - Evidence 상세 Preview
-- Owner Decision 전용 panel
 - 관리대장 역할별 진입 UX 정리
 - 시각 회귀 기준 이미지 정리

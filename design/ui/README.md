@@ -261,5 +261,7 @@ Stitch 결과는 다음 순서로 코드화한다.
 - Navigation / RegisterTable / DetailPane / EvidenceViewer / AuditTimeline / ActionGate / DecisionPanel을 실제 화면에 1차 적용
 - Timeline / Command Grid / 기본 Table 스타일을 Legacy CSS에서 Tailwind/공통 컴포넌트로 이전
 - 대표 역할별 화면을 390 / 768 / 1440px 기준으로 자동 검증
-- 남은 작업: 29개 관리대장을 Register Template + Projection Map에 연결
-- 남은 작업: FilterBar / DetailDrawer 실제 관리대장 적용과 시각 회귀 기준 확대
+- 29개 관리대장을 `RegisterTemplate + FilterBar + RegisterTable + DetailDrawer`로 연결 완료
+- 역할별 Mobile Navigation 공통화 완료
+- 발주처 보고·결정 전용 Owner Governance 화면과 `OwnerDecisionPanel` 적용
+- 남은 작업: Evidence 상세 Preview, 관리대장 역할별 진입 UX, 시각 회귀 기준 확대
