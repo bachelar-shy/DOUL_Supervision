@@ -112,7 +112,7 @@ def sniff(data):
     raise ContractError('MIME_INVALID','Supported development formats: PNG/JPEG/GIF/WebP/MP4/WebM/WAV/MP3/PDF')
 
 
-def create_app(db_path=':memory:', demo=False, persistence=None):
+def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=None):
     if not demo:raise RuntimeError('Production auth is not configured. Explicit --demo is required; bind to loopback only.')
     origins=development_origins()
     if persistence is not None and not isinstance(persistence,PersistencePort):
@@ -120,6 +120,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None):
     store=persistence if persistence is not None else create_local_persistence(db_path,demo=True)
     app=FastAPI(title='DOUL MVP local development adapter',version='0.1.0',docs_url='/api-docs')
     app.state.store=store
+    app.state.queue_enabled = (os.getenv('DOUL_QUEUE_ENABLED', '').lower() == 'true') if queue_enabled is None else bool(queue_enabled)
     app.state.allowed_origins=origins
     sessions={};session_lock=RLock()
     app.add_middleware(TrustedHostMiddleware,allowed_hosts=['127.0.0.1','localhost','testserver'])
@@ -207,7 +208,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None):
         return results
 
     @app.get('/health')
-    def health():return dict(status='ok',mode='local-demo',baseCommit='1540acb',adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo','mediaPipeline':'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
+    def health():return dict(status='ok',mode='local-demo',baseCommit='1540acb',adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
 
     @app.get('/dev/actors')
     def actors():
@@ -294,6 +295,9 @@ def create_app(db_path=':memory:', demo=False, persistence=None):
                 body.get('inspectionId'),
                 body.get('retryOfId'),
             )
+            if app.state.queue_enabled:
+                from services.worker.jobs import register_job
+                register_job(store, run)
             remember_application(request_key,fingerprint,run)
             return JSONResponse(run,status_code=201)
 

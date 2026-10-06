@@ -94,7 +94,7 @@ jobs:
           docker compose \
             -f infra/compose/compose.dev.yml \
             -f infra/compose/compose.worker.yml \
-            up -d --wait --wait-timeout 60 redis worker-runtime
+            up -d --build --wait --wait-timeout 120 redis worker-runtime
 
       - name: Verify Redis connectivity and worker heartbeat
         run: |

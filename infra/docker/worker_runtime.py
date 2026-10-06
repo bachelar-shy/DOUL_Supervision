@@ -202,5 +202,5 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as exc:
-        print(f"worker-runtime error: {exc}", file=sys.stderr)
+        print(f"worker-runtime error: {type(exc).__name__}", file=sys.stderr)
         raise SystemExit(1) from exc

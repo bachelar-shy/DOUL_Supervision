@@ -1,5 +1,11 @@
 services:
+  api:
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://doul_dev:local-postgres-only@postgres:5432/doul_supervision}
+      DOUL_QUEUE_ENABLED: "true"
   worker-runtime:
+    command: ["python", "-m", "services.worker", "--demo"]
+    stop_grace_period: 15s
     image: doul-supervision-worker-runtime:dev
     build:
       context: ../..
@@ -19,5 +25,9 @@ services:
       DOUL_WORKER_HEARTBEAT_TTL: ${DOUL_WORKER_HEARTBEAT_TTL:-30}
     depends_on:
       redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      api:
         condition: service_healthy
     restart: unless-stopped
