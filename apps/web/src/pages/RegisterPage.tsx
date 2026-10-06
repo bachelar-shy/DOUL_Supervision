@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Eye, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -175,52 +175,65 @@ export function RegisterPage({
   const [statusFilter, setStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const requestSequence = useRef(0);
 
   const definition =
     registerProjectionCatalog.find((item) => item.id === registerId) ||
     registerProjectionCatalog[10];
 
   async function load() {
+    const sequence = ++requestSequence.current;
     setLoading(true);
     try {
       const nextRows = await client.request<RegisterProjectionRow[]>(
         client.path(`/registers/${registerId}`),
       );
+      if (sequence !== requestSequence.current) return;
       setRows(nextRows);
       setError("");
     } catch (e) {
+      if (sequence !== requestSequence.current) return;
       setRows([]);
-      setError(e instanceof Error ? e.message : "관리대장을 불러오지 못했습니다.");
+      setError(
+        e instanceof Error ? e.message : "관리대장을 불러오지 못했습니다.",
+      );
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
   }
 
   useEffect(() => {
-    let active = true;
+    const sequence = ++requestSequence.current;
     client
       .request<RegisterProjectionRow[]>(
         client.path(`/registers/${registerId}`),
       )
       .then((nextRows) => {
-        if (!active) return;
+        if (sequence !== requestSequence.current) return;
         setRows(nextRows);
         setError("");
       })
       .catch((e) => {
-        if (!active) return;
+        if (sequence !== requestSequence.current) return;
         setRows([]);
-        setError(e instanceof Error ? e.message : String(e));
+        setError(
+          e instanceof Error ? e.message : "관리대장을 불러오지 못했습니다.",
+        );
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (sequence === requestSequence.current) setLoading(false);
       });
+
     return () => {
-      active = false;
+      if (sequence === requestSequence.current) {
+        requestSequence.current += 1;
+      }
     };
   }, [client, registerId]);
 
   function changeRegister(nextRegisterId: string) {
+    // Invalidate any in-flight manual refresh before the new selection renders.
+    requestSequence.current += 1;
     setLoading(true);
     setSourceFilter("all");
     setStatusFilter("all");
