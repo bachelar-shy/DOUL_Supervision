@@ -136,6 +136,7 @@ src/pages/**           (supervision UI)
 
 - `NavigationList`
 - `FilterBar`
+- `RegisterNavigator`
 - `RegisterTable`
 - `DetailPane`
 - `DetailDrawer`
@@ -160,9 +161,9 @@ src/pages/**           (supervision UI)
 
 ### B. Register
 
-`PageHeader → FilterBar → RegisterTable → Detail Drawer`
+`PageHeader → RegisterNavigator → FilterBar → RegisterTable → Detail Drawer`
 
-관리대장 29종은 서로 다른 디자인을 만들지 않고 같은 Register 템플릿을 공유한다.
+관리대장 29종은 서로 다른 디자인을 만들지 않고 같은 Register 템플릿을 공유한다. 역할별 추천은 진입 순서만 바꾸며 실제 조회범위와 권한은 서버 Contract를 따른다.
 
 ### C. Issue / Inspection Workbench
 
@@ -266,4 +267,6 @@ Stitch 결과는 다음 순서로 코드화한다.
 - 발주처 보고·결정 전용 Owner Governance 화면과 `OwnerDecisionPanel` 적용
 - Evidence 원본/파생 상세 Preview와 `EvidenceDetailSheet` 적용
 - 증빙 원본·출처·파생범위·해시를 분리 표시하고 판정과 증빙을 구분
-- 남은 작업: 관리대장 역할별 진입 UX, 시각 회귀 기준 확대
+- `RegisterNavigator`로 감리·시공사·발주처·설계자·관리자 역할별 추천 진입과 전체 29개 검색/그룹 진입 적용
+- 역할별 추천은 Presentation Preset으로만 사용하고 실제 Projection 데이터는 서버 읽기 권한 결과를 유지
+- 남은 작업: 시각 회귀 기준 확대

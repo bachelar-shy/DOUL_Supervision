@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  registerNavigationGroups,
+  roleRegisterEntries,
+} from "../app/register-navigation";
 import type { SupervisionClient } from "../data/supervision-client";
 import type { RegisterProjectionRow, Workspace } from "../data/ui-contract";
 import {
@@ -28,6 +31,7 @@ import { EmptyState, SectionHeader, StatusBadge } from "../ui";
 import {
   DetailDrawer,
   FilterBar,
+  RegisterNavigator,
   RegisterTable,
   type RegisterColumn,
 } from "../ui/catalog";
@@ -68,6 +72,10 @@ function sourceTypeOptionLabel(
   const source = definition.sources.find((item) => item.objectType === objectType);
   const subtype = source?.subtype ? ` / ${source.subtype}` : "";
   return `${registerSourceLabel(objectType)}${subtype}`;
+}
+
+function registerModeLabel(definition: RegisterProjectionDefinition) {
+  return definition.mode === "actionable" ? "업무 연결형" : "조회형";
 }
 
 function RegisterDetail({
@@ -168,7 +176,8 @@ export function RegisterPage({
   client: SupervisionClient;
   workspace: Workspace;
 }) {
-  const [registerId, setRegisterId] = useState("11");
+  const entrySpec = roleRegisterEntries[workspace.role.actorGroup];
+  const [registerId, setRegisterId] = useState(entrySpec.defaultRegisterId);
   const [rows, setRows] = useState<RegisterProjectionRow[]>([]);
   const [query, setQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState("all");
@@ -180,6 +189,29 @@ export function RegisterPage({
   const definition =
     registerProjectionCatalog.find((item) => item.id === registerId) ||
     registerProjectionCatalog[10];
+
+  const navigationItems = useMemo(() => {
+    const byId = new Map<string, RegisterProjectionDefinition>(
+      registerProjectionCatalog.map((item) => [item.id, item]),
+    );
+    const toItem = (id: string) => {
+      const item = byId.get(id);
+      return item
+        ? { id: item.id, name: item.name, modeLabel: registerModeLabel(item) }
+        : null;
+    };
+    return {
+      recommendedItems: entrySpec.recommendedRegisterIds
+        .map(toItem)
+        .filter((item): item is NonNullable<typeof item> => item !== null),
+      groups: registerNavigationGroups.map((group) => ({
+        ...group,
+        items: group.registerIds
+          .map(toItem)
+          .filter((item): item is NonNullable<typeof item> => item !== null),
+      })),
+    };
+  }, [entrySpec]);
 
   async function load() {
     const sequence = ++requestSequence.current;
@@ -384,34 +416,23 @@ export function RegisterPage({
         </div>
       }
     >
-      <div className="mb-3 flex flex-wrap items-end gap-3">
-        <label className="min-w-64 flex-1 md:max-w-md">
-          <span className="mb-1.5 block text-[10px] font-medium text-slate-500">
-            관리대장 선택
-          </span>
-          <Select value={registerId} onValueChange={changeRegister}>
-            <SelectTrigger
-              aria-label="관리대장 선택"
-              className="h-10 w-full bg-white text-xs"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper" align="start">
-              <SelectGroup>
-                {registerProjectionCatalog.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.id} · {item.name}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </label>
+      <RegisterNavigator
+        roleLabel={entrySpec.label}
+        roleDescription={entrySpec.description}
+        activeId={registerId}
+        recommendedItems={navigationItems.recommendedItems}
+        groups={navigationItems.groups}
+        onSelect={changeRegister}
+      />
 
-        <div className="min-w-0 text-[10px] leading-5 text-slate-400">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[10px] leading-5 text-slate-400">
+        <span className="font-medium text-slate-600">
+          현재 대장 · {definition.id} {definition.name}
+        </span>
+        <span>
           원본 {definition.sources.length}종 · 계산필드{" "}
-          {definition.calculatedFields.length}개
-        </div>
+          {definition.calculatedFields.length}개 · {registerModeLabel(definition)}
+        </span>
       </div>
 
       <FilterBar

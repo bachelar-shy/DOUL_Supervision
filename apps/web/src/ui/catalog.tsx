@@ -1,4 +1,4 @@
-import type { HTMLAttributes, ReactNode } from "react";
+import { useMemo, useState, type HTMLAttributes, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -183,6 +183,189 @@ export function FilterBar({
       {children}
       {actions ? <div className="ml-auto flex items-center gap-2">{actions}</div> : null}
     </div>
+  );
+}
+
+export interface RegisterNavigatorItem {
+  id: string;
+  name: string;
+  modeLabel: string;
+}
+
+export interface RegisterNavigatorGroup {
+  id: string;
+  label: string;
+  description?: string;
+  items: readonly RegisterNavigatorItem[];
+}
+
+export function RegisterNavigator({
+  roleLabel,
+  roleDescription,
+  activeId,
+  recommendedItems,
+  groups,
+  onSelect,
+}: {
+  roleLabel: string;
+  roleDescription: string;
+  activeId: string;
+  recommendedItems: readonly RegisterNavigatorItem[];
+  groups: readonly RegisterNavigatorGroup[];
+  onSelect: (id: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredGroups = useMemo(
+    () =>
+      groups
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) =>
+            `${item.id} ${item.name}`.toLowerCase().includes(normalizedQuery),
+          ),
+        }))
+        .filter((group) => group.items.length),
+    [groups, normalizedQuery],
+  );
+
+  function itemButton(item: RegisterNavigatorItem) {
+    const active = item.id === activeId;
+    return (
+      <button
+        key={item.id}
+        type="button"
+        aria-current={active ? "page" : undefined}
+        aria-label={`${item.id} ${item.name} 열기`}
+        className={cn(
+          "group grid min-h-14 w-full grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-2 rounded-sm border px-3 py-2.5 text-left transition-colors",
+          active
+            ? "border-primary bg-primary/5"
+            : "border-border bg-background hover:border-slate-300 hover:bg-slate-50",
+        )}
+        onClick={() => onSelect(item.id)}
+      >
+        <span
+          className={cn(
+            "font-mono text-[10px] font-semibold",
+            active ? "text-primary" : "text-slate-400",
+          )}
+        >
+          {item.id}
+        </span>
+        <span className="min-w-0">
+          <strong className="block truncate text-[11px] font-semibold text-slate-700">
+            {item.name}
+          </strong>
+          <small className="mt-0.5 block text-[9px] text-slate-400">
+            {item.modeLabel}
+          </small>
+        </span>
+        <ChevronRight
+          aria-hidden="true"
+          className={cn(
+            "size-4 shrink-0",
+            active ? "text-primary" : "text-slate-300 group-hover:text-slate-500",
+          )}
+        />
+      </button>
+    );
+  }
+
+  return (
+    <section
+      className="mb-4 overflow-hidden rounded-md border border-border bg-white"
+      data-ui-component="register-navigator"
+      data-role-preset={roleLabel}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border bg-slate-50 px-4 py-3">
+        <div>
+          <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-primary">
+            관리대장 진입
+          </span>
+          <h3 className="mt-1 text-sm font-semibold text-slate-800">
+            {roleLabel} 추천 · 전체 29개
+          </h3>
+          <p className="mt-1 max-w-2xl text-[10px] leading-5 text-slate-500">
+            {roleDescription}
+          </p>
+        </div>
+        <div className="rounded-sm border border-border bg-white px-2.5 py-2 text-[10px] text-slate-500">
+          추천은 진입 편의용 · 실제 조회 범위는 서버 권한 기준
+        </div>
+      </div>
+
+      <Tabs defaultValue="role" className="gap-0">
+        <TabsList
+          variant="line"
+          className="w-full justify-start gap-5 border-b border-border bg-background px-4 py-1"
+        >
+          <TabsTrigger value="role" className="min-h-11 flex-none px-1.5 text-xs">
+            내 역할 추천
+          </TabsTrigger>
+          <TabsTrigger value="all" className="min-h-11 flex-none px-1.5 text-xs">
+            전체 29개
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="role" className="m-0 p-4">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {recommendedItems.map(itemButton)}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="all" className="m-0">
+          <div className="border-b border-border p-3">
+            <label className="relative block">
+              <span className="sr-only">관리대장 빠른 찾기</span>
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="관리대장 이름 또는 번호 검색"
+                className="pl-9"
+              />
+            </label>
+          </div>
+          <div className="max-h-[420px] overflow-y-auto p-4">
+            {filteredGroups.length ? (
+              <div className="space-y-5">
+                {filteredGroups.map((group) => (
+                  <section key={group.id} aria-labelledby={`register-group-${group.id}`}>
+                    <div className="mb-2">
+                      <h4
+                        id={`register-group-${group.id}`}
+                        className="text-[11px] font-semibold text-slate-700"
+                      >
+                        {group.label}
+                        <span className="ml-1.5 font-normal text-slate-400">
+                          {group.items.length}개
+                        </span>
+                      </h4>
+                      {group.description ? (
+                        <p className="mt-0.5 text-[9px] leading-4 text-slate-400">
+                          {group.description}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                      {group.items.map(itemButton)}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <div className="py-10 text-center text-xs text-slate-400">
+                검색 결과가 없습니다.
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+    </section>
   );
 }
 

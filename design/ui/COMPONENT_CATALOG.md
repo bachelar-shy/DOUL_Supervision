@@ -34,6 +34,7 @@ Page / Template
 | `NavigationList` | 역할별 주 메뉴와 활성 상태, 배지 | Desktop AppShell |
 | `MobileNavigation` | 역할별 모바일 핵심 메뉴와 더보기 상태 | Mobile AppShell |
 | `FilterBar` | 검색·필터·도구의 표준 행 | 29개 관리대장 |
+| `RegisterNavigator` | 역할별 추천·전체 29개 검색/그룹 진입 | 29개 관리대장 |
 | `RegisterTable` | 관리대장 공통 표, sticky header | 29개 관리대장 / Admin 역할배정 |
 | `DetailPane` | Workbench 상세영역 | Inspection / Issue / Action / Owner / RFI |
 | `DetailDrawer` | 좁은 화면 및 관리대장 상세 Sheet | 29개 관리대장 |
@@ -84,6 +85,18 @@ Page / Template
 - 우측 action
 
 FilterBar 자체는 검색 결과를 계산하지 않는다.
+
+### RegisterNavigator
+
+29개 관리대장을 단일 긴 Select로 나열하지 않고 `내 역할 추천 / 전체 29개` 두 진입 방식으로 제공한다.
+
+- 역할별 추천은 **화면 진입 편의용 Presentation Preset**이며 권한 규칙이 아니다.
+- 실제 조회 가능 데이터는 기존 서버 `readable(...)` 검증 결과만 사용한다.
+- 29개 대장 정의는 생성된 `register-projection-catalog.generated.ts`를 기준으로 하며 UI가 대장 종류를 새로 만들지 않는다.
+- 전체 목록은 6개 업무 그룹으로 묶고 번호·이름 검색을 제공한다.
+- 역할별 최초 진입은 감리 11 / 시공사 11 / 발주처 22 / 설계자 13 / 관리자 03으로 구성한다.
+- 역할 추천 대장을 선택해도 상태·권한·Command는 변경하지 않는다.
+- 탭과 대장 선택 버튼은 모바일에서 44px 이상의 터치영역을 유지한다.
 
 ### RegisterTable
 
@@ -175,5 +188,4 @@ v1 첫 이전 범위:
 
 ## 다음 연결
 
-- 관리대장 역할별 진입 UX 정리
 - 시각 회귀 기준 이미지 정리
