@@ -13,7 +13,11 @@ import { MockSupervisionClient } from "./mock-supervision-client";
 
 export { ApiError };
 
-const safetyCollections: Record<string, string> = {
+const workflowCollections: Record<string, string> = {
+  schedule_baseline: "schedule-baselines",
+  schedule_progress: "schedule-progress-updates",
+  delay_event: "delay-events",
+  recovery_plan: "recovery-plans",
   safety_permit: "safety-permits",
   safety_stop_order: "safety-stop-orders",
   safety_equipment_inspection: "safety-equipment-inspections",
@@ -94,7 +98,7 @@ class HttpSupervisionClient implements SupervisionClient {
     evidenceIds?: string[],
     key?: string,
   ) {
-    const collection = safetyCollections[item.machine];
+    const collection = workflowCollections[item.machine];
     if (!collection) {
       return this.client.execute(item, command, payload, evidenceIds, key);
     }
@@ -118,7 +122,16 @@ class HttpSupervisionClient implements SupervisionClient {
   }
 
   create(machine: string, payload: object, clientObjectId?: string, key?: string) {
-    return this.client.create(machine, payload, clientObjectId, key);
+    const collection = workflowCollections[machine];
+    if (!collection) return this.client.create(machine, payload, clientObjectId, key);
+    const session = this.client.session;
+    if (!session) throw new Error("로그인이 필요합니다.");
+    return this.client.request<{ record: RecordDTO }>(this.client.path(`/${collection}`), {
+      method: "POST",
+      headers: { "Idempotency-Key": key || newKey() },
+      body: JSON.stringify({ roleAssignmentId: session.actor.roleAssignmentId,
+        clientObjectId: clientObjectId || newKey(), payload }),
+    });
   }
 
   upload(

@@ -19,6 +19,7 @@ import {
   OwnerGovernancePage,
   RegisterPage,
   SafetyPage,
+  SchedulePage,
   TodayPage,
   WorkbenchPage,
 } from "../pages";
@@ -376,6 +377,11 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   }}
                 />
               )}
+              {safeRoute === "schedule" && (
+                <SchedulePage client={client} workspace={workspace} selected={selected}
+                  current={current} online={online} onSelect={setSelected} refresh={refresh}
+                  onOpenCommand={(item, action) => setDialog({ item, action })} />
+              )}
               {safeRoute === "safety" && (
                 <SafetyPage
                   workspace={workspace}
@@ -396,7 +402,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   onOpenCommand={(item, action) => setDialog({ item, action })}
                 />
               )}
-              {!["owner", "safety"].includes(safeRoute) && machineForRoute[safeRoute] && (
+              {!["owner", "safety", "schedule"].includes(safeRoute) && machineForRoute[safeRoute] && (
                 <WorkbenchPage
                   route={safeRoute}
                   role={role}

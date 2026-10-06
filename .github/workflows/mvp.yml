@@ -31,7 +31,9 @@ jobs:
           python -m unittest discover -s tests -q
           .venv/bin/python -m unittest discover -s tests_mvp -v
       - name: UI and function boundary
-        run: npm run check:ui-boundary
+        run: |
+          npm run check:ui-boundary
+          python3 scripts/generate_schedule_ui.py --check
       - name: Typecheck and responsive web build
         run: |
           npm run typecheck
