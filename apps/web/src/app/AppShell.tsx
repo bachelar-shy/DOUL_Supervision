@@ -104,12 +104,13 @@ export function AppShell({ client }: { client: SupervisionClient }) {
     item: WorkItem,
     command: string,
     payload: Fields = {},
+    evidenceIds: string[] = [],
   ) {
     if (!online)
       throw new Error(
         "오프라인입니다. 공식 제출은 연결 복구 후 다시 확인하십시오.",
       );
-    await client.execute(item, command, payload);
+    await client.execute(item, command, payload, evidenceIds);
     setToast("서버에서 처리했습니다.");
     await refresh();
   }
@@ -418,8 +419,8 @@ export function AppShell({ client }: { client: SupervisionClient }) {
           dialog={dialog}
           workspace={workspace}
           onClose={() => setDialog(null)}
-          onSubmit={async (p) => {
-            await perform(dialog.item, dialog.action.command, p);
+          onSubmit={async (p, evidenceIds) => {
+            await perform(dialog.item, dialog.action.command, p, evidenceIds);
             setDialog(null);
           }}
         />

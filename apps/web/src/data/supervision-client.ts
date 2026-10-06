@@ -111,7 +111,7 @@ class HttpSupervisionClient implements SupervisionClient {
           roleAssignmentId: session.actor.roleAssignmentId,
           expectedVersion: item.record.version,
           payload,
-          evidenceIds: evidenceIds ?? item.record.evidenceIds ?? [],
+          evidenceIds: evidenceIds ?? [],
         }),
       },
     );

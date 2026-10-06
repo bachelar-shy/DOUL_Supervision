@@ -200,6 +200,17 @@ test("safety workspace keeps permit, stop, resume gate, and equipment states sep
             blockedReason: null,
             expectedVersion: 1,
           },
+          {
+            command: "lift_stop",
+            to: "lifted",
+            authority: "safety.stop_lift",
+            fields: [],
+            requiresEvidence: true,
+            ready: true,
+            requiresInput: false,
+            blockedReason: null,
+            expectedVersion: 1,
+          },
         ],
       },
       {
@@ -296,6 +307,47 @@ test("safety workspace keeps permit, stop, resume gate, and equipment states sep
   await expect.poll(() => commandBody?.expectedVersion).toBe(1);
   expect(commandBody.payload).toEqual({});
   expect(commandBody.evidenceIds).toEqual([]);
+
+  let evidenceCommandBody: any = null;
+  await page.route("**/safety-stop-orders/STOP-UI-CMD/lift-stop", async (route) => {
+    evidenceCommandBody = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        record: {
+          id: "STOP-UI-CMD",
+          projectId: "ignored",
+          version: 2,
+          subtype: "SafetyStopOrder",
+          status: "lifted",
+          data: {},
+        },
+      }),
+    });
+  });
+  await page
+    .locator('[data-ui-component="action-gate"]')
+    .getByRole("button", { name: "작업중지 해제", exact: true })
+    .click();
+  const evidenceDialog = page.getByRole("dialog");
+  await evidenceDialog
+    .getByRole("button", { name: "확인 후 실행", exact: true })
+    .click();
+  await expect(evidenceDialog.getByRole("alert")).toContainText(
+    "현재 단계의 증빙 ID가 필요합니다",
+  );
+  expect(evidenceCommandBody).toBeNull();
+  await evidenceDialog
+    .getByRole("textbox", { name: "명령 증빙 ID" })
+    .fill("EVD-COMMAND-001, EVD-COMMAND-002");
+  await evidenceDialog
+    .getByRole("button", { name: "확인 후 실행", exact: true })
+    .click();
+  await expect.poll(() => evidenceCommandBody?.evidenceIds).toEqual([
+    "EVD-COMMAND-001",
+    "EVD-COMMAND-002",
+  ]);
 
   await workspace.getByRole("tab", { name: "장비 안전검사", exact: true }).click();
   await page

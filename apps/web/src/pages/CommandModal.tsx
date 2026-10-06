@@ -76,7 +76,7 @@ export function CommandModal({
   dialog: { item: WorkItem; action: CommandDescriptor };
   workspace: Workspace;
   onClose: () => void;
-  onSubmit: (p: Fields) => Promise<void>;
+  onSubmit: (p: Fields, evidenceIds: string[]) => Promise<void>;
 }) {
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -88,6 +88,7 @@ export function CommandModal({
   );
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [evidenceText, setEvidenceText] = useState("");
   const title = commands[dialog.action.command] || dialog.action.command;
   async function submit() {
     setBusy(true);
@@ -104,7 +105,15 @@ export function CommandModal({
             ? (JSON.parse(v) as Json)
             : v;
       }
-      await onSubmit(payload);
+      const evidenceIds = evidenceText
+        .split(/[\s,]+/)
+        .map((value) => value.trim())
+        .filter(Boolean);
+      const uniqueEvidenceIds = [...new Set(evidenceIds)];
+      if (dialog.action.requiresEvidence && !uniqueEvidenceIds.length) {
+        throw new Error("이 명령에는 현재 단계의 증빙 ID가 필요합니다.");
+      }
+      await onSubmit(payload, uniqueEvidenceIds);
     } catch (e) {
       setErr(
         e instanceof ApiError
@@ -201,6 +210,23 @@ export function CommandModal({
             </label>
           ))}
         </div>
+        {dialog.action.requiresEvidence ? (
+          <div className="modal-fields">
+            <label>
+              명령 증빙 ID
+              <textarea
+                rows={2}
+                value={evidenceText}
+                onChange={(e) => setEvidenceText(e.target.value)}
+                placeholder="예: EVD-001, EVD-002"
+                aria-label="명령 증빙 ID"
+              />
+              <span className="muted">
+                이 명령 단계의 근거를 명시하십시오. 기존 기록의 증빙은 자동 재사용하지 않습니다.
+              </span>
+            </label>
+          </div>
+        ) : null}
         {!dialog.action.fields.length && (
           <div className="notice">
             이 동작은 서버에 기록됩니다. 근거와 현재 상태를 확인한 뒤
