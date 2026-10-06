@@ -1,0 +1,78 @@
+{
+  "version": "1.0",
+  "source": "31_Schedule_Delay_Recovery_Functional_Contract.md",
+  "schedule_kinds": {
+    "baseline": {
+      "machine": "schedule_baseline",
+      "meaning": "approved comparison basis; forecast updates never mutate it"
+    },
+    "progress_update": {
+      "machine": "schedule_progress",
+      "meaning": "actual/forecast snapshot at one Data Date"
+    },
+    "recovery": {
+      "machine": null,
+      "meaning": "exact supporting Schedule referenced by RecoveryPlan"
+    },
+    "lookahead": {
+      "machine": null,
+      "meaning": "supporting short-horizon schedule; not a baseline"
+    }
+  },
+  "baseline_activation": {
+    "atomic": true,
+    "single_effective_per_scope": true,
+    "scope_fields": [
+      "projectId",
+      "packageId",
+      "discipline"
+    ],
+    "revision_requires_approved_basis_after_first_baseline": true,
+    "effects": [
+      "activate exact approved Schedule version",
+      "supersede prior effective baseline without deletion",
+      "preserve exact supersedesRef and revisionBasisRef"
+    ]
+  },
+  "progress_freeze": {
+    "content_immutable_after_frozen": true,
+    "correction_requires_new_schedule_record": true,
+    "data_date_must_not_move_backward": true,
+    "same_data_date_requires_correction_reason": true,
+    "forecast_never_rewrites_baseline": true,
+    "replacement_supersedes_prior_snapshot_only_after_new_snapshot_is_frozen": true
+  },
+  "delay_boundary": {
+    "delay_event_is_fact_not_entitlement": true,
+    "threshold_is_trigger_not_liability_decision": true,
+    "delay_close_does_not_close_claim_or_eot": true
+  },
+  "recovery_boundary": {
+    "accepted_recovery_does_not_revise_baseline": true,
+    "accepted_recovery_does_not_approve_eot_or_cost": true,
+    "quality_or_safety_standard_relaxation_forbidden": true,
+    "ineffective_completion_requires_followup_or_contract_track": true
+  },
+  "activity_boundary": {
+    "percent_complete_100_does_not_change_inspection_or_handover": true,
+    "activity_is_exact_schedule_version_snapshot": true
+  },
+  "server_managed_timestamps": [
+    "submittedAt",
+    "reviewedAt",
+    "acceptedAt",
+    "effectiveAt",
+    "frozenAt",
+    "notifiedAt",
+    "assessmentStartedAt",
+    "impactAnalysisStartedAt",
+    "mitigationStartedAt",
+    "monitoringStartedAt",
+    "resolvedAt",
+    "transferredAt",
+    "closedAt",
+    "requestedAt",
+    "activatedAt",
+    "completedAt"
+  ]
+}

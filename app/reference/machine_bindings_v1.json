@@ -53,6 +53,22 @@
     "safety_equipment_inspection": {
       "collection": "safety-equipment-inspections",
       "create_authority": "safety.equipment.create"
+    },
+    "schedule_baseline": {
+      "collection": "schedule-baselines",
+      "create_authority": "schedule.baseline.create"
+    },
+    "schedule_progress": {
+      "collection": "schedule-progress-updates",
+      "create_authority": "schedule.progress.submit"
+    },
+    "delay_event": {
+      "collection": "delay-events",
+      "create_authority": "schedule.delay.create"
+    },
+    "recovery_plan": {
+      "collection": "recovery-plans",
+      "create_authority": "schedule.recovery.request"
     }
   }
 }

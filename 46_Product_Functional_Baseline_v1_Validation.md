@@ -174,6 +174,29 @@ Baseline v1.0은 다음 항목을 모두 검증해 PASS로 확정한다.
 
 이 변경은 F-03의 업무 의미를 새로 만드는 것이 아니라 이미 확정된 Safety 상세정의를 State/Authority/Schema/API 실행계약으로 구조화한 것이다. Backend는 이 계약을 소비하며 별도 상태·권한 의미를 재정의하지 않는다.
 
+### 11.4 F-04 Schedule 실행계약 승격 검증
+
+`31_Schedule_Delay_Recovery_Functional_Contract.md`의 상세정의를 실행 가능한 Product Contract로 구조화했다.
+
+- Typed data: Schedule / ScheduleActivity / DelayEvent / DelayImpactAnalysis / RecoveryPlan
+- State Machine: `schedule_baseline`, `schedule_progress`, `delay_event`, `recovery_plan`
+- Authority: `schedule.*` 정책
+- Baseline: exact approved version만 effective, 이전 effective Baseline은 삭제 없이 superseded
+- Progress: frozen Snapshot 불변, 정정은 새 record + reason + supersedes chain
+- Data Date: 역행 금지, 동일 Data Date는 explicit correction만 허용
+- Forecast는 Baseline을 변경하지 않음
+- Delay Event는 사실/영향 기록이며 EOT entitlement 판정이 아님
+- Recovery acceptance/execution은 Baseline revision·EOT·Cost 승인이 아님
+- Schedule Activity 100%는 Inspection/Handover 상태를 변경하지 않음
+- Contract validator: PASS — 17 machines / 224 transitions / 112 policies / 29 registers / 36 forms / 218 API operations
+- Schedule execution contract tests: 10 PASS
+- Core tests: 156 PASS
+- HTTP/Application tests: 174 run — 171 PASS, 3 PostgreSQL live-integration tests skipped locally when DSN is absent
+- OpenAPI / TypeScript / Web register catalog: current
+- `git diff --check`: PASS
+
+이 변경은 F-04의 업무 의미를 새로 만드는 것이 아니라 이미 확정된 Schedule/Delay/Recovery 상세정의를 State/Authority/Schema/API 실행계약으로 구조화한 것이다. Backend B-P3 구현 인수 전까지 F-04 진척단계는 `contract_confirmed`로 유지한다.
+
 ## 12. 다음 단계
 
 Baseline v1.0 이후는 Product 의미를 임의 확장하지 않고 다음 원칙으로 진행한다.
