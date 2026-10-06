@@ -1,0 +1,81 @@
+name: platform-postgres-backup
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/platform-postgres-backup.yml"
+      - "infra/backup/**"
+      - "infra/compose/compose.dev.yml"
+      - "infra/docker/postgres-dev.Dockerfile"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/platform-postgres-backup.yml"
+      - "infra/backup/**"
+      - "infra/compose/compose.dev.yml"
+      - "infra/docker/postgres-dev.Dockerfile"
+
+permissions:
+  contents: read
+
+jobs:
+  clean-restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Validate scripts and isolated safety regressions
+        run: |
+          sh -n infra/backup/postgres_backup.sh
+          sh -n infra/backup/postgres_restore_clean.sh
+          python3 infra/backup/test_postgres_backup.py -v
+          docker compose -f infra/compose/compose.dev.yml config --quiet
+
+      - name: Start PostgreSQL
+        run: |
+          docker compose -f infra/compose/compose.dev.yml \
+            up -d --build --wait --wait-timeout 60 postgres
+
+      - name: Seed backup source database
+        run: |
+          docker compose -f infra/compose/compose.dev.yml exec -T postgres \
+            sh -ec '
+              dropdb --if-exists -U "$POSTGRES_USER" doul_backup_probe
+              createdb -T template0 -U "$POSTGRES_USER" doul_backup_probe
+              psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d doul_backup_probe \
+                -c "CREATE TABLE platform_restore_probe (id integer PRIMARY KEY, payload text NOT NULL);" \
+                -c "INSERT INTO platform_restore_probe (id, payload) VALUES (1, '"'"'snapshot-v1'"'"');"
+            '
+
+      - name: Create and verify private backup
+        run: |
+          install -d -m 700 /tmp/doul-backup
+          infra/backup/postgres_backup.sh \
+            doul_backup_probe \
+            /tmp/doul-backup/probe.dump
+          test -s /tmp/doul-backup/probe.dump
+          test -s /tmp/doul-backup/probe.dump.sha256
+          expected="$(cat /tmp/doul-backup/probe.dump.sha256)"
+          actual="$(sha256sum /tmp/doul-backup/probe.dump | awk '{print $1}')"
+          test "$expected" = "$actual"
+
+      - name: Restore into new clean database
+        run: |
+          infra/backup/postgres_restore_clean.sh \
+            /tmp/doul-backup/probe.dump \
+            doul_restore_probe
+          restored="$(docker compose -f infra/compose/compose.dev.yml exec -T postgres \
+            sh -ec 'psql -At -U "$POSTGRES_USER" -d doul_restore_probe -c "SELECT payload FROM platform_restore_probe WHERE id=1"')"
+          test "$restored" = "snapshot-v1"
+
+      - name: Verify live archive rejection and existing database preservation
+        run: python3 infra/backup/test_postgres_restore_live.py /tmp/doul-backup/probe.dump
+
+      - name: PostgreSQL logs
+        if: failure()
+        run: docker compose -f infra/compose/compose.dev.yml logs --no-color postgres
+
+      - name: Stop PostgreSQL
+        if: always()
+        run: docker compose -f infra/compose/compose.dev.yml down -v --remove-orphans
