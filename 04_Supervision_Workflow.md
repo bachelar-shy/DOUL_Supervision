@@ -188,9 +188,27 @@ Nghị định 207/2026/NĐ-CP 제28조에 따라 완료서류는 베트남어�
 
 ## 18. 연결문서
 
-- 01_Regulatory_Requirement_Matrix.md
-- 02_Supervision_Staffing_Matrix.md
-- 03_Roles_Responsibilities_Approval_Matrix.md
-- 04A_Vietnam_Mandatory_Documents_Forms.md
-- 향후 05_Registers_Data_Model.md
-- 향후 06_Inspection_Test_Plan.md
+- `01_Regulatory_Requirement_Matrix.md`
+- `02_Supervision_Staffing_Matrix.md`
+- `03_Roles_Responsibilities_Approval_Matrix.md`
+- `04A_Vietnam_Mandatory_Documents_Forms.md`
+- `06_Inspection_Test_Plan.md`
+- `17_Domain_State_Authority_Model.md`
+- `26_Product_Functional_Map_v1.md`
+- `30_Safety_Permit_Stop_Resume_Functional_Contract.md`
+- `31_Schedule_Delay_Recovery_Functional_Contract.md`
+- `32_Progress_Measurement_Payment_Functional_Contract.md`
+- `33_Fire_Environment_Compliance_Functional_Contract.md`
+- `34_Commissioning_Handover_Warranty_Functional_Contract.md`
+- `35_Contract_Notice_Claim_EOT_Functional_Contract.md`
+- `36_Regulatory_Permit_Lifecycle_Functional_Contract.md`
+- `37_Site_Instruction_Functional_Contract.md`
+- `38_Risk_Assurance_Audit_Functional_Contract.md`
+- `39_Insurance_Guarantee_Functional_Contract.md`
+- `40_Lesson_Learned_Functional_Contract.md`
+- `41_Document_Transmittal_Functional_Contract.md`
+- `42_Personnel_Qualification_Deployment_Functional_Contract.md`
+- `43_Drawing_Revision_Field_Distribution_Functional_Contract.md`
+- `44_Daily_Record_Evidence_Functional_Contract.md`
+- `45_Role_End_to_End_Journeys_v1.md`
+- `46_Product_Functional_Baseline_v1_Validation.md`

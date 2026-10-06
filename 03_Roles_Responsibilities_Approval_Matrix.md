@@ -344,8 +344,11 @@ DOUL 내부의 프로젝트 총괄 역할이다.
 
 본 문서는 다음 문서와 연계한다.
 
-- 01_Regulatory_Requirement_Matrix.md
-- 02_Supervision_Staffing_Matrix.md
-- 향후 04_Supervision_Workflow.md
-- 향후 05_Registers_Data_Model.md
-- 향후 06_Inspection_Test_Plan.md
+- `01_Regulatory_Requirement_Matrix.md`
+- `02_Supervision_Staffing_Matrix.md`
+- `04_Supervision_Workflow.md`
+- `06_Inspection_Test_Plan.md`
+- `17_Domain_State_Authority_Model.md`
+- `26_Product_Functional_Map_v1.md`
+- `45_Role_End_to_End_Journeys_v1.md`
+- `46_Product_Functional_Baseline_v1_Validation.md`
