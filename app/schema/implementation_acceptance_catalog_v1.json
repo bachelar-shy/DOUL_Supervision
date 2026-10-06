@@ -1,0 +1,203 @@
+{
+  "version": "1.0",
+  "baselineVersion": "1.0",
+  "stages": [
+    "contract_confirmed",
+    "backend_api_implemented",
+    "ui_connected",
+    "integration_passed",
+    "pilot_verified"
+  ],
+  "scenarios": [
+    {
+      "id": "AC-Q-01",
+      "domain": "quality",
+      "kind": "e2e",
+      "expected": [
+        "Issue requires current-cycle closure evidence",
+        "Reinspection precedes Issue close"
+      ],
+      "forbidden": [
+        "contractor self-close",
+        "Owner Report auto-close"
+      ],
+      "ownerReportingCheck": true
+    },
+    {
+      "id": "AC-S-01",
+      "domain": "safety",
+      "kind": "e2e",
+      "expected": [
+        "Explicit Stop lift required before resume",
+        "workAuthorized recalculated"
+      ],
+      "forbidden": [
+        "Permit authorization equals workAuthorized",
+        "Issue close auto-resumes work"
+      ],
+      "ownerReportingCheck": true
+    },
+    {
+      "id": "AC-SCH-01",
+      "domain": "schedule",
+      "kind": "e2e",
+      "expected": [
+        "Baseline remains immutable",
+        "Approved EOT triggers new baseline version"
+      ],
+      "forbidden": [
+        "Forecast overwrites baseline",
+        "DelayEvent implies EOT"
+      ],
+      "ownerReportingCheck": true
+    },
+    {
+      "id": "AC-PAY-01",
+      "domain": "payment",
+      "kind": "e2e",
+      "expected": [
+        "Claimed/verified/recommended/approved/paid remain separate"
+      ],
+      "forbidden": [
+        "Recommendation equals payment approval",
+        "Approval equals payment"
+      ],
+      "ownerReportingCheck": true
+    },
+    {
+      "id": "AC-HO-01",
+      "domain": "handover",
+      "kind": "e2e",
+      "expected": [
+        "Commissioning/Handover/Warranty remain separate"
+      ],
+      "forbidden": [
+        "Test pass equals handover",
+        "Handover equals warranty close"
+      ],
+      "ownerReportingCheck": true
+    },
+    {
+      "id": "AC-MEDIA-01",
+      "domain": "media",
+      "kind": "e2e",
+      "expected": [
+        "Coverage and Human Review preserved",
+        "Only eligible confirmed observations can issue"
+      ],
+      "forbidden": [
+        "no_findings equals pass",
+        "speech-only candidate issues official Issue"
+      ],
+      "ownerReportingCheck": false
+    },
+    {
+      "id": "AC-AUTH-01",
+      "domain": "authority",
+      "kind": "security",
+      "expected": [
+        "Cross-project command denied"
+      ],
+      "forbidden": [
+        "cross-project object access"
+      ],
+      "ownerReportingCheck": false
+    },
+    {
+      "id": "AC-QUAL-01",
+      "domain": "authority",
+      "kind": "security",
+      "expected": [
+        "Expired qualification blocks future official command"
+      ],
+      "forbidden": [
+        "retroactive invalidation of historical signature"
+      ],
+      "ownerReportingCheck": false
+    },
+    {
+      "id": "AC-ADM-01",
+      "domain": "authority",
+      "kind": "security",
+      "expected": [
+        "ADM technical decision denied"
+      ],
+      "forbidden": [
+        "ADM technical approval"
+      ],
+      "ownerReportingCheck": false
+    },
+    {
+      "id": "AC-VERSION-01",
+      "domain": "cross-cutting",
+      "kind": "concurrency",
+      "expected": [
+        "Stale expectedVersion rejected"
+      ],
+      "forbidden": [
+        "last-write-wins"
+      ],
+      "ownerReportingCheck": false
+    },
+    {
+      "id": "AC-IDEMP-01",
+      "domain": "cross-cutting",
+      "kind": "concurrency",
+      "expected": [
+        "Repeated Idempotency-Key returns stable result"
+      ],
+      "forbidden": [
+        "duplicate official record"
+      ],
+      "ownerReportingCheck": false
+    },
+    {
+      "id": "AC-STORE-01",
+      "domain": "evidence",
+      "kind": "failure",
+      "expected": [
+        "Storage failure prevents successful domain finalization"
+      ],
+      "forbidden": [
+        "DB success with lost required blob"
+      ],
+      "ownerReportingCheck": false
+    },
+    {
+      "id": "AC-WORKER-01",
+      "domain": "media",
+      "kind": "failure",
+      "expected": [
+        "Restart preserves at-most-one logical result and explicit retry/failure"
+      ],
+      "forbidden": [
+        "heartbeat interpreted as completed analysis"
+      ],
+      "ownerReportingCheck": false
+    },
+    {
+      "id": "AC-REPORT-01",
+      "domain": "owner-governance",
+      "kind": "e2e",
+      "expected": [
+        "Report remains open until linked Decision/Action verified"
+      ],
+      "forbidden": [
+        "Domain close auto-closes report"
+      ],
+      "ownerReportingCheck": true
+    },
+    {
+      "id": "AC-OFFLINE-01",
+      "domain": "mobile",
+      "kind": "failure",
+      "expected": [
+        "Conflict is surfaced for human resolution"
+      ],
+      "forbidden": [
+        "silent overwrite"
+      ],
+      "ownerReportingCheck": false
+    }
+  ]
+}
