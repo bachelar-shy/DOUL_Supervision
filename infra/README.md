@@ -18,6 +18,9 @@ The application boundary remains unchanged in this phase:
 
 - when the Backend PostgreSQL snapshot adapter is present and `DATABASE_URL`
   is configured, the Compose API uses PostgreSQL for snapshot state and blobs
+- when the Backend PostgreSQL adapter is not yet present, the development
+  entrypoint safely keeps the SQLite fallback even if `DATABASE_URL` is configured;
+  once the adapter is present, the same configuration selects PostgreSQL
 - when `DATABASE_URL` is empty, the existing SQLite development adapter remains
   available for direct local/test fallback
 - the Compose API waits for the PostgreSQL healthcheck before starting
@@ -101,7 +104,9 @@ OBJECT_STORAGE_REGION
 
 These values describe how Backend adapters reach the services from inside
 Compose. `DATABASE_URL` selects the PostgreSQL snapshot adapter when that
-Backend adapter is available; leaving it empty preserves the SQLite fallback.
+Backend adapter is available. Before that adapter lands, the development
+entrypoint keeps the SQLite fallback so the Platform change can be integrated
+independently; leaving `DATABASE_URL` empty also preserves the SQLite fallback.
 
 ## Verify data services
 

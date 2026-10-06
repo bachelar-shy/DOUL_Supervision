@@ -25,15 +25,21 @@ port = int(os.getenv("DOUL_API_PORT", "8791"))
 log_level = os.getenv("DOUL_API_LOG_LEVEL", "info")
 
 if database_url:
-    try:
-        from services.api.persistence import create_postgres_persistence
-    except ImportError as exc:
-        raise SystemExit(
+    from services.api import persistence as persistence_module
+
+    create_postgres_persistence = getattr(
+        persistence_module, "create_postgres_persistence", None
+    )
+    if create_postgres_persistence is not None:
+        persistence = create_postgres_persistence(database_url, demo=True)
+        app = create_app(demo=True, persistence=persistence)
+    else:
+        print(
             "DATABASE_URL is configured but the Backend PostgreSQL adapter "
-            "is not available in this revision."
-        ) from exc
-    persistence = create_postgres_persistence(database_url, demo=True)
-    app = create_app(demo=True, persistence=persistence)
+            "is not available in this revision; using the SQLite development fallback."
+        )
+        Path(database).parent.mkdir(parents=True, exist_ok=True)
+        app = create_app(database, demo=True)
 else:
     Path(database).parent.mkdir(parents=True, exist_ok=True)
     app = create_app(database, demo=True)
