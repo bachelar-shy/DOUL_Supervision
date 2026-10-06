@@ -30,7 +30,8 @@
       "Manual",
       "GeneralDocument",
       "Schedule",
-      "ContractBOQ"
+      "ContractBOQ",
+      "DailyRecord"
     ],
     "Asset": [
       "BuildingElement",
@@ -67,7 +68,13 @@
       "ContractNotice",
       "InsuranceGuarantee",
       "ComplianceAudit",
-      "Lesson"
+      "Lesson",
+      "FireCompliance",
+      "Claim",
+      "EOTRequest",
+      "RegulatoryPermit",
+      "DocumentTransmittal",
+      "PersonnelDeployment"
     ],
     "Issue": [
       "Defect",

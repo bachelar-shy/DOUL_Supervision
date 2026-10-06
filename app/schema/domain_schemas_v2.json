@@ -1136,7 +1136,8 @@
               "Manual",
               "GeneralDocument",
               "Schedule",
-              "ContractBOQ"
+              "ContractBOQ",
+              "DailyRecord"
             ]
           },
           "title": {
@@ -2063,7 +2064,13 @@
               "ContractNotice",
               "InsuranceGuarantee",
               "ComplianceAudit",
-              "Lesson"
+              "Lesson",
+              "FireCompliance",
+              "Claim",
+              "EOTRequest",
+              "RegulatoryPermit",
+              "DocumentTransmittal",
+              "PersonnelDeployment"
             ]
           },
           "status": {

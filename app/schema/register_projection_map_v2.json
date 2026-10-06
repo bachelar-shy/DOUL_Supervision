@@ -13,6 +13,14 @@
         {
           "object_type": "InformationItem",
           "subtype": "GeneralDocument"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "RegulatoryPermit"
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
         }
       ],
       "join_relations": [
@@ -130,6 +138,10 @@
         {
           "object_type": "Qualification",
           "subtype": null
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "PersonnelDeployment"
         }
       ],
       "join_relations": [
@@ -201,6 +213,18 @@
         {
           "object_type": "InformationItem",
           "subtype": "Drawing"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "DocumentTransmittal"
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "ChangeRequest"
         }
       ],
       "join_relations": [
@@ -257,6 +281,10 @@
         {
           "object_type": "Notification",
           "subtype": null
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "DocumentTransmittal"
         }
       ],
       "join_relations": [
@@ -1626,6 +1654,18 @@
         {
           "object_type": "DocumentSnapshot",
           "subtype": null
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "FireCompliance"
+        },
+        {
+          "object_type": "Issue",
+          "subtype": "Fire"
+        },
+        {
+          "object_type": "Approval",
+          "subtype": null
         }
       ],
       "join_relations": [
@@ -1730,6 +1770,14 @@
         {
           "object_type": "Issue",
           "subtype": "Environmental"
+        },
+        {
+          "object_type": "Inspection",
+          "subtype": null
+        },
+        {
+          "object_type": "Evidence",
+          "subtype": null
         }
       ],
       "join_relations": [
@@ -1966,6 +2014,10 @@
         {
           "object_type": "InformationItem",
           "subtype": "Report"
+        },
+        {
+          "object_type": "InformationItem",
+          "subtype": "DailyRecord"
         }
       ],
       "join_relations": [
@@ -2247,6 +2299,18 @@
         {
           "object_type": "Decision",
           "subtype": null
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "Claim"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "EOTRequest"
+        },
+        {
+          "object_type": "WorkItem",
+          "subtype": "DelayEvent"
         }
       ],
       "join_relations": [

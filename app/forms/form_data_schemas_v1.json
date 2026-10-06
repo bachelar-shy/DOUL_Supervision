@@ -2114,6 +2114,698 @@
       ],
       "legal_mode": "doul_internal",
       "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"
+    },
+    "FM-27": {
+      "scalar_fields": {
+        "project.name": {
+          "type": "string",
+          "required": true,
+          "label_key": "project.name"
+        },
+        "fire.system": {
+          "type": "string",
+          "required": true,
+          "label_key": "fire.system"
+        },
+        "fire.location": {
+          "type": "string",
+          "required": true,
+          "label_key": "fire.location"
+        },
+        "fire.stage": {
+          "type": "string",
+          "required": true,
+          "label_key": "fire.stage"
+        },
+        "fire.design_approval": {
+          "type": "string",
+          "required": true,
+          "label_key": "fire.design_approval"
+        },
+        "fire.test_status": {
+          "type": "string",
+          "required": true,
+          "label_key": "fire.test_status"
+        },
+        "fire.acceptance": {
+          "type": "string",
+          "required": true,
+          "label_key": "fire.acceptance"
+        },
+        "fire.issue_status": {
+          "type": "string",
+          "required": true,
+          "label_key": "fire.issue_status"
+        }
+      },
+      "tables": [
+        {
+          "path": "items",
+          "columns": [
+            "requirement",
+            "source",
+            "status",
+            "note"
+          ],
+          "type": "repeat_table"
+        }
+      ],
+      "signature_roles": [
+        "fire_reviewer",
+        "chief_supervisor"
+      ],
+      "conditional_signatures": [],
+      "final_required_fields": [
+        "project.name",
+        "fire.system",
+        "fire.location",
+        "fire.stage",
+        "fire.design_approval",
+        "fire.test_status",
+        "fire.acceptance",
+        "fire.issue_status"
+      ],
+      "legal_mode": "doul_internal",
+      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"
+    },
+    "FM-28": {
+      "scalar_fields": {
+        "project.name": {
+          "type": "string",
+          "required": true,
+          "label_key": "project.name"
+        },
+        "environment.condition": {
+          "type": "string",
+          "required": true,
+          "label_key": "environment.condition"
+        },
+        "environment.monitoring_date": {
+          "type": "string",
+          "required": true,
+          "label_key": "environment.monitoring_date"
+        },
+        "environment.result": {
+          "type": "string",
+          "required": true,
+          "label_key": "environment.result"
+        },
+        "environment.criterion": {
+          "type": "string",
+          "required": true,
+          "label_key": "environment.criterion"
+        },
+        "environment.status": {
+          "type": "string",
+          "required": true,
+          "label_key": "environment.status"
+        },
+        "environment.action": {
+          "type": "string",
+          "required": true,
+          "label_key": "environment.action"
+        }
+      },
+      "tables": [
+        {
+          "path": "items",
+          "columns": [
+            "point",
+            "method",
+            "result",
+            "criterion",
+            "status"
+          ],
+          "type": "repeat_table"
+        }
+      ],
+      "signature_roles": [
+        "environment_reviewer",
+        "chief_supervisor"
+      ],
+      "conditional_signatures": [],
+      "final_required_fields": [
+        "project.name",
+        "environment.condition",
+        "environment.monitoring_date",
+        "environment.result",
+        "environment.criterion",
+        "environment.status",
+        "environment.action"
+      ],
+      "legal_mode": "doul_internal",
+      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"
+    },
+    "FM-29": {
+      "scalar_fields": {
+        "project.name": {
+          "type": "string",
+          "required": true,
+          "label_key": "project.name"
+        },
+        "contract.event": {
+          "type": "string",
+          "required": true,
+          "label_key": "contract.event"
+        },
+        "contract.notice_no": {
+          "type": "string",
+          "required": true,
+          "label_key": "contract.notice_no"
+        },
+        "contract.notice_due": {
+          "type": "string",
+          "required": true,
+          "label_key": "contract.notice_due"
+        },
+        "contract.claim_status": {
+          "type": "string",
+          "required": true,
+          "label_key": "contract.claim_status"
+        },
+        "contract.time_impact": {
+          "type": "string",
+          "required": true,
+          "label_key": "contract.time_impact"
+        },
+        "contract.cost_impact": {
+          "type": "string",
+          "required": true,
+          "label_key": "contract.cost_impact"
+        },
+        "contract.recommendation": {
+          "type": "string",
+          "required": true,
+          "label_key": "contract.recommendation"
+        }
+      },
+      "tables": [
+        {
+          "path": "items",
+          "columns": [
+            "event",
+            "notice",
+            "evidence",
+            "assessment",
+            "decision"
+          ],
+          "type": "repeat_table"
+        }
+      ],
+      "signature_roles": [
+        "contract_reviewer",
+        "chief_supervisor"
+      ],
+      "conditional_signatures": [],
+      "final_required_fields": [
+        "project.name",
+        "contract.event",
+        "contract.notice_no",
+        "contract.notice_due",
+        "contract.claim_status",
+        "contract.time_impact",
+        "contract.cost_impact",
+        "contract.recommendation"
+      ],
+      "legal_mode": "doul_internal",
+      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"
+    },
+    "FM-30": {
+      "scalar_fields": {
+        "project.name": {
+          "type": "string",
+          "required": true,
+          "label_key": "project.name"
+        },
+        "permit.type": {
+          "type": "string",
+          "required": true,
+          "label_key": "permit.type"
+        },
+        "permit.authority": {
+          "type": "string",
+          "required": true,
+          "label_key": "permit.authority"
+        },
+        "permit.status": {
+          "type": "string",
+          "required": true,
+          "label_key": "permit.status"
+        },
+        "permit.submitted_at": {
+          "type": "string",
+          "required": true,
+          "label_key": "permit.submitted_at"
+        },
+        "permit.valid_to": {
+          "type": "string",
+          "required": true,
+          "label_key": "permit.valid_to"
+        },
+        "permit.condition": {
+          "type": "string",
+          "required": true,
+          "label_key": "permit.condition"
+        }
+      },
+      "tables": [
+        {
+          "path": "items",
+          "columns": [
+            "requirement",
+            "submission",
+            "response",
+            "condition",
+            "status"
+          ],
+          "type": "repeat_table"
+        }
+      ],
+      "signature_roles": [
+        "permit_reviewer",
+        "chief_supervisor"
+      ],
+      "conditional_signatures": [],
+      "final_required_fields": [
+        "project.name",
+        "permit.type",
+        "permit.authority",
+        "permit.status",
+        "permit.submitted_at",
+        "permit.valid_to",
+        "permit.condition"
+      ],
+      "legal_mode": "doul_internal",
+      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"
+    },
+    "FM-31": {
+      "scalar_fields": {
+        "project.name": {
+          "type": "string",
+          "required": true,
+          "label_key": "project.name"
+        },
+        "assurance.type": {
+          "type": "string",
+          "required": true,
+          "label_key": "assurance.type"
+        },
+        "assurance.scope": {
+          "type": "string",
+          "required": true,
+          "label_key": "assurance.scope"
+        },
+        "assurance.risk_rating": {
+          "type": "string",
+          "required": true,
+          "label_key": "assurance.risk_rating"
+        },
+        "assurance.finding": {
+          "type": "string",
+          "required": true,
+          "label_key": "assurance.finding"
+        },
+        "assurance.action": {
+          "type": "string",
+          "required": true,
+          "label_key": "assurance.action"
+        },
+        "assurance.verification": {
+          "type": "string",
+          "required": true,
+          "label_key": "assurance.verification"
+        }
+      },
+      "tables": [
+        {
+          "path": "items",
+          "columns": [
+            "item",
+            "owner",
+            "due",
+            "status",
+            "evidence"
+          ],
+          "type": "repeat_table"
+        }
+      ],
+      "signature_roles": [
+        "assurance_reviewer",
+        "chief_supervisor"
+      ],
+      "conditional_signatures": [],
+      "final_required_fields": [
+        "project.name",
+        "assurance.type",
+        "assurance.scope",
+        "assurance.risk_rating",
+        "assurance.finding",
+        "assurance.action",
+        "assurance.verification"
+      ],
+      "legal_mode": "doul_internal",
+      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"
+    },
+    "FM-32": {
+      "scalar_fields": {
+        "project.name": {
+          "type": "string",
+          "required": true,
+          "label_key": "project.name"
+        },
+        "guarantee.type": {
+          "type": "string",
+          "required": true,
+          "label_key": "guarantee.type"
+        },
+        "guarantee.issuer": {
+          "type": "string",
+          "required": true,
+          "label_key": "guarantee.issuer"
+        },
+        "guarantee.no": {
+          "type": "string",
+          "required": true,
+          "label_key": "guarantee.no"
+        },
+        "guarantee.amount": {
+          "type": "string",
+          "required": true,
+          "label_key": "guarantee.amount"
+        },
+        "guarantee.valid_to": {
+          "type": "string",
+          "required": true,
+          "label_key": "guarantee.valid_to"
+        },
+        "guarantee.status": {
+          "type": "string",
+          "required": true,
+          "label_key": "guarantee.status"
+        }
+      },
+      "tables": [
+        {
+          "path": "items",
+          "columns": [
+            "requirement",
+            "value",
+            "status",
+            "note"
+          ],
+          "type": "repeat_table"
+        }
+      ],
+      "signature_roles": [
+        "contract_reviewer",
+        "chief_supervisor"
+      ],
+      "conditional_signatures": [],
+      "final_required_fields": [
+        "project.name",
+        "guarantee.type",
+        "guarantee.issuer",
+        "guarantee.no",
+        "guarantee.amount",
+        "guarantee.valid_to",
+        "guarantee.status"
+      ],
+      "legal_mode": "doul_internal",
+      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"
+    },
+    "FM-33": {
+      "scalar_fields": {
+        "project.name": {
+          "type": "string",
+          "required": true,
+          "label_key": "project.name"
+        },
+        "lesson.source": {
+          "type": "string",
+          "required": true,
+          "label_key": "lesson.source"
+        },
+        "lesson.context": {
+          "type": "string",
+          "required": true,
+          "label_key": "lesson.context"
+        },
+        "lesson.statement": {
+          "type": "string",
+          "required": true,
+          "label_key": "lesson.statement"
+        },
+        "lesson.applicability": {
+          "type": "string",
+          "required": true,
+          "label_key": "lesson.applicability"
+        },
+        "lesson.decision": {
+          "type": "string",
+          "required": true,
+          "label_key": "lesson.decision"
+        },
+        "lesson.effectiveness": {
+          "type": "string",
+          "required": true,
+          "label_key": "lesson.effectiveness"
+        }
+      },
+      "tables": [
+        {
+          "path": "items",
+          "columns": [
+            "source",
+            "lesson",
+            "action",
+            "owner",
+            "status"
+          ],
+          "type": "repeat_table"
+        }
+      ],
+      "signature_roles": [
+        "lesson_reviewer",
+        "chief_supervisor"
+      ],
+      "conditional_signatures": [],
+      "final_required_fields": [
+        "project.name",
+        "lesson.source",
+        "lesson.context",
+        "lesson.statement",
+        "lesson.applicability",
+        "lesson.decision",
+        "lesson.effectiveness"
+      ],
+      "legal_mode": "doul_internal",
+      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"
+    },
+    "FM-34": {
+      "scalar_fields": {
+        "project.name": {
+          "type": "string",
+          "required": true,
+          "label_key": "project.name"
+        },
+        "transmittal.no": {
+          "type": "string",
+          "required": true,
+          "label_key": "transmittal.no"
+        },
+        "transmittal.sender": {
+          "type": "string",
+          "required": true,
+          "label_key": "transmittal.sender"
+        },
+        "transmittal.recipient": {
+          "type": "string",
+          "required": true,
+          "label_key": "transmittal.recipient"
+        },
+        "transmittal.purpose": {
+          "type": "string",
+          "required": true,
+          "label_key": "transmittal.purpose"
+        },
+        "transmittal.issued_at": {
+          "type": "string",
+          "required": true,
+          "label_key": "transmittal.issued_at"
+        },
+        "transmittal.response_due": {
+          "type": "string",
+          "required": true,
+          "label_key": "transmittal.response_due"
+        },
+        "transmittal.status": {
+          "type": "string",
+          "required": true,
+          "label_key": "transmittal.status"
+        }
+      },
+      "tables": [
+        {
+          "path": "items",
+          "columns": [
+            "title",
+            "no_rev",
+            "purpose",
+            "receipt",
+            "response"
+          ],
+          "type": "repeat_table"
+        }
+      ],
+      "signature_roles": [],
+      "conditional_signatures": [],
+      "final_required_fields": [
+        "project.name",
+        "transmittal.no",
+        "transmittal.sender",
+        "transmittal.recipient",
+        "transmittal.purpose",
+        "transmittal.issued_at",
+        "transmittal.response_due",
+        "transmittal.status"
+      ],
+      "legal_mode": "doul_internal",
+      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"
+    },
+    "FM-35": {
+      "scalar_fields": {
+        "project.name": {
+          "type": "string",
+          "required": true,
+          "label_key": "project.name"
+        },
+        "personnel.name": {
+          "type": "string",
+          "required": true,
+          "label_key": "personnel.name"
+        },
+        "personnel.role": {
+          "type": "string",
+          "required": true,
+          "label_key": "personnel.role"
+        },
+        "personnel.qualification": {
+          "type": "string",
+          "required": true,
+          "label_key": "personnel.qualification"
+        },
+        "personnel.valid_to": {
+          "type": "string",
+          "required": true,
+          "label_key": "personnel.valid_to"
+        },
+        "personnel.deployment": {
+          "type": "string",
+          "required": true,
+          "label_key": "personnel.deployment"
+        },
+        "personnel.status": {
+          "type": "string",
+          "required": true,
+          "label_key": "personnel.status"
+        }
+      },
+      "tables": [
+        {
+          "path": "items",
+          "columns": [
+            "qualification",
+            "issuer",
+            "valid_to",
+            "status",
+            "note"
+          ],
+          "type": "repeat_table"
+        }
+      ],
+      "signature_roles": [
+        "personnel_reviewer",
+        "chief_supervisor"
+      ],
+      "conditional_signatures": [],
+      "final_required_fields": [
+        "project.name",
+        "personnel.name",
+        "personnel.role",
+        "personnel.qualification",
+        "personnel.valid_to",
+        "personnel.deployment",
+        "personnel.status"
+      ],
+      "legal_mode": "doul_internal",
+      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"
+    },
+    "FM-36": {
+      "scalar_fields": {
+        "project.name": {
+          "type": "string",
+          "required": true,
+          "label_key": "project.name"
+        },
+        "drawing.no": {
+          "type": "string",
+          "required": true,
+          "label_key": "drawing.no"
+        },
+        "drawing.revision": {
+          "type": "string",
+          "required": true,
+          "label_key": "drawing.revision"
+        },
+        "drawing.issued_for": {
+          "type": "string",
+          "required": true,
+          "label_key": "drawing.issued_for"
+        },
+        "drawing.approval_status": {
+          "type": "string",
+          "required": true,
+          "label_key": "drawing.approval_status"
+        },
+        "drawing.release_status": {
+          "type": "string",
+          "required": true,
+          "label_key": "drawing.release_status"
+        },
+        "drawing.distribution_status": {
+          "type": "string",
+          "required": true,
+          "label_key": "drawing.distribution_status"
+        }
+      },
+      "tables": [
+        {
+          "path": "items",
+          "columns": [
+            "recipient",
+            "revision",
+            "issued_at",
+            "receipt",
+            "status"
+          ],
+          "type": "repeat_table"
+        }
+      ],
+      "signature_roles": [
+        "document_reviewer"
+      ],
+      "conditional_signatures": [],
+      "final_required_fields": [
+        "project.name",
+        "drawing.no",
+        "drawing.revision",
+        "drawing.issued_for",
+        "drawing.approval_status",
+        "drawing.release_status",
+        "drawing.distribution_status"
+      ],
+      "legal_mode": "doul_internal",
+      "language_policy": "vi for statutory final; ko/vi/en collaboration labels via approved dictionary"
     }
   },
   "source_mapping": "form_domain_bindings_v2.json",
