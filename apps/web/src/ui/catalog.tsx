@@ -619,8 +619,77 @@ export interface ActionGateItem {
   label: ReactNode;
   primary?: boolean;
   disabled?: boolean;
+  availability?: "ready" | "input" | "blocked" | "forbidden" | "offline";
+  availabilityLabel?: ReactNode;
   reason?: ReactNode;
   onAction: () => void;
+}
+
+export interface StatusBoundaryItem {
+  id: string;
+  label: ReactNode;
+  value: ReactNode;
+  detail?: ReactNode;
+  tone?: "neutral" | "positive" | "warning" | "critical";
+}
+
+const boundaryToneClasses: Record<
+  NonNullable<StatusBoundaryItem["tone"]>,
+  string
+> = {
+  neutral: "border-border bg-slate-50 text-slate-700",
+  positive: "border-doul-success/25 bg-doul-success/5 text-doul-success",
+  warning: "border-doul-warning/25 bg-doul-warning/5 text-doul-warning",
+  critical: "border-destructive/25 bg-destructive/5 text-destructive",
+};
+
+export function StatusBoundaryGroup({
+  title,
+  description,
+  items,
+  className,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  items: readonly StatusBoundaryItem[];
+  className?: string;
+}) {
+  return (
+    <section
+      className={cn("rounded-sm border border-border bg-white p-3", className)}
+      data-ui-component="status-boundary-group"
+    >
+      <div className="mb-3">
+        <h3 className="text-[11px] font-semibold text-slate-700">{title}</h3>
+        {description ? (
+          <p className="mt-1 text-[9px] leading-4 text-slate-500">
+            {description}
+          </p>
+        ) : null}
+      </div>
+      <dl className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className={cn(
+              "min-w-0 rounded-sm border p-3",
+              boundaryToneClasses[item.tone || "neutral"],
+            )}
+          >
+            <dt className="text-[9px] font-medium text-slate-500">
+              {item.label}
+            </dt>
+            <dd className="mt-1 text-xs font-semibold">{item.value}</dd>
+            {item.detail ? (
+              <p className="mt-1 text-[9px] leading-4 text-slate-500">
+                {item.detail}
+              </p>
+            ) : null}
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
 }
 
 export function ActionGate({
@@ -637,6 +706,26 @@ export function ActionGate({
     >
       {actions.map((action) => (
         <div key={action.id} className="command-option">
+          {action.availabilityLabel ? (
+            <div
+              className={cn(
+                "mb-1.5 inline-flex rounded-sm border px-1.5 py-0.5 text-[9px] font-medium",
+                action.availability === "ready" &&
+                  "border-doul-success/25 bg-doul-success/5 text-doul-success",
+                action.availability === "input" &&
+                  "border-primary/20 bg-primary/5 text-primary",
+                action.availability === "blocked" &&
+                  "border-doul-warning/25 bg-doul-warning/5 text-doul-warning",
+                action.availability === "forbidden" &&
+                  "border-destructive/25 bg-destructive/5 text-destructive",
+                action.availability === "offline" &&
+                  "border-slate-300 bg-slate-100 text-slate-600",
+              )}
+              data-command-availability={action.availability}
+            >
+              {action.availabilityLabel}
+            </div>
+          ) : null}
           <Button
             type="button"
             variant={action.primary ? "default" : "outline"}

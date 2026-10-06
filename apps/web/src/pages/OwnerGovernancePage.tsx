@@ -1,7 +1,8 @@
 import type { CommandDescriptor, WorkItem, Workspace } from "../data/ui-contract";
-import { commands, reasonLabel, states } from "../labels";
+import { describeCommandAvailability } from "../data/ui-presentation";
+import { commands, states } from "../labels";
 import { EmptyState, StatusBadge } from "../ui";
-import { ActionGate, OwnerDecisionPanel } from "../ui/catalog";
+import { ActionGate, OwnerDecisionPanel, StatusBoundaryGroup } from "../ui/catalog";
 import { OwnerReportTemplate } from "../ui/templates";
 import { PageBoundary } from "./PageBoundary";
 import { RecordList } from "./shared";
@@ -74,6 +75,18 @@ export function OwnerGovernancePage({
   const report = detail?.report;
   const impact = report?.impact ?? detail?.impact;
   const options = Array.isArray(detail?.options) ? detail.options : [];
+  const receiptAction = ownerCurrent?.actions.find(
+    (action) => action.command === "acknowledge",
+  );
+  const decisionAction = ownerCurrent?.actions.find(
+    (action) => action.command === "decide",
+  );
+  const receiptPresentation = receiptAction
+    ? describeCommandAvailability(receiptAction, online)
+    : null;
+  const decisionPresentation = decisionAction
+    ? describeCommandAvailability(decisionAction, online)
+    : null;
 
   return (
     <PageBoundary name="owner" data-owner-governance="true">
@@ -187,6 +200,54 @@ export function OwnerGovernancePage({
                 </div>
               </div>
 
+              <StatusBoundaryGroup
+                className="mt-3"
+                title="수령·결정 상태 경계"
+                description="수령 확인은 승인이나 결정이 아닙니다. 현재 객체 상태와 서버가 허용한 다음 명령을 별도로 표시합니다."
+                items={[
+                  {
+                    id: "owner-object-state",
+                    label: "현재 객체 상태",
+                    value:
+                      states[detail?.status || ""] ||
+                      detail?.status ||
+                      "상태 없음",
+                    detail:
+                      ownerCurrent.machine === "report"
+                        ? "보고 객체 상태"
+                        : "결정 객체 상태",
+                  },
+                  {
+                    id: "owner-receipt",
+                    label: "수령 확인",
+                    value: receiptPresentation?.label || "현재 명령 없음",
+                    tone:
+                      receiptPresentation?.availability === "ready"
+                        ? "positive"
+                        : receiptPresentation?.availability === "forbidden"
+                          ? "critical"
+                          : receiptPresentation?.availability === "blocked"
+                            ? "warning"
+                            : "neutral",
+                    detail: "승인·결정과 별도",
+                  },
+                  {
+                    id: "owner-decision",
+                    label: "결정 제출",
+                    value: decisionPresentation?.label || "현재 명령 없음",
+                    tone:
+                      decisionPresentation?.availability === "ready"
+                        ? "positive"
+                        : decisionPresentation?.availability === "forbidden"
+                          ? "critical"
+                          : decisionPresentation?.availability === "blocked"
+                            ? "warning"
+                            : "neutral",
+                    detail: "수령 확인과 별도",
+                  },
+                ]}
+              />
+
               {ownerCurrent.machine === "report" ? (
                 <div className="report-body mt-5">
                   <h3>현황</h3>
@@ -262,22 +323,21 @@ export function OwnerGovernancePage({
 
               <h3 className="subheading">현재 가능한 업무</h3>
               <ActionGate
-                actions={ownerCurrent.actions.map((action) => ({
-                  id: action.command,
-                  label: commands[action.command] || action.command,
-                  primary: ["acknowledge", "decide", "verify", "close"].includes(
-                    action.command,
-                  ),
-                  disabled:
-                    !online || (!action.ready && !action.requiresInput),
-                  reason:
-                    action.blockedReason && !action.requiresInput
-                      ? reasonLabel(action.blockedReason.code)
-                      : action.requiresInput
-                        ? "입력 후 서버에서 선행조건을 다시 확인합니다."
-                        : undefined,
-                  onAction: () => onOpenCommand(ownerCurrent, action),
-                }))}
+                actions={ownerCurrent.actions.map((action) => {
+                  const presentation = describeCommandAvailability(action, online);
+                  return {
+                    id: action.command,
+                    label: commands[action.command] || action.command,
+                    primary: ["acknowledge", "decide", "verify", "close"].includes(
+                      action.command,
+                    ),
+                    disabled: presentation.disabled,
+                    availability: presentation.availability,
+                    availabilityLabel: presentation.label,
+                    reason: presentation.reason,
+                    onAction: () => onOpenCommand(ownerCurrent, action),
+                  };
+                })}
               />
               {!ownerCurrent.actions.length ? (
                 <p className="muted">
