@@ -48,6 +48,20 @@ for (const width of [390, 768, 1440]) {
   });
 }
 
+test.describe("today heading date", () => {
+  test.use({ timezoneId: "Asia/Bangkok" });
+
+  test("refreshes after local midnight without weather placeholder", async ({ page }) => {
+    await page.clock.install({ time: new Date("2026-10-06T16:59:55Z") });
+    await page.goto("/#/today");
+    const date = page.locator('[data-ui-component="today-date-context"]');
+    await expect(date).toContainText("2026년 10월 6일");
+    await expect(page.getByText("날씨 정보 미연동", { exact: true })).toHaveCount(0);
+    await page.clock.fastForward(10_000);
+    await expect(date).toContainText("2026년 10월 7일");
+  });
+});
+
 test("DOUL component catalog is mounted on representative surfaces", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('[data-ui-component="navigation"]')).toBeVisible();

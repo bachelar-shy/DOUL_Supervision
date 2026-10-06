@@ -339,16 +339,6 @@ strong {
   height: 15px;
   color: #7a8796;
 }
-.heading-context .weather-context {
-  gap: 9px;
-  color: #5c6978;
-}
-.heading-context .weather-context svg {
-  width: 42px;
-  height: 42px;
-  color: #d99b2b;
-  stroke-width: 1.5;
-}
 .heading-actions {
   display: flex;
   align-items: center;
