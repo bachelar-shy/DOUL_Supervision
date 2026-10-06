@@ -89,7 +89,7 @@ class FakeS3:
             kind = 'DeleteMarker' if version['data'] is None else 'Version'
             xml.append('<' + kind + '><Key>' + escape(quote(key, safe='')) + '</Key><VersionId>' + version['version'] +
                        '</VersionId><IsLatest>' + ('true' if index == 0 else 'false') + '</IsLatest>' +
-                       '<LastModified>2026-10-06T00:00:00.000Z</LastModified>' +
+                       ('<LastModified>2026-10-06T00:00:00.' + version['version'].zfill(9) + 'Z</LastModified>') +
                        ('<Size>' + str(len(version['data'])) + '</Size>' if version['data'] is not None else '') + '</' + kind + '>')
         if extra:
             key, _, version = page[-1]
@@ -155,11 +155,21 @@ class VersionRecoveryTests(unittest.TestCase):
         self.client.put_object(Bucket='source-bucket', Key=key, Body=b'v2', Metadata={'a':'c'}, Tagging='stage=two', ContentType='image/png')
         self.client.delete_object(Bucket='source-bucket', Key='deleted-only')
 
-    def test_order_survives_identical_timestamps_pagination_and_unicode(self):
+    def test_order_survives_pagination_and_unicode(self):
         rows = inventory(self.client, 'source-bucket')
         self.assertEqual([r['deleteMarker'] for r in rows if r['key'] == self.key], [False,True,False])
         self.assertEqual(len(rows), 4)
         self.assertFalse(self.client.meta.events.handlers)
+
+    def test_ambiguous_equal_time_marker_history_is_not_invented(self):
+        original = self.client.list_object_versions
+        def equal_time(**kwargs):
+            page = original(**kwargs)
+            for row in page.get('_doulRows', []): row['lastModified'] = '2026-10-06T00:00:00Z'
+            return page
+        self.client.list_object_versions = equal_time
+        with self.assertRaisesRegex(ValueError, 'Ambiguous'):
+            inventory(self.client, 'source-bucket')
 
     def test_roundtrip_preserves_all_versions_markers_metadata_and_source(self):
         source = deepcopy(self.client.buckets['source-bucket'])

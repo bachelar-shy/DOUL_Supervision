@@ -34,9 +34,10 @@ The supplied development and staging verification uses actual Compose services.
   format, canonical snapshot hash and every Evidence blob hash.
 - Every S3 object version, immutable backup byte hash, content headers, metadata,
   tags, original timestamp, delete marker and current-version identity.
-- The original interleaved version/marker order from S3 XML, including equal
-  timestamps and pagination. Sorting separate SDK arrays by timestamp is not
-  an adequate reconstruction of version history.
+- The exact XML version timestamps and pagination order. Cross-kind history is
+  chronologically verified because some providers serialize versions and markers
+  in separate groups. Equal-time version/marker ambiguity fails explicitly instead
+  of inventing a history; a provider event journal is then required.
 - The exact release commit and tracked configuration artifacts with hashes.
   Runtime Project Configuration also remains in the DB snapshot.
 - A versioned secret-recovery inventory of names, vault references and owners.
@@ -150,7 +151,7 @@ and API/Worker stack. It adds synthetic original Evidence, several object
 versions with metadata/tags and delete markers, pauses writers, creates the
 encrypted bundle, rejects wrong keys/tampering before any target operation,
 restores new targets, verifies fingerprints/history/private access, and resumes
-the previously running writers. Unit tests also exercise equal-timestamp history,
+the previously running writers. Unit tests also exercise ambiguous equal-timestamp rejection,
 Unicode keys, pagination, path safety, source-change rejection and private keys.
 
 Primary references: AWS S3 ListObjectVersions/DeleteObject APIs, boto3 after-call

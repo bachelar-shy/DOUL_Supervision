@@ -8,6 +8,8 @@ rewrite an original evidence reference silently.
 from __future__ import annotations
 
 from collections import defaultdict
+from datetime import datetime, timezone
+from decimal import Decimal
 from copy import deepcopy
 from hashlib import sha256
 import json
@@ -77,10 +79,29 @@ def inventory(client, bucket, max_versions=1000000):
         client.meta.events.unregister('after-call.s3.ListObjectVersions', unique_id=uid)
     groups = defaultdict(list)
     for row in rows: groups[row['key']].append(row)
-    for entries in groups.values():
+    ordered = []
+    def timestamp(entry):
+        value = entry['lastModified']
+        match = re.fullmatch(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?(?:Z|\+00:00)', value or '')
+        if not match:
+            raise ValueError('Invalid version timestamp')
+        seconds = Decimal(int(datetime.fromisoformat(match[1]).replace(tzinfo=timezone.utc).timestamp()))
+        return seconds + Decimal('0.' + (match[2] or '0'))
+    for key in sorted(groups):
+        entries = groups[key]
+        by_time = defaultdict(list)
+        for entry in entries: by_time[timestamp(entry)].append(entry)
+        for tied in by_time.values():
+            if len({entry['deleteMarker'] for entry in tied}) > 1:
+                # Some S3-compatible servers group Version and DeleteMarker XML
+                # children separately. Equal timestamps then cannot establish a
+                # cross-kind historical order; do not invent a sequence.
+                raise ValueError('Ambiguous equal-time version/delete-marker history')
+        entries.sort(key=timestamp, reverse=True)
         if not entries[0]['isLatest'] or sum(bool(e['isLatest']) for e in entries) != 1:
-            raise ValueError('Object history is not newest-first or has no unique current version')
-    return rows
+            raise ValueError('Object history has no unique current version matching timestamps')
+        ordered.extend(entries)
+    return ordered
 
 
 def backup_objects(client, bucket, root):
