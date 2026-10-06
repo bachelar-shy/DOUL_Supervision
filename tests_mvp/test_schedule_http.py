@@ -616,6 +616,7 @@ class ScheduleHttpPersistenceTests(unittest.TestCase):
                 "payload": {
                     **self.scope,
                     "title": "Recovery Plan",
+                    "evidenceIds": [self.evidence_id],
                     "data": {"triggerDelayEventRefs": [self.ref(delay, "WorkItem")]},
                 },
             },
