@@ -1,0 +1,37 @@
+name: platform-document-runtime
+on:
+  pull_request:
+    paths: ['services/document_runtime/**', 'services/api/**', 'infra/docker/document-runtime.Dockerfile', 'infra/compose/compose.documents.yml', 'tests_mvp/test_document_runtime.py', 'tests_runtime/document*.py', '.github/workflows/platform-documents.yml']
+  push:
+    branches: [main]
+    paths: ['services/document_runtime/**', 'services/api/**', 'infra/docker/document-runtime.Dockerfile', 'infra/compose/compose.documents.yml', 'tests_mvp/test_document_runtime.py', 'tests_runtime/document*.py', '.github/workflows/platform-documents.yml']
+permissions:
+  contents: read
+jobs:
+  render-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Build pinned document runtime and verify non-root user
+        run: |
+          docker build -f infra/docker/document-runtime.Dockerfile -t doul-document-runtime:test .
+          test "$(docker inspect doul-document-runtime:test --format '{{.Config.User}}')" = '10001:10001'
+      - name: Verify all 36 internal form OOXML outputs
+        run: |
+          docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,size=512m \
+            doul-document-runtime:test python -m unittest discover -s tests_mvp -p test_document_runtime.py -q
+      - name: Render Korean, Vietnamese, multi-page table and signature fixtures
+        run: |
+          install -d -m 700 qa-documents
+          docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,size=1g \
+            --user "$(id -u):$(id -g)" -v "$PWD/qa-documents:/qa" \
+            doul-document-runtime:test python -m tests_runtime.document_render_live /qa
+      - name: Preserve reviewable output and pixel verification artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: document-runtime-qa
+          path: qa-documents/
+          if-no-files-found: warn
+          retention-days: 7

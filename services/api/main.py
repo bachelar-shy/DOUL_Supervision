@@ -113,13 +113,17 @@ def sniff(data):
     raise ContractError('MIME_INVALID','Supported development formats: PNG/JPEG/GIF/WebP/MP4/WebM/WAV/MP3/PDF')
 
 
-def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=None):
+def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=None, document_runtime=None):
     if not demo:raise RuntimeError('Production auth is not configured. Explicit --demo is required; bind to loopback only.')
     origins=development_origins()
     if persistence is not None and not isinstance(persistence,PersistencePort):
         raise TypeError('persistence must satisfy PersistencePort')
     store=persistence if persistence is not None else create_local_persistence(db_path,demo=True)
     app=FastAPI(title='DOUL MVP local development adapter',version='0.1.0',docs_url='/api-docs')
+    app.state.document_runtime=document_runtime
+    if document_runtime is None and os.getenv('DOUL_DOCUMENT_RUNTIME') == 'local':
+        from services.document_runtime.render import LocalDocumentRuntime
+        app.state.document_runtime=LocalDocumentRuntime(os.environ['DOUL_DOCUMENT_CACHE'])
     app.state.store=store
     app.state.queue_enabled = (os.getenv('DOUL_QUEUE_ENABLED', '').lower() == 'true') if queue_enabled is None else bool(queue_enabled)
     app.state.allowed_origins=origins
@@ -862,6 +866,29 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             role=role_for(session,project_id,body['roleAssignmentId'])
             for ref in body['sourceDomainRefs']:readable(store.engine.resolve(ref,project_id),session,role)
             return store.documents.render(form_id,body['sourceDomainRefs'],body['data'],session['partyId'],role['id'],key,body['language'],operation=='render')
+
+    @app.get('/projects/{project_id}/documents/{document_id}/exports/{format}')
+    def document_export(project_id:str,document_id:str,format:str,request:Request):
+        session=identity(request)
+        require(format in {'docx','pdf'},'NOT_FOUND','Unsupported export format')
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            snapshot=store.documents.get(document_id);readable(snapshot,session,role)
+            preserved=store.documents.rerender(document_id)
+        require(app.state.document_runtime is not None,'ADAPTER_NOT_CONFIGURED','Reproducible document runtime is not installed')
+        try:
+            artifact=app.state.document_runtime.export(snapshot,preserved,format)
+        except Exception:
+            raise ContractError('ADAPTER_NOT_CONFIGURED','Document export failed integrity or runtime checks')
+        # Recheck visibility after conversion; a revoked role cannot receive bytes.
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            readable(store.documents.get(document_id),session,role)
+        return Response(artifact['content'],media_type=artifact['mediaType'],headers={
+            'Content-Disposition':'attachment; filename="'+snapshot['formId']+'-'+snapshot['id']+'.'+format+'"',
+            'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff',
+            'X-Artifact-SHA256':artifact['sha256'],'X-Source-Render-Hash':snapshot['renderHash'],
+            'X-Source-Snapshot-ID':snapshot['id'],'X-Legal-Signature-Transferred':'false'})
 
     @app.post('/projects/{project_id}/documents/{document_id}/sign')
     async def sign(project_id:str,document_id:str,request:Request):
