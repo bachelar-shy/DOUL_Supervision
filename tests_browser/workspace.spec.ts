@@ -70,7 +70,13 @@ test("DOUL component catalog is mounted on representative surfaces", async ({ pa
     .filter({ hasText: "경량벽체 은폐 전 검측" })
     .first()
     .click();
-  await expect(page.locator('[data-ui-component="action-gate"]')).toBeVisible();
+  const inspectionBoundary = page.locator('[data-ui-component="status-boundary-group"]');
+  await expect(inspectionBoundary).toBeVisible();
+  await expect(inspectionBoundary).toContainText("검측 판정");
+  await expect(inspectionBoundary).toContainText("후속공정 허용");
+  const actionGate = page.locator('[data-ui-component="action-gate"]');
+  await expect(actionGate).toBeVisible();
+  await expect(actionGate.locator("[data-command-availability]")).not.toHaveCount(0);
 
   await page.goto("/#/owner");
   await expect(
@@ -81,9 +87,15 @@ test("DOUL component catalog is mounted on representative surfaces", async ({ pa
     .filter({ hasText: "발주처 즉시보고" })
     .first()
     .click();
-  await expect(
-    page.locator('[data-ui-component="owner-decision-panel"]'),
-  ).toBeVisible();
+  const ownerPanel = page.locator('[data-ui-component="owner-decision-panel"]');
+  await expect(ownerPanel).toBeVisible();
+  const ownerBoundary = ownerPanel.locator(
+    '[data-ui-component="status-boundary-group"]',
+  );
+  await expect(ownerBoundary).toBeVisible();
+  await expect(ownerBoundary).toContainText("수령·결정 상태 경계");
+  await expect(ownerBoundary).toContainText("수령 확인");
+  await expect(ownerBoundary).toContainText("결정 제출");
 
   await page.goto("/#/registers");
   await expect(page.locator('[data-ui-component="register-navigator"]')).toBeVisible();
@@ -506,8 +518,15 @@ test("pass cannot bypass release guards", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: "후속공정 허용", exact: true }),
   ).toBeDisabled();
+  const releaseBoundary = page.locator(
+    '[data-ui-component="status-boundary-group"]',
+  );
+  await expect(releaseBoundary).toContainText("후속공정 허용");
+  await expect(releaseBoundary).toContainText("미허용");
   await expect(
-    page.getByText("아직 허용되지 않음", { exact: true }),
+    page
+      .locator('[data-ui-component="action-gate"]')
+      .getByText("선행조건 대기", { exact: true }),
   ).toBeVisible();
 });
 
