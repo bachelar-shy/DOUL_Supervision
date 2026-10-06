@@ -381,12 +381,12 @@ class Engine:
         validate(proposed,self.schemas[kind],self.schemas)
         role=self.authorize(proposed,transition['authority'],party_id,role_id)
         self._common(proposed,role,allow_stale_baseline=machine=='inspection' and command in ['receive','return'])
-        if transition['required_evidence']:
-            require(bool(proposed.get('evidenceIds')),'EVIDENCE_REQUIRED','Transition requires preserved evidence')
         for guard in transition['guards']:
             if guard not in ['assignment_authorized','expected_version_matches','requirement_versions_current','evidence_provenance_valid','drawing_revision_current','upstream_hold_points_released']:
                 self._guard(guard,proposed,payload,party_id)
         if machine=='report' and command=='acknowledge':require(party_id in record['report']['recipients'], 'RECIPIENT_MISMATCH', 'Only an issued recipient may acknowledge')
+        if transition['required_evidence']:
+            require(bool(evidence_ids),'EVIDENCE_REQUIRED','Transition requires current command evidence')
         self._effects(machine,command,proposed,party_id,role_id)
         proposed.update(status=transition['to'],version=record['version']+1,updatedAt=self.at())
         if machine=='schedule_baseline' and command=='activate_baseline':

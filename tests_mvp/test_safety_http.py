@@ -365,6 +365,21 @@ class SafetyHttpPersistenceTests(unittest.TestCase):
         self.assertEqual(start_correction.status_code, 200, start_correction.text)
         stop = start_correction.json()["record"]
 
+        missing_resume_evidence = self.client.post(
+            f"/projects/{project_id}/safety-stop-orders/{stop['id']}/request-resume",
+            headers={**contractor_headers, "Idempotency-Key": uid()},
+            json={
+                "roleAssignmentId": contractor["actor"]["roleAssignmentId"],
+                "expectedVersion": stop["version"],
+                "payload": {},
+                "evidenceIds": [],
+            },
+        )
+        self.assertEqual(
+            missing_resume_evidence.status_code, 409, missing_resume_evidence.text
+        )
+        self.assertEqual(missing_resume_evidence.json()["code"], "EVIDENCE_REQUIRED")
+
         request_resume = self.client.post(
             f"/projects/{project_id}/safety-stop-orders/{stop['id']}/request-resume",
             headers={**contractor_headers, "Idempotency-Key": uid()},

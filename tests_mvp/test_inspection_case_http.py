@@ -83,7 +83,17 @@ class InspectionCaseHTTPTests(unittest.TestCase):
         issue_actions=case['issues'][0]['issue']['actions']
         request_reinspection=next(x for x in issue_actions if x['command']=='request_reinspection')
         self.assertFalse(request_reinspection['ready'])
+        self.assertTrue(request_reinspection['requiresEvidence'])
         self.assertEqual(request_reinspection['blockedReason']['code'],'CORRECTIVE_ACTION_SUBMITTED')
+
+    def test_evidence_only_commands_are_input_requests_not_disabled_actions(self):
+        workspace = self.workspace()
+        evidence_only = [action for item in workspace['items'] for action in item['actions']
+                         if action['requiresEvidence'] and not action['fields']]
+        self.assertTrue(evidence_only)
+        for action in evidence_only:
+            self.assertFalse(action['ready'], action)
+            self.assertEqual(action['requiresInput'], action['blockedReason']['code'] == 'EVIDENCE_REQUIRED', action)
 
     def test_unlinked_inspection_has_no_issue_and_no_unrelated_timeline(self):
         workspace=self.workspace()

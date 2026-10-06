@@ -538,6 +538,66 @@ class ScheduleHttpPersistenceTests(unittest.TestCase):
         persisted = self.app.state.store.engine.get("InformationItem", corrected["id"])
         self.assertEqual(persisted["status"], "frozen")
 
+    def test_delay_mitigation_requires_current_evidence_and_preserves_failed_request(self):
+        baseline = self.create_effective_baseline()
+        progress, _, _ = self.freeze_progress(baseline)
+        delay = self.create_delay(baseline, progress)
+        for command, payload in [
+            ("notify", {}),
+            ("start_assessment", {"assignedPartyId": self.sessions["CON"]["actor"]["partyId"], "causeCategory": "procurement_delay"}),
+            ("start_impact_analysis", {"affectedMilestoneIds": ["M1"], "currentForecastImpactDays": 15, "criticalPathAffected": True, "totalFloatImpact": -15}),
+        ]:
+            response = self.command("delay-events", delay, command, "SUP", payload)
+            self.assertEqual(response.status_code, 200, response.text)
+            delay = response.json()["record"]
+        response = self.client.post(
+            f"/projects/{self.project_id}/actions",
+            headers={**self.headers["SUP"], "Idempotency-Key": uid()},
+            json={"roleAssignmentId": self.sessions["SUP"]["actor"]["roleAssignmentId"],
+                  "clientObjectId": uid(), "payload": {**self.scope, "title": "Mitigate procurement delay"}},
+        )
+        self.assertEqual(response.status_code, 201, response.text)
+        action = response.json()["record"]
+        payload = {
+            "impactAnalysis": {
+                "baselineScheduleRef": self.ref(baseline),
+                "dataDate": progress["schedule"]["dataDate"],
+                "scheduleRef": self.ref(progress),
+                "affectedActivityRefs": [], "affectedMilestoneIds": ["M1"],
+                "criticalPathAffected": True,
+                "beforeForecastAt": "2026-12-31T00:00:00Z",
+                "afterForecastAt": "2027-01-15T00:00:00Z",
+                "forecastImpactDays": 15, "mitigationIncluded": True,
+                "assumptions": ["procurement"],
+            },
+            "mitigationActionRefs": [self.ref(action, "Action")],
+        }
+        engine = self.app.state.store.engine
+        audit_count = len(engine.audit_events)
+        missing = self.command("delay-events", delay, "start_mitigation", "SUP", payload, evidence=[])
+        self.assertEqual(missing.status_code, 409, missing.text)
+        self.assertEqual(missing.json()["code"], "EVIDENCE_REQUIRED")
+        self.assertEqual(engine.get("WorkItem", delay["id"]), delay)
+        self.assertEqual(len(engine.audit_events), audit_count)
+        with self.app.state.store.transaction(True):
+            foreign = self.app.state.store.engine.get("Evidence", self.evidence_id)
+            foreign.update(id=uid(), projectId=uid())
+            self.app.state.store.engine.bootstrap("Evidence", foreign)
+        invalid = self.command("delay-events", delay, "start_mitigation", "SUP", payload, evidence=[foreign["id"]])
+        self.assertEqual(invalid.status_code, 409, invalid.text)
+        self.assertEqual(invalid.json()["code"], "EVIDENCE_INVALID")
+        self.assertEqual(self.app.state.store.engine.get("WorkItem", delay["id"]), delay)
+        self.reopen()
+        self.assertEqual(self.app.state.store.engine.get("WorkItem", delay["id"]), delay)
+        key = uid()
+        accepted = self.command("delay-events", delay, "start_mitigation", "SUP", payload, evidence=[self.evidence_id], key=key)
+        self.assertEqual(accepted.status_code, 200, accepted.text)
+        self.assertEqual(accepted.json()["record"]["status"], "mitigation_active")
+        self.reopen()
+        replay = self.command("delay-events", delay, "start_mitigation", "SUP", payload, evidence=[self.evidence_id], key=key)
+        self.assertEqual(replay.status_code, 200, replay.text)
+        self.assertEqual(replay.json(), accepted.json())
+
     def test_delay_and_recovery_persist_without_mutating_entitlement_or_baseline(self):
         baseline = self.create_effective_baseline()
         progress, _, _ = self.freeze_progress(baseline)
@@ -556,6 +616,7 @@ class ScheduleHttpPersistenceTests(unittest.TestCase):
                 "payload": {
                     **self.scope,
                     "title": "Recovery Plan",
+                    "evidenceIds": [self.evidence_id],
                     "data": {"triggerDelayEventRefs": [self.ref(delay, "WorkItem")]},
                 },
             },
@@ -619,6 +680,40 @@ class ScheduleHttpPersistenceTests(unittest.TestCase):
         self.assertEqual(injected.status_code, 422, injected.text)
         self.assertEqual(injected.json()["code"], "SCHEMA_INVALID")
 
+        response = self.command(
+            "recovery-plans", recovery, "activate_recovery", "CON"
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        recovery = response.json()["record"]
+        response = self.command(
+            "recovery-plans", recovery, "start_recovery_monitoring", "SUP"
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        recovery = response.json()["record"]
+
+        missing_evidence = self.command(
+            "recovery-plans",
+            recovery,
+            "mark_recovery_effective",
+            "SUP",
+            {"effectivenessSummary": "forecast recovered"},
+            evidence=[],
+        )
+        self.assertEqual(missing_evidence.status_code, 409, missing_evidence.text)
+        self.assertEqual(missing_evidence.json()["code"], "EVIDENCE_REQUIRED")
+
+        response = self.command(
+            "recovery-plans",
+            recovery,
+            "mark_recovery_effective",
+            "SUP",
+            {"effectivenessSummary": "forecast recovered"},
+            evidence=[self.evidence_id],
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        recovery = response.json()["record"]
+        self.assertEqual(recovery["status"], "effective")
+
         self.reopen()
         persisted_delay = self.app.state.store.engine.get("WorkItem", delay["id"])
         persisted_recovery = self.app.state.store.engine.get(
@@ -628,7 +723,7 @@ class ScheduleHttpPersistenceTests(unittest.TestCase):
             "InformationItem", baseline["id"]
         )
         self.assertEqual(persisted_delay["status"], "notified")
-        self.assertEqual(persisted_recovery["status"], "accepted_for_execution")
+        self.assertEqual(persisted_recovery["status"], "effective")
         self.assertEqual(persisted_baseline["status"], "effective")
         self.assertNotIn("entitlement", persisted_delay["data"])
 
