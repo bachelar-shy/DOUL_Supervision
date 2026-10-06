@@ -41,7 +41,8 @@ Page / Template
 | `EvidenceViewer` | 서버 증빙 목록·상세 선택 | Capture |
 | `EvidenceDetailSheet` | 원본 미리보기, 출처·파생 연결, 기술정보 | Capture |
 | `AuditTimeline` | 서버 처리이력 | Today |
-| `ActionGate` | 서버가 허용한 Command 표시 | Workbench |
+| `StatusBoundaryGroup` | 서로 대체할 수 없는 업무 상태를 병렬 표시 | Inspection / Owner Governance |
+| `ActionGate` | 서버 허용 Command와 실행 불가 사유 표시 | Workbench / Owner Governance |
 | `DecisionPanel` | 판단·선행조건 강조 | Today |
 | `OwnerDecisionPanel` | 발주처 보고·결정 상세, 서버 허용 업무 표시 | Owner Governance |
 
@@ -136,6 +137,18 @@ Sticky Header의 스크롤 기준은 외부 `table-scroll` 하나로 유지한�
 
 서버가 제공한 감사/처리 이력을 시간순으로 표시한다. 클라이언트 임의 이벤트를 공식 이력으로 승격하지 않는다.
 
+### StatusBoundaryGroup
+
+Product Baseline U-P1의 상태 분리 규칙을 표현하는 공통 컴포넌트다. 서로 연관되지만 같은 의미가 아닌 상태를 각각 별도 label/value/detail로 표시한다.
+
+- Inspection Pass와 Next-work Released를 같은 완료 상태로 합치지 않는다.
+- Owner Report의 수령 확인과 결정 제출을 같은 승인 상태로 합치지 않는다.
+- 향후 Permit/Work Authorized/Stop, Baseline/Forecast, Payment, Handover에도 같은 패턴을 재사용한다.
+- UI가 존재하지 않는 Domain 상태를 추론하거나 생성하지 않는다.
+- 색상은 보조 수단이며 모든 의미를 텍스트와 함께 표시한다.
+
+상세 기준은 `design/ui/STATUS_SEMANTICS.md`를 따른다.
+
 ### ActionGate
 
 서버가 제공한 action descriptor를 표시한다.
@@ -145,7 +158,9 @@ Sticky Header의 스크롤 기준은 외부 `table-scroll` 하나로 유지한�
 - `blockedReason`
 - online/offline 조건
 
-을 Page가 해석해 props로 전달한다. UI 컴포넌트는 새로운 Command를 만들지 않는다.
+을 `data/ui-presentation.ts`에서 표시 상태로 변환한 뒤 전달한다. UI 컴포넌트는 새로운 Command나 권한을 만들지 않는다.
+
+표시 상태는 `실행 가능 / 입력 필요 / 선행조건 대기 / 권한 없음 / 오프라인`으로 구분하며 버튼의 enabled/disabled만으로 이유를 전달하지 않는다.
 
 ### DecisionPanel
 

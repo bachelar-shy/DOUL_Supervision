@@ -269,4 +269,7 @@ Stitch 결과는 다음 순서로 코드화한다.
 - 증빙 원본·출처·파생범위·해시를 분리 표시하고 판정과 증빙을 구분
 - `RegisterNavigator`로 감리·시공사·발주처·설계자·관리자 역할별 추천 진입과 전체 29개 검색/그룹 진입 적용
 - 역할별 추천은 Presentation Preset으로만 사용하고 실제 Projection 데이터는 서버 읽기 권한 결과를 유지
-- 남은 작업: 시각 회귀 기준 확대
+- Product Baseline U-P1 공통 상태표현 적용: `StatusBoundaryGroup`, ActionGate 실행가능/입력필요/선행조건/권한없음/오프라인 구분
+- Inspection Pass와 Next-work Released, Owner Report 수령과 결정을 별도 상태로 표시
+- 상태표현 기준: `design/ui/STATUS_SEMANTICS.md`
+- 남은 작업: U-P2 역할별 업무화면 확장, 시각 회귀 기준 확대

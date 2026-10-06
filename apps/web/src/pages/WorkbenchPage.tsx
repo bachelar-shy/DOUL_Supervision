@@ -4,9 +4,10 @@ import type {
   WorkItem,
   Workspace,
 } from "../data/ui-contract";
-import { commands, reasonLabel, states } from "../labels";
+import { describeCommandAvailability } from "../data/ui-presentation";
+import { commands, states } from "../labels";
 import { EmptyState, StatusBadge } from "../ui";
-import { ActionGate, DetailPane } from "../ui/catalog";
+import { ActionGate, DetailPane, StatusBoundaryGroup } from "../ui/catalog";
 import { OwnerReportTemplate, WorkbenchTemplate } from "../ui/templates";
 import { machineForRoute, machineLabels, routes } from "../app/routes";
 import { PageBoundary } from "./PageBoundary";
@@ -110,34 +111,47 @@ export function WorkbenchPage({
               {current.machine === "inspection" && (
                 <>
                   <FloorPlan />
-                  <div className="gate-grid">
-                    <div>
-                      <small>검측 판정</small>
-                      <b>
-                        {current.record.resultStatus === "pass"
-                          ? "적합"
-                          : current.record.resultStatus === "fail"
-                            ? "부적합"
-                            : "미판정"}
-                      </b>
-                    </div>
-                    <div>
-                      <small>필수확인점</small>
-                      <b>{current.record.holdPoint ? "Hold 적용" : "일반"}</b>
-                    </div>
-                    <div
-                      className={
-                        current.record.nextWorkAllowed ? "good" : "warn"
-                      }
-                    >
-                      <small>후속공정</small>
-                      <b>
-                        {current.record.nextWorkAllowed
+                  <StatusBoundaryGroup
+                    title="검측 결과와 후속공정 상태"
+                    description="검측 적합과 후속공정 허용은 서로 다른 상태입니다. 적합 판정만으로 다음 공정이 자동 허용되지 않습니다."
+                    items={[
+                      {
+                        id: "inspection-result",
+                        label: "검측 판정",
+                        value:
+                          current.record.resultStatus === "pass"
+                            ? "적합"
+                            : current.record.resultStatus === "fail"
+                              ? "부적합"
+                              : "미판정",
+                        tone:
+                          current.record.resultStatus === "pass"
+                            ? "positive"
+                            : current.record.resultStatus === "fail"
+                              ? "critical"
+                              : "neutral",
+                        detail: "검측 결과",
+                      },
+                      {
+                        id: "next-work",
+                        label: "후속공정 허용",
+                        value: current.record.nextWorkAllowed
                           ? "허용"
-                          : "아직 허용되지 않음"}
-                      </b>
-                    </div>
-                  </div>
+                          : "미허용",
+                        tone: current.record.nextWorkAllowed
+                          ? "positive"
+                          : "warning",
+                        detail: "검측 판정과 별도",
+                      },
+                      {
+                        id: "hold-point",
+                        label: "필수확인점",
+                        value: current.record.holdPoint ? "Hold 적용" : "일반",
+                        tone: current.record.holdPoint ? "warning" : "neutral",
+                        detail: "승인·해제 조건을 별도 확인",
+                      },
+                    ]}
+                  />
                 </>
               )}
 
@@ -200,22 +214,21 @@ export function WorkbenchPage({
 
               <h3 className="subheading">현재 가능한 업무</h3>
               <ActionGate
-                actions={current.actions.map((action) => ({
-                  id: action.command,
-                  label: commands[action.command] || action.command,
-                  primary: ["close", "pass", "issue", "decide"].includes(
-                    action.command,
-                  ),
-                  disabled:
-                    !online || (!action.ready && !action.requiresInput),
-                  reason:
-                    action.blockedReason && !action.requiresInput
-                      ? reasonLabel(action.blockedReason.code)
-                      : action.requiresInput
-                        ? "입력 후 서버에서 선행조건을 다시 확인합니다."
-                        : undefined,
-                  onAction: () => onOpenCommand(current, action),
-                }))}
+                actions={current.actions.map((action) => {
+                  const presentation = describeCommandAvailability(action, online);
+                  return {
+                    id: action.command,
+                    label: commands[action.command] || action.command,
+                    primary: ["close", "pass", "issue", "decide"].includes(
+                      action.command,
+                    ),
+                    disabled: presentation.disabled,
+                    availability: presentation.availability,
+                    availabilityLabel: presentation.label,
+                    reason: presentation.reason,
+                    onAction: () => onOpenCommand(current, action),
+                  };
+                })}
               />
 
               {!current.actions.length && (

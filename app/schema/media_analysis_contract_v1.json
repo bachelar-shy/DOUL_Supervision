@@ -1,5 +1,5 @@
 {
-  "version": "1.2",
+  "version": "1.3",
   "original_evidence_immutable": true,
   "official_issue_requires_human_confirmation": true,
   "nonhuman_actor": "AI",
@@ -152,5 +152,78 @@
       "Candidate and no_findings outcomes for the same photo conflict.",
       "No-findings is a worker assessment, never an official acceptance result."
     ]
+  },
+  "operations_policy": {
+    "automatic_retry": {
+      "meaning": "Execution retry for retryable infrastructure/provider failure; does not replace the logical AnalysisRun history.",
+      "bounded": true,
+      "project_config_fields": [
+        "mediaPolicy.autoRetry.maxAttempts",
+        "mediaPolicy.autoRetry.backoffSeconds"
+      ],
+      "must_preserve": [
+        "prior attempts",
+        "partial coverage",
+        "failure reason",
+        "model/prompt/policy versions"
+      ]
+    },
+    "user_reanalysis": {
+      "authority": "SUP",
+      "new_analysis_run_required": true,
+      "link_field": "reanalysisOfId",
+      "reason_required": true,
+      "prior_human_review_preserved": true,
+      "no_automatic_precedence_for_newest_run": true
+    },
+    "failure": {
+      "required": [
+        "failureCode",
+        "failedStage",
+        "retryable",
+        "processedCoverage"
+      ],
+      "partial_results_may_be_preserved": true,
+      "partial_never_means_complete": true
+    },
+    "cancellation": {
+      "required": [
+        "cancelRequestedBy",
+        "requestedAt",
+        "effectiveAt",
+        "reason"
+      ],
+      "preserve_existing_evidence": true,
+      "no_official_domain_state_change": true
+    },
+    "cost_control": {
+      "project_config_fields": [
+        "mediaPolicy.perRunCostLimit",
+        "mediaPolicy.monthlyCostLimit",
+        "mediaPolicy.costCurrency"
+      ],
+      "silent_mode_downgrade_forbidden": true
+    },
+    "external_transfer": {
+      "project_config_field": "mediaPolicy.externalTransferPolicy",
+      "allowed_values": [
+        "forbidden",
+        "approved_only",
+        "allowed_under_contract"
+      ],
+      "audit_required": [
+        "provider",
+        "region",
+        "source scope",
+        "redaction status",
+        "config version"
+      ]
+    },
+    "export_and_retention": {
+      "original_export_requires_explicit_permission": true,
+      "retention_project_configured": true,
+      "official_evidence_not_user_deletable": true,
+      "shared_derivatives_keep_provenance": true
+    }
   }
 }
