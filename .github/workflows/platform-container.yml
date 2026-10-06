@@ -116,11 +116,37 @@ jobs:
           test "$(docker inspect -f '{{.State.Status}}' "$init_id")" = "exited"
 
           bucket="$(docker compose -f infra/compose/compose.dev.yml config --format json | python3 -c 'import json,sys; print(json.load(sys.stdin)["services"]["object-storage-init"]["environment"]["OBJECT_STORAGE_BUCKET"])')"
-          docker compose -f infra/compose/compose.dev.yml exec -T -e "OBJECT_STORAGE_BUCKET=$bucket" object-storage \
-            sh -ec 'mc alias set verify http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" && mc stat "verify/$OBJECT_STORAGE_BUCKET"'
-          anonymous_status="$(curl --silent --output /tmp/anonymous-bucket.xml --write-out '%{http_code}' \
+          probe_object=".platform-private-policy-probe"
+          docker compose -f infra/compose/compose.dev.yml exec -T \
+            -e "OBJECT_STORAGE_BUCKET=$bucket" -e "PROBE_OBJECT=$probe_object" object-storage \
+            sh -ec '
+              mc alias set verify http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
+              printf "private-policy-probe" | mc pipe "verify/$OBJECT_STORAGE_BUCKET/$PROBE_OBJECT"
+              mc anonymous set download "verify/$OBJECT_STORAGE_BUCKET"
+              mc stat "verify/$OBJECT_STORAGE_BUCKET/$PROBE_OBJECT"
+            '
+
+          public_get_status="$(curl --silent --output /tmp/public-policy-probe.txt --write-out '%{http_code}' \
+            "http://127.0.0.1:9000/$bucket/$probe_object")"
+          test "$public_get_status" = "200"
+          grep -q '^private-policy-probe$' /tmp/public-policy-probe.txt
+
+          docker compose -f infra/compose/compose.dev.yml run --rm --no-deps object-storage-init
+
+          anonymous_list_status="$(curl --silent --output /tmp/anonymous-bucket.xml --write-out '%{http_code}' \
             "http://127.0.0.1:9000/$bucket?list-type=2")"
-          test "$anonymous_status" = "403"
+          anonymous_get_status="$(curl --silent --output /tmp/anonymous-object.xml --write-out '%{http_code}' \
+            "http://127.0.0.1:9000/$bucket/$probe_object")"
+          test "$anonymous_list_status" = "403"
+          test "$anonymous_get_status" = "403"
+
+          docker compose -f infra/compose/compose.dev.yml exec -T \
+            -e "OBJECT_STORAGE_BUCKET=$bucket" -e "PROBE_OBJECT=$probe_object" object-storage \
+            sh -ec '
+              mc alias set verify http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
+              mc stat "verify/$OBJECT_STORAGE_BUCKET/$PROBE_OBJECT"
+              mc rm "verify/$OBJECT_STORAGE_BUCKET/$PROBE_OBJECT"
+            '
 
           docker compose -f infra/compose/compose.dev.yml exec -T postgres \
             sh -ec 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
