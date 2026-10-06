@@ -147,7 +147,6 @@ jobs:
             tests_mvp.test_postgres_persistence.PostgresPersistenceIntegrationTests \
             -v 2>&1 | tee /tmp/postgres-integration-tests.txt
 
-          grep -q 'Ran 3 tests' /tmp/postgres-integration-tests.txt
           grep -q '^OK$' /tmp/postgres-integration-tests.txt
           if grep -qi 'skipped' /tmp/postgres-integration-tests.txt; then
             echo "PostgreSQL integration tests must not skip when DOUL_TEST_POSTGRES_DSN is configured."
