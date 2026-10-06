@@ -110,7 +110,11 @@ def sniff(data):
     if data[4:8]==b'ftyp':return 'video/mp4'
     if data.startswith(b'\x1a\x45\xdf\xa3'):return 'video/webm'
     if data.startswith(b'ID3') or data[:2] in [b'\xff\xfb',b'\xff\xf3',b'\xff\xf2']:return 'audio/mpeg'
-    raise ContractError('MIME_INVALID','Supported development formats: PNG/JPEG/GIF/WebP/MP4/WebM/WAV/MP3/PDF')
+    try:
+        parsed=json.loads(data)
+        if isinstance(parsed,(dict,list)):return 'application/json'
+    except (ValueError,UnicodeError):pass
+    raise ContractError('MIME_INVALID','Supported development formats: JSON/ PNG/JPEG/GIF/WebP/MP4/WebM/WAV/MP3/PDF')
 
 
 def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=None, document_runtime=None, authentication=None):
@@ -289,10 +293,11 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             items=[]
             for (kind,oid),r in store.engine._records.items():
                 machine=store.engine._record_machines.get((kind,oid))
-                if machine is None and kind not in ['Evidence','DocumentSnapshot']:continue
+                supporting=('schedule_activity' if kind=='WorkItem' and r.get('subtype')=='ScheduleActivity' else 'schedule_source' if kind=='InformationItem' and r.get('metadata',{}).get('sourceImport') else None)
+                if machine is None and kind not in ['Evidence','DocumentSnapshot'] and not supporting:continue
                 try:readable(r,session,role)
                 except ContractError:continue
-                items.append(dict(machine=machine or ('evidence' if kind=='Evidence' else 'document'),record=deepcopy(r),actions=preflight(machine,r,session,role) if machine else []))
+                items.append(dict(machine=machine or supporting or ('evidence' if kind=='Evidence' else 'document'),record=deepcopy(r),actions=preflight(machine,r,session,role) if machine else []))
             visible_ids={x['record']['id'] for x in items}
             audits=[x for x in store.engine.audit_events if x['projectId']==project_id and x['objectRef']['objectId'] in visible_ids][-50:]
             return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context=({k:v for k,v in store.meta.items() if k in ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId']} if store.meta.get('projectId')==project_id else {'projectId':project_id}),participants=[dict(partyId=r['partyId'],name=store.engine.get('Party',r['partyId'])['name'],actorGroup=r['actorGroup']) for (kind,_),r in store.engine._records.items() if kind=='RoleAssignment' and r['projectId']==project_id and r['active'] and r['actorGroup'] in ['SUP','CON','OWN','DES','ADM']],formSchemas=store.documents.schemas,demo=demo)
@@ -922,6 +927,28 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         with store.transaction():
             role=role_for(session,project_id,request.headers.get('x-roleassignment-id'));machine,r=machine_record(collection,object_id,project_id,session,role)
             return preflight(machine,r,session,role)
+
+    @app.post('/projects/{project_id}/schedule-source-imports')
+    async def schedule_source_import(project_id:str,request:Request):
+        from .schedule_import import import_source
+        session=identity(request);body=await body_json(request);key=key_for(request)
+        with store.transaction(True):
+            role=role_for(session,project_id,body.get('roleAssignmentId'))
+            result=import_source(store,project_id,body,session['partyId'],role['id'],key)
+            return JSONResponse(result,status_code=201)
+
+    @app.get('/projects/{project_id}/schedule-source-imports/{object_id}')
+    def schedule_source_detail(project_id:str,object_id:str,request:Request):
+        session=identity(request)
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'));valid_id(object_id)
+            current=store.engine.get('InformationItem',object_id);readable(current,session,role)
+            provenance=current.get('metadata',{}).get('sourceImport')
+            require(provenance is not None,'NOT_FOUND','Imported source unavailable')
+            source=store.engine.resolve(provenance['sourceScheduleRef'],project_id);readable(source,session,role)
+            activities=[store.engine.resolve(ref,project_id) for ref in provenance['activityRefs']]
+            for activity in activities:readable(activity,session,role)
+            return dict(record=source,activities=activities,sourceScheduleRef=provenance['sourceScheduleRef'],activityRefs=provenance['activityRefs'])
 
     @app.get('/projects/{project_id}/{collection}/{object_id}')
     def detail(project_id:str,collection:str,object_id:str,request:Request):
