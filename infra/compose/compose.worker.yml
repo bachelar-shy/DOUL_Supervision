@@ -5,7 +5,7 @@ services:
       DOUL_QUEUE_ENABLED: "true"
   worker-runtime:
     command: ["python", "-m", "services.worker", "--demo"]
-    stop_grace_period: 15s
+    stop_grace_period: 70s
     image: doul-supervision-worker-runtime:dev
     build:
       context: ../..

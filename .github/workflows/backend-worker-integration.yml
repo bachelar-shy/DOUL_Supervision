@@ -15,7 +15,7 @@ jobs:
       redis:
         image: redis:7.4.11-alpine3.21
         ports: ['6379:6379']
-        options: --health-cmd 'redis-cli ping' --health-interval 5s --health-timeout 3s --health-retries 10
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
       postgres:
         image: postgres:16.15-alpine3.24
         env:
@@ -23,7 +23,7 @@ jobs:
           POSTGRES_PASSWORD: disposable-ci-only
           POSTGRES_DB: worker_test
         ports: ['5432:5432']
-        options: --health-cmd 'pg_isready -U integration -d worker_test' --health-interval 5s --health-timeout 3s --health-retries 10
+        options: --health-cmd "pg_isready -U integration -d worker_test" --health-interval 5s --health-timeout 3s --health-retries 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
