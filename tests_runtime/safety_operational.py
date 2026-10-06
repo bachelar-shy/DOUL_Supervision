@@ -206,7 +206,7 @@ def run_safety_operational_e2e(request, restart_api, fixture, sup_token, con_tok
         "Stale affected Permit did not reject the entire Stop package"
     )
     status, unchanged = call(permit_endpoint, sup_token)
-    assert status == 200
+    assert status == 200, ("permit-after-rollback", status, unchanged)
     assert unchanged["status"] == "active"
     assert unchanged["version"] == permit["version"]
     assert unchanged["data"]["workAuthorized"] is True
