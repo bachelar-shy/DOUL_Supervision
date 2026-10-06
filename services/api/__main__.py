@@ -2,6 +2,8 @@ import argparse
 import os
 
 import uvicorn
+from services.telemetry import configure_logging
+configure_logging()
 
 from .main import create_app
 from .persistence import create_postgres_persistence
@@ -28,4 +30,4 @@ if a.database_url:
 else:
     app = create_app(a.database, demo=True)
 
-uvicorn.run(app, host="127.0.0.1", port=a.port, log_level="info")
+uvicorn.run(app, host="127.0.0.1", port=a.port, log_level="info", log_config=None, access_log=False)

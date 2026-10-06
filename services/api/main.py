@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
 import os
+import re
 from pathlib import Path
 import secrets
 from threading import RLock
@@ -122,6 +123,29 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     app.state.store=store
     app.state.queue_enabled = (os.getenv('DOUL_QUEUE_ENABLED', '').lower() == 'true') if queue_enabled is None else bool(queue_enabled)
     app.state.allowed_origins=origins
+
+    async def system_request_log(request, call_next):
+        import time
+        from uuid import uuid4
+        from services.telemetry import emit
+        request_id = str(uuid4())
+        started = time.monotonic()
+        status = 500
+        error_type = None
+        try:
+            response = await call_next(request)
+            status = response.status_code
+            response.headers['X-Request-ID'] = request_id
+            return response
+        except Exception as exc:
+            error_type = type(exc).__name__
+            raise
+        finally:
+            route = getattr(request.scope.get('route'), 'path', 'unmatched')
+            emit('api', 'http-request', method=request.method, route=route,
+                 requestId=request_id, statusCode=status,
+                 latencyMs=round((time.monotonic() - started) * 1000, 3), errorType=error_type)
+
     sessions={};session_lock=RLock()
     app.add_middleware(TrustedHostMiddleware,allowed_hosts=['127.0.0.1','localhost','testserver'])
     app.add_middleware(CORSMiddleware,allow_origins=origins,allow_methods=['GET','POST','PUT'],allow_headers=['Authorization','Content-Type','X-RoleAssignment-Id','Idempotency-Key','Upload-Offset'])
@@ -207,8 +231,19 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             results.append(dict(command=transition['command'],to=transition['to'],authority=transition['authority'],fields=fields,requiresEvidence=transition['required_evidence'],ready=failure is None,requiresInput=bool(fields),blockedReason=failure,expectedVersion=record['version']))
         return results
 
+    @app.get('/ready')
+    def ready():
+        try:
+            with store.transaction():
+                initialized = bool(store.engine._records)
+            if not initialized:
+                return JSONResponse({'status': 'error', 'errorType': 'UnprovisionedStore'}, status_code=503)
+            return {'status': 'ok', 'database': 'reachable'}
+        except Exception as exc:
+            return JSONResponse({'status': 'error', 'errorType': type(exc).__name__}, status_code=503)
+
     @app.get('/health')
-    def health():return dict(status='ok',mode='local-demo',baseCommit='1540acb',adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
+    def health():return dict(status='ok',mode='local-demo',baseCommit=(os.getenv('DOUL_RELEASE_SHA', '') if re.fullmatch(r'[a-f0-9]{40}', os.getenv('DOUL_RELEASE_SHA', '')) else 'unversioned-development'),adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
 
     @app.get('/dev/actors')
     def actors():
@@ -871,4 +906,5 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         with store.transaction(True):
             role=role_for(session,project_id,body['roleAssignmentId']);machine,r=machine_record(collection,object_id,project_id,session,role)
             return store.engine.execute(machine,object_id,cmd,body['expectedVersion'],body['payload'],body['evidenceIds'],session['partyId'],role['id'],key)
+    app.middleware('http')(system_request_log)
     return app

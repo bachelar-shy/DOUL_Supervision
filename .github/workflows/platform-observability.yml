@@ -1,52 +1,45 @@
 name: platform-observability
-
 on:
   pull_request:
-    paths:
-      - ".github/workflows/platform-observability.yml"
-      - "infra/observability/**"
-      - "infra/compose/compose.dev.yml"
+    paths: ['.github/workflows/platform-observability.yml', 'infra/observability/**', 'infra/compose/**', 'services/**', 'tests_mvp/test_observability.py', 'tests_runtime/observability_live.py']
   push:
     branches: [main]
-    paths:
-      - ".github/workflows/platform-observability.yml"
-      - "infra/observability/**"
-      - "infra/compose/compose.dev.yml"
-
+    paths: ['.github/workflows/platform-observability.yml', 'infra/observability/**', 'infra/compose/**', 'services/**', 'tests_mvp/test_observability.py', 'tests_runtime/observability_live.py']
 permissions:
   contents: read
-
 jobs:
   runtime-health-contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-
-      - name: Compile runtime health snapshot
-        run: python3 -m py_compile infra/observability/runtime_snapshot.py
-
-      - name: Verify structured and secret-safe signals
-        run: python3 -m unittest discover -s infra/observability -p 'test_*.py' -v
-
-      - name: Start current development object storage
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install locked runtime
+        run: pip install -r services/api/requirements.lock
+      - name: Verify health, metrics, private logs and alert retries
         run: |
-          docker compose -f infra/compose/compose.dev.yml \
-            up -d --build --wait --wait-timeout 90 object-storage
-
-      - name: Verify live configured storage health
+          python -m unittest discover -s infra/observability -p 'test_*.py' -v
+          python -m unittest discover -s tests_mvp -p test_observability.py -v
+      - name: Start disposable integrated runtime
         run: |
-          python3 - <<'PY'
-          import json
-          import sys
-          from pathlib import Path
-          sys.path.insert(0, str(Path('infra/observability').resolve()))
-          from runtime_snapshot import probe_object_storage
-          result = probe_object_storage('http://127.0.0.1:9000')
-          print(json.dumps(result, sort_keys=True))
-          assert result['status'] == 'ok', 'configured storage health probe failed'
-          PY
-
-      - name: Stop disposable storage
+          docker compose -f infra/compose/compose.dev.yml -f infra/compose/compose.worker.yml \
+            up -d --build --wait --wait-timeout 120 postgres redis api worker-runtime object-storage object-storage-init
+      - name: Verify live capacity, queue, worker and API signals
+        env:
+          DATABASE_URL: postgresql://doul_dev:local-postgres-only@127.0.0.1:5432/doul_supervision
+          REDIS_URL: redis://:local-redis-only@127.0.0.1:6379/0
+          OBJECT_STORAGE_ENDPOINT: http://127.0.0.1:9000
+          OBJECT_STORAGE_ACCESS_KEY: doul-dev
+          OBJECT_STORAGE_SECRET_KEY: local-minio-only
+          OBJECT_STORAGE_BUCKET: doul-supervision-dev
+        run: |
+          python -m tests_runtime.observability_live
+          python -m services.observability --demo
+      - name: Runtime logs
+        if: failure()
+        run: docker compose -f infra/compose/compose.dev.yml -f infra/compose/compose.worker.yml logs --no-color --tail 100 api worker-runtime
+      - name: Stop disposable runtime
         if: always()
-        run: docker compose -f infra/compose/compose.dev.yml down -v --remove-orphans
+        run: docker compose -f infra/compose/compose.dev.yml -f infra/compose/compose.worker.yml down -v --remove-orphans

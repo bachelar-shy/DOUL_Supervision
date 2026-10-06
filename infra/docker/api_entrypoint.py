@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 
 import uvicorn
+from services.telemetry import configure_logging
+configure_logging()
 
 from services.api.main import create_app
 
@@ -44,4 +46,4 @@ else:
     Path(database).parent.mkdir(parents=True, exist_ok=True)
     app = create_app(database, demo=True)
 
-uvicorn.run(app, host=host, port=port, log_level=log_level)
+uvicorn.run(app, host=host, port=port, log_level=log_level, log_config=None, access_log=False)
