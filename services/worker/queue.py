@@ -16,8 +16,10 @@ class QueuePort(Protocol):
 
 
 class RedisQueue:
-    def __init__(self, url: str, namespace: str = 'doul:media'):
+    def __init__(self, url: str, namespace: str = 'doul:media', initialize: bool = True):
         import redis
+        from services.runtime_config import validate_redis_url
+        validate_redis_url(url)
         if not namespace or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-_' for c in namespace):
             raise ValueError('Invalid queue namespace')
         self.client = redis.Redis.from_url(url, decode_responses=True, socket_timeout=5,
@@ -26,6 +28,8 @@ class RedisQueue:
         self.group = 'workers-v1'
         self.namespace = namespace
         self.client.ping()
+        if not initialize:
+            return
         try:
             self.client.xgroup_create(self.stream, self.group, id='0', mkstream=True)
         except redis.ResponseError as exc:

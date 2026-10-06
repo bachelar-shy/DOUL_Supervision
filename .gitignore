@@ -13,3 +13,10 @@ dist/
 playwright-report/
 test-results/
 *.tsbuildinfo
+
+# Recovery artifacts and operator secrets
+.local-backups/
+.secrets/
+*.backup.enc
+*.dump
+*.dump.sha256

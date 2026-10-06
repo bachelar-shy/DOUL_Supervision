@@ -1,0 +1,9 @@
+services:
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/document-runtime.Dockerfile
+    command: ["python", "-m", "infra.docker.api_entrypoint"]
+    environment:
+      DOUL_DOCUMENT_RUNTIME: local
+      DOUL_DOCUMENT_CACHE: /data/document-artifacts

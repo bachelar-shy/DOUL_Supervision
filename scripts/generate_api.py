@@ -87,6 +87,9 @@ def generate():
     schemas['SignRequest']={'type':'object','required':['roleAssignmentId','documentHash','roleCode','method'],'properties':{'roleAssignmentId':{'type':'string','format':'uuid'},'documentHash':{'type':'string'},'roleCode':{'type':'string'},'method':{'enum':['wet_original_verified','approved_e_signature']},'originalFileId':{'type':'string','format':'uuid'}},'additionalProperties':False}
     endpoint(root+'/documents/{documentId}/sign','post','현재 자격·배치·정확한 문서 hash에 서명',{'$ref':'#/components/schemas/SignRequest'}, {'$ref':'#/components/schemas/Signature'},code=201)
     endpoint(root+'/documents/{documentId}','get','불변 문서와 서명 이력',response={'$ref':'#/components/schemas/DocumentSnapshot'})
+    export_path=root+'/documents/{documentId}/exports/{format}'
+    endpoint(export_path,'get','Stored snapshot derivative export; original signature is not transferred',response={'type':'string','format':'binary'})
+    paths[export_path]['get']['responses']['200']['content']={mime:{'schema':{'type':'string','format':'binary'}} for mime in ['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document']}
     endpoint(root+'/notifications/{notificationId}/acknowledge','post','수신자 본인의 보고 수령 확인',{'$ref':'#/components/schemas/CommandRequest'}, {'$ref':'#/components/schemas/Notification'})
     endpoint(root+'/sync/conflicts','get','수동 해결을 기다리는 stale 업무명령',response={'type':'array','items':{'$ref':'#/components/schemas/CommandError'}})
     return {'openapi':'3.1.0','info':{'title':'DOUL Supervision Domain Command API','version':'2.2.0','description':'Project-scoped contract. Executable in-memory reference covers workflow; HTTP/DB/auth/media/DOCX/PDF adapters are implementation work.'},

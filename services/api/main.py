@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
 import os
+import re
 from pathlib import Path
 import secrets
 from threading import RLock
@@ -112,18 +113,56 @@ def sniff(data):
     raise ContractError('MIME_INVALID','Supported development formats: PNG/JPEG/GIF/WebP/MP4/WebM/WAV/MP3/PDF')
 
 
-def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=None):
-    if not demo:raise RuntimeError('Production auth is not configured. Explicit --demo is required; bind to loopback only.')
-    origins=development_origins()
+def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=None, document_runtime=None, authentication=None):
+    from services.runtime_config import environment
+    stage=environment()
+    if demo and stage!='development':raise RuntimeError('Demonstration mode is forbidden outside development')
+    if not demo:
+        if stage=='development':raise RuntimeError('Production auth requires an explicitly configured staging or pilot environment')
+        from services.deployment.auth import PinnedJWT
+        from services.deployment.gates import https_origins,allowed_hosts,validate_store
+        authentication=authentication or PinnedJWT.configured()
+        origins=https_origins();hosts=allowed_hosts()
+        if persistence is None:raise RuntimeError('Non-demo API requires explicitly provisioned persistence')
+        validate_store(persistence,stage)
+    else:
+        origins=development_origins();hosts=['127.0.0.1','localhost','testserver']
     if persistence is not None and not isinstance(persistence,PersistencePort):
         raise TypeError('persistence must satisfy PersistencePort')
     store=persistence if persistence is not None else create_local_persistence(db_path,demo=True)
-    app=FastAPI(title='DOUL MVP local development adapter',version='0.1.0',docs_url='/api-docs')
+    app=FastAPI(title='DOUL Supervision API',version='0.1.0',docs_url='/api-docs' if demo else None,openapi_url='/openapi.json' if demo else None,redoc_url=None)
+    app.state.document_runtime=document_runtime
+    if document_runtime is None and os.getenv('DOUL_DOCUMENT_RUNTIME') == 'local':
+        from services.document_runtime.render import LocalDocumentRuntime
+        app.state.document_runtime=LocalDocumentRuntime(os.environ['DOUL_DOCUMENT_CACHE'])
     app.state.store=store
     app.state.queue_enabled = (os.getenv('DOUL_QUEUE_ENABLED', '').lower() == 'true') if queue_enabled is None else bool(queue_enabled)
     app.state.allowed_origins=origins
+
+    async def system_request_log(request, call_next):
+        import time
+        from uuid import uuid4
+        from services.telemetry import emit
+        request_id = str(uuid4())
+        started = time.monotonic()
+        status = 500
+        error_type = None
+        try:
+            response = await call_next(request)
+            status = response.status_code
+            response.headers['X-Request-ID'] = request_id
+            return response
+        except Exception as exc:
+            error_type = type(exc).__name__
+            raise
+        finally:
+            route = getattr(request.scope.get('route'), 'path', 'unmatched')
+            emit('api', 'http-request', method=request.method, route=route,
+                 requestId=request_id, statusCode=status,
+                 latencyMs=round((time.monotonic() - started) * 1000, 3), errorType=error_type)
+
     sessions={};session_lock=RLock()
-    app.add_middleware(TrustedHostMiddleware,allowed_hosts=['127.0.0.1','localhost','testserver'])
+    app.add_middleware(TrustedHostMiddleware,allowed_hosts=hosts)
     app.add_middleware(CORSMiddleware,allow_origins=origins,allow_methods=['GET','POST','PUT'],allow_headers=['Authorization','Content-Type','X-RoleAssignment-Id','Idempotency-Key','Upload-Offset'])
 
     @app.exception_handler(ContractError)
@@ -132,12 +171,18 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     def identity(request):
         auth=request.headers.get('authorization','')
         token=auth[7:] if auth.startswith('Bearer ') else ''
+        if not demo:return authentication.session(token,store)
         with session_lock:session=sessions.get(token)
         require(session is not None and session['expires']>datetime.now(timezone.utc),'UNAUTHENTICATED','Development session missing or expired')
         return session
 
     def role_for(session,project,role_id=None):
         valid_id(project)
+        if not demo:
+            binding=store.meta.get('identityBindings',{}).get(session['identityKey'],{})
+            require(binding.get('active') is True and binding.get('partyId')==session['partyId'] and session['issuedAt']>=binding.get('validAfter',0),'UNAUTHENTICATED','Identity is revoked')
+            party=store.engine.get('Party',session['partyId'])
+            require(party.get('loginEnabled') is True,'UNAUTHENTICATED','Identity is disabled')
         rid=role_id or session['roleAssignmentId']
         role=store.engine.get('RoleAssignment',rid)
         require(role['partyId']==session['partyId'],'NOT_AUTHORIZED','Role does not belong to this session')
@@ -207,8 +252,19 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             results.append(dict(command=transition['command'],to=transition['to'],authority=transition['authority'],fields=fields,requiresEvidence=transition['required_evidence'],ready=failure is None,requiresInput=bool(fields),blockedReason=failure,expectedVersion=record['version']))
         return results
 
+    @app.get('/ready')
+    def ready():
+        try:
+            with store.transaction():
+                initialized = bool(store.engine._records)
+            if not initialized:
+                return JSONResponse({'status': 'error', 'errorType': 'UnprovisionedStore'}, status_code=503)
+            return {'status': 'ok', 'database': 'reachable'}
+        except Exception as exc:
+            return JSONResponse({'status': 'error', 'errorType': type(exc).__name__}, status_code=503)
+
     @app.get('/health')
-    def health():return dict(status='ok',mode='local-demo',baseCommit='1540acb',adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
+    def health():return dict(status='ok',mode='local-demo' if demo else stage,baseCommit=(os.getenv('DOUL_RELEASE_SHA', '') if re.fullmatch(r'[a-f0-9]{40}', os.getenv('DOUL_RELEASE_SHA', '')) else 'unversioned-development'),adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo' if demo else 'pinned-rs256-access-token','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
 
     @app.get('/dev/actors')
     def actors():
@@ -239,7 +295,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                 items.append(dict(machine=machine or ('evidence' if kind=='Evidence' else 'document'),record=deepcopy(r),actions=preflight(machine,r,session,role) if machine else []))
             visible_ids={x['record']['id'] for x in items}
             audits=[x for x in store.engine.audit_events if x['projectId']==project_id and x['objectRef']['objectId'] in visible_ids][-50:]
-            return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context={k:v for k,v in store.meta.items() if k not in ['actors','serviceActors']},participants=[{k:a[k] for k in ['partyId','name','actorGroup']} for a in store.meta['actors'].values()],formSchemas=store.documents.schemas,demo=True)
+            return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context=({k:v for k,v in store.meta.items() if k in ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId']} if store.meta.get('projectId')==project_id else {'projectId':project_id}),participants=[dict(partyId=r['partyId'],name=store.engine.get('Party',r['partyId'])['name'],actorGroup=r['actorGroup']) for (kind,_),r in store.engine._records.items() if kind=='RoleAssignment' and r['projectId']==project_id and r['active'] and r['actorGroup'] in ['SUP','CON','OWN','DES','ADM']],formSchemas=store.documents.schemas,demo=demo)
 
     @app.get('/projects/{project_id}/roles')
     def roles(project_id:str,request:Request):
@@ -276,6 +332,8 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         for value in body['sourceEvidenceIds']:valid_id(value)
         with store.transaction(True):
             role=role_for(session,project_id,body['roleAssignmentId'])
+            if not demo:
+                require(store.meta.get('projectConfiguration',{}).get('mediaPolicy',{}).get('enabled') is True,'ADAPTER_NOT_CONFIGURED','Media processing is not enabled for this environment')
             for evidence_id in body['sourceEvidenceIds']:
                 evidence=store.engine.get('Evidence',evidence_id);readable(evidence,session,role)
             if body.get('inspectionId'):
@@ -828,6 +886,29 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             for ref in body['sourceDomainRefs']:readable(store.engine.resolve(ref,project_id),session,role)
             return store.documents.render(form_id,body['sourceDomainRefs'],body['data'],session['partyId'],role['id'],key,body['language'],operation=='render')
 
+    @app.get('/projects/{project_id}/documents/{document_id}/exports/{format}')
+    def document_export(project_id:str,document_id:str,format:str,request:Request):
+        session=identity(request)
+        require(format in {'docx','pdf'},'NOT_FOUND','Unsupported export format')
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            snapshot=store.documents.get(document_id);readable(snapshot,session,role)
+            preserved=store.documents.rerender(document_id)
+        require(app.state.document_runtime is not None,'ADAPTER_NOT_CONFIGURED','Reproducible document runtime is not installed')
+        try:
+            artifact=app.state.document_runtime.export(snapshot,preserved,format)
+        except Exception:
+            raise ContractError('ADAPTER_NOT_CONFIGURED','Document export failed integrity or runtime checks')
+        # Recheck visibility after conversion; a revoked role cannot receive bytes.
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            readable(store.documents.get(document_id),session,role)
+        return Response(artifact['content'],media_type=artifact['mediaType'],headers={
+            'Content-Disposition':'attachment; filename="'+snapshot['formId']+'-'+snapshot['id']+'.'+format+'"',
+            'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff',
+            'X-Artifact-SHA256':artifact['sha256'],'X-Source-Render-Hash':snapshot['renderHash'],
+            'X-Source-Snapshot-ID':snapshot['id'],'X-Legal-Signature-Transferred':'false'})
+
     @app.post('/projects/{project_id}/documents/{document_id}/sign')
     async def sign(project_id:str,document_id:str,request:Request):
         session=identity(request);body=await body_json(request);key_for(request);validate(body,SCHEMAS['SignRequest'],SCHEMAS)
@@ -871,4 +952,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         with store.transaction(True):
             role=role_for(session,project_id,body['roleAssignmentId']);machine,r=machine_record(collection,object_id,project_id,session,role)
             return store.engine.execute(machine,object_id,cmd,body['expectedVersion'],body['payload'],body['evidenceIds'],session['partyId'],role['id'],key)
+    if not demo:
+        app.router.routes=[route for route in app.router.routes if not getattr(route,'path','').startswith('/dev/')]
+    app.middleware('http')(system_request_log)
     return app

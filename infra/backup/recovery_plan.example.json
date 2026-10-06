@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "composeProject": "doul-supervision-dev",
+  "composeFiles": ["infra/compose/compose.dev.yml", "infra/compose/compose.worker.yml"],
+  "database": "doul_supervision",
+  "bucket": "doul-supervision-dev",
+  "releaseSha": "0000000000000000000000000000000000000000",
+  "configurationPaths": ["app/schema/project_configuration_contract_v1.json", "infra/storage_policy_v1.json"],
+  "secretRecovery": [
+    {"name": "DATABASE_URL", "vaultRef": "EXAMPLE-vault/database", "versionRef": "EXAMPLE-version", "owner": "Platform operations"},
+    {"name": "REDIS_URL", "vaultRef": "EXAMPLE-vault/redis", "versionRef": "EXAMPLE-version", "owner": "Platform operations"},
+    {"name": "OBJECT_STORAGE_ACCESS_KEY", "vaultRef": "EXAMPLE-vault/storage-access", "versionRef": "EXAMPLE-version", "owner": "Storage operations"},
+    {"name": "OBJECT_STORAGE_SECRET_KEY", "vaultRef": "EXAMPLE-vault/storage-secret", "versionRef": "EXAMPLE-version", "owner": "Storage operations"},
+    {"name": "RECOVERY_ENCRYPTION_KEY", "vaultRef": "EXAMPLE-offline-recovery-vault/key", "versionRef": "EXAMPLE-version", "owner": "Recovery approver"}
+  ],
+  "targets": {"rpoSeconds": 86400, "rtoSeconds": 14400, "status": "draft"},
+  "owners": {"backup": "Platform operations", "restore": "Recovery operator", "approval": "Project operation owner"},
+  "writeBoundary": "all-api-worker-and-external-writers-stopped",
+  "applicationStorage": "database-blobs-v1"
+}
