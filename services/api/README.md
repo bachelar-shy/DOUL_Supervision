@@ -3,8 +3,8 @@
 `python -m services.api --demo`로만 실행한다. loopback 8791 포트와 합성자료를 사용한다.
 
 - 기존 PR #2 `Engine`과 `Documents` 계약 재사용
-- SQLite는 개발용 JSON snapshot adapter이며 normalized PostgreSQL 구현이 아니다.
-- HTTP Application은 `PersistencePort`에만 의존하고, 현재 기본 구현은 `SQLiteSnapshotAdapter`다. `create_app(..., persistence=...)`로 어댑터를 주입할 수 있어 다음 단계의 PostgreSQL 구현이 Application/업무 Contract를 다시 정의하지 않도록 경계를 분리했다.
+- 기본 저장소는 개발용 `SQLiteSnapshotAdapter`다. `PostgresSnapshotAdapter`도 같은 snapshot 의미와 `PersistencePort`를 구현하며 Psycopg `ConnectionPool`로 연결 수명·재사용을 관리한다. 다만 단일 in-memory snapshot 모델 자체는 `RLock`으로 직렬화하므로 아직 normalized PostgreSQL domain schema나 병렬 domain mutation을 뜻하지 않는다.
+- HTTP Application은 `PersistencePort`에만 의존한다. `create_app(..., persistence=...)`로 어댑터를 주입할 수 있으며, 로컬 CLI는 `DATABASE_URL` 또는 `--database-url`이 있으면 PostgreSQL snapshot adapter를 선택한다. 업무 Contract는 저장소 선택과 독립적이다.
 - Dev session은 실제 사용자 인증이 아니다.
 - 실제 AI 모델 공급자 호출, 전자서명, DOCX/PDF 어댑터는 아직 연결하지 않았다. Generic `analysis-runs` 생성은 계속 HTTP 501이며, 대신 아래의 정규화된 Media Analysis Application Service와 demo-only Worker ingress로 계약을 검증한다.
 - 모든 증빙·업무 조회와 명령에 프로젝트 배치·유효기간·범위 검증 적용
