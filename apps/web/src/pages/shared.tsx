@@ -48,7 +48,11 @@ export function RecordList({
   items,
   onSelect,
   selected,
+  statusLabel,
+  contextLabel,
 }: {
+  statusLabel?: (item: WorkItem) => string;
+  contextLabel?: (item: WorkItem) => string;
   items: WorkItem[];
   onSelect: (x: WorkItem) => void;
   selected?: string | null;
@@ -82,14 +86,14 @@ export function RecordList({
                   {x.record.id.slice(0, 6)}
                 </small>
                 <StatusBadge status={x.record.status}>
-                  {states[x.record.status || ""] ||
+                  {statusLabel?.(x) || states[x.record.status || ""] ||
                     x.record.status ||
                     "원본 보존"}
                 </StatusBadge>
               </div>
               <strong>{recordTitle(x.record)}</strong>
               <span>
-                A동 2층 / C-5 <i>·</i> 원본 v{x.record.version}
+                {contextLabel ? contextLabel(x) : "A동 2층 / C-5"} <i>·</i> 원본 v{x.record.version}
               </span>
             </div>
             <Icon name="arrow" />

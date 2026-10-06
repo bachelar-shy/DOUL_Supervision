@@ -1,3 +1,4 @@
+import { scheduleInputs } from "../data/schedule-fields.generated";
 import { useState } from "react";
 import type {
   CommandDescriptor,
@@ -30,12 +31,14 @@ const jsonFields = new Set([
 function fieldDefault(field: string, w: Workspace, item: WorkItem): string {
   const existing =
     item.record.data?.[field] ??
+    (item.record.schedule as Record<string, Json> | undefined)?.[field] ??
     (item.record[field] as Json | undefined);
   if (existing !== undefined && existing !== null) {
     return typeof existing === "object"
       ? JSON.stringify(existing, null, 2)
       : String(existing);
   }
+  if (scheduleInputs[item.machine]) return "";
   if (field.endsWith("At"))
     return new Date(
       Date.now() + (field === "dueAt" ? 86400000 : 0),
@@ -98,10 +101,18 @@ export function CommandModal({
       for (const f of dialog.action.fields) {
         const v = values[f];
         if (!v?.trim()) continue;
-        payload[f] = booleanFields.has(f)
+        const inputType = scheduleInputs[dialog.item.machine]?.commandFields[f]?.type;
+        if (inputType === "integer" || inputType === "number") {
+          const number = Number(v);
+          if (!Number.isFinite(number) || (inputType === "integer" && !Number.isInteger(number)))
+            throw new Error(`${fields[f] || f}: 숫자를 입력하십시오.`);
+          payload[f] = number;
+          continue;
+        }
+        payload[f] = inputType === "boolean" || booleanFields.has(f)
           ? v === "true"
-          : jsonFields.has(f) ||
-              /Ids$|Refs$|Ref$|^references$/.test(f)
+          : inputType === "object" || inputType === "array" || jsonFields.has(f) ||
+              (!inputType && /Ids$|Refs$|Ref$|^references$/.test(f))
             ? (JSON.parse(v) as Json)
             : v;
       }
@@ -171,13 +182,14 @@ export function CommandModal({
                   <option value="false">필요 없음</option>
                   <option value="true">설계변경 필요</option>
                 </select>
-              ) : booleanFields.has(f) ? (
+              ) : (booleanFields.has(f) || scheduleInputs[dialog.item.machine]?.commandFields[f]?.type === "boolean") ? (
                 <select
                   value={values[f]}
                   onChange={(e) =>
                     setValues({ ...values, [f]: e.target.value })
                   }
                 >
+                  {scheduleInputs[dialog.item.machine] && <option value="">선택</option>}
                   <option value="false">아니오</option>
                   <option value="true">예</option>
                 </select>

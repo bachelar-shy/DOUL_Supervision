@@ -7,3 +7,5 @@ export { RegisterPage } from "./RegisterPage";
 export { SafetyPage } from "./SafetyPage";
 export { TodayPage } from "./TodayPage";
 export { WorkbenchPage } from "./WorkbenchPage";
+
+export { SchedulePage } from "./SchedulePage";

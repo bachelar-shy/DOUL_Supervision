@@ -17,6 +17,8 @@ export function recordRef(item: WorkItem): DomainRef {
     issue: "Issue",
     observation: "Observation",
     action: "Action",
+    delay_event: "WorkItem",
+    recovery_plan: "WorkItem",
     rfi: "WorkItem",
     report: "InformationItem",
     decision: "Decision",
