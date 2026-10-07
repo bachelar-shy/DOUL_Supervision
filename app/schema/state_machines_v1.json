@@ -8479,6 +8479,1489 @@
           "audit_event": true
         }
       ]
+    },
+    "contract_boq": {
+      "object_type": "InformationItem",
+      "subtype": "ContractBOQ",
+      "initial": "draft",
+      "states": [
+        "draft",
+        "submitted",
+        "commercial_review",
+        "decision_pending",
+        "approved",
+        "effective",
+        "returned",
+        "rejected",
+        "superseded",
+        "withdrawn"
+      ],
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "submitted",
+          "command": "submit_boq",
+          "authority": "payment.boq.submit",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "boq_submission_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "currency",
+            "contractRef",
+            "effectiveFrom",
+            "sourceFileRefs",
+            "lineItems",
+            "provisionalSumRules",
+            "measurementRulesRef",
+            "roundingRule",
+            "revisionBasisRefs"
+          ],
+          "required_payload_fields": [
+            "currency",
+            "contractRef",
+            "effectiveFrom",
+            "sourceFileRefs",
+            "lineItems",
+            "measurementRulesRef",
+            "roundingRule"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "BOQ_SUBMISSION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "commercial_review",
+          "command": "start_boq_review",
+          "authority": "payment.boq.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "boq_review_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "BOQ_REVIEW_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "returned",
+          "command": "return_boq",
+          "authority": "payment.boq.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "commercial_review",
+          "to": "returned",
+          "command": "return_boq",
+          "authority": "payment.boq.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "commercial_review",
+          "to": "decision_pending",
+          "command": "request_boq_decision",
+          "authority": "payment.boq.request_decision",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "boq_decision_request_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "BOQ_DECISION_REQUEST_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decision_pending",
+          "to": "approved",
+          "command": "approve_boq",
+          "authority": "payment.boq.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "boq_approved_decision_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "ownerDecisionRef"
+          ],
+          "required_payload_fields": [
+            "ownerDecisionRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "BOQ_APPROVED_DECISION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decision_pending",
+          "to": "rejected",
+          "command": "reject_boq",
+          "authority": "payment.boq.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "boq_rejected_decision_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "ownerDecisionRef"
+          ],
+          "required_payload_fields": [
+            "ownerDecisionRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "BOQ_REJECTED_DECISION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "approved",
+          "to": "effective",
+          "command": "activate_boq",
+          "authority": "payment.boq.activate",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "boq_activation_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "BOQ_ACTIVATION_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "returned",
+          "to": "submitted",
+          "command": "resubmit_boq",
+          "authority": "payment.boq.submit",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "boq_submission_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "currency",
+            "contractRef",
+            "effectiveFrom",
+            "sourceFileRefs",
+            "lineItems",
+            "provisionalSumRules",
+            "measurementRulesRef",
+            "roundingRule",
+            "revisionBasisRefs"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "BOQ_SUBMISSION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "draft",
+          "to": "withdrawn",
+          "command": "withdraw_boq",
+          "authority": "payment.boq.withdraw",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "withdrawn",
+          "command": "withdraw_boq",
+          "authority": "payment.boq.withdraw",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        }
+      ]
+    },
+    "quantity_measurement": {
+      "object_type": "WorkItem",
+      "subtype": "QuantityMeasurement",
+      "initial": "draft",
+      "states": [
+        "draft",
+        "submitted",
+        "completeness_review",
+        "field_verification",
+        "technical_verification",
+        "adjustment_required",
+        "verified",
+        "disputed",
+        "superseded",
+        "cancelled"
+      ],
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "submitted",
+          "command": "submit_measurement",
+          "authority": "payment.measurement.submit",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "measurement_submission_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "periodStart",
+            "periodEnd",
+            "measuredAt",
+            "boqRef",
+            "boqItemRef",
+            "claimedQuantity",
+            "unit",
+            "measurementMethod",
+            "drawingRefs",
+            "inspectionRefs",
+            "testRefs",
+            "materialLotRefs",
+            "changeRefs",
+            "variationRefs",
+            "previousCertifiedQuantity"
+          ],
+          "required_payload_fields": [
+            "periodStart",
+            "periodEnd",
+            "measuredAt",
+            "boqRef",
+            "boqItemRef",
+            "claimedQuantity",
+            "unit",
+            "measurementMethod",
+            "previousCertifiedQuantity"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "MEASUREMENT_SUBMISSION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "completeness_review",
+          "command": "receive_measurement",
+          "authority": "payment.measurement.receive",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "measurement_receipt_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "MEASUREMENT_RECEIPT_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "completeness_review",
+          "to": "adjustment_required",
+          "command": "return_incomplete",
+          "authority": "payment.measurement.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "completeness_review",
+          "to": "field_verification",
+          "command": "start_field_verification",
+          "authority": "payment.measurement.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "measurement_field_review_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "MEASUREMENT_FIELD_REVIEW_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "field_verification",
+          "to": "technical_verification",
+          "command": "start_technical_verification",
+          "authority": "payment.measurement.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "measurement_technical_review_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "MEASUREMENT_TECHNICAL_REVIEW_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "technical_verification",
+          "to": "adjustment_required",
+          "command": "request_measurement_adjustment",
+          "authority": "payment.measurement.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "adjustment_required",
+          "to": "submitted",
+          "command": "resubmit_measurement",
+          "authority": "payment.measurement.submit",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "measurement_submission_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "periodStart",
+            "periodEnd",
+            "measuredAt",
+            "boqRef",
+            "boqItemRef",
+            "claimedQuantity",
+            "unit",
+            "measurementMethod",
+            "drawingRefs",
+            "inspectionRefs",
+            "testRefs",
+            "materialLotRefs",
+            "changeRefs",
+            "variationRefs",
+            "previousCertifiedQuantity"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "MEASUREMENT_SUBMISSION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "technical_verification",
+          "to": "verified",
+          "command": "verify_quantity",
+          "authority": "payment.measurement.verify",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "measurement_verification_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "verifiedQuantity"
+          ],
+          "required_payload_fields": [
+            "verifiedQuantity"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "MEASUREMENT_VERIFICATION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "technical_verification",
+          "to": "disputed",
+          "command": "mark_measurement_disputed",
+          "authority": "payment.measurement.verify",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "measurement_dispute_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "verifiedQuantity",
+            "disputedQuantity",
+            "disputeReason"
+          ],
+          "required_payload_fields": [
+            "disputedQuantity",
+            "disputeReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "MEASUREMENT_DISPUTE_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "disputed",
+          "to": "verified",
+          "command": "resolve_measurement",
+          "authority": "payment.measurement.resolve",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "measurement_resolution_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "verifiedQuantity",
+            "resolutionRef"
+          ],
+          "required_payload_fields": [
+            "verifiedQuantity",
+            "resolutionRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "MEASUREMENT_RESOLUTION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "verified",
+          "to": "superseded",
+          "command": "supersede_measurement",
+          "authority": "payment.measurement.resolve",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "measurement_supersede_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef"
+          ],
+          "required_payload_fields": [
+            "replacementRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "MEASUREMENT_SUPERSEDE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "draft",
+          "to": "cancelled",
+          "command": "cancel_measurement",
+          "authority": "payment.measurement.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "cancelled",
+          "command": "cancel_measurement",
+          "authority": "payment.measurement.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "adjustment_required",
+          "to": "cancelled",
+          "command": "cancel_measurement",
+          "authority": "payment.measurement.cancel",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        }
+      ]
+    },
+    "payment_claim": {
+      "object_type": "WorkItem",
+      "subtype": "PaymentClaim",
+      "initial": "draft",
+      "states": [
+        "draft",
+        "submitted",
+        "completeness_review",
+        "quantity_review",
+        "valuation_review",
+        "adjustment_required",
+        "recommendation_pending",
+        "recommended",
+        "owner_review",
+        "owner_approved",
+        "owner_adjusted",
+        "rejected",
+        "payment_recorded",
+        "closed",
+        "withdrawn",
+        "superseded"
+      ],
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "submitted",
+          "command": "submit_payment_claim",
+          "authority": "payment.claim.submit",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_claim_submission_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "periodStart",
+            "periodEnd",
+            "contractRef",
+            "boqRef",
+            "currency",
+            "quantityMeasurementRefs",
+            "claimedGrossAmount",
+            "variationComponents",
+            "eligibleMaterialOnSiteAmount",
+            "previousPaymentClaimRef",
+            "previousCertifiedAmount",
+            "previousPaidAmount"
+          ],
+          "required_payload_fields": [
+            "periodStart",
+            "periodEnd",
+            "contractRef",
+            "boqRef",
+            "currency",
+            "quantityMeasurementRefs",
+            "claimedGrossAmount",
+            "previousCertifiedAmount",
+            "previousPaidAmount"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_CLAIM_SUBMISSION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "completeness_review",
+          "command": "receive_payment_claim",
+          "authority": "payment.claim.receive",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_claim_receipt_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_CLAIM_RECEIPT_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "completeness_review",
+          "to": "adjustment_required",
+          "command": "return_payment_claim_incomplete",
+          "authority": "payment.claim.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "completeness_review",
+          "to": "quantity_review",
+          "command": "start_quantity_review",
+          "authority": "payment.claim.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_quantity_review_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_QUANTITY_REVIEW_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "quantity_review",
+          "to": "valuation_review",
+          "command": "start_valuation_review",
+          "authority": "payment.claim.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_valuation_review_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "verifiedGrossAmount",
+            "disputedAmount"
+          ],
+          "required_payload_fields": [
+            "verifiedGrossAmount",
+            "disputedAmount"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_VALUATION_REVIEW_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "valuation_review",
+          "to": "adjustment_required",
+          "command": "request_payment_adjustment",
+          "authority": "payment.claim.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "adjustment_required",
+          "to": "submitted",
+          "command": "resubmit_payment_claim",
+          "authority": "payment.claim.submit",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_claim_submission_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "periodStart",
+            "periodEnd",
+            "contractRef",
+            "boqRef",
+            "currency",
+            "quantityMeasurementRefs",
+            "claimedGrossAmount",
+            "variationComponents",
+            "eligibleMaterialOnSiteAmount",
+            "previousPaymentClaimRef",
+            "previousCertifiedAmount",
+            "previousPaidAmount"
+          ],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_CLAIM_SUBMISSION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "valuation_review",
+          "to": "recommendation_pending",
+          "command": "prepare_recommendation",
+          "authority": "payment.claim.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_recommendation_prepare_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "eligibleVariationAmount",
+            "eligibleMaterialOnSiteAmount",
+            "retentionAmount",
+            "advanceRecoveryAmount",
+            "otherDeductionAmount",
+            "taxAmount",
+            "recommendedNetAmount",
+            "deductionComponents",
+            "calculationRuleRef",
+            "reservationComment"
+          ],
+          "required_payload_fields": [
+            "eligibleVariationAmount",
+            "eligibleMaterialOnSiteAmount",
+            "retentionAmount",
+            "advanceRecoveryAmount",
+            "otherDeductionAmount",
+            "taxAmount",
+            "recommendedNetAmount",
+            "deductionComponents",
+            "calculationRuleRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_RECOMMENDATION_PREPARE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "recommendation_pending",
+          "to": "recommended",
+          "command": "recommend_payment",
+          "authority": "payment.claim.recommend",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_recommendation_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_RECOMMENDATION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "recommended",
+          "to": "owner_review",
+          "command": "submit_owner_review",
+          "authority": "payment.claim.owner_review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_owner_review_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_OWNER_REVIEW_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "owner_review",
+          "to": "owner_approved",
+          "command": "approve_payment",
+          "authority": "payment.claim.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_owner_approval_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "ownerApprovedAmount",
+            "decisionRefs"
+          ],
+          "required_payload_fields": [
+            "ownerApprovedAmount",
+            "decisionRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_OWNER_APPROVAL_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "owner_review",
+          "to": "owner_adjusted",
+          "command": "adjust_payment",
+          "authority": "payment.claim.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_owner_adjustment_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "ownerApprovedAmount",
+            "adjustmentReason",
+            "decisionRefs"
+          ],
+          "required_payload_fields": [
+            "ownerApprovedAmount",
+            "adjustmentReason",
+            "decisionRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_OWNER_ADJUSTMENT_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "owner_review",
+          "to": "rejected",
+          "command": "reject_payment",
+          "authority": "payment.claim.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_owner_rejection_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "decisionRefs"
+          ],
+          "required_payload_fields": [
+            "decisionRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_OWNER_REJECTION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "owner_approved",
+          "to": "payment_recorded",
+          "command": "record_payment",
+          "authority": "payment.claim.record",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_record_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "paymentAmount",
+            "paidAt",
+            "paymentReference",
+            "externalSystemRef"
+          ],
+          "required_payload_fields": [
+            "paymentAmount",
+            "paidAt",
+            "paymentReference"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_RECORD_READY",
+            "EVIDENCE_REQUIRED",
+            "PAYMENT_REFERENCE_DUPLICATE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "owner_adjusted",
+          "to": "payment_recorded",
+          "command": "record_payment",
+          "authority": "payment.claim.record",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_record_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "paymentAmount",
+            "paidAt",
+            "paymentReference",
+            "externalSystemRef"
+          ],
+          "required_payload_fields": [
+            "paymentAmount",
+            "paidAt",
+            "paymentReference"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_RECORD_READY",
+            "EVIDENCE_REQUIRED",
+            "PAYMENT_REFERENCE_DUPLICATE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "payment_recorded",
+          "to": "closed",
+          "command": "close_payment_claim",
+          "authority": "payment.claim.close",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_close_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_CLOSE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "draft",
+          "to": "withdrawn",
+          "command": "withdraw_payment_claim",
+          "authority": "payment.claim.withdraw",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "withdrawn",
+          "command": "withdraw_payment_claim",
+          "authority": "payment.claim.withdraw",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "reason_present"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "reason"
+          ],
+          "required_payload_fields": [
+            "reason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "REASON_PRESENT"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "closed",
+          "to": "superseded",
+          "command": "supersede_payment_claim",
+          "authority": "payment.claim.close",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_supersede_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "replacementRef"
+          ],
+          "required_payload_fields": [
+            "replacementRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_SUPERSEDE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "payment_recorded",
+          "to": "payment_recorded",
+          "command": "record_additional_payment",
+          "authority": "payment.claim.record",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_record_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "paymentAmount",
+            "paidAt",
+            "paymentReference",
+            "externalSystemRef"
+          ],
+          "required_payload_fields": [
+            "paymentAmount",
+            "paidAt",
+            "paymentReference"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_RECORD_READY",
+            "EVIDENCE_REQUIRED",
+            "PAYMENT_REFERENCE_DUPLICATE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "payment_recorded",
+          "to": "payment_recorded",
+          "command": "correct_payment_record",
+          "authority": "payment.claim.record",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_correction_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "supersedesPaymentRecordId",
+            "paymentAmount",
+            "paidAt",
+            "paymentReference",
+            "externalSystemRef",
+            "correctionReason"
+          ],
+          "required_payload_fields": [
+            "supersedesPaymentRecordId",
+            "paymentAmount",
+            "paidAt",
+            "paymentReference",
+            "correctionReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_CORRECTION_READY",
+            "PAYMENT_REFERENCE_DUPLICATE",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "payment_recorded",
+          "to": "payment_recorded",
+          "command": "cancel_payment_record",
+          "authority": "payment.claim.record",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_cancellation_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "supersedesPaymentRecordId",
+            "paidAt",
+            "paymentReference",
+            "externalSystemRef",
+            "correctionReason"
+          ],
+          "required_payload_fields": [
+            "supersedesPaymentRecordId",
+            "paidAt",
+            "paymentReference",
+            "correctionReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_CANCELLATION_READY",
+            "PAYMENT_REFERENCE_DUPLICATE",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "closed",
+          "to": "payment_recorded",
+          "command": "correct_payment_record",
+          "authority": "payment.claim.record",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_correction_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "supersedesPaymentRecordId",
+            "paymentAmount",
+            "paidAt",
+            "paymentReference",
+            "externalSystemRef",
+            "correctionReason"
+          ],
+          "required_payload_fields": [
+            "supersedesPaymentRecordId",
+            "paymentAmount",
+            "paidAt",
+            "paymentReference",
+            "correctionReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_CORRECTION_READY",
+            "PAYMENT_REFERENCE_DUPLICATE",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "closed",
+          "to": "payment_recorded",
+          "command": "cancel_payment_record",
+          "authority": "payment.claim.record",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_cancellation_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "supersedesPaymentRecordId",
+            "paidAt",
+            "paymentReference",
+            "externalSystemRef",
+            "correctionReason"
+          ],
+          "required_payload_fields": [
+            "supersedesPaymentRecordId",
+            "paidAt",
+            "paymentReference",
+            "correctionReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_CANCELLATION_READY",
+            "PAYMENT_REFERENCE_DUPLICATE",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        }
+      ]
     }
   }
 }

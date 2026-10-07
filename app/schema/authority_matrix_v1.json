@@ -2070,6 +2070,376 @@
       "discipline_scope_required": false,
       "package_scope_required": false,
       "location_scope_required": false
+    },
+    "payment.boq.create": {
+      "actor_groups": [
+        "SUP",
+        "OWN"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "project_manager",
+        "owner_decision_maker",
+        "owner_representative"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.boq.submit": {
+      "actor_groups": [
+        "SUP",
+        "OWN"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "project_manager",
+        "owner_representative"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.boq.review": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "project_manager"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.boq.request_decision": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.boq.decide": {
+      "actor_groups": [
+        "OWN"
+      ],
+      "role_codes": [
+        "owner_decision_maker"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.boq.activate": {
+      "actor_groups": [
+        "SUP",
+        "OWN"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "owner_decision_maker"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.boq.withdraw": {
+      "actor_groups": [
+        "SUP",
+        "OWN"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "project_manager",
+        "owner_representative"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.measurement.create": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.measurement.submit": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.measurement.receive": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "discipline_supervisor"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.measurement.review": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "discipline_supervisor",
+        "project_manager"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.measurement.verify": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "discipline_supervisor",
+        "project_manager"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.measurement.resolve": {
+      "actor_groups": [
+        "SUP",
+        "OWN"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "project_manager",
+        "owner_decision_maker"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.measurement.cancel": {
+      "actor_groups": [
+        "CON",
+        "SUP"
+      ],
+      "role_codes": [
+        "contractor_technical_lead",
+        "chief_supervisor",
+        "project_manager"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.claim.create": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.claim.submit": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.claim.receive": {
+      "actor_groups": [
+        "SUP",
+        "ADM"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "project_admin"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.claim.review": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "discipline_supervisor",
+        "project_manager"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.claim.recommend": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.claim.owner_review": {
+      "actor_groups": [
+        "SUP"
+      ],
+      "role_codes": [
+        "chief_supervisor"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.claim.decide": {
+      "actor_groups": [
+        "OWN"
+      ],
+      "role_codes": [
+        "owner_decision_maker"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.claim.record": {
+      "actor_groups": [
+        "OWN",
+        "ADM"
+      ],
+      "role_codes": [
+        "owner_decision_maker",
+        "owner_representative",
+        "project_admin"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.claim.close": {
+      "actor_groups": [
+        "SUP",
+        "ADM"
+      ],
+      "role_codes": [
+        "chief_supervisor",
+        "project_manager",
+        "project_admin"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": false,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
+    },
+    "payment.claim.withdraw": {
+      "actor_groups": [
+        "CON"
+      ],
+      "role_codes": [
+        "contractor_technical_lead"
+      ],
+      "qualification_required": false,
+      "official": true,
+      "contractor_organization_scope": true,
+      "discipline_scope_required": false,
+      "package_scope_required": false,
+      "location_scope_required": false
     }
   }
 }

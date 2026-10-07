@@ -440,7 +440,31 @@
                 "contract.eot.request_decision",
                 "contract.eot.decide",
                 "contract.eot.baseline_update",
-                "contract.eot.close"
+                "contract.eot.close",
+                "payment.boq.create",
+                "payment.boq.submit",
+                "payment.boq.review",
+                "payment.boq.request_decision",
+                "payment.boq.decide",
+                "payment.boq.activate",
+                "payment.boq.withdraw",
+                "payment.measurement.create",
+                "payment.measurement.submit",
+                "payment.measurement.receive",
+                "payment.measurement.review",
+                "payment.measurement.verify",
+                "payment.measurement.resolve",
+                "payment.measurement.cancel",
+                "payment.claim.create",
+                "payment.claim.submit",
+                "payment.claim.receive",
+                "payment.claim.review",
+                "payment.claim.recommend",
+                "payment.claim.owner_review",
+                "payment.claim.decide",
+                "payment.claim.record",
+                "payment.claim.close",
+                "payment.claim.withdraw"
               ]
             }
           },
@@ -1316,6 +1340,9 @@
               }
             },
             "additionalProperties": false
+          },
+          "boq": {
+            "$ref": "#/components/schemas/ContractBOQData"
           }
         },
         "required": [
@@ -1344,6 +1371,28 @@
               "required": [
                 "schedule"
               ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "ContractBOQ"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "required": [
+                "boq"
+              ],
+              "properties": {
+                "boq": {
+                  "$ref": "#/components/schemas/ContractBOQData"
+                }
+              }
             }
           }
         ]
@@ -2459,6 +2508,44 @@
               "properties": {
                 "data": {
                   "$ref": "#/components/schemas/EOTRequestData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "QuantityMeasurement"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/QuantityMeasurementData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "PaymentClaim"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/PaymentClaimData"
                 }
               }
             }
@@ -5444,6 +5531,902 @@
         },
         "required": [
           "eotNo"
+        ],
+        "additionalProperties": false
+      },
+      "NonNegativeDecimalString": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$",
+        "description": "Canonical non-negative decimal string. Binary floating-point is not an authoritative commercial value."
+      },
+      "CurrencyCode": {
+        "type": "string",
+        "pattern": "^[A-Z]{3}$"
+      },
+      "ContractBOQItemRef": {
+        "type": "object",
+        "properties": {
+          "boqRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "boqItemId": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "boqRef",
+          "boqItemId"
+        ],
+        "additionalProperties": false
+      },
+      "ContractBOQLineItem": {
+        "type": "object",
+        "properties": {
+          "boqItemId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "itemNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1
+          },
+          "contractQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "unitRate": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "contractAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string",
+            "minLength": 1
+          },
+          "locationScope": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "measurementRuleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "variationEligible": {
+            "type": "boolean"
+          },
+          "provisional": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "boqItemId",
+          "itemNo",
+          "description",
+          "unit",
+          "contractQuantity",
+          "unitRate",
+          "contractAmount",
+          "packageId",
+          "discipline",
+          "measurementRuleRef",
+          "variationEligible",
+          "provisional"
+        ],
+        "additionalProperties": false
+      },
+      "ContractBOQData": {
+        "type": "object",
+        "properties": {
+          "boqNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "contractRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sourceFileRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "lineItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContractBOQLineItem"
+            },
+            "minItems": 1
+          },
+          "provisionalSumRules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "measurementRulesRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "roundingRule": {
+            "type": "string",
+            "minLength": 1
+          },
+          "revisionBasisRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "supersedesRef": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DomainRef"
+              }
+            ],
+            "readOnly": true
+          },
+          "ownerDecisionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "boqNo"
+        ],
+        "additionalProperties": false
+      },
+      "QuantityMeasurementData": {
+        "type": "object",
+        "properties": {
+          "measurementNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "boqRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "boqItemRef": {
+            "$ref": "#/components/schemas/ContractBOQItemRef"
+          },
+          "claimedQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "verifiedQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1
+          },
+          "measurementMethod": {
+            "type": "string",
+            "minLength": 1
+          },
+          "drawingRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "inspectionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "testRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "materialLotRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "changeRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "variationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "previousCertifiedQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "cumulativeVerifiedQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "blockedQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "disputedQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "disputeReason": {
+            "type": "string"
+          },
+          "resolutionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "eligibilityStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "eligible",
+              "blocked",
+              "disputed"
+            ],
+            "readOnly": true
+          },
+          "paymentEligible": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "blockedReasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "fieldVerifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "technicallyReviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "verifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "replacementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          }
+        },
+        "required": [
+          "measurementNo"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentVariationComponent": {
+        "type": "object",
+        "properties": {
+          "variationRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "claimedAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "eligibleAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          }
+        },
+        "required": [
+          "variationRef",
+          "claimedAmount",
+          "eligibleAmount",
+          "currency"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentDeductionComponent": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "basis": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rate": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "contractClauseRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "sourceDecisionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "period": {
+            "type": "string"
+          },
+          "cumulativeAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          }
+        },
+        "required": [
+          "type",
+          "basis",
+          "amount",
+          "currency",
+          "contractClauseRef"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentRecommendationSnapshot": {
+        "type": "object",
+        "properties": {
+          "claimBasisRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "boqRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "measurementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "verifiedGrossAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "blockedReasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eligibleVariationAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "deductionComponents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentDeductionComponent"
+            }
+          },
+          "recommendedNetAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "calculationRuleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "reviewerPartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recommendedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reservationComment": {
+            "type": "string"
+          },
+          "eligibleMaterialOnSiteAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "retentionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "advanceRecoveryAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "otherDeductionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "taxAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "calculationTrace": {
+            "$ref": "#/components/schemas/PaymentCalculationTrace"
+          }
+        },
+        "required": [
+          "claimBasisRef",
+          "boqRef",
+          "measurementRefs",
+          "verifiedGrossAmount",
+          "blockedReasons",
+          "eligibleVariationAmount",
+          "deductionComponents",
+          "recommendedNetAmount",
+          "currency",
+          "calculationRuleRef",
+          "reviewerPartyId",
+          "recommendedAt",
+          "eligibleMaterialOnSiteAmount",
+          "retentionAmount",
+          "advanceRecoveryAmount",
+          "otherDeductionAmount",
+          "taxAmount",
+          "calculationTrace"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentClaimData": {
+        "type": "object",
+        "properties": {
+          "paymentClaimNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contractRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "boqRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "quantityMeasurementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "claimedGrossAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "verifiedGrossAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "eligibleVariationAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "unapprovedVariationAmount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            ],
+            "readOnly": true
+          },
+          "eligibleMaterialOnSiteAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "retentionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "advanceRecoveryAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "otherDeductionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "taxAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "recommendedNetAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "ownerApprovedAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "paidAmount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            ],
+            "readOnly": true
+          },
+          "unpaidBalance": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            ],
+            "readOnly": true
+          },
+          "disputedAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "blockedReasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "variationComponents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentVariationComponent"
+            }
+          },
+          "deductionComponents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentDeductionComponent"
+            }
+          },
+          "calculationRuleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "recommendationSnapshot": {
+            "$ref": "#/components/schemas/PaymentRecommendationSnapshot"
+          },
+          "approvalRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "decisionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "paymentReference": {
+            "type": "string"
+          },
+          "externalSystemRef": {
+            "type": "string"
+          },
+          "previousPaymentClaimRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "previousCertifiedAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "previousPaidAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "cumulativeCertifiedAmount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            ],
+            "readOnly": true
+          },
+          "cumulativePaidAmount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            ],
+            "readOnly": true
+          },
+          "remainingContractValue": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            ],
+            "readOnly": true
+          },
+          "reservationComment": {
+            "type": "string"
+          },
+          "adjustmentReason": {
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "recommendedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "ownerDecidedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paymentRecordedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "replacementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "recommendationRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "recordedBy": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "paymentRecords": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActualPaymentRecord"
+            },
+            "readOnly": true
+          },
+          "calculationTrace": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentCalculationTrace"
+              }
+            ],
+            "readOnly": true
+          },
+          "paymentAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString",
+            "writeOnly": true
+          },
+          "supersedesPaymentRecordId": {
+            "type": "string",
+            "format": "uuid",
+            "writeOnly": true
+          },
+          "correctionReason": {
+            "type": "string",
+            "minLength": 1,
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "paymentClaimNo"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentCalculationTrace": {
+        "type": "object",
+        "properties": {
+          "ruleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "formulaId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "baseAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "additionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "deductionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "preRoundAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "roundedAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "roundingRuleId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "roundingQuantum": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "roundingMode": {
+            "type": "string",
+            "enum": [
+              "half_up",
+              "half_even",
+              "down",
+              "up"
+            ]
+          },
+          "deductionTotals": {
+            "type": "object",
+            "properties": {
+              "retentionAmount": {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              },
+              "advanceRecoveryAmount": {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              },
+              "otherDeductionAmount": {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            },
+            "required": [
+              "retentionAmount",
+              "advanceRecoveryAmount",
+              "otherDeductionAmount"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "ruleRef",
+          "formulaId",
+          "baseAmount",
+          "additionAmount",
+          "deductionAmount",
+          "preRoundAmount",
+          "roundedAmount",
+          "roundingRuleId",
+          "roundingQuantum",
+          "roundingMode",
+          "deductionTotals"
+        ],
+        "additionalProperties": false
+      },
+      "ActualPaymentRecord": {
+        "type": "object",
+        "properties": {
+          "recordId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "payment",
+              "correction",
+              "cancellation"
+            ]
+          },
+          "amount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paymentReference": {
+            "type": "string",
+            "minLength": 1
+          },
+          "externalSystemRef": {
+            "type": "string"
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1
+          },
+          "recordedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "supersedesPaymentRecordId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "recordId",
+          "kind",
+          "amount",
+          "currency",
+          "paidAt",
+          "paymentReference",
+          "evidenceIds",
+          "recordedBy",
+          "recordedAt"
         ],
         "additionalProperties": false
       }
