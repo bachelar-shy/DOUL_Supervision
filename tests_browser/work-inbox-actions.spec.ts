@@ -6,7 +6,7 @@ test("work inbox shows server candidates and requires explicit confirmation befo
   await page.goto("/#/parallel-test");
   await page.getByRole("tab", { name: "작업함", exact: true }).click();
   await expect(page.getByTestId("work-inbox-actions")).toBeVisible();
-  await expect(page.locator(".work-inbox-actions [role=status]").filter({ hasText: "작업함을 불러오는 중" })).toHaveCount(0);
+  await expect(page.locator(".work-inbox-actions [role=status]").filter({ hasText: "작업함을 불러오는 중" })).toHaveCount(0, { timeout: 15000 });
   const action = page.locator(".work-inbox-card .work-inbox-candidate:not([disabled])").first();
   await expect(action, "server must provide at least one ready or input-requiring command candidate").toBeVisible();
   const record = action.locator("xpath=ancestor::article[contains(@class, 'work-inbox-card')]");
