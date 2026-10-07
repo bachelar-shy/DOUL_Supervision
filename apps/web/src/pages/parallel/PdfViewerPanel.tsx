@@ -15,10 +15,11 @@ import {
   type PdfPinLocation,
 } from "../../data/pdf-pin-client";
 import { listPdfEvidenceSources, loadPdfEvidence, uploadPdfEvidence } from "../../data/pdf-viewer-client";
+import { createPdfDrawingMarkup, fetchPdfDrawingMarkups, type PdfDrawingMarkup, type PdfMarkupRect } from "../../data/pdf-markup-client";
 
 GlobalWorkerOptions.workerSrc = workerSrc;
 
-interface Props { client: SupervisionClient; workspace: Workspace; onChanged?: () => void }
+interface Props { client: SupervisionClient; workspace: Workspace; onChanged?: () => void; onSelectMarkup?: (id: string | null) => void }
 type Status = { kind: "idle" | "loading" | "ready" | "error"; message?: string };
 interface CommittedViewport { page: number; viewport: PdfViewport; sequence: number }
 interface PinView { locationName: string; point: CssPoint; anchor: PdfDrawingAnchor }
@@ -33,7 +34,7 @@ function validAnchor(value: unknown): value is PdfDrawingAnchor {
     && anchor.coordinateSystem === "pdf_points";
 }
 
-export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
+export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }: Props) {
   const sources = useMemo(() => listPdfEvidenceSources(workspace), [workspace]);
   const [selectedId, setSelectedId] = useState("");
   const [selectedBindingId, setSelectedBindingId] = useState("");
@@ -58,6 +59,14 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
   const [committedViewport, setCommittedViewport] = useState<CommittedViewport | null>(null);
   const [rendering, setRendering] = useState(false);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [markupMode, setMarkupMode] = useState(false);
+  const [markups, setMarkups] = useState<PdfDrawingMarkup[]>([]);
+  const [markupError, setMarkupError] = useState("");
+  const [markupLoading, setMarkupLoading] = useState(false);
+  const [savingMarkup, setSavingMarkup] = useState(false);
+  const [markupText, setMarkupText] = useState("");
+  const [pendingMarkup, setPendingMarkup] = useState<PdfMarkupRect | null>(null);
+  const [selectedMarkupId, setSelectedMarkupId] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const docRef = useRef<PDFDocumentProxy | null>(null);
@@ -68,6 +77,11 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
   const renderSequence = useRef(0);
   const previewFiles = useRef(new Map<string, File>());
   const activeDocumentUrl = useRef<string | null>(null);
+  const markupSequence = useRef(0);
+  const markupContextSequence = useRef(0);
+  const drawingStart = useRef<{ x: number; y: number; pointerId: number } | null>(null);
+  const onSelectMarkupRef = useRef(onSelectMarkup);
+  onSelectMarkupRef.current = onSelectMarkup;
 
   const selectedSource = sources.find((source) => source.id === selectedId);
   const matchingBindings = useMemo(() => {
@@ -92,6 +106,46 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
     : matchingBindings.find((binding) => binding.id === selectedBindingId);
   const isDemoAdmin = workspace.demo && client.session?.actor.actorGroup === "ADM";
   const selectedLocation = locations.find((location) => location.reference.objectId === selectedLocationRef);
+  const markupContextKey = [workspace.project.id, workspace.role.id, selectedId, activeBinding?.id ?? "", page, committedViewport?.sequence ?? ""].join(":");
+
+  useLayoutEffect(() => {
+    ++markupContextSequence.current;
+    ++markupSequence.current;
+    drawingStart.current = null;
+    setPendingMarkup(null);
+    setMarkupText("");
+    setSavingMarkup(false);
+    setMarkupMode(false);
+    setSelectedMarkupId(null);
+    onSelectMarkupRef.current?.(null);
+  }, [markupContextKey]);
+
+  useEffect(() => () => {
+    ++markupContextSequence.current;
+    ++markupSequence.current;
+    drawingStart.current = null;
+  }, []);
+
+  useEffect(() => {
+    const bindingId = activeBinding?.id;
+    if (!bindingId || !committedViewport || committedViewport.page !== page || rendering) {
+      setMarkups([]);
+      return;
+    }
+    let active = true;
+    const sequence = ++markupSequence.current;
+    setMarkupLoading(true);
+    setMarkupError("");
+    void fetchPdfDrawingMarkups(client, bindingId).then((items) => {
+      if (active && sequence === markupSequence.current) setMarkups(items.filter((item) => item.projectId === workspace.project.id && item.bindingId === bindingId
+        && sameDomainRef(item.drawingRef, activeBinding?.drawingRef) && sameDomainRef(item.evidenceRef, activeBinding?.evidenceRef)));
+    }).catch((reason) => {
+      if (active && sequence === markupSequence.current) setMarkupError(reason instanceof Error ? reason.message : "주석을 불러오지 못했습니다.");
+    }).finally(() => {
+      if (active && sequence === markupSequence.current) setMarkupLoading(false);
+    });
+    return () => { active = false; };
+  }, [client, activeBinding?.id, committedViewport?.sequence, page, rendering, workspace.project.id, workspace.role.id]);
 
   const cancelRender = useCallback(async () => {
     const task = renderRef.current;
@@ -363,6 +417,26 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
     return anchored;
   }, [activeBinding, committedViewport, page, canvasSize, locations, pendingPin]);
 
+  const overlayMarkups = useMemo(() => {
+    if (!committedViewport || committedViewport.page !== page || canvasSize.width <= 0 || canvasSize.height <= 0) return [];
+    return markups.filter((item) => item.bindingId === activeBinding?.id && item.page === page).flatMap((item) => {
+      const corners = [
+        { x: item.rect.x1, y: item.rect.y1 }, { x: item.rect.x2, y: item.rect.y1 },
+        { x: item.rect.x2, y: item.rect.y2 }, { x: item.rect.x1, y: item.rect.y2 },
+      ].map((point) => pdfPointToCssPoint(committedViewport.viewport, canvasSize, point));
+      return corners.every((point) => point !== null) ? [{ item, points: corners as CssPoint[] }] : [];
+    });
+  }, [markups, activeBinding?.id, committedViewport, page, canvasSize]);
+
+  const pendingMarkupPoints = useMemo(() => {
+    if (!pendingMarkup || !committedViewport || committedViewport.page !== page || canvasSize.width <= 0 || canvasSize.height <= 0) return null;
+    const corners = [
+      { x: pendingMarkup.x1, y: pendingMarkup.y1 }, { x: pendingMarkup.x2, y: pendingMarkup.y1 },
+      { x: pendingMarkup.x2, y: pendingMarkup.y2 }, { x: pendingMarkup.x1, y: pendingMarkup.y2 },
+    ].map((point) => pdfPointToCssPoint(committedViewport.viewport, canvasSize, point));
+    return corners.every((point) => point !== null) ? corners as CssPoint[] : null;
+  }, [pendingMarkup, committedViewport, page, canvasSize]);
+
   async function chooseFile(file?: File) {
     if (!file) return;
     setUploading(true);
@@ -387,6 +461,71 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
       location: selectedLocation,
       anchor: { drawingRef: activeBinding.drawingRef, page, x: point.x, y: point.y, coordinateSystem: "pdf_points" },
     });
+  }
+
+  function cssEventToPdf(event: React.PointerEvent<SVGSVGElement>) {
+    if (!committedViewport || committedViewport.page !== page || rendering || !canvasRef.current) return null;
+    const rect = canvasRef.current.getBoundingClientRect();
+    return cssPointToPdfPoint(committedViewport.viewport, rect, event.clientX, event.clientY);
+  }
+
+  function beginMarkupDraw(event: React.PointerEvent<SVGSVGElement>) {
+    if (!markupMode || !isDemoAdmin || !activeBinding || !committedViewport || rendering) return;
+    const point = cssEventToPdf(event);
+    if (!point) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    drawingStart.current = { ...point, pointerId: event.pointerId };
+    setPendingMarkup({ x1: point.x, y1: point.y, x2: point.x, y2: point.y });
+    setMarkupText("");
+    setSelectedMarkupId(null);
+    onSelectMarkupRef.current?.(null);
+  }
+
+  function moveMarkupDraw(event: React.PointerEvent<SVGSVGElement>) {
+    const start = drawingStart.current;
+    if (!start || start.pointerId !== event.pointerId) return;
+    const point = cssEventToPdf(event);
+    if (!point) return;
+    setPendingMarkup({ x1: Math.min(start.x, point.x), y1: Math.min(start.y, point.y), x2: Math.max(start.x, point.x), y2: Math.max(start.y, point.y) });
+  }
+
+  function finishMarkupDraw(event: React.PointerEvent<SVGSVGElement>) {
+    const start = drawingStart.current;
+    if (!start || start.pointerId !== event.pointerId) return;
+    drawingStart.current = null;
+    const point = cssEventToPdf(event);
+    if (!point) { setPendingMarkup(null); return; }
+    const rect = { x1: Math.min(start.x, point.x), y1: Math.min(start.y, point.y), x2: Math.max(start.x, point.x), y2: Math.max(start.y, point.y) };
+    if (rect.x2 - rect.x1 < 2 || rect.y2 - rect.y1 < 2) { setPendingMarkup(null); return; }
+    setPendingMarkup(rect);
+  }
+
+  function selectMarkup(id: string | null) {
+    setSelectedMarkupId(id);
+    onSelectMarkupRef.current?.(id);
+  }
+
+  async function savePendingMarkup() {
+    if (!pendingMarkup || !activeBinding || !isDemoAdmin || !committedViewport || committedViewport.page !== page || !markupText.trim()) return;
+    const requestSequence = markupContextSequence.current;
+    const bindingId = activeBinding.id;
+    const targetPage = page;
+    setSavingMarkup(true);
+    setMarkupError("");
+    try {
+      const created = await createPdfDrawingMarkup(client, { bindingId, page: targetPage, rect: pendingMarkup, text: markupText });
+      if (requestSequence !== markupContextSequence.current || activeBinding?.id !== bindingId || page !== targetPage) return;
+      setPendingMarkup(null);
+      setMarkupText("");
+      setMarkups((current) => [...current.filter((item) => item.id !== created.id), created]);
+      selectMarkup(created.id);
+      onChanged?.();
+    } catch (reason) {
+      if (requestSequence === markupContextSequence.current) setMarkupError(reason instanceof Error ? reason.message : "주석을 저장하지 못했습니다.");
+    } finally {
+      if (requestSequence === markupContextSequence.current) setSavingMarkup(false);
+    }
   }
 
   async function savePendingPin() {
@@ -447,6 +586,23 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
         {matchingBindings.map((binding) => <option key={binding.id} value={binding.id}>{binding.drawingRef.objectId} · v{binding.drawingRef.version} · 증빙 v{binding.evidenceRef.version}</option>)}
       </select></label>}
       {matchingBindings.length === 1 && <p className="pdf-binding-label">연결 도면 {matchingBindings[0].drawingRef.objectId} · v{matchingBindings[0].drawingRef.version} · 등록 증빙 v{matchingBindings[0].evidenceRef.version} · {matchingBindings[0].fileHash.slice(0, 12)}</p>}
+      {activeBinding && <div className="pdf-markup-controls">
+        <div className="pdf-markup-heading"><strong>주석</strong><span>{markupLoading ? "불러오는 중…" : markups.length + "개"} · 사각형 메모</span></div>
+        {isDemoAdmin ? <>
+          <button type="button" aria-pressed={markupMode} disabled={savingMarkup || rendering} onClick={() => { setMarkupMode((value) => !value); setPendingMarkup(null); setMarkupText(""); }}>
+            {markupMode ? "주석 그리기 종료" : "사각형 메모 추가"}
+          </button>
+          {markupMode && <span>페이지에서 드래그해 영역을 지정하세요. 메모를 입력한 뒤 저장합니다.</span>}
+          {pendingMarkup && <label className="pdf-markup-memo">메모<textarea aria-label="주석 메모" maxLength={2000} rows={2} value={markupText} onChange={(event) => setMarkupText(event.target.value)} placeholder="이 영역에 대한 메모" /></label>}
+          {pendingMarkup && <button type="button" disabled={savingMarkup || rendering || !markupText.trim()} onClick={() => void savePendingMarkup()}>{savingMarkup ? "저장 중…" : "주석 저장"}</button>}
+        </> : <span>주석 등록은 데모 ADM에서 사용할 수 있습니다.</span>}
+        {markupError && <span role="alert" className="pdf-error-text">{markupError}</span>}
+        {markups.length > 0 && <ul className="pdf-markup-list" aria-label="저장된 도면 주석">{markups.filter((item) => item.page === page).map((item) =>
+          <li key={item.id}><button type="button" className={selectedMarkupId === item.id ? "is-selected" : ""} onClick={() => selectMarkup(selectedMarkupId === item.id ? null : item.id)}>
+            p.{item.page} · {item.text}
+          </button></li>)}
+        </ul>}
+      </div>}
       {activeBinding && <div className="pdf-pin-controls">
         <label>위치 선택<select aria-label="핀을 연결할 위치" disabled={savingPin} value={selectedLocationRef} onChange={(event) => setSelectedLocationRef(event.target.value)}>
           <option value="">위치를 선택하세요…</option>
@@ -470,6 +626,16 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
       <div className="pdf-canvas-viewport">
         <div className="pdf-canvas-stack" onClick={stagePin} aria-disabled={!isDemoAdmin || !activeBinding || !selectedLocation || rendering}>
           <canvas ref={canvasRef} aria-label={"PDF 페이지 " + page + " / " + pageCount} />
+          <svg className={"pdf-markup-layer" + (markupMode ? " is-drawing" : "")} aria-label="도면 주석 영역"
+            viewBox={`0 0 ${Math.max(1, canvasSize.width)} ${Math.max(1, canvasSize.height)}`} preserveAspectRatio="none"
+            onPointerDown={beginMarkupDraw} onPointerMove={moveMarkupDraw} onPointerUp={finishMarkupDraw}
+            onPointerCancel={() => { drawingStart.current = null; setPendingMarkup(null); }}>
+            {overlayMarkups.map(({ item, points }) => <polygon key={item.id} points={points.map((point) => `${point.left},${point.top}`).join(" ")}
+              className={selectedMarkupId === item.id ? "pdf-markup-shape is-selected" : "pdf-markup-shape"}
+              role="button" tabIndex={0} aria-label={`주석: ${item.text}`} onClick={(event) => { event.stopPropagation(); selectMarkup(selectedMarkupId === item.id ? null : item.id); }}
+              onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectMarkup(selectedMarkupId === item.id ? null : item.id); } }} />)}
+            {pendingMarkupPoints && <polygon points={pendingMarkupPoints.map((point) => `${point.left},${point.top}`).join(" ")} className="pdf-markup-shape is-pending" />}
+          </svg>
           <div className="pdf-pin-layer" aria-label="도면 위치 핀">
             {overlayPins.map((pin, index) => <button
               type="button"
