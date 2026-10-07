@@ -2,6 +2,7 @@ import { scheduleInputs } from "../data/schedule-fields.generated";
 import { useState } from "react";
 import type {
   CommandDescriptor,
+  DomainRef,
   Fields,
   Json,
   WorkItem,
@@ -9,10 +10,12 @@ import type {
 } from "../data/ui-contract";
 import { ApiError } from "../data/supervision-client";
 import { commands, fields, reasonLabel, roles } from "../labels";
+import { recordRef } from "./record-utils";
 import { Icon } from "./shared";
 
 const booleanFields = new Set([
   "changeRequired",
+  "dueCalculationConfirmed",
   "safetyReviewComplete",
   "prestartVerified",
   "completionConfirmed",
@@ -26,7 +29,114 @@ const jsonFields = new Set([
   "readiness",
   "blockedReasons",
   "restrictionConditions",
+  "disputedItems",
+  "substantiationRequirements",
 ]);
+
+const numericFields = new Set([
+  "amountClaimed",
+  "amountAssessed",
+  "amountApproved",
+  "daysClaimed",
+  "daysAssessed",
+  "daysApproved",
+]);
+
+const multipleReferenceFields = new Set([
+  "noticeRefs",
+  "eventRefs",
+  "clauseRefs",
+  "evidenceRefs",
+  "delayEventRefs",
+  "impactAnalysisRefs",
+]);
+
+const selectableReferenceFields = new Set([
+  ...multipleReferenceFields,
+  "decisionRef",
+  "baselineScheduleRef",
+  "baselineRevisionRef",
+]);
+
+function refForItem(item: WorkItem): DomainRef | null {
+  if (item.machine === "evidence") {
+    return {
+      objectType: "Evidence",
+      objectId: item.record.id,
+      version: item.record.version,
+    };
+  }
+  const ref = recordRef(item);
+  return ref.objectType === "InformationItem" && item.machine !== "schedule_baseline"
+    ? null
+    : ref;
+}
+
+function referenceOptions(
+  field: string,
+  workspace: Workspace,
+  current: WorkItem,
+): Array<{ label: string; ref: DomainRef }> {
+  if (!selectableReferenceFields.has(field)) return [];
+  if (field === "clauseRefs") {
+    return [{ label: "현재 계약 Requirement", ref: workspace.context.requirementRef }];
+  }
+
+  let candidates = workspace.items;
+  if (field === "noticeRefs")
+    candidates = candidates.filter((item) => item.machine === "contract_notice");
+  else if (field === "eventRefs")
+    candidates = candidates.filter(
+      (item) =>
+        recordRef(item).objectType === "WorkItem" &&
+        !["contract_notice", "claim", "eot_request"].includes(item.machine),
+    );
+  else if (field === "delayEventRefs")
+    candidates = candidates.filter((item) => item.machine === "delay_event");
+  else if (field === "evidenceRefs" || field === "impactAnalysisRefs")
+    candidates = candidates.filter((item) => item.machine === "evidence");
+  else if (field === "baselineScheduleRef" || field === "baselineRevisionRef")
+    candidates = candidates.filter(
+      (item) =>
+        item.machine === "schedule_baseline" &&
+        item.record.status === "effective" &&
+        (field !== "baselineRevisionRef" ||
+          item.record.id !==
+            (current.record.data?.baselineScheduleRef as DomainRef | undefined)
+              ?.objectId),
+    );
+  else if (field === "decisionRef")
+    candidates = candidates.filter((item) => {
+      if (item.machine !== "decision") return false;
+      const target = item.record.targetRef as DomainRef | undefined;
+      return (
+        target?.objectId === current.record.id &&
+        target?.version === current.record.version
+      );
+    });
+
+  return candidates.flatMap((item) => {
+    const ref = refForItem(item);
+    return ref
+      ? [
+          {
+            label: `${item.record.title || item.record.workName || item.machine} · v${item.record.version}`,
+            ref,
+          },
+        ]
+      : [];
+  });
+}
+
+function selectedReferenceValues(value: string): string[] {
+  if (!value.trim()) return [];
+  try {
+    const parsed = JSON.parse(value) as DomainRef[];
+    return Array.isArray(parsed) ? parsed.map((ref) => JSON.stringify(ref)) : [];
+  } catch {
+    return [];
+  }
+}
 
 function fieldDefault(field: string, w: Workspace, item: WorkItem): string {
   const existing =
@@ -102,9 +212,16 @@ export function CommandModal({
         const v = values[f];
         if (!v?.trim()) continue;
         const inputType = scheduleInputs[dialog.item.machine]?.commandFields[f]?.type;
-        if (inputType === "integer" || inputType === "number") {
+        if (
+          inputType === "integer" ||
+          inputType === "number" ||
+          numericFields.has(f)
+        ) {
           const number = Number(v);
-          if (!Number.isFinite(number) || (inputType === "integer" && !Number.isInteger(number)))
+          if (
+            !Number.isFinite(number) ||
+            (inputType === "integer" && !Number.isInteger(number))
+          )
             throw new Error(`${fields[f] || f}: 숫자를 입력하십시오.`);
           payload[f] = number;
           continue;
@@ -206,6 +323,42 @@ export function CommandModal({
                       {roles[p.actorGroup]} · {p.name}
                     </option>
                   ))}
+                </select>
+              ) : referenceOptions(f, workspace, dialog.item).length ? (
+                <select
+                  multiple={multipleReferenceFields.has(f)}
+                  value={
+                    multipleReferenceFields.has(f)
+                      ? selectedReferenceValues(values[f])
+                      : values[f]
+                  }
+                  onChange={(e) => {
+                    if (multipleReferenceFields.has(f)) {
+                      const refs = Array.from(e.currentTarget.selectedOptions).map(
+                        (option) => JSON.parse(option.value) as DomainRef,
+                      );
+                      setValues({
+                        ...values,
+                        [f]: JSON.stringify(refs, null, 2),
+                      });
+                    } else {
+                      setValues({ ...values, [f]: e.target.value });
+                    }
+                  }}
+                >
+                  {!multipleReferenceFields.has(f) && (
+                    <option value="">참조 선택</option>
+                  )}
+                  {referenceOptions(f, workspace, dialog.item).map(
+                    ({ label, ref }) => {
+                      const value = JSON.stringify(ref);
+                      return (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      );
+                    },
+                  )}
                 </select>
               ) : (
                 <textarea

@@ -252,6 +252,9 @@ export const collections: Record<string, string> = {
   report: "owner-reports",
   decision: "owner-decisions",
   analysis_run: "analysis-runs",
+  contract_notice: "contract-notices",
+  claim: "claims",
+  eot_request: "eot-requests",
 };
 export class ApiError extends Error {
   detail: Failure;
