@@ -14,6 +14,9 @@ class TraceEngine:
         self.current = {}
         self.history = {}
         self.denied = set()
+        self.auth_errors = {}
+        self.location_ids = set()
+        self.allowed_location_ids = set()
 
     def add(self, object_type, object_id, project_id, version=1, **values):
         record = {
@@ -24,6 +27,8 @@ class TraceEngine:
         }
         self.current[(object_type, object_id)] = record
         self.history[(object_type, object_id, version)] = record
+        if object_type == "Location":
+            self.location_ids.add(object_id)
         return record
 
     def resolve(self, reference, project_id=None):
@@ -43,8 +48,16 @@ class TraceEngine:
         return copy.deepcopy(source[key])
 
     def authorize_read(self, record, party_id, role_id):
+        auth_error = self.auth_errors.get((record["id"], role_id))
+        if auth_error:
+            raise ContractError(auth_error, "authorization failed")
         if (record["id"], role_id) in self.denied:
             raise ContractError("NOT_FOUND", "hidden by scope policy")
+        if record["id"] in self.location_ids:
+            # Faithful to Engine.authorize: it scopes by locationId, but a
+            # Location schema has only id, so the caller must adapt it.
+            if record.get("locationId") not in self.allowed_location_ids:
+                raise ContractError("SCOPE_MISMATCH", "location outside assigned scope")
         return {"id": role_id}
 
 
@@ -54,6 +67,7 @@ class SafetyStopTraceabilityTests(unittest.TestCase):
         self.role = "sup-role"
         self.party = "sup-party"
         self.project = "project-a"
+        self.engine.allowed_location_ids.add("loc-a")
 
         self.engine.add("Location", "loc-a", self.project, version=8)
         self.engine.add("Evidence", "evidence-a", self.project, version=5)
@@ -144,6 +158,22 @@ class SafetyStopTraceabilityTests(unittest.TestCase):
         self.assertEqual(issue_errors[0]["status"], "unauthorized")
         self.assertIsNone(issue_errors[0]["target"])
         self.assertNotIn("issue-a", repr(issue_errors[0]))
+
+    def test_location_authorization_adapts_id_to_location_scope_and_hides_out_of_scope(self):
+        self.engine.add("Location", "loc-hidden", self.project, version=1)
+        self.engine.history[("WorkItem", "stop-a", 2)]["locationId"] = "loc-hidden"
+        result = self.run_trace()
+        visible = [row for row in result["links"] if row["relation"] == "stopOrder.location"]
+        errors = [d for d in result["diagnostics"] if d["sourceField"] == "stopOrder.locationId"]
+        self.assertEqual(visible, [])
+        self.assertEqual(errors[0]["status"], "unauthorized")
+        self.assertNotIn("loc-hidden", repr(errors[0]))
+
+    def test_unexpected_authorization_configuration_error_propagates(self):
+        self.engine.auth_errors[("evidence-a", self.role)] = "QUALIFICATION_RULE_MISSING"
+        with self.assertRaises(ContractError) as caught:
+            self.run_trace()
+        self.assertEqual(caught.exception.code, "QUALIFICATION_RULE_MISSING")
 
     def test_root_must_be_exact_safety_stop_order_ref(self):
         with self.assertRaises(ContractError) as caught:

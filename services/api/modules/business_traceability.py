@@ -17,6 +17,18 @@ _EXPECTED_SUBTYPES = {
     "affectedPermitRefs": "SafetyPermit",
 }
 _ISSUE_ID_FIELDS = (("actionIds", "Action"), ("inspectionIds", "Inspection"))
+_AUTHORIZATION_DENIAL_CODES = {
+    "ASSIGNMENT_EXPIRED",
+    "AUTHORITY_DENIED",
+    "NONHUMAN_OFFICIAL_DENIED",
+    "NOT_AUTHORIZED",
+    "NOT_FOUND",
+    "ORGANIZATION_MISMATCH",
+    "PERMISSION_DENIED",
+    "PROJECT_MISMATCH",
+    "QUALIFICATION_INVALID",
+    "SCOPE_MISMATCH",
+}
 
 
 def _diagnostic(relation, source_field, status):
@@ -52,10 +64,23 @@ def _classify_error(error):
         return "foreign_project"
     if error.code in {
         "SCOPE_MISMATCH", "AUTHORITY_DENIED", "NOT_AUTHORIZED",
-        "PERMISSION_DENIED", "NOT_FOUND",
+        "PERMISSION_DENIED", "NOT_FOUND", "ASSIGNMENT_EXPIRED",
+        "ORGANIZATION_MISMATCH", "QUALIFICATION_INVALID",
+        "NONHUMAN_OFFICIAL_DENIED",
     }:
         return "unauthorized"
     return "invalid_reference"
+
+
+def _authorize_link(engine, record, party_id, role_id, relation, source_field, diagnostics):
+    try:
+        engine.authorize_read(record, party_id, role_id)
+    except ContractError as error:
+        if error.code not in _AUTHORIZATION_DENIAL_CODES:
+            raise
+        diagnostics.append(_diagnostic(relation, source_field, _classify_error(error)))
+        return False
+    return True
 
 
 def _add_domain_ref(engine, ref, project_id, party_id, role_id, relation,
@@ -71,10 +96,7 @@ def _add_domain_ref(engine, ref, project_id, party_id, role_id, relation,
     if expected_subtype and record.get("subtype") != expected_subtype:
         diagnostics.append(_diagnostic(relation, source_field, "invalid_reference"))
         return None
-    try:
-        engine.authorize_read(record, party_id, role_id)
-    except ContractError:
-        diagnostics.append(_diagnostic(relation, source_field, "unauthorized"))
+    if not _authorize_link(engine, record, party_id, role_id, relation, source_field, diagnostics):
         return None
     safe_ref = {
         "objectType": ref["objectType"],
@@ -101,10 +123,15 @@ def _add_current_id(engine, object_type, object_id, project_id, party_id, role_i
     if record.get("projectId") != project_id:
         diagnostics.append(_diagnostic(relation, source_field, "foreign_project"))
         return None
-    try:
-        engine.authorize_read(record, party_id, role_id)
-    except ContractError:
-        diagnostics.append(_diagnostic(relation, source_field, "unauthorized"))
+    authorization_record = record
+    if object_type == "Location":
+        # Engine scope checks use locationId, while the Location object schema
+        # stores only id. This transient adapter is authorization context only.
+        authorization_record = dict(record, locationId=record["id"])
+    if not _authorize_link(
+        engine, authorization_record, party_id, role_id,
+        relation, source_field, diagnostics,
+    ):
         return None
     rows.append(_row(
         relation, source_field,
