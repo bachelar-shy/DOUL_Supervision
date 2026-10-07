@@ -1,0 +1,10 @@
+.work-inbox-actions { display: grid; gap: 1rem; }
+.work-inbox-toolbar, .work-inbox-record, .work-inbox-actions-list { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+.work-inbox-list { display: grid; gap: .75rem; }
+.work-inbox-card { border: 1px solid var(--line, #d7dee8); border-radius: .75rem; padding: 1rem; background: var(--surface, white); }
+.work-inbox-card h3 { margin: 0; }
+.work-inbox-meta { display:flex; gap:.65rem; flex-wrap:wrap; color:var(--muted,#64748b); font-size:.9rem; }
+.work-inbox-candidate { display:grid; gap:.35rem; text-align:left; min-width: 12rem; }
+.work-inbox-candidate small { white-space:normal; }
+.work-inbox-candidate[disabled] { opacity:.65; cursor:not-allowed; }
+.work-inbox-pagination { display:flex; justify-content:space-between; align-items:center; gap:.75rem; }
