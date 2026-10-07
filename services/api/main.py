@@ -249,6 +249,17 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         require(session['actorGroup']=='ADM','NOT_AUTHORIZED','Local media worker ingress requires the demo administrator')
         return session
 
+    def has_command_candidates(machine,record,session,role):
+        for transition in store.engine.machines[machine]['transitions']:
+            if transition['from'] != record['status']:
+                continue
+            try:
+                store.engine.authorize(record,transition['authority'],session['partyId'],role['id'])
+            except ContractError:
+                continue
+            return True
+        return False
+
     def preflight(machine,record,session,role,payload=None):
         results=[]
         for transition in store.engine.machines[machine]['transitions']:
@@ -372,7 +383,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         session=identity(request)
         with store.transaction():
             role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
-            try:return build_work_inbox(store.engine,project_id,session,role,readable=readable,preflight=preflight,limit=limit,cursor=cursor)
+            try:return build_work_inbox(store.engine,project_id,session,role,readable=readable,preflight=preflight,has_candidates=has_command_candidates,limit=limit,cursor=cursor)
             except InboxCursorError as exc:raise ContractError('INVALID_REQUEST',str(exc))
             except ValueError as exc:raise ContractError('INVALID_REQUEST',str(exc))
 
