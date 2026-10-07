@@ -31,3 +31,11 @@ API 실행: 기존 프로젝트 가상환경의 Python으로 `python -m services
 연결 시험: `python -m unittest tests_mvp.test_parallel_workspace_api tests_mvp.test_parallel_evidence_upload tests_mvp.test_safety_http -q`.
 화면: UI 경계 검사, web typecheck/lint/build. 브라우저: `./node_modules/.bin/playwright test --config playwright.parallel.config.ts`.
 Context7 확인: Starlette Request.stream (https://github.com/kludex/starlette/blob/main/docs/requests.md), 원본 요청을 전체 메모리에 읽지 않고 디스크로 처리. 설치 버전에서 지원이 불확실한 max_body_size 옵션 대신 직접 크기를 검사한다.
+
+## 2026-10-07 재개 검증 결과
+
+- 최신 API로 재시작 후 건강 상태와 브라우저 조회/파일 격리 업로드 시험 통과.
+- 6개 모듈 집중시험 54개, 연결 및 안전 HTTP 시험 20개 통과. UI 경계/typecheck/build 통과, lint 경고/오류 0개.
+- 전체 API 수집 시험은 174개 중 인증/DB 의존성 누락으로 7개 오류, 4개 건너뜀. 전체 통과로 간주하지 않는다. 누락 패키지: jwt, psycopg, psycopg_pool, cryptography.
+- 별도 .venv에 고정 의존성 설치를 시도했으나 현재 패키지 인덱스에 anyio==4.15.1이 없어 실패했다. 고정 파일을 임의 변경하지 않았다. 서버는 기존 검증된 가상환경으로 계속 실행한다. 새 .venv는 서버 실행에 사용하지 않는다.
+- Tailscale 접속 설정은 이전 자동 승인 검토 차단 이후 실행하지 않았다. 현재 맥미니 로컬에서만 접속한다.
