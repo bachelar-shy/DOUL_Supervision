@@ -17,7 +17,10 @@ async function createVisibleStop(request: APIRequestContext) {
   });
   const response = await request.get(`/api/projects/${con.projectId}/workspace`, { headers: headers(con) });
   expect(response.status(), await response.text()).toBe(200);
-  const context = (await response.json()).context;
+  const workspace = await response.json();
+  const context = workspace.context;
+  const correctiveAction = workspace.items.find((item: any) => item.machine === "action" && !["verified", "closed", "cancelled"].includes(item.record.status));
+  expect(correctiveAction, "a current non-complete Action is required for synthetic correction setup").toBeTruthy();
   const permitResponse = await request.post(`/api/projects/${con.projectId}/safety-permits`, {
     headers: headers(con),
     data: { roleAssignmentId: con.actor.roleAssignmentId, clientObjectId: randomUUID(), payload: { ...context.scope, title: "Synthetic command verification permit", data: {} } },
@@ -48,7 +51,7 @@ async function createVisibleStop(request: APIRequestContext) {
   });
   expect(created.status(), await created.text()).toBe(201);
   const stop = (await created.json()).record;
-  return { con, sup, context, title, stop, headers };
+  return { con, sup, context, title, stop, correctiveAction, headers };
 }
 
 async function selectRole(page: Page, role: string) {
@@ -63,7 +66,7 @@ async function selectRole(page: Page, role: string) {
 
 test("selected current SafetyStopOrder uses server actions and refuses a guarded resume", async ({ page, request }) => {
   const fixture = await createVisibleStop(request);
-  const { con, sup, context, title, stop, headers } = fixture;
+  const { con, sup, context, title, stop, correctiveAction, headers } = fixture;
   const uiWrites: string[] = [];
   page.on("request", req => {
     if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method()) && req.url().includes("/api/")) uiWrites.push(`${req.method()} ${req.url()}`);
@@ -82,8 +85,8 @@ test("selected current SafetyStopOrder uses server actions and refuses a guarded
   await expect(acknowledge).toBeEnabled();
 
   await acknowledge.click();
-  const dialog = page.getByRole("dialog", { name: /작업중지 확인/ });
-  await expect(dialog.getByText(new RegExp(`원본 v${stop.version} 기준`))).toBeVisible();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator("p").filter({ hasText: `원본 v${stop.version} 기준` })).toBeVisible();
   await dialog.getByRole("button", { name: "취소", exact: true }).click();
   expect(uiWrites).toEqual([]);
 
@@ -95,18 +98,40 @@ test("selected current SafetyStopOrder uses server actions and refuses a guarded
   }).toBe("acknowledged");
   expect(uiWrites.some(url => url.includes(`/safety-stop-orders/${stop.id}/acknowledge-stop`))).toBe(true);
 
+  const acknowledgedResponse = await request.get(`/api/projects/${sup.projectId}/safety-stop-orders/${stop.id}`, { headers: headers(con) });
+  const acknowledged = await acknowledgedResponse.json();
+  const correctionResponse = await request.post(`/api/projects/${sup.projectId}/safety-stop-orders/${stop.id}/start-correction`, {
+    headers: headers(con),
+    data: {
+      roleAssignmentId: con.actor.roleAssignmentId,
+      expectedVersion: acknowledged.version,
+      payload: { correctiveActionRefs: [{ objectType: "Action", objectId: correctiveAction.record.id, version: correctiveAction.record.version }] },
+      evidenceIds: [],
+    },
+  });
+  expect(correctionResponse.status(), await correctionResponse.text()).toBe(200);
+
+  await page.getByRole("button", { name: "새로고침", exact: true }).click();
   const beforeGuard = await request.get(`/api/projects/${sup.projectId}/safety-stop-orders/${stop.id}`, { headers: headers(con) });
   const versionBeforeGuard = (await beforeGuard.json()).version;
-  const resume = commandRegion.getByRole("button", { name: "재개 요청 열기 · 입력 후 서버 검증", exact: true });
-  await expect(resume).toBeEnabled();
-  await resume.click();
-  const resumeDialog = page.getByRole("dialog");
-  await resumeDialog.getByLabel("명령 증빙 ID").fill(context.evidenceId);
-  await resumeDialog.getByRole("button", { name: "확인 후 실행", exact: true }).click();
-  await expect(resumeDialog.getByRole("alert")).toBeVisible();
+  const actionResponse = await request.get(`/api/projects/${sup.projectId}/safety-stop-orders/${stop.id}/available-actions`, { headers: headers(con) });
+  const resumeAction = (await actionResponse.json()).find((action: any) => action.command === "request_resume");
+  expect(resumeAction).toMatchObject({ ready: false, requiresInput: false, expectedVersion: versionBeforeGuard });
+  await expect(commandRegion.getByRole("button", { name: /재개 요청/ })).toHaveCount(0);
+  const resumeAttempt = await request.post(`/api/projects/${sup.projectId}/safety-stop-orders/${stop.id}/request-resume`, {
+    headers: headers(con),
+    data: {
+      roleAssignmentId: con.actor.roleAssignmentId,
+      expectedVersion: versionBeforeGuard,
+      payload: {},
+      evidenceIds: [context.evidenceId],
+    },
+  });
+  expect(resumeAttempt.status()).toBe(409);
+  expect((await resumeAttempt.json()).code).toBe("STOP_RESUME_REQUEST_READY");
   const afterGuard = await request.get(`/api/projects/${sup.projectId}/safety-stop-orders/${stop.id}`, { headers: headers(con) });
   const afterRecord = await afterGuard.json();
   expect(afterRecord.version).toBe(versionBeforeGuard);
   expect(afterRecord.data.resumeRequestAt).toBeUndefined();
-  expect(uiWrites.filter(url => url.includes(`/safety-stop-orders/${stop.id}/request-resume`))).toHaveLength(1);
+  expect(uiWrites.filter(url => url.includes(`/safety-stop-orders/${stop.id}/request-resume`))).toHaveLength(0);
 });
