@@ -825,22 +825,26 @@ class Engine:
         except ContractError:
             return False
 
+    def _current_equipment_inspection(self,equipment_id,project_id):
+        candidates=[]
+        for sequence,((kind,object_id),record) in enumerate(self._records.items()):
+            if kind!='WorkItem' or record.get('subtype')!='SafetyEquipmentInspection' or record.get('projectId')!=project_id:
+                continue
+            target=record.get('data',{}).get('equipmentRef',{})
+            if target.get('objectId')!=equipment_id:
+                continue
+            current=self.get('WorkItem',object_id)
+            data=current.get('data',{})
+            effective_at=data.get('inspectedAt') or data.get('scheduledAt') or current.get('createdAt') or ''
+            candidates.append((effective_at,current.get('createdAt',''),sequence,current))
+        return max(candidates,key=lambda item:item[:3])[3] if candidates else None
+
     def _permit_equipment_ready(self,r):
         r=self._fields(r)
         for reference in r.get('equipmentRefs',[]):
             equipment=self._current_reference(reference,r['projectId'],object_type='Asset',subtype='Equipment')
-            available=False
-            for (kind,object_id),record in self._records.items():
-                if kind!='WorkItem' or record.get('subtype')!='SafetyEquipmentInspection' or record['projectId']!=r['projectId']:
-                    continue
-                target=record.get('data',{}).get('equipmentRef',{})
-                if target.get('objectId')!=equipment['id'] or record.get('status')!='passed':
-                    continue
-                current=self.get('WorkItem',object_id)
-                if current.get('data',{}).get('equipmentAvailable') is True:
-                    available=True
-                    break
-            if not available:
+            current=self._current_equipment_inspection(equipment['id'],r['projectId'])
+            if current is None or current.get('status')!='passed' or current.get('data',{}).get('equipmentAvailable') is not True:
                 return False
         return True
 
