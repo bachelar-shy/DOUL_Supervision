@@ -59,6 +59,7 @@ async function captureSession(page: Page, actorGroup: string): Promise<{ session
   const session = await responseJson<Session>(await ready, 200);
   const workspace = await responseJson<Workspace>(await workspaceReady, 200);
   expect(workspace.role.actorGroup).toBe(actorGroup);
+  await page.goto("/#/parallel-test");
   return { session, workspace };
 }
 async function switchRole(page: Page, actorGroup: string): Promise<Workspace> {
@@ -67,6 +68,7 @@ async function switchRole(page: Page, actorGroup: string): Promise<Workspace> {
     const response = page.waitForResponse(value => value.url().endsWith("/workspace") && value.ok());
     const result = await responseJson<Workspace>(await response, 200);
     expect(result.role.actorGroup).toBe(actorGroup);
+    await page.goto("/#/parallel-test");
     return result;
   }
   const workspaceResponse = page.waitForResponse(async response => {
@@ -77,6 +79,7 @@ async function switchRole(page: Page, actorGroup: string): Promise<Workspace> {
   await picker.selectOption(actorGroup);
   const data = await responseJson<Workspace>(await workspaceResponse, 200);
   expect(data.role.actorGroup).toBe(actorGroup);
+  await page.goto("/#/parallel-test");
   return data;
 }
 
