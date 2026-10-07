@@ -38,7 +38,7 @@ def _authoritative_version(record, kind):
 
 
 def _is_visibility_denial(error):
-    return error.code in {"SCOPE_MISMATCH", "NOT_FOUND", "ORGANIZATION_MISMATCH"}
+    return error.code in {"SCOPE_MISMATCH", "NOT_FOUND", "ORGANIZATION_MISMATCH", "QUALIFICATION_INVALID"}
 
 
 def _authorize_read(engine, record, party_id, role_id, *, is_location=False):
@@ -76,6 +76,8 @@ def _readable_drawing_anchors(engine, anchors, project_id, party_id, role_id):
         except ContractError:
             # Missing, malformed, or foreign-project references are not
             # returned to a caller who cannot safely resolve them.
+            continue
+        if drawing.get("subtype") != "Drawing":
             continue
         if _authorize_read(engine, drawing, party_id, role_id):
             readable.append(deepcopy(anchor))

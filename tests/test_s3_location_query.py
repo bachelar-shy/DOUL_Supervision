@@ -103,14 +103,16 @@ class LocationTreeQueryTests(unittest.TestCase):
         )
         return party_id, role_id
 
-    def add_drawing(self, project_id, location_id, *, name="Drawing"):
+    def add_drawing(
+        self, project_id, location_id, *, name="Drawing", subtype="Drawing"
+    ):
         drawing_id = uid()
         return self.engine.bootstrap(
             "InformationItem",
             {
                 "id": drawing_id,
                 "projectId": project_id,
-                "subtype": "Drawing",
+                "subtype": subtype,
                 "title": name,
                 "revision": "A",
                 "status": "current",
@@ -300,6 +302,12 @@ class LocationTreeQueryTests(unittest.TestCase):
         foreign_drawing = self.add_drawing(
             self.other_project_id, uid(), name="Foreign drawing"
         )
+        non_drawing = self.add_drawing(
+            self.project_id,
+            location_id,
+            name="Specification information item",
+            subtype="Specification",
+        )
         anchors = [
             {
                 "drawingRef": {
@@ -312,7 +320,12 @@ class LocationTreeQueryTests(unittest.TestCase):
                 "y": 0.5,
                 "coordinateSystem": "normalized",
             }
-            for drawing in [readable_drawing, unreadable_drawing, foreign_drawing]
+            for drawing in [
+                readable_drawing,
+                unreadable_drawing,
+                foreign_drawing,
+                non_drawing,
+            ]
         ]
         # Replace the location record with the same data plus anchors; bootstrap
         # rejects duplicate IDs, so this trusted fixture edit represents legacy
@@ -335,6 +348,27 @@ class LocationTreeQueryTests(unittest.TestCase):
         )
         self.assertNotIn(unreadable_drawing["id"], repr(result))
         self.assertNotIn(foreign_drawing["id"], repr(result))
+        self.assertNotIn(non_drawing["id"], repr(result))
+
+    def test_invalid_caller_authorization_is_not_filtered_as_visibility(self):
+        location_id = uid()
+        self.add_location(
+            location_id,
+            name="Visible",
+            discipline="architecture",
+            package_id=self.package_id,
+        )
+        party_id, role_id = self.add_reader_role([location_id])
+
+        with self.assertRaises(ContractError) as raised:
+            query_location_tree(
+                self.engine,
+                self.project_id,
+                party_id=uid(),
+                role_id=role_id,
+            )
+
+        self.assertEqual(raised.exception.code, "NOT_AUTHORIZED")
 
     def test_authenticated_arguments_must_be_supplied_as_a_pair(self):
         with self.assertRaises(ContractError) as raised:
