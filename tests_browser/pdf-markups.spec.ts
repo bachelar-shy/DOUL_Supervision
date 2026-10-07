@@ -102,12 +102,12 @@ test("creates a rectangle memo against an exact PDF binding and reads it back af
   expect(listResponse.ok()).toBeTruthy();
   const markups = await listResponse.json() as { items: Array<{ id: string; text: string; bindingId: string }> };
   expect(markups.items).toContainEqual(expect.objectContaining({ id: created.id, text: memo, bindingId: binding.id }));
-  await expect(viewer.getByRole("button", { name: new RegExp(memo) })).toBeVisible();
+  await expect(viewer.getByRole("list", { name: "저장된 도면 주석" }).getByRole("button", { name: new RegExp(memo) })).toBeVisible();
   await viewer.getByRole("button", { name: "회전" }).click();
   await expect(viewer.getByLabel(`주석: ${memo}`)).toBeVisible();
   await viewer.getByLabel("PDF 원본 선택").selectOption("");
   await viewer.getByLabel("PDF 원본 선택").selectOption(evidenceId);
-  await expect(viewer.getByRole("button", { name: new RegExp(memo) })).toBeVisible();
+  await expect(viewer.getByRole("list", { name: "저장된 도면 주석" }).getByRole("button", { name: new RegExp(memo) })).toBeVisible();
 
   const reload = await api(`/parallel/drawing-markups/${created.id}`);
   expect(reload.ok()).toBeTruthy();
@@ -121,7 +121,7 @@ test("creates a rectangle memo against an exact PDF binding and reads it back af
   const supervisorViewer = page.getByLabel("PDF 도면 뷰어");
   await supervisorViewer.getByLabel("PDF 원본 선택").selectOption(evidenceId);
   await expect(supervisorViewer.getByLabel(`주석: ${memo}`)).toBeVisible();
-  const selectedMemo = supervisorViewer.getByRole("button", { name: new RegExp(memo) });
+  const selectedMemo = supervisorViewer.getByRole("list", { name: "저장된 도면 주석" }).getByRole("button", { name: new RegExp(memo) });
   await selectedMemo.click();
   await expect(selectedMemo).toHaveClass(/is-selected/);
 });
