@@ -45,7 +45,7 @@ export function parseDrawingPdfBindings(value: unknown): DrawingPdfBinding[] {
     if (!item || typeof item !== "object") return [];
     const row = item as Record<string, unknown>;
     if (typeof row.id !== "string" || typeof row.projectId !== "string" || !isRef(row.drawingRef)
-      || !isRef(row.evidenceRef) || typeof row.fileHash !== "string"
+      || row.drawingRef.objectType !== "InformationItem" || !isRef(row.evidenceRef) || row.evidenceRef.objectType !== "Evidence" || typeof row.fileHash !== "string"
       || typeof row.createdAt !== "string" || typeof row.createdBy !== "string") return [];
     return [{
       id: row.id,
@@ -65,7 +65,7 @@ export function parsePdfPinLocations(value: unknown): PdfPinLocation[] {
   return rows.flatMap((item): PdfPinLocation[] => {
     if (!item || typeof item !== "object") return [];
     const row = item as Record<string, unknown>;
-    if (!isRef(row.reference) || typeof row.name !== "string" || !Array.isArray(row.drawingAnchors)) return [];
+    if (!isRef(row.reference) || row.reference.objectType !== "Location" || typeof row.name !== "string" || !Array.isArray(row.drawingAnchors)) return [];
     return [{ reference: row.reference, name: row.name, drawingAnchors: row.drawingAnchors }];
   });
 }
@@ -81,7 +81,8 @@ export async function fetchPdfPinLocations(client: SupervisionClient): Promise<P
 }
 
 export async function savePdfLocationAnchor(client: SupervisionClient, location: PdfPinLocation, anchor: PdfDrawingAnchor): Promise<void> {
-  if (!isRef(location.reference) || !isRef(anchor.drawingRef)
+  if (!isRef(location.reference) || location.reference.objectType !== "Location"
+    || !isRef(anchor.drawingRef) || anchor.drawingRef.objectType !== "InformationItem"
     || !Number.isInteger(anchor.page) || anchor.page < 1 || !Number.isFinite(anchor.x) || !Number.isFinite(anchor.y)
     || anchor.coordinateSystem !== "pdf_points") {
     throw new Error("저장할 도면 위치 정보가 올바르지 않습니다.");

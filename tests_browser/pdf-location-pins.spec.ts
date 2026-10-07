@@ -112,7 +112,7 @@ test("mocked drawing binding plus real Location API stages, saves, and restores 
 
   await page.route("**/api/projects/*/parallel/drawing-pdf-bindings", async (route) => {
     await bindingReady;
-    const evidenceRef = { objectType: "InformationItem", objectId: evidenceId, version: evidenceVersion };
+    const evidenceRef = { objectType: "Evidence", objectId: evidenceId, version: evidenceVersion };
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -148,6 +148,7 @@ test("mocked drawing binding plus real Location API stages, saves, and restores 
     await page.getByLabel("개발 역할 선택").selectOption("ADM");
     await expect(page.getByLabel("개발 역할 선택")).toHaveValue("ADM");
     await expect.poll(() => adminWorkspace?.role.actorGroup).toBe("ADM");
+    await page.goto("/#/parallel-test");
     await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
     const viewer = page.getByLabel("PDF 도면 뷰어");
     await expect(viewer).toBeVisible();
@@ -235,6 +236,7 @@ test("mocked drawing binding plus real Location API stages, saves, and restores 
     await page.getByLabel("개발 역할 선택").selectOption("ADM");
     await expect.poll(() => adminWorkspace?.role.actorGroup).toBe("ADM");
     await expect.poll(() => adminSession?.actor.roleAssignmentId).toBeTruthy();
+    await page.goto("/#/parallel-test");
     await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
     const restoredViewer = page.getByLabel("PDF 도면 뷰어");
     await expect(restoredViewer).toBeVisible();
