@@ -8,6 +8,7 @@ import { LocationEditorPanel } from "./parallel/LocationEditorPanel";
 import { SafetyConnectedPanel } from "./parallel/SafetyConnectedPanel";
 import { InspectionCaseFlowPanel } from "./parallel/InspectionCaseFlowPanel";
 import { DrawingPdfBindingPanel } from "./parallel/DrawingPdfBindingPanel";
+import { DrawingFieldManagementPanel } from "./parallel/DrawingFieldManagementPanel";
 import { DrawingSourceRegistrationPanel } from "./parallel/DrawingSourceRegistrationPanel";
 import { DrawingMarkupIssuePanel } from "./parallel/DrawingMarkupIssuePanel";
 import { NotificationEventsPanel } from "./parallel/NotificationEventsPanel";
@@ -124,6 +125,7 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     <div className="parallel-test-tabs" role="tablist" aria-label="테스트 모듈">{modules.map(module => <button key={module.id} type="button" role="tab" aria-selected={active === module.id} className={active === module.id ? "active" : ""} onClick={() => { setActive(module.id); setSelectedIndex(0); }}>{module.label}</button>)}</div>
     {active === "drawing-compare" && <Suspense fallback={<div role="status">도면 비교를 불러오는 중…</div>}><DrawingComparePanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} /></Suspense>}
     {active === "drawings" && <DrawingSourceRegistrationPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onNavigate={onNavigate} />}
+    {active === "drawings" && <DrawingFieldManagementPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "drawings" && <DrawingPdfBindingPanel client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "drawings" && <Suspense fallback={<div role="status">PDF 뷰어를 불러오는 중…</div>}><PdfViewerPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onSelectMarkup={setSelectedMarkupId} /></Suspense>}
     {active === "drawings" && <DrawingMarkupIssuePanel client={client} workspace={workspace} selectedMarkupId={selectedMarkupId} onChanged={onChanged} onSelect={onSelect} onNavigate={onNavigate} />}

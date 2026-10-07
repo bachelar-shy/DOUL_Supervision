@@ -147,9 +147,10 @@ export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOp
     setBindings([]); setDrawings([]); setRevisions([]); setLoaded("");
     setError(""); setNotice(""); setPending(null); setHistory(null); setHistoryFor("");
     if (!session) setLoaded(scopeKey);
-    void refresh();
     return () => { alive.current = false; sequence.current += 1; };
   }, [scopeKey, refresh]);
+
+  useEffect(() => { void refresh(); }, [workspace.items, refresh]);
 
   function toggleRecipient(id: string) {
     setRecipientIds(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
@@ -167,13 +168,15 @@ export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOp
     if (sameNumber.some(row => row.revision.toLocaleLowerCase() === revision.trim().toLocaleLowerCase())) {
       setError("같은 도면번호와 개정의 현장 관리 기록이 이미 있습니다."); return;
     }
+    const selectedApproval = approvalKey ? bindingApprovals.find(item => item.record.id === approvalKey) : null;
+    if (approvalKey && !selectedApproval) { setError("선택한 승인 근거가 변경되었습니다. 현재 승인을 다시 선택하십시오."); return; }
     const input: DrawingFieldRegistrationInput = {
       bindingId: selectedBinding.id,
       drawingNo: drawingNo.trim(),
       revision: revision.trim(),
       issuedFor,
       requiredRecipientPartyIds: [...new Set(recipientIds)],
-      approvalRef: approvalKey ? refFor("Approval", bindingApprovals.find(item => item.record.id === approvalKey)!.record) : null,
+      approvalRef: selectedApproval ? refFor("Approval", selectedApproval.record) : null,
       changeRefs: [...changeRefs],
       supersedesId: supersedesId || null,
     };
