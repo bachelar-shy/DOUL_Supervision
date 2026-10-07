@@ -27,6 +27,7 @@ function validAnchor(value: unknown): value is PdfDrawingAnchor {
   if (!value || typeof value !== "object") return false;
   const anchor = value as Record<string, unknown>;
   return !!anchor.drawingRef && typeof anchor.drawingRef === "object"
+    && (anchor.drawingRef as Record<string, unknown>).objectType === "InformationItem"
     && Number.isInteger(anchor.page) && Number(anchor.page) > 0
     && Number.isFinite(anchor.x) && Number.isFinite(anchor.y)
     && anchor.coordinateSystem === "pdf_points";
@@ -72,14 +73,15 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
   const matchingBindings = useMemo(() => {
     if (!selectedId) return [];
     return bindings.filter((binding) => binding.projectId === workspace.project.id
-      && binding.evidenceRef.objectType === "InformationItem"
+      && binding.evidenceRef.objectType === "Evidence"
       && binding.evidenceRef.objectId === selectedId);
   }, [bindings, selectedId, workspace.project.id]);
   const boundOnlyEvidence = useMemo(() => {
     const listed = new Set(sources.map((source) => source.id));
     const seen = new Set<string>();
     return bindings.filter((binding) => {
-      if (binding.projectId !== workspace.project.id || listed.has(binding.evidenceRef.objectId)
+      if (binding.projectId !== workspace.project.id || binding.evidenceRef.objectType !== "Evidence"
+        || listed.has(binding.evidenceRef.objectId)
         || seen.has(binding.evidenceRef.objectId)) return false;
       seen.add(binding.evidenceRef.objectId);
       return true;
