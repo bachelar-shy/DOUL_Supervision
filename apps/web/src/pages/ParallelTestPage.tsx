@@ -63,9 +63,9 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     }
   }, [client]);
   useEffect(() => {
-    const timer = window.setTimeout(() => { for (const module of modules) if (module.id !== "safety-traceability" && module.id !== "evidence-quarantine") void refresh(module.id); }, 0);
+    const timer = window.setTimeout(() => { if (active === "drawings" || active === "locations") void refresh(active); }, 0);
     return () => window.clearTimeout(timer);
-  }, [refresh]);
+  }, [active, refresh]);
   const safetyItems = workspace.items.filter(item => item.machine === "safety_stop_order");
   const loadSafetyRecord = useCallback(async () => {
     const item = safetyItems.find(candidate => candidate.record.id === selectedSafetyId);
@@ -108,6 +108,7 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     } catch (error) { setUploadError(error instanceof Error ? error.message : String(error)); }
     finally { setUploading(false); }
   }, [client, uploadFile]);
+  const showDiagnostic = active !== "work-inbox" && active !== "notifications";
   const state = states[active];
   const rows = useMemo(() => rowsFrom(state.data), [state.data]);
   const selected = rows[selectedIndex] ?? rows[0];
@@ -124,7 +125,7 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     {active === "work-inbox" && <WorkInboxActionsPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onNavigate={onNavigate} />}
     {active === "evidence-quarantine" && <EvidenceRegistrationPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "safety-traceability" && <SafetyConnectedPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onSelect={onSelect} onOpenCommand={onOpenCommand} />}
-    <div className="parallel-test-toolbar"><span>{state.refreshedAt ? `최근 조회 ${state.refreshedAt}` : "아직 조회되지 않음"}</span>{active === "safety-traceability" ? <><select aria-label="안전 원본 레코드" value={selectedSafetyId} onChange={event => { setSelectedSafetyId(event.target.value); setStates(current => ({ ...current, "safety-traceability": { data: null, error: "", loading: false } })); }}><option value="">원본 기록 선택</option>{safetyItems.map(item => <option key={item.record.id} value={item.record.id}>{item.record.title || item.machine} · v{item.record.version} · {item.record.id}</option>)}</select><ActionButton onClick={() => void loadSafetyRecord()} disabled={state.loading || !selectedSafetyId}>선택 원본 조회</ActionButton></> : <ActionButton onClick={() => void refresh(active)} disabled={state.loading}>{active === "evidence-quarantine" ? "격리 목록 조회" : "다시 조회"}</ActionButton>}</div>
+    {showDiagnostic && <><div className="parallel-test-toolbar"><span>{state.refreshedAt ? `최근 조회 ${state.refreshedAt}` : "아직 조회되지 않음"}</span>{active === "safety-traceability" ? <><select aria-label="안전 원본 레코드" value={selectedSafetyId} onChange={event => { setSelectedSafetyId(event.target.value); setStates(current => ({ ...current, "safety-traceability": { data: null, error: "", loading: false } })); }}><option value="">원본 기록 선택</option>{safetyItems.map(item => <option key={item.record.id} value={item.record.id}>{item.record.title || item.machine} · v{item.record.version} · {item.record.id}</option>)}</select><ActionButton onClick={() => void loadSafetyRecord()} disabled={state.loading || !selectedSafetyId}>선택 원본 조회</ActionButton></> : <ActionButton onClick={() => void refresh(active)} disabled={state.loading}>{active === "evidence-quarantine" ? "격리 목록 조회" : "다시 조회"}</ActionButton>}</div>
     {active === "evidence-quarantine" && <div className="parallel-evidence-test">
       <p className="muted">격리 전용 테스트 경로입니다. 업로드 파일은 원본 업무 기록에 발행되지 않습니다. 최대 20 MiB.</p>
       <label>테스트 파일 <input type="file" onChange={event => { setUploadFile(event.target.files?.[0] ?? null); setUploadError(""); setUploadResult(null); }} /></label>
@@ -147,5 +148,6 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     </div>}
     {active === "evidence-quarantine" && !state.loading && !state.error && state.data !== null && <div className="parallel-test-detail"><SectionHeader title="격리 파일 목록" meta={`${rows.length}건`} /><pre>{stringify(state.data)}</pre></div>}
     {active === "safety-traceability" && selectedSafetyId && !state.loading && !state.error && state.data !== null && <div className="parallel-test-detail"><SectionHeader title="선택한 안전 기록 응답" /><p className="muted">서버 응답에서 선택 원본의 연결 기록과 진단을 확인합니다.</p><pre>{stringify(state.data)}</pre><ActionButton onClick={() => onNavigate("capture")}>증빙 업로드 화면 열기</ActionButton></div>}
+    </>}
   </Panel></div>;
 }
