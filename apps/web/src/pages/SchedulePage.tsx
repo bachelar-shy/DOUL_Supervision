@@ -88,15 +88,19 @@ function CreateSchedule({ machine, workspace, client, online, onCreated, onClose
   const schema = scheduleInputs[machine];
   const [values, setValues] = useState<Record<string, string>>({});
   const [title, setTitle] = useState("");
+  const [evidenceIds, setEvidenceIds] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const identity = useRef({ id: crypto.randomUUID(), key: crypto.randomUUID(), body: "" });
   const isSchedule = machine.startsWith("schedule_");
+  const requiresEvidence = machine === "delay_event";
+  const evidenceItems = workspace.items.filter(item => item.machine === "evidence");
   async function submit() {
     setError(""); setBusy(true);
     try {
       if (!online) throw new Error("연결 복구 후 다시 제출하십시오.");
       if (!title.trim()) throw new Error("제목을 입력하십시오.");
+      if (requiresEvidence && evidenceIds.length === 0) throw new Error("지연사건에는 현장 증빙을 1건 이상 연결하십시오.");
       const data: Record<string, unknown> = {};
       for (const [key, spec] of Object.entries(schema.fields)) {
         const text = values[key]?.trim();
@@ -114,6 +118,7 @@ function CreateSchedule({ machine, workspace, client, online, onCreated, onClose
       }
       if (isSchedule) data.scheduleKind = machine === "schedule_baseline" ? "baseline" : "progress_update";
       const payload = { ...workspace.context.scope, title: title.trim(),
+        ...(requiresEvidence ? { evidenceIds } : {}),
         ...(isSchedule ? { revision: data.revision, fileIds: data.sourceFileRef ? [data.sourceFileRef] : [], schedule: data } : { data }) };
       const body = JSON.stringify(payload);
       if (identity.current.body && identity.current.body !== body) identity.current = { id: crypto.randomUUID(), key: crypto.randomUUID(), body };
@@ -137,6 +142,10 @@ function CreateSchedule({ machine, workspace, client, online, onCreated, onClose
     <div className="section-heading"><h2>{tabs.find(x => x.id === machine)?.label} 기록 추가</h2><button aria-label="대화상자 닫기" onClick={onClose} disabled={busy}>×</button></div>
     <p className="muted">원본 파일과 정확한 버전 참조를 입력하십시오. 권한·공정 연계·필수자료는 제출 시 서버가 검증합니다.</p>
     <div className="modal-fields"><label>제목 *<input value={title} onChange={e => setTitle(e.target.value)} /></label>
+      {requiresEvidence && <label>현장 증빙 *<select multiple value={evidenceIds} size={Math.min(6, Math.max(3, evidenceItems.length))}
+        onChange={e => setEvidenceIds([...e.target.selectedOptions].map(option => option.value))}>
+        {evidenceItems.map(item => <option key={item.record.id} value={item.record.id}>{recordTitle(item.record)} · {item.record.id}</option>)}
+      </select><span className="muted">현재 프로젝트에 보존된 증빙을 1건 이상 선택하십시오.</span></label>}
       {schema.required.filter(key => key !== "scheduleKind").map(input)}
     </div>
     <details><summary>추가 공정자료 · 참조 · 정정 사유</summary><div className="modal-fields">{Object.keys(schema.fields).filter(key => !schema.required.includes(key)).map(input)}</div></details>
