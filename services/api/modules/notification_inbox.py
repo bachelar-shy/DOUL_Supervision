@@ -9,32 +9,27 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timezone
 from collections.abc import Iterable, Mapping
+import json
+from pathlib import Path
+import re
+
+from app.reference.validation import ContractError, validate
 
 
 class NotificationProjectionError(ValueError):
     """An in-scope notification cannot be safely projected."""
 
 
-_REQUIRED_FIELDS = {
-    "id",
-    "projectId",
-    "version",
-    "createdAt",
-    "updatedAt",
-    "createdBy",
-    "recipientPartyId",
-    "sourceRef",
-    "channel",
-    "status",
-    "dueAt",
-    "retryCount",
-}
-_CHANNELS = {"in_app", "push", "email_adapter"}
-_STATUSES = {"queued", "sent", "delivered", "acknowledged", "failed"}
+_TIMESTAMP_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})")
+
+_SCHEMA_PATH = Path(__file__).resolve().parents[3] / "app" / "schema" / "domain_schemas_v2.json"
+_SCHEMA_DOCUMENT = json.loads(_SCHEMA_PATH.read_text(encoding="utf-8"))
+_SCHEMAS = _SCHEMA_DOCUMENT["components"]["schemas"]
+_NOTIFICATION_SCHEMA = _SCHEMAS["Notification"]
 
 
 def _parse_instant(value: object, field: str) -> datetime:
-    if not isinstance(value, str):
+    if not isinstance(value, str) or not _TIMESTAMP_RE.fullmatch(value):
         raise NotificationProjectionError(f"{field} must be an RFC3339 timestamp")
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -62,8 +57,27 @@ def project_notification_inbox(
     if not isinstance(recipient_party_id, str) or not recipient_party_id:
         raise NotificationProjectionError("recipient_party_id is required")
 
-    allowed_projects = frozenset(accessible_project_ids)
-    receipts = read_receipts or {}
+    if isinstance(accessible_project_ids, (str, bytes)):
+        raise NotificationProjectionError("accessible_project_ids must be an iterable of project ids, not a string")
+    try:
+        allowed_projects = frozenset(accessible_project_ids)
+    except TypeError as error:
+        raise NotificationProjectionError("accessible_project_ids must be an iterable of project ids") from error
+    if any(not isinstance(project_id, str) or not project_id for project_id in allowed_projects):
+        raise NotificationProjectionError("accessible_project_ids must contain non-empty strings")
+
+    receipts = {} if read_receipts is None else read_receipts
+    if not isinstance(receipts, Mapping):
+        raise NotificationProjectionError("read_receipts must be a mapping")
+    for key, read_at in receipts.items():
+        if (
+            not isinstance(key, tuple)
+            or len(key) != 3
+            or any(not isinstance(part, str) or not part for part in key)
+        ):
+            raise NotificationProjectionError("read receipt keys must be (recipientPartyId, projectId, notificationId)")
+        _parse_instant(read_at, "readAt")
+
     visible: dict[tuple[str, str], tuple[datetime, dict[str, object], str | None]] = {}
 
     for candidate in notifications:
@@ -79,28 +93,22 @@ def project_notification_inbox(
         # Establish tenant and recipient scope before reading other fields.
         if candidate_recipient != recipient_party_id or project_id not in allowed_projects:
             continue
-        if candidate.get("channel") != "in_app":
+        channel = candidate.get("channel")
+        if channel in ("push", "email_adapter"):
             continue
+        if channel != "in_app":
+            raise NotificationProjectionError("notification channel is outside the current contract")
 
-        missing = _REQUIRED_FIELDS.difference(candidate)
-        if missing:
-            raise NotificationProjectionError(f"notification is missing required fields: {', '.join(sorted(missing))}")
-        if candidate.get("channel") not in _CHANNELS or candidate.get("status") not in _STATUSES:
-            raise NotificationProjectionError("notification channel or status is outside the current contract")
-        if not isinstance(candidate.get("sourceRef"), Mapping):
-            raise NotificationProjectionError("notification sourceRef must be an object")
-        if isinstance(candidate.get("version"), bool) or not isinstance(candidate.get("version"), int) or candidate["version"] < 1:
-            raise NotificationProjectionError("notification version must be a positive integer")
-        if isinstance(candidate.get("retryCount"), bool) or not isinstance(candidate.get("retryCount"), int) or candidate["retryCount"] < 0:
-            raise NotificationProjectionError("notification retryCount must be a non-negative integer")
+        record = dict(candidate)
+        try:
+            validate(record, _NOTIFICATION_SCHEMA, _SCHEMAS, path="Notification")
+        except ContractError as error:
+            raise NotificationProjectionError(f"notification does not match the Notification DTO: {error}") from error
 
-        created_at = _parse_instant(candidate["createdAt"], "createdAt")
-        _parse_instant(candidate["dueAt"], "dueAt")
+        created_at = _parse_instant(record["createdAt"], "createdAt")
         key = (project_id, notification_id)
-        record = deepcopy(dict(candidate))
+        record = deepcopy(record)
         read_at = receipts.get((recipient_party_id, project_id, notification_id))
-        if read_at is not None:
-            _parse_instant(read_at, "readAt")
 
         prior = visible.get(key)
         if prior is not None:

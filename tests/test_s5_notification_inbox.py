@@ -7,19 +7,21 @@ from services.api.modules.notification_inbox import (
 )
 
 
-RECIPIENT = "party-owner"
-OTHER = "party-contractor"
-PROJECT = "project-a"
-OTHER_PROJECT = "project-b"
+RECIPIENT = "00000000-0000-4000-8000-000000000001"
+OTHER = "00000000-0000-4000-8000-000000000002"
+PROJECT = "00000000-0000-4000-8000-000000000003"
+OTHER_PROJECT = "00000000-0000-4000-8000-000000000004"
+NOTIFICATION_ID = "00000000-0000-4000-8000-000000000005"
+OLDER_NOTIFICATION_ID = "00000000-0000-4000-8000-000000000006"
 NOTIFICATION = {
-    "id": "n-1",
+    "id": NOTIFICATION_ID,
     "projectId": PROJECT,
     "version": 1,
     "createdAt": "2026-10-07T08:00:00Z",
     "updatedAt": "2026-10-07T08:00:00Z",
-    "createdBy": "party-supervisor",
+    "createdBy": "00000000-0000-4000-8000-000000000007",
     "recipientPartyId": RECIPIENT,
-    "sourceRef": {"objectType": "InformationItem", "objectId": "report-1", "version": 2},
+    "sourceRef": {"objectType": "InformationItem", "objectId": "00000000-0000-4000-8000-000000000008", "version": 2},
     "channel": "in_app",
     "status": "delivered",
     "dueAt": "2026-10-06T08:00:00+00:00",
@@ -37,20 +39,20 @@ class NotificationInboxProjectionTests(unittest.TestCase):
         )
 
     def test_recipient_project_and_channel_scope_is_enforced(self):
-        other_recipient = {**NOTIFICATION, "id": "n-other-party", "recipientPartyId": OTHER}
-        other_project = {**NOTIFICATION, "id": "n-other-project", "projectId": OTHER_PROJECT}
-        email = {**NOTIFICATION, "id": "n-email", "channel": "email_adapter"}
+        other_recipient = {**NOTIFICATION, "id": "00000000-0000-4000-8000-000000000009", "recipientPartyId": OTHER}
+        other_project = {**NOTIFICATION, "id": "00000000-0000-4000-8000-000000000010", "projectId": OTHER_PROJECT}
+        email = {**NOTIFICATION, "id": "00000000-0000-4000-8000-000000000011", "channel": "email_adapter"}
 
         result = self.project([NOTIFICATION, other_recipient, other_project, email])
 
         self.assertEqual(result["total"], 1)
-        self.assertEqual(result["items"][0]["notification"]["id"], "n-1")
+        self.assertEqual(result["items"][0]["notification"]["id"], NOTIFICATION_ID)
 
     def test_read_receipt_is_recipient_scoped_and_does_not_acknowledge_or_mutate(self):
         original = deepcopy(NOTIFICATION)
         result = self.project(
             [NOTIFICATION],
-            read_receipts={(RECIPIENT, PROJECT, "n-1"): "2026-10-07T09:00:00+07:00"},
+            read_receipts={(RECIPIENT, PROJECT, NOTIFICATION_ID): "2026-10-07T09:00:00+07:00"},
         )
 
         item = result["items"][0]
@@ -69,10 +71,10 @@ class NotificationInboxProjectionTests(unittest.TestCase):
         self.assertNotIn("deadlineStatus", item)
 
     def test_order_is_newest_first_and_exact_duplicates_are_idempotent(self):
-        older = {**NOTIFICATION, "id": "n-older", "createdAt": "2026-10-06T08:00:00Z"}
+        older = {**NOTIFICATION, "id": OLDER_NOTIFICATION_ID, "createdAt": "2026-10-06T08:00:00Z"}
         result = self.project([older, NOTIFICATION, deepcopy(NOTIFICATION)])
 
-        self.assertEqual([item["notification"]["id"] for item in result["items"]], ["n-1", "n-older"])
+        self.assertEqual([item["notification"]["id"] for item in result["items"]], [NOTIFICATION_ID, OLDER_NOTIFICATION_ID])
         self.assertEqual(result["total"], 2)
 
     def test_conflicting_duplicate_and_malformed_visible_record_are_rejected(self):
@@ -83,6 +85,48 @@ class NotificationInboxProjectionTests(unittest.TestCase):
         malformed = {key: value for key, value in NOTIFICATION.items() if key != "sourceRef"}
         with self.assertRaises(NotificationProjectionError):
             self.project([malformed])
+
+    def test_all_notification_timestamps_and_receipts_fail_closed(self):
+        for field in ("updatedAt", "dueAt"):
+            malformed = {**NOTIFICATION, field: "2026-10-07T08:00:00"}
+            with self.subTest(field=field), self.assertRaises(NotificationProjectionError):
+                self.project([malformed])
+
+        for receipts in (
+            {(RECIPIENT, PROJECT, NOTIFICATION_ID): "not-a-timestamp"},
+            {(RECIPIENT, PROJECT): "2026-10-07T08:00:00Z"},
+            {"malformed-key": "2026-10-07T08:00:00Z"},
+            [],
+        ):
+            with self.subTest(receipts=receipts), self.assertRaises(NotificationProjectionError):
+                self.project([NOTIFICATION], read_receipts=receipts)
+
+    def test_unknown_fields_and_unknown_channel_are_rejected(self):
+        with self.assertRaises(NotificationProjectionError):
+            self.project([{**NOTIFICATION, "unvalidatedPrivateData": "must not leak"}])
+        with self.assertRaises(NotificationProjectionError):
+            self.project([{**NOTIFICATION, "channel": "unknown"}])
+
+    def test_optional_notification_timestamps_are_validated_and_preserved(self):
+        notification = {**NOTIFICATION, "sentAt": "2026-10-07T08:01:00Z"}
+        item = self.project([notification])["items"][0]
+        self.assertEqual(item["notification"]["sentAt"], notification["sentAt"])
+
+        malformed = {**notification, "acknowledgedAt": "not-a-timestamp"}
+        with self.assertRaises(NotificationProjectionError):
+            self.project([malformed])
+
+    def test_schema_validation_covers_domain_refs_and_project_scope_input(self):
+        invalid_ref = {**NOTIFICATION, "sourceRef": {"objectType": "InformationItem", "objectId": "bad", "version": 2}}
+        with self.assertRaises(NotificationProjectionError):
+            self.project([invalid_ref])
+
+        with self.assertRaises(NotificationProjectionError):
+            project_notification_inbox(
+                [NOTIFICATION],
+                recipient_party_id=RECIPIENT,
+                accessible_project_ids=PROJECT,
+            )
 
     def test_empty_authorized_scope_returns_no_records(self):
         result = project_notification_inbox(
