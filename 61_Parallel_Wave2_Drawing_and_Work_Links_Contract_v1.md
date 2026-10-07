@@ -9,7 +9,7 @@ POST /projects/{projectId}/parallel/drawing-pdf-bindings 요청은 drawingRef와
 
 binding은 id, projectId, drawingRef, evidenceRef, fileHash, createdAt, createdBy를 갖는 기술 기록이다. store.meta의 JSON index와 별도 기술 변경 내역으로 저장한다. Drawing 원본, fileIds, Evidence 원본과 공식 승인/발행 상태는 수정하지 않는다. 정확한 Drawing 버전당 원본 PDF는 하나만 연결한다. 같은 연결은 중복 생성하지 않으며 다른 원본으로 교체하려 하면 409를 반환한다. 수정/삭제/재발행은 별도 계약으로 처리한다.
 
-GET은 현재 역할에서 두 원본을 모두 읽을 수 있는 해당 프로젝트 연결만 반환한다. 다른 프로젝트/권한 철회/누락 원본은 연결 식별정보를 노출하지 않는다. 재시작 후에도 index가 유지된다. PDF 자체를 구조 검증하거나 도면 승인으로 간주하지 않는다.
+GET은 현재 역할에서 두 원본을 모두 읽을 수 있는 해당 프로젝트 연결만 반환한다. 다른 프로젝트/권한 철회/누락 원본은 연결 식별정보를 노출하지 않는다. GET /parallel/drawing-pdf-bindings/{id}/content는 현재 역할이 두 원본을 모두 읽을 수 있을 때만 정확한 역사 Evidence.fileId의 원본을 돌려준다. 연결의 해시와 원본 해시가 같아야 하며 최신 Evidence 파일로 대체하지 않는다. 재시작 후에도 index가 유지된다. PDF 자체를 구조 검증하거나 도면 승인으로 간주하지 않는다.
 
 ## 위치 핀
 화면 클릭 위치는 PDF.js PageViewport.convertToPdfPoint로 변환한다. canvas CSS bounding rectangle을 viewport 공간으로 환산하고 DPR은 PDF 좌표에 곱하지 않는다. 확대/회전 뒤에도 같은 pdf_points 좌표를 convertToViewportPoint로 다시 표시한다. 렌더 완료된 현재 viewport에서만 클릭을 받는다. 유한한 좌표와 PDF viewBox 내부 클릭을 확인한다.

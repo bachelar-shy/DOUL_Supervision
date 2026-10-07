@@ -94,6 +94,10 @@ export class MockSupervisionClient implements SupervisionClient {
     return previewOnly();
   }
 
+  async drawingPdfContent(_bindingId: string): Promise<Blob> {
+    throw new Error("화면 미리보기에서는 도면 PDF 원본 연결을 제공하지 않습니다.");
+  }
+
   async evidenceContent(evidenceId: string): Promise<Blob> {
     if (!evidenceId.startsWith("EVD-UI-")) {
       throw new Error("UI Mock Preview에서 찾을 수 없는 증빙입니다.");
