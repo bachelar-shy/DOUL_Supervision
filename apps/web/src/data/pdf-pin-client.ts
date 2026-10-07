@@ -60,13 +60,14 @@ export function parseDrawingPdfBindings(value: unknown): DrawingPdfBinding[] {
 }
 
 export function parsePdfPinLocations(value: unknown): PdfPinLocation[] {
-  const rows = value && typeof value === "object" && Array.isArray((value as { rows?: unknown }).rows)
-    ? (value as { rows: unknown[] }).rows : [];
+  const rows = value && typeof value === "object" && Array.isArray((value as { items?: unknown }).items)
+    ? (value as { items: unknown[] }).items : [];
   return rows.flatMap((item): PdfPinLocation[] => {
     if (!item || typeof item !== "object") return [];
     const row = item as Record<string, unknown>;
-    if (!isRef(row.reference) || row.reference.objectType !== "Location" || typeof row.name !== "string" || !Array.isArray(row.drawingAnchors)) return [];
-    return [{ reference: row.reference, name: row.name, drawingAnchors: row.drawingAnchors }];
+    if (!isRef(row.reference) || row.reference.objectType !== "Location" || typeof row.name !== "string") return [];
+    if (row.drawingAnchors !== undefined && !Array.isArray(row.drawingAnchors)) return [];
+    return [{ reference: row.reference, name: row.name, drawingAnchors: Array.isArray(row.drawingAnchors) ? row.drawingAnchors : [] }];
   });
 }
 
