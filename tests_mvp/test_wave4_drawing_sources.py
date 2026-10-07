@@ -63,3 +63,24 @@ class DrawingSourceTests(unittest.TestCase):
             self.store.engine.create = original
         self.assertNotIn(('InformationItem', self.body['objectId']), self.store.engine._records)
         self.assertFalse(any(b['drawingRef']['objectId'] == self.body['objectId'] for b in self.store.meta['drawingPdfBindings']))
+
+    def test_new_source_needs_received_field_release_and_superseded_copy_is_blocked(self):
+        result = self.post_source().json(); drawing = result['drawing']; approval = result['approval']; sup = self.store.meta['actors']['SUP']
+        with self.store.transaction(True):
+            reviewed = self.store.engine.execute('approval', approval['id'], 'review', approval['version'], {}, [], sup['partyId'], sup['roleAssignmentId'], 'review-for-field')['record']
+            approved = self.store.engine.execute('approval', reviewed['id'], 'approve', reviewed['version'], {}, [], sup['partyId'], sup['roleAssignmentId'], 'approve-for-field')['record']
+        role = self.store.engine.get('RoleAssignment', sup['roleAssignmentId'])
+        payload = dict(projectId=self.project, drawingRef=result['binding']['drawingRef'])
+        with self.assertRaises(ContractError):
+            self.store.engine._common(payload, role)
+        revision = dict(id=str(uuid4()), projectId=self.project, drawingNo='TEST-A1', drawingRef=result['binding']['drawingRef'], evidenceRef=result['binding']['evidenceRef'], approvalRef=self.ref('Approval', approved), status='released', issuedFor='construction', changeRefs=[], requiredRecipientPartyIds=[sup['partyId']], receipts=[])
+        with self.store.transaction(True):
+            self.store.meta.setdefault('drawingFieldRevisions', []).append(revision)
+        with self.store.transaction():
+            with self.assertRaises(ContractError): self.store.engine._common(payload, role)
+        with self.store.transaction(True):
+            self.store.meta['drawingFieldRevisions'][0]['receipts'].append(dict(recipientPartyId=sup['partyId'], deliveredAt=self.store.engine.at(), receivedAt=self.store.engine.at()))
+        with self.store.transaction(): self.store.engine._common(payload, role)
+        with self.store.transaction(True): self.store.meta['drawingFieldRevisions'][0]['status'] = 'superseded'
+        with self.store.transaction():
+            with self.assertRaises(ContractError): self.store.engine._common(payload, role)

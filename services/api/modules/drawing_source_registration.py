@@ -29,6 +29,10 @@ def install_drawing_source_routes(app, store, *, identity, role_for, key_for, de
                 store.engine.authorize_read(source, actor['partyId'], role['id'])
                 require(source['sourceType'] == 'original' and source['mediaType'] == 'document' and source.get('metadata', {}).get('mimeType') == 'application/pdf', 'SOURCE_INVALID', 'Original PDF required')
                 scope = {name: deepcopy(source[name]) for name in ['packageId', 'locationId', 'discipline', 'responsibleOrganizationId', 'minimumQualificationRank'] if name in source}
+                project = store.engine.get('Project', project_id)
+                ranks = [rule['minimumRank'] for rule in project.get('qualificationRules', []) if rule.get('discipline') in [scope.get('discipline'), '*']]
+                require(bool(ranks), 'QUALIFICATION_RULE_MISSING', 'Project must define the drawing discipline qualification')
+                scope['minimumQualificationRank'] = min(ranks)
                 store.engine.authorize(dict(scope, projectId=project_id), 'issue_revised_information', actor['partyId'], role['id'])
                 request_key = f"drawing-source:{project_id}:{actor['partyId']}:{key}"
                 fingerprint = _fingerprint(project_id, actor['partyId'], 'register-source', body)
