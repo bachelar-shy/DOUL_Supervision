@@ -33,6 +33,43 @@ export interface UploadOptions {
   capturedAt?: string;
 }
 
+export interface NormalizedScheduleSourceActivity {
+  data: Record<string, unknown>;
+  predecessorActivityIds?: string[];
+  successorActivityIds?: string[];
+}
+
+export interface NormalizedScheduleSource {
+  schedule: Record<string, unknown>;
+  activities: NormalizedScheduleSourceActivity[];
+  criticalActivityId: string;
+}
+
+export interface ScheduleSourceImportInput {
+  clientObjectId: string;
+  scope: Omit<Scope, "minimumQualificationRank">;
+  title: string;
+  sourceEvidenceRef: DomainRef;
+  inputMode: string;
+  parserVersion: string;
+  schedule: Record<string, unknown>;
+  activities: Array<NormalizedScheduleSourceActivity & { clientObjectId: string }>;
+  criticalActivityId: string;
+}
+
+export interface ScheduleSourceImportResult {
+  record: RecordDTO;
+  sourceScheduleRef: DomainRef;
+  activityRefs: DomainRef[];
+}
+
+export interface ScheduleSourceImportDetail {
+  record: RecordDTO;
+  activities: RecordDTO[];
+  sourceScheduleRef: DomainRef;
+  activityRefs: DomainRef[];
+}
+
 export interface SupervisionClient {
   readonly kind: "http" | "mock";
   readonly session: Session | null;
@@ -56,6 +93,11 @@ export interface SupervisionClient {
     options: UploadOptions,
     progress?: (offset: number, total: number) => void,
   ): Promise<RecordDTO>;
+  importScheduleSource(
+    input: ScheduleSourceImportInput,
+    key?: string,
+  ): Promise<ScheduleSourceImportResult>;
+  scheduleSourceImportDetail(objectId: string): Promise<ScheduleSourceImportDetail>;
   render(
     formId: string,
     sourceDomainRefs: DomainRef[],
@@ -140,6 +182,28 @@ class HttpSupervisionClient implements SupervisionClient {
     progress?: (offset: number, total: number) => void,
   ) {
     return this.client.upload(bytes, options, progress);
+  }
+
+  importScheduleSource(input: ScheduleSourceImportInput, key?: string) {
+    const session = this.client.session;
+    if (!session) throw new Error("로그인이 필요합니다.");
+    return this.client.request<ScheduleSourceImportResult>(
+      this.client.path("/schedule-source-imports"),
+      {
+        method: "POST",
+        headers: { "Idempotency-Key": key || newKey() },
+        body: JSON.stringify({
+          roleAssignmentId: session.actor.roleAssignmentId,
+          ...input,
+        }),
+      },
+    );
+  }
+
+  scheduleSourceImportDetail(objectId: string) {
+    return this.client.request<ScheduleSourceImportDetail>(
+      this.client.path(`/schedule-source-imports/${objectId}`),
+    );
   }
 
   render(
