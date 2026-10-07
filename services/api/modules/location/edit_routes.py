@@ -17,6 +17,7 @@ from app.reference.validation import ContractError, require, validate
 
 
 _EDITABLE = {"name", "semanticAnchor", "parentId", "drawingAnchors"}
+_MAX_DRAWING_ANCHORS = 1000
 _INHERITABLE = ("packageId", "discipline", "responsibleOrganizationId", "reason", "minimumQualificationRank", "requirementRefs", "evidenceIds", "drawingRef", "upstreamInspectionIds")
 
 
@@ -28,13 +29,16 @@ def _require_admin(demo_enabled, session, role):
 
 def _valid_drawing_anchors(engine, anchors, project_id, party_id, role_id):
     require(isinstance(anchors, list), "INVALID_REQUEST", "drawingAnchors must be an array")
+    require(len(anchors) <= _MAX_DRAWING_ANCHORS, "INVALID_REQUEST", f"drawingAnchors cannot exceed {_MAX_DRAWING_ANCHORS} entries")
     result = []
+    seen = set()
     for anchor in anchors:
         require(isinstance(anchor, dict), "INVALID_REQUEST", "Each drawing anchor must be an object")
         require(set(anchor) == {"drawingRef", "page", "x", "y", "coordinateSystem"}, "INVALID_REQUEST", "Drawing anchor fields are incomplete or unsupported")
         ref = anchor["drawingRef"]
         require(isinstance(ref, dict) and set(ref) == {"objectType", "objectId", "version"} and ref.get("objectType") == "InformationItem", "REFERENCE_INVALID", "Drawing anchor needs an exact InformationItem reference")
         require(isinstance(ref.get("version"), int) and not isinstance(ref.get("version"), bool) and ref["version"] >= 1, "REFERENCE_INVALID", "Drawing reference version must be positive")
+        validate(ref, engine.schemas["DomainRef"], engine.schemas)
         drawing = engine.resolve(ref, project_id=project_id)
         require(drawing.get("subtype") == "Drawing", "REFERENCE_TYPE_INVALID", "Anchor reference must resolve to a Drawing")
         engine.authorize_read(drawing, party_id, role_id)
@@ -43,6 +47,9 @@ def _valid_drawing_anchors(engine, anchors, project_id, party_id, role_id):
         for coordinate in (anchor["x"], anchor["y"]):
             require(isinstance(coordinate, (int, float)) and not isinstance(coordinate, bool) and math.isfinite(coordinate), "INVALID_REQUEST", "Drawing coordinates must be finite numbers")
         require(anchor["coordinateSystem"] == "pdf_points", "INVALID_REQUEST", "Coordinates must use the canonical pdf_points system")
+        identity = (ref["objectId"], ref["version"], page, anchor["x"], anchor["y"], anchor["coordinateSystem"])
+        require(identity not in seen, "INVALID_REQUEST", "Duplicate drawing anchor; remove the duplicate entry")
+        seen.add(identity)
         result.append(deepcopy(anchor))
     return result
 
@@ -63,9 +70,13 @@ def _idempotency_key(request):
 
 async def _read_json(request):
     try:
-        return await request.json()
+        raw = await request.body()
+        return json.loads(
+            raw.decode("utf-8"),
+            parse_constant=lambda value: (_ for _ in ()).throw(ValueError("Non-finite JSON number")),
+        )
     except (json.JSONDecodeError, UnicodeDecodeError, ValueError) as exc:
-        raise ContractError("INVALID_REQUEST", "Expected valid JSON") from exc
+        raise ContractError("INVALID_REQUEST", "Expected valid JSON with finite numbers") from exc
 
 
 def register_location_edit_routes(app, *, store, identity, role_for, demo_enabled, location_scope_check=None):
