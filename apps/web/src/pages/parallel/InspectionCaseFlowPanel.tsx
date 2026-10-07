@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { InspectionCase } from "@doul/client";
 import type { CommandDescriptor, WorkItem, Workspace } from "../../data/ui-contract";
 import type { SupervisionClient } from "../../data/supervision-client";
 import { getInspectionCase } from "../../data/inspection-case-flow-client";
+import type { InspectionCase } from "../../data/inspection-case-flow-client";
 import { commands } from "../../labels";
 import "./inspection-case-flow.css";
 
@@ -58,8 +58,17 @@ export function InspectionCaseFlowPanel({ client, workspace, onSelect, onOpenCom
     catch (cause) { if (requestId === seq.current) { const message = cause instanceof Error ? cause.message : String(cause); setError(/409|VERSION_CONFLICT|stale/i.test(message) ? "기록 버전이 변경되었습니다. 최신 작업공간에서 다시 조회하십시오." : message); } }
     finally { if (requestId === seq.current) setLoading(false); }
   }, [client]);
-  useEffect(() => { setSelectedId(""); setGraph(null); setError(""); if (inspections[0]) void load(inspections[0].record.id); else setLoading(false); return () => { seq.current += 1; }; }, [roleKey, inspections, load]);
-  useEffect(() => { if (selectedId && selected && graph?.requestedInspectionId !== selected.record.id) void load(selected.record.id); }, [selectedId, selected?.record.id, graph?.requestedInspectionId, load]);
+  useEffect(() => {
+    setGraph(null); setError(""); setSelectedId(inspections[0]?.record.id || "");
+    return () => { seq.current += 1; };
+  }, [roleKey]);
+  useEffect(() => {
+    if (selectedId && !inspections.some(item => item.record.id === selectedId)) setSelectedId("");
+  }, [inspections, selectedId]);
+  useEffect(() => {
+    if (selected) void load(selected.record.id);
+    else { setGraph(null); setLoading(false); }
+  }, [selected?.record.id, selected?.record.version, roleKey, workspace.items, load]);
   return <section className="inspection-case-flow" data-ui-component="inspection-case-flow" data-testid="inspection-case-flow">
     <header className="inspection-case-flow-header"><div><h2>검측 사례 흐름</h2><p>서버가 명시적으로 연결한 원 검측 · Issue · 시정조치 · 재검측 · 발주자 보고와 준비상태를 조회합니다.</p></div>
       <button type="button" onClick={() => selected && void load(selected.record.id)} disabled={!selected || loading}>{loading ? "조회 중…" : "새로고침"}</button></header>
@@ -67,7 +76,7 @@ export function InspectionCaseFlowPanel({ client, workspace, onSelect, onOpenCom
       <option value="">검측 선택</option>{inspections.map(item => <option key={item.record.id} value={item.record.id}>{titleOf(item)} · {item.record.id} · v{item.record.version}</option>)}
     </select></label>
     {!inspections.length && <p className="inspection-case-empty">현재 작업공간에서 열람할 수 있는 원 검측이 없습니다.</p>}
-    {selected && <div className="inspection-case-root"><strong>{titleOf(selected)}</strong><span>검측 · {selected.record.id} · v{selected.record.version} · {selected.record.status || "상태 확인"}</span></div>}
+    {graph && <LinkedRecord item={graph.rootInspection} workspace={workspace} onOpenCommand={onOpenCommand} />}
     {loading && <p role="status">검측 사례 그래프를 조회하는 중…</p>}{error && <div role="alert" className="inspection-case-error">{error}</div>}
     {graph && <><div className="inspection-case-summary" role="status"><strong>서버 판정 · {graph.readiness.complete ? "사례 완료" : "진행 중"}</strong><span>열린 Issue {graph.readiness.openIssueIds.length}</span><span>발주자 보고 대기 {graph.readiness.ownerReportingPendingIssueIds.length}</span><span>{graph.issues.length}개 연결 Issue</span></div>
       {!graph.issues.length && <p className="inspection-case-empty">이 검측에 서버가 연결한 Issue가 없습니다. 다른 검측 사례를 선택할 수 있습니다.</p>}
