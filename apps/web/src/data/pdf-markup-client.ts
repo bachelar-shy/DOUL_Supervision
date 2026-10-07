@@ -115,14 +115,26 @@ export async function fetchPdfDrawingMarkupHistory(client: SupervisionClient, id
   return (value as { items: unknown[] }).items.flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const entry = item as Record<string, unknown>;
-    const parsed = parsePdfDrawingMarkup(entry.snapshot);
+    // The endpoint projects history as bare snapshots, while older adapters may expose event wrappers.
+    const snapshot = (entry.snapshot && typeof entry.snapshot === "object" ? entry.snapshot : item) as Record<string, unknown>;
+    const parsed = parsePdfDrawingMarkup(snapshot);
     if (!parsed || (typeof entry.markupId === "string" && entry.markupId !== parsed.id)) return [];
+    const reason = typeof entry.reason === "string" ? entry.reason
+      : typeof snapshot.updateReason === "string" ? snapshot.updateReason
+        : typeof snapshot.deleteReason === "string" ? snapshot.deleteReason
+          : parsed.version === 1 ? "Initial markup" : undefined;
+    const eventAt = typeof entry.createdAt === "string" ? entry.createdAt
+      : typeof snapshot.updatedAt === "string" ? snapshot.updatedAt
+        : typeof snapshot.deletedAt === "string" ? snapshot.deletedAt : snapshot.createdAt;
+    const eventBy = typeof entry.createdBy === "string" ? entry.createdBy
+      : typeof snapshot.updatedBy === "string" ? snapshot.updatedBy
+        : typeof snapshot.deletedBy === "string" ? snapshot.deletedBy : snapshot.createdBy;
     return [{ ...parsed,
-      ...(typeof entry.reason === "string" ? { reason: entry.reason } : {}),
-      ...(typeof entry.updateReason === "string" ? { updateReason: entry.updateReason } : {}),
-      ...(typeof entry.deleteReason === "string" ? { deleteReason: entry.deleteReason } : {}),
-      ...(typeof entry.createdAt === "string" ? { eventAt: entry.createdAt } : {}),
-      ...(typeof entry.createdBy === "string" ? { eventBy: entry.createdBy } : {}),
+      ...(reason ? { reason } : {}),
+      ...(typeof snapshot.updateReason === "string" ? { updateReason: snapshot.updateReason } : {}),
+      ...(typeof snapshot.deleteReason === "string" ? { deleteReason: snapshot.deleteReason } : {}),
+      ...(typeof eventAt === "string" ? { eventAt } : {}),
+      ...(typeof eventBy === "string" ? { eventBy } : {}),
     }];
   });
 }
