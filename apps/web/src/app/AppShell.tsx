@@ -460,7 +460,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                 <AdminPage client={client} workspace={workspace} />
               )}
               {safeRoute === "parallel-test" && (
-                <ParallelTestPage client={client} workspace={workspace} onNavigate={nav} />
+                <ParallelTestPage client={client} workspace={workspace} onNavigate={nav} onChanged={() => void refresh()} onSelect={setSelected} onOpenCommand={(item, action) => setDialog({ item, action })} />
               )}
             </>
           )}
