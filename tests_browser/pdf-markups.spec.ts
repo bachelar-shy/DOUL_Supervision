@@ -80,13 +80,17 @@ test("creates a rectangle memo against an exact PDF binding and reads it back af
 
   const memo = `QA markup ${randomUUID()}`;
   await viewer.getByRole("button", { name: "사각형 메모 추가" }).click();
-  const canvas = viewer.locator("canvas");
-  const box = await canvas.boundingBox();
+  const markupLayer = viewer.locator(".pdf-markup-layer");
+  await markupLayer.scrollIntoViewIfNeeded();
+  await expect(markupLayer).toHaveClass(/is-drawing/);
+  await expect(viewer.getByRole("status", { name: "페이지를 표시하는 중…" })).toHaveCount(0);
+  const box = await markupLayer.boundingBox();
   expect(box).not.toBeNull();
   await page.mouse.move(box!.x + box!.width * 0.2, box!.y + box!.height * 0.2);
   await page.mouse.down();
-  await page.mouse.move(box!.x + box!.width * 0.62, box!.y + box!.height * 0.48);
+  await page.mouse.move(box!.x + box!.width * 0.62, box!.y + box!.height * 0.48, { steps: 8 });
   await page.mouse.up();
+  await expect(viewer.locator(".pdf-markup-shape.is-pending")).toBeVisible();
   await viewer.getByLabel("주석 메모").fill(memo);
   const postResponse = page.waitForResponse((response) => response.url().endsWith("/parallel/drawing-markups") && response.request().method() === "POST");
   await viewer.getByRole("button", { name: "주석 저장" }).click();

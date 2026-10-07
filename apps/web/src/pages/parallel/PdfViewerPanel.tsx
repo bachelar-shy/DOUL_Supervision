@@ -81,6 +81,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
   const markupContextSequence = useRef(0);
   const drawingStart = useRef<{ x: number; y: number; pointerId: number } | null>(null);
   const onSelectMarkupRef = useRef(onSelectMarkup);
+  const markupAttemptRef = useRef<{ fingerprint: string; key: string } | null>(null);
   onSelectMarkupRef.current = onSelectMarkup;
 
   const selectedSource = sources.find((source) => source.id === selectedId);
@@ -115,6 +116,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     setPendingMarkup(null);
     setMarkupText("");
     setSavingMarkup(false);
+    markupAttemptRef.current = null;
     setMarkupMode(false);
     setSelectedMarkupId(null);
     onSelectMarkupRef.current?.(null);
@@ -476,6 +478,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     drawingStart.current = { ...point, pointerId: event.pointerId };
+    markupAttemptRef.current = null;
     setPendingMarkup({ x1: point.x, y1: point.y, x2: point.x, y2: point.y });
     setMarkupText("");
     setSelectedMarkupId(null);
@@ -511,13 +514,19 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     const requestSequence = markupContextSequence.current;
     const bindingId = activeBinding.id;
     const targetPage = page;
+    const payloadFingerprint = JSON.stringify({ bindingId, page: targetPage, rect: pendingMarkup, text: markupText.trim() });
+    if (markupAttemptRef.current?.fingerprint !== payloadFingerprint) {
+      markupAttemptRef.current = { fingerprint: payloadFingerprint, key: crypto.randomUUID() };
+    }
+    const idempotencyKey = markupAttemptRef.current.key;
     setSavingMarkup(true);
     setMarkupError("");
     try {
-      const created = await createPdfDrawingMarkup(client, { bindingId, page: targetPage, rect: pendingMarkup, text: markupText });
+      const created = await createPdfDrawingMarkup(client, { bindingId, page: targetPage, rect: pendingMarkup, text: markupText, idempotencyKey });
       if (requestSequence !== markupContextSequence.current || activeBinding?.id !== bindingId || page !== targetPage) return;
       setPendingMarkup(null);
       setMarkupText("");
+      markupAttemptRef.current = null;
       setMarkups((current) => [...current.filter((item) => item.id !== created.id), created]);
       selectMarkup(created.id);
       onChanged?.();
@@ -589,7 +598,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       {activeBinding && <div className="pdf-markup-controls">
         <div className="pdf-markup-heading"><strong>주석</strong><span>{markupLoading ? "불러오는 중…" : markups.length + "개"} · 사각형 메모</span></div>
         {isDemoAdmin ? <>
-          <button type="button" aria-pressed={markupMode} disabled={savingMarkup || rendering} onClick={() => { setMarkupMode((value) => !value); setPendingMarkup(null); setMarkupText(""); }}>
+          <button type="button" aria-pressed={markupMode} disabled={savingMarkup || rendering} onClick={() => { setMarkupMode((value) => !value); setPendingMarkup(null); setMarkupText(""); markupAttemptRef.current = null; }}>
             {markupMode ? "주석 그리기 종료" : "사각형 메모 추가"}
           </button>
           {markupMode && <span>페이지에서 드래그해 영역을 지정하세요. 메모를 입력한 뒤 저장합니다.</span>}

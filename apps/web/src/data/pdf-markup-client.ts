@@ -15,7 +15,7 @@ export interface PdfDrawingMarkup {
   createdAt: string;
   createdBy: string;
 }
-export interface CreatePdfMarkupInput { bindingId: string; page: number; rect: PdfMarkupRect; text: string }
+export interface CreatePdfMarkupInput { bindingId: string; page: number; rect: PdfMarkupRect; text: string; idempotencyKey?: string }
 
 function isRef(value: unknown, type: string): value is DomainRef {
   if (!value || typeof value !== "object") return false;
@@ -63,7 +63,7 @@ export async function createPdfDrawingMarkup(client: SupervisionClient, input: C
     || [x1, y1, x2, y2].some((point) => Math.abs(point) > 10_000_000)
     || text.length < 1 || text.length > 2000) throw new Error("주석 내용이나 위치 정보가 올바르지 않습니다.");
   const value = await client.request<unknown>(client.path("/parallel/drawing-markups"), {
-    method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() },
+    method: "POST", headers: { "Idempotency-Key": input.idempotencyKey || crypto.randomUUID() },
     body: JSON.stringify({ bindingId: input.bindingId, page: input.page, rect: { x1, y1, x2, y2 }, text }),
   });
   const markup = parsePdfDrawingMarkup(value);
