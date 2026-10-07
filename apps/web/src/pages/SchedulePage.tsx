@@ -262,10 +262,13 @@ function CreateSchedule({
   const schema = scheduleInputs[machine];
   const [values, setValues] = useState<Record<string, string>>({});
   const [title, setTitle] = useState("");
+  const [selectedEvidenceId, setSelectedEvidenceId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const identity = useRef({ id: crypto.randomUUID(), key: crypto.randomUUID(), body: "" });
   const isSchedule = machine.startsWith("schedule_");
+  const requiresEvidence = machine === "delay_event";
+  const evidenceItems = workspace.items.filter((item) => item.machine === "evidence");
 
   async function submit() {
     setError("");
@@ -273,6 +276,7 @@ function CreateSchedule({
     try {
       if (!online) throw new Error("연결 복구 후 다시 제출하십시오.");
       if (!title.trim()) throw new Error("제목을 입력하십시오.");
+      if (requiresEvidence && !selectedEvidenceId) throw new Error("지연사건의 근거 증빙을 선택하십시오.");
       const data: Record<string, unknown> = {};
       for (const [key, spec] of Object.entries(schema.fields)) {
         const text = values[key]?.trim();
@@ -302,6 +306,7 @@ function CreateSchedule({
       const payload = {
         ...workspace.context.scope,
         title: title.trim(),
+        ...(requiresEvidence ? { evidenceIds: [selectedEvidenceId] } : {}),
         ...(isSchedule
           ? {
               revision: data.revision,
@@ -362,6 +367,10 @@ function CreateSchedule({
       <p className="muted">원본 파일과 정확한 버전 참조를 입력하십시오. 권한·공정 연계·필수자료는 제출 시 서버가 검증합니다.</p>
       <div className="modal-fields">
         <label>제목 *<input value={title} onChange={(e) => setTitle(e.target.value)} /></label>
+        {requiresEvidence && <label>근거 증빙 *<select aria-label="근거 증빙" value={selectedEvidenceId} onChange={(e) => setSelectedEvidenceId(e.target.value)}>
+          <option value="">증빙 선택</option>
+          {evidenceItems.map((item) => <option key={item.record.id} value={item.record.id}>{recordTitle(item.record)} · {item.record.id}</option>)}
+        </select><small className="muted">{evidenceItems.length ? "지연사건은 서버에 보존된 근거 증빙을 선택해야 등록할 수 있습니다." : "현재 프로젝트에 연결 가능한 서버 증빙이 없어 지연사건을 등록할 수 없습니다."}</small></label>}
         {schema.required.filter((key) => key !== "scheduleKind").map(input)}
       </div>
       <details>
@@ -373,7 +382,7 @@ function CreateSchedule({
       {error && <div role="alert" className="error-box">{error}</div>}
       <div className="modal-actions">
         <button className="secondary" disabled={busy} onClick={onClose}>취소</button>
-        <button className="primary" disabled={busy || !online} onClick={() => void submit()}>
+        <button className="primary" disabled={busy || !online || (requiresEvidence && !selectedEvidenceId)} onClick={() => void submit()}>
           {busy ? "검증 중…" : "기록 추가"}
         </button>
       </div>

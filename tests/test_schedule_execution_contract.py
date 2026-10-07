@@ -138,6 +138,31 @@ class ScheduleExecutionContractTests(unittest.TestCase):
         self.assertEqual(second['status'],'effective')
         self.assertEqual(second['schedule']['supersedesRef']['objectId'],first['id'])
 
+    def test_delay_event_rejects_cross_project_evidence(self):
+        baseline=self.make_baseline()
+        other_evidence=uid()
+        self.f.engine.bootstrap('Evidence',dict(
+            id=other_evidence,projectId=uid(),sourceType='original',mediaType='photo',
+            fileId=uid(),fileHash=hashlib.sha256(b'other-project-delay-evidence').hexdigest(),
+            sourcePartyId=self.f.actors['CON'][0],submittedBy=self.f.actors['CON'][0],
+            uploadedAt=AT,**self.f.scope()))
+        data=dict(
+            delayEventNo='DE-CROSS-PROJECT',
+            eventType='forecast_delay',
+            observedAt=AT,
+            knownAt=AT,
+            description='Cross-project evidence must be rejected',
+            baselineScheduleRef=self.f.ref('InformationItem',baseline['id']),
+            currentScheduleRef=self.f.ref('InformationItem',baseline['id']),
+        )
+        with self.assertRaises(ContractError) as error:
+            self.f.create(
+                'delay_event',
+                dict(title='Invalid evidence delay',data=data,evidenceIds=[other_evidence]),
+                'SUP',
+            )
+        self.assertEqual(error.exception.code,'EVIDENCE_INVALID')
+
     def test_delay_event_is_factual_and_closes_without_entitlement_mutation(self):
         baseline=self.make_baseline();progress=self.freeze_progress(baseline)
         delay=self.delay(baseline,progress)
