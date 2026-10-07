@@ -105,7 +105,7 @@ test("mocked drawing binding plus real Location API stages, saves, and restores 
     }
     if (url.includes("/parallel/locations") && response.request().method() === "GET") {
       void response.json().then((data) => {
-        if (Array.isArray(data?.rows)) locationRows = data.rows;
+        if (Array.isArray(data?.items)) locationRows = data.items.map((row: { drawingAnchors?: unknown[] }) => ({ ...row, drawingAnchors: row.drawingAnchors ?? [] }));
       }).catch(() => undefined);
     }
   });
@@ -174,6 +174,7 @@ test("mocked drawing binding plus real Location API stages, saves, and restores 
     await expect(viewer.getByLabel("핀을 연결할 위치")).toBeVisible();
     await expect.poll(() => locationRows.length).toBeGreaterThan(0);
     initialLocation = locationRows[0];
+    expect(initialLocation.reference.objectType).toBe("Location");
     await viewer.getByLabel("핀을 연결할 위치").selectOption(initialLocation.reference.objectId);
     const canvas = viewer.locator("canvas");
     await expect(canvas).toHaveAttribute("aria-label", "PDF 페이지 1 / 2");
@@ -207,7 +208,9 @@ test("mocked drawing binding plus real Location API stages, saves, and restores 
       { headers: apiHeaders() },
     );
     expect(refetch.ok()).toBeTruthy();
-    const freshRows = (await refetch.json()).rows as Array<{ reference: DomainRef; name: string; drawingAnchors: unknown[] }>;
+    const locationTree = await refetch.json();
+    expect(Array.isArray(locationTree.items)).toBe(true);
+    const freshRows = locationTree.items as Array<{ reference: DomainRef; name: string; drawingAnchors?: unknown[] }>;
     const freshLocation = freshRows.find((row) => row.reference.objectId === initialLocation!.reference.objectId);
     expect(freshLocation).toBeTruthy();
     expect(freshLocation!.drawingAnchors).toContainEqual(insertedAnchor);
@@ -248,10 +251,10 @@ test("mocked drawing binding plus real Location API stages, saves, and restores 
       const headers = apiHeaders();
       const latestResponse = await page.request.get(String(baseURL) + "/api/projects/" + projectId + "/parallel/locations", { headers });
       if (latestResponse.ok()) {
-        const latestRows = (await latestResponse.json()).rows as Array<{ reference: DomainRef; drawingAnchors: unknown[] }>;
+        const latestRows = (await latestResponse.json()).items as Array<{ reference: DomainRef; drawingAnchors?: unknown[] }>;
         const latest = latestRows.find((row) => row.reference.objectId === initialLocation!.reference.objectId);
         if (latest) {
-          const restored = latest.drawingAnchors.filter((anchor) => JSON.stringify(anchor) !== JSON.stringify(insertedAnchor));
+          const restored = (latest.drawingAnchors ?? []).filter((anchor) => JSON.stringify(anchor) !== JSON.stringify(insertedAnchor));
           await page.request.put(
             String(baseURL) + "/api/projects/" + projectId + "/parallel/locations/" + latest.reference.objectId,
             {
