@@ -1401,13 +1401,22 @@
       ],
       "calculated_fields": [
         "verified_quantity",
+        "blocked_quantity",
         "claimed_amount",
         "verified_amount",
         "recommended_amount",
         "owner_approved_amount",
         "paid_amount",
         "approved_variation",
-        "disputed_amount"
+        "unapproved_variation",
+        "retention",
+        "advance_recovery",
+        "other_deduction",
+        "disputed_amount",
+        "cumulative_certified",
+        "cumulative_paid",
+        "remaining_contract_value",
+        "payment_reference"
       ],
       "mode": "read_only",
       "allowed_commands": [],
@@ -1439,6 +1448,13 @@
           "operator": "coalesce",
           "paths": [
             "data.verifiedQuantity"
+          ],
+          "missing_value": null
+        },
+        "blocked_quantity": {
+          "operator": "coalesce",
+          "paths": [
+            "data.blockedQuantity"
           ],
           "missing_value": null
         },
@@ -1480,7 +1496,35 @@
         "approved_variation": {
           "operator": "coalesce",
           "paths": [
-            "data.approvedVariation"
+            "data.eligibleVariationAmount"
+          ],
+          "missing_value": null
+        },
+        "unapproved_variation": {
+          "operator": "coalesce",
+          "paths": [
+            "data.unapprovedVariationAmount"
+          ],
+          "missing_value": null
+        },
+        "retention": {
+          "operator": "coalesce",
+          "paths": [
+            "data.retentionAmount"
+          ],
+          "missing_value": null
+        },
+        "advance_recovery": {
+          "operator": "coalesce",
+          "paths": [
+            "data.advanceRecoveryAmount"
+          ],
+          "missing_value": null
+        },
+        "other_deduction": {
+          "operator": "coalesce",
+          "paths": [
+            "data.otherDeductionAmount"
           ],
           "missing_value": null
         },
@@ -1488,6 +1532,34 @@
           "operator": "coalesce",
           "paths": [
             "data.disputedAmount"
+          ],
+          "missing_value": null
+        },
+        "cumulative_certified": {
+          "operator": "coalesce",
+          "paths": [
+            "data.cumulativeCertifiedAmount"
+          ],
+          "missing_value": null
+        },
+        "cumulative_paid": {
+          "operator": "coalesce",
+          "paths": [
+            "data.cumulativePaidAmount"
+          ],
+          "missing_value": null
+        },
+        "remaining_contract_value": {
+          "operator": "coalesce",
+          "paths": [
+            "data.remainingContractValue"
+          ],
+          "missing_value": null
+        },
+        "payment_reference": {
+          "operator": "coalesce",
+          "paths": [
+            "data.paymentReference"
           ],
           "missing_value": null
         }

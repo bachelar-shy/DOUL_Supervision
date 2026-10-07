@@ -62,9 +62,12 @@
       "currentStage": "contract_confirmed",
       "stageStatus": "accepted",
       "evidenceRefs": [
-        "46_Product_Functional_Baseline_v1_Validation.md"
+        "32_Progress_Measurement_Payment_Functional_Contract.md",
+        "46_Product_Functional_Baseline_v1_Validation.md",
+        "app/schema/measurement_payment_execution_contract_v1.json",
+        "tests/test_measurement_payment_execution_contract.py"
       ],
-      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+      "note": "B-P4 Product execution contract structured and validated for ContractBOQ exact-version history, QuantityMeasurement verification/payment-eligibility separation, PaymentClaim claimed/verified/recommended/ownerApproved/paid amount boundaries, decimal strings, duplicate-claim guards, unapproved Variation exclusion, cumulative reconciliation and partial-payment tracking. Backend HTTP/database acceptance is still required before promotion."
     },
     {
       "functionId": "F-06",

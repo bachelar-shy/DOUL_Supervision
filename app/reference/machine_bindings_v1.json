@@ -81,6 +81,18 @@
     "eot_request": {
       "collection": "eot-requests",
       "create_authority": "contract.eot.draft"
+    },
+    "contract_boq": {
+      "collection": "contract-boqs",
+      "create_authority": "payment.boq.create"
+    },
+    "quantity_measurement": {
+      "collection": "quantity-measurements",
+      "create_authority": "payment.measurement.create"
+    },
+    "payment_claim": {
+      "collection": "payment-claims",
+      "create_authority": "payment.claim.create"
     }
   }
 }

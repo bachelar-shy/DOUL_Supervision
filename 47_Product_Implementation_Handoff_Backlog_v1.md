@@ -87,16 +87,35 @@ Acceptance:
 
 ### B-P4. Measurement / Payment
 
-구현:
-- ContractBOQ exact version
-- QuantityMeasurement workflow
-- PaymentClaim detailed workflow
-- Decimal string 계산 adapter
-- cumulative reconciliation / duplicate check
+Product 실행계약:
+- `state_machines_v1.json`: `contract_boq`, `quantity_measurement`, `payment_claim`
+- `authority_matrix_v1.json`: `payment.*` 공식 인간권한
+- `domain_schemas_v2.json`: `ContractBOQData`, `QuantityMeasurementData`, `PaymentClaimData` 및 canonical Decimal string
+- `measurement_payment_execution_contract_v1.json`: BOQ version / 물량검증 / 지급적격 / 누계 / 중복청구 / 지급기록 불변조건
+- 관리대장 17: read-only Projection, raw status patch 금지
+
+Backend 구현:
+- ContractBOQ exact version과 effective/superseded history를 보존하고 과거 기성을 최신 BOQ로 재계산하지 않음
+- QuantityMeasurement는 claimed와 verified를 분리하고, 수량 검증과 지급적격을 별도 판정
+- PaymentClaim은 claimed / verified / recommended / ownerApproved / paid 금액을 각각 보존
+- 통화·단가·금액·정밀수량은 canonical Decimal string으로 계산하고 binary floating-point를 공식값으로 사용하지 않음
+- 동일 QuantityMeasurement의 활성 PaymentClaim 중복청구 차단
+- 미승인 Variation은 청구내역에 보존하되 기본 지급추천액에서 제외
+- previous PaymentClaim exact ref를 기준으로 cumulative certified / paid를 재조정
+- Owner Decision은 exact current PaymentClaim version을 대상으로 함
+- 부분지급은 Owner Approved 금액을 변경하지 않고 누적 지급기록으로 추적
+- 실제 지급은 외부 payment reference/evidence를 기록하며 은행 지급기능으로 해석하지 않음
 
 Acceptance:
-- claimed/verified/recommended/ownerApproved/paid 분리
+- Schedule Progress ≠ QuantityMeasurement
+- Inspection pass ≠ Payment approval
+- claimed quantity ≠ verified quantity
+- verified Measurement라도 지급 Gate 미충족 시 `paymentEligible=false` 유지
+- claimed / verified / recommended / ownerApproved / paid 분리
 - unapproved Variation 기본 지급추천 제외
+- 동일 측정량 중복 기성청구 차단
+- 부분지급 후 unpaid balance 0 이전에는 PaymentClaim close 금지
+- 관리대장 17에서 직접 상태수정 금지
 
 ### B-P5. Compliance / Permit
 

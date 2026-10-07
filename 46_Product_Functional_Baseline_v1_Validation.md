@@ -221,6 +221,32 @@ Baseline v1.0은 다음 항목을 모두 검증해 PASS로 확정한다.
 
 이 변경은 F-08의 업무 의미를 새로 만드는 것이 아니라 이미 확정된 Notice/Claim/EOT 상세정의를 State/Authority/Schema/API 실행계약으로 구조화한 것이다. Backend B-P7 구현 인수 전까지 F-08 진척단계는 `contract_confirmed`로 유지한다.
 
+### 11.6 F-05 Measurement / Payment 실행계약 승격 검증
+
+`32_Progress_Measurement_Payment_Functional_Contract.md`의 상세정의를 실행 가능한 Product Contract로 구조화했다.
+
+- Typed data: `ContractBOQData`, `QuantityMeasurementData`, `PaymentClaimData`, BOQ line / Variation component / Deduction / Recommendation Snapshot
+- State Machine: `contract_boq`, `quantity_measurement`, `payment_claim`
+- Authority: `payment.*` 24개 공식 인간권한; AI/SYSTEM/INTEGRATION의 BOQ·물량·기성 계약판정 권한 없음
+- Decimal: 통화·단가·금액·정밀수량의 authoritative value는 canonical Decimal string이며 binary floating-point를 공식값으로 사용하지 않음
+- ContractBOQ: exact version을 보존하고 새 effective BOQ 적용 시 이전 BOQ는 삭제 없이 superseded; 과거 Measurement/PaymentClaim은 과거 exact BOQ ref 유지
+- QuantityMeasurement: claimed quantity와 verified quantity를 분리하고, 수량이 verified여도 Inspection/Test/Material/Variation Gate에 따라 `paymentEligible=false`가 될 수 있음
+- PaymentClaim: claimed / verified / recommended / ownerApproved / paid 금액을 각각 별도 필드와 버전으로 보존
+- Variation: 미승인 Variation은 청구내역에서 삭제하지 않고 `unapprovedVariationAmount`로 보존하며 기본 지급추천액에서는 제외
+- Duplicate: 동일 QuantityMeasurement의 활성 PaymentClaim 중복청구 차단
+- Cumulative: previous PaymentClaim exact ref 기준으로 certified/paid 누계를 연결하며 부분지급은 Owner Approved 금액을 변경하지 않음
+- Owner Decision: exact current PaymentClaim version을 대상으로 승인·조정·거절을 명시적 command로 기록
+- Actual payment: 외부 payment reference/evidence를 기록할 뿐 은행 지급기능으로 해석하지 않음
+- 관리대장 17: read-only Projection, raw status patch와 직접 상태변경 금지
+- Contract validator: PASS — 23 machines / 314 transitions / 160 policies / 29 registers / 36 forms / 305 API operations
+- F-05 execution contract tests: 7 PASS
+- Core tests: 181 PASS
+- HTTP/Application tests: 243 run — 212 PASS, 31 optional-integration tests skipped in local environment
+- OpenAPI / TypeScript / Web register catalog: current
+- `git diff --check`: PASS
+
+이 변경은 F-05의 업무 의미를 새로 만드는 것이 아니라 이미 확정된 물량검증·기성 상세정의를 State/Authority/Schema/API 실행계약으로 구조화한 것이다. Backend B-P4 HTTP/DB 인수 전까지 F-05 진척단계는 `contract_confirmed`로 유지한다.
+
 ## 12. 다음 단계
 
 Baseline v1.0 이후는 Product 의미를 임의 확장하지 않고 다음 원칙으로 진행한다.

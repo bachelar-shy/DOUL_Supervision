@@ -243,7 +243,7 @@ export const registerProjectionCatalog = [
       { objectType: "Approval", subtype: null },
       { objectType: "Decision", subtype: null },
     ],
-    calculatedFields: ["verified_quantity", "claimed_amount", "verified_amount", "recommended_amount", "owner_approved_amount", "paid_amount", "approved_variation", "disputed_amount"],
+    calculatedFields: ["verified_quantity", "blocked_quantity", "claimed_amount", "verified_amount", "recommended_amount", "owner_approved_amount", "paid_amount", "approved_variation", "unapproved_variation", "retention", "advance_recovery", "other_deduction", "disputed_amount", "cumulative_certified", "cumulative_paid", "remaining_contract_value", "payment_reference"],
     mode: "read_only",
     statusSource: "domain.state; resultStatus and nextWorkAllowed remain separate",
     rawStatusPatch: false,
