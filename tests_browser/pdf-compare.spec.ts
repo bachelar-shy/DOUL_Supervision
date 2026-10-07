@@ -29,20 +29,20 @@ function pdfWithPages(count: number): Buffer {
 
 test("compares two uploaded PDFs with independent page controls and no compare writes", async ({ page, baseURL }) => {
   let workspace: Workspace | undefined;
-  let adminSession: { accessToken: string; projectId: string; actor: { roleAssignmentId: string } } | undefined;
+  let designerSession: { accessToken: string; projectId: string; actor: { roleAssignmentId: string } } | undefined;
   page.on("response", (response) => {
     if (response.url().endsWith("/dev/sessions") && response.request().method() === "POST") {
       const body = response.request().postData() || "";
-      if (body.includes('"actorGroup":"ADM"')) void response.json().then((session) => { adminSession = session; }).catch(() => undefined);
+      if (body.includes('"actorGroup":"DES"')) void response.json().then((session) => { designerSession = session; }).catch(() => undefined);
     }
     if (response.url().endsWith("/workspace")) {
-      void response.json().then((result: Workspace) => { if (result.role.actorGroup === "ADM") workspace = result; }).catch(() => undefined);
+      void response.json().then((result: Workspace) => { if (result.role.actorGroup === "DES") workspace = result; }).catch(() => undefined);
     }
   });
 
   await page.goto("/#/parallel-test");
-  await page.getByLabel("개발 역할 선택").selectOption("ADM");
-  await expect.poll(() => workspace?.role.actorGroup).toBe("ADM");
+  await page.getByLabel("개발 역할 선택").selectOption("DES");
+  await expect.poll(() => workspace?.role.actorGroup).toBe("DES");
   await page.goto("/#/parallel-test");
   await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
   const viewer = page.getByLabel("PDF 도면 뷰어");
@@ -54,30 +54,44 @@ test("compares two uploaded PDFs with independent page controls and no compare w
     );
     await viewer.getByTestId("pdf-upload").setInputFiles({ name: filename, mimeType: "application/pdf", buffer: pdfWithPages(pages) });
     const response = await complete;
-    expect(response.ok()).toBeTruthy();
-    return await response.json() as { id: string; version: number; projectId: string };
+    const responseText = await response.text();
+    expect(response.ok(), responseText).toBeTruthy();
+    return JSON.parse(responseText) as { id: string; version: number };
   };
-  const onePage = await upload(`compare-one-${randomUUID()}.pdf`, 1);
-  const twoPages = await upload(`compare-two-${randomUUID()}.pdf`, 2);
-  const drawingRef = workspace!.context.drawingRef;
-  expect(drawingRef?.objectType).toBe("InformationItem");
+  const suffix = randomUUID();
+  const onePage = await upload(`compare-one-${suffix}.pdf`, 1);
+  const twoPages = await upload(`compare-two-${suffix}.pdf`, 2);
   const headers = {
-    Authorization: "Bearer " + adminSession!.accessToken,
-    "X-RoleAssignment-Id": adminSession!.actor.roleAssignmentId,
+    Authorization: "Bearer " + designerSession!.accessToken,
+    "X-RoleAssignment-Id": designerSession!.actor.roleAssignmentId,
   };
-  const createBinding = async (evidence: { id: string; version: number }) => {
+  const registerRevision = async (
+    evidence: { id: string; version: number },
+    revision: string,
+    predecessorRef: { objectType: string; objectId: string; version: number } | null,
+  ) => {
     const response = await page.request.post(
-      String(baseURL) + `/api/projects/${workspace!.project.id}/parallel/drawing-pdf-bindings`,
+      String(baseURL) + `/api/projects/${workspace!.project.id}/parallel/drawing-sources`,
       {
         headers: { ...headers, "Idempotency-Key": randomUUID() },
-        data: { drawingRef, evidenceRef: { objectType: "Evidence", objectId: evidence.id, version: evidence.version } },
+        data: {
+          objectId: randomUUID(),
+          title: `PDF compare fixture ${suffix}`,
+          revision,
+          evidenceRef: { objectType: "Evidence", objectId: evidence.id, version: evidence.version },
+          predecessorRef,
+          requestReview: false,
+        },
       },
     );
-    expect(response.ok()).toBeTruthy();
-    return await response.json() as { id: string };
+    const responseText = await response.text();
+    expect(response.ok(), responseText).toBeTruthy();
+    return JSON.parse(responseText) as { binding: { id: string; drawingRef: { objectType: string; objectId: string; version: number } } };
   };
-  const leftBinding = await createBinding(onePage);
-  const rightBinding = await createBinding(twoPages);
+  const firstRevision = await registerRevision(onePage, "01", null);
+  const secondRevision = await registerRevision(twoPages, "02", firstRevision.binding.drawingRef);
+  const leftBinding = firstRevision.binding;
+  const rightBinding = secondRevision.binding;
 
   const compareWrites: string[] = [];
   const listener = (request: import("@playwright/test").Request) => { if (request.method() === "POST") compareWrites.push(request.url()); };
