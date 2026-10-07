@@ -125,7 +125,9 @@ export function AppShell({ client }: { client: SupervisionClient }) {
     setSelected(null);
     setMenu(false);
   };
-  const allowed = roleRoutes[role];
+  const allowed = workspace?.demo
+    ? Array.from(new Set([...roleRoutes[role], "parallel-test"]))
+    : roleRoutes[role];
   const safeRoute = allowed.includes(route) ? route : "today";
   const mobileItems = mobileRoutes[role].filter((item) =>
     allowed.includes(item.id),
@@ -460,7 +462,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                 <AdminPage client={client} workspace={workspace} />
               )}
               {safeRoute === "parallel-test" && (
-                <ParallelTestPage client={client} workspace={workspace} onNavigate={nav} onChanged={() => void refresh()} onSelect={setSelected} onOpenCommand={(item, action) => setDialog({ item, action })} />
+                <ParallelTestPage key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onNavigate={nav} onChanged={refresh} onSelect={setSelected} onOpenCommand={(item, action) => setDialog({ item, action })} />
               )}
             </>
           )}
