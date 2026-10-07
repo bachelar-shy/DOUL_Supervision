@@ -21,7 +21,7 @@ def generate():
         subtype=condition.get('if',{}).get('properties',{}).get('subtype',{}).get('const')
         reference=condition.get('then',{}).get('properties',{}).get('data',{}).get('$ref')
         if subtype and reference:workitem_data_schemas[subtype]=reference.split('/')[-1]
-    informationitem_nested_schemas={'Schedule':('schedule','ScheduleData')}
+    informationitem_nested_schemas={'Schedule':('schedule','ScheduleData'),'ContractBOQ':('boq','ContractBOQData')}
     paths = {}
     parameter = lambda name: {'name': name, 'in':'path', 'required':True, 'schema':{'type':'string', 'format':'uuid'} if name.endswith('Id') and name not in ['registerId','viewId','formId','legalFormId'] else {'type':'string'}}
     error_responses = {str(code): {'description':description,'content':{'application/json':{'schema':{'$ref':'#/components/schemas/CommandError'}}}} for code,description in [(400,'잘못된 요청'),(401,'인증 필요'),(403,'권한·자격·배치범위 불충족'),(404,'대상 없음 또는 범위 밖'),(409,'상태·버전·중복요청·선행조건 충돌'),(422,'필수자료·법정필드 미비'),(429,'요청량 초과')]}

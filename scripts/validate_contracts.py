@@ -99,6 +99,41 @@ def validate_all():
     check(bool(eot_baseline) and eot_baseline['from'] in ['approved','partially_approved'] and 'eot_baseline_update_ready' in eot_baseline['guards'],'Only approved EOT may request Baseline revision')
     register26=next(x for x in mapping['registers'] if x['register_id']=='26')
     check(register26['raw_status_patch'] is False and 'eot_request:request_baseline_update' in register26['allowed_commands'],'Contract/Claim register must use domain commands, not raw status patch')
+    f05_machines={'contract_boq':('InformationItem','ContractBOQ'),'quantity_measurement':('WorkItem','QuantityMeasurement'),'payment_claim':('WorkItem','PaymentClaim')}
+    check(set(f05_machines)<=set(machines),'F-05 ContractBOQ / QuantityMeasurement / PaymentClaim state machines are required')
+    for machine_name,(object_type,subtype) in f05_machines.items():
+        check(machines[machine_name]['object_type']==object_type and machines[machine_name]['subtype']==subtype,machine_name+' binding mismatch')
+    f05_execution=load('schema/measurement_payment_execution_contract_v1.json')
+    check(f05_execution['functionalId']=='F-05' and f05_execution['status']=='contract_defined_backend_not_implemented','F-05 must remain Product-defined until Backend/API acceptance')
+    check(f05_execution['decimalContract']['authoritativeRepresentation']=='canonical_decimal_string' and f05_execution['decimalContract']['binaryFloatAuthoritative'] is False,'F-05 authoritative commercial values must remain decimal strings')
+    check(schemas['NonNegativeDecimalString']['type']=='string','F-05 decimal schema must remain a string type')
+    check(f05_execution['boundaries']['claimedVerifiedRecommendedOwnerApprovedPaidRemainSeparate'] is True,'F-05 claimed/verified/recommended/approved/paid boundary changed')
+    check(f05_execution['boundaries']['ownerApprovalIsNotActualPayment'] is True and f05_execution['boundaries']['externalPaymentRecordedOnlyNoBankExecution'] is True,'Owner approval/payment record boundary changed')
+    check(f05_execution['boqVersioning']['exactVersionRequired'] is True and f05_execution['boqVersioning']['oldClaimsNeverRecomputedAgainstCurrentBOQ'] is True,'ContractBOQ exact-version history boundary changed')
+    check(f05_execution['eligibility']['measurementMayBeVerifiedWhilePaymentBlocked'] is True,'Measurement verification and payment eligibility must remain separate')
+    check(f05_execution['eligibility']['unapprovedVariationExcludedFromDefaultRecommendation'] is True,'Unapproved Variation must remain excluded from default payment recommendation')
+    check(f05_execution['eligibility']['duplicateClaimBlocked'] is True,'Duplicate certified quantity claim guard changed')
+    check(f05_execution['cumulative']['partialPaymentDoesNotChangeOwnerApprovedAmount'] is True,'Partial payment must not rewrite Owner approved amount')
+    payment_policies={name:policy for name,policy in policies.items() if name.startswith('payment.')}
+    check(bool(payment_policies),'F-05 payment authorities are required')
+    for name,policy in payment_policies.items():
+        check(policy['official'] is True and not set(policy['actor_groups'])&{'AI','SYSTEM','INTEGRATION'},name+' must remain human official authority')
+    payment_owner_commands={t['command'] for t in machines['payment_claim']['transitions'] if t['from']=='owner_review'}
+    check({'approve_payment','adjust_payment','reject_payment'}<=payment_owner_commands,'Payment Owner decision outcomes must remain explicit commands')
+    partial_payment=next((t for t in machines['payment_claim']['transitions'] if t['from']=='payment_recorded' and t['command']=='record_additional_payment'),None)
+    check(bool(partial_payment) and partial_payment['to']=='payment_recorded' and 'payment_record_ready' in partial_payment['guards'],'Partial payment continuation contract changed')
+    payment_close=next((t for t in machines['payment_claim']['transitions'] if t['from']=='payment_recorded' and t['command']=='close_payment_claim'),None)
+    check(bool(payment_close) and 'payment_close_ready' in payment_close['guards'],'Payment close must remain gated by zero unpaid balance')
+    register17=next(x for x in mapping['registers'] if x['register_id']=='17')
+    check(register17['mode']=='read_only' and register17['raw_status_patch'] is False and register17['allowed_commands']==[],'Register 17 must remain read-only Projection over payment domain records')
+    payment_readonly=set()
+    for schema_name in ['QuantityMeasurementData','PaymentClaimData']:
+        for field,spec in schemas[schema_name]['properties'].items():
+            if spec.get('readOnly') is True or any(x.get('readOnly') is True for x in spec.get('allOf',[]) if isinstance(x,dict)):
+                payment_readonly.add(field)
+    for machine_name in ['quantity_measurement','payment_claim']:
+        for transition in machines[machine_name]['transitions']:
+            check(not (set(transition['payload_fields']) & payment_readonly),machine_name+' exposes server-derived payment fields in command payload')
     source_import=load('schema/schedule_source_import_contract_v1.json')
     check(source_import['status']=='contract_defined_backend_not_implemented','Source import implementation must not be claimed without acceptance')
     check(source_import['atomicity']['schedule_and_all_activities_and_audit_and_idempotency_in_one_transaction'] and source_import['atomicity']['no_orphan_activity'],'Schedule import must be atomic')
@@ -242,7 +277,7 @@ def validate_all():
         for condition in conditions:
             check(condition['when']=={'operator':'failed_inspection_has_issued_issue'},'Unsafe form requirement predicate')
             check(condition['any_of']==[{'field':'review.ncr_no'},{'source_object_type':'Issue'}],'Invalid NCR link alternatives')
-    known={'$ref','$schema','type','enum','const','format','pattern','minLength','minimum','maximum','properties','required','additionalProperties','items','minItems','uniqueItems','allOf','oneOf','anyOf','if','then','else','description','title','default','readOnly'}
+    known={'$ref','$schema','type','enum','const','format','pattern','minLength','minimum','maximum','properties','required','additionalProperties','items','minItems','uniqueItems','allOf','oneOf','anyOf','if','then','else','description','title','default','readOnly','writeOnly'}
     def walk(schema):
         check(set(schema)<=known,'Unsupported validation keywords '+str(set(schema)-known))
         if '$ref' in schema:check(schema['$ref'].split('/')[-1] in schemas,'Unresolved schema reference')

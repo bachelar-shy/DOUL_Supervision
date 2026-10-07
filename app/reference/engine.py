@@ -7,6 +7,7 @@ locks, authentication, durable files and media workers need production adapters.
 """
 from copy import deepcopy
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_HALF_EVEN, ROUND_HALF_UP, ROUND_UP
 import hashlib
 import json
 from pathlib import Path
@@ -304,6 +305,22 @@ class Engine:
         if machine=='eot_request':
             for field in ['decisionOutcome','baselineRevisionBasisRef','submittedAt','receivedAt','timeImpactReviewedAt','entitlementReviewedAt','decisionAt','baselineUpdateRequestedAt','closedAt']:
                 require(field not in record['data'],'IMMUTABLE_FIELD',field+' is server-derived')
+        if machine=='contract_boq':
+            boq=record['boq']
+            for field in ['supersedesRef','ownerDecisionRef','submittedAt','reviewedAt','approvedAt','effectiveAt']:
+                require(field not in boq,'IMMUTABLE_FIELD',field+' is server-derived or command-controlled')
+            boq.setdefault('revision',record['revision'])
+            require(boq['revision']==record['revision'],'BOQ_REVISION_MISMATCH','InformationItem and ContractBOQ revisions must match')
+        if machine=='quantity_measurement':
+            data=record['data']
+            for field in ['eligibilityStatus','paymentEligible','blockedReasons','cumulativeVerifiedQuantity','blockedQuantity','submittedAt','receivedAt','fieldVerifiedAt','technicallyReviewedAt','verifiedAt']:
+                require(field not in data,'IMMUTABLE_FIELD',field+' is server-derived')
+            data.update(eligibilityStatus='pending',paymentEligible=False,blockedReasons=[])
+        if machine=='payment_claim':
+            data=record['data']
+            for field in ['verifiedGrossAmount','eligibleVariationAmount','unapprovedVariationAmount','recommendedNetAmount','ownerApprovedAmount','paidAmount','unpaidBalance','blockedReasons','recommendationSnapshot','calculationTrace','paymentRecords','paymentAmount','supersedesPaymentRecordId','correctionReason','approvalRef','decisionRefs','recommendationRef','recordedBy','cumulativeCertifiedAmount','cumulativePaidAmount','paymentReference','externalSystemRef','paidAt','submittedAt','receivedAt','reviewedAt','recommendedAt','ownerDecidedAt','paymentRecordedAt','closedAt']:
+                require(field not in data,'IMMUTABLE_FIELD',field+' is command-controlled or server-derived')
+            data.update(paymentRecords=[],paidAmount='0')
         validate(record,self.schemas[kind],self.schemas)
         if machine=='schedule_progress':self._schedule_progress_submission_complete(self._fields(record))
         if machine=='delay_event':self._delay_event_create_ready(self._fields(record))
@@ -383,12 +400,14 @@ class Engine:
                 if field in payload:
                     require(payload[field]==record['schedule'].get(field), 'IMMUTABLE_FIELD', 'Imported source content requires a new source package: '+field)
         proposed=deepcopy(record)
-        target=proposed.setdefault('data',{}) if kind=='WorkItem' else proposed['report'] if machine=='report' else proposed['schedule'] if machine in ['schedule_baseline','schedule_progress'] else proposed
+        target=proposed.setdefault('data',{}) if kind=='WorkItem' else proposed['report'] if machine=='report' else proposed['schedule'] if machine in ['schedule_baseline','schedule_progress'] else proposed['boq'] if machine=='contract_boq' else proposed
         for field,value in payload.items():
             if machine in ['schedule_baseline','schedule_progress']:
                 if field=='revision':
                     proposed['revision']=deepcopy(value);target['revision']=deepcopy(value);continue
                 destination=target if field in self.schemas['ScheduleData']['properties'] else proposed
+            elif machine=='contract_boq':
+                destination=target if field in self.schemas['ContractBOQData']['properties'] else proposed
             else:
                 destination=proposed if kind=='WorkItem' and field in self.schemas[kind]['properties'] else target
             destination[field]=deepcopy(value)
@@ -405,12 +424,14 @@ class Engine:
         if machine=='report' and command=='acknowledge':require(party_id in record['report']['recipients'], 'RECIPIENT_MISMATCH', 'Only an issued recipient may acknowledge')
         if transition['required_evidence']:
             require(bool(evidence_ids),'EVIDENCE_REQUIRED','Transition requires current command evidence')
-        self._effects(machine,command,proposed,party_id,role_id)
+        self._effects(machine,command,proposed,party_id,role_id,evidence_ids,payload)
         proposed.update(status=transition['to'],version=record['version']+1,updatedAt=self.at())
         if machine=='schedule_baseline' and command=='activate_baseline':
             return self._activate_schedule_baseline(record,proposed,request,party_id,role_id,key)
         if machine=='schedule_progress' and command=='freeze_progress':
             return self._freeze_schedule_progress(record,proposed,request,party_id,role_id,key)
+        if machine=='contract_boq' and command=='activate_boq':
+            return self._activate_contract_boq(record,proposed,request,party_id,role_id,key)
         validate(proposed,self.schemas[kind],self.schemas)
         self._save(kind,proposed)
         result=self._event(proposed,machine+':'+command,party_id,role_id,key,request,record)
@@ -438,7 +459,7 @@ class Engine:
         return dict(record=deepcopy(record),auditEvent=deepcopy(event))
 
     def _fields(self, record):
-        return {**record.get('data',{}), **record}
+        return {**record.get('data',{}), **record.get('boq',{}), **record}
 
     def _latest_reinspection(self, issue):
         inspections=[self.get('Inspection',i) for i in issue['inspectionIds']]
@@ -574,13 +595,42 @@ class Engine:
             'eot_baseline_update_ready':self._eot_baseline_update_ready,
             'eot_baseline_revision_confirmed':self._eot_baseline_revision_confirmed,
             'eot_rejected_close_ready':self._eot_rejected_close_ready,
+            'boq_submission_ready':self._boq_submission_ready,
+            'boq_review_ready':self._boq_review_ready,
+            'boq_decision_request_ready':self._boq_decision_request_ready,
+            'boq_approved_decision_ready':self._boq_approved_decision_ready,
+            'boq_rejected_decision_ready':self._boq_rejected_decision_ready,
+            'boq_activation_ready':self._boq_activation_ready,
+            'measurement_submission_ready':self._measurement_submission_ready,
+            'measurement_receipt_ready':self._measurement_receipt_ready,
+            'measurement_field_review_ready':self._measurement_field_review_ready,
+            'measurement_technical_review_ready':self._measurement_technical_review_ready,
+            'measurement_verification_ready':self._measurement_verification_ready,
+            'measurement_dispute_ready':self._measurement_dispute_ready,
+            'measurement_resolution_ready':self._measurement_resolution_ready,
+            'measurement_supersede_ready':self._measurement_supersede_ready,
+            'payment_claim_submission_ready':self._payment_claim_submission_ready,
+            'payment_claim_receipt_ready':self._payment_claim_receipt_ready,
+            'payment_quantity_review_ready':self._payment_quantity_review_ready,
+            'payment_valuation_review_ready':self._payment_valuation_review_ready,
+            'payment_recommendation_prepare_ready':self._payment_recommendation_prepare_ready,
+            'payment_recommendation_ready':self._payment_recommendation_ready,
+            'payment_owner_review_ready':self._payment_owner_review_ready,
+            'payment_owner_approval_ready':self._payment_owner_approval_ready,
+            'payment_owner_adjustment_ready':self._payment_owner_adjustment_ready,
+            'payment_owner_rejection_ready':self._payment_owner_rejection_ready,
+            'payment_record_ready':self._payment_record_ready,
+            'payment_correction_ready':self._payment_correction_ready,
+            'payment_cancellation_ready':self._payment_cancellation_ready,
+            'payment_close_ready':self._payment_close_ready,
+            'payment_supersede_ready':self._payment_supersede_ready,
         }
         if name in checks:checks[name](r)
         else:
             require(name in predicates,'GUARD_UNIMPLEMENTED',name)
             require(predicates[name](),name.upper(),name)
 
-    def _effects(self, machine, command, record, party_id, role_id):
+    def _effects(self, machine, command, record, party_id, role_id, evidence_ids=None, payload=None):
         if machine=='observation' and command=='confirm':record.update(confirmedBy=party_id,confirmedAt=self.at())
         if machine=='inspection':
             result={'pass':'pass','fail':'fail','conditional':'conditional','hold':'hold'}.get(command)
@@ -673,6 +723,116 @@ class Engine:
                 data['baselineRevisionBasisRef']={'objectType':'WorkItem','objectId':record['id'],'version':record['version']}
                 data['baselineUpdateRequestedAt']=stamp
             if command in ['confirm_baseline_update','close_eot']:data['closedAt']=stamp
+        if machine=='contract_boq':
+            boq=record['boq'];stamp=self.at()
+            if command in ['submit_boq','resubmit_boq']:boq['submittedAt']=stamp
+            if command in ['start_boq_review','request_boq_decision']:boq['reviewedAt']=stamp
+            if command=='approve_boq':boq['approvedAt']=stamp
+            if command=='activate_boq':boq['effectiveAt']=stamp
+        if machine=='quantity_measurement':
+            data=record['data'];stamp=self.at()
+            if command in ['submit_measurement','resubmit_measurement']:data['submittedAt']=stamp
+            if command=='receive_measurement':data['receivedAt']=stamp
+            if command=='start_technical_verification':data['fieldVerifiedAt']=stamp
+            if command in ['verify_quantity','mark_measurement_disputed','resolve_measurement']:data['technicallyReviewedAt']=stamp
+            if command in ['verify_quantity','resolve_measurement']:
+                cumulative=self._decimal_value(data.get('previousCertifiedQuantity','0'))+self._decimal_value(data['verifiedQuantity'])
+                blocks=self._measurement_payment_blocks(self._fields(record))
+                data['cumulativeVerifiedQuantity']=self._decimal_text(cumulative)
+                data['blockedReasons']=blocks
+                data['paymentEligible']=not blocks
+                data['eligibilityStatus']='eligible' if not blocks else 'blocked'
+                data['blockedQuantity']='0' if not blocks else data['verifiedQuantity']
+                data['verifiedAt']=stamp
+            if command=='mark_measurement_disputed':
+                data['eligibilityStatus']='disputed'
+                data['paymentEligible']=False
+                data['blockedReasons']=['DISPUTED_QUANTITY']
+                data['blockedQuantity']=data['disputedQuantity']
+        if machine=='payment_claim':
+            data=record['data'];stamp=self.at()
+            if command in ['submit_payment_claim','resubmit_payment_claim']:data['submittedAt']=stamp
+            if command=='receive_payment_claim':data['receivedAt']=stamp
+            if command in ['start_quantity_review','start_valuation_review','prepare_recommendation']:data['reviewedAt']=stamp
+            if command=='start_valuation_review':
+                measurements=self._payment_measurements(self._fields(record),current=False)
+                blocks=[]
+                for measurement in measurements:
+                    md=measurement.get('data',{})
+                    if md.get('paymentEligible') is not True:
+                        blocks.extend(md.get('blockedReasons') or ['CONTRACT_RULE_NOT_MET'])
+                _,unapproved=self._payment_variation_amounts(self._fields(record))
+                if unapproved>0:blocks.append('UNAPPROVED_VARIATION')
+                data['blockedReasons']=list(dict.fromkeys(blocks))
+                data['unapprovedVariationAmount']=self._decimal_text(unapproved)
+            if command=='prepare_recommendation':
+                _,unapproved=self._payment_variation_amounts(self._fields(record))
+                data['unapprovedVariationAmount']=self._decimal_text(unapproved)
+                data['calculationTrace']=self._payment_recommendation_calculation(self._fields(record))
+            if command=='recommend_payment':
+                data['recommendedAt']=stamp
+                data['recommendationSnapshot']={
+                    'claimBasisRef':{'objectType':'WorkItem','objectId':record['id'],'version':record['version']},
+                    'boqRef':deepcopy(data['boqRef']),
+                    'measurementRefs':deepcopy(data['quantityMeasurementRefs']),
+                    'verifiedGrossAmount':data['verifiedGrossAmount'],
+                    'blockedReasons':deepcopy(data.get('blockedReasons',[])),
+                    'eligibleVariationAmount':data['eligibleVariationAmount'],
+                    'eligibleMaterialOnSiteAmount':data['eligibleMaterialOnSiteAmount'],
+                    'retentionAmount':data['retentionAmount'],
+                    'advanceRecoveryAmount':data['advanceRecoveryAmount'],
+                    'otherDeductionAmount':data['otherDeductionAmount'],
+                    'taxAmount':data['taxAmount'],
+                    'deductionComponents':deepcopy(data.get('deductionComponents',[])),
+                    'recommendedNetAmount':data['recommendedNetAmount'],
+                    'currency':data['currency'],
+                    'calculationRuleRef':deepcopy(data['calculationRuleRef']),
+                    'calculationTrace':deepcopy(data['calculationTrace']),
+                    'reviewerPartyId':party_id,
+                    'recommendedAt':stamp,
+                    **({'reservationComment':data['reservationComment']} if data.get('reservationComment') else {}),
+                }
+            if command in ['approve_payment','adjust_payment']:
+                data['ownerDecidedAt']=stamp
+                cumulative=self._decimal_value(data.get('previousCertifiedAmount','0'))+self._decimal_value(data['ownerApprovedAmount'])
+                data['cumulativeCertifiedAmount']=self._decimal_text(cumulative)
+                boq=self._boq_reference(data['boqRef'],record['projectId'],statuses=['effective','superseded'])
+                total=sum((self._decimal_value(line['contractAmount']) for line in boq.get('boq',{}).get('lineItems',[])),Decimal('0'))
+                data['remainingContractValue']=self._decimal_text(max(total-cumulative,Decimal('0')))
+            if command=='reject_payment':data['ownerDecidedAt']=stamp
+            if command in ['record_payment','record_additional_payment','correct_payment_record','cancel_payment_record']:
+                payload=payload or {}
+                kind='payment' if command in ['record_payment','record_additional_payment'] else 'correction' if command=='correct_payment_record' else 'cancellation'
+                amount=self._decimal_value(payload.get('paymentAmount','0'),'PAYMENT_RECORD_READY','paymentAmount') if kind!='cancellation' else Decimal('0')
+                item={
+                    'recordId':uid(),
+                    'kind':kind,
+                    'amount':self._decimal_text(amount),
+                    'currency':data['currency'],
+                    'paidAt':payload['paidAt'],
+                    'paymentReference':payload['paymentReference'],
+                    'evidenceIds':list(dict.fromkeys(evidence_ids or [])),
+                    'recordedBy':party_id,
+                    'recordedAt':stamp,
+                }
+                if payload.get('externalSystemRef'):item['externalSystemRef']=payload['externalSystemRef']
+                if payload.get('supersedesPaymentRecordId'):item['supersedesPaymentRecordId']=payload['supersedesPaymentRecordId']
+                if payload.get('correctionReason'):item['reason']=payload['correctionReason']
+                data.setdefault('paymentRecords',[]).append(item)
+                for transient in ['paymentAmount','supersedesPaymentRecordId','correctionReason']:
+                    data.pop(transient,None)
+                paid=self._payment_active_total(self._fields(record))
+                approved=self._decimal_value(data['ownerApprovedAmount'])
+                data['paidAmount']=self._decimal_text(paid)
+                data['recordedBy']=party_id
+                data['paymentRecordedAt']=stamp
+                data['paymentReference']=payload['paymentReference']
+                data['paidAt']=payload['paidAt']
+                if payload.get('externalSystemRef'):data['externalSystemRef']=payload['externalSystemRef']
+                else:data.pop('externalSystemRef',None)
+                data['unpaidBalance']=self._decimal_text(approved-paid)
+                data['cumulativePaidAmount']=self._decimal_text(self._decimal_value(data.get('previousPaidAmount','0'))+paid)
+            if command=='close_payment_claim':data['closedAt']=stamp
 
     def _all_true(self, value, keys):
         return isinstance(value,dict) and all(value.get(key) is True for key in keys)
@@ -1382,8 +1542,471 @@ class Engine:
         require(schedule.get('revisionBasisRef')==basis,'EOT_BASELINE_REVISION_CONFIRMED','Baseline revision must cite the exact approved EOT version')
         require(schedule.get('contractualCompletionAt')==r.get('revisedCompletionDate'),'EOT_BASELINE_REVISION_CONFIRMED','Baseline contractual completion must match approved EOT decision')
 
+
+    def _decimal_value(self,value,code='DECIMAL_INVALID',label='value'):
+        require(isinstance(value,str) and bool(value.strip()),code,label+' must be a canonical decimal string')
+        try:number=Decimal(value)
+        except (InvalidOperation,ValueError):raise ContractError(code,label+' is not a valid decimal')
+        require(number.is_finite() and number>=0,code,label+' must be non-negative and finite')
+        return number
+
+    def _decimal_text(self,value):
+        text=format(value,'f')
+        if '.' in text:text=text.rstrip('0').rstrip('.')
+        return text or '0'
+
+    def _boq_reference(self,reference,project_id,*,current=False,statuses=None):
+        if current:
+            boq=self._current_reference(reference,project_id,object_type='InformationItem',subtype='ContractBOQ')
+        else:
+            boq=self._contract_ref(reference,project_id,object_type='InformationItem',subtype='ContractBOQ')
+        if statuses is not None:require(boq.get('status') in statuses,'BOQ_STATUS_INVALID','ContractBOQ status is not eligible')
+        return boq
+
+    def _boq_line(self,boq,item_id):
+        lines=boq.get('boq',{}).get('lineItems',[])
+        matches=[line for line in lines if line.get('boqItemId')==item_id]
+        require(len(matches)==1,'BOQ_ITEM_NOT_FOUND',item_id)
+        return matches[0]
+
+    def _boq_submission_ready(self,r):
+        required=['boqNo','revision','currency','contractRef','effectiveFrom','sourceFileRefs','lineItems','measurementRulesRef','roundingRule']
+        require(all(r.get(x) not in [None,'',[]] for x in required),'BOQ_SUBMISSION_READY','ContractBOQ identity, contract basis, source, line items and rules are required')
+        require(r.get('boq',{}).get('revision')==r.get('revision'),'BOQ_REVISION_MISMATCH','InformationItem and ContractBOQ revisions must match')
+        contract=self._current_reference(r['contractRef'],r['projectId'],object_type='Requirement')
+        require(contract.get('status')=='active','BOQ_SUBMISSION_READY','Contract basis must be current and active')
+        rule=self._current_reference(r['measurementRulesRef'],r['projectId'],object_type='Requirement')
+        require(rule.get('status')=='active','BOQ_SUBMISSION_READY','Measurement rule must be current and active')
+        self._contract_refs(r['sourceFileRefs'],r['projectId'])
+        lines=r['lineItems']
+        require(len({x['boqItemId'] for x in lines})==len(lines),'BOQ_SUBMISSION_READY','BOQ item identifiers must be unique')
+        require(len({x['itemNo'] for x in lines})==len(lines),'BOQ_SUBMISSION_READY','BOQ item numbers must be unique')
+        for line in lines:
+            self._decimal_value(line['contractQuantity'],'BOQ_SUBMISSION_READY','contractQuantity')
+            self._decimal_value(line['unitRate'],'BOQ_SUBMISSION_READY','unitRate')
+            self._decimal_value(line['contractAmount'],'BOQ_SUBMISSION_READY','contractAmount')
+            measurement_rule=self._current_reference(line['measurementRuleRef'],r['projectId'],object_type='Requirement')
+            require(measurement_rule.get('status')=='active','BOQ_SUBMISSION_READY','BOQ line measurement rule must be active')
+        for reference in r.get('revisionBasisRefs',[]):self.resolve(reference,r['projectId'])
+
+    def _boq_review_ready(self,r):
+        self._boq_submission_ready(r)
+
+    def _boq_decision_request_ready(self,r):
+        self._boq_submission_ready(r)
+
+    def _boq_owner_decision(self,r,expected):
+        decision=self._contract_ref(r.get('ownerDecisionRef'),r['projectId'],object_type='Decision',statuses=['decided','executing','verified','closed'])
+        target=decision.get('targetRef')
+        require(target=={'objectType':'InformationItem','objectId':r['id'],'version':r['version']},'BOQ_DECISION_TARGET_INVALID','Owner Decision must target the exact current ContractBOQ version')
+        require(all(decision.get(field)==r.get(field) for field in ['packageId','locationId','discipline']),'BOQ_DECISION_TARGET_INVALID','Owner Decision scope must match ContractBOQ scope')
+        require(decision.get('decision')==expected,'BOQ_DECISION_OUTCOME_INVALID','Owner Decision outcome does not match ContractBOQ command')
+        return decision
+
+    def _boq_approved_decision_ready(self,r):
+        self._boq_owner_decision(r,'approved')
+
+    def _boq_rejected_decision_ready(self,r):
+        self._boq_owner_decision(r,'rejected')
+
+    def _boq_activation_ready(self,r):
+        decision=self._contract_ref(r.get('ownerDecisionRef'),r['projectId'],object_type='Decision',statuses=['decided','executing','verified','closed'])
+        require(decision.get('decision')=='approved','BOQ_ACTIVATION_READY','ContractBOQ activation requires an approved Owner Decision')
+        require(decision.get('targetRef')=={'objectType':'InformationItem','objectId':r['id'],'version':r['version']-1},'BOQ_ACTIVATION_READY','Owner Decision must target the immediately preceding decision-pending ContractBOQ version')
+        require(bool(r.get('approvedAt')),'BOQ_ACTIVATION_READY','ContractBOQ needs recorded Owner approval before activation')
+        require(instant(r['effectiveFrom'])<=instant(self.at()),'BOQ_ACTIVATION_READY','ContractBOQ effective date has not started')
+
+    def _measurement_package_ready(self,r,*,active_boq=False):
+        required=['periodStart','periodEnd','measuredAt','boqRef','boqItemRef','claimedQuantity','unit','measurementMethod','previousCertifiedQuantity']
+        require(all(r.get(x) not in [None,'',[]] for x in required),'MEASUREMENT_SUBMISSION_READY','Measurement period, BOQ item, quantity, unit and method are required')
+        require(instant(r['periodStart'])<=instant(r['periodEnd']),'MEASUREMENT_SUBMISSION_READY','Measurement period is invalid')
+        boq=self._boq_reference(r['boqRef'],r['projectId'],current=active_boq,statuses=['effective'] if active_boq else ['effective','superseded'])
+        item_ref=r['boqItemRef']
+        require(item_ref.get('boqRef')==r['boqRef'],'MEASUREMENT_SUBMISSION_READY','BOQ item reference must use the exact Measurement BOQ version')
+        line=self._boq_line(boq,item_ref.get('boqItemId'))
+        require(line.get('unit')==r.get('unit'),'UNIT_MISMATCH','Measurement unit must match ContractBOQ')
+        self._decimal_value(r['claimedQuantity'],'MEASUREMENT_SUBMISSION_READY','claimedQuantity')
+        self._decimal_value(r['previousCertifiedQuantity'],'MEASUREMENT_SUBMISSION_READY','previousCertifiedQuantity')
+        for field in ['drawingRefs','inspectionRefs','testRefs','materialLotRefs','changeRefs','variationRefs']:
+            refs=r.get(field,[])
+            require(isinstance(refs,list),'MEASUREMENT_SUBMISSION_READY',field+' must be a reference list')
+            if refs:self._contract_refs(refs,r['projectId'])
+        for reference in r.get('variationRefs',[]):
+            variation=self._contract_ref(reference,r['projectId'],object_type='WorkItem',subtype='Variation')
+            require(variation.get('status') not in ['cancelled','withdrawn','superseded'],'MEASUREMENT_SUBMISSION_READY','Variation reference is not active')
+        return boq,line
+
+    def _measurement_submission_ready(self,r):
+        self._measurement_package_ready(r,active_boq=True)
+        require(bool(r.get('evidenceIds')),'MEASUREMENT_SUBMISSION_READY','Quantity Measurement needs preserved source evidence')
+
+    def _measurement_receipt_ready(self,r):
+        self._measurement_package_ready(r)
+
+    def _measurement_field_review_ready(self,r):
+        self._measurement_package_ready(r)
+
+    def _measurement_technical_review_ready(self,r):
+        self._measurement_package_ready(r)
+        require(bool(r.get('evidenceIds')),'MEASUREMENT_TECHNICAL_REVIEW_READY','Technical verification needs measurement evidence')
+
+    def _measurement_payment_blocks(self,r):
+        blocks=[]
+        boq,line=self._measurement_package_ready(r)
+        if not r.get('evidenceIds'):blocks.append('EVIDENCE_INCOMPLETE')
+        for reference in r.get('inspectionRefs',[]):
+            inspection=self._contract_ref(reference,r['projectId'],object_type='Inspection')
+            if not (inspection.get('resultStatus')=='pass' and inspection.get('nextWorkAllowed') is True):
+                blocks.append('INSPECTION_NOT_ACCEPTED')
+            issue_id=inspection.get('relatedIssueId')
+            if issue_id:
+                try:issue=self.get('Issue',issue_id)
+                except ContractError:issue=None
+                if issue and issue.get('subtype')=='NCR' and issue.get('status') not in ['closed','cancelled','superseded']:
+                    blocks.append('BLOCKING_NCR')
+        accepted={'accepted','approved','passed','completed','closed','verified','released'}
+        for reference in r.get('testRefs',[]):
+            test=self._contract_ref(reference,r['projectId'])
+            status=test.get('status')
+            if status in ['failed','rejected']:blocks.append('TEST_FAILED')
+            elif status not in accepted:blocks.append('TEST_PENDING')
+        for reference in r.get('materialLotRefs',[]):
+            material=self._contract_ref(reference,r['projectId'])
+            if material.get('status') not in accepted:blocks.append('MATERIAL_NOT_ACCEPTED')
+        approved_variation=False
+        for reference in r.get('variationRefs',[]):
+            variation=self._contract_ref(reference,r['projectId'],object_type='WorkItem',subtype='Variation')
+            if variation.get('status')=='approved':approved_variation=True
+            else:blocks.append('UNAPPROVED_VARIATION')
+        if r.get('verifiedQuantity') is not None:
+            cumulative=self._decimal_value(r.get('previousCertifiedQuantity','0'))+self._decimal_value(r['verifiedQuantity'])
+            if cumulative>self._decimal_value(line['contractQuantity']) and not approved_variation:
+                blocks.append('EXCEEDS_CONTRACT_QUANTITY')
+        return list(dict.fromkeys(blocks))
+
+    def _measurement_verification_ready(self,r):
+        self._measurement_package_ready(r)
+        self._decimal_value(r.get('verifiedQuantity'),'MEASUREMENT_VERIFICATION_READY','verifiedQuantity')
+        require(bool(r.get('evidenceIds')),'MEASUREMENT_VERIFICATION_READY','Verified quantity needs current evidence')
+
+    def _measurement_dispute_ready(self,r):
+        self._measurement_package_ready(r)
+        disputed=self._decimal_value(r.get('disputedQuantity'),'MEASUREMENT_DISPUTE_READY','disputedQuantity')
+        require(disputed>0 and bool(r.get('disputeReason','').strip()),'MEASUREMENT_DISPUTE_READY','Disputed quantity and reason are required')
+        if r.get('verifiedQuantity') is not None:self._decimal_value(r['verifiedQuantity'],'MEASUREMENT_DISPUTE_READY','verifiedQuantity')
+        require(bool(r.get('evidenceIds')),'MEASUREMENT_DISPUTE_READY','Dispute record needs current evidence')
+
+    def _measurement_resolution_ready(self,r):
+        self._measurement_package_ready(r)
+        self._decimal_value(r.get('verifiedQuantity'),'MEASUREMENT_RESOLUTION_READY','verifiedQuantity')
+        resolution=self._contract_ref(r.get('resolutionRef'),r['projectId'])
+        require(resolution.get('status') not in ['draft','requested','submitted'],'MEASUREMENT_RESOLUTION_READY','Dispute resolution reference must be decided or final')
+        require(bool(r.get('evidenceIds')),'MEASUREMENT_RESOLUTION_READY','Measurement resolution needs current evidence')
+
+    def _measurement_supersede_ready(self,r):
+        replacement=self._current_reference(r.get('replacementRef'),r['projectId'],object_type='WorkItem',subtype='QuantityMeasurement')
+        require(replacement['id']!=r['id'] and replacement.get('status')=='verified','MEASUREMENT_SUPERSEDE_READY','Replacement Measurement must be a different current verified record')
+        require(replacement.get('data',{}).get('boqItemRef')==r.get('boqItemRef'),'MEASUREMENT_SUPERSEDE_READY','Replacement must retain the same exact BOQ item basis')
+
+    def _payment_measurements(self,r,*,current=True):
+        refs=r.get('quantityMeasurementRefs')
+        require(isinstance(refs,list) and bool(refs),'PAYMENT_CLAIM_SUBMISSION_READY','PaymentClaim needs verified QuantityMeasurement references')
+        require(len({(x.get('objectId'),x.get('version')) for x in refs})==len(refs),'REFERENCE_DUPLICATE','PaymentClaim measurement references must be unique')
+        result=[]
+        for reference in refs:
+            measurement=(self._current_reference(reference,r['projectId'],object_type='WorkItem',subtype='QuantityMeasurement') if current
+                         else self._contract_ref(reference,r['projectId'],object_type='WorkItem',subtype='QuantityMeasurement'))
+            require(measurement.get('status')=='verified','QUANTITY_NOT_VERIFIED','PaymentClaim may use only verified QuantityMeasurement records')
+            require(measurement.get('data',{}).get('boqRef')==r.get('boqRef'),'BOQ_VERSION_STALE','PaymentClaim and QuantityMeasurement must use the same exact ContractBOQ version')
+            result.append(measurement)
+        return result
+
+    def _payment_previous_basis(self,r):
+        previous_ref=r.get('previousPaymentClaimRef')
+        previous_certified=self._decimal_value(r.get('previousCertifiedAmount','0'),'PAYMENT_CLAIM_SUBMISSION_READY','previousCertifiedAmount')
+        previous_paid=self._decimal_value(r.get('previousPaidAmount','0'),'PAYMENT_CLAIM_SUBMISSION_READY','previousPaidAmount')
+        if not previous_ref:
+            require(previous_certified==0 and previous_paid==0,'PAYMENT_CLAIM_SUBMISSION_READY','First PaymentClaim must start with zero previous certified and paid amounts')
+            return None
+        previous=self._contract_ref(previous_ref,r['projectId'],object_type='WorkItem',subtype='PaymentClaim',statuses=['payment_recorded','closed'])
+        data=previous.get('data',{})
+        require(previous_certified==self._decimal_value(data.get('cumulativeCertifiedAmount','0')),'PAYMENT_CLAIM_SUBMISSION_READY','Previous certified amount must match the exact prior PaymentClaim')
+        require(previous_paid==self._decimal_value(data.get('cumulativePaidAmount','0')),'PAYMENT_CLAIM_SUBMISSION_READY','Previous paid amount must match the exact prior PaymentClaim')
+        require(data.get('currency')==r.get('currency'),'PAYMENT_CLAIM_SUBMISSION_READY','PaymentClaim currency cannot change across cumulative chain')
+        return previous
+
+    def _payment_duplicate_guard(self,r):
+        current_measurements={x['objectId'] for x in r.get('quantityMeasurementRefs',[])}
+        for (kind,object_id),record in self._records.items():
+            if kind!='WorkItem' or object_id==r['id'] or record.get('subtype')!='PaymentClaim' or record['projectId']!=r['projectId']:
+                continue
+            if record.get('status') in ['draft','withdrawn','rejected','superseded','cancelled']:continue
+            used={x.get('objectId') for x in record.get('data',{}).get('quantityMeasurementRefs',[])}
+            require(not (current_measurements & used),'DUPLICATE_CLAIM','A verified QuantityMeasurement is already included in another active PaymentClaim')
+
+    def _payment_claim_package_ready(self,r,*,active_boq=False,check_duplicate=False):
+        required=['periodStart','periodEnd','contractRef','boqRef','currency','quantityMeasurementRefs','claimedGrossAmount','previousCertifiedAmount','previousPaidAmount']
+        require(all(r.get(x) not in [None,'',[]] for x in required),'PAYMENT_CLAIM_SUBMISSION_READY','Payment period, contract, BOQ, measurements and claimed amount are required')
+        require(instant(r['periodStart'])<=instant(r['periodEnd']),'PAYMENT_CLAIM_SUBMISSION_READY','Payment period is invalid')
+        boq=self._boq_reference(r['boqRef'],r['projectId'],current=active_boq,statuses=['effective'] if active_boq else ['effective','superseded'])
+        require(boq.get('boq',{}).get('currency')==r.get('currency'),'PAYMENT_CLAIM_SUBMISSION_READY','PaymentClaim currency must match ContractBOQ')
+        contract=self._contract_ref(r['contractRef'],r['projectId'])
+        require(contract.get('status') not in ['expired','cancelled','withdrawn'],'PAYMENT_CLAIM_SUBMISSION_READY','Contract basis is not valid')
+        self._decimal_value(r['claimedGrossAmount'],'PAYMENT_CLAIM_SUBMISSION_READY','claimedGrossAmount')
+        self._payment_measurements(r,current=active_boq)
+        self._payment_previous_basis(r)
+        if check_duplicate:self._payment_duplicate_guard(r)
+        return boq
+
+    def _payment_variation_amounts(self,r):
+        eligible=Decimal('0');unapproved=Decimal('0')
+        for component in r.get('variationComponents',[]):
+            variation=self._contract_ref(component['variationRef'],r['projectId'],object_type='WorkItem',subtype='Variation')
+            claimed=self._decimal_value(component['claimedAmount'],'PAYMENT_VARIATION_INVALID','variation claimedAmount')
+            accepted=self._decimal_value(component['eligibleAmount'],'PAYMENT_VARIATION_INVALID','variation eligibleAmount')
+            require(component.get('currency')==r.get('currency'),'PAYMENT_VARIATION_INVALID','Variation currency must match PaymentClaim')
+            if variation.get('status')=='approved':
+                require(accepted<=claimed,'PAYMENT_VARIATION_INVALID','Eligible Variation amount cannot exceed claimed amount')
+                eligible+=accepted
+            else:
+                require(accepted==0,'UNAPPROVED_VARIATION','Unapproved Variation must have zero eligible amount')
+                unapproved+=claimed
+        return eligible,unapproved
+
+    def _payment_claim_submission_ready(self,r):
+        self._payment_claim_package_ready(r,active_boq=True,check_duplicate=True)
+        require(bool(r.get('evidenceIds')),'PAYMENT_CLAIM_SUBMISSION_READY','PaymentClaim submission needs preserved evidence')
+        self._payment_variation_amounts(r)
+
+    def _payment_claim_receipt_ready(self,r):
+        self._payment_claim_package_ready(r,check_duplicate=True)
+
+    def _payment_quantity_review_ready(self,r):
+        self._payment_claim_package_ready(r,check_duplicate=True)
+
+    def _payment_valuation_review_ready(self,r):
+        self._payment_claim_package_ready(r,check_duplicate=True)
+        verified=self._decimal_value(r.get('verifiedGrossAmount'),'PAYMENT_VALUATION_REVIEW_READY','verifiedGrossAmount')
+        claimed=self._decimal_value(r.get('claimedGrossAmount'),'PAYMENT_VALUATION_REVIEW_READY','claimedGrossAmount')
+        disputed=self._decimal_value(r.get('disputedAmount'),'PAYMENT_VALUATION_REVIEW_READY','disputedAmount')
+        require(verified<=claimed and disputed<=claimed,'PAYMENT_VALUATION_REVIEW_READY','Verified/disputed amount cannot exceed claimed amount')
+        require(bool(r.get('evidenceIds')),'PAYMENT_VALUATION_REVIEW_READY','Valuation review needs current evidence')
+
+    def _payment_calculation_rule(self,r):
+        code='PAYMENT_RECOMMENDATION_PREPARE_READY'
+        rule_record=self._contract_ref(r.get('calculationRuleRef'),r['projectId'],object_type='Requirement',statuses=['active'])
+        require(all(rule_record.get(field)==r.get(field) for field in ['packageId','locationId','discipline']),code,'Payment calculation rule scope must match PaymentClaim')
+        rule=rule_record.get('applicability',{}).get('paymentCalculationRule')
+        require(isinstance(rule,dict),code,'Calculation Requirement must contain paymentCalculationRule')
+        allowed={'verifiedGrossAmount','eligibleVariationAmount','eligibleMaterialOnSiteAmount','retentionAmount','advanceRecoveryAmount','otherDeductionAmount','taxAmount'}
+        components=[]
+        for name in ['baseComponents','addComponents','subtractComponents']:
+            values=rule.get(name)
+            require(isinstance(values,list) and all(isinstance(x,str) and x in allowed for x in values),code,name+' contains an unsupported component')
+            components.extend(values)
+        require(len(components)==len(set(components)),code,'Calculation rule components must not overlap')
+        require(bool(rule.get('formulaId')),code,'Calculation rule formulaId is required')
+        type_map=rule.get('deductionTypeMap')
+        require(isinstance(type_map,dict) and all(isinstance(k,str) and k and v in rule['subtractComponents'] for k,v in type_map.items()),code,'Deduction type map is invalid')
+        require({'retentionAmount','advanceRecoveryAmount','otherDeductionAmount'}<=set(type_map.values()),code,'Retention, advance recovery and other deduction must reconcile through deduction components')
+        rounding=rule.get('rounding')
+        require(isinstance(rounding,dict) and bool(rounding.get('id')),code,'Versioned rounding rule is required')
+        quantum=self._decimal_value(rounding.get('quantum'),code,'rounding quantum')
+        require(quantum>0,code,'Rounding quantum must be positive')
+        modes={'half_up':ROUND_HALF_UP,'half_even':ROUND_HALF_EVEN,'down':ROUND_DOWN,'up':ROUND_UP}
+        require(rounding.get('mode') in modes,code,'Unsupported rounding mode')
+        return rule,modes[rounding['mode']],quantum
+
+    def _payment_recommendation_calculation(self,r):
+        code='PAYMENT_RECOMMENDATION_PREPARE_READY'
+        for field in ['verifiedGrossAmount','eligibleVariationAmount','eligibleMaterialOnSiteAmount','retentionAmount','advanceRecoveryAmount','otherDeductionAmount','taxAmount','recommendedNetAmount']:
+            self._decimal_value(r.get(field),code,field)
+        eligible_variation,unapproved=self._payment_variation_amounts(r)
+        require(self._decimal_value(r['eligibleVariationAmount'])==eligible_variation,code,'Eligible Variation amount must equal approved Variation components only')
+        require(unapproved>=0,code,'Variation calculation failed')
+        rule,rounding_mode,quantum=self._payment_calculation_rule(r)
+        deduction_totals={field:Decimal('0') for field in ['retentionAmount','advanceRecoveryAmount','otherDeductionAmount']}
+        type_map=rule['deductionTypeMap']
+        for deduction in r.get('deductionComponents',[]):
+            amount=self._decimal_value(deduction['amount'],code,'deduction amount')
+            require(deduction.get('currency')==r.get('currency'),code,'Deduction currency must match PaymentClaim')
+            self._contract_ref(deduction['contractClauseRef'],r['projectId'],object_type='Requirement')
+            if deduction.get('sourceDecisionRef'):
+                self._contract_ref(deduction['sourceDecisionRef'],r['projectId'],object_type='Decision')
+            deduction_type=deduction.get('type')
+            require(deduction_type in type_map,code,'Deduction component type is not mapped by the calculation rule')
+            field=type_map[deduction_type]
+            if field in deduction_totals: deduction_totals[field]+=amount
+        for field,total in deduction_totals.items():
+            require(self._decimal_value(r[field],code,field)==total,code,field+' must equal mapped deduction component total')
+        base=sum((self._decimal_value(r[field],code,field) for field in rule['baseComponents']),Decimal('0'))
+        additions=sum((self._decimal_value(r[field],code,field) for field in rule['addComponents']),Decimal('0'))
+        deductions=sum((self._decimal_value(r[field],code,field) for field in rule['subtractComponents']),Decimal('0'))
+        pre_round=base+additions-deductions
+        require(pre_round>=0,code,'Calculated recommendation cannot be negative')
+        rounded=(pre_round/quantum).quantize(Decimal('1'),rounding=rounding_mode)*quantum
+        recommended=self._decimal_value(r['recommendedNetAmount'],code,'recommendedNetAmount')
+        require(recommended==rounded,code,'Recommended amount must equal the versioned calculation rule result')
+        rounding=rule['rounding']
+        return {
+            'ruleRef':deepcopy(r['calculationRuleRef']),
+            'formulaId':rule['formulaId'],
+            'baseAmount':self._decimal_text(base),
+            'additionAmount':self._decimal_text(additions),
+            'deductionAmount':self._decimal_text(deductions),
+            'preRoundAmount':self._decimal_text(pre_round),
+            'roundedAmount':self._decimal_text(rounded),
+            'roundingRuleId':rounding['id'],
+            'roundingQuantum':self._decimal_text(quantum),
+            'roundingMode':rounding['mode'],
+            'deductionTotals':{field:self._decimal_text(value) for field,value in deduction_totals.items()},
+        }
+
+    def _payment_recommendation_prepare_ready(self,r):
+        self._payment_claim_package_ready(r,check_duplicate=True)
+        self._payment_recommendation_calculation(r)
+
+    def _payment_recommendation_ready(self,r):
+        self._payment_recommendation_prepare_ready(r)
+        require(bool(r.get('evidenceIds')),'PAYMENT_RECOMMENDATION_READY','Payment recommendation needs current evidence')
+
+    def _payment_owner_review_ready(self,r):
+        require(isinstance(r.get('recommendationSnapshot'),dict) and bool(r.get('recommendedAt')),'PAYMENT_OWNER_REVIEW_READY','Immutable supervisor recommendation snapshot is required')
+
+    def _payment_owner_decision(self,r,expected):
+        refs=r.get('decisionRefs')
+        require(isinstance(refs,list) and bool(refs),'PAYMENT_OWNER_DECISION_REQUIRED','Owner Decision exact reference is required')
+        matches=[]
+        for reference in refs:
+            decision=self._contract_ref(reference,r['projectId'],object_type='Decision',statuses=['decided','executing','verified','closed'])
+            if (
+                decision.get('targetRef')=={'objectType':'WorkItem','objectId':r['id'],'version':r['version']}
+                and all(decision.get(field)==r.get(field) for field in ['packageId','locationId','discipline'])
+                and decision.get('decision')==expected
+            ):
+                matches.append(decision)
+        require(len(matches)==1,'PAYMENT_OWNER_DECISION_REQUIRED','Exactly one Owner Decision must target the exact current PaymentClaim version and outcome')
+        return matches[0]
+
+    def _payment_owner_approval_ready(self,r):
+        self._payment_owner_review_ready(r);self._payment_owner_decision(r,'approved')
+        approved=self._decimal_value(r.get('ownerApprovedAmount'),'PAYMENT_OWNER_APPROVAL_READY','ownerApprovedAmount')
+        recommended=self._decimal_value(r.get('recommendedNetAmount'),'PAYMENT_OWNER_APPROVAL_READY','recommendedNetAmount')
+        require(approved==recommended,'PAYMENT_OWNER_APPROVAL_READY','Use Owner adjustment command when approved amount differs from supervisor recommendation')
+
+    def _payment_owner_adjustment_ready(self,r):
+        self._payment_owner_review_ready(r);self._payment_owner_decision(r,'approved')
+        approved=self._decimal_value(r.get('ownerApprovedAmount'),'PAYMENT_OWNER_ADJUSTMENT_READY','ownerApprovedAmount')
+        recommended=self._decimal_value(r.get('recommendedNetAmount'),'PAYMENT_OWNER_ADJUSTMENT_READY','recommendedNetAmount')
+        require(approved!=recommended and bool(r.get('adjustmentReason','').strip()),'PAYMENT_OWNER_ADJUSTMENT_READY','Owner adjustment requires a different amount and explicit reason')
+
+    def _payment_owner_rejection_ready(self,r):
+        self._payment_owner_review_ready(r);self._payment_owner_decision(r,'rejected')
+
+    def _payment_active_total(self,r):
+        records=r.get('paymentRecords') or []
+        superseded={x.get('supersedesPaymentRecordId') for x in records if x.get('supersedesPaymentRecordId')}
+        return sum((self._decimal_value(x['amount'],'PAYMENT_RECORD_READY','payment record amount') for x in records if x['recordId'] not in superseded and x.get('kind') in ['payment','correction']),Decimal('0'))
+
+    def _payment_record_target(self,r,code):
+        target_id=r.get('supersedesPaymentRecordId')
+        records=r.get('paymentRecords') or []
+        targets=[x for x in records if x.get('recordId')==target_id]
+        require(len(targets)==1,code,'Correction/cancellation must target one existing payment record')
+        superseded={x.get('supersedesPaymentRecordId') for x in records if x.get('supersedesPaymentRecordId')}
+        require(target_id not in superseded,code,'Payment record is already superseded')
+        require(targets[0].get('kind') in ['payment','correction'],code,'Cancellation records cannot be corrected or cancelled again')
+        return targets[0]
+
+    def _payment_reference_unique(self,r,code):
+        reference=r.get('paymentReference','').strip()
+        external=r.get('externalSystemRef','').strip()
+        require(bool(reference),code,'External payment reference is required')
+        for (kind,_),record in self._records.items():
+            if kind!='WorkItem' or record.get('projectId')!=r.get('projectId') or record.get('subtype')!='PaymentClaim':continue
+            for item in record.get('data',{}).get('paymentRecords',[]):
+                require(item.get('paymentReference')!=reference,'PAYMENT_REFERENCE_DUPLICATE','Payment reference is already recorded')
+                if external:require(item.get('externalSystemRef')!=external,'PAYMENT_REFERENCE_DUPLICATE','External system reference is already recorded')
+
+    def _payment_record_ready(self,r):
+        code='PAYMENT_RECORD_READY'
+        approved=self._decimal_value(r.get('ownerApprovedAmount'),code,'ownerApprovedAmount')
+        amount=self._decimal_value(r.get('paymentAmount'),code,'paymentAmount')
+        require(amount>0,code,'Payment transaction amount must be positive')
+        require(self._payment_active_total(r)+amount<=approved,code,'Cumulative active payments cannot exceed Owner approved amount')
+        require(bool(r.get('paidAt')) and bool(r.get('paymentReference','').strip()),code,'Actual payment date and external payment reference are required')
+        self._payment_reference_unique(r,code)
+
+    def _payment_correction_ready(self,r):
+        code='PAYMENT_CORRECTION_READY'
+        approved=self._decimal_value(r.get('ownerApprovedAmount'),code,'ownerApprovedAmount')
+        target=self._payment_record_target(r,code)
+        amount=self._decimal_value(r.get('paymentAmount'),code,'paymentAmount')
+        require(amount>0 and bool(r.get('correctionReason','').strip()),code,'Payment correction needs positive amount and reason')
+        require(bool(r.get('paidAt')) and bool(r.get('paymentReference','').strip()),code,'Payment correction needs effective date and reference')
+        projected=self._payment_active_total(r)-self._decimal_value(target['amount'],code,'target amount')+amount
+        require(projected>=0 and projected<=approved,code,'Corrected cumulative payment cannot exceed Owner approved amount')
+        self._payment_reference_unique(r,code)
+
+    def _payment_cancellation_ready(self,r):
+        code='PAYMENT_CANCELLATION_READY'
+        target=self._payment_record_target(r,code)
+        require(bool(r.get('correctionReason','').strip()),code,'Payment cancellation needs reason')
+        require(bool(r.get('paidAt')) and bool(r.get('paymentReference','').strip()),code,'Payment cancellation needs effective date and reference')
+        require(self._payment_active_total(r)-self._decimal_value(target['amount'],code,'target amount')>=0,code,'Payment cancellation total is invalid')
+        self._payment_reference_unique(r,code)
+
+    def _payment_close_ready(self,r):
+        require(self._decimal_value(r.get('unpaidBalance'),'PAYMENT_CLOSE_READY','unpaidBalance')==0,'PAYMENT_CLOSE_READY','PaymentClaim cannot close while approved amount remains unpaid')
+        require(bool(r.get('paymentRecords')),'PAYMENT_CLOSE_READY','At least one preserved Actual Payment Record is required before close')
+
+    def _payment_supersede_ready(self,r):
+        replacement=self._current_reference(r.get('replacementRef'),r['projectId'],object_type='WorkItem',subtype='PaymentClaim')
+        require(replacement['id']!=r['id'] and replacement.get('status')=='closed','PAYMENT_SUPERSEDE_READY','Replacement PaymentClaim must be a different current closed record')
+        for field in ['packageId','locationId','discipline','responsibleOrganizationId']:
+            require(replacement.get(field)==r.get(field),'PAYMENT_SUPERSEDE_READY','Replacement PaymentClaim must retain the same work scope')
+
     def _eot_rejected_close_ready(self,r):
         require(r.get('decisionOutcome')=='rejected','EOT_REJECTED_CLOSE_READY','Only rejected EOT may close without Baseline revision')
+
+    def _effective_contract_boqs(self,record,exclude_id=None):
+        contract_id=record.get('boq',{}).get('contractRef',{}).get('objectId')
+        scope_fields=['packageId','locationId','discipline','responsibleOrganizationId']
+        output=[]
+        for (kind,object_id),candidate in self._records.items():
+            if kind!='InformationItem' or object_id==exclude_id or candidate.get('subtype')!='ContractBOQ':
+                continue
+            if candidate.get('projectId')!=record.get('projectId') or candidate.get('status')!='effective':
+                continue
+            if candidate.get('boq',{}).get('contractRef',{}).get('objectId')!=contract_id:
+                continue
+            if any(candidate.get(field)!=record.get(field) for field in scope_fields):
+                continue
+            output.append(self.get('InformationItem',object_id))
+        return output
+
+    def _activate_contract_boq(self,before,proposed,request,party_id,role_id,key):
+        prior=self._effective_contract_boqs(proposed,exclude_id=proposed['id'])
+        require(len(prior)<=1,'BOQ_ACTIVATION_READY','Multiple effective ContractBOQ records exist in one contract scope')
+        if prior:
+            proposed['boq']['supersedesRef']={'objectType':'InformationItem','objectId':prior[0]['id'],'version':prior[0]['version']}
+        validate(proposed,self.schemas['InformationItem'],self.schemas)
+        snapshot=(deepcopy(self._records),deepcopy(self._history),deepcopy(self._audit),deepcopy(self._idempotency),deepcopy(self._record_machines))
+        try:
+            self._save('InformationItem',proposed)
+            result=self._event(proposed,'contract_boq:activate_boq',party_id,role_id,key,request,before)
+            if prior:
+                old=prior[0]
+                updated=deepcopy(old)
+                updated.update(status='superseded',version=old['version']+1,updatedAt=self.at())
+                validate(updated,self.schemas['InformationItem'],self.schemas)
+                self._save('InformationItem',updated)
+                self._event(updated,'contract_boq:derived_supersede',party_id,role_id,key,request,old)
+            self._remember(proposed['projectId'],party_id,'contract_boq:activate_boq',key,request,result)
+            return result
+        except Exception:
+            self._records,self._history,self._audit,self._idempotency,self._record_machines=snapshot
+            raise
 
     def _activate_schedule_baseline(self,before,proposed,request,party_id,role_id,key):
         prior=self._effective_baselines(proposed,exclude_id=proposed['id'])

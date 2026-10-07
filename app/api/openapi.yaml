@@ -19253,6 +19253,3750 @@
         "x-domain-command": "eot_request:resolve_eot_dispute_rejected"
       }
     },
+    "/projects/{projectId}/contract-boqs": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_boqs",
+        "summary": "contract_boq 생성",
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_boq"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Create_contract_boq"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/contract-boqs/{objectId}": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "get_projects_projectId_contract_boqs_objectId",
+        "summary": "contract_boq 상세",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InformationItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-RoleAssignment-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/projects/{projectId}/contract-boqs/{objectId}/submit-boq": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_boqs_objectId_submit_boq",
+        "summary": "contract_boq / submit_boq",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_boq"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_boq_submit_boq"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_boq:submit_boq"
+      }
+    },
+    "/projects/{projectId}/contract-boqs/{objectId}/start-boq-review": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_boqs_objectId_start_boq_review",
+        "summary": "contract_boq / start_boq_review",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_boq"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_boq_start_boq_review"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_boq:start_boq_review"
+      }
+    },
+    "/projects/{projectId}/contract-boqs/{objectId}/return-boq": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_boqs_objectId_return_boq",
+        "summary": "contract_boq / return_boq",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_boq"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_boq_return_boq"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_boq:return_boq"
+      }
+    },
+    "/projects/{projectId}/contract-boqs/{objectId}/request-boq-decision": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_boqs_objectId_request_boq_decision",
+        "summary": "contract_boq / request_boq_decision",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_boq"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_boq_request_boq_decision"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_boq:request_boq_decision"
+      }
+    },
+    "/projects/{projectId}/contract-boqs/{objectId}/approve-boq": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_boqs_objectId_approve_boq",
+        "summary": "contract_boq / approve_boq",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_boq"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_boq_approve_boq"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_boq:approve_boq"
+      }
+    },
+    "/projects/{projectId}/contract-boqs/{objectId}/reject-boq": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_boqs_objectId_reject_boq",
+        "summary": "contract_boq / reject_boq",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_boq"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_boq_reject_boq"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_boq:reject_boq"
+      }
+    },
+    "/projects/{projectId}/contract-boqs/{objectId}/activate-boq": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_boqs_objectId_activate_boq",
+        "summary": "contract_boq / activate_boq",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_boq"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_boq_activate_boq"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_boq:activate_boq"
+      }
+    },
+    "/projects/{projectId}/contract-boqs/{objectId}/resubmit-boq": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_boqs_objectId_resubmit_boq",
+        "summary": "contract_boq / resubmit_boq",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_boq"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_boq_resubmit_boq"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_boq:resubmit_boq"
+      }
+    },
+    "/projects/{projectId}/contract-boqs/{objectId}/withdraw-boq": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_boqs_objectId_withdraw_boq",
+        "summary": "contract_boq / withdraw_boq",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_boq"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_boq_withdraw_boq"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_boq:withdraw_boq"
+      }
+    },
+    "/projects/{projectId}/quantity-measurements": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_quantity_measurements",
+        "summary": "quantity_measurement 생성",
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_quantity_measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Create_quantity_measurement"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/quantity-measurements/{objectId}": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "get_projects_projectId_quantity_measurements_objectId",
+        "summary": "quantity_measurement 상세",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-RoleAssignment-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/projects/{projectId}/quantity-measurements/{objectId}/submit-measurement": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_quantity_measurements_objectId_submit_measurement",
+        "summary": "quantity_measurement / submit_measurement",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_quantity_measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_quantity_measurement_submit_measurement"
+              }
+            }
+          }
+        },
+        "x-domain-command": "quantity_measurement:submit_measurement"
+      }
+    },
+    "/projects/{projectId}/quantity-measurements/{objectId}/receive-measurement": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_quantity_measurements_objectId_receive_measurement",
+        "summary": "quantity_measurement / receive_measurement",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_quantity_measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_quantity_measurement_receive_measurement"
+              }
+            }
+          }
+        },
+        "x-domain-command": "quantity_measurement:receive_measurement"
+      }
+    },
+    "/projects/{projectId}/quantity-measurements/{objectId}/return-incomplete": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_quantity_measurements_objectId_return_incomplete",
+        "summary": "quantity_measurement / return_incomplete",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_quantity_measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_quantity_measurement_return_incomplete"
+              }
+            }
+          }
+        },
+        "x-domain-command": "quantity_measurement:return_incomplete"
+      }
+    },
+    "/projects/{projectId}/quantity-measurements/{objectId}/start-field-verification": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_quantity_measurements_objectId_start_field_verification",
+        "summary": "quantity_measurement / start_field_verification",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_quantity_measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_quantity_measurement_start_field_verification"
+              }
+            }
+          }
+        },
+        "x-domain-command": "quantity_measurement:start_field_verification"
+      }
+    },
+    "/projects/{projectId}/quantity-measurements/{objectId}/start-technical-verification": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_quantity_measurements_objectId_start_technical_verification",
+        "summary": "quantity_measurement / start_technical_verification",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_quantity_measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_quantity_measurement_start_technical_verification"
+              }
+            }
+          }
+        },
+        "x-domain-command": "quantity_measurement:start_technical_verification"
+      }
+    },
+    "/projects/{projectId}/quantity-measurements/{objectId}/request-measurement-adjustment": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_quantity_measurements_objectId_request_measurement_adjustment",
+        "summary": "quantity_measurement / request_measurement_adjustment",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_quantity_measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_quantity_measurement_request_measurement_adjustment"
+              }
+            }
+          }
+        },
+        "x-domain-command": "quantity_measurement:request_measurement_adjustment"
+      }
+    },
+    "/projects/{projectId}/quantity-measurements/{objectId}/resubmit-measurement": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_quantity_measurements_objectId_resubmit_measurement",
+        "summary": "quantity_measurement / resubmit_measurement",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_quantity_measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_quantity_measurement_resubmit_measurement"
+              }
+            }
+          }
+        },
+        "x-domain-command": "quantity_measurement:resubmit_measurement"
+      }
+    },
+    "/projects/{projectId}/quantity-measurements/{objectId}/verify-quantity": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_quantity_measurements_objectId_verify_quantity",
+        "summary": "quantity_measurement / verify_quantity",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_quantity_measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_quantity_measurement_verify_quantity"
+              }
+            }
+          }
+        },
+        "x-domain-command": "quantity_measurement:verify_quantity"
+      }
+    },
+    "/projects/{projectId}/quantity-measurements/{objectId}/mark-measurement-disputed": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_quantity_measurements_objectId_mark_measurement_disputed",
+        "summary": "quantity_measurement / mark_measurement_disputed",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_quantity_measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_quantity_measurement_mark_measurement_disputed"
+              }
+            }
+          }
+        },
+        "x-domain-command": "quantity_measurement:mark_measurement_disputed"
+      }
+    },
+    "/projects/{projectId}/quantity-measurements/{objectId}/resolve-measurement": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_quantity_measurements_objectId_resolve_measurement",
+        "summary": "quantity_measurement / resolve_measurement",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_quantity_measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_quantity_measurement_resolve_measurement"
+              }
+            }
+          }
+        },
+        "x-domain-command": "quantity_measurement:resolve_measurement"
+      }
+    },
+    "/projects/{projectId}/quantity-measurements/{objectId}/supersede-measurement": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_quantity_measurements_objectId_supersede_measurement",
+        "summary": "quantity_measurement / supersede_measurement",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_quantity_measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_quantity_measurement_supersede_measurement"
+              }
+            }
+          }
+        },
+        "x-domain-command": "quantity_measurement:supersede_measurement"
+      }
+    },
+    "/projects/{projectId}/quantity-measurements/{objectId}/cancel-measurement": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_quantity_measurements_objectId_cancel_measurement",
+        "summary": "quantity_measurement / cancel_measurement",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_quantity_measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_quantity_measurement_cancel_measurement"
+              }
+            }
+          }
+        },
+        "x-domain-command": "quantity_measurement:cancel_measurement"
+      }
+    },
+    "/projects/{projectId}/payment-claims": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims",
+        "summary": "payment_claim 생성",
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Create_payment_claim"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "get_projects_projectId_payment_claims_objectId",
+        "summary": "payment_claim 상세",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-RoleAssignment-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/submit-payment-claim": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_submit_payment_claim",
+        "summary": "payment_claim / submit_payment_claim",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_submit_payment_claim"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:submit_payment_claim"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/receive-payment-claim": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_receive_payment_claim",
+        "summary": "payment_claim / receive_payment_claim",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_receive_payment_claim"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:receive_payment_claim"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/return-payment-claim-incomplete": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_return_payment_claim_incomplete",
+        "summary": "payment_claim / return_payment_claim_incomplete",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_return_payment_claim_incomplete"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:return_payment_claim_incomplete"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/start-quantity-review": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_start_quantity_review",
+        "summary": "payment_claim / start_quantity_review",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_start_quantity_review"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:start_quantity_review"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/start-valuation-review": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_start_valuation_review",
+        "summary": "payment_claim / start_valuation_review",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_start_valuation_review"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:start_valuation_review"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/request-payment-adjustment": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_request_payment_adjustment",
+        "summary": "payment_claim / request_payment_adjustment",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_request_payment_adjustment"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:request_payment_adjustment"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/resubmit-payment-claim": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_resubmit_payment_claim",
+        "summary": "payment_claim / resubmit_payment_claim",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_resubmit_payment_claim"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:resubmit_payment_claim"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/prepare-recommendation": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_prepare_recommendation",
+        "summary": "payment_claim / prepare_recommendation",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_prepare_recommendation"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:prepare_recommendation"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/recommend-payment": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_recommend_payment",
+        "summary": "payment_claim / recommend_payment",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_recommend_payment"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:recommend_payment"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/submit-owner-review": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_submit_owner_review",
+        "summary": "payment_claim / submit_owner_review",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_submit_owner_review"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:submit_owner_review"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/approve-payment": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_approve_payment",
+        "summary": "payment_claim / approve_payment",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_approve_payment"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:approve_payment"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/adjust-payment": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_adjust_payment",
+        "summary": "payment_claim / adjust_payment",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_adjust_payment"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:adjust_payment"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/reject-payment": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_reject_payment",
+        "summary": "payment_claim / reject_payment",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_reject_payment"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:reject_payment"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/record-payment": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_record_payment",
+        "summary": "payment_claim / record_payment",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_record_payment"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:record_payment"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/close-payment-claim": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_close_payment_claim",
+        "summary": "payment_claim / close_payment_claim",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_close_payment_claim"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:close_payment_claim"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/withdraw-payment-claim": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_withdraw_payment_claim",
+        "summary": "payment_claim / withdraw_payment_claim",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_withdraw_payment_claim"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:withdraw_payment_claim"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/supersede-payment-claim": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_supersede_payment_claim",
+        "summary": "payment_claim / supersede_payment_claim",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_supersede_payment_claim"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:supersede_payment_claim"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/record-additional-payment": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_record_additional_payment",
+        "summary": "payment_claim / record_additional_payment",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_record_additional_payment"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:record_additional_payment"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/correct-payment-record": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_correct_payment_record",
+        "summary": "payment_claim / correct_payment_record",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_correct_payment_record"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:correct_payment_record"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/cancel-payment-record": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_cancel_payment_record",
+        "summary": "payment_claim / cancel_payment_record",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_cancel_payment_record"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:cancel_payment_record"
+      }
+    },
     "/projects/{projectId}/registers/{registerId}": {
       "parameters": [
         {
@@ -20984,7 +24728,31 @@
                 "contract.eot.request_decision",
                 "contract.eot.decide",
                 "contract.eot.baseline_update",
-                "contract.eot.close"
+                "contract.eot.close",
+                "payment.boq.create",
+                "payment.boq.submit",
+                "payment.boq.review",
+                "payment.boq.request_decision",
+                "payment.boq.decide",
+                "payment.boq.activate",
+                "payment.boq.withdraw",
+                "payment.measurement.create",
+                "payment.measurement.submit",
+                "payment.measurement.receive",
+                "payment.measurement.review",
+                "payment.measurement.verify",
+                "payment.measurement.resolve",
+                "payment.measurement.cancel",
+                "payment.claim.create",
+                "payment.claim.submit",
+                "payment.claim.receive",
+                "payment.claim.review",
+                "payment.claim.recommend",
+                "payment.claim.owner_review",
+                "payment.claim.decide",
+                "payment.claim.record",
+                "payment.claim.close",
+                "payment.claim.withdraw"
               ]
             }
           },
@@ -21860,6 +25628,9 @@
               }
             },
             "additionalProperties": false
+          },
+          "boq": {
+            "$ref": "#/components/schemas/ContractBOQData"
           }
         },
         "required": [
@@ -21888,6 +25659,28 @@
               "required": [
                 "schedule"
               ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "ContractBOQ"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "required": [
+                "boq"
+              ],
+              "properties": {
+                "boq": {
+                  "$ref": "#/components/schemas/ContractBOQData"
+                }
+              }
             }
           }
         ]
@@ -23003,6 +26796,44 @@
               "properties": {
                 "data": {
                   "$ref": "#/components/schemas/EOTRequestData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "QuantityMeasurement"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/QuantityMeasurementData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "PaymentClaim"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/PaymentClaimData"
                 }
               }
             }
@@ -25988,6 +29819,902 @@
         },
         "required": [
           "eotNo"
+        ],
+        "additionalProperties": false
+      },
+      "NonNegativeDecimalString": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$",
+        "description": "Canonical non-negative decimal string. Binary floating-point is not an authoritative commercial value."
+      },
+      "CurrencyCode": {
+        "type": "string",
+        "pattern": "^[A-Z]{3}$"
+      },
+      "ContractBOQItemRef": {
+        "type": "object",
+        "properties": {
+          "boqRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "boqItemId": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "boqRef",
+          "boqItemId"
+        ],
+        "additionalProperties": false
+      },
+      "ContractBOQLineItem": {
+        "type": "object",
+        "properties": {
+          "boqItemId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "itemNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1
+          },
+          "contractQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "unitRate": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "contractAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "packageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discipline": {
+            "type": "string",
+            "minLength": 1
+          },
+          "locationScope": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "measurementRuleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "variationEligible": {
+            "type": "boolean"
+          },
+          "provisional": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "boqItemId",
+          "itemNo",
+          "description",
+          "unit",
+          "contractQuantity",
+          "unitRate",
+          "contractAmount",
+          "packageId",
+          "discipline",
+          "measurementRuleRef",
+          "variationEligible",
+          "provisional"
+        ],
+        "additionalProperties": false
+      },
+      "ContractBOQData": {
+        "type": "object",
+        "properties": {
+          "boqNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "contractRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sourceFileRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "lineItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContractBOQLineItem"
+            },
+            "minItems": 1
+          },
+          "provisionalSumRules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "measurementRulesRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "roundingRule": {
+            "type": "string",
+            "minLength": 1
+          },
+          "revisionBasisRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "supersedesRef": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DomainRef"
+              }
+            ],
+            "readOnly": true
+          },
+          "ownerDecisionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "boqNo"
+        ],
+        "additionalProperties": false
+      },
+      "QuantityMeasurementData": {
+        "type": "object",
+        "properties": {
+          "measurementNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "boqRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "boqItemRef": {
+            "$ref": "#/components/schemas/ContractBOQItemRef"
+          },
+          "claimedQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "verifiedQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1
+          },
+          "measurementMethod": {
+            "type": "string",
+            "minLength": 1
+          },
+          "drawingRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "inspectionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "testRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "materialLotRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "changeRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "variationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "previousCertifiedQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "cumulativeVerifiedQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "blockedQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "disputedQuantity": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "disputeReason": {
+            "type": "string"
+          },
+          "resolutionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "eligibilityStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "eligible",
+              "blocked",
+              "disputed"
+            ],
+            "readOnly": true
+          },
+          "paymentEligible": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "blockedReasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "fieldVerifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "technicallyReviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "verifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "replacementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          }
+        },
+        "required": [
+          "measurementNo"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentVariationComponent": {
+        "type": "object",
+        "properties": {
+          "variationRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "claimedAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "eligibleAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          }
+        },
+        "required": [
+          "variationRef",
+          "claimedAmount",
+          "eligibleAmount",
+          "currency"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentDeductionComponent": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "basis": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rate": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "contractClauseRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "sourceDecisionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "period": {
+            "type": "string"
+          },
+          "cumulativeAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          }
+        },
+        "required": [
+          "type",
+          "basis",
+          "amount",
+          "currency",
+          "contractClauseRef"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentRecommendationSnapshot": {
+        "type": "object",
+        "properties": {
+          "claimBasisRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "boqRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "measurementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "verifiedGrossAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "blockedReasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eligibleVariationAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "deductionComponents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentDeductionComponent"
+            }
+          },
+          "recommendedNetAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "calculationRuleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "reviewerPartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recommendedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reservationComment": {
+            "type": "string"
+          },
+          "eligibleMaterialOnSiteAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "retentionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "advanceRecoveryAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "otherDeductionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "taxAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "calculationTrace": {
+            "$ref": "#/components/schemas/PaymentCalculationTrace"
+          }
+        },
+        "required": [
+          "claimBasisRef",
+          "boqRef",
+          "measurementRefs",
+          "verifiedGrossAmount",
+          "blockedReasons",
+          "eligibleVariationAmount",
+          "deductionComponents",
+          "recommendedNetAmount",
+          "currency",
+          "calculationRuleRef",
+          "reviewerPartyId",
+          "recommendedAt",
+          "eligibleMaterialOnSiteAmount",
+          "retentionAmount",
+          "advanceRecoveryAmount",
+          "otherDeductionAmount",
+          "taxAmount",
+          "calculationTrace"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentClaimData": {
+        "type": "object",
+        "properties": {
+          "paymentClaimNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contractRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "boqRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "quantityMeasurementRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "claimedGrossAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "verifiedGrossAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "eligibleVariationAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "unapprovedVariationAmount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            ],
+            "readOnly": true
+          },
+          "eligibleMaterialOnSiteAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "retentionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "advanceRecoveryAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "otherDeductionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "taxAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "recommendedNetAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "ownerApprovedAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "paidAmount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            ],
+            "readOnly": true
+          },
+          "unpaidBalance": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            ],
+            "readOnly": true
+          },
+          "disputedAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "blockedReasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "variationComponents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentVariationComponent"
+            }
+          },
+          "deductionComponents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentDeductionComponent"
+            }
+          },
+          "calculationRuleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "recommendationSnapshot": {
+            "$ref": "#/components/schemas/PaymentRecommendationSnapshot"
+          },
+          "approvalRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "decisionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "paymentReference": {
+            "type": "string"
+          },
+          "externalSystemRef": {
+            "type": "string"
+          },
+          "previousPaymentClaimRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "previousCertifiedAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "previousPaidAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "cumulativeCertifiedAmount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            ],
+            "readOnly": true
+          },
+          "cumulativePaidAmount": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            ],
+            "readOnly": true
+          },
+          "remainingContractValue": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            ],
+            "readOnly": true
+          },
+          "reservationComment": {
+            "type": "string"
+          },
+          "adjustmentReason": {
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "recommendedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "ownerDecidedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paymentRecordedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "replacementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "recommendationRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "recordedBy": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "paymentRecords": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActualPaymentRecord"
+            },
+            "readOnly": true
+          },
+          "calculationTrace": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentCalculationTrace"
+              }
+            ],
+            "readOnly": true
+          },
+          "paymentAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString",
+            "writeOnly": true
+          },
+          "supersedesPaymentRecordId": {
+            "type": "string",
+            "format": "uuid",
+            "writeOnly": true
+          },
+          "correctionReason": {
+            "type": "string",
+            "minLength": 1,
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "paymentClaimNo"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentCalculationTrace": {
+        "type": "object",
+        "properties": {
+          "ruleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "formulaId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "baseAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "additionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "deductionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "preRoundAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "roundedAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "roundingRuleId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "roundingQuantum": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "roundingMode": {
+            "type": "string",
+            "enum": [
+              "half_up",
+              "half_even",
+              "down",
+              "up"
+            ]
+          },
+          "deductionTotals": {
+            "type": "object",
+            "properties": {
+              "retentionAmount": {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              },
+              "advanceRecoveryAmount": {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              },
+              "otherDeductionAmount": {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            },
+            "required": [
+              "retentionAmount",
+              "advanceRecoveryAmount",
+              "otherDeductionAmount"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "ruleRef",
+          "formulaId",
+          "baseAmount",
+          "additionAmount",
+          "deductionAmount",
+          "preRoundAmount",
+          "roundedAmount",
+          "roundingRuleId",
+          "roundingQuantum",
+          "roundingMode",
+          "deductionTotals"
+        ],
+        "additionalProperties": false
+      },
+      "ActualPaymentRecord": {
+        "type": "object",
+        "properties": {
+          "recordId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "payment",
+              "correction",
+              "cancellation"
+            ]
+          },
+          "amount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paymentReference": {
+            "type": "string",
+            "minLength": 1
+          },
+          "externalSystemRef": {
+            "type": "string"
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1
+          },
+          "recordedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "supersedesPaymentRecordId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "recordId",
+          "kind",
+          "amount",
+          "currency",
+          "paidAt",
+          "paymentReference",
+          "evidenceIds",
+          "recordedBy",
+          "recordedAt"
         ],
         "additionalProperties": false
       },
@@ -29448,6 +34175,9 @@
                   }
                 },
                 "additionalProperties": false
+              },
+              "boq": {
+                "$ref": "#/components/schemas/ContractBOQData"
               }
             },
             "required": [
@@ -29469,6 +34199,28 @@
                   "required": [
                     "schedule"
                   ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "subtype": {
+                      "const": "ContractBOQ"
+                    }
+                  },
+                  "required": [
+                    "subtype"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "boq"
+                  ],
+                  "properties": {
+                    "boq": {
+                      "$ref": "#/components/schemas/ContractBOQData"
+                    }
+                  }
                 }
               }
             ]
@@ -31540,6 +36292,9 @@
                   }
                 },
                 "additionalProperties": false
+              },
+              "boq": {
+                "$ref": "#/components/schemas/ContractBOQData"
               }
             },
             "required": [
@@ -32097,6 +36852,9 @@
                   }
                 },
                 "additionalProperties": false
+              },
+              "boq": {
+                "$ref": "#/components/schemas/ContractBOQData"
               }
             },
             "required": [
@@ -34558,6 +39316,1774 @@
                 "additionalProperties": false,
                 "required": [
                   "decisionRef"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Create_contract_boq": {
+        "type": "object",
+        "required": [
+          "roleAssignmentId",
+          "clientObjectId",
+          "payload"
+        ],
+        "properties": {
+          "roleAssignmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientObjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payload": {
+            "type": "object",
+            "properties": {
+              "packageId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "locationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "discipline": {
+                "type": "string"
+              },
+              "responsibleOrganizationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "minimumQualificationRank": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3
+              },
+              "requirementRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainRef"
+                }
+              },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "drawingRef": {
+                "$ref": "#/components/schemas/DomainRef"
+              },
+              "upstreamInspectionIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "subtype": {
+                "const": "ContractBOQ"
+              },
+              "title": {
+                "type": "string"
+              },
+              "revision": {
+                "type": "string"
+              },
+              "fileIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "relatedRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainRef"
+                }
+              },
+              "report": {
+                "$ref": "#/components/schemas/OwnerReportData"
+              },
+              "certificateKind": {
+                "type": "string",
+                "enum": [
+                  "safety",
+                  "inspection",
+                  "calibration",
+                  "other"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "validTo": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "schedule": {
+                "$ref": "#/components/schemas/ScheduleData"
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "sourceImport": {
+                    "type": "object",
+                    "properties": {
+                      "contractVersion": {
+                        "type": "string"
+                      },
+                      "parserVersion": {
+                        "type": "string"
+                      },
+                      "inputMode": {
+                        "type": "string"
+                      },
+                      "sourceEvidenceRef": {
+                        "$ref": "#/components/schemas/DomainRef"
+                      },
+                      "sourceScheduleRef": {
+                        "$ref": "#/components/schemas/DomainRef"
+                      },
+                      "activityRefs": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/DomainRef"
+                        }
+                      }
+                    },
+                    "required": [
+                      "contractVersion",
+                      "parserVersion",
+                      "inputMode",
+                      "sourceEvidenceRef",
+                      "sourceScheduleRef",
+                      "activityRefs"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              },
+              "boq": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/ContractBOQData"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  }
+                ]
+              }
+            },
+            "required": [
+              "title",
+              "revision",
+              "boq"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "CommandResult_contract_boq": {
+        "type": "object",
+        "required": [
+          "record",
+          "auditEvent"
+        ],
+        "properties": {
+          "record": {
+            "$ref": "#/components/schemas/InformationItem"
+          },
+          "auditEvent": {
+            "$ref": "#/components/schemas/AuditEvent"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Command_contract_boq_submit_boq": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "contractRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "currency": {
+                    "$ref": "#/components/schemas/CurrencyCode"
+                  },
+                  "effectiveFrom": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "lineItems": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ContractBOQLineItem"
+                    },
+                    "minItems": 1
+                  },
+                  "measurementRulesRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "provisionalSumRules": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "revisionBasisRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "roundingRule": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sourceFileRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    },
+                    "minItems": 1
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "contractRef",
+                  "currency",
+                  "effectiveFrom",
+                  "lineItems",
+                  "measurementRulesRef",
+                  "roundingRule",
+                  "sourceFileRefs"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_boq_start_boq_review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_boq_return_boq": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_boq_request_boq_decision": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_boq_approve_boq": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "ownerDecisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "ownerDecisionRef"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_boq_reject_boq": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "ownerDecisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "ownerDecisionRef"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_boq_activate_boq": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_boq_resubmit_boq": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "contractRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "currency": {
+                    "$ref": "#/components/schemas/CurrencyCode"
+                  },
+                  "effectiveFrom": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "lineItems": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ContractBOQLineItem"
+                    },
+                    "minItems": 1
+                  },
+                  "measurementRulesRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "provisionalSumRules": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "revisionBasisRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "roundingRule": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sourceFileRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    },
+                    "minItems": 1
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_boq_withdraw_boq": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Create_quantity_measurement": {
+        "type": "object",
+        "required": [
+          "roleAssignmentId",
+          "clientObjectId",
+          "payload"
+        ],
+        "properties": {
+          "roleAssignmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientObjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payload": {
+            "type": "object",
+            "properties": {
+              "packageId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "locationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "discipline": {
+                "type": "string"
+              },
+              "responsibleOrganizationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "minimumQualificationRank": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3
+              },
+              "requirementRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainRef"
+                }
+              },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "drawingRef": {
+                "$ref": "#/components/schemas/DomainRef"
+              },
+              "upstreamInspectionIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "subtype": {
+                "const": "QuantityMeasurement"
+              },
+              "title": {
+                "type": "string"
+              },
+              "data": {
+                "$ref": "#/components/schemas/QuantityMeasurementData"
+              },
+              "relatedRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainRef"
+                }
+              },
+              "dueAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "title",
+              "data"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "CommandResult_quantity_measurement": {
+        "type": "object",
+        "required": [
+          "record",
+          "auditEvent"
+        ],
+        "properties": {
+          "record": {
+            "$ref": "#/components/schemas/WorkItem"
+          },
+          "auditEvent": {
+            "$ref": "#/components/schemas/AuditEvent"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Command_quantity_measurement_submit_measurement": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "boqItemRef": {
+                    "$ref": "#/components/schemas/ContractBOQItemRef"
+                  },
+                  "boqRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "changeRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "claimedQuantity": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "drawingRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "inspectionRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "materialLotRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "measuredAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "measurementMethod": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "periodEnd": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "periodStart": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "previousCertifiedQuantity": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "testRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "unit": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "variationRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "boqItemRef",
+                  "boqRef",
+                  "claimedQuantity",
+                  "measuredAt",
+                  "measurementMethod",
+                  "periodEnd",
+                  "periodStart",
+                  "previousCertifiedQuantity",
+                  "unit"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_quantity_measurement_receive_measurement": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_quantity_measurement_return_incomplete": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_quantity_measurement_start_field_verification": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_quantity_measurement_start_technical_verification": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_quantity_measurement_request_measurement_adjustment": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_quantity_measurement_resubmit_measurement": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "boqItemRef": {
+                    "$ref": "#/components/schemas/ContractBOQItemRef"
+                  },
+                  "boqRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "changeRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "claimedQuantity": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "drawingRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "inspectionRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "materialLotRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "measuredAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "measurementMethod": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "periodEnd": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "periodStart": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "previousCertifiedQuantity": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "testRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "unit": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "variationRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_quantity_measurement_verify_quantity": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "verifiedQuantity": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "verifiedQuantity"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_quantity_measurement_mark_measurement_disputed": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "disputeReason": {
+                    "type": "string"
+                  },
+                  "disputedQuantity": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "verifiedQuantity": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "disputeReason",
+                  "disputedQuantity"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_quantity_measurement_resolve_measurement": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "resolutionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "verifiedQuantity": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "resolutionRef",
+                  "verifiedQuantity"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_quantity_measurement_supersede_measurement": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "replacementRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "replacementRef"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_quantity_measurement_cancel_measurement": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Create_payment_claim": {
+        "type": "object",
+        "required": [
+          "roleAssignmentId",
+          "clientObjectId",
+          "payload"
+        ],
+        "properties": {
+          "roleAssignmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientObjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payload": {
+            "type": "object",
+            "properties": {
+              "packageId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "locationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "discipline": {
+                "type": "string"
+              },
+              "responsibleOrganizationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "minimumQualificationRank": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3
+              },
+              "requirementRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainRef"
+                }
+              },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "drawingRef": {
+                "$ref": "#/components/schemas/DomainRef"
+              },
+              "upstreamInspectionIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "subtype": {
+                "const": "PaymentClaim"
+              },
+              "title": {
+                "type": "string"
+              },
+              "data": {
+                "$ref": "#/components/schemas/PaymentClaimData"
+              },
+              "relatedRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainRef"
+                }
+              },
+              "dueAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "title",
+              "data"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "CommandResult_payment_claim": {
+        "type": "object",
+        "required": [
+          "record",
+          "auditEvent"
+        ],
+        "properties": {
+          "record": {
+            "$ref": "#/components/schemas/WorkItem"
+          },
+          "auditEvent": {
+            "$ref": "#/components/schemas/AuditEvent"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Command_payment_claim_submit_payment_claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "boqRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "claimedGrossAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "contractRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "currency": {
+                    "$ref": "#/components/schemas/CurrencyCode"
+                  },
+                  "eligibleMaterialOnSiteAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "periodEnd": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "periodStart": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "previousCertifiedAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "previousPaidAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "previousPaymentClaimRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "quantityMeasurementRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    },
+                    "minItems": 1
+                  },
+                  "variationComponents": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/PaymentVariationComponent"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "boqRef",
+                  "claimedGrossAmount",
+                  "contractRef",
+                  "currency",
+                  "periodEnd",
+                  "periodStart",
+                  "previousCertifiedAmount",
+                  "previousPaidAmount",
+                  "quantityMeasurementRefs"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_receive_payment_claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_return_payment_claim_incomplete": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_start_quantity_review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_start_valuation_review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "disputedAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "verifiedGrossAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "disputedAmount",
+                  "verifiedGrossAmount"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_request_payment_adjustment": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_resubmit_payment_claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "boqRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "claimedGrossAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "contractRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "currency": {
+                    "$ref": "#/components/schemas/CurrencyCode"
+                  },
+                  "eligibleMaterialOnSiteAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "periodEnd": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "periodStart": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "previousCertifiedAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "previousPaidAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "previousPaymentClaimRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "quantityMeasurementRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    },
+                    "minItems": 1
+                  },
+                  "variationComponents": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/PaymentVariationComponent"
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_prepare_recommendation": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "advanceRecoveryAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "calculationRuleRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "deductionComponents": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/PaymentDeductionComponent"
+                    }
+                  },
+                  "eligibleMaterialOnSiteAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "eligibleVariationAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "otherDeductionAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "recommendedNetAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "reservationComment": {
+                    "type": "string"
+                  },
+                  "retentionAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  },
+                  "taxAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "advanceRecoveryAmount",
+                  "calculationRuleRef",
+                  "deductionComponents",
+                  "eligibleMaterialOnSiteAmount",
+                  "eligibleVariationAmount",
+                  "otherDeductionAmount",
+                  "recommendedNetAmount",
+                  "retentionAmount",
+                  "taxAmount"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_recommend_payment": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_submit_owner_review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_approve_payment": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "decisionRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "ownerApprovedAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "decisionRefs",
+                  "ownerApprovedAmount"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_adjust_payment": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "adjustmentReason": {
+                    "type": "string"
+                  },
+                  "decisionRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "ownerApprovedAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "adjustmentReason",
+                  "decisionRefs",
+                  "ownerApprovedAmount"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_reject_payment": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "decisionRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "decisionRefs"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_record_payment": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "externalSystemRef": {
+                    "type": "string"
+                  },
+                  "paidAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "paymentAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString",
+                    "writeOnly": true
+                  },
+                  "paymentReference": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "paidAt",
+                  "paymentAmount",
+                  "paymentReference"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_close_payment_claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_withdraw_payment_claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_supersede_payment_claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "replacementRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "replacementRef"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_record_additional_payment": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "externalSystemRef": {
+                    "type": "string"
+                  },
+                  "paidAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "paymentAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString",
+                    "writeOnly": true
+                  },
+                  "paymentReference": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "paidAt",
+                  "paymentAmount",
+                  "paymentReference"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_correct_payment_record": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "correctionReason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "writeOnly": true
+                  },
+                  "externalSystemRef": {
+                    "type": "string"
+                  },
+                  "paidAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "paymentAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString",
+                    "writeOnly": true
+                  },
+                  "paymentReference": {
+                    "type": "string"
+                  },
+                  "supersedesPaymentRecordId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "writeOnly": true
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "correctionReason",
+                  "paidAt",
+                  "paymentAmount",
+                  "paymentReference",
+                  "supersedesPaymentRecordId"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_cancel_payment_record": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "correctionReason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "writeOnly": true
+                  },
+                  "externalSystemRef": {
+                    "type": "string"
+                  },
+                  "paidAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "paymentReference": {
+                    "type": "string"
+                  },
+                  "supersedesPaymentRecordId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "writeOnly": true
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "correctionReason",
+                  "paidAt",
+                  "paymentReference",
+                  "supersedesPaymentRecordId"
                 ]
               }
             }

@@ -433,9 +433,11 @@ ADM은 기술수량 검증이나 지급추천 권한을 행사하지 않는다.
 - Previous Certified/Paid Amount
 - Current Recommended Amount
 
-정확한 공식은 프로젝트 계약설정으로 관리한다.
+정확한 공식은 `calculationRuleRef`가 가리키는 exact versioned Contract Requirement로 관리한다. 앱에서 단일 글로벌 계산식을 강제하지 않으며 UI 산식도 authoritative 계산이 아니다.
 
-앱에서 단일 글로벌 계산식을 강제하지 않는다.
+서버는 Rule의 Formula ID, Base/Add/Subtract component, Deduction Type 매핑, Rounding Rule/Quantum/Mode를 읽어 canonical Decimal로 재계산한다. `retentionAmount`, `advanceRecoveryAmount`, `otherDeductionAmount`는 `deductionComponents[]`의 해당 Line 합계와 정확히 일치해야 한다.
+
+Recommendation Snapshot에는 Rule exact ref와 함께 base/addition/deduction 합계, 반올림 전·후 금액, Rounding Rule을 계산 Trace로 보존한다.
 
 ---
 
@@ -491,7 +493,8 @@ Payment Claim은 이전 승인/지급 누계를 참조한다.
 - Deduction Components
 - Recommended Amount
 - Currency
-- Calculation Rule version
+- Calculation Rule exact version
+- Calculation / Rounding Trace
 - Reviewer
 - RecommendedAt
 - Reservation/Comment
@@ -519,16 +522,22 @@ FM-26은 이 Recommendation의 사람이 읽는 DOUL 내부 Snapshot이다.
 
 ## 21. Actual Payment Record
 
-실제 지급이 외부 ERP/회계/은행에서 발생하는 경우 앱은 다음을 기록한다.
+실제 지급이 외부 ERP/회계/은행에서 발생하는 경우 앱은 PaymentClaim의 append-only `paymentRecords[]`에 지급건별 원본을 보존한다.
 
-- paidAmount
-- currency
+각 Actual Payment Record 최소항목:
+
+- recordId
+- kind = payment / correction / cancellation
+- amount / currency
 - paidAt
-- paymentReference
-- externalSystemRef
-- recordedBy
+- paymentReference / externalSystemRef
+- evidenceIds
+- recordedBy / recordedAt
+- supersedesPaymentRecordId / reason — 정정·취소 시
 
-외부 지급실패나 부분지급은 Owner Approved 상태를 소급변경하지 않는다.
+동일 Project에서 `paymentReference`와 유효한 `externalSystemRef`는 재사용할 수 없다. `paidAmount`, `cumulativePaidAmount`, `unpaidBalance`는 현재 유효한 Payment Record에서 서버가 파생하는 Projection이며 새 지급건이 앞 지급건을 덮어쓰지 않는다.
+
+정정·취소는 원기록을 삭제하지 않고 correction/cancellation record를 추가하여 `supersedesPaymentRecordId`로 연결한다. 외부 지급실패나 부분지급은 Owner Approved 상태와 `ownerApprovedAmount`를 소급변경하지 않는다.
 
 ---
 
@@ -592,6 +601,7 @@ FM-26은 이 Recommendation의 사람이 읽는 DOUL 내부 Snapshot이다.
 - Cumulative Paid
 - Remaining Contract Value
 - Owner Decision / Approval
+- Actual Payment Records
 - Payment Reference
 - Next Due
 
