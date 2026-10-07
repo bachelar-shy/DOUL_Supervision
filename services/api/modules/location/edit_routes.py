@@ -6,16 +6,17 @@ requires the existing ADM/project_admin assignment plus the explicit
 render_document visibility authority. It is not a production write route.
 """
 from copy import deepcopy
+import json
 import math
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from app.reference.engine import uid
-from app.reference.validation import require, validate
+from app.reference.validation import ContractError, require, validate
 
 
-_EDITABLE = {"name", "semanticAnchor", "parentId", "drawingAnchors", "packageId", "discipline", "responsibleOrganizationId", "reason", "minimumQualificationRank", "requirementRefs", "evidenceIds", "drawingRef", "upstreamInspectionIds"}
+_EDITABLE = {"name", "semanticAnchor", "parentId", "drawingAnchors"}
 _INHERITABLE = ("packageId", "discipline", "responsibleOrganizationId", "reason", "minimumQualificationRank", "requirementRefs", "evidenceIds", "drawingRef", "upstreamInspectionIds")
 
 
@@ -54,6 +55,19 @@ def _assert_scope(engine, project_id, location_id, role, callback=None, record=N
         require(engine._scope(role.get("locationIds", []), location_id, True), "NOT_AUTHORIZED", "Location is outside the administrator's authorized scope")
 
 
+def _idempotency_key(request):
+    key = request.headers.get("idempotency-key", "")
+    require(bool(key.strip()) and len(key) <= 160, "IDEMPOTENCY_REQUIRED", "Provide Idempotency-Key, at most 160 characters")
+    return key
+
+
+async def _read_json(request):
+    try:
+        return await request.json()
+    except (json.JSONDecodeError, UnicodeDecodeError, ValueError) as exc:
+        raise ContractError("INVALID_REQUEST", "Expected valid JSON") from exc
+
+
 def register_location_edit_routes(app, *, store, identity, role_for, demo_enabled, location_scope_check=None):
     """Install optional routes; caller owns auth/session plumbing and mount point.
 
@@ -68,7 +82,8 @@ def register_location_edit_routes(app, *, store, identity, role_for, demo_enable
         with store.transaction(True):
             role = role_for(session, project_id, request.headers.get("x-roleassignment-id"))
             _require_admin(demo_enabled, session, role)
-            body = await request.json()
+            body = await _read_json(request)
+            key = _idempotency_key(request)
             require(isinstance(body, dict) and set(body) <= (_EDITABLE | {"clientObjectId"}) and {"name", "semanticAnchor", "parentId"} <= set(body), "INVALID_REQUEST", "Location name, semantic anchor and parent are required")
             parent_id = body["parentId"]
             parent = None
@@ -78,7 +93,6 @@ def register_location_edit_routes(app, *, store, identity, role_for, demo_enable
                 _assert_scope(store.engine, project_id, parent_id, role, location_scope_check, parent)
             else:
                 require(role.get("locationIds") == ["*"], "NOT_AUTHORIZED", "Creating a root location requires explicit wildcard location scope")
-            key = request.headers.get("idempotency-key", "")
             location_id = body.get("clientObjectId") or uid()
             request_payload = {k: v for k, v in body.items() if k != "clientObjectId"}
             cached = store.engine._replay(project_id, session["partyId"], "Location:create", key, request_payload)
@@ -108,13 +122,20 @@ def register_location_edit_routes(app, *, store, identity, role_for, demo_enable
             current = store.engine._records.get(("Location", location_id))
             require(current is not None and current.get("projectId") == project_id, "NOT_FOUND", "Location unavailable")
             _assert_scope(store.engine, project_id, location_id, role, location_scope_check, current)
-            body = await request.json()
+            body = await _read_json(request)
+            key = _idempotency_key(request)
             require(isinstance(body, dict) and set(body) <= (_EDITABLE | {"expectedVersion"}) and isinstance(body.get("expectedVersion"), int) and not isinstance(body.get("expectedVersion"), bool), "INVALID_REQUEST", "Expected version and editable location fields are required")
+            request_payload = dict(body)
+            cached = store.engine._replay(project_id, session["partyId"], "Location:update", key, request_payload)
+            if cached:
+                return cached
             require(current["version"] == body["expectedVersion"], "REFERENCE_STALE", "Location version changed")
             proposed = deepcopy(current)
             for field in _EDITABLE & set(body):
                 proposed[field] = deepcopy(body[field])
             parent_id = proposed.get("parentId")
+            if "parentId" in body and parent_id is None:
+                require(role.get("locationIds") == ["*"], "NOT_AUTHORIZED", "Moving a location to the project root requires explicit wildcard location scope")
             if parent_id is not None:
                 parent = store.engine._records.get(("Location", parent_id))
                 require(parent is not None and parent.get("projectId") == project_id, "NOT_FOUND", "Parent location unavailable")
@@ -131,11 +152,6 @@ def register_location_edit_routes(app, *, store, identity, role_for, demo_enable
             proposed["version"] += 1
             proposed["updatedAt"] = store.engine.at()
             validate(proposed, store.engine.schemas["Location"], store.engine.schemas)
-            key = request.headers.get("idempotency-key", "")
-            request_payload = dict(body)
-            cached = store.engine._replay(project_id, session["partyId"], "Location:update", key, request_payload)
-            if cached:
-                return cached
             store.engine._save("Location", proposed)
             result = store.engine._event(proposed, "Location:update", session["partyId"], role["id"], key, request_payload, current)
             store.engine._remember(project_id, session["partyId"], "Location:update", key, request_payload, result)
