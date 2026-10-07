@@ -104,6 +104,38 @@ class WorkInboxProjectionTests(unittest.TestCase):
         self.assertEqual(result["projectId"], PROJECT)
         self.assertEqual(result["roleAssignmentId"], ROLE["id"])
 
+    def test_only_engine_visibility_denials_are_hidden(self):
+        rows = [
+            ("Issue", "issue", record("hidden")),
+            ("Issue", "issue", record("broken")),
+        ]
+
+        def readable_with_engine_errors(item, session, role):
+            if item["id"] == "hidden":
+                raise ContractError("NOT_FOUND", "Record is not visible")
+            raise ContractError("QUALIFICATION_RULE_MISSING", "Project rules are incomplete")
+
+        with self.assertRaisesRegex(ContractError, "Project rules are incomplete"):
+            build_work_inbox(
+                StubEngine(rows),
+                PROJECT,
+                SESSION,
+                ROLE,
+                readable=readable_with_engine_errors,
+                preflight=preflight,
+            )
+
+        visible_rows = [("Issue", "issue", record("hidden"))]
+        result = build_work_inbox(
+            StubEngine(visible_rows),
+            PROJECT,
+            SESSION,
+            ROLE,
+            readable=readable_with_engine_errors,
+            preflight=preflight,
+        )
+        self.assertEqual(result["records"], [])
+
     def test_role_scope_uses_authoritative_preflight_and_preserves_action_details(self):
         rows = [
             ("Inspection", "inspection", record("inspection-sup")),

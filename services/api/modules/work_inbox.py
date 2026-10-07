@@ -30,6 +30,7 @@ INBOX_MACHINES = frozenset(
 )
 DEFAULT_PAGE_SIZE = 50
 MAX_PAGE_SIZE = 100
+_READ_DENIAL_CODES = frozenset({"NOT_AUTHORIZED", "NOT_FOUND"})
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
@@ -118,8 +119,13 @@ def build_work_inbox(
         record = engine.get(kind, object_id)
         try:
             readable(record, session, role)
-        except ContractError:
-            continue
+        except ContractError as exc:
+            # The engine deliberately uses NOT_FOUND to conceal records that
+            # exist but are not visible to this role. Other contract errors
+            # indicate a broken callback or record and must remain observable.
+            if exc.code in _READ_DENIAL_CODES:
+                continue
+            raise
 
         command_candidates = preflight(machine, record, session, role)
         if not command_candidates:
