@@ -14,10 +14,12 @@ import { NotificationEventsPanel } from "./parallel/NotificationEventsPanel";
 
 const PdfViewerPanel = lazy(() => import("./parallel/PdfViewerPanel").then(module => ({ default: module.PdfViewerPanel })));
 
-type ModuleId = "drawings" | "locations" | "work-inbox" | "notifications" | "safety-traceability" | "evidence-quarantine";
+const DrawingComparePanel = lazy(() => import("./parallel/DrawingComparePanel").then(module => ({ default: module.DrawingComparePanel })));
+
+type ModuleId = "drawing-compare" | "drawings" | "locations" | "work-inbox" | "notifications" | "safety-traceability" | "evidence-quarantine";
 type ModuleState = { data: unknown; error: string; loading: boolean; refreshedAt?: string };
 const modules: Array<{ id: ModuleId; label: string }> = [
-  { id: "drawings", label: "도면 버전" }, { id: "locations", label: "위치 계층" },
+  { id: "drawings", label: "도면 버전" }, { id: "drawing-compare", label: "도면 비교" }, { id: "locations", label: "위치 계층" },
   { id: "work-inbox", label: "작업함" }, { id: "notifications", label: "알림" },
   { id: "safety-traceability", label: "안전 추적성" }, { id: "evidence-quarantine", label: "증빙 격리 테스트" },
 ];
@@ -52,7 +54,7 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
   const [drawingError, setDrawingError] = useState("");
   const [drawingLoading, setDrawingLoading] = useState(false);
   const [states, setStates] = useState<Record<ModuleId, ModuleState>>({
-    "drawings": { data: null, error: "", loading: true }, "locations": { data: null, error: "", loading: true },
+    "drawing-compare": { data: null, error: "", loading: false }, "drawings": { data: null, error: "", loading: true }, "locations": { data: null, error: "", loading: true },
     "work-inbox": { data: null, error: "", loading: true }, "notifications": { data: null, error: "", loading: true },
     "safety-traceability": { data: null, error: "", loading: false }, "evidence-quarantine": { data: null, error: "", loading: false },
   });
@@ -111,7 +113,7 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     } catch (error) { setUploadError(error instanceof Error ? error.message : String(error)); }
     finally { setUploading(false); }
   }, [client, uploadFile]);
-  const showDiagnostic = active !== "work-inbox" && active !== "notifications";
+  const showDiagnostic = active !== "drawing-compare" && active !== "work-inbox" && active !== "notifications";
   const state = states[active];
   const rows = useMemo(() => rowsFrom(state.data), [state.data]);
   const selected = rows[selectedIndex] ?? rows[0];
@@ -120,6 +122,7 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     <SectionHeader title="병렬 기능 통합 테스트" meta={`프로젝트 ${workspace.project.id}`} />
     <p className="muted">개발 API에서 조회한 원본 응답을 표시합니다. 조회 실패와 빈 결과를 구분합니다.</p>
     <div className="parallel-test-tabs" role="tablist" aria-label="테스트 모듈">{modules.map(module => <button key={module.id} type="button" role="tab" aria-selected={active === module.id} className={active === module.id ? "active" : ""} onClick={() => { setActive(module.id); setSelectedIndex(0); }}>{module.label}</button>)}</div>
+    {active === "drawing-compare" && <Suspense fallback={<div role="status">도면 비교를 불러오는 중…</div>}><DrawingComparePanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} /></Suspense>}
     {active === "drawings" && <DrawingSourceRegistrationPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onNavigate={onNavigate} />}
     {active === "drawings" && <DrawingPdfBindingPanel client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "drawings" && <Suspense fallback={<div role="status">PDF 뷰어를 불러오는 중…</div>}><PdfViewerPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onSelectMarkup={setSelectedMarkupId} /></Suspense>}
