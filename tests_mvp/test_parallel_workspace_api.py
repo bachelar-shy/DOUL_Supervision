@@ -75,7 +75,16 @@ class ParallelWorkspaceApiTests(unittest.TestCase):
         self.assertEqual(invalid_page.status_code, 422)
         notifications = self.get('notifications')
         self.assertEqual(notifications.status_code, 200, notifications.text)
-        self.assertEqual(notifications.json(), {'items': [], 'total': 0, 'unreadCount': 0})
+        body = notifications.json()
+        self.assertEqual(body['total'], len(body['items']))
+        self.assertEqual(body['unreadCount'], sum(not row['isRead'] for row in body['items']))
+        self.assertTrue(body['items'])
+        for row in body['items']:
+            self.assertEqual(row['notification']['recipientPartyId'], self.session['actor']['partyId'])
+            self.assertEqual(row['notification']['projectId'], self.project)
+            self.assertEqual(row['notification']['channel'], 'in_app')
+            self.assertEqual(row['notification']['status'], 'queued')
+            self.assertIn('sourceRef', row['notification'])
         self.assertNotIn('intents', notifications.json())
 
     def test_safety_traceability_requires_exact_reference_and_keeps_read_only_shape(self):

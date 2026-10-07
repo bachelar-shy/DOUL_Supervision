@@ -1,2 +1,2 @@
 import { defineConfig } from "@playwright/test";
-export default defineConfig({testDir:"./tests_browser",testMatch:"parallel.spec.ts",workers:1,timeout:30000,use:{baseURL:"http://127.0.0.1:5191",browserName:"chromium"},reporter:"list"});
+export default defineConfig({testDir:"./tests_browser",testMatch:["parallel.spec.ts", "work-inbox-actions.spec.ts", "safety-connected.spec.ts", "pdf-viewer-browser.spec.ts", "notification-events.spec.ts", "pdf-evidence-source.spec.ts", "location-editor.spec.ts"],workers:1,timeout:30000,use:{baseURL:"http://127.0.0.1:5191",browserName:"chromium"},reporter:"list"});
