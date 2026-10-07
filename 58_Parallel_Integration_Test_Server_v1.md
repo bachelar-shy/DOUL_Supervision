@@ -39,3 +39,7 @@ Context7 확인: Starlette Request.stream (https://github.com/kludex/starlette/b
 - 전체 API 수집 시험은 174개 중 인증/DB 의존성 누락으로 7개 오류, 4개 건너뜀. 전체 통과로 간주하지 않는다. 누락 패키지: jwt, psycopg, psycopg_pool, cryptography.
 - 별도 .venv에 고정 의존성 설치를 시도했으나 현재 패키지 인덱스에 anyio==4.15.1이 없어 실패했다. 고정 파일을 임의 변경하지 않았다. 서버는 기존 검증된 가상환경으로 계속 실행한다. 새 .venv는 서버 실행에 사용하지 않는다.
 - Tailscale 접속 설정은 이전 자동 승인 검토 차단 이후 실행하지 않았다. 현재 맥미니 로컬에서만 접속한다.
+
+## Tailscale 접속 추가
+
+2026-10-07 사용자 명시 승인으로 Tailscale Serve HTTPS 10002를 추가했다. 접속: https://automation-macmini.tail0e9ef7.ts.net:10002/#/parallel-test . Tailscale 내부 전용이며 해당 포트의 Funnel은 활성화하지 않았다. 기존 443/8443/10000 설정은 유지했다. Vite의 허용 호스트는 DOUL_TEST_ALLOWED_HOST=automation-macmini.tail0e9ef7.ts.net 이다. 이 주소에서 화면과 /api/health 응답을 확인했다. 해제 명령: Tailscale CLI의 serve --https=10002 off.
