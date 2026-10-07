@@ -16,7 +16,7 @@ export function DrawingSourceRegistrationPanel({ client, workspace, onChanged, o
   useEffect(() => { const seq = ++lifetime.current; let active = true;
     void listDrawingRevisions(client, workspace.project.id).then(items => { if (active && seq === lifetime.current) setDrawings(items); }).catch(reason => { if (active && seq === lifetime.current) setError(String(reason)); });
     return () => { active = false; lifetime.current++; };
-  }, [client, workspace.project.id]);
+  }, [client, workspace.project.id, workspace.items]);
   const pdfs = useMemo(() => workspace.items.filter(item => item.machine === 'evidence' && item.record.sourceType === 'original' && item.record.mediaType === 'document' && item.record.metadata?.mimeType === 'application/pdf').map(item => item.record), [workspace.items]);
   const canRegister = workspace.demo && workspace.role.actorGroup === 'DES' && workspace.role.roleCode === 'designer';
   function prepare() {

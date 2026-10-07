@@ -304,6 +304,8 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     install_drawing_markup_routes(app, store, identity=identity, role_for=role_for, key_for=key_for, demo_enabled=demo)
     from services.api.modules.drawing_source_registration import install_drawing_source_routes
     install_drawing_source_routes(app, store, identity=identity, role_for=role_for, key_for=key_for, demo_enabled=demo)
+    from services.api.modules.drawing_field_control import install_drawing_field_routes
+    install_drawing_field_routes(app, store, identity=identity, role_for=role_for, key_for=key_for, demo_enabled=demo)
 
     from services.api.modules.notification_events import reconcile_notification_events, read_receipts_for_projection
     from services.api.modules.notification_routes import install_notification_read_route

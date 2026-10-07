@@ -133,7 +133,7 @@ def _changes_ok(engine, project_id, change_refs, drawing_ref):
             return False, "CHANGE_TARGET_MISMATCH", []
         if drawing_links and not any(_same_ref(reference, drawing_ref) for reference in drawing_links):
             return False, "CHANGE_TARGET_MISMATCH", []
-        approval_ref = item.get("approvalRef")
+        approval_ref = item.get("approvalRef") or (item.get("data") or {}).get("approvalRef")
         if approval_ref is not None:
             try:
                 approval = engine._current_reference(approval_ref, project_id, object_type="Approval")
