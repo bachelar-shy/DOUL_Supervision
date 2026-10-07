@@ -1,15 +1,13 @@
-"""Explicit in-app notification intent reconciliation and UI-only read receipts.
+"""Reconcile actor-scoped audit-event notifications and store UI-only read receipts.
 
-Audit events are not notification instructions by themselves. This module consumes
-only explicit, persisted intents in Engine._notifications and requires each one to
-reference an exact existing audit event and source version. It never synthesizes
-contractual deadlines or changes delivery/acknowledgement state.
+Each generated in-app item points to the exact readable historical source version
+and uses the audit event occurrence time. Read receipts remain separate metadata;
+they never update the Notification delivery or acknowledgement status.
 """
 from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime
-from typing import Mapping
 from uuid import UUID, uuid5, NAMESPACE_URL
 
 from app.reference.validation import ContractError, validate
@@ -31,13 +29,6 @@ def _uuid(value, field):
         raise ValueError(f"{field} must be a UUID") from exc
 
 
-def _intent_entries(engine):
-    intents = engine._notifications
-    if not isinstance(intents, Mapping):
-        raise ValueError("notification intents must be a mapping")
-    return list(intents.items())
-
-
 def _active_recipient_role(engine, project_id, recipient_id, role_id, now):
     role = engine.get("RoleAssignment", role_id)
     if (role.get("partyId") != recipient_id or role.get("projectId") != project_id
@@ -46,21 +37,6 @@ def _active_recipient_role(engine, project_id, recipient_id, role_id, now):
                     < datetime.fromisoformat(role["validTo"].replace("Z", "+00:00")))):
         raise PermissionError("recipient role is not active for this project")
     return role
-
-
-def _matching_audit(engine, intent):
-    event_id = intent.get("sourceEventId")
-    if not event_id:
-        raise ValueError("notification intent must identify sourceEventId")
-    matches = [event for event in engine._audit if event.get("id") == event_id]
-    if len(matches) != 1:
-        raise PermissionError("notification source event is unavailable")
-    event = matches[0]
-    ref = intent.get("sourceRef")
-    if (not isinstance(ref, dict) or event.get("projectId") != intent.get("projectId")
-            or event.get("objectRef") != ref):
-        raise PermissionError("notification source event reference does not match")
-    return event
 
 
 def reconcile_notification_events(store, *, limit=MAX_RECONCILE):
@@ -150,26 +126,34 @@ def notification_receipts_for_projection(meta):
     return result
 
 
-def mark_notification_read(store, *, notification_id, recipient_party_id, project_id, accessible_project_ids, read_at=None):
-    """Record an idempotent UI read timestamp, leaving Notification unchanged."""
+def mark_notification_read_in_transaction(store, *, notification_id, recipient_party_id, project_id, accessible_project_ids, read_at=None):
+    """Record an idempotent UI receipt while the caller holds a write transaction."""
     notification_id = _uuid(notification_id, "notification_id")
     recipient_party_id = _uuid(recipient_party_id, "recipient_party_id")
     project_id = _uuid(project_id, "project_id")
     if project_id not in set(accessible_project_ids):
         raise PermissionError("project is not accessible")
+    record = store.engine.get("Notification", notification_id)
+    if record.get("projectId") != project_id or record.get("recipientPartyId") != recipient_party_id:
+        raise PermissionError("notification is not accessible to this recipient")
+    receipts = store.meta.setdefault(RECEIPTS_KEY, {})
+    if not isinstance(receipts, dict):
+        raise ValueError(f"{RECEIPTS_KEY} must be an object")
+    key = _receipt_key(recipient_party_id, project_id, notification_id)
+    if key not in receipts:
+        value = read_at or _iso_now(store.engine)
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        receipts[key] = value
+    return {"notificationId": notification_id, "readAt": receipts[key], "isRead": True}
+
+
+def mark_notification_read(store, *, notification_id, recipient_party_id, project_id, accessible_project_ids, read_at=None):
+    """Record an idempotent UI read timestamp in its own write transaction."""
     with store.transaction(write=True):
-        record = store.engine.get("Notification", notification_id)
-        if record.get("projectId") != project_id or record.get("recipientPartyId") != recipient_party_id:
-            raise PermissionError("notification is not accessible to this recipient")
-        receipts = store.meta.setdefault(RECEIPTS_KEY, {})
-        if not isinstance(receipts, dict):
-            raise ValueError(f"{RECEIPTS_KEY} must be an object")
-        key = _receipt_key(recipient_party_id, project_id, notification_id)
-        if key not in receipts:
-            value = read_at or _iso_now(store.engine)
-            datetime.fromisoformat(value.replace("Z", "+00:00"))
-            receipts[key] = value
-        return {"notificationId": notification_id, "readAt": receipts[key], "isRead": True}
+        return mark_notification_read_in_transaction(
+            store, notification_id=notification_id, recipient_party_id=recipient_party_id,
+            project_id=project_id, accessible_project_ids=accessible_project_ids, read_at=read_at,
+        )
 
 
 def read_receipts_for_projection(store):
