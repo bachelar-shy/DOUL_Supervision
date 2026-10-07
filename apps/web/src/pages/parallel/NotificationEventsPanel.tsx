@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { SupervisionClient } from "../../data/supervision-client";
 import type { Workspace } from "../../data/ui-contract";
@@ -43,44 +43,86 @@ export function NotificationEventsPanel({
   workspace: Workspace;
   onChanged?: () => void;
 }) {
-  const [inbox, setInbox] = useState<Inbox>({ items: [], total: 0, unreadCount: 0 });
+  const scopeKey = `${client.session?.projectId ?? workspace.project.id}:${client.session?.actor.roleAssignmentId ?? ""}`;
+  const [inboxSnapshot, setInboxSnapshot] = useState<{ scopeKey: string; data: Inbox } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState("");
-  const [error, setError] = useState("");
+  const [busy, setBusy] = useState<{ scopeKey: string; id: string } | null>(null);
+  const [errorSnapshot, setErrorSnapshot] = useState<{ scopeKey: string; message: string } | null>(null);
   const [refreshIndex, setRefreshIndex] = useState(0);
+  const inbox = inboxSnapshot?.scopeKey === scopeKey ? inboxSnapshot.data : { items: [], total: 0, unreadCount: 0 };
+  const error = errorSnapshot?.scopeKey === scopeKey ? errorSnapshot.message : "";
+  const busyId = busy?.scopeKey === scopeKey ? busy.id : "";
+  const scopeEpoch = useRef(0);
+  const requestSequence = useRef(0);
+  const busyRead = useRef(false);
+  const mounted = useRef(false);
 
-  const refresh = useCallback(async () => {
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      scopeEpoch.current += 1;
+      requestSequence.current += 1;
+      busyRead.current = false;
+    };
+  }, []);
+
+  const refresh = useCallback(async (expectedScope = scopeEpoch.current) => {
+    const sequence = ++requestSequence.current;
     setLoading(true);
-    setError("");
+    setErrorSnapshot(null);
     try {
       const result = await client.request<unknown>(client.path("/parallel/notifications"));
-      setInbox(asInbox(result));
+      if (mounted.current && scopeEpoch.current === expectedScope && requestSequence.current === sequence) {
+        setInboxSnapshot({ scopeKey, data: asInbox(result) });
+      }
     } catch (requestError) {
-      setInbox({ items: [], total: 0, unreadCount: 0 });
-      setError(errorMessage(requestError));
+      if (mounted.current && scopeEpoch.current === expectedScope && requestSequence.current === sequence) {
+        setInboxSnapshot({ scopeKey, data: { items: [], total: 0, unreadCount: 0 } });
+        setErrorSnapshot({ scopeKey, message: errorMessage(requestError) });
+      }
     } finally {
-      setLoading(false);
+      if (mounted.current && scopeEpoch.current === expectedScope && requestSequence.current === sequence) {
+        setLoading(false);
+      }
     }
-  }, [client]);
+  }, [client, scopeKey]);
 
-  useEffect(() => { void refresh(); }, [refresh, refreshIndex, workspace.project.id]);
+  useEffect(() => {
+    const epoch = ++scopeEpoch.current;
+    requestSequence.current += 1;
+    busyRead.current = false;
+    void refresh(epoch);
+    return () => {
+      if (scopeEpoch.current === epoch) scopeEpoch.current += 1;
+      requestSequence.current += 1;
+    };
+  }, [refresh, refreshIndex, scopeKey]);
 
   const markRead = useCallback(async (notificationId: string) => {
-    setBusyId(notificationId);
-    setError("");
+    if (busyRead.current) return;
+    busyRead.current = true;
+    const epoch = scopeEpoch.current;
+    setBusy({ scopeKey, id: notificationId });
+    setErrorSnapshot(null);
     try {
       await client.request<unknown>(
         client.path(`/parallel/notifications/${encodeURIComponent(notificationId)}/read`),
         { method: "POST" },
       );
-      await refresh();
-      onChanged?.();
+      if (mounted.current && scopeEpoch.current === epoch) {
+        await refresh(epoch);
+        if (scopeEpoch.current === epoch) onChanged?.();
+      }
     } catch (requestError) {
-      setError(errorMessage(requestError));
+      if (mounted.current && scopeEpoch.current === epoch) setErrorSnapshot({ scopeKey, message: errorMessage(requestError) });
     } finally {
-      setBusyId("");
+      if (mounted.current && scopeEpoch.current === epoch) {
+        busyRead.current = false;
+        setBusy(null);
+      }
     }
-  }, [client, onChanged, refresh]);
+  }, [client, onChanged, refresh, scopeKey]);
 
   return (
     <Panel className="notification-events-panel" aria-labelledby="notification-events-title">
@@ -100,7 +142,7 @@ export function NotificationEventsPanel({
       {!loading && !error && inbox.items.length > 0 && (
         <ul className="notification-events-list">
           {inbox.items.map(({ notification, isRead, readAt }) => (
-            <li key={notification.id} className={isRead ? "is-read" : "is-unread"}>
+            <li key={notification.id} data-notification-id={notification.id} className={isRead ? "is-read" : "is-unread"}>
               <div className="notification-events-copy">
                 <div className="notification-events-heading">
                   <strong>내 업무 변경</strong>
@@ -116,7 +158,7 @@ export function NotificationEventsPanel({
                 </dl>
               </div>
               {!isRead && (
-                <ActionButton onClick={() => void markRead(notification.id)} disabled={busyId === notification.id}>
+                <ActionButton onClick={() => void markRead(notification.id)} disabled={busyId !== ""}>
                   {busyId === notification.id ? "처리 중…" : "읽음으로 표시"}
                 </ActionButton>
               )}
