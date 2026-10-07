@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { SupervisionClient } from "../data/supervision-client";
 import type { CommandDescriptor, WorkItem, Workspace } from "../data/ui-contract";
 import { ActionButton, Panel, SectionHeader } from "../ui";
-import { PdfViewerPanel } from "./parallel/PdfViewerPanel";
 import { EvidenceRegistrationPanel } from "./parallel/EvidenceRegistrationPanel";
 import { WorkInboxActionsPanel } from "./WorkInboxActionsPanel";
 import { LocationEditorPanel } from "./parallel/LocationEditorPanel";
 import { SafetyConnectedPanel } from "./parallel/SafetyConnectedPanel";
 import { NotificationEventsPanel } from "./parallel/NotificationEventsPanel";
+
+const PdfViewerPanel = lazy(() => import("./parallel/PdfViewerPanel").then(module => ({ default: module.PdfViewerPanel })));
 
 type ModuleId = "drawings" | "locations" | "work-inbox" | "notifications" | "safety-traceability" | "evidence-quarantine";
 type ModuleState = { data: unknown; error: string; loading: boolean; refreshedAt?: string };
@@ -113,7 +114,7 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     <SectionHeader title="병렬 기능 통합 테스트" meta={`프로젝트 ${workspace.project.id}`} />
     <p className="muted">개발 API에서 조회한 원본 응답을 표시합니다. 조회 실패와 빈 결과를 구분합니다.</p>
     <div className="parallel-test-tabs" role="tablist" aria-label="테스트 모듈">{modules.map(module => <button key={module.id} type="button" role="tab" aria-selected={active === module.id} className={active === module.id ? "active" : ""} onClick={() => { setActive(module.id); setSelectedIndex(0); }}>{module.label}</button>)}</div>
-    {active === "drawings" && <PdfViewerPanel client={client} workspace={workspace} />}
+    {active === "drawings" && <Suspense fallback={<div role="status">PDF 뷰어를 불러오는 중…</div>}><PdfViewerPanel client={client} workspace={workspace} /></Suspense>}
     {active === "locations" && <LocationEditorPanel client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "notifications" && <NotificationEventsPanel client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "work-inbox" && <WorkInboxActionsPanel client={client} workspace={workspace} onChanged={onChanged} onNavigate={onNavigate} />}
@@ -135,7 +136,7 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     {!state.loading && !state.error && active !== "safety-traceability" && active !== "evidence-quarantine" && rows.length > 0 && <div className="parallel-test-grid">
       <div className="parallel-test-list" aria-label={`${modules.find(x => x.id === active)?.label} 기록`}>{rows.map((row, index) => <button type="button" key={String(asObject(row).id ?? asObject(row).recordId ?? index)} className={index === selectedIndex ? "selected" : ""} onClick={() => active === "drawings" ? void loadDrawingDetail(row, index) : setSelectedIndex(index)} style={active === "locations" ? { paddingLeft: `${12 + Number(asObject(row).depth ?? 0) * 12}px` } : undefined}><strong>{displayLabel(row, index)}</strong><small>{[asObject(row).sourceStatus ?? asObject(row).status ?? asObject(asObject(row).record).status, asObject(row).revision ? `개정 ${asObject(row).revision}` : asObject(row).version ? `v${asObject(row).version}` : undefined, asObject(row).discipline, asObject(row).locationId].filter(Boolean).join(" · ")}</small></button>)}</div>
       <div className="parallel-test-detail"><SectionHeader title="선택 기록" meta={`${rows.length}건`} />
-        {active === "drawings" && <><p className="muted">도면별 revision과 서버가 제공하는 exact-linked record를 표시합니다. PDF 뷰어는 아직 연결되지 않았습니다.</p>{drawingLoading && <div role="status">정확한 도면 버전 조회 중…</div>}{drawingError && <div role="alert" className="error-box">{drawingError}</div>}</>}
+        {active === "drawings" && <><p className="muted">도면별 revision과 서버가 제공하는 exact-linked record를 표시합니다. PDF 원본 확인은 위의 읽기 전용 뷰어에서 할 수 있습니다.</p>{drawingLoading && <div role="status">정확한 도면 버전 조회 중…</div>}{drawingError && <div role="alert" className="error-box">{drawingError}</div>}</>}
         {active === "locations" && <p className="muted">위치 노드의 부모·경로 필드를 원본 값 그대로 확인합니다.</p>}
         <pre>{stringify(active === "drawings" ? drawingDetail ?? selected : selected)}</pre>
       </div>
