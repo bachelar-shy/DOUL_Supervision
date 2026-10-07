@@ -1168,11 +1168,18 @@ class Engine:
     def _recovery_decision_approved(self,r):
         self._recovery_submission_complete(r)
         require(r.get('ownerDecisionRequired') is True,'RECOVERY_DECISION_APPROVED','Owner decision flag is required')
+        expected_target={'objectType':'WorkItem','objectId':r['id'],'version':r['version']}
         decisions=[]
         for reference in r.get('decisionRefs',[]):
             decision=self._current_reference(reference,r['projectId'],object_type='Decision')
-            if decision.get('decision')=='approved' and decision.get('status') in ['decided','executing','verified','closed']:decisions.append(decision)
-        require(bool(decisions),'RECOVERY_DECISION_APPROVED','Approved Owner Decision required')
+            if (
+                decision.get('targetRef')==expected_target
+                and all(decision.get(field)==r.get(field) for field in ['packageId','locationId','discipline'])
+                and decision.get('decision')=='approved'
+                and decision.get('status') in ['decided','executing','verified','closed']
+            ):
+                decisions.append(decision)
+        require(bool(decisions),'RECOVERY_DECISION_APPROVED','Approved Owner Decision for the exact current Recovery Plan version required')
 
     def _recovery_activation_ready(self,r):
         require(bool(r.get('acceptedAt')),'RECOVERY_ACTIVATION_READY','Recovery Plan must be accepted before activation')
