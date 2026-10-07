@@ -50,7 +50,11 @@ async function captureSession(page: Page, actorGroup: string): Promise<{ session
   const ready = page.waitForResponse(response => response.url().endsWith("/dev/sessions")
     && response.request().method() === "POST"
     && (response.request().postData() || "").includes(`"actorGroup":"${actorGroup}"`));
-  const workspaceReady = page.waitForResponse(response => response.url().endsWith("/workspace") && response.ok());
+  const workspaceReady = page.waitForResponse(async response => {
+    if (!response.url().endsWith("/workspace") || !response.ok()) return false;
+    try { return ((await response.json()) as Workspace).role.actorGroup === actorGroup; }
+    catch { return false; }
+  });
   await page.getByRole("combobox", { name: "개발 역할 선택" }).selectOption(actorGroup);
   const session = await responseJson<Session>(await ready, 200);
   const workspace = await responseJson<Workspace>(await workspaceReady, 200);
@@ -65,7 +69,11 @@ async function switchRole(page: Page, actorGroup: string): Promise<Workspace> {
     expect(result.role.actorGroup).toBe(actorGroup);
     return result;
   }
-  const workspaceResponse = page.waitForResponse(response => response.url().endsWith("/workspace") && response.ok());
+  const workspaceResponse = page.waitForResponse(async response => {
+    if (!response.url().endsWith("/workspace") || !response.ok()) return false;
+    try { return ((await response.json()) as Workspace).role.actorGroup === actorGroup; }
+    catch { return false; }
+  });
   await picker.selectOption(actorGroup);
   const data = await responseJson<Workspace>(await workspaceResponse, 200);
   expect(data.role.actorGroup).toBe(actorGroup);
