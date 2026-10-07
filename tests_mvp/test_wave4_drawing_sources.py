@@ -84,3 +84,96 @@ class DrawingSourceTests(unittest.TestCase):
         with self.store.transaction(True): self.store.meta['drawingFieldRevisions'][0]['status'] = 'superseded'
         with self.store.transaction():
             with self.assertRaises(ContractError): self.store.engine._common(payload, role)
+
+    def _install_usable_field_revision(self, drawing, evidence, approval, change):
+        sup = self.store.meta['actors']['SUP']
+        revision = dict(
+            id=str(uuid4()), projectId=self.project, drawingNo='FIELD-CHANGE-TEST',
+            drawingRef=self.ref('InformationItem', drawing),
+            evidenceRef=self.ref('Evidence', evidence), data={'approvalRef': self.ref('Approval', approval)},
+            status='released', issuedFor='construction',
+            changeRefs=[self.ref('WorkItem', change)],
+            requiredRecipientPartyIds=[sup['partyId']],
+            receipts=[dict(recipientPartyId=sup['partyId'], deliveredAt=self.store.engine.at(),
+                           receivedAt=self.store.engine.at(), returnedAt=None)],
+        )
+        with self.store.transaction(True):
+            self.store.meta.setdefault('drawingFieldRevisions', []).append(revision)
+        return revision
+
+    def _change_request(self, drawing_ref):
+        key, original = next((key, record) for key, record in self.store.engine._records.items()
+                             if key[0] == 'WorkItem')
+        change = deepcopy(original)
+        change.update(subtype='ChangeRequest', status='approved', drawingRef=deepcopy(drawing_ref),
+                      relatedRefs=[], data={})
+        with self.store.transaction(True):
+            self.store.engine._records[key] = deepcopy(change)
+            self.store.engine._history[(key[0], key[1], change['version'])] = deepcopy(change)
+        return change
+
+    def _change_approval(self, source_approval, change, *, status='approved', expires_at=None, target=None):
+        approval = deepcopy(source_approval)
+        approval.update(id=str(uuid4()), version=1, status=status,
+                        targetRef=deepcopy(target or self.ref('WorkItem', change)))
+        for field in ('validTo', 'expiresAt', 'validUntil'):
+            approval.pop(field, None)
+        if expires_at is not None:
+            approval['expiresAt'] = expires_at
+        with self.store.transaction(True):
+            self.store.engine._records[('Approval', approval['id'])] = deepcopy(approval)
+            self.store.engine._history[('Approval', approval['id'], approval['version'])] = deepcopy(approval)
+        return approval
+
+    def test_drawing_usability_rejects_mismatched_change_target(self):
+        result = self.post_source().json()
+        drawing = result['drawing']
+        approval_record = self.store.engine.get('Approval', result['approval']['id'])
+        sup = self.store.meta['actors']['SUP']
+        with self.store.transaction(True):
+            reviewed = self.store.engine.execute('approval', approval_record['id'], 'review', approval_record['version'], {}, [],
+                sup['partyId'], sup['roleAssignmentId'], 'review-mismatched-change-source')['record']
+            approved = self.store.engine.execute('approval', reviewed['id'], 'approve', reviewed['version'], {}, [],
+                sup['partyId'], sup['roleAssignmentId'], 'approve-mismatched-change-source')['record']
+        wrong_target = dict(objectType='InformationItem', objectId=str(uuid4()), version=1)
+        change = self._change_request(wrong_target)
+        source_evidence = self.store.engine.get('Evidence', result['binding']['evidenceRef']['objectId'])
+        self._install_usable_field_revision(drawing, source_evidence, approved, change)
+        self.assertFalse(self.store.engine._drawing_field_usable(drawing))
+
+    def test_drawing_usability_rechecks_change_approval_target_state_and_expiry(self):
+        result = self.post_source().json()
+        drawing = result['drawing']
+        approval_record = self.store.engine.get('Approval', result['approval']['id'])
+        sup = self.store.meta['actors']['SUP']
+        with self.store.transaction(True):
+            reviewed = self.store.engine.execute('approval', approval_record['id'], 'review', approval_record['version'], {}, [],
+                sup['partyId'], sup['roleAssignmentId'], 'review-change-approval-source')['record']
+            approved = self.store.engine.execute('approval', reviewed['id'], 'approve', reviewed['version'], {}, [],
+                sup['partyId'], sup['roleAssignmentId'], 'approve-change-approval-source')['record']
+        drawing_ref = self.ref('InformationItem', drawing)
+        change = self._change_request(drawing_ref)
+        source_evidence = self.store.engine.get('Evidence', result['binding']['evidenceRef']['objectId'])
+        self._install_usable_field_revision(drawing, source_evidence, approved, change)
+
+        expired = self._change_approval(approved, change, expires_at='2000-01-01T00:00:00Z')
+        changed = deepcopy(change)
+        changed['data'] = {'references': [drawing_ref], 'approvalRef': self.ref('Approval', expired)}
+        with self.store.transaction(True):
+            self.store.engine._records[('WorkItem', change['id'])] = deepcopy(changed)
+            self.store.engine._history[('WorkItem', change['id'], changed['version'])] = deepcopy(changed)
+        self.assertFalse(self.store.engine._drawing_field_usable(drawing))
+
+        revoked = self._change_approval(approved, changed, status='revoked')
+        changed['data']['approvalRef'] = self.ref('Approval', revoked)
+        with self.store.transaction(True):
+            self.store.engine._records[('WorkItem', change['id'])] = deepcopy(changed)
+            self.store.engine._history[('WorkItem', change['id'], changed['version'])] = deepcopy(changed)
+        self.assertFalse(self.store.engine._drawing_field_usable(drawing))
+
+        valid = self._change_approval(approved, changed)
+        changed['data']['approvalRef'] = self.ref('Approval', valid)
+        with self.store.transaction(True):
+            self.store.engine._records[('WorkItem', change['id'])] = deepcopy(changed)
+            self.store.engine._history[('WorkItem', change['id'], changed['version'])] = deepcopy(changed)
+        self.assertTrue(self.store.engine._drawing_field_usable(drawing))

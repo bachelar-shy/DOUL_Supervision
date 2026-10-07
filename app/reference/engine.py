@@ -222,29 +222,74 @@ class Engine:
         managed = [r for r in revisions if r.get('projectId') == drawing['projectId'] and r.get('drawingRef') == target]
         if not managed:
             return drawing.get('status') == 'approved'  # legacy, unmanaged baselines
+
+        def not_expired(approval):
+            now = instant(self.at())
+            return all(key not in approval or instant(approval[key]) > now
+                       for key in ('validTo', 'expiresAt', 'validUntil'))
+
+        def same_ref(left, right):
+            return isinstance(left, dict) and isinstance(right, dict) and all(
+                left.get(key) == right.get(key)
+                for key in ('objectType', 'objectId', 'version'))
+
         for revision in managed:
             if revision.get('status') != 'released' or revision.get('issuedFor') != 'construction':
                 continue
             try:
-                approval = self._current_reference(revision.get('approvalRef'), drawing['projectId'], object_type='Approval')
-                if approval.get('approvalKind') != 'technical' or approval.get('status') != 'approved' or approval.get('targetRef') != target:
-                    continue
-                if approval.get('expiresAt') and instant(self.at()) >= instant(approval['expiresAt']):
+                revision_data = revision.get('data') or {}
+                approval_ref = revision.get('approvalRef') or revision_data.get('approvalRef')
+                approval = self._current_reference(approval_ref, drawing['projectId'], object_type='Approval')
+                if (approval.get('approvalKind') != 'technical' or approval.get('status') != 'approved'
+                        or not same_ref(approval.get('targetRef'), target) or not not_expired(approval)):
                     continue
                 evidence = self._current_reference(revision.get('evidenceRef'), drawing['projectId'], object_type='Evidence')
-                if evidence.get('sourceType') != 'original' or evidence.get('mediaType') != 'document':
+                if (evidence.get('sourceType') != 'original' or evidence.get('mediaType') != 'document'
+                        or (evidence.get('metadata') or {}).get('mimeType') != 'application/pdf'):
                     continue
-                changes = [self._current_reference(ref, drawing['projectId'], object_type='WorkItem', subtype='ChangeRequest') for ref in revision.get('changeRefs', [])]
-                if any(change.get('status') not in ['approved', 'revised_information_issued', 'implemented'] for change in changes):
+                changes_valid = True
+                for reference in revision.get('changeRefs', []):
+                    change = self._current_reference(reference, drawing['projectId'],
+                                                     object_type='WorkItem', subtype='ChangeRequest')
+                    if change.get('status') not in {'approved', 'revised_information_issued', 'implemented'}:
+                        changes_valid = False
+                        break
+                    change_drawing_ref = change.get('drawingRef') or change.get('targetRef')
+                    if change_drawing_ref is not None and not same_ref(change_drawing_ref, target):
+                        changes_valid = False
+                        break
+                    linked_refs = change.get('relatedRefs') or (change.get('data') or {}).get('references') or []
+                    drawing_links = [ref for ref in linked_refs
+                                     if isinstance(ref, dict) and ref.get('objectType') == 'InformationItem']
+                    if drawing_links and not any(same_ref(ref, target) for ref in drawing_links):
+                        changes_valid = False
+                        break
+                    change_data = change.get('data') or {}
+                    change_approval_ref = change.get('approvalRef') or change_data.get('approvalRef')
+                    if change_approval_ref is not None:
+                        change_approval = self._current_reference(
+                            change_approval_ref, drawing['projectId'], object_type='Approval')
+                        change_target = dict(objectType='WorkItem', objectId=change['id'], version=change['version'])
+                        if (change_approval.get('status') != 'approved'
+                                or not same_ref(change_approval.get('targetRef'), change_target)
+                                or not not_expired(change_approval)):
+                            changes_valid = False
+                            break
+                if not changes_valid:
                     continue
                 required = set(revision.get('requiredRecipientPartyIds', []))
-                received = {r.get('recipientPartyId') for r in revision.get('receipts', []) if r.get('deliveredAt') and r.get('receivedAt') and not r.get('returnedAt')}
+                received = {receipt.get('recipientPartyId') for receipt in revision.get('receipts', [])
+                            if receipt.get('deliveredAt') and receipt.get('receivedAt')
+                            and not receipt.get('returnedAt')}
                 if not required or not required.issubset(received):
                     continue
-                if any(other.get('projectId') == drawing['projectId'] and other.get('id') != revision.get('id') and other.get('drawingNo') == revision.get('drawingNo') and other.get('status') == 'released' for other in revisions):
+                if any(other.get('projectId') == drawing['projectId']
+                       and other.get('id') != revision.get('id')
+                       and other.get('drawingNo') == revision.get('drawingNo')
+                       and other.get('status') == 'released' for other in revisions):
                     continue
                 return True
-            except (ContractError, KeyError, TypeError):
+            except (ContractError, KeyError, TypeError, ValueError):
                 continue
         return False
 
