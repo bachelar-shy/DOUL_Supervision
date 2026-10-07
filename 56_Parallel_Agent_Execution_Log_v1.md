@@ -38,3 +38,17 @@
 ## 완료 표현
 
 브랜치/worktree 생성이나 모듈 단위시험 통과를 앱 기능의 저장·API·화면·현장 통합 완료로 표현하지 않는다. 실제 API 연결·권한·원본 저장·UI·Browser E2E·장애복구가 남으면 각각 미완료로 보고한다. 각 작은 PR에 완료 범위와 다음 연결을 남긴다.
+
+## 첫 구현 검토와 도면 방향 변경
+
+- S1 PR #114: 정확한 도면 버전 참조 조회, 집중시험 5개 통과. PDF 중심의 Fieldwire 참고 개발계획을 추가한다.
+- S2 PR #115: 크기/SHA-256 검증과 디스크 임시 저장, 원격 스트림 자원 정리, 집중시험 14개 통과. 실제 boto3 설치/원격 저장소 실행은 미검증이다.
+- S3 PR #117: 위치 트리와 범위 권한/버전 조회. 도면 anchor의 subtype 및 권한 예외를 추가 검토 중이다.
+- S4 PR #116: 기존 명령 후보 업무함, 집중시험 8개 통과. 예상 범위/조직/자격 거부는 숨기고 설정 오류는 전파한다.
+- S5 PR #118: 정식 Notification DTO 검증과 읽음 분리, 집중시험 10개 통과.
+- S6: 안전 작업중지의 명시적 참조 추적. 위치 자체의 범위 권한과 설정 오류 전파를 추가 검토 중이다.
+- GitHub 전체 CI는 진행 중이며 전체 통과 또는 운영 성능 검증 완료로 간주하지 않는다. API/화면 연결은 아직 없다.
+
+사용자 추가 지시: 도면은 PDF 기반으로 가볍게 운용하고 Fieldwire 기능을 적극 차용한다. S1에 이를 전달했다. PDF.js Context7 공식 문서 확인: /mozilla/pdf.js, https://github.com/mozilla/pdf.js/blob/master/examples/learning/helloworld.html 및 https://github.com/mozilla/pdf.js/blob/master/src/display/api.js . PDF worker, 페이지 단위 렌더링, 렌더 취소와 자원 정리 API를 검토했다. 실제 패키지 추가 시 고정 버전과 대조해야 한다.
+
+Fieldwire 공식 참고: 도면 버전 비교, 마크업, 업무/사진 링크, 축척 측정은 https://help.fieldwire.com/hc/en-us/articles/202909260-How-to-use-the-Single-Plan-View-and-Markup-Tools-Web 및 https://help.fieldwire.com/hc/en-us/articles/115000652623-How-to-Compare-Plans . 원본 PDF는 불변 보존하고 마크업/핀은 별도 저장한다. 새 버전으로의 자동 이전이 기존 증빙의 역사적 버전 참조를 덮어쓰지 않아야 한다. Mac M4 16GB용 동시성/캔버스/캐시 상한은 실측 후 확정한다.
