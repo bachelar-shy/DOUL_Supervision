@@ -114,12 +114,12 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     <SectionHeader title="병렬 기능 통합 테스트" meta={`프로젝트 ${workspace.project.id}`} />
     <p className="muted">개발 API에서 조회한 원본 응답을 표시합니다. 조회 실패와 빈 결과를 구분합니다.</p>
     <div className="parallel-test-tabs" role="tablist" aria-label="테스트 모듈">{modules.map(module => <button key={module.id} type="button" role="tab" aria-selected={active === module.id} className={active === module.id ? "active" : ""} onClick={() => { setActive(module.id); setSelectedIndex(0); }}>{module.label}</button>)}</div>
-    {active === "drawings" && <Suspense fallback={<div role="status">PDF 뷰어를 불러오는 중…</div>}><PdfViewerPanel client={client} workspace={workspace} /></Suspense>}
-    {active === "locations" && <LocationEditorPanel client={client} workspace={workspace} onChanged={onChanged} />}
-    {active === "notifications" && <NotificationEventsPanel client={client} workspace={workspace} onChanged={onChanged} />}
-    {active === "work-inbox" && <WorkInboxActionsPanel client={client} workspace={workspace} onChanged={onChanged} onNavigate={onNavigate} />}
-    {active === "evidence-quarantine" && <EvidenceRegistrationPanel client={client} workspace={workspace} onChanged={onChanged} />}
-    {active === "safety-traceability" && <SafetyConnectedPanel client={client} workspace={workspace} onChanged={onChanged} onSelect={onSelect} onOpenCommand={onOpenCommand} />}
+    {active === "drawings" && <Suspense fallback={<div role="status">PDF 뷰어를 불러오는 중…</div>}><PdfViewerPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} /></Suspense>}
+    {active === "locations" && <LocationEditorPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} />}
+    {active === "notifications" && <NotificationEventsPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} />}
+    {active === "work-inbox" && <WorkInboxActionsPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onNavigate={onNavigate} />}
+    {active === "evidence-quarantine" && <EvidenceRegistrationPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} />}
+    {active === "safety-traceability" && <SafetyConnectedPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onSelect={onSelect} onOpenCommand={onOpenCommand} />}
     <div className="parallel-test-toolbar"><span>{state.refreshedAt ? `최근 조회 ${state.refreshedAt}` : "아직 조회되지 않음"}</span>{active === "safety-traceability" ? <><select aria-label="안전 원본 레코드" value={selectedSafetyId} onChange={event => { setSelectedSafetyId(event.target.value); setStates(current => ({ ...current, "safety-traceability": { data: null, error: "", loading: false } })); }}><option value="">원본 기록 선택</option>{safetyItems.map(item => <option key={item.record.id} value={item.record.id}>{item.record.title || item.machine} · v{item.record.version} · {item.record.id}</option>)}</select><ActionButton onClick={() => void loadSafetyRecord()} disabled={state.loading || !selectedSafetyId}>선택 원본 조회</ActionButton></> : <ActionButton onClick={() => void refresh(active)} disabled={state.loading}>{active === "evidence-quarantine" ? "격리 목록 조회" : "다시 조회"}</ActionButton>}</div>
     {active === "evidence-quarantine" && <div className="parallel-evidence-test">
       <p className="muted">격리 전용 테스트 경로입니다. 업로드 파일은 원본 업무 기록에 발행되지 않습니다. 최대 20 MiB.</p>

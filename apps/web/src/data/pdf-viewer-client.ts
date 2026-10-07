@@ -26,7 +26,8 @@ function sameRef(a: unknown, b: unknown): boolean {
   if (!a || !b || typeof a !== "object" || typeof b !== "object") return false;
   const left = a as Record<string, unknown>;
   const right = b as Record<string, unknown>;
-  return left.objectType === right.objectType && left.objectId === right.objectId;
+  return typeof left.version === "number" && Number.isInteger(left.version) && left.version > 0
+    && left.objectType === right.objectType && left.objectId === right.objectId && left.version === right.version;
 }
 
 export function listPdfEvidenceSources(workspace: Workspace): PdfEvidenceSource[] {

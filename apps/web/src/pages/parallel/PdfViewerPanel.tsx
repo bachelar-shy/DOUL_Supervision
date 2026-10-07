@@ -8,10 +8,10 @@ import { listPdfEvidenceSources, loadPdfEvidence, uploadPdfEvidence } from "../.
 
 GlobalWorkerOptions.workerSrc = workerSrc;
 
-interface Props { client: SupervisionClient; workspace: Workspace }
+interface Props { client: SupervisionClient; workspace: Workspace; onChanged?: () => void }
 type Status = { kind: "idle" | "loading" | "ready" | "error"; message?: string };
 
-export function PdfViewerPanel({ client, workspace }: Props) {
+export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
   const sources = useMemo(() => listPdfEvidenceSources(workspace), [workspace]);
   const [selectedId, setSelectedId] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -180,9 +180,10 @@ export function PdfViewerPanel({ client, workspace }: Props) {
     try {
       const record = await uploadPdfEvidence(client, workspace, file);
       const id = record.id;
+      previewFiles.current.clear();
       previewFiles.current.set(id, file);
       setSelectedId(id);
-      setStatus({ kind: "ready" });
+      onChanged?.();
     } catch (reason) {
       setStatus({ kind: "error", message: reason instanceof Error ? reason.message : "PDF 업로드를 완료하지 못했습니다." });
     } finally { setUploading(false); }
