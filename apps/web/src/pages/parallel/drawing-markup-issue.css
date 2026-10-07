@@ -1,0 +1,16 @@
+.drawing-markup-issue { color:var(--foreground); }
+.drawing-markup-issue>div { display:grid; gap:.8rem; }
+.drawing-markup-issue label { display:grid; gap:.35rem; font-size:.78rem; font-weight:600; }
+.drawing-markup-issue select,.drawing-markup-issue input { min-width:0; border:1px solid var(--input); border-radius:.25rem; background:var(--background); color:var(--foreground); padding:.55rem; font:inherit; font-weight:400; }
+.drawing-markup-issue-empty,.drawing-markup-issue-note,.drawing-markup-issue-exact { margin:0; color:var(--muted-foreground); font-size:.78rem; line-height:1.5; }
+.drawing-markup-issue-markup,.drawing-markup-issue-linked,.drawing-markup-issue-result { display:grid; gap:.4rem; border:1px solid var(--border); border-radius:.3rem; background:var(--muted); padding:.75rem; font-size:.76rem; }
+.drawing-markup-issue-markup strong,.drawing-markup-issue-linked strong,.drawing-markup-issue-result strong { font-size:.83rem; }
+.drawing-markup-issue-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(13rem,1fr)); gap:.65rem; }
+.drawing-markup-issue-error { border:1px solid color-mix(in srgb,var(--destructive) 35%,transparent); border-radius:.25rem; background:color-mix(in srgb,var(--destructive) 7%,transparent); padding:.65rem; color:var(--destructive); font-size:.78rem; }
+.drawing-markup-issue-scrim { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:1rem; background:rgb(0 0 0 / 45%); }
+.drawing-markup-issue-dialog { display:grid; gap:.65rem; width:min(36rem,100%); max-height:min(90vh,52rem); overflow:auto; border:1px solid var(--border); border-radius:.4rem; background:var(--background); padding:1.1rem; box-shadow:0 1rem 3rem rgb(0 0 0 / 20%); }
+.drawing-markup-issue-dialog h3,.drawing-markup-issue-dialog p { margin:0; }
+.drawing-markup-issue-dialog h3 { font-size:1rem; }
+.drawing-markup-issue-dialog p { color:var(--muted-foreground); font-size:.78rem; line-height:1.5; overflow-wrap:anywhere; }
+.drawing-markup-issue-dialog .drawing-markup-issue-caution { border-left:3px solid var(--destructive); padding:.55rem; background:color-mix(in srgb,var(--destructive) 6%,transparent); color:var(--foreground); }
+.drawing-markup-issue-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:.5rem; }
