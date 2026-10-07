@@ -192,10 +192,12 @@ def _available_commands(store, project_id, revision, binding, actor, role):
         return commands
     admin = group == "ADM" and role.get("roleCode") == "project_admin" and _can(engine, drawing, actor, role, "render_document")
     supervisor = group == "SUP" and role.get("roleCode") == "chief_supervisor" and _can(engine, drawing, actor, role, "review_approval", qualification=True)
-    if revision.get("status") == "registered" and revision.get("issuedFor") == "construction" and (admin or supervisor):
-        commands.append({"command": "release", "label": "현장 사용 승인"})
+    if revision.get("status") == "registered" and (admin or supervisor):
+        commands.append({"command": "update_basis", "label": "승인 근거 갱신"})
+        if revision.get("issuedFor") == "construction":
+            commands.append({"command": "release", "label": "현장 사용본 발행"})
     if revision.get("status") == "released" and admin:
-        commands.append({"command": "distribute", "label": "배포·수령 기록"})
+        commands.append({"command": "distribute", "label": "배포 기록"})
     if revision.get("status") == "released" and role.get("partyId") in revision.get("requiredRecipientPartyIds", []) and _can(engine, drawing, actor, role, "render_document"):
         if any(item.get("recipientPartyId") == actor["partyId"] and item.get("deliveredAt") and not item.get("receivedAt") for item in revision.get("receipts", [])):
             commands.append({"command": "acknowledge", "label": "수령 확인"})
@@ -303,7 +305,8 @@ def _audit(store, event, revision, actor, role, *, before=None, reason=None, at=
         "drawingRef": deepcopy(revision["drawingRef"]), "bindingId": revision["bindingId"],
         "actorPartyId": actor["partyId"], "roleAssignmentId": role["id"],
         "occurredAt": at or store.engine.at(), "before": deepcopy(before),
-        "after": {"status": revision.get("status"), "version": revision.get("version")}, "reason": reason,
+        "after": {"status": revision.get("status"), "version": revision.get("version"),
+                  "approvalRef": deepcopy(revision.get("approvalRef")), "changeRefs": deepcopy(revision.get("changeRefs", []))}, "reason": reason,
     })
 
 
@@ -467,11 +470,11 @@ def install_drawing_field_routes(app: FastAPI, store, *, identity: Callable, rol
             body = json.loads(raw)
             require(isinstance(body, dict) and set(body) == COMMAND_FIELDS, "INVALID_REQUEST", "Expected command, expectedVersion and payload")
             command = body["command"]
-            require(command in {"release", "distribute", "acknowledge", "return_copy", "withdraw"}, "COMMAND_INVALID", "Unknown field drawing command")
+            require(command in {"update_basis", "release", "distribute", "acknowledge", "return_copy", "withdraw"}, "COMMAND_INVALID", "Unknown field drawing command")
             require(type(body["expectedVersion"]) is int and body["expectedVersion"] > 0, "VERSION_INVALID", "expectedVersion must be positive")
             payload = body["payload"]
             require(isinstance(payload, dict), "PAYLOAD_INVALID", "Command payload must be an object")
-            required_payloads = {"release": set(), "distribute": {"recipientPartyIds"}, "acknowledge": set(), "return_copy": {"reason"}, "withdraw": {"reason"}}
+            required_payloads = {"update_basis": {"approvalRef", "changeRefs"}, "release": set(), "distribute": {"recipientPartyIds"}, "acknowledge": set(), "return_copy": {"reason"}, "withdraw": {"reason"}}
             require(set(payload) == required_payloads[command], "PAYLOAD_INVALID", "Command payload fields do not match")
             if command in {"return_copy", "withdraw"}:
                 require(isinstance(payload["reason"], str) and 1 <= len(payload["reason"].strip()) <= 500,
@@ -504,7 +507,23 @@ def install_drawing_field_routes(app: FastAPI, store, *, identity: Callable, rol
                 before = deepcopy(revision)
                 now = store.engine.at()
                 group, role_code = role.get("actorGroup"), role.get("roleCode")
-                if command == "release":
+                if command == "update_basis":
+                    require(revision.get("status") == "registered", "BASIS_STATE_INVALID", "Approval basis can only be updated before field release")
+                    require((group == "ADM" and role_code == "project_admin") or (group == "SUP" and role_code == "chief_supervisor"),
+                            "NOT_AUTHORIZED", "Basis update requires administrator or supervision authority")
+                    authority = "render_document" if group == "ADM" else "review_approval"
+                    store.engine.authorize(drawing, authority, actor["partyId"], role["id"], qualification=True if group == "SUP" else None)
+                    approval_ref = payload["approvalRef"]
+                    require(approval_ref is None or _ref(approval_ref, "Approval"), "APPROVAL_REF_INVALID", "approvalRef must be an exact Approval ref or null")
+                    approval = _validate_approval_reference(store.engine, project_id, revision["drawingRef"], approval_ref)
+                    if approval is not None:
+                        _authorize_read(store.engine, approval, actor, role)
+                    changes = _validate_change_refs(store.engine, project_id, payload["changeRefs"])
+                    for change in changes:
+                        _authorize_read(store.engine, change, actor, role)
+                    revision["approvalRef"] = deepcopy(approval_ref)
+                    revision["changeRefs"] = deepcopy(payload["changeRefs"])
+                elif command == "release":
                     require(revision.get("status") == "registered" and revision.get("issuedFor") == "construction", "RELEASE_STATE_INVALID", "Only registered construction revisions can be released")
                     require(is_current_source, "SOURCE_STALE", "Drawing and PDF source must remain current")
                     release_authorized = False
@@ -584,7 +603,7 @@ def install_drawing_field_routes(app: FastAPI, store, *, identity: Callable, rol
         except ContractError as exc:
             code = exc.code
             status = (401 if code == "UNAUTHENTICATED" else 403 if code == "NOT_AUTHORIZED" else 404 if code == "NOT_FOUND" else
-                      409 if code in {"REFERENCE_STALE", "SOURCE_STALE", "APPROVAL_STALE", "APPROVAL_EXPIRED", "APPROVAL_NOT_CURRENT_TECHNICAL", "APPROVAL_MISSING", "APPROVAL_STALE", "CHANGE_STALE", "CHANGE_NOT_APPROVED", "CHANGE_TARGET_MISMATCH", "CHANGE_APPROVAL_INVALID", "RELEASE_STATE_INVALID", "RELEASE_GATE_BLOCKED", "SUPERSEDES_NOT_CURRENT", "DISTRIBUTION_STATE_INVALID", "ALREADY_DISTRIBUTED", "ACK_STATE_INVALID", "RECEIPT_NOT_DELIVERED", "RETURN_STATE_INVALID", "COPY_NOT_OUTSTANDING", "WITHDRAW_STATE_INVALID", "IDEMPOTENCY_CONFLICT"}
+                      409 if code in {"REFERENCE_STALE", "SOURCE_STALE", "APPROVAL_STALE", "APPROVAL_EXPIRED", "APPROVAL_NOT_CURRENT_TECHNICAL", "APPROVAL_MISSING", "CHANGE_STALE", "CHANGE_NOT_APPROVED", "CHANGE_TARGET_MISMATCH", "CHANGE_APPROVAL_INVALID", "RELEASE_STATE_INVALID", "RELEASE_GATE_BLOCKED", "SUPERSEDES_NOT_CURRENT", "DISTRIBUTION_STATE_INVALID", "ALREADY_DISTRIBUTED", "ACK_STATE_INVALID", "RECEIPT_NOT_DELIVERED", "RETURN_STATE_INVALID", "COPY_NOT_OUTSTANDING", "WITHDRAW_STATE_INVALID", "BASIS_STATE_INVALID", "IDEMPOTENCY_CONFLICT"}
                       else 413 if code == "PAYLOAD_TOO_LARGE" else 422)
             return _error(code, str(exc), status, current_version=exc.current_version)
         except (KeyError, ValueError, TypeError, json.JSONDecodeError):

@@ -132,7 +132,7 @@ class DrawingFieldControlTests(unittest.TestCase):
         )
         self.assertEqual(detail.status_code, 200, detail.text)
         self.assertEqual(detail.json()["version"], 1)
-        self.assertEqual(detail.json()["availableCommands"][0]["command"], "release")
+        self.assertEqual(detail.json()["availableCommands"][0]["command"], "update_basis")
         foreign = self.client.get(f"/projects/{uid()}/parallel/drawing-field-revisions/{field_revision['id']}",
                                   headers=self.headers())
         self.assertEqual(foreign.status_code, 404)
@@ -254,6 +254,52 @@ class DrawingFieldControlTests(unittest.TestCase):
         )
         self.assertEqual(history.status_code, 200, history.text)
         self.assertEqual([item["event"] for item in history.json()["items"]], ["registered", "release", "distribute", "acknowledge", "superseded", "return_copy"])
+
+    def test_pending_approval_can_be_refreshed_after_canonical_approval(self):
+        with self.store.transaction(True):
+            drawing = self.store.engine.get("InformationItem", self.drawing["id"])
+            pending = self.store.engine.bootstrap("Approval", {
+                "id": uid(), "projectId": self.project, "status": "pending",
+                "targetRef": self.drawing_ref, "requestedBy": self.store.meta["actors"]["CON"]["partyId"],
+                "approvalKind": "technical", "packageId": drawing["packageId"],
+                "locationId": drawing["locationId"], "discipline": drawing["discipline"],
+                "responsibleOrganizationId": drawing["responsibleOrganizationId"],
+                "minimumQualificationRank": drawing["minimumQualificationRank"],
+            })
+        created = self.register(self.register_body(approvalRef=self.ref("Approval", pending)), key="pending-register")
+        self.assertEqual(created.status_code, 201, created.text)
+
+        approved = deepcopy(pending)
+        approved.update(status="approved", version=pending["version"] + 2,
+                        approvedBy=self.store.meta["actors"]["SUP"]["partyId"],
+                        approvedAt=self.store.engine.at(), updatedAt=self.store.engine.at())
+        interim = deepcopy(pending)
+        interim.update(status="under_review", version=pending["version"] + 1, updatedAt=self.store.engine.at())
+        with self.store.transaction(True):
+            self.store.engine._records[("Approval", pending["id"])] = approved
+            self.store.engine._history[("Approval", pending["id"], interim["version"])] = interim
+            self.store.engine._history[("Approval", pending["id"], approved["version"])] = deepcopy(approved)
+
+        self.actor = deepcopy(self.store.meta["actors"]["SUP"])
+        refreshed = self.command(created.json(), "update_basis", {
+            "approvalRef": self.ref("Approval", approved), "changeRefs": [],
+        }, key="refresh-approved-basis")
+        self.assertEqual(refreshed.status_code, 200, refreshed.text)
+        self.assertEqual(refreshed.json()["approvalRef"], self.ref("Approval", approved))
+        self.assertEqual(refreshed.json()["version"], 2)
+        replay = self.command(created.json(), "update_basis", {
+            "approvalRef": self.ref("Approval", approved), "changeRefs": [],
+        }, key="refresh-approved-basis")
+        self.assertEqual(replay.status_code, 200, replay.text)
+        self.assertEqual(replay.json()["version"], 2)
+        changed_retry = self.command(refreshed.json(), "update_basis", {
+            "approvalRef": None, "changeRefs": [],
+        }, key="refresh-approved-basis")
+        self.assertEqual(changed_retry.status_code, 409, changed_retry.text)
+
+        released = self.command(refreshed.json(), "release", {}, key="release-after-refresh")
+        self.assertEqual(released.status_code, 200, released.text)
+        self.assertEqual(released.json()["status"], "released")
 
     def test_demo_write_gate_and_read_permission_revocation(self):
         record = self.register().json()
