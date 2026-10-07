@@ -1,5 +1,8 @@
 import unittest
 from copy import deepcopy
+from unittest.mock import patch
+
+import services.api.modules.work_inbox as work_inbox_module
 
 from app.reference.validation import ContractError
 from services.api.modules.work_inbox import (
@@ -170,6 +173,97 @@ class WorkInboxProjectionTests(unittest.TestCase):
         self.assertEqual(second["total"], 3)
         self.assertIsNotNone(first["nextCursor"])
         self.assertIsNone(second["nextCursor"])
+
+    def test_optional_candidate_check_preserves_projection_and_preflights_only_page(self):
+        rows = [
+            ("Issue", "issue", record("issue-c", updated="2026-10-07T08:00:00Z")),
+            ("Issue", "issue", record("issue-a", updated="2026-10-07T10:00:00Z")),
+            ("Issue", "issue", record("issue-b", updated="2026-10-07T09:00:00Z")),
+            ("Issue", "issue", record("issue-hidden", readers=("OWN",))),
+            ("Issue", "issue", record("issue-no-command", commands=("CON",))),
+        ]
+        engine = StubEngine(rows)
+        preflight_calls = []
+        has_candidate_calls = []
+
+        def counted_preflight(machine, item, session, role):
+            preflight_calls.append(item["id"])
+            return preflight(machine, item, session, role)
+
+        def has_candidates(machine, item, session, role):
+            has_candidate_calls.append(item["id"])
+            return role["actorGroup"] in item["commandRoles"]
+
+        legacy_first = build_work_inbox(
+            engine, PROJECT, SESSION, ROLE, readable=readable, preflight=counted_preflight, limit=2,
+        )
+        preflight_calls.clear()
+        fast_first = build_work_inbox(
+            engine, PROJECT, SESSION, ROLE, readable=readable, preflight=counted_preflight,
+            has_candidates=has_candidates, limit=2,
+        )
+        self.assertEqual(fast_first, legacy_first)
+        self.assertEqual(preflight_calls, ["issue-a", "issue-b"])
+        self.assertNotIn("issue-hidden", has_candidate_calls)
+        self.assertIn("issue-no-command", has_candidate_calls)
+
+        legacy_second = build_work_inbox(
+            engine, PROJECT, SESSION, ROLE, readable=readable, preflight=preflight,
+            limit=2, cursor=legacy_first["nextCursor"],
+        )
+        fast_second = build_work_inbox(
+            engine, PROJECT, SESSION, ROLE, readable=readable, preflight=preflight,
+            has_candidates=has_candidates, limit=2, cursor=fast_first["nextCursor"],
+        )
+        self.assertEqual(fast_second, legacy_second)
+        self.assertEqual([x["record"]["id"] for x in fast_second["records"]], ["issue-c"])
+        self.assertEqual(fast_second["total"], 3)
+        self.assertIsNone(fast_second["nextCursor"])
+
+    def test_candidate_check_keeps_role_and_version_authority_in_page_preflight(self):
+        rows = [
+            ("Issue", "issue", record("issue-sup", readers=("SUP",), commands=("SUP",))),
+            ("Issue", "issue", record("issue-own", readers=("OWN",), commands=("OWN",))),
+        ]
+        engine = StubEngine(rows)
+        role_specific = {**ROLE, "actorGroup": "OWN", "id": "role-own"}
+
+        def has_candidates(machine, item, session, role):
+            return role["actorGroup"] in item["commandRoles"]
+
+        result = build_work_inbox(
+            engine, PROJECT, SESSION, role_specific, readable=readable, preflight=preflight,
+            has_candidates=has_candidates,
+        )
+        self.assertEqual([x["record"]["id"] for x in result["records"]], ["issue-own"])
+        self.assertEqual(result["records"][0]["record"]["version"], 3)
+        self.assertEqual(result["records"][0]["commandCandidates"][0]["expectedVersion"], 3)
+
+    def test_optimized_projection_copies_response_rows_only_after_paging(self):
+        rows = [("Issue", "issue", record(f"issue-{index:03}")) for index in range(40)]
+        engine = StubEngine(rows)
+
+        def has_candidates(machine, item, session, role):
+            return True
+
+        original_deepcopy = deepcopy
+        copy_calls = []
+
+        def count_copy(value):
+            copy_calls.append(value)
+            return original_deepcopy(value)
+
+        with patch.object(work_inbox_module, "deepcopy", side_effect=count_copy):
+            result = build_work_inbox(
+                engine, PROJECT, SESSION, ROLE, readable=readable, preflight=preflight,
+                has_candidates=has_candidates, limit=3,
+            )
+
+        self.assertEqual(result["total"], 40)
+        self.assertEqual(len(result["records"]), 3)
+        self.assertEqual(len(copy_calls), 3)
+        result["records"][0]["record"]["readers"].clear()
+        self.assertEqual(engine._records[("Issue", result["records"][0]["record"]["id"])]["readers"], ["SUP"])
 
     def test_page_size_is_bounded_and_boolean_is_not_accepted_as_integer(self):
         engine = StubEngine([("Issue", "issue", record("issue-1"))])
