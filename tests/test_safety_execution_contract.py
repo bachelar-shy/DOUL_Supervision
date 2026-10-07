@@ -438,6 +438,114 @@ class SafetyExecutionContractTests(unittest.TestCase):
         self.assertFalse(fixture.engine.get('WorkItem', inspection['id'])['data']['equipmentAvailable'])
         self.assertFalse(fixture.engine._permit_equipment_ready(current_permit))
 
+    def test_permit_uses_latest_equipment_inspection_not_historical_pass(self):
+        fixture = Fixture()
+        equipment = fixture.engine.bootstrap(
+            'Asset',
+            {
+                'id': uid(),
+                'projectId': fixture.project,
+                'subtype': 'Equipment',
+                'name': 'Latest inspection gate equipment',
+                'certificateRequired': False,
+                'calibrationRequired': False,
+            },
+        )
+        equipment_ref = fixture.ref('Asset', equipment['id'])
+        readiness = {
+            'methodStatementCurrent': True,
+            'riskAssessmentCurrent': True,
+            'personnelQualified': True,
+            'equipmentReady': True,
+            'controlMeasuresReady': True,
+            'emergencyReady': True,
+            'environmentalConditionsReady': True,
+            'noBlockingSafetyIssue': True,
+        }
+        permit = fixture.create('safety_permit', {'title': 'Latest inspection permit', 'data': {}}, actor='CON')
+        self.set_permit_state(
+            fixture,
+            permit,
+            state='authorized',
+            work_authorized=False,
+            readiness=readiness,
+            validFrom=BEFORE,
+            validTo='2028-01-01T00:00:00Z',
+            equipmentRefs=[equipment_ref],
+        )
+
+        def result(command, *, at, reason=None, valid_to='2028-01-01T00:00:00Z'):
+            fixture.clock = at
+            inspection = fixture.create(
+                'safety_equipment_inspection',
+                {'title': command, 'data': {'equipmentRef': equipment_ref, 'inspectionKind': 'pre_use'}},
+                actor='SUP',
+            )
+            inspection = fixture.command('safety_equipment_inspection', inspection, 'request_inspection', actor='SUP', evidence=[])
+            inspection = fixture.command('safety_equipment_inspection', inspection, 'schedule_inspection', {'scheduledAt': fixture.engine.at()}, actor='SUP', evidence=[])
+            inspection = fixture.command('safety_equipment_inspection', inspection, 'start_inspection', {'inspectedAt': fixture.engine.at()}, actor='SUP', evidence=[])
+            inspection = fixture.command(
+                'safety_equipment_inspection',
+                inspection,
+                'submit_result',
+                {
+                    'resultSummary': command,
+                    'preUseCheckComplete': command == 'pass',
+                    'validTo': valid_to,
+                    **({'failureReason': reason or 'failed'} if command == 'fail' else {}),
+                    **({'restrictionConditions': [reason or 'restricted']} if command == 'restrict' else {}),
+                },
+                actor='SUP',
+                evidence=[fixture.evidence],
+            )
+            payload = {'failureReason': reason or 'failed'} if command == 'fail' else {'restrictionConditions': [reason or 'restricted']} if command == 'restrict' else {}
+            return fixture.command('safety_equipment_inspection', inspection, command, payload, actor='SUP', evidence=[fixture.evidence])
+
+        result('pass', at=datetime(2026, 10, 6, 10, 0, tzinfo=timezone.utc))
+        current_permit = fixture.engine.get('WorkItem', permit['id'])
+        self.assertTrue(fixture.engine._permit_equipment_ready(current_permit))
+
+        failed = result('fail', at=datetime(2026, 10, 6, 11, 0, tzinfo=timezone.utc), reason='brake failure')
+        self.assertFalse(fixture.engine._permit_equipment_ready(current_permit))
+        with self.assertRaisesRegex(ContractError, 'Equipment readiness is not current'):
+            fixture.command('safety_permit', current_permit, 'activate', {'readiness': readiness}, actor='SUP', evidence=[])
+
+        action = fixture.action()
+        failed = fixture.command(
+            'safety_equipment_inspection',
+            failed,
+            'require_reinspection',
+            {
+                'correctiveActionRefs': [fixture.ref('Action', action['id'])],
+                'reason': 'brake failure requires reinspection',
+            },
+            actor='SUP',
+            evidence=[],
+        )
+        self.assertEqual(failed['status'], 'reinspection_due')
+        self.assertFalse(fixture.engine._permit_equipment_ready(current_permit))
+
+        result('restrict', at=datetime(2026, 10, 6, 12, 0, tzinfo=timezone.utc), reason='restricted use')
+        self.assertFalse(fixture.engine._permit_equipment_ready(current_permit))
+
+        latest_pass = result(
+            'pass',
+            at=datetime(2026, 10, 6, 13, 0, tzinfo=timezone.utc),
+            valid_to='2026-10-07T00:00:00Z',
+        )
+        self.assertTrue(fixture.engine._permit_equipment_ready(current_permit))
+
+        fixture.clock = datetime(2026, 10, 8, tzinfo=timezone.utc)
+        latest_pass = fixture.command(
+            'safety_equipment_inspection',
+            latest_pass,
+            'expire',
+            actor='SYSTEM',
+            evidence=[],
+        )
+        self.assertEqual(latest_pass['status'], 'expired')
+        self.assertFalse(fixture.engine._permit_equipment_ready(current_permit))
+
     def test_equipment_pass_rejects_stale_or_wrong_kind_certificate_refs(self):
         fixture = Fixture()
         equipment = fixture.engine.bootstrap(

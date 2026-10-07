@@ -181,6 +181,93 @@ class SafetyHttpPersistenceTests(unittest.TestCase):
             "SafetyEquipmentInspection",
         )
 
+    def test_activate_blocks_when_latest_equipment_inspection_failed(self):
+        project_id, scope, permit = self.create_permit(title="Latest equipment inspection gate")
+        supervisor, headers = self.login("SUP")
+        readiness = {
+            "methodStatementCurrent": True,
+            "riskAssessmentCurrent": True,
+            "personnelQualified": True,
+            "equipmentReady": True,
+            "controlMeasuresReady": True,
+            "emergencyReady": True,
+            "environmentalConditionsReady": True,
+            "noBlockingSafetyIssue": True,
+        }
+        with self.app.state.store.transaction(True):
+            engine = self.app.state.store.engine
+            equipment = engine.bootstrap(
+                "Asset",
+                {
+                    "id": uid(),
+                    "projectId": project_id,
+                    "subtype": "Equipment",
+                    "name": "HTTP latest-inspection equipment",
+                    "certificateRequired": False,
+                    "calibrationRequired": False,
+                },
+            )
+            equipment_ref = {
+                "objectType": "Asset",
+                "objectId": equipment["id"],
+                "version": equipment["version"],
+            }
+            current = engine.get("WorkItem", permit["id"])
+            current["status"] = "authorized"
+            current["data"].update(
+                {
+                    "workAuthorized": False,
+                    "readiness": readiness,
+                    "blockedReasons": [],
+                    "validFrom": "2026-01-01T00:00:00Z",
+                    "validTo": "2028-01-01T00:00:00Z",
+                    "equipmentRefs": [equipment_ref],
+                }
+            )
+            engine._save("WorkItem", current)
+            for created_at, status, available in [
+                ("2026-10-06T09:00:00Z", "passed", True),
+                ("2026-10-06T11:00:00Z", "failed", False),
+            ]:
+                engine.bootstrap(
+                    "WorkItem",
+                    {
+                        "id": uid(),
+                        "projectId": project_id,
+                        "createdAt": created_at,
+                        "updatedAt": created_at,
+                        "createdBy": uid(),
+                        "subtype": "SafetyEquipmentInspection",
+                        "status": status,
+                        "title": status,
+                        "data": {
+                            "equipmentRef": equipment_ref,
+                            "inspectionKind": "pre_use",
+                            "equipmentAvailable": available,
+                            "validTo": "2028-01-01T00:00:00Z",
+                        },
+                        **scope,
+                    },
+                )
+            permit = engine.get("WorkItem", permit["id"])
+
+        response = self.client.post(
+            f"/projects/{project_id}/safety-permits/{permit['id']}/activate",
+            headers={**headers, "Idempotency-Key": uid()},
+            json={
+                "roleAssignmentId": supervisor["actor"]["roleAssignmentId"],
+                "expectedVersion": permit["version"],
+                "payload": {"readiness": readiness, "blockedReasons": []},
+                "evidenceIds": [],
+            },
+        )
+        self.assertEqual(response.status_code, 409, response.text)
+        self.assertEqual(response.json()["code"], "SAFETY_WORK_AUTHORIZED")
+        self.assertEqual(
+            self.app.state.store.engine.get("WorkItem", permit["id"])["status"],
+            "authorized",
+        )
+
     def test_issue_stop_is_atomic_idempotent_and_survives_restart(self):
         project_id, scope, permit = self.create_permit()
         permit = self.force_permit_active_for_stop_prerequisite(permit["id"])

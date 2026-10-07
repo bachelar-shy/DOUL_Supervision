@@ -901,18 +901,19 @@ class Engine:
         r=self._fields(r)
         for reference in r.get('equipmentRefs',[]):
             equipment=self._current_reference(reference,r['projectId'],object_type='Asset',subtype='Equipment')
-            available=False
-            for (kind,object_id),record in self._records.items():
+            inspections=[]
+            for sequence,((kind,object_id),record) in enumerate(self._records.items()):
                 if kind!='WorkItem' or record.get('subtype')!='SafetyEquipmentInspection' or record['projectId']!=r['projectId']:
                     continue
                 target=record.get('data',{}).get('equipmentRef',{})
-                if target.get('objectId')!=equipment['id'] or record.get('status')!='passed':
+                if target.get('objectId')!=equipment['id']:
                     continue
                 current=self.get('WorkItem',object_id)
-                if current.get('data',{}).get('equipmentAvailable') is True:
-                    available=True
-                    break
-            if not available:
+                inspections.append((current.get('createdAt',''),sequence,current))
+            if not inspections:
+                return False
+            current_inspection=max(inspections,key=lambda item:(item[0],item[1]))[2]
+            if current_inspection.get('status')!='passed' or current_inspection.get('data',{}).get('equipmentAvailable') is not True:
                 return False
         return True
 
