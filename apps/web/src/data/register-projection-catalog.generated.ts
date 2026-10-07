@@ -377,7 +377,7 @@ export const registerProjectionCatalog = [
       { objectType: "WorkItem", subtype: "EOTRequest" },
       { objectType: "WorkItem", subtype: "DelayEvent" },
     ],
-    calculatedFields: ["notice_due", "claim_status"],
+    calculatedFields: ["notice_due", "time_bar_risk", "claim_status", "eot_status", "baseline_update_status"],
     mode: "actionable",
     statusSource: "domain.state; resultStatus and nextWorkAllowed remain separate",
     rawStatusPatch: false,

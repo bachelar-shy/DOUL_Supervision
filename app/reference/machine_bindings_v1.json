@@ -69,6 +69,18 @@
     "recovery_plan": {
       "collection": "recovery-plans",
       "create_authority": "schedule.recovery.request"
+    },
+    "contract_notice": {
+      "collection": "contract-notices",
+      "create_authority": "contract.notice.identify"
+    },
+    "claim": {
+      "collection": "claims",
+      "create_authority": "contract.claim.draft"
+    },
+    "eot_request": {
+      "collection": "eot-requests",
+      "create_authority": "contract.eot.draft"
     }
   }
 }

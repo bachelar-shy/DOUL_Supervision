@@ -416,7 +416,31 @@
                 "schedule.recovery.monitor",
                 "schedule.recovery.close",
                 "schedule.recovery.supersede",
-                "schedule.recovery.cancel"
+                "schedule.recovery.cancel",
+                "contract.notice.identify",
+                "contract.notice.calculate_due",
+                "contract.notice.submit",
+                "contract.notice.acknowledge",
+                "contract.notice.followup",
+                "contract.notice.preserve",
+                "contract.notice.flag_risk",
+                "contract.notice.close",
+                "contract.claim.draft",
+                "contract.claim.submit",
+                "contract.claim.receive",
+                "contract.claim.review",
+                "contract.claim.request_decision",
+                "contract.claim.decide",
+                "contract.claim.close",
+                "contract.eot.draft",
+                "contract.eot.submit",
+                "contract.eot.receive",
+                "contract.eot.time_review",
+                "contract.eot.entitlement_review",
+                "contract.eot.request_decision",
+                "contract.eot.decide",
+                "contract.eot.baseline_update",
+                "contract.eot.close"
               ]
             }
           },
@@ -2378,6 +2402,63 @@
               "properties": {
                 "data": {
                   "$ref": "#/components/schemas/RecoveryPlanData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "ContractNotice"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/ContractNoticeData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "Claim"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/ClaimData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "EOTRequest"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/EOTRequestData"
                 }
               }
             }
@@ -4969,6 +5050,400 @@
         },
         "required": [
           "triggerDelayEventRefs"
+        ],
+        "additionalProperties": false
+      },
+      "ContractNoticeData": {
+        "type": "object",
+        "properties": {
+          "noticeNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "eventRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "clauseRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "contractRuleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "awareAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "eventAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "noticeDueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueCalculationConfirmed": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "senderPartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recipientPartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reliefReserved": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "acknowledgementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "followupDueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "continuingRecordRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "downstreamCaseRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "timeBarRisk": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "timeBarRiskAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "acknowledgedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "preservedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "noticeNo",
+          "eventRef",
+          "clauseRef",
+          "contractRuleRef",
+          "awareAt",
+          "eventAt",
+          "senderPartyId",
+          "recipientPartyId",
+          "subject"
+        ],
+        "additionalProperties": false
+      },
+      "ClaimData": {
+        "type": "object",
+        "properties": {
+          "claimNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "noticeRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "eventRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "clauseRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "claimType": {
+            "type": "string",
+            "enum": [
+              "time",
+              "cost",
+              "time_and_cost",
+              "other"
+            ]
+          },
+          "reliefRequested": {
+            "type": "string",
+            "minLength": 1
+          },
+          "entitlementBasis": {
+            "type": "string"
+          },
+          "chronology": {
+            "type": "string"
+          },
+          "evidenceRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "timeImpactRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "costImpactRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "amountClaimed": {
+            "type": "number",
+            "minimum": 0
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "substantiationRequirements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "entitlementAssessment": {
+            "type": "string"
+          },
+          "amountAssessed": {
+            "type": "number",
+            "minimum": 0
+          },
+          "recommendation": {
+            "type": "string"
+          },
+          "decisionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "decisionOutcome": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "partially_approved",
+              "rejected",
+              "disputed"
+            ],
+            "readOnly": true
+          },
+          "amountApproved": {
+            "type": "number",
+            "minimum": 0
+          },
+          "disputedItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "implementationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "settlementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "decisionAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "settledAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "claimNo"
+        ],
+        "additionalProperties": false
+      },
+      "EOTRequestData": {
+        "type": "object",
+        "properties": {
+          "eotNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "delayEventRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "noticeRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "baselineScheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "impactAnalysisRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "daysClaimed": {
+            "type": "number",
+            "minimum": 0
+          },
+          "concurrentDelayAssessment": {
+            "type": "string"
+          },
+          "timeImpactAssessment": {
+            "type": "string"
+          },
+          "daysAssessed": {
+            "type": "number",
+            "minimum": 0
+          },
+          "assessedCompletionDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "entitlementAssessment": {
+            "type": "string"
+          },
+          "recommendation": {
+            "type": "string"
+          },
+          "decisionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "decisionOutcome": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "partially_approved",
+              "rejected",
+              "disputed"
+            ],
+            "readOnly": true
+          },
+          "daysApproved": {
+            "type": "number",
+            "minimum": 0
+          },
+          "revisedCompletionDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "baselineRevisionBasisRef": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DomainRef"
+              }
+            ],
+            "readOnly": true
+          },
+          "baselineRevisionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "disputeReason": {
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "timeImpactReviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "entitlementReviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "decisionAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "baselineUpdateRequestedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "eotNo"
         ],
         "additionalProperties": false
       }
