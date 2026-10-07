@@ -81,9 +81,7 @@ test("inspection case panel shows the server-linked graph and opens commands onl
   const panel = page.getByTestId("inspection-case-flow");
   await expect(panel).toBeVisible();
   await panel.getByLabel("원 검측 선택", { exact: true }).selectOption(fixture.inspectionId);
-  const issue = panel.locator(".inspection-case-issue").filter({
-    has: panel.locator(".inspection-case-issue-title h3").filter({ hasText: fixture.issueTitle }),
-  });
+  const issue = panel.locator(".inspection-case-issue").filter({ hasText: fixture.issueTitle });
   await expect(issue).toHaveCount(1);
   await expect(issue.locator(".inspection-case-issue-title h3")).toContainText(fixture.issueTitle);
   const observationRef = issue.locator(".inspection-case-related").nth(0)
