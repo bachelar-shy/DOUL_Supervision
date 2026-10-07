@@ -10,6 +10,8 @@ on:
       - "services/**"
       - "apps/web/**"
       - "packages/client/**"
+      - "tests_mvp/test_*postgres*.py"
+      - "tests_mvp/test_schedule_source_import*.py"
       - "package.json"
       - "package-lock.json"
   push:
@@ -22,6 +24,8 @@ on:
       - "services/**"
       - "apps/web/**"
       - "packages/client/**"
+      - "tests_mvp/test_*postgres*.py"
+      - "tests_mvp/test_schedule_source_import*.py"
       - "package.json"
       - "package-lock.json"
 
@@ -129,7 +133,7 @@ jobs:
             echo "DOUL_TEST_POSTGRES_DSN=$test_database_url"
           } >> "$GITHUB_ENV"
 
-      - name: Run live PostgreSQL persistence integration tests
+      - name: Run live PostgreSQL persistence and Schedule import integration tests
         if: steps.postgres_adapter.outputs.available == 'true'
         run: |
           set -o pipefail
@@ -138,20 +142,32 @@ jobs:
             sh -ec 'test_db="${POSTGRES_DB}_ci_test"; dropdb --if-exists -U "$POSTGRES_USER" "$test_db"; createdb -U "$POSTGRES_USER" "$test_db"'
 
           test -n "$DOUL_TEST_POSTGRES_DSN"
-          docker compose -f infra/compose/compose.dev.yml run --rm --no-deps \
-            -e DOUL_TEST_POSTGRES_DSN \
-            -e DATABASE_URL= \
-            -v "$PWD:/workspace:ro" \
-            -w /workspace \
-            api python -m unittest \
-            tests_mvp.test_postgres_persistence.PostgresPersistenceIntegrationTests \
-            -v 2>&1 | tee /tmp/postgres-integration-tests.txt
 
-          grep -q '^OK$' /tmp/postgres-integration-tests.txt
-          if grep -qi 'skipped' /tmp/postgres-integration-tests.txt; then
-            echo "PostgreSQL integration tests must not skip when DOUL_TEST_POSTGRES_DSN is configured."
-            exit 1
-          fi
+          run_postgres_suite() {
+            log_file="$1"
+            shift
+            docker compose -f infra/compose/compose.dev.yml run --rm --no-deps \
+              -e DOUL_TEST_POSTGRES_DSN \
+              -e DATABASE_URL= \
+              -v "$PWD:/workspace:ro" \
+              -w /workspace \
+              api python -m unittest "$@" -v 2>&1 | tee "$log_file"
+
+            grep -Eq '^Ran [1-9][0-9]* tests? in ' "$log_file"
+            grep -q '^OK$' "$log_file"
+            if grep -qi 'skipped' "$log_file"; then
+              echo "PostgreSQL integration tests must not skip when DOUL_TEST_POSTGRES_DSN is configured."
+              exit 1
+            fi
+          }
+
+          run_postgres_suite \
+            /tmp/postgres-persistence-tests.txt \
+            tests_mvp.test_postgres_persistence.PostgresPersistenceIntegrationTests
+
+          run_postgres_suite \
+            /tmp/schedule-source-import-postgres-tests.txt \
+            tests_mvp.test_schedule_source_import_postgres
 
       - name: Start development stack
         run: |
