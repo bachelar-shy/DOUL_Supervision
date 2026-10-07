@@ -10,6 +10,7 @@ import unittest
 from services.api.modules.evidence.storage import (
     Boto3S3QuarantineStore,
     ObjectStorageError,
+    QuarantinedObject,
     StreamingQuarantineUploader,
     UploadValidationError,
 )
@@ -23,6 +24,13 @@ class TrackingStream(io.BytesIO):
     def read(self, size: int = -1) -> bytes:
         self.read_sizes.append(size)
         return super().read(size)
+
+
+class OversizedReadStream(io.BytesIO):
+    """A broken/nonconforming stream that returns more than requested."""
+
+    def read(self, size: int = -1) -> bytes:
+        return super().read(-1)
 
 
 class FakeQuarantineStore:
@@ -55,7 +63,8 @@ class FakeS3Client:
 
     def put_object(self, **kwargs):
         self.put_args = kwargs
-        return {"VersionId": "version-2"}
+        # ETag is intentionally not treated as a content SHA-256.
+        return {"ETag": '"md5-or-provider-value"'}
 
     def get_object(self, **kwargs):
         self.get_args = kwargs
@@ -71,10 +80,20 @@ class StreamingQuarantineUploaderTests(unittest.TestCase):
             self.store, self.temp.name, max_bytes=64 * 1024, read_size=4096
         )
 
-    def test_streams_bounded_reads_and_persists_exact_hash_in_quarantine(self):
+    def store_bytes(self, content: bytes, *, project_id: str = "project_1", upload_id: str = "upload_123"):
+        return self.uploader.store_verified(
+            project_id,
+            upload_id,
+            io.BytesIO(content),
+            expected_bytes=len(content),
+            expected_sha256=hashlib.sha256(content).hexdigest(),
+        )
+
+    def test_streams_bounded_reads_and_persists_exact_hash_in_project_quarantine(self):
         content = bytes(range(256)) * 128
         source = TrackingStream(content)
         ref = self.uploader.store_verified(
+            "project_1",
             "upload_123",
             source,
             expected_bytes=len(content),
@@ -84,6 +103,8 @@ class StreamingQuarantineUploaderTests(unittest.TestCase):
 
         self.assertTrue(source.read_sizes)
         self.assertTrue(all(size == 4096 for size in source.read_sizes))
+        self.assertEqual(ref.project_id, "project_1")
+        self.assertEqual(ref.key, f"evidence/project_1/upload_123/{hashlib.sha256(content).hexdigest()}")
         stored, metadata = self.store.objects[ref.key]
         self.assertEqual(stored, content)
         self.assertEqual(ref.byte_count, len(content))
@@ -94,9 +115,16 @@ class StreamingQuarantineUploaderTests(unittest.TestCase):
             self.assertEqual(restored.read(), content)
         self.assertEqual(list(Path(self.temp.name).iterdir()), [])
 
-    def test_hash_mismatch_writes_no_object(self):
+    def test_same_upload_and_content_are_isolated_by_project(self):
+        first = self.store_bytes(b"same", project_id="project_a")
+        second = self.store_bytes(b"same", project_id="project_b")
+        self.assertNotEqual(first.key, second.key)
+        self.assertEqual(len(self.store.objects), 2)
+
+    def test_hash_mismatch_writes_no_object_and_removes_staging(self):
         with self.assertRaisesRegex(UploadValidationError, "SHA-256"):
             self.uploader.store_verified(
+                "project_1",
                 "upload_123",
                 io.BytesIO(b"original"),
                 expected_bytes=8,
@@ -108,6 +136,7 @@ class StreamingQuarantineUploaderTests(unittest.TestCase):
     def test_declared_length_mismatch_writes_no_object(self):
         with self.assertRaisesRegex(UploadValidationError, "size"):
             self.uploader.store_verified(
+                "project_1",
                 "upload_123",
                 io.BytesIO(b"short"),
                 expected_bytes=10,
@@ -116,58 +145,83 @@ class StreamingQuarantineUploaderTests(unittest.TestCase):
         self.assertEqual(self.store.objects, {})
 
     def test_oversized_stream_stops_before_remote_write(self):
+        content = b"x" * (64 * 1024 + 1)
         with self.assertRaisesRegex(UploadValidationError, "exceeds"):
             self.uploader.store_verified(
+                "project_1",
                 "upload_123",
-                TrackingStream(b"x" * (64 * 1024 + 1)),
-                expected_bytes=64 * 1024 + 1,
-                expected_sha256=hashlib.sha256(b"x" * (64 * 1024 + 1)).hexdigest(),
+                TrackingStream(content),
+                expected_bytes=len(content),
+                expected_sha256=hashlib.sha256(content).hexdigest(),
             )
         self.assertEqual(self.store.objects, {})
 
-    def test_storage_failure_does_not_return_official_reference(self):
-        self.store.fail = True
-        with self.assertRaises(ObjectStorageError):
+    def test_nonconforming_source_cannot_exceed_configured_read_chunk(self):
+        with self.assertRaisesRegex(UploadValidationError, "bounded read size"):
             self.uploader.store_verified(
+                "project_1",
                 "upload_123",
-                io.BytesIO(b"safe"),
-                expected_bytes=4,
-                expected_sha256=hashlib.sha256(b"safe").hexdigest(),
+                OversizedReadStream(b"x" * 5000),
+                expected_bytes=5000,
+                expected_sha256=hashlib.sha256(b"x" * 5000).hexdigest(),
             )
+        self.assertEqual(self.store.objects, {})
         self.assertEqual(list(Path(self.temp.name).iterdir()), [])
 
-    def test_boto3_adapter_uses_private_quarantine_metadata_and_exact_version(self):
+    def test_bool_integer_limits_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "max_bytes"):
+            StreamingQuarantineUploader(self.store, self.temp.name, max_bytes=True)
+        with self.assertRaisesRegex(ValueError, "read_size"):
+            StreamingQuarantineUploader(self.store, self.temp.name, max_bytes=10, read_size=True)
+        with self.assertRaisesRegex(ValueError, "expected_bytes"):
+            self.uploader.store_verified(
+                "project_1", "upload_123", io.BytesIO(b""), expected_bytes=False,
+                expected_sha256=hashlib.sha256(b"").hexdigest(),
+            )
+
+    def test_storage_failure_does_not_return_reference_and_cleans_staging(self):
+        self.store.fail = True
+        with self.assertRaises(ObjectStorageError):
+            self.store_bytes(b"safe")
+        self.assertEqual(list(Path(self.temp.name).iterdir()), [])
+
+    def test_boto3_adapter_sends_binary_body_private_metadata_and_exact_version(self):
         client = FakeS3Client()
         store = Boto3S3QuarantineStore(client, bucket="doul-private", prefix="evidence")
+        body = io.BytesIO(b"remote")
         version = store.put_quarantine(
-            "upload_123/abc",
-            io.BytesIO(b"remote"),
+            "project_1/upload_123/abc",
+            body,
             content_length=6,
             content_type="application/octet-stream",
             sha256=hashlib.sha256(b"remote").hexdigest(),
         )
 
-        self.assertEqual(version, "version-2")
+        self.assertIsNone(version)
+        self.assertIs(client.put_args["Body"], body)
         self.assertEqual(client.put_args["Bucket"], "doul-private")
-        self.assertEqual(client.put_args["Key"], "evidence/upload_123/abc")
+        self.assertEqual(client.put_args["Key"], "evidence/project_1/upload_123/abc")
+        self.assertEqual(client.put_args["ContentLength"], 6)
         self.assertEqual(client.put_args["Metadata"]["classification"], "quarantine")
+        self.assertEqual(client.put_args["Metadata"]["sha256"], hashlib.sha256(b"remote").hexdigest())
         self.assertNotIn("ACL", client.put_args)
-        with store.open_quarantine("upload_123/abc", version) as body:
-            self.assertEqual(body.read(), b"remote")
-        self.assertEqual(client.get_args["VersionId"], version)
+        with store.open_quarantine("project_1/upload_123/abc", "version-2") as remote:
+            self.assertEqual(remote.read(), b"remote")
+        self.assertEqual(client.get_args["VersionId"], "version-2")
 
-    def test_corrupt_download_is_not_exposed_to_caller(self):
-        content = b"original"
-        ref = self.uploader.store_verified(
-            "upload_123",
-            io.BytesIO(content),
-            expected_bytes=len(content),
-            expected_sha256=hashlib.sha256(content).hexdigest(),
-        )
-        self.store.objects[ref.key] = (
-            b"tampered",
-            {"classification": "quarantine"},
-        )
+    def test_corrupt_download_size_is_not_exposed_to_caller(self):
+        ref = self.store_bytes(b"original")
+        self.store.objects[ref.key] = (b"original-extra", {})
+        exposed = False
+        with self.assertRaisesRegex(UploadValidationError, "size"):
+            with self.uploader.open_verified(ref):
+                exposed = True
+        self.assertFalse(exposed)
+        self.assertEqual(list(Path(self.temp.name).iterdir()), [])
+
+    def test_corrupt_download_hash_is_not_exposed_to_caller(self):
+        ref = self.store_bytes(b"original")
+        self.store.objects[ref.key] = (b"tampered", {})
         exposed = False
         with self.assertRaisesRegex(UploadValidationError, "SHA-256"):
             with self.uploader.open_verified(ref):
@@ -175,14 +229,32 @@ class StreamingQuarantineUploaderTests(unittest.TestCase):
         self.assertFalse(exposed)
         self.assertEqual(list(Path(self.temp.name).iterdir()), [])
 
-    def test_invalid_upload_id_is_rejected(self):
-        with self.assertRaises(ValueError):
-            self.uploader.store_verified(
-                "../project",
-                io.BytesIO(b""),
-                expected_bytes=0,
-                expected_sha256=hashlib.sha256(b"").hexdigest(),
-            )
+    def test_open_verified_rejects_cross_project_key_before_storage_read(self):
+        ref = self.store_bytes(b"original")
+        foreign = QuarantinedObject(
+            project_id="project_other",
+            key=ref.key,
+            version_id=ref.version_id,
+            byte_count=ref.byte_count,
+            sha256=ref.sha256,
+            content_type=ref.content_type,
+        )
+        with self.assertRaisesRegex(ValueError, "project namespace"):
+            with self.uploader.open_verified(foreign):
+                self.fail("unreachable")
+        self.assertEqual(list(Path(self.temp.name).iterdir()), [])
+
+    def test_invalid_project_or_upload_id_is_rejected(self):
+        for project_id, upload_id in [("../project", "upload_123"), ("project", "../upload")]:
+            with self.subTest(project_id=project_id, upload_id=upload_id):
+                with self.assertRaises(ValueError):
+                    self.uploader.store_verified(
+                        project_id,
+                        upload_id,
+                        io.BytesIO(b""),
+                        expected_bytes=0,
+                        expected_sha256=hashlib.sha256(b"").hexdigest(),
+                    )
 
 
 if __name__ == "__main__":

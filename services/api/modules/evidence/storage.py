@@ -3,6 +3,8 @@
 This module deliberately does not finalize evidence or make objects available to
 business workflows. Callers must complete MIME validation, security scanning,
 metadata commit, and reconciliation before an object can become official.
+Local staging files are temporary and removed; remote quarantine objects are
+retained until an explicit governance disposition or reconciliation action.
 """
 from __future__ import annotations
 
@@ -26,8 +28,13 @@ class ObjectStorageError(RuntimeError):
 
 @dataclass(frozen=True)
 class QuarantinedObject:
-    """Reference to one verified object that remains quarantined."""
+    """Reference to a verified, project-scoped object that remains quarantined.
 
+    This reference is not proof of malware scanning, business acceptance, or
+    official evidence finalization.
+    """
+
+    project_id: str
     key: str
     version_id: str | None
     byte_count: int
@@ -109,9 +116,13 @@ class Boto3S3QuarantineStore:
 class StreamingQuarantineUploader:
     """Verify to bounded local disk, then stream the verified bytes to storage.
 
-    The temporary file bounds memory use independently of upload size. It is
-    deleted on success and failure. The deterministic quarantine key makes a
-    retry of the same upload and digest idempotent at the object-key level.
+    A disk-backed temporary file bounds staging storage by max_bytes, while this
+    adapter's in-memory source/readback chunks are limited to read_size (excluding
+    buffers internal to the caller or object-storage SDK). Staging files are
+    deleted on success and failure. The deterministic project/upload/hash key
+    makes same-content retries idempotent within a project.
+    Remote quarantine objects are not automatically deleted: retention and
+    disposition require a separate explicit policy.
     """
 
     _UPLOAD_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
@@ -126,12 +137,16 @@ class StreamingQuarantineUploader:
         read_size: int = 1024 * 1024,
         key_prefix: str = "evidence",
     ):
-        if max_bytes <= 0:
-            raise ValueError("max_bytes must be positive")
-        if read_size <= 0:
-            raise ValueError("read_size must be positive")
-        if not key_prefix or any(part in {"", ".", ".."} for part in key_prefix.split("/")):
+        if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes <= 0:
+            raise ValueError("max_bytes must be a positive integer")
+        if isinstance(read_size, bool) or not isinstance(read_size, int) or read_size <= 0:
+            raise ValueError("read_size must be a positive integer")
+        if not isinstance(key_prefix, str) or not key_prefix or any(
+            part in {"", ".", ".."} for part in key_prefix.strip("/").split("/")
+        ):
             raise ValueError("key_prefix must be a safe relative prefix")
+        if not key_prefix.strip("/"):
+            raise ValueError("key_prefix must not be empty")
         self._store = store
         self._staging_dir = Path(staging_dir)
         self._max_bytes = max_bytes
@@ -147,8 +162,14 @@ class StreamingQuarantineUploader:
         This prevents callers from processing corrupt or truncated object data.
         The returned stream is disk-backed and is removed when the context exits.
         """
+        if isinstance(reference.byte_count, bool) or not isinstance(reference.byte_count, int):
+            raise ValueError("reference byte_count must be an integer")
         if reference.byte_count < 0 or reference.byte_count > self._max_bytes:
             raise UploadValidationError("stored object exceeds configured maximum")
+        if not self._UPLOAD_ID.fullmatch(reference.project_id):
+            raise ValueError("reference project_id is invalid")
+        if not reference.key.startswith(f"{self._key_prefix}/{reference.project_id}/"):
+            raise ValueError("reference key is outside its project namespace")
         if not self._SHA256.fullmatch(reference.sha256):
             raise ValueError("reference SHA-256 is invalid")
 
@@ -198,6 +219,7 @@ class StreamingQuarantineUploader:
 
     def store_verified(
         self,
+        project_id: str,
         upload_id: str,
         source: BinaryIO,
         *,
@@ -210,15 +232,22 @@ class StreamingQuarantineUploader:
         The content type is descriptive only. Callers must independently sniff
         and validate media type before any later evidence-finalization step.
         """
-        if not self._UPLOAD_ID.fullmatch(upload_id):
+        if not isinstance(project_id, str) or not self._UPLOAD_ID.fullmatch(project_id):
+            raise ValueError("project_id must be an opaque safe identifier")
+        if not isinstance(upload_id, str) or not self._UPLOAD_ID.fullmatch(upload_id):
             raise ValueError("upload_id must be an opaque safe identifier")
-        if not isinstance(expected_bytes, int) or expected_bytes < 0:
+        if isinstance(expected_bytes, bool) or not isinstance(expected_bytes, int) or expected_bytes < 0:
             raise ValueError("expected_bytes must be a non-negative integer")
         if expected_bytes > self._max_bytes:
             raise UploadValidationError("upload exceeds configured maximum")
         if not self._SHA256.fullmatch(expected_sha256):
             raise ValueError("expected_sha256 must be a hexadecimal SHA-256")
-        if not content_type or len(content_type) > 255 or any(ch in content_type for ch in "\r\n"):
+        if (
+            not isinstance(content_type, str)
+            or not content_type
+            or len(content_type) > 255
+            or any(ch in content_type for ch in "\r\n")
+        ):
             raise ValueError("content_type is invalid")
 
         expected_digest = expected_sha256.lower()
@@ -226,8 +255,8 @@ class StreamingQuarantineUploader:
         byte_count = 0
         self._staging_dir.mkdir(parents=True, exist_ok=True)
 
-        # NamedTemporaryFile is always disk-backed; no user media is retained
-        # in Python memory while hashing or sending it to the object store.
+        # NamedTemporaryFile is disk-backed; memory held by this loop is one
+        # configured read chunk at a time, independent of total object size.
         with tempfile.NamedTemporaryFile(
             mode="w+b", prefix="doul-evidence-", dir=self._staging_dir, delete=True
         ) as staged:
@@ -239,6 +268,8 @@ class StreamingQuarantineUploader:
                     raise TypeError("source.read() must return bytes")
                 if not block:
                     break
+                if len(block) > self._read_size:
+                    raise UploadValidationError("source stream exceeded bounded read size")
                 byte_count += len(block)
                 if byte_count > expected_bytes or byte_count > self._max_bytes:
                     raise UploadValidationError("stream exceeds declared or configured size")
@@ -254,7 +285,7 @@ class StreamingQuarantineUploader:
             staged.flush()
             staged.seek(0)
             object_key = (
-                f"{self._key_prefix}/{upload_id}/{actual_digest}"
+                f"{self._key_prefix}/{project_id}/{upload_id}/{actual_digest}"
             )
             try:
                 version_id = self._store.put_quarantine(
@@ -271,6 +302,7 @@ class StreamingQuarantineUploader:
                 raise ObjectStorageError("quarantine persistence was not confirmed") from exc
 
         return QuarantinedObject(
+            project_id=project_id,
             key=object_key,
             version_id=version_id,
             byte_count=byte_count,
