@@ -1416,6 +1416,7 @@
         "cumulative_certified",
         "cumulative_paid",
         "remaining_contract_value",
+        "payment_records",
         "payment_reference"
       ],
       "mode": "read_only",
@@ -1562,6 +1563,13 @@
             "data.paymentReference"
           ],
           "missing_value": null
+        },
+        "payment_records": {
+          "operator": "coalesce",
+          "paths": [
+            "data.paymentRecords"
+          ],
+          "missing_value": []
         }
       }
     },

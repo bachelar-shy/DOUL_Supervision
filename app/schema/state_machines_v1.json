@@ -9631,13 +9631,13 @@
           ],
           "required_evidence": true,
           "payload_fields": [
-            "paidAmount",
+            "paymentAmount",
             "paidAt",
             "paymentReference",
             "externalSystemRef"
           ],
           "required_payload_fields": [
-            "paidAmount",
+            "paymentAmount",
             "paidAt",
             "paymentReference"
           ],
@@ -9646,7 +9646,8 @@
             "VERSION_CONFLICT",
             "EVIDENCE_INVALID",
             "PAYMENT_RECORD_READY",
-            "EVIDENCE_REQUIRED"
+            "EVIDENCE_REQUIRED",
+            "PAYMENT_REFERENCE_DUPLICATE"
           ],
           "audit_event": true
         },
@@ -9663,13 +9664,13 @@
           ],
           "required_evidence": true,
           "payload_fields": [
-            "paidAmount",
+            "paymentAmount",
             "paidAt",
             "paymentReference",
             "externalSystemRef"
           ],
           "required_payload_fields": [
-            "paidAmount",
+            "paymentAmount",
             "paidAt",
             "paymentReference"
           ],
@@ -9678,7 +9679,8 @@
             "VERSION_CONFLICT",
             "EVIDENCE_INVALID",
             "PAYMENT_RECORD_READY",
-            "EVIDENCE_REQUIRED"
+            "EVIDENCE_REQUIRED",
+            "PAYMENT_REFERENCE_DUPLICATE"
           ],
           "audit_event": true
         },
@@ -9795,13 +9797,13 @@
           ],
           "required_evidence": true,
           "payload_fields": [
-            "paidAmount",
+            "paymentAmount",
             "paidAt",
             "paymentReference",
             "externalSystemRef"
           ],
           "required_payload_fields": [
-            "paidAmount",
+            "paymentAmount",
             "paidAt",
             "paymentReference"
           ],
@@ -9810,6 +9812,151 @@
             "VERSION_CONFLICT",
             "EVIDENCE_INVALID",
             "PAYMENT_RECORD_READY",
+            "EVIDENCE_REQUIRED",
+            "PAYMENT_REFERENCE_DUPLICATE"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "payment_recorded",
+          "to": "payment_recorded",
+          "command": "correct_payment_record",
+          "authority": "payment.claim.record",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_correction_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "supersedesPaymentRecordId",
+            "paymentAmount",
+            "paidAt",
+            "paymentReference",
+            "externalSystemRef",
+            "correctionReason"
+          ],
+          "required_payload_fields": [
+            "supersedesPaymentRecordId",
+            "paymentAmount",
+            "paidAt",
+            "paymentReference",
+            "correctionReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_CORRECTION_READY",
+            "PAYMENT_REFERENCE_DUPLICATE",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "payment_recorded",
+          "to": "payment_recorded",
+          "command": "cancel_payment_record",
+          "authority": "payment.claim.record",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_cancellation_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "supersedesPaymentRecordId",
+            "paidAt",
+            "paymentReference",
+            "externalSystemRef",
+            "correctionReason"
+          ],
+          "required_payload_fields": [
+            "supersedesPaymentRecordId",
+            "paidAt",
+            "paymentReference",
+            "correctionReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_CANCELLATION_READY",
+            "PAYMENT_REFERENCE_DUPLICATE",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "closed",
+          "to": "payment_recorded",
+          "command": "correct_payment_record",
+          "authority": "payment.claim.record",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_correction_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "supersedesPaymentRecordId",
+            "paymentAmount",
+            "paidAt",
+            "paymentReference",
+            "externalSystemRef",
+            "correctionReason"
+          ],
+          "required_payload_fields": [
+            "supersedesPaymentRecordId",
+            "paymentAmount",
+            "paidAt",
+            "paymentReference",
+            "correctionReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_CORRECTION_READY",
+            "PAYMENT_REFERENCE_DUPLICATE",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "closed",
+          "to": "payment_recorded",
+          "command": "cancel_payment_record",
+          "authority": "payment.claim.record",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "payment_cancellation_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "supersedesPaymentRecordId",
+            "paidAt",
+            "paymentReference",
+            "externalSystemRef",
+            "correctionReason"
+          ],
+          "required_payload_fields": [
+            "supersedesPaymentRecordId",
+            "paidAt",
+            "paymentReference",
+            "correctionReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "PAYMENT_CANCELLATION_READY",
+            "PAYMENT_REFERENCE_DUPLICATE",
             "EVIDENCE_REQUIRED"
           ],
           "audit_event": true

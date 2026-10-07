@@ -103,7 +103,9 @@ Backend 구현:
 - 미승인 Variation은 청구내역에 보존하되 기본 지급추천액에서 제외
 - previous PaymentClaim exact ref를 기준으로 cumulative certified / paid를 재조정
 - Owner Decision은 exact current PaymentClaim version을 대상으로 함
-- 부분지급은 Owner Approved 금액을 변경하지 않고 누적 지급기록으로 추적
+- 지급추천은 exact `calculationRuleRef`의 Formula/Deduction/Rounding Rule로 서버 재계산하고 Deduction Line 합계와 Aggregate 필드를 reconcile
+- 부분지급은 Owner Approved 금액을 변경하지 않고 append-only `paymentRecords[]`로 지급건별 보존; `paidAmount/cumulativePaidAmount`는 유효 지급기록에서 파생
+- 지급 Reference/외부시스템 Reference 재사용 차단; 정정·취소는 원기록 삭제 없이 supersede trace로 연결
 - 실제 지급은 외부 payment reference/evidence를 기록하며 은행 지급기능으로 해석하지 않음
 
 Acceptance:
@@ -114,6 +116,9 @@ Acceptance:
 - claimed / verified / recommended / ownerApproved / paid 분리
 - unapproved Variation 기본 지급추천 제외
 - 동일 측정량 중복 기성청구 차단
+- 잘못된 추천금액·Deduction 불일치·Rounding 불일치 시 Recommendation 전이 차단
+- 부분지급 후 모든 Actual Payment Record 조회 가능하고 누계가 그 기록에서 재현됨
+- 지급 Reference 중복 차단 및 correction/cancellation supersede trace 보존
 - 부분지급 후 unpaid balance 0 이전에는 PaymentClaim close 금지
 - 관리대장 17에서 직접 상태수정 금지
 

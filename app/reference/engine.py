@@ -7,7 +7,7 @@ locks, authentication, durable files and media workers need production adapters.
 """
 from copy import deepcopy
 from datetime import datetime, timezone
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_HALF_EVEN, ROUND_HALF_UP, ROUND_UP
 import hashlib
 import json
 from pathlib import Path
@@ -318,8 +318,9 @@ class Engine:
             data.update(eligibilityStatus='pending',paymentEligible=False,blockedReasons=[])
         if machine=='payment_claim':
             data=record['data']
-            for field in ['verifiedGrossAmount','eligibleVariationAmount','unapprovedVariationAmount','recommendedNetAmount','ownerApprovedAmount','paidAmount','unpaidBalance','blockedReasons','recommendationSnapshot','approvalRef','decisionRefs','recommendationRef','recordedBy','cumulativeCertifiedAmount','cumulativePaidAmount','paymentReference','externalSystemRef','paidAt','submittedAt','receivedAt','reviewedAt','recommendedAt','ownerDecidedAt','paymentRecordedAt','closedAt']:
+            for field in ['verifiedGrossAmount','eligibleVariationAmount','unapprovedVariationAmount','recommendedNetAmount','ownerApprovedAmount','paidAmount','unpaidBalance','blockedReasons','recommendationSnapshot','calculationTrace','paymentRecords','paymentAmount','supersedesPaymentRecordId','correctionReason','approvalRef','decisionRefs','recommendationRef','recordedBy','cumulativeCertifiedAmount','cumulativePaidAmount','paymentReference','externalSystemRef','paidAt','submittedAt','receivedAt','reviewedAt','recommendedAt','ownerDecidedAt','paymentRecordedAt','closedAt']:
                 require(field not in data,'IMMUTABLE_FIELD',field+' is command-controlled or server-derived')
+            data.update(paymentRecords=[],paidAmount='0')
         validate(record,self.schemas[kind],self.schemas)
         if machine=='schedule_progress':self._schedule_progress_submission_complete(self._fields(record))
         if machine=='delay_event':self._delay_event_create_ready(self._fields(record))
@@ -423,7 +424,7 @@ class Engine:
         if machine=='report' and command=='acknowledge':require(party_id in record['report']['recipients'], 'RECIPIENT_MISMATCH', 'Only an issued recipient may acknowledge')
         if transition['required_evidence']:
             require(bool(evidence_ids),'EVIDENCE_REQUIRED','Transition requires current command evidence')
-        self._effects(machine,command,proposed,party_id,role_id)
+        self._effects(machine,command,proposed,party_id,role_id,evidence_ids,payload)
         proposed.update(status=transition['to'],version=record['version']+1,updatedAt=self.at())
         if machine=='schedule_baseline' and command=='activate_baseline':
             return self._activate_schedule_baseline(record,proposed,request,party_id,role_id,key)
@@ -619,6 +620,8 @@ class Engine:
             'payment_owner_adjustment_ready':self._payment_owner_adjustment_ready,
             'payment_owner_rejection_ready':self._payment_owner_rejection_ready,
             'payment_record_ready':self._payment_record_ready,
+            'payment_correction_ready':self._payment_correction_ready,
+            'payment_cancellation_ready':self._payment_cancellation_ready,
             'payment_close_ready':self._payment_close_ready,
             'payment_supersede_ready':self._payment_supersede_ready,
         }
@@ -627,7 +630,7 @@ class Engine:
             require(name in predicates,'GUARD_UNIMPLEMENTED',name)
             require(predicates[name](),name.upper(),name)
 
-    def _effects(self, machine, command, record, party_id, role_id):
+    def _effects(self, machine, command, record, party_id, role_id, evidence_ids=None, payload=None):
         if machine=='observation' and command=='confirm':record.update(confirmedBy=party_id,confirmedAt=self.at())
         if machine=='inspection':
             result={'pass':'pass','fail':'fail','conditional':'conditional','hold':'hold'}.get(command)
@@ -765,6 +768,7 @@ class Engine:
             if command=='prepare_recommendation':
                 _,unapproved=self._payment_variation_amounts(self._fields(record))
                 data['unapprovedVariationAmount']=self._decimal_text(unapproved)
+                data['calculationTrace']=self._payment_recommendation_calculation(self._fields(record))
             if command=='recommend_payment':
                 data['recommendedAt']=stamp
                 data['recommendationSnapshot']={
@@ -774,10 +778,16 @@ class Engine:
                     'verifiedGrossAmount':data['verifiedGrossAmount'],
                     'blockedReasons':deepcopy(data.get('blockedReasons',[])),
                     'eligibleVariationAmount':data['eligibleVariationAmount'],
+                    'eligibleMaterialOnSiteAmount':data['eligibleMaterialOnSiteAmount'],
+                    'retentionAmount':data['retentionAmount'],
+                    'advanceRecoveryAmount':data['advanceRecoveryAmount'],
+                    'otherDeductionAmount':data['otherDeductionAmount'],
+                    'taxAmount':data['taxAmount'],
                     'deductionComponents':deepcopy(data.get('deductionComponents',[])),
                     'recommendedNetAmount':data['recommendedNetAmount'],
                     'currency':data['currency'],
                     'calculationRuleRef':deepcopy(data['calculationRuleRef']),
+                    'calculationTrace':deepcopy(data['calculationTrace']),
                     'reviewerPartyId':party_id,
                     'recommendedAt':stamp,
                     **({'reservationComment':data['reservationComment']} if data.get('reservationComment') else {}),
@@ -790,11 +800,36 @@ class Engine:
                 total=sum((self._decimal_value(line['contractAmount']) for line in boq.get('boq',{}).get('lineItems',[])),Decimal('0'))
                 data['remainingContractValue']=self._decimal_text(max(total-cumulative,Decimal('0')))
             if command=='reject_payment':data['ownerDecidedAt']=stamp
-            if command in ['record_payment','record_additional_payment']:
-                paid=self._decimal_value(data['paidAmount'])
+            if command in ['record_payment','record_additional_payment','correct_payment_record','cancel_payment_record']:
+                payload=payload or {}
+                kind='payment' if command in ['record_payment','record_additional_payment'] else 'correction' if command=='correct_payment_record' else 'cancellation'
+                amount=self._decimal_value(payload.get('paymentAmount','0'),'PAYMENT_RECORD_READY','paymentAmount') if kind!='cancellation' else Decimal('0')
+                item={
+                    'recordId':uid(),
+                    'kind':kind,
+                    'amount':self._decimal_text(amount),
+                    'currency':data['currency'],
+                    'paidAt':payload['paidAt'],
+                    'paymentReference':payload['paymentReference'],
+                    'evidenceIds':list(dict.fromkeys(evidence_ids or [])),
+                    'recordedBy':party_id,
+                    'recordedAt':stamp,
+                }
+                if payload.get('externalSystemRef'):item['externalSystemRef']=payload['externalSystemRef']
+                if payload.get('supersedesPaymentRecordId'):item['supersedesPaymentRecordId']=payload['supersedesPaymentRecordId']
+                if payload.get('correctionReason'):item['reason']=payload['correctionReason']
+                data.setdefault('paymentRecords',[]).append(item)
+                for transient in ['paymentAmount','supersedesPaymentRecordId','correctionReason']:
+                    data.pop(transient,None)
+                paid=self._payment_active_total(self._fields(record))
                 approved=self._decimal_value(data['ownerApprovedAmount'])
+                data['paidAmount']=self._decimal_text(paid)
                 data['recordedBy']=party_id
                 data['paymentRecordedAt']=stamp
+                data['paymentReference']=payload['paymentReference']
+                data['paidAt']=payload['paidAt']
+                if payload.get('externalSystemRef'):data['externalSystemRef']=payload['externalSystemRef']
+                else:data.pop('externalSystemRef',None)
                 data['unpaidBalance']=self._decimal_text(approved-paid)
                 data['cumulativePaidAmount']=self._decimal_text(self._decimal_value(data.get('previousPaidAmount','0'))+paid)
             if command=='close_payment_claim':data['closedAt']=stamp
@@ -1757,21 +1792,79 @@ class Engine:
         require(verified<=claimed and disputed<=claimed,'PAYMENT_VALUATION_REVIEW_READY','Verified/disputed amount cannot exceed claimed amount')
         require(bool(r.get('evidenceIds')),'PAYMENT_VALUATION_REVIEW_READY','Valuation review needs current evidence')
 
+    def _payment_calculation_rule(self,r):
+        code='PAYMENT_RECOMMENDATION_PREPARE_READY'
+        rule_record=self._contract_ref(r.get('calculationRuleRef'),r['projectId'],object_type='Requirement',statuses=['active'])
+        require(all(rule_record.get(field)==r.get(field) for field in ['packageId','locationId','discipline']),code,'Payment calculation rule scope must match PaymentClaim')
+        rule=rule_record.get('applicability',{}).get('paymentCalculationRule')
+        require(isinstance(rule,dict),code,'Calculation Requirement must contain paymentCalculationRule')
+        allowed={'verifiedGrossAmount','eligibleVariationAmount','eligibleMaterialOnSiteAmount','retentionAmount','advanceRecoveryAmount','otherDeductionAmount','taxAmount'}
+        components=[]
+        for name in ['baseComponents','addComponents','subtractComponents']:
+            values=rule.get(name)
+            require(isinstance(values,list) and all(isinstance(x,str) and x in allowed for x in values),code,name+' contains an unsupported component')
+            components.extend(values)
+        require(len(components)==len(set(components)),code,'Calculation rule components must not overlap')
+        require(bool(rule.get('formulaId')),code,'Calculation rule formulaId is required')
+        type_map=rule.get('deductionTypeMap')
+        require(isinstance(type_map,dict) and all(isinstance(k,str) and k and v in rule['subtractComponents'] for k,v in type_map.items()),code,'Deduction type map is invalid')
+        require({'retentionAmount','advanceRecoveryAmount','otherDeductionAmount'}<=set(type_map.values()),code,'Retention, advance recovery and other deduction must reconcile through deduction components')
+        rounding=rule.get('rounding')
+        require(isinstance(rounding,dict) and bool(rounding.get('id')),code,'Versioned rounding rule is required')
+        quantum=self._decimal_value(rounding.get('quantum'),code,'rounding quantum')
+        require(quantum>0,code,'Rounding quantum must be positive')
+        modes={'half_up':ROUND_HALF_UP,'half_even':ROUND_HALF_EVEN,'down':ROUND_DOWN,'up':ROUND_UP}
+        require(rounding.get('mode') in modes,code,'Unsupported rounding mode')
+        return rule,modes[rounding['mode']],quantum
+
+    def _payment_recommendation_calculation(self,r):
+        code='PAYMENT_RECOMMENDATION_PREPARE_READY'
+        for field in ['verifiedGrossAmount','eligibleVariationAmount','eligibleMaterialOnSiteAmount','retentionAmount','advanceRecoveryAmount','otherDeductionAmount','taxAmount','recommendedNetAmount']:
+            self._decimal_value(r.get(field),code,field)
+        eligible_variation,unapproved=self._payment_variation_amounts(r)
+        require(self._decimal_value(r['eligibleVariationAmount'])==eligible_variation,code,'Eligible Variation amount must equal approved Variation components only')
+        require(unapproved>=0,code,'Variation calculation failed')
+        rule,rounding_mode,quantum=self._payment_calculation_rule(r)
+        deduction_totals={field:Decimal('0') for field in ['retentionAmount','advanceRecoveryAmount','otherDeductionAmount']}
+        type_map=rule['deductionTypeMap']
+        for deduction in r.get('deductionComponents',[]):
+            amount=self._decimal_value(deduction['amount'],code,'deduction amount')
+            require(deduction.get('currency')==r.get('currency'),code,'Deduction currency must match PaymentClaim')
+            self._contract_ref(deduction['contractClauseRef'],r['projectId'],object_type='Requirement')
+            if deduction.get('sourceDecisionRef'):
+                self._contract_ref(deduction['sourceDecisionRef'],r['projectId'],object_type='Decision')
+            deduction_type=deduction.get('type')
+            require(deduction_type in type_map,code,'Deduction component type is not mapped by the calculation rule')
+            field=type_map[deduction_type]
+            if field in deduction_totals: deduction_totals[field]+=amount
+        for field,total in deduction_totals.items():
+            require(self._decimal_value(r[field],code,field)==total,code,field+' must equal mapped deduction component total')
+        base=sum((self._decimal_value(r[field],code,field) for field in rule['baseComponents']),Decimal('0'))
+        additions=sum((self._decimal_value(r[field],code,field) for field in rule['addComponents']),Decimal('0'))
+        deductions=sum((self._decimal_value(r[field],code,field) for field in rule['subtractComponents']),Decimal('0'))
+        pre_round=base+additions-deductions
+        require(pre_round>=0,code,'Calculated recommendation cannot be negative')
+        rounded=(pre_round/quantum).quantize(Decimal('1'),rounding=rounding_mode)*quantum
+        recommended=self._decimal_value(r['recommendedNetAmount'],code,'recommendedNetAmount')
+        require(recommended==rounded,code,'Recommended amount must equal the versioned calculation rule result')
+        rounding=rule['rounding']
+        return {
+            'ruleRef':deepcopy(r['calculationRuleRef']),
+            'formulaId':rule['formulaId'],
+            'baseAmount':self._decimal_text(base),
+            'additionAmount':self._decimal_text(additions),
+            'deductionAmount':self._decimal_text(deductions),
+            'preRoundAmount':self._decimal_text(pre_round),
+            'roundedAmount':self._decimal_text(rounded),
+            'roundingRuleId':rounding['id'],
+            'roundingQuantum':self._decimal_text(quantum),
+            'roundingMode':rounding['mode'],
+            'deductionTotals':{field:self._decimal_text(value) for field,value in deduction_totals.items()},
+        }
+
     def _payment_recommendation_prepare_ready(self,r):
         self._payment_claim_package_ready(r,check_duplicate=True)
-        for field in ['verifiedGrossAmount','eligibleVariationAmount','eligibleMaterialOnSiteAmount','retentionAmount','advanceRecoveryAmount','otherDeductionAmount','taxAmount','recommendedNetAmount']:
-            self._decimal_value(r.get(field),'PAYMENT_RECOMMENDATION_PREPARE_READY',field)
-        eligible_variation,unapproved=self._payment_variation_amounts(r)
-        require(self._decimal_value(r['eligibleVariationAmount'])==eligible_variation,'PAYMENT_RECOMMENDATION_PREPARE_READY','Eligible Variation amount must equal approved Variation components only')
-        for deduction in r.get('deductionComponents',[]):
-            self._decimal_value(deduction['amount'],'PAYMENT_RECOMMENDATION_PREPARE_READY','deduction amount')
-            require(deduction.get('currency')==r.get('currency'),'PAYMENT_RECOMMENDATION_PREPARE_READY','Deduction currency must match PaymentClaim')
-            self._contract_ref(deduction['contractClauseRef'],r['projectId'],object_type='Requirement')
-        self._contract_ref(r.get('calculationRuleRef'),r['projectId'],object_type='Requirement')
-        ceiling=(self._decimal_value(r['verifiedGrossAmount'])+eligible_variation+
-                 self._decimal_value(r['eligibleMaterialOnSiteAmount'])+self._decimal_value(r['taxAmount']))
-        require(self._decimal_value(r['recommendedNetAmount'])<=ceiling,'PAYMENT_RECOMMENDATION_PREPARE_READY','Recommended amount exceeds verified eligible value before deductions')
-        require(unapproved>=0,'PAYMENT_RECOMMENDATION_PREPARE_READY','Variation calculation failed')
+        self._payment_recommendation_calculation(r)
 
     def _payment_recommendation_ready(self,r):
         self._payment_recommendation_prepare_ready(r)
@@ -1810,19 +1903,62 @@ class Engine:
     def _payment_owner_rejection_ready(self,r):
         self._payment_owner_review_ready(r);self._payment_owner_decision(r,'rejected')
 
+    def _payment_active_total(self,r):
+        records=r.get('paymentRecords') or []
+        superseded={x.get('supersedesPaymentRecordId') for x in records if x.get('supersedesPaymentRecordId')}
+        return sum((self._decimal_value(x['amount'],'PAYMENT_RECORD_READY','payment record amount') for x in records if x['recordId'] not in superseded and x.get('kind') in ['payment','correction']),Decimal('0'))
+
+    def _payment_record_target(self,r,code):
+        target_id=r.get('supersedesPaymentRecordId')
+        records=r.get('paymentRecords') or []
+        targets=[x for x in records if x.get('recordId')==target_id]
+        require(len(targets)==1,code,'Correction/cancellation must target one existing payment record')
+        superseded={x.get('supersedesPaymentRecordId') for x in records if x.get('supersedesPaymentRecordId')}
+        require(target_id not in superseded,code,'Payment record is already superseded')
+        require(targets[0].get('kind') in ['payment','correction'],code,'Cancellation records cannot be corrected or cancelled again')
+        return targets[0]
+
+    def _payment_reference_unique(self,r,code):
+        reference=r.get('paymentReference','').strip()
+        external=r.get('externalSystemRef','').strip()
+        require(bool(reference),code,'External payment reference is required')
+        for (kind,_),record in self._records.items():
+            if kind!='WorkItem' or record.get('projectId')!=r.get('projectId') or record.get('subtype')!='PaymentClaim':continue
+            for item in record.get('data',{}).get('paymentRecords',[]):
+                require(item.get('paymentReference')!=reference,'PAYMENT_REFERENCE_DUPLICATE','Payment reference is already recorded')
+                if external:require(item.get('externalSystemRef')!=external,'PAYMENT_REFERENCE_DUPLICATE','External system reference is already recorded')
+
     def _payment_record_ready(self,r):
-        approved=self._decimal_value(r.get('ownerApprovedAmount'),'PAYMENT_RECORD_READY','ownerApprovedAmount')
-        paid=self._decimal_value(r.get('paidAmount'),'PAYMENT_RECORD_READY','paidAmount')
-        require(paid>0 and paid<=approved,'PAYMENT_RECORD_READY','Paid amount must be positive and cannot exceed Owner approved amount')
-        current=self.get('WorkItem',r['id'])
-        prior_paid=current.get('data',{}).get('paidAmount')
-        if prior_paid is not None:require(paid>=self._decimal_value(prior_paid),'PAYMENT_RECORD_READY','Additional payment cannot reduce previously recorded paid amount')
-        require(bool(r.get('paidAt')) and bool(r.get('paymentReference','').strip()),'PAYMENT_RECORD_READY','Actual payment date and external payment reference are required')
-        require(bool(r.get('evidenceIds')),'PAYMENT_RECORD_READY','Actual payment record needs preserved payment evidence')
+        code='PAYMENT_RECORD_READY'
+        approved=self._decimal_value(r.get('ownerApprovedAmount'),code,'ownerApprovedAmount')
+        amount=self._decimal_value(r.get('paymentAmount'),code,'paymentAmount')
+        require(amount>0,code,'Payment transaction amount must be positive')
+        require(self._payment_active_total(r)+amount<=approved,code,'Cumulative active payments cannot exceed Owner approved amount')
+        require(bool(r.get('paidAt')) and bool(r.get('paymentReference','').strip()),code,'Actual payment date and external payment reference are required')
+        self._payment_reference_unique(r,code)
+
+    def _payment_correction_ready(self,r):
+        code='PAYMENT_CORRECTION_READY'
+        approved=self._decimal_value(r.get('ownerApprovedAmount'),code,'ownerApprovedAmount')
+        target=self._payment_record_target(r,code)
+        amount=self._decimal_value(r.get('paymentAmount'),code,'paymentAmount')
+        require(amount>0 and bool(r.get('correctionReason','').strip()),code,'Payment correction needs positive amount and reason')
+        require(bool(r.get('paidAt')) and bool(r.get('paymentReference','').strip()),code,'Payment correction needs effective date and reference')
+        projected=self._payment_active_total(r)-self._decimal_value(target['amount'],code,'target amount')+amount
+        require(projected>=0 and projected<=approved,code,'Corrected cumulative payment cannot exceed Owner approved amount')
+        self._payment_reference_unique(r,code)
+
+    def _payment_cancellation_ready(self,r):
+        code='PAYMENT_CANCELLATION_READY'
+        target=self._payment_record_target(r,code)
+        require(bool(r.get('correctionReason','').strip()),code,'Payment cancellation needs reason')
+        require(bool(r.get('paidAt')) and bool(r.get('paymentReference','').strip()),code,'Payment cancellation needs effective date and reference')
+        require(self._payment_active_total(r)-self._decimal_value(target['amount'],code,'target amount')>=0,code,'Payment cancellation total is invalid')
+        self._payment_reference_unique(r,code)
 
     def _payment_close_ready(self,r):
         require(self._decimal_value(r.get('unpaidBalance'),'PAYMENT_CLOSE_READY','unpaidBalance')==0,'PAYMENT_CLOSE_READY','PaymentClaim cannot close while approved amount remains unpaid')
-        require(bool(r.get('paymentReference','').strip()),'PAYMENT_CLOSE_READY','Payment reference is required before close')
+        require(bool(r.get('paymentRecords')),'PAYMENT_CLOSE_READY','At least one preserved Actual Payment Record is required before close')
 
     def _payment_supersede_ready(self,r):
         replacement=self._current_reference(r.get('replacementRef'),r['projectId'],object_type='WorkItem',subtype='PaymentClaim')

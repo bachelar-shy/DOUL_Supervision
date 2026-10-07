@@ -277,7 +277,7 @@ def validate_all():
         for condition in conditions:
             check(condition['when']=={'operator':'failed_inspection_has_issued_issue'},'Unsafe form requirement predicate')
             check(condition['any_of']==[{'field':'review.ncr_no'},{'source_object_type':'Issue'}],'Invalid NCR link alternatives')
-    known={'$ref','$schema','type','enum','const','format','pattern','minLength','minimum','maximum','properties','required','additionalProperties','items','minItems','uniqueItems','allOf','oneOf','anyOf','if','then','else','description','title','default','readOnly'}
+    known={'$ref','$schema','type','enum','const','format','pattern','minLength','minimum','maximum','properties','required','additionalProperties','items','minItems','uniqueItems','allOf','oneOf','anyOf','if','then','else','description','title','default','readOnly','writeOnly'}
     def walk(schema):
         check(set(schema)<=known,'Unsupported validation keywords '+str(set(schema)-known))
         if '$ref' in schema:check(schema['$ref'].split('/')[-1] in schemas,'Unresolved schema reference')

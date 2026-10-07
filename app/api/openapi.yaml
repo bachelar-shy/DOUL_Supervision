@@ -22835,6 +22835,168 @@
         "x-domain-command": "payment_claim:record_additional_payment"
       }
     },
+    "/projects/{projectId}/payment-claims/{objectId}/correct-payment-record": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_correct_payment_record",
+        "summary": "payment_claim / correct_payment_record",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_correct_payment_record"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:correct_payment_record"
+      }
+    },
+    "/projects/{projectId}/payment-claims/{objectId}/cancel-payment-record": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_payment_claims_objectId_cancel_payment_record",
+        "summary": "payment_claim / cancel_payment_record",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_payment_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_payment_claim_cancel_payment_record"
+              }
+            }
+          }
+        },
+        "x-domain-command": "payment_claim:cancel_payment_record"
+      }
+    },
     "/projects/{projectId}/registers/{registerId}": {
       "parameters": [
         {
@@ -30116,6 +30278,24 @@
           },
           "reservationComment": {
             "type": "string"
+          },
+          "eligibleMaterialOnSiteAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "retentionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "advanceRecoveryAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "otherDeductionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "taxAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "calculationTrace": {
+            "$ref": "#/components/schemas/PaymentCalculationTrace"
           }
         },
         "required": [
@@ -30130,7 +30310,13 @@
           "currency",
           "calculationRuleRef",
           "reviewerPartyId",
-          "recommendedAt"
+          "recommendedAt",
+          "eligibleMaterialOnSiteAmount",
+          "retentionAmount",
+          "advanceRecoveryAmount",
+          "otherDeductionAmount",
+          "taxAmount",
+          "calculationTrace"
         ],
         "additionalProperties": false
       },
@@ -30204,7 +30390,12 @@
             "$ref": "#/components/schemas/NonNegativeDecimalString"
           },
           "paidAmount": {
-            "$ref": "#/components/schemas/NonNegativeDecimalString"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            ],
+            "readOnly": true
           },
           "unpaidBalance": {
             "allOf": [
@@ -30344,10 +30535,186 @@
             "type": "string",
             "format": "uuid",
             "readOnly": true
+          },
+          "paymentRecords": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActualPaymentRecord"
+            },
+            "readOnly": true
+          },
+          "calculationTrace": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentCalculationTrace"
+              }
+            ],
+            "readOnly": true
+          },
+          "paymentAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString",
+            "writeOnly": true
+          },
+          "supersedesPaymentRecordId": {
+            "type": "string",
+            "format": "uuid",
+            "writeOnly": true
+          },
+          "correctionReason": {
+            "type": "string",
+            "minLength": 1,
+            "writeOnly": true
           }
         },
         "required": [
           "paymentClaimNo"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentCalculationTrace": {
+        "type": "object",
+        "properties": {
+          "ruleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "formulaId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "baseAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "additionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "deductionAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "preRoundAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "roundedAmount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "roundingRuleId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "roundingQuantum": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "roundingMode": {
+            "type": "string",
+            "enum": [
+              "half_up",
+              "half_even",
+              "down",
+              "up"
+            ]
+          },
+          "deductionTotals": {
+            "type": "object",
+            "properties": {
+              "retentionAmount": {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              },
+              "advanceRecoveryAmount": {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              },
+              "otherDeductionAmount": {
+                "$ref": "#/components/schemas/NonNegativeDecimalString"
+              }
+            },
+            "required": [
+              "retentionAmount",
+              "advanceRecoveryAmount",
+              "otherDeductionAmount"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "ruleRef",
+          "formulaId",
+          "baseAmount",
+          "additionAmount",
+          "deductionAmount",
+          "preRoundAmount",
+          "roundedAmount",
+          "roundingRuleId",
+          "roundingQuantum",
+          "roundingMode",
+          "deductionTotals"
+        ],
+        "additionalProperties": false
+      },
+      "ActualPaymentRecord": {
+        "type": "object",
+        "properties": {
+          "recordId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "payment",
+              "correction",
+              "cancellation"
+            ]
+          },
+          "amount": {
+            "$ref": "#/components/schemas/NonNegativeDecimalString"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paymentReference": {
+            "type": "string",
+            "minLength": 1
+          },
+          "externalSystemRef": {
+            "type": "string"
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1
+          },
+          "recordedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "supersedesPaymentRecordId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "recordId",
+          "kind",
+          "amount",
+          "currency",
+          "paidAt",
+          "paymentReference",
+          "evidenceIds",
+          "recordedBy",
+          "recordedAt"
         ],
         "additionalProperties": false
       },
@@ -40505,12 +40872,13 @@
                   "externalSystemRef": {
                     "type": "string"
                   },
-                  "paidAmount": {
-                    "$ref": "#/components/schemas/NonNegativeDecimalString"
-                  },
                   "paidAt": {
                     "type": "string",
                     "format": "date-time"
+                  },
+                  "paymentAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString",
+                    "writeOnly": true
                   },
                   "paymentReference": {
                     "type": "string"
@@ -40518,8 +40886,8 @@
                 },
                 "additionalProperties": false,
                 "required": [
-                  "paidAmount",
                   "paidAt",
+                  "paymentAmount",
                   "paymentReference"
                 ]
               }
@@ -40606,12 +40974,13 @@
                   "externalSystemRef": {
                     "type": "string"
                   },
-                  "paidAmount": {
-                    "$ref": "#/components/schemas/NonNegativeDecimalString"
-                  },
                   "paidAt": {
                     "type": "string",
                     "format": "date-time"
+                  },
+                  "paymentAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString",
+                    "writeOnly": true
                   },
                   "paymentReference": {
                     "type": "string"
@@ -40619,9 +40988,102 @@
                 },
                 "additionalProperties": false,
                 "required": [
-                  "paidAmount",
                   "paidAt",
+                  "paymentAmount",
                   "paymentReference"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_correct_payment_record": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "correctionReason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "writeOnly": true
+                  },
+                  "externalSystemRef": {
+                    "type": "string"
+                  },
+                  "paidAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "paymentAmount": {
+                    "$ref": "#/components/schemas/NonNegativeDecimalString",
+                    "writeOnly": true
+                  },
+                  "paymentReference": {
+                    "type": "string"
+                  },
+                  "supersedesPaymentRecordId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "writeOnly": true
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "correctionReason",
+                  "paidAt",
+                  "paymentAmount",
+                  "paymentReference",
+                  "supersedesPaymentRecordId"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_payment_claim_cancel_payment_record": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "correctionReason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "writeOnly": true
+                  },
+                  "externalSystemRef": {
+                    "type": "string"
+                  },
+                  "paidAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "paymentReference": {
+                    "type": "string"
+                  },
+                  "supersedesPaymentRecordId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "writeOnly": true
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "correctionReason",
+                  "paidAt",
+                  "paymentReference",
+                  "supersedesPaymentRecordId"
                 ]
               }
             }

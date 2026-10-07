@@ -41,7 +41,7 @@
   "cumulative": {
     "previousCertificateExactRefWhenPresent": true,
     "cumulativeCertifiedEqualsPreviousPlusOwnerApproved": true,
-    "cumulativePaidEqualsPreviousPlusPaid": true,
+    "cumulativePaidEqualsPreviousPlusPaid": "derived_from_previous_paid_plus_active_payment_records",
     "partialPaymentDoesNotChangeOwnerApprovedAmount": true
   },
   "ownerDecision": {
@@ -52,11 +52,28 @@
   "register17": {
     "mode": "read_only",
     "rawStatusPatch": false,
-    "stateChangesViaDomainCommandsOnly": true
+    "stateChangesViaDomainCommandsOnly": true,
+    "paymentRecordsAndCumulativeBothProjected": true
   },
   "machines": {
     "contract_boq": "ContractBOQ",
     "quantity_measurement": "QuantityMeasurement",
     "payment_claim": "PaymentClaim"
+  },
+  "recommendationCalculation": {
+    "calculationRuleRefExactVersionRequired": true,
+    "ruleStoredAsVersionedRequirementApplicability": true,
+    "serverRecalculatesRecommendedAmount": true,
+    "deductionComponentsReconcileAggregateFields": true,
+    "roundingRuleAndResultPreservedInSnapshot": true,
+    "uiFormulaAuthoritative": false
+  },
+  "actualPaymentRecord": {
+    "appendOnlyPaymentRecords": true,
+    "cumulativePaidDerivedFromActiveRecords": true,
+    "duplicatePaymentReferenceRejectedAcrossProject": true,
+    "correctionAndCancellationUseSupersedeTrace": true,
+    "originalPaymentRecordNeverDeleted": true,
+    "ownerApprovedAmountUnaffectedByPartialPayment": true
   }
 }

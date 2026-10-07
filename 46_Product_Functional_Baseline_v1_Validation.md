@@ -225,22 +225,23 @@ Baseline v1.0은 다음 항목을 모두 검증해 PASS로 확정한다.
 
 `32_Progress_Measurement_Payment_Functional_Contract.md`의 상세정의를 실행 가능한 Product Contract로 구조화했다.
 
-- Typed data: `ContractBOQData`, `QuantityMeasurementData`, `PaymentClaimData`, BOQ line / Variation component / Deduction / Recommendation Snapshot
+- Typed data: `ContractBOQData`, `QuantityMeasurementData`, `PaymentClaimData`, `PaymentCalculationTrace`, `ActualPaymentRecord`, BOQ line / Variation component / Deduction / Recommendation Snapshot
 - State Machine: `contract_boq`, `quantity_measurement`, `payment_claim`
 - Authority: `payment.*` 24개 공식 인간권한; AI/SYSTEM/INTEGRATION의 BOQ·물량·기성 계약판정 권한 없음
 - Decimal: 통화·단가·금액·정밀수량의 authoritative value는 canonical Decimal string이며 binary floating-point를 공식값으로 사용하지 않음
 - ContractBOQ: exact version을 보존하고 새 effective BOQ 적용 시 이전 BOQ는 삭제 없이 superseded; 과거 Measurement/PaymentClaim은 과거 exact BOQ ref 유지
 - QuantityMeasurement: claimed quantity와 verified quantity를 분리하고, 수량이 verified여도 Inspection/Test/Material/Variation Gate에 따라 `paymentEligible=false`가 될 수 있음
 - PaymentClaim: claimed / verified / recommended / ownerApproved / paid 금액을 각각 별도 필드와 버전으로 보존
+- Recommendation calculation: exact versioned `calculationRuleRef`에 따라 서버가 Decimal 재계산하고 Deduction Line 합계·Aggregate Field·Rounding Rule을 reconcile; 계산 Trace를 Recommendation Snapshot에 보존
 - Variation: 미승인 Variation은 청구내역에서 삭제하지 않고 `unapprovedVariationAmount`로 보존하며 기본 지급추천액에서는 제외
 - Duplicate: 동일 QuantityMeasurement의 활성 PaymentClaim 중복청구 차단
 - Cumulative: previous PaymentClaim exact ref 기준으로 certified/paid 누계를 연결하며 부분지급은 Owner Approved 금액을 변경하지 않음
 - Owner Decision: exact current PaymentClaim version을 대상으로 승인·조정·거절을 명시적 command로 기록
-- Actual payment: 외부 payment reference/evidence를 기록할 뿐 은행 지급기능으로 해석하지 않음
-- 관리대장 17: read-only Projection, raw status patch와 직접 상태변경 금지
-- Contract validator: PASS — 23 machines / 314 transitions / 160 policies / 29 registers / 36 forms / 305 API operations
-- F-05 execution contract tests: 7 PASS
-- Core tests: 181 PASS
+- Actual payment: 지급건별 append-only `paymentRecords[]`에 금액/일자/Reference/Evidence를 보존하고 누계금액은 유효 지급기록에서 파생; 중복 Reference 차단, 정정·취소는 supersede trace 사용
+- 관리대장 17: transaction records와 cumulative 값을 함께 제공하는 read-only Projection, raw status patch와 직접 상태변경 금지
+- Contract validator: PASS — 23 machines / 318 transitions / 160 policies / 29 registers / 36 forms / 307 API operations
+- F-05 execution contract tests: 17 PASS
+- Core tests: 191 PASS
 - HTTP/Application tests: 243 run — 212 PASS, 31 optional-integration tests skipped in local environment
 - OpenAPI / TypeScript / Web register catalog: current
 - `git diff --check`: PASS

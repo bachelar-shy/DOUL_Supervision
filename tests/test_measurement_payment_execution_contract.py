@@ -23,6 +23,45 @@ class MeasurementPaymentExecutionContractTests(unittest.TestCase):
 
     def setUp(self):
         self.f = Fixture()
+        self.payment_rule = uid()
+        self.f.engine.bootstrap(
+            "Requirement",
+            {
+                "id": self.payment_rule,
+                "projectId": self.f.project,
+                "kind": "contract",
+                "title": "Payment calculation rule",
+                "effectiveFrom": BEFORE,
+                "status": "active",
+                "applicability": {
+                    "paymentCalculationRule": {
+                        "formulaId": "verified-eligible-net-v1",
+                        "baseComponents": [
+                            "verifiedGrossAmount",
+                            "eligibleVariationAmount",
+                            "eligibleMaterialOnSiteAmount",
+                        ],
+                        "addComponents": ["taxAmount"],
+                        "subtractComponents": [
+                            "retentionAmount",
+                            "advanceRecoveryAmount",
+                            "otherDeductionAmount",
+                        ],
+                        "deductionTypeMap": {
+                            "retention": "retentionAmount",
+                            "advance_recovery": "advanceRecoveryAmount",
+                            "other": "otherDeductionAmount",
+                        },
+                        "rounding": {
+                            "id": "vnd-whole-half-up-v1",
+                            "quantum": "1",
+                            "mode": "half_up",
+                        },
+                    }
+                },
+                **self.f.scope(),
+            },
+        )
 
     def decision(
         self,
@@ -193,6 +232,25 @@ class MeasurementPaymentExecutionContractTests(unittest.TestCase):
             "CON",
         )
 
+    def deduction_components(self, retention="50", advance="0", other="0"):
+        components = []
+        for component_type, amount in [
+            ("retention", retention),
+            ("advance_recovery", advance),
+            ("other", other),
+        ]:
+            if amount != "0":
+                components.append(
+                    {
+                        "type": component_type,
+                        "basis": "contract payment rule",
+                        "amount": amount,
+                        "currency": "VND",
+                        "contractClauseRef": self.f.ref("Requirement", self.f.requirement),
+                    }
+                )
+        return components
+
     def submit_payment(self, payment, boq, measurements, *, variation_components=None):
         return self.f.command(
             "payment_claim",
@@ -214,10 +272,10 @@ class MeasurementPaymentExecutionContractTests(unittest.TestCase):
             evidence=[self.f.evidence],
         )
 
-    def advance_payment_to_recommendation(self, payment):
+    def advance_payment_to_valuation(self, payment):
         payment = self.f.command("payment_claim", payment, "receive_payment_claim", actor="SUP", evidence=[])
         payment = self.f.command("payment_claim", payment, "start_quantity_review", actor="SUP", evidence=[])
-        payment = self.f.command(
+        return self.f.command(
             "payment_claim",
             payment,
             "start_valuation_review",
@@ -225,22 +283,36 @@ class MeasurementPaymentExecutionContractTests(unittest.TestCase):
             actor="SUP",
             evidence=[self.f.evidence],
         )
+
+    def recommendation_payload(
+        self,
+        *,
+        retention="50",
+        advance="0",
+        other="0",
+        tax="0",
+        recommended="850",
+    ):
+        return {
+            "eligibleVariationAmount": "0",
+            "eligibleMaterialOnSiteAmount": "0",
+            "retentionAmount": retention,
+            "advanceRecoveryAmount": advance,
+            "otherDeductionAmount": other,
+            "taxAmount": tax,
+            "recommendedNetAmount": recommended,
+            "deductionComponents": self.deduction_components(retention, advance, other),
+            "calculationRuleRef": self.f.ref("Requirement", self.payment_rule),
+            "reservationComment": "Verified eligible work only",
+        }
+
+    def advance_payment_to_recommendation(self, payment):
+        payment = self.advance_payment_to_valuation(payment)
         payment = self.f.command(
             "payment_claim",
             payment,
             "prepare_recommendation",
-            {
-                "eligibleVariationAmount": "0",
-                "eligibleMaterialOnSiteAmount": "0",
-                "retentionAmount": "50",
-                "advanceRecoveryAmount": "0",
-                "otherDeductionAmount": "0",
-                "taxAmount": "0",
-                "recommendedNetAmount": "850",
-                "deductionComponents": [],
-                "calculationRuleRef": self.f.ref("Requirement", self.f.requirement),
-                "reservationComment": "Verified eligible work only",
-            },
+            self.recommendation_payload(),
             actor="SUP",
             evidence=[],
         )
@@ -249,6 +321,31 @@ class MeasurementPaymentExecutionContractTests(unittest.TestCase):
             payment,
             "recommend_payment",
             actor="SUP",
+            evidence=[self.f.evidence],
+        )
+
+    def approve_payment(self, payment, amount="850"):
+        payment = self.f.command(
+            "payment_claim",
+            payment,
+            "submit_owner_review",
+            actor="SUP",
+            evidence=[],
+        )
+        decision = self.decision(payment, "WorkItem", "approved", "Approve payment")
+        command = "approve_payment" if amount == payment["data"]["recommendedNetAmount"] else "adjust_payment"
+        payload = {
+            "ownerApprovedAmount": amount,
+            "decisionRefs": [self.f.ref("Decision", decision["id"])],
+        }
+        if command == "adjust_payment":
+            payload["adjustmentReason"] = "Owner commercial adjustment"
+        return self.f.command(
+            "payment_claim",
+            payment,
+            command,
+            payload,
+            actor="OWN",
             evidence=[self.f.evidence],
         )
 
@@ -353,8 +450,8 @@ class MeasurementPaymentExecutionContractTests(unittest.TestCase):
                 "otherDeductionAmount": "0",
                 "taxAmount": "0",
                 "recommendedNetAmount": "850",
-                "deductionComponents": [],
-                "calculationRuleRef": self.f.ref("Requirement", self.f.requirement),
+                "deductionComponents": self.deduction_components(),
+                "calculationRuleRef": self.f.ref("Requirement", self.payment_rule),
             },
             actor="SUP",
             evidence=[],
@@ -401,7 +498,7 @@ class MeasurementPaymentExecutionContractTests(unittest.TestCase):
             payment,
             "record_payment",
             {
-                "paidAmount": "500",
+                "paymentAmount": "500",
                 "paidAt": AT,
                 "paymentReference": "BANK-001",
                 "externalSystemRef": "ERP-001",
@@ -413,6 +510,10 @@ class MeasurementPaymentExecutionContractTests(unittest.TestCase):
         self.assertEqual(payment["data"]["paidAmount"], "500")
         self.assertEqual(payment["data"]["unpaidBalance"], "300")
         self.assertEqual(payment["data"]["ownerApprovedAmount"], "800")
+        self.assertEqual(len(payment["data"]["paymentRecords"]), 1)
+        self.assertEqual(payment["data"]["paymentRecords"][0]["amount"], "500")
+        self.assertEqual(payment["data"]["paymentRecords"][0]["paymentReference"], "BANK-001")
+        self.assertEqual(payment["data"]["paymentRecords"][0]["evidenceIds"], [self.f.evidence])
 
         with self.assertRaises(ContractError) as close_error:
             self.f.command("payment_claim", payment, "close_payment_claim", actor="SUP", evidence=[])
@@ -423,7 +524,7 @@ class MeasurementPaymentExecutionContractTests(unittest.TestCase):
             payment,
             "record_additional_payment",
             {
-                "paidAmount": "800",
+                "paymentAmount": "300",
                 "paidAt": AT,
                 "paymentReference": "BANK-002",
                 "externalSystemRef": "ERP-002",
@@ -434,6 +535,10 @@ class MeasurementPaymentExecutionContractTests(unittest.TestCase):
         self.assertEqual(payment["data"]["ownerApprovedAmount"], "800")
         self.assertEqual(payment["data"]["paidAmount"], "800")
         self.assertEqual(payment["data"]["unpaidBalance"], "0")
+        self.assertEqual(
+            [(item["amount"], item["paymentReference"]) for item in payment["data"]["paymentRecords"]],
+            [("500", "BANK-001"), ("300", "BANK-002")],
+        )
         payment = self.f.command("payment_claim", payment, "close_payment_claim", actor="SUP", evidence=[])
         self.assertEqual(payment["status"], "closed")
         self.assertEqual(payment["data"]["cumulativeCertifiedAmount"], "800")
@@ -698,8 +803,8 @@ class MeasurementPaymentExecutionContractTests(unittest.TestCase):
                 "otherDeductionAmount": "0",
                 "taxAmount": "0",
                 "recommendedNetAmount": "850",
-                "deductionComponents": [],
-                "calculationRuleRef": self.f.ref("Requirement", self.f.requirement),
+                "deductionComponents": self.deduction_components(),
+                "calculationRuleRef": self.f.ref("Requirement", self.payment_rule),
             },
             actor="SUP",
             evidence=[],
@@ -713,6 +818,238 @@ class MeasurementPaymentExecutionContractTests(unittest.TestCase):
                 evidence=[self.f.evidence],
             )
         self.assertEqual(recommend_error.exception.code, "NOT_AUTHORIZED")
+
+    def test_recommendation_must_equal_versioned_calculation_rule_result(self):
+        boq = self.activate_boq(self.create_boq())
+        measurement = self.measurement(boq, inspection=self.accepted_inspection())
+        payment = self.advance_payment_to_valuation(
+            self.submit_payment(self.payment_draft(), boq, [measurement])
+        )
+
+        for bad_amount in ["1", "849", "900"]:
+            with self.assertRaises(ContractError) as error:
+                self.f.command(
+                    "payment_claim",
+                    payment,
+                    "prepare_recommendation",
+                    self.recommendation_payload(recommended=bad_amount),
+                    actor="SUP",
+                    evidence=[],
+                )
+            self.assertEqual(
+                error.exception.code,
+                "PAYMENT_RECOMMENDATION_PREPARE_READY",
+            )
+
+        payment = self.f.command(
+            "payment_claim",
+            payment,
+            "prepare_recommendation",
+            self.recommendation_payload(recommended="850"),
+            actor="SUP",
+            evidence=[],
+        )
+        trace = payment["data"]["calculationTrace"]
+        self.assertEqual(trace["ruleRef"], self.f.ref("Requirement", self.payment_rule))
+        self.assertEqual(trace["baseAmount"], "900")
+        self.assertEqual(trace["additionAmount"], "0")
+        self.assertEqual(trace["deductionAmount"], "50")
+        self.assertEqual(trace["preRoundAmount"], "850")
+        self.assertEqual(trace["roundedAmount"], "850")
+        self.assertEqual(trace["roundingRuleId"], "vnd-whole-half-up-v1")
+        self.assertEqual(trace["roundingMode"], "half_up")
+
+        payment = self.f.command(
+            "payment_claim",
+            payment,
+            "recommend_payment",
+            actor="SUP",
+            evidence=[self.f.evidence],
+        )
+        snapshot = payment["data"]["recommendationSnapshot"]
+        self.assertEqual(snapshot["calculationTrace"], trace)
+        self.assertEqual(snapshot["retentionAmount"], "50")
+
+    def test_deduction_components_must_reconcile_aggregate_fields(self):
+        boq = self.activate_boq(self.create_boq())
+        measurement = self.measurement(boq, inspection=self.accepted_inspection())
+        payment = self.advance_payment_to_valuation(
+            self.submit_payment(self.payment_draft(), boq, [measurement])
+        )
+
+        mismatch = self.recommendation_payload()
+        mismatch["deductionComponents"] = self.deduction_components(retention="40")
+        with self.assertRaises(ContractError) as error:
+            self.f.command(
+                "payment_claim",
+                payment,
+                "prepare_recommendation",
+                mismatch,
+                actor="SUP",
+                evidence=[],
+            )
+        self.assertEqual(
+            error.exception.code,
+            "PAYMENT_RECOMMENDATION_PREPARE_READY",
+        )
+
+        reconciled = self.recommendation_payload(
+            retention="50",
+            advance="20",
+            other="10",
+            tax="90",
+            recommended="910",
+        )
+        payment = self.f.command(
+            "payment_claim",
+            payment,
+            "prepare_recommendation",
+            reconciled,
+            actor="SUP",
+            evidence=[],
+        )
+        trace = payment["data"]["calculationTrace"]
+        self.assertEqual(trace["additionAmount"], "90")
+        self.assertEqual(trace["deductionAmount"], "80")
+        self.assertEqual(
+            trace["deductionTotals"],
+            {
+                "retentionAmount": "50",
+                "advanceRecoveryAmount": "20",
+                "otherDeductionAmount": "10",
+            },
+        )
+        self.assertEqual(trace["roundedAmount"], "910")
+
+    def test_payment_reference_and_external_reference_cannot_be_reused(self):
+        boq = self.activate_boq(self.create_boq())
+        measurement = self.measurement(boq, inspection=self.accepted_inspection())
+        payment = self.approve_payment(
+            self.advance_payment_to_recommendation(
+                self.submit_payment(self.payment_draft(), boq, [measurement])
+            )
+        )
+        payment = self.f.command(
+            "payment_claim",
+            payment,
+            "record_payment",
+            {
+                "paymentAmount": "500",
+                "paidAt": AT,
+                "paymentReference": "BANK-DUP-001",
+                "externalSystemRef": "ERP-DUP-001",
+            },
+            actor="ADM",
+            evidence=[self.f.evidence],
+        )
+
+        with self.assertRaises(ContractError) as reference_error:
+            self.f.command(
+                "payment_claim",
+                payment,
+                "record_additional_payment",
+                {
+                    "paymentAmount": "100",
+                    "paidAt": AT,
+                    "paymentReference": "BANK-DUP-001",
+                    "externalSystemRef": "ERP-DUP-002",
+                },
+                actor="ADM",
+                evidence=[self.f.evidence],
+            )
+        self.assertEqual(
+            reference_error.exception.code,
+            "PAYMENT_REFERENCE_DUPLICATE",
+        )
+
+        with self.assertRaises(ContractError) as external_error:
+            self.f.command(
+                "payment_claim",
+                payment,
+                "record_additional_payment",
+                {
+                    "paymentAmount": "100",
+                    "paidAt": AT,
+                    "paymentReference": "BANK-DUP-002",
+                    "externalSystemRef": "ERP-DUP-001",
+                },
+                actor="ADM",
+                evidence=[self.f.evidence],
+            )
+        self.assertEqual(
+            external_error.exception.code,
+            "PAYMENT_REFERENCE_DUPLICATE",
+        )
+
+    def test_payment_correction_and_cancellation_preserve_append_only_trace(self):
+        boq = self.activate_boq(self.create_boq())
+        measurement = self.measurement(boq, inspection=self.accepted_inspection())
+        payment = self.approve_payment(
+            self.advance_payment_to_recommendation(
+                self.submit_payment(self.payment_draft(), boq, [measurement])
+            )
+        )
+        payment = self.f.command(
+            "payment_claim",
+            payment,
+            "record_payment",
+            {
+                "paymentAmount": "500",
+                "paidAt": AT,
+                "paymentReference": "BANK-TRACE-001",
+                "externalSystemRef": "ERP-TRACE-001",
+            },
+            actor="ADM",
+            evidence=[self.f.evidence],
+        )
+        first = payment["data"]["paymentRecords"][0]
+
+        payment = self.f.command(
+            "payment_claim",
+            payment,
+            "correct_payment_record",
+            {
+                "supersedesPaymentRecordId": first["recordId"],
+                "paymentAmount": "450",
+                "paidAt": AT,
+                "paymentReference": "BANK-TRACE-002",
+                "externalSystemRef": "ERP-TRACE-002",
+                "correctionReason": "Bank advice corrected",
+            },
+            actor="ADM",
+            evidence=[self.f.evidence],
+        )
+        correction = payment["data"]["paymentRecords"][1]
+        self.assertEqual(correction["kind"], "correction")
+        self.assertEqual(correction["supersedesPaymentRecordId"], first["recordId"])
+        self.assertEqual(payment["data"]["paidAmount"], "450")
+        self.assertEqual(payment["data"]["ownerApprovedAmount"], "850")
+
+        payment = self.f.command(
+            "payment_claim",
+            payment,
+            "cancel_payment_record",
+            {
+                "supersedesPaymentRecordId": correction["recordId"],
+                "paidAt": AT,
+                "paymentReference": "BANK-TRACE-CANCEL",
+                "externalSystemRef": "ERP-TRACE-CANCEL",
+                "correctionReason": "Payment reversed externally",
+            },
+            actor="ADM",
+            evidence=[self.f.evidence],
+        )
+        cancellation = payment["data"]["paymentRecords"][2]
+        self.assertEqual(cancellation["kind"], "cancellation")
+        self.assertEqual(
+            cancellation["supersedesPaymentRecordId"],
+            correction["recordId"],
+        )
+        self.assertEqual(len(payment["data"]["paymentRecords"]), 3)
+        self.assertEqual(payment["data"]["paidAmount"], "0")
+        self.assertEqual(payment["data"]["unpaidBalance"], "850")
+        self.assertEqual(payment["data"]["ownerApprovedAmount"], "850")
+        self.assertEqual(first["paymentReference"], "BANK-TRACE-001")
 
     def test_paid_amount_cannot_exceed_owner_approved_amount(self):
         boq = self.activate_boq(self.create_boq())
@@ -745,7 +1082,7 @@ class MeasurementPaymentExecutionContractTests(unittest.TestCase):
                 payment,
                 "record_payment",
                 {
-                    "paidAmount": "851",
+                    "paymentAmount": "851",
                     "paidAt": AT,
                     "paymentReference": "BANK-OVERPAY",
                     "externalSystemRef": "ERP-OVERPAY",
