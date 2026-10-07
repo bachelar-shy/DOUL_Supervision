@@ -2,25 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Workspace, WorkItem } from "../../data/ui-contract";
 import type { SupervisionClient } from "../../data/supervision-client";
 import type { RecordDTO } from "../../data/ui-contract";
+import {
+  currentEvidenceActor,
+  EVIDENCE_UPLOAD_LIMIT_BYTES,
+  evidenceChecksum,
+  sniffEvidenceMime,
+  uploadOfficialEvidence,
+} from "../../data/evidence-registration-data";
 
-const MAX_BYTES = 20 * 1024 * 1024;
 type QuarantineItem = { key: string; byteCount: number; sha256: string; contentType: string; status: string };
-
-function sniffEvidence(bytes: Uint8Array): string | null {
-  if (bytes.length >= 8 && bytes.slice(0, 8).join(",") === "137,80,78,71,13,10,26,10") return "image/png";
-  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
-  if (bytes.length >= 6 && ["GIF87a", "GIF89a"].includes(String.fromCharCode(...bytes.slice(0, 6)))) return "image/gif";
-  if (bytes.length >= 12 && String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
-      String.fromCharCode(...bytes.slice(8, 12)) === "WEBP") return "image/webp";
-  if (bytes.length >= 5 && String.fromCharCode(...bytes.slice(0, 5)) === "%PDF-") return "application/pdf";
-  return null;
-}
-
-async function checksum(bytes: Uint8Array) {
-  const source = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-  return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", source)))
-    .map((value) => value.toString(16).padStart(2, "0")).join("");
-}
 
 export function EvidenceRegistrationPanel({
   client, workspace, selectedWork, onChanged, onEvidenceSelected,
@@ -38,41 +28,48 @@ export function EvidenceRegistrationPanel({
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
   const [error, setError] = useState("");
+  const [quarantineActorKey, setQuarantineActorKey] = useState("");
+  const actor = client.session?.actor ?? null;
+  const actorKey = actor ? `${actor.partyId}:${actor.roleAssignmentId}` : "";
   const officialEvidence = useMemo(() => workspace.items
     .filter((item) => item.machine === "evidence")
     .map((item) => item.record), [workspace.items]);
 
   const loadQuarantine = useCallback(async () => {
-    if (!client.session) return;
+    if (!client.session) { setQuarantine([]); setSelectedKey(""); return; }
+    const requestActorKey = `${client.session.actor.partyId}:${client.session.actor.roleAssignmentId}`;
     try {
       const result = await client.request<{ items: QuarantineItem[] }>(
         client.path("/parallel/evidence-quarantine"),
       );
-      setQuarantine(result.items.filter((item) => item.status === "quarantined"));
+      if (!client.session || `${client.session.actor.partyId}:${client.session.actor.roleAssignmentId}` !== requestActorKey) return;
+      const available = result.items.filter((item) => item.status === "quarantined");
+      setQuarantine(available);
+      setQuarantineActorKey(requestActorKey);
+      setSelectedKey((current) => available.some((item) => item.key === current) ? current : "");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     }
   }, [client]);
 
-  useEffect(() => { void loadQuarantine(); }, [loadQuarantine]);
+  useEffect(() => { setQuarantine([]); setSelectedKey(""); setQuarantineActorKey(""); setSelectedOfficialId(""); void loadQuarantine(); }, [loadQuarantine, actorKey]);
 
   async function uploadOfficial(file?: File) {
     if (!file) return;
     setBusy(true);
     setError("");
-    setProgress("Checking file bytes…");
+    setProgress("파일 내용을 확인하고 있습니다…");
     try {
-      if (file.size === 0 || file.size > MAX_BYTES) throw new Error("Choose an image or PDF under 20 MiB.");
+      if (file.size === 0 || file.size > EVIDENCE_UPLOAD_LIMIT_BYTES) throw new Error("20 MiB 이하의 이미지 또는 PDF 파일을 선택하세요.");
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const mime = sniffEvidence(bytes);
-      if (!mime) throw new Error("The file bytes are not a supported image or PDF.");
-      if (file.type && file.type !== mime) throw new Error("The file type label does not match its bytes.");
-      const record = await client.upload(bytes, {
-        name: file.name, mime, hash: await checksum(bytes),
-        scope: workspace.context.scope, sourcePartyId: client.session!.actor.partyId,
-      }, (offset, total) => setProgress(`Uploading ${Math.round((offset / total) * 100)}%`));
+      const mime = sniffEvidenceMime(bytes);
+      if (!mime) throw new Error("지원하는 이미지 또는 PDF 형식이 아닙니다.");
+      if (file.type && file.type !== mime) throw new Error("파일 형식 표시와 실제 내용이 일치하지 않습니다.");
+      const record = await uploadOfficialEvidence(client, bytes, {
+        name: file.name, mime, hash: await evidenceChecksum(bytes), scope: workspace.context.scope,
+      }, (offset, total) => setProgress(`업로드 ${Math.round((offset / total) * 100)}%`));
       setSelectedOfficialId(record.id);
-      setProgress(`Official evidence registered · ${record.id} · SHA-256 ${record.fileHash}`);
+      setProgress(`공식 증빙 등록 완료 · ${record.id} · SHA-256 ${record.fileHash}`);
       onEvidenceSelected?.(record.id);
       await onChanged?.();
       await loadQuarantine();
@@ -86,10 +83,11 @@ export function EvidenceRegistrationPanel({
 
   async function registerQuarantine() {
     const item = quarantine.find((entry) => entry.key === selectedKey);
-    if (!item || !client.session) return;
+    if (!item || !client.session || !quarantine.some((entry) => entry.key === selectedKey)) return;
+    const currentActor = currentEvidenceActor(client);
     setBusy(true);
     setError("");
-    setProgress("Verifying quarantined original…");
+    setProgress("격리된 원본을 확인하고 있습니다…");
     try {
       const record = await client.request<RecordDTO>(
         client.path("/parallel/evidence-quarantine/register"),
@@ -97,10 +95,10 @@ export function EvidenceRegistrationPanel({
           method: "POST",
           headers: { "Idempotency-Key": crypto.randomUUID() },
           body: JSON.stringify({
-            roleAssignmentId: client.session.actor.roleAssignmentId,
+            roleAssignmentId: currentActor.roleAssignmentId,
             quarantineKey: item.key,
             sha256: item.sha256,
-            sourcePartyId: client.session.actor.partyId,
+            sourcePartyId: currentActor.partyId,
             fileName: registerFileName.trim(),
             discipline: workspace.context.scope.discipline,
             packageId: workspace.context.scope.packageId,
@@ -109,7 +107,7 @@ export function EvidenceRegistrationPanel({
         },
       );
       setSelectedOfficialId(record.id);
-      setProgress(`Official evidence registered · ${record.id} · SHA-256 ${record.fileHash}`);
+      setProgress(`공식 증빙 등록 완료 · ${record.id} · SHA-256 ${record.fileHash}`);
       onEvidenceSelected?.(record.id);
       await onChanged?.();
       await loadQuarantine();
@@ -128,44 +126,44 @@ export function EvidenceRegistrationPanel({
 
   return (
     <section className="rounded-lg border bg-card p-4" aria-labelledby="evidence-registration-title">
-      <h2 id="evidence-registration-title" className="text-lg font-semibold">Evidence registration</h2>
+      <h2 id="evidence-registration-title" className="text-lg font-semibold">증빙 등록</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Register image or PDF originals, then explicitly select an evidence ID in the work command that needs it.
+        이미지 또는 PDF 원본을 등록한 뒤, 사용할 작업 명령에서 증빙 ID를 직접 선택하세요.
       </p>
 
-      <label className="mt-4 block text-sm font-medium" htmlFor="official-evidence-file">Register a new image or PDF</label>
+      <label className="mt-4 block text-sm font-medium" htmlFor="official-evidence-file">새 이미지 또는 PDF 등록</label>
       <input id="official-evidence-file" className="mt-2 block w-full text-sm" type="file"
         accept="image/png,image/jpeg,image/gif,image/webp,application/pdf"
         disabled={busy} onChange={(event) => void uploadOfficial(event.target.files?.[0])} />
 
       <div className="mt-5 border-t pt-4">
-        <h3 className="font-medium">Register an existing quarantined original</h3>
+        <h3 className="font-medium">격리된 원본 등록</h3>
         {quarantine.length ? (
           <div className="mt-2 flex flex-wrap gap-2">
             <select className="min-w-64 rounded-md border bg-background px-3 py-2 text-sm"
-              value={selectedKey} onChange={(event) => setSelectedKey(event.target.value)} disabled={busy}>
-              <option value="">Choose a quarantined file</option>
+              value={selectedKey} onChange={(event) => setSelectedKey(event.target.value)} disabled={busy || quarantineActorKey !== actorKey}>
+              <option value="">격리된 파일 선택</option>
               {quarantine.map((item) => (
                 <option key={item.key} value={item.key}>
-                  {item.key.split("/").slice(-2, -1)[0]} · {item.contentType} · {item.byteCount.toLocaleString()} bytes
+                  {item.key.split("/").slice(-2, -1)[0]} · {item.contentType} · {item.byteCount.toLocaleString()}바이트
                 </option>
               ))}
             </select>
-            <input className="rounded-md border bg-background px-3 py-2 text-sm" aria-label="Registered file name"
-              placeholder="File name" value={registerFileName} onChange={(event) => setRegisterFileName(event.target.value)} disabled={busy} />
+            <input className="rounded-md border bg-background px-3 py-2 text-sm" aria-label="등록할 파일 이름"
+              placeholder="파일 이름" value={registerFileName} onChange={(event) => setRegisterFileName(event.target.value)} disabled={busy} />
             <button type="button" className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground"
-              disabled={busy || !selectedKey || !registerFileName.trim()} onClick={() => void registerQuarantine()}>
-              Register official evidence
+              disabled={busy || quarantineActorKey !== actorKey || !selectedKey || !quarantine.some((item) => item.key === selectedKey) || !registerFileName.trim()} onClick={() => void registerQuarantine()}>
+              공식 증빙 등록
             </button>
           </div>
-        ) : <p className="mt-2 text-sm text-muted-foreground">No quarantined originals are available for this account.</p>}
+        ) : <p className="mt-2 text-sm text-muted-foreground">현재 계정에서 등록할 수 있는 격리 원본이 없습니다.</p>}
       </div>
 
       <div className="mt-5 border-t pt-4">
-        <label className="block text-sm font-medium" htmlFor="existing-official-evidence">Select existing official evidence</label>
+        <label className="block text-sm font-medium" htmlFor="existing-official-evidence">기존 공식 증빙 선택</label>
         <select id="existing-official-evidence" className="mt-2 w-full rounded-md border bg-background px-3 py-2 text-sm"
           value={selectedOfficialId} onChange={(event) => chooseOfficial(event.target.value)}>
-          <option value="">Choose evidence for a work command</option>
+          <option value="">작업 명령에 사용할 증빙 선택</option>
           {officialEvidence.map((record) => (
             <option key={record.id} value={record.id}>
               {String(record.metadata?.name ?? record.id)} · {record.id} · {record.fileHash}
@@ -173,10 +171,10 @@ export function EvidenceRegistrationPanel({
           ))}
         </select>
         {selectedWork && <p className="mt-2 text-sm text-muted-foreground">
-          Selected work: {selectedWork.machine} · {selectedWork.record.id}. Use the chosen ID in that work item's next command evidence selection.
+          선택된 작업: {selectedWork.machine} · {selectedWork.record.id}. 다음 작업 명령에서 선택한 증빙 ID를 지정하세요.
         </p>}
         {selectedOfficialId && <p className="mt-2 break-all text-sm" role="status">
-          Persisted official record selected: {selectedOfficialId}
+          저장된 공식 증빙 선택됨: {selectedOfficialId}
         </p>}
       </div>
       {progress && <p className="mt-3 break-all text-sm" role="status">{progress}</p>}
