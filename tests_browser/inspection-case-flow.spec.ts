@@ -81,9 +81,19 @@ test("inspection case panel shows the server-linked graph and opens commands onl
   const panel = page.getByTestId("inspection-case-flow");
   await expect(panel).toBeVisible();
   await panel.getByLabel("원 검측 선택", { exact: true }).selectOption(fixture.inspectionId);
-  await expect(panel.getByText(fixture.issueTitle, { exact: false })).toBeVisible();
-  await expect(panel.getByText(fixture.observationId, { exact: false })).toBeVisible();
-  await expect(panel.getByText(fixture.correctiveActionId, { exact: false })).toBeVisible();
+  const issue = panel.locator(".inspection-case-issue").filter({
+    has: panel.locator(".inspection-case-issue-title h3").filter({ hasText: fixture.issueTitle }),
+  });
+  await expect(issue).toHaveCount(1);
+  await expect(issue.locator(".inspection-case-issue-title h3")).toContainText(fixture.issueTitle);
+  const observationRef = issue.locator(".inspection-case-related").nth(0)
+    .locator(".inspection-case-record-heading span").filter({ hasText: fixture.observationId });
+  const correctionRef = issue.locator(".inspection-case-related").nth(1)
+    .locator(".inspection-case-record-heading span").filter({ hasText: fixture.correctiveActionId });
+  await expect(observationRef).toHaveCount(1);
+  await expect(observationRef).toBeVisible();
+  await expect(correctionRef).toHaveCount(1);
+  await expect(correctionRef).toBeVisible();
   await expect(panel.getByText("서버 준비상태 · 시정 주기 0", { exact: true })).toBeVisible();
   const candidate = panel.locator(".inspection-case-actions button:not([disabled])").first();
   await expect(candidate, "synthetic linked graph must expose a server-provided current command candidate").toBeVisible();
