@@ -179,11 +179,12 @@ test("mocked drawing binding plus real Location API stages, saves, and restores 
     const canvas = viewer.locator("canvas");
     await expect(canvas).toHaveAttribute("aria-label", "PDF 페이지 1 / 2");
     await expect.poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.width > 0 && element.height > 0)).toBe(true);
+    await expect(viewer.getByRole("status", { name: "페이지를 표시하는 중…" })).toHaveCount(0);
     await expect(viewer.getByRole("button", { name: "위치 핀 저장" })).toHaveCount(0);
 
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
-    await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+    await canvas.click({ position: { x: box!.width / 2, y: box!.height / 2 } });
     await expect(viewer.getByRole("button", { name: "위치 핀 저장" })).toBeVisible();
     const stagedPin = viewer.getByTestId("pdf-pin-preview");
     await expect(stagedPin).toBeVisible();
