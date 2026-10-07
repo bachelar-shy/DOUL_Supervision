@@ -255,7 +255,10 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     const sequence = ++loadSequence.current;
     setSearchError("");
     setCommittedViewport(null);
-    if (selectedId && directoryLoading) {
+    // A just-uploaded local preview is already available and can be parsed
+    // without waiting for a workspace refresh of the binding/location lists.
+    // This also keeps corrupt-file errors visible while that refresh is pending.
+    if (selectedId && directoryLoading && !previewFiles.current.has(selectedId)) {
       setStatus({ kind: "loading", message: "도면 PDF 연결을 확인하는 중…" });
       return () => { active = false; };
     }
