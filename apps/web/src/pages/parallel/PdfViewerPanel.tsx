@@ -578,7 +578,8 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       setMarkups((current) => [...current.filter((item) => item.id !== saved.id), saved]);
       setSelectedMarkup(saved);
       selectMarkup(saved.id);
-      onChanged?.();
+      // Markups live in their own API. Refreshing the workspace here restarts
+      // PDF loading and clears the selected markup before its history can render.
     } catch (reason) {
       if (requestSequence === markupContextSequence.current) {
         setMarkupError(reason instanceof Error ? reason.message : "주석을 저장하지 못했습니다.");
@@ -631,7 +632,6 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       setDeletingMarkup(false);
       setMarkupReason("");
       markupMutationAttempt.current = null;
-      onChanged?.();
     } catch (reason) {
       if (requestSequence === markupContextSequence.current) {
         setMarkupError(reason instanceof Error ? reason.message : "주석을 삭제하지 못했습니다.");
