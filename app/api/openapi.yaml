@@ -16076,6 +16076,3183 @@
         "x-domain-command": "recovery_plan:cancel_recovery"
       }
     },
+    "/projects/{projectId}/contract-notices": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_notices",
+        "summary": "contract_notice 생성",
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_notice"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Create_contract_notice"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/contract-notices/{objectId}": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "get_projects_projectId_contract_notices_objectId",
+        "summary": "contract_notice 상세",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-RoleAssignment-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/projects/{projectId}/contract-notices/{objectId}/calculate-notice-due": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_notices_objectId_calculate_notice_due",
+        "summary": "contract_notice / calculate_notice_due",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_notice"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_notice_calculate_notice_due"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_notice:calculate_notice_due"
+      }
+    },
+    "/projects/{projectId}/contract-notices/{objectId}/submit-notice": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_notices_objectId_submit_notice",
+        "summary": "contract_notice / submit_notice",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_notice"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_notice_submit_notice"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_notice:submit_notice"
+      }
+    },
+    "/projects/{projectId}/contract-notices/{objectId}/record-acknowledgement": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_notices_objectId_record_acknowledgement",
+        "summary": "contract_notice / record_acknowledgement",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_notice"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_notice_record_acknowledgement"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_notice:record_acknowledgement"
+      }
+    },
+    "/projects/{projectId}/contract-notices/{objectId}/require-followup": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_notices_objectId_require_followup",
+        "summary": "contract_notice / require_followup",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_notice"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_notice_require_followup"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_notice:require_followup"
+      }
+    },
+    "/projects/{projectId}/contract-notices/{objectId}/preserve-rights-record": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_notices_objectId_preserve_rights_record",
+        "summary": "contract_notice / preserve_rights_record",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_notice"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_notice_preserve_rights_record"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_notice:preserve_rights_record"
+      }
+    },
+    "/projects/{projectId}/contract-notices/{objectId}/close-notice": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_notices_objectId_close_notice",
+        "summary": "contract_notice / close_notice",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_notice"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_notice_close_notice"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_notice:close_notice"
+      }
+    },
+    "/projects/{projectId}/contract-notices/{objectId}/flag-time-bar-risk": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_contract_notices_objectId_flag_time_bar_risk",
+        "summary": "contract_notice / flag_time_bar_risk",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_contract_notice"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_contract_notice_flag_time_bar_risk"
+              }
+            }
+          }
+        },
+        "x-domain-command": "contract_notice:flag_time_bar_risk"
+      }
+    },
+    "/projects/{projectId}/claims": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_claims",
+        "summary": "claim 생성",
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Create_claim"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/claims/{objectId}": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "get_projects_projectId_claims_objectId",
+        "summary": "claim 상세",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-RoleAssignment-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/projects/{projectId}/claims/{objectId}/submit-claim": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_claims_objectId_submit_claim",
+        "summary": "claim / submit_claim",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_claim_submit_claim"
+              }
+            }
+          }
+        },
+        "x-domain-command": "claim:submit_claim"
+      }
+    },
+    "/projects/{projectId}/claims/{objectId}/receive-claim": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_claims_objectId_receive_claim",
+        "summary": "claim / receive_claim",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_claim_receive_claim"
+              }
+            }
+          }
+        },
+        "x-domain-command": "claim:receive_claim"
+      }
+    },
+    "/projects/{projectId}/claims/{objectId}/request-substantiation": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_claims_objectId_request_substantiation",
+        "summary": "claim / request_substantiation",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_claim_request_substantiation"
+              }
+            }
+          }
+        },
+        "x-domain-command": "claim:request_substantiation"
+      }
+    },
+    "/projects/{projectId}/claims/{objectId}/start-entitlement-review": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_claims_objectId_start_entitlement_review",
+        "summary": "claim / start_entitlement_review",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_claim_start_entitlement_review"
+              }
+            }
+          }
+        },
+        "x-domain-command": "claim:start_entitlement_review"
+      }
+    },
+    "/projects/{projectId}/claims/{objectId}/start-quantum-review": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_claims_objectId_start_quantum_review",
+        "summary": "claim / start_quantum_review",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_claim_start_quantum_review"
+              }
+            }
+          }
+        },
+        "x-domain-command": "claim:start_quantum_review"
+      }
+    },
+    "/projects/{projectId}/claims/{objectId}/request-claim-decision": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_claims_objectId_request_claim_decision",
+        "summary": "claim / request_claim_decision",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_claim_request_claim_decision"
+              }
+            }
+          }
+        },
+        "x-domain-command": "claim:request_claim_decision"
+      }
+    },
+    "/projects/{projectId}/claims/{objectId}/approve-claim": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_claims_objectId_approve_claim",
+        "summary": "claim / approve_claim",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_claim_approve_claim"
+              }
+            }
+          }
+        },
+        "x-domain-command": "claim:approve_claim"
+      }
+    },
+    "/projects/{projectId}/claims/{objectId}/partially-approve-claim": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_claims_objectId_partially_approve_claim",
+        "summary": "claim / partially_approve_claim",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_claim_partially_approve_claim"
+              }
+            }
+          }
+        },
+        "x-domain-command": "claim:partially_approve_claim"
+      }
+    },
+    "/projects/{projectId}/claims/{objectId}/reject-claim": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_claims_objectId_reject_claim",
+        "summary": "claim / reject_claim",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_claim_reject_claim"
+              }
+            }
+          }
+        },
+        "x-domain-command": "claim:reject_claim"
+      }
+    },
+    "/projects/{projectId}/claims/{objectId}/dispute-claim": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_claims_objectId_dispute_claim",
+        "summary": "claim / dispute_claim",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_claim_dispute_claim"
+              }
+            }
+          }
+        },
+        "x-domain-command": "claim:dispute_claim"
+      }
+    },
+    "/projects/{projectId}/claims/{objectId}/record-claim-settlement": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_claims_objectId_record_claim_settlement",
+        "summary": "claim / record_claim_settlement",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_claim_record_claim_settlement"
+              }
+            }
+          }
+        },
+        "x-domain-command": "claim:record_claim_settlement"
+      }
+    },
+    "/projects/{projectId}/claims/{objectId}/close-claim": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_claims_objectId_close_claim",
+        "summary": "claim / close_claim",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_claim_close_claim"
+              }
+            }
+          }
+        },
+        "x-domain-command": "claim:close_claim"
+      }
+    },
+    "/projects/{projectId}/eot-requests": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests",
+        "summary": "eot_request 생성",
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Create_eot_request"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "get_projects_projectId_eot_requests_objectId",
+        "summary": "eot_request 상세",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-RoleAssignment-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/submit-eot": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_submit_eot",
+        "summary": "eot_request / submit_eot",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_submit_eot"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:submit_eot"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/receive-eot": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_receive_eot",
+        "summary": "eot_request / receive_eot",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_receive_eot"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:receive_eot"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/start-time-impact-review": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_start_time_impact_review",
+        "summary": "eot_request / start_time_impact_review",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_start_time_impact_review"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:start_time_impact_review"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/start-eot-entitlement-review": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_start_eot_entitlement_review",
+        "summary": "eot_request / start_eot_entitlement_review",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_start_eot_entitlement_review"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:start_eot_entitlement_review"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/request-eot-decision": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_request_eot_decision",
+        "summary": "eot_request / request_eot_decision",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_request_eot_decision"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:request_eot_decision"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/approve-eot": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_approve_eot",
+        "summary": "eot_request / approve_eot",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_approve_eot"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:approve_eot"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/partially-approve-eot": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_partially_approve_eot",
+        "summary": "eot_request / partially_approve_eot",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_partially_approve_eot"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:partially_approve_eot"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/reject-eot": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_reject_eot",
+        "summary": "eot_request / reject_eot",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_reject_eot"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:reject_eot"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/dispute-eot": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_dispute_eot",
+        "summary": "eot_request / dispute_eot",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_dispute_eot"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:dispute_eot"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/request-baseline-update": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_request_baseline_update",
+        "summary": "eot_request / request_baseline_update",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_request_baseline_update"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:request_baseline_update"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/confirm-baseline-update": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_confirm_baseline_update",
+        "summary": "eot_request / confirm_baseline_update",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_confirm_baseline_update"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:confirm_baseline_update"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/close-eot": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_close_eot",
+        "summary": "eot_request / close_eot",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_close_eot"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:close_eot"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/resolve-eot-dispute-approved": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_resolve_eot_dispute_approved",
+        "summary": "eot_request / resolve_eot_dispute_approved",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_resolve_eot_dispute_approved"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:resolve_eot_dispute_approved"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/resolve-eot-dispute-partially-approved": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_resolve_eot_dispute_partially_approved",
+        "summary": "eot_request / resolve_eot_dispute_partially_approved",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_resolve_eot_dispute_partially_approved"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:resolve_eot_dispute_partially_approved"
+      }
+    },
+    "/projects/{projectId}/eot-requests/{objectId}/resolve-eot-dispute-rejected": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_eot_requests_objectId_resolve_eot_dispute_rejected",
+        "summary": "eot_request / resolve_eot_dispute_rejected",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_eot_request"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_eot_request_resolve_eot_dispute_rejected"
+              }
+            }
+          }
+        },
+        "x-domain-command": "eot_request:resolve_eot_dispute_rejected"
+      }
+    },
     "/projects/{projectId}/registers/{registerId}": {
       "parameters": [
         {
@@ -17783,7 +20960,31 @@
                 "schedule.recovery.monitor",
                 "schedule.recovery.close",
                 "schedule.recovery.supersede",
-                "schedule.recovery.cancel"
+                "schedule.recovery.cancel",
+                "contract.notice.identify",
+                "contract.notice.calculate_due",
+                "contract.notice.submit",
+                "contract.notice.acknowledge",
+                "contract.notice.followup",
+                "contract.notice.preserve",
+                "contract.notice.flag_risk",
+                "contract.notice.close",
+                "contract.claim.draft",
+                "contract.claim.submit",
+                "contract.claim.receive",
+                "contract.claim.review",
+                "contract.claim.request_decision",
+                "contract.claim.decide",
+                "contract.claim.close",
+                "contract.eot.draft",
+                "contract.eot.submit",
+                "contract.eot.receive",
+                "contract.eot.time_review",
+                "contract.eot.entitlement_review",
+                "contract.eot.request_decision",
+                "contract.eot.decide",
+                "contract.eot.baseline_update",
+                "contract.eot.close"
               ]
             }
           },
@@ -19745,6 +22946,63 @@
               "properties": {
                 "data": {
                   "$ref": "#/components/schemas/RecoveryPlanData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "ContractNotice"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/ContractNoticeData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "Claim"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/ClaimData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "EOTRequest"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/EOTRequestData"
                 }
               }
             }
@@ -22336,6 +25594,400 @@
         },
         "required": [
           "triggerDelayEventRefs"
+        ],
+        "additionalProperties": false
+      },
+      "ContractNoticeData": {
+        "type": "object",
+        "properties": {
+          "noticeNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "eventRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "clauseRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "contractRuleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "awareAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "eventAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "noticeDueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueCalculationConfirmed": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "senderPartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recipientPartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reliefReserved": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "acknowledgementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "followupDueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "continuingRecordRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "downstreamCaseRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "timeBarRisk": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "timeBarRiskAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "acknowledgedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "preservedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "noticeNo",
+          "eventRef",
+          "clauseRef",
+          "contractRuleRef",
+          "awareAt",
+          "eventAt",
+          "senderPartyId",
+          "recipientPartyId",
+          "subject"
+        ],
+        "additionalProperties": false
+      },
+      "ClaimData": {
+        "type": "object",
+        "properties": {
+          "claimNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "noticeRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "eventRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "clauseRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "claimType": {
+            "type": "string",
+            "enum": [
+              "time",
+              "cost",
+              "time_and_cost",
+              "other"
+            ]
+          },
+          "reliefRequested": {
+            "type": "string",
+            "minLength": 1
+          },
+          "entitlementBasis": {
+            "type": "string"
+          },
+          "chronology": {
+            "type": "string"
+          },
+          "evidenceRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "timeImpactRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "costImpactRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "amountClaimed": {
+            "type": "number",
+            "minimum": 0
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "substantiationRequirements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "entitlementAssessment": {
+            "type": "string"
+          },
+          "amountAssessed": {
+            "type": "number",
+            "minimum": 0
+          },
+          "recommendation": {
+            "type": "string"
+          },
+          "decisionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "decisionOutcome": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "partially_approved",
+              "rejected",
+              "disputed"
+            ],
+            "readOnly": true
+          },
+          "amountApproved": {
+            "type": "number",
+            "minimum": 0
+          },
+          "disputedItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "implementationRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            }
+          },
+          "settlementRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "decisionAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "settledAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "claimNo"
+        ],
+        "additionalProperties": false
+      },
+      "EOTRequestData": {
+        "type": "object",
+        "properties": {
+          "eotNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "delayEventRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "noticeRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "baselineScheduleRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "impactAnalysisRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "minItems": 1
+          },
+          "daysClaimed": {
+            "type": "number",
+            "minimum": 0
+          },
+          "concurrentDelayAssessment": {
+            "type": "string"
+          },
+          "timeImpactAssessment": {
+            "type": "string"
+          },
+          "daysAssessed": {
+            "type": "number",
+            "minimum": 0
+          },
+          "assessedCompletionDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "entitlementAssessment": {
+            "type": "string"
+          },
+          "recommendation": {
+            "type": "string"
+          },
+          "decisionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "decisionOutcome": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "partially_approved",
+              "rejected",
+              "disputed"
+            ],
+            "readOnly": true
+          },
+          "daysApproved": {
+            "type": "number",
+            "minimum": 0
+          },
+          "revisedCompletionDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "baselineRevisionBasisRef": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DomainRef"
+              }
+            ],
+            "readOnly": true
+          },
+          "baselineRevisionRef": {
+            "$ref": "#/components/schemas/DomainRef"
+          },
+          "disputeReason": {
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "timeImpactReviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "entitlementReviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "decisionAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "baselineUpdateRequestedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "eotNo"
         ],
         "additionalProperties": false
       },
@@ -29607,6 +33259,1305 @@
                 "additionalProperties": false,
                 "required": [
                   "reason"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Create_contract_notice": {
+        "type": "object",
+        "required": [
+          "roleAssignmentId",
+          "clientObjectId",
+          "payload"
+        ],
+        "properties": {
+          "roleAssignmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientObjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payload": {
+            "type": "object",
+            "properties": {
+              "packageId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "locationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "discipline": {
+                "type": "string"
+              },
+              "responsibleOrganizationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "minimumQualificationRank": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3
+              },
+              "requirementRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainRef"
+                }
+              },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "drawingRef": {
+                "$ref": "#/components/schemas/DomainRef"
+              },
+              "upstreamInspectionIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "subtype": {
+                "const": "ContractNotice"
+              },
+              "title": {
+                "type": "string"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ContractNoticeData"
+              },
+              "relatedRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainRef"
+                }
+              },
+              "dueAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "title",
+              "data"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "CommandResult_contract_notice": {
+        "type": "object",
+        "required": [
+          "record",
+          "auditEvent"
+        ],
+        "properties": {
+          "record": {
+            "$ref": "#/components/schemas/WorkItem"
+          },
+          "auditEvent": {
+            "$ref": "#/components/schemas/AuditEvent"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Command_contract_notice_calculate_notice_due": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "noticeDueAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "noticeDueAt"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_notice_submit_notice": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_notice_record_acknowledgement": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "acknowledgementRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "acknowledgementRef"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_notice_require_followup": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "followupDueAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "followupDueAt"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_notice_preserve_rights_record": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "continuingRecordRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "continuingRecordRefs"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_notice_close_notice": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "downstreamCaseRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "downstreamCaseRefs"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_contract_notice_flag_time_bar_risk": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Create_claim": {
+        "type": "object",
+        "required": [
+          "roleAssignmentId",
+          "clientObjectId",
+          "payload"
+        ],
+        "properties": {
+          "roleAssignmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientObjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payload": {
+            "type": "object",
+            "properties": {
+              "packageId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "locationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "discipline": {
+                "type": "string"
+              },
+              "responsibleOrganizationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "minimumQualificationRank": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3
+              },
+              "requirementRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainRef"
+                }
+              },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "drawingRef": {
+                "$ref": "#/components/schemas/DomainRef"
+              },
+              "upstreamInspectionIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "subtype": {
+                "const": "Claim"
+              },
+              "title": {
+                "type": "string"
+              },
+              "data": {
+                "$ref": "#/components/schemas/ClaimData"
+              },
+              "relatedRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainRef"
+                }
+              },
+              "dueAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "title",
+              "data"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "CommandResult_claim": {
+        "type": "object",
+        "required": [
+          "record",
+          "auditEvent"
+        ],
+        "properties": {
+          "record": {
+            "$ref": "#/components/schemas/WorkItem"
+          },
+          "auditEvent": {
+            "$ref": "#/components/schemas/AuditEvent"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Command_claim_submit_claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "amountClaimed": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "chronology": {
+                    "type": "string"
+                  },
+                  "claimType": {
+                    "type": "string",
+                    "enum": [
+                      "time",
+                      "cost",
+                      "time_and_cost",
+                      "other"
+                    ]
+                  },
+                  "clauseRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    },
+                    "minItems": 1
+                  },
+                  "costImpactRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{3}$"
+                  },
+                  "entitlementBasis": {
+                    "type": "string"
+                  },
+                  "eventRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    },
+                    "minItems": 1
+                  },
+                  "evidenceRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "noticeRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    },
+                    "minItems": 1
+                  },
+                  "reliefRequested": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "timeImpactRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "chronology",
+                  "claimType",
+                  "clauseRefs",
+                  "entitlementBasis",
+                  "eventRefs",
+                  "noticeRefs",
+                  "reliefRequested"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_claim_receive_claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_claim_request_substantiation": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "substantiationRequirements": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "substantiationRequirements"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_claim_start_entitlement_review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "entitlementAssessment": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "entitlementAssessment"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_claim_start_quantum_review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "amountAssessed": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "recommendation": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "recommendation"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_claim_request_claim_decision": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "recommendation": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "recommendation"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_claim_approve_claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "amountApproved": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "decisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "decisionRef"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_claim_partially_approve_claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "amountApproved": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "decisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "disputedItems": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "amountApproved",
+                  "decisionRef"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_claim_reject_claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "decisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "decisionRef"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_claim_dispute_claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "decisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "disputedItems": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "decisionRef",
+                  "disputedItems"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_claim_record_claim_settlement": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "implementationRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  },
+                  "settlementRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "settlementRef"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_claim_close_claim": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "implementationRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    }
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "implementationRefs"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Create_eot_request": {
+        "type": "object",
+        "required": [
+          "roleAssignmentId",
+          "clientObjectId",
+          "payload"
+        ],
+        "properties": {
+          "roleAssignmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientObjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payload": {
+            "type": "object",
+            "properties": {
+              "packageId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "locationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "discipline": {
+                "type": "string"
+              },
+              "responsibleOrganizationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "minimumQualificationRank": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3
+              },
+              "requirementRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainRef"
+                }
+              },
+              "evidenceIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "drawingRef": {
+                "$ref": "#/components/schemas/DomainRef"
+              },
+              "upstreamInspectionIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "subtype": {
+                "const": "EOTRequest"
+              },
+              "title": {
+                "type": "string"
+              },
+              "data": {
+                "$ref": "#/components/schemas/EOTRequestData"
+              },
+              "relatedRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainRef"
+                }
+              },
+              "dueAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "title",
+              "data"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "CommandResult_eot_request": {
+        "type": "object",
+        "required": [
+          "record",
+          "auditEvent"
+        ],
+        "properties": {
+          "record": {
+            "$ref": "#/components/schemas/WorkItem"
+          },
+          "auditEvent": {
+            "$ref": "#/components/schemas/AuditEvent"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Command_eot_request_submit_eot": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "baselineScheduleRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "concurrentDelayAssessment": {
+                    "type": "string"
+                  },
+                  "daysClaimed": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "delayEventRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    },
+                    "minItems": 1
+                  },
+                  "impactAnalysisRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    },
+                    "minItems": 1
+                  },
+                  "noticeRefs": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/DomainRef"
+                    },
+                    "minItems": 1
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "baselineScheduleRef",
+                  "daysClaimed",
+                  "delayEventRefs",
+                  "impactAnalysisRefs",
+                  "noticeRefs"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_receive_eot": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_start_time_impact_review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "assessedCompletionDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "daysAssessed": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "timeImpactAssessment": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "assessedCompletionDate",
+                  "daysAssessed",
+                  "timeImpactAssessment"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_start_eot_entitlement_review": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "entitlementAssessment": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "entitlementAssessment"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_request_eot_decision": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "recommendation": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "recommendation"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_approve_eot": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "daysApproved": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "decisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "revisedCompletionDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "daysApproved",
+                  "decisionRef",
+                  "revisedCompletionDate"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_partially_approve_eot": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "daysApproved": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "decisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "revisedCompletionDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "daysApproved",
+                  "decisionRef",
+                  "revisedCompletionDate"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_reject_eot": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "decisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "decisionRef"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_dispute_eot": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "decisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "disputeReason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "decisionRef",
+                  "disputeReason"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_request_baseline_update": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_confirm_baseline_update": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "baselineRevisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "baselineRevisionRef"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_close_eot": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_resolve_eot_dispute_approved": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "daysApproved": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "decisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "revisedCompletionDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "daysApproved",
+                  "decisionRef",
+                  "revisedCompletionDate"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_resolve_eot_dispute_partially_approved": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "daysApproved": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "decisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  },
+                  "revisedCompletionDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "daysApproved",
+                  "decisionRef",
+                  "revisedCompletionDate"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_eot_request_resolve_eot_dispute_rejected": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "decisionRef": {
+                    "$ref": "#/components/schemas/DomainRef"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "decisionRef"
                 ]
               }
             }

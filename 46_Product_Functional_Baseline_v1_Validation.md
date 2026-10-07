@@ -197,6 +197,30 @@ Baseline v1.0은 다음 항목을 모두 검증해 PASS로 확정한다.
 
 이 변경은 F-04의 업무 의미를 새로 만드는 것이 아니라 이미 확정된 Schedule/Delay/Recovery 상세정의를 State/Authority/Schema/API 실행계약으로 구조화한 것이다. Backend B-P3 구현 인수 전까지 F-04 진척단계는 `contract_confirmed`로 유지한다.
 
+### 11.5 F-08 Contract Notice / Claim / EOT 실행계약 승격 검증
+
+`35_Contract_Notice_Claim_EOT_Functional_Contract.md`의 상세정의를 실행 가능한 Product Contract로 구조화했다.
+
+- Typed data: `ContractNoticeData`, `ClaimData`, `EOTRequestData`
+- State Machine: `contract_notice`, `claim`, `eot_request`
+- Authority: `contract.*` 24개 공식 인간권한; AI/SYSTEM/INTEGRATION의 계약결정 권한 없음
+- Notice: 공식 기한은 인간 확인, 기한 초과는 `timeBarRisk` 병렬 표시이며 자동 권리상실 판정이 아님
+- Claim: 원 청구액/근거와 assessed/approved 결과를 분리하고 승인·부분승인·거절·분쟁을 명시적 Owner command로 기록
+- EOT 제출: exact DelayEvent + submitted Notice + effective Baseline + impact refs + claimed days가 모두 필요
+- EOT 결정: SUP 기술검토와 OWN 계약결정을 분리하고 exact current EOT version을 대상으로 함
+- Baseline bridge: 승인/부분승인 EOT만 revision 요청 가능하며 승인 당시 EOT exact historical version을 `baselineRevisionBasisRef`로 서버 보존
+- 새 F-04 Baseline은 해당 exact EOT version을 `revisionBasisRef`로 참조하고 effective가 된 뒤에만 EOT close 가능
+- EOT command는 기존 effective Baseline을 직접 수정하지 않음
+- 관리대장 26: raw status patch 없이 F-08 domain command projection 적용
+- Contract validator: PASS — 20 machines / 269 transitions / 136 policies / 29 registers / 36 forms / 260 API operations
+- F-08 execution contract tests: 9 PASS
+- Core tests: 171 PASS
+- HTTP/Application tests: 234 run — 204 PASS, 30 optional-integration tests skipped in local environment
+- OpenAPI / TypeScript / Web register catalog: current
+- `git diff --check`: PASS
+
+이 변경은 F-08의 업무 의미를 새로 만드는 것이 아니라 이미 확정된 Notice/Claim/EOT 상세정의를 State/Authority/Schema/API 실행계약으로 구조화한 것이다. Backend B-P7 구현 인수 전까지 F-08 진척단계는 `contract_confirmed`로 유지한다.
+
 ## 12. 다음 단계
 
 Baseline v1.0 이후는 Product 의미를 임의 확장하지 않고 다음 원칙으로 진행한다.

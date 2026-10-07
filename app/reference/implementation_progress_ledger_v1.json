@@ -89,9 +89,12 @@
       "currentStage": "contract_confirmed",
       "stageStatus": "accepted",
       "evidenceRefs": [
-        "46_Product_Functional_Baseline_v1_Validation.md"
+        "35_Contract_Notice_Claim_EOT_Functional_Contract.md",
+        "46_Product_Functional_Baseline_v1_Validation.md",
+        "app/schema/contract_notice_claim_eot_execution_contract_v1.json",
+        "tests/test_contract_notice_claim_eot_execution_contract.py"
       ],
-      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+      "note": "F-08 Product execution contract structured and validated. Backend/API implementation acceptance is still required before promotion."
     },
     {
       "functionId": "F-09",

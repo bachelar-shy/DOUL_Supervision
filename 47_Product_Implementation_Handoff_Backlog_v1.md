@@ -125,14 +125,34 @@ Acceptance:
 
 ### B-P7. Contract Notice / Claim / EOT
 
-구현:
-- Notice deadline engine with versioned contract rule
-- Claim / EOTRequest workflow
-- F-04/F-05 source refs
+Product 실행계약:
+- `state_machines_v1.json`: `contract_notice`, `claim`, `eot_request`
+- `authority_matrix_v1.json`: `contract.*` 공식 인간권한
+- `domain_schemas_v2.json`: `ContractNoticeData`, `ClaimData`, `EOTRequestData`
+- `contract_notice_claim_eot_execution_contract_v1.json`: Notice/Claim/EOT 및 F-04 Baseline 연결 불변조건
+- 관리대장 26: raw status patch 금지, F-08 domain command projection
+
+Backend 구현:
+- Notice deadline은 versioned Contract Requirement를 기준으로 계산하되 시스템 계산은 advisory로만 취급
+- 공식 `noticeDueAt`은 인간 권한으로 확인하며 기한 초과는 `timeBarRisk` 병렬 표시만 생성
+- Claim 원 청구액/근거와 assessed/approved 결과를 별도 필드·버전으로 보존
+- EOT는 exact DelayEvent + submitted Notice + effective Baseline + impact refs가 있어야 제출 가능
+- Owner Decision은 exact current Claim/EOT version을 대상으로 해야 하며 승인/부분승인/거절/분쟁을 명시적 command로 기록
+- 승인/부분승인 EOT만 Baseline revision 요청 가능
+- Baseline revision 요청 시 서버가 승인 당시 EOT의 exact historical version을 `baselineRevisionBasisRef`로 보존
+- 새 F-04 Baseline이 그 exact EOT version을 `revisionBasisRef`로 참조하고 effective가 된 뒤 EOT close
+- 기존 effective Baseline 직접 수정 금지
+- F-04/F-05 source refs 및 Audit/Idempotency/expectedVersion 적용
 
 Acceptance:
+- DelayEvent 단독으로 EOT 제출/승인 불가
+- Notice 제출 ≠ Claim 인정
 - deadline overrun = risk flag, 자동 권리상실 판정 금지
-- EOT decision 후에만 Baseline revision trigger
+- SUP 기술검토 ≠ Owner 계약결정
+- EOT 승인 ≠ Cost Claim 승인
+- 승인 EOT exact version 없이 Baseline revision 불가
+- EOT decision 자체가 기존 Baseline을 변경하지 않음
+- 부분승인 Claim은 원 청구액을 보존하고 승인액/분쟁잔액을 별도 기록
 
 ### B-P8. Supporting workflows
 

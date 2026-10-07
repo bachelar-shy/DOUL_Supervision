@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schemaVersion": "contract-notice-claim-eot-execution/1",
+  "functionalId": "F-08",
+  "status": "contract_defined_backend_not_implemented",
+  "principles": {
+    "delay_event_is_fact_not_entitlement": true,
+    "notice_submission_is_not_claim_recognition": true,
+    "supervisor_review_is_not_owner_decision": true,
+    "recovery_acceptance_is_not_eot_approval": true,
+    "eot_approval_is_not_cost_claim_approval": true,
+    "claim_close_does_not_delete_delay_event": true
+  },
+  "noticeDeadline": {
+    "exact_contract_rule_version_required": true,
+    "human_confirmation_required_for_official_due_date": true,
+    "system_calculation_is_advisory_only": true,
+    "overdue_sets_risk_flag_not_automatic_forfeiture": true,
+    "time_bar_risk_is_parallel_flag_not_lifecycle_state": true
+  },
+  "decisionRights": {
+    "SUP": "facts_technical_schedule_quantity_assessment_and_recommendation",
+    "OWN": "final_entitlement_days_amount_decision",
+    "ADM": "receipt_deadline_document_record_only",
+    "CON": "claimant_submission_only"
+  },
+  "claimBoundary": {
+    "claimed_amount_preserved_after_submission": true,
+    "assessed_amount_separate_from_claimed": true,
+    "approved_amount_separate_from_assessed": true,
+    "approved_claim_not_automatically_payment_record": true
+  },
+  "eotBaselineBridge": {
+    "only_approved_or_partially_approved_eot_can_request_baseline_update": true,
+    "baseline_revision_basis_is_exact_approved_eot_version": true,
+    "request_baseline_update_preserves_approved_version_ref_server_side": true,
+    "baseline_revision_must_be_new_record": true,
+    "baseline_revision_must_be_effective_before_eot_close": true,
+    "eot_decision_never_mutates_existing_baseline": true,
+    "forecast_never_becomes_contractual_baseline_without_revision_workflow": true
+  },
+  "decisionMapping": {
+    "approve_or_partial_requires_owner_decision": "approved",
+    "reject_requires_owner_decision": "rejected",
+    "dispute_requires_owner_decision": "returned",
+    "note": "Generic Decision returned means unresolved/returned at the owner-decision layer; F-08 keeps disputed as the contract-track state."
+  },
+  "exactReferenceRules": {
+    "same_project_required": true,
+    "delay_event_refs_must_resolve_exact_version": true,
+    "notice_refs_must_resolve_exact_version": true,
+    "owner_decision_ref_must_resolve_exact_version": true,
+    "baseline_schedule_ref_must_resolve_exact_version": true,
+    "historical_approved_eot_version_is_valid_revision_basis": true
+  },
+  "machines": {
+    "contract_notice": "ContractNotice",
+    "claim": "Claim",
+    "eot_request": "EOTRequest"
+  }
+}

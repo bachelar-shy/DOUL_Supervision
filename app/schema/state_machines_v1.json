@@ -7213,6 +7213,1272 @@
           "audit_event": true
         }
       ]
+    },
+    "contract_notice": {
+      "object_type": "WorkItem",
+      "subtype": "ContractNotice",
+      "initial": "identified",
+      "states": [
+        "identified",
+        "notice_due",
+        "submitted",
+        "acknowledged",
+        "followup_required",
+        "preserved",
+        "closed"
+      ],
+      "transitions": [
+        {
+          "from": "identified",
+          "to": "notice_due",
+          "command": "calculate_notice_due",
+          "authority": "contract.notice.calculate_due",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "contract_notice_due_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "noticeDueAt"
+          ],
+          "required_payload_fields": [
+            "noticeDueAt"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CONTRACT_NOTICE_DUE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "notice_due",
+          "to": "submitted",
+          "command": "submit_notice",
+          "authority": "contract.notice.submit",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "contract_notice_submission_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CONTRACT_NOTICE_SUBMISSION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "acknowledged",
+          "command": "record_acknowledgement",
+          "authority": "contract.notice.acknowledge",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "contract_notice_ack_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "acknowledgementRef"
+          ],
+          "required_payload_fields": [
+            "acknowledgementRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CONTRACT_NOTICE_ACK_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "acknowledged",
+          "to": "followup_required",
+          "command": "require_followup",
+          "authority": "contract.notice.followup",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "contract_notice_followup_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "followupDueAt"
+          ],
+          "required_payload_fields": [
+            "followupDueAt"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CONTRACT_NOTICE_FOLLOWUP_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "followup_required",
+          "to": "preserved",
+          "command": "preserve_rights_record",
+          "authority": "contract.notice.preserve",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "contract_notice_preservation_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "continuingRecordRefs"
+          ],
+          "required_payload_fields": [
+            "continuingRecordRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CONTRACT_NOTICE_PRESERVATION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "acknowledged",
+          "to": "closed",
+          "command": "close_notice",
+          "authority": "contract.notice.close",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "contract_notice_close_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "downstreamCaseRefs"
+          ],
+          "required_payload_fields": [
+            "downstreamCaseRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CONTRACT_NOTICE_CLOSE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "preserved",
+          "to": "closed",
+          "command": "close_notice",
+          "authority": "contract.notice.close",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "contract_notice_close_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "downstreamCaseRefs"
+          ],
+          "required_payload_fields": [
+            "downstreamCaseRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CONTRACT_NOTICE_CLOSE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "identified",
+          "to": "identified",
+          "command": "flag_time_bar_risk",
+          "authority": "contract.notice.flag_risk",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "contract_notice_time_bar_risk_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CONTRACT_NOTICE_TIME_BAR_RISK_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "notice_due",
+          "to": "notice_due",
+          "command": "flag_time_bar_risk",
+          "authority": "contract.notice.flag_risk",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "contract_notice_time_bar_risk_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CONTRACT_NOTICE_TIME_BAR_RISK_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "submitted",
+          "command": "flag_time_bar_risk",
+          "authority": "contract.notice.flag_risk",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "contract_notice_time_bar_risk_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CONTRACT_NOTICE_TIME_BAR_RISK_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "acknowledged",
+          "to": "acknowledged",
+          "command": "flag_time_bar_risk",
+          "authority": "contract.notice.flag_risk",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "contract_notice_time_bar_risk_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CONTRACT_NOTICE_TIME_BAR_RISK_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "followup_required",
+          "to": "followup_required",
+          "command": "flag_time_bar_risk",
+          "authority": "contract.notice.flag_risk",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "contract_notice_time_bar_risk_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CONTRACT_NOTICE_TIME_BAR_RISK_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "preserved",
+          "to": "preserved",
+          "command": "flag_time_bar_risk",
+          "authority": "contract.notice.flag_risk",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "contract_notice_time_bar_risk_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CONTRACT_NOTICE_TIME_BAR_RISK_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        }
+      ]
+    },
+    "claim": {
+      "object_type": "WorkItem",
+      "subtype": "Claim",
+      "initial": "draft",
+      "states": [
+        "draft",
+        "submitted",
+        "completeness_review",
+        "substantiation",
+        "entitlement_review",
+        "quantum_review",
+        "decision_pending",
+        "approved",
+        "partially_approved",
+        "rejected",
+        "disputed",
+        "settled",
+        "closed"
+      ],
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "submitted",
+          "command": "submit_claim",
+          "authority": "contract.claim.submit",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_submission_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "noticeRefs",
+            "eventRefs",
+            "clauseRefs",
+            "claimType",
+            "reliefRequested",
+            "entitlementBasis",
+            "chronology",
+            "evidenceRefs",
+            "timeImpactRef",
+            "costImpactRef",
+            "amountClaimed",
+            "currency"
+          ],
+          "required_payload_fields": [
+            "noticeRefs",
+            "eventRefs",
+            "clauseRefs",
+            "claimType",
+            "reliefRequested",
+            "entitlementBasis",
+            "chronology"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_SUBMISSION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "completeness_review",
+          "command": "receive_claim",
+          "authority": "contract.claim.receive",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_receipt_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_RECEIPT_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "completeness_review",
+          "to": "substantiation",
+          "command": "request_substantiation",
+          "authority": "contract.claim.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_substantiation_request_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "substantiationRequirements"
+          ],
+          "required_payload_fields": [
+            "substantiationRequirements"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_SUBSTANTIATION_REQUEST_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "completeness_review",
+          "to": "entitlement_review",
+          "command": "start_entitlement_review",
+          "authority": "contract.claim.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_entitlement_review_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "entitlementAssessment"
+          ],
+          "required_payload_fields": [
+            "entitlementAssessment"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_ENTITLEMENT_REVIEW_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "substantiation",
+          "to": "entitlement_review",
+          "command": "start_entitlement_review",
+          "authority": "contract.claim.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_entitlement_review_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "entitlementAssessment"
+          ],
+          "required_payload_fields": [
+            "entitlementAssessment"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_ENTITLEMENT_REVIEW_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "entitlement_review",
+          "to": "quantum_review",
+          "command": "start_quantum_review",
+          "authority": "contract.claim.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_quantum_review_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "amountAssessed",
+            "recommendation"
+          ],
+          "required_payload_fields": [
+            "recommendation"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_QUANTUM_REVIEW_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "quantum_review",
+          "to": "decision_pending",
+          "command": "request_claim_decision",
+          "authority": "contract.claim.request_decision",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_decision_request_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "recommendation"
+          ],
+          "required_payload_fields": [
+            "recommendation"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_DECISION_REQUEST_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decision_pending",
+          "to": "approved",
+          "command": "approve_claim",
+          "authority": "contract.claim.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_approved_decision_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "decisionRef",
+            "amountApproved"
+          ],
+          "required_payload_fields": [
+            "decisionRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_APPROVED_DECISION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decision_pending",
+          "to": "partially_approved",
+          "command": "partially_approve_claim",
+          "authority": "contract.claim.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_partially_approved_decision_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "decisionRef",
+            "amountApproved",
+            "disputedItems"
+          ],
+          "required_payload_fields": [
+            "decisionRef",
+            "amountApproved"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_PARTIALLY_APPROVED_DECISION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decision_pending",
+          "to": "rejected",
+          "command": "reject_claim",
+          "authority": "contract.claim.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_rejected_decision_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "decisionRef"
+          ],
+          "required_payload_fields": [
+            "decisionRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_REJECTED_DECISION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decision_pending",
+          "to": "disputed",
+          "command": "dispute_claim",
+          "authority": "contract.claim.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_disputed_decision_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "decisionRef",
+            "disputedItems"
+          ],
+          "required_payload_fields": [
+            "decisionRef",
+            "disputedItems"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_DISPUTED_DECISION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "disputed",
+          "to": "settled",
+          "command": "record_claim_settlement",
+          "authority": "contract.claim.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_settlement_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "settlementRef",
+            "implementationRefs"
+          ],
+          "required_payload_fields": [
+            "settlementRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_SETTLEMENT_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "approved",
+          "to": "closed",
+          "command": "close_claim",
+          "authority": "contract.claim.close",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_close_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "implementationRefs"
+          ],
+          "required_payload_fields": [
+            "implementationRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_CLOSE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "partially_approved",
+          "to": "closed",
+          "command": "close_claim",
+          "authority": "contract.claim.close",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_close_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "implementationRefs"
+          ],
+          "required_payload_fields": [
+            "implementationRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_CLOSE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "rejected",
+          "to": "closed",
+          "command": "close_claim",
+          "authority": "contract.claim.close",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_close_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "implementationRefs"
+          ],
+          "required_payload_fields": [
+            "implementationRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_CLOSE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "settled",
+          "to": "closed",
+          "command": "close_claim",
+          "authority": "contract.claim.close",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "claim_close_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "implementationRefs"
+          ],
+          "required_payload_fields": [
+            "implementationRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "CLAIM_CLOSE_READY"
+          ],
+          "audit_event": true
+        }
+      ]
+    },
+    "eot_request": {
+      "object_type": "WorkItem",
+      "subtype": "EOTRequest",
+      "initial": "draft",
+      "states": [
+        "draft",
+        "submitted",
+        "completeness_review",
+        "time_impact_review",
+        "entitlement_review",
+        "decision_pending",
+        "approved",
+        "partially_approved",
+        "rejected",
+        "disputed",
+        "baseline_update_pending",
+        "closed"
+      ],
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "submitted",
+          "command": "submit_eot",
+          "authority": "contract.eot.submit",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_submission_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "delayEventRefs",
+            "noticeRefs",
+            "baselineScheduleRef",
+            "impactAnalysisRefs",
+            "daysClaimed",
+            "concurrentDelayAssessment"
+          ],
+          "required_payload_fields": [
+            "delayEventRefs",
+            "noticeRefs",
+            "baselineScheduleRef",
+            "impactAnalysisRefs",
+            "daysClaimed"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_SUBMISSION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "submitted",
+          "to": "completeness_review",
+          "command": "receive_eot",
+          "authority": "contract.eot.receive",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_receipt_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_RECEIPT_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "completeness_review",
+          "to": "time_impact_review",
+          "command": "start_time_impact_review",
+          "authority": "contract.eot.time_review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_time_review_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "timeImpactAssessment",
+            "daysAssessed",
+            "assessedCompletionDate"
+          ],
+          "required_payload_fields": [
+            "timeImpactAssessment",
+            "daysAssessed",
+            "assessedCompletionDate"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_TIME_REVIEW_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "time_impact_review",
+          "to": "entitlement_review",
+          "command": "start_eot_entitlement_review",
+          "authority": "contract.eot.entitlement_review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_entitlement_review_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "entitlementAssessment"
+          ],
+          "required_payload_fields": [
+            "entitlementAssessment"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_ENTITLEMENT_REVIEW_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "entitlement_review",
+          "to": "decision_pending",
+          "command": "request_eot_decision",
+          "authority": "contract.eot.request_decision",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_decision_request_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "recommendation"
+          ],
+          "required_payload_fields": [
+            "recommendation"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_DECISION_REQUEST_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decision_pending",
+          "to": "approved",
+          "command": "approve_eot",
+          "authority": "contract.eot.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_approved_decision_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "decisionRef",
+            "daysApproved",
+            "revisedCompletionDate"
+          ],
+          "required_payload_fields": [
+            "decisionRef",
+            "daysApproved",
+            "revisedCompletionDate"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_APPROVED_DECISION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decision_pending",
+          "to": "partially_approved",
+          "command": "partially_approve_eot",
+          "authority": "contract.eot.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_partially_approved_decision_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "decisionRef",
+            "daysApproved",
+            "revisedCompletionDate"
+          ],
+          "required_payload_fields": [
+            "decisionRef",
+            "daysApproved",
+            "revisedCompletionDate"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_PARTIALLY_APPROVED_DECISION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decision_pending",
+          "to": "rejected",
+          "command": "reject_eot",
+          "authority": "contract.eot.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_rejected_decision_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "decisionRef"
+          ],
+          "required_payload_fields": [
+            "decisionRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_REJECTED_DECISION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "decision_pending",
+          "to": "disputed",
+          "command": "dispute_eot",
+          "authority": "contract.eot.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_disputed_decision_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "decisionRef",
+            "disputeReason"
+          ],
+          "required_payload_fields": [
+            "decisionRef",
+            "disputeReason"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_DISPUTED_DECISION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "approved",
+          "to": "baseline_update_pending",
+          "command": "request_baseline_update",
+          "authority": "contract.eot.baseline_update",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_baseline_update_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_BASELINE_UPDATE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "partially_approved",
+          "to": "baseline_update_pending",
+          "command": "request_baseline_update",
+          "authority": "contract.eot.baseline_update",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_baseline_update_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_BASELINE_UPDATE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "baseline_update_pending",
+          "to": "closed",
+          "command": "confirm_baseline_update",
+          "authority": "contract.eot.close",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_baseline_revision_confirmed"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "baselineRevisionRef"
+          ],
+          "required_payload_fields": [
+            "baselineRevisionRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_BASELINE_REVISION_CONFIRMED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "rejected",
+          "to": "closed",
+          "command": "close_eot",
+          "authority": "contract.eot.close",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_rejected_close_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [],
+          "required_payload_fields": [],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_REJECTED_CLOSE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "disputed",
+          "to": "approved",
+          "command": "resolve_eot_dispute_approved",
+          "authority": "contract.eot.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_approved_decision_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "decisionRef",
+            "daysApproved",
+            "revisedCompletionDate"
+          ],
+          "required_payload_fields": [
+            "decisionRef",
+            "daysApproved",
+            "revisedCompletionDate"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_APPROVED_DECISION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "disputed",
+          "to": "partially_approved",
+          "command": "resolve_eot_dispute_partially_approved",
+          "authority": "contract.eot.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_partially_approved_decision_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "decisionRef",
+            "daysApproved",
+            "revisedCompletionDate"
+          ],
+          "required_payload_fields": [
+            "decisionRef",
+            "daysApproved",
+            "revisedCompletionDate"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_PARTIALLY_APPROVED_DECISION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "disputed",
+          "to": "rejected",
+          "command": "resolve_eot_dispute_rejected",
+          "authority": "contract.eot.decide",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "evidence_provenance_valid",
+            "eot_rejected_decision_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "decisionRef"
+          ],
+          "required_payload_fields": [
+            "decisionRef"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "EVIDENCE_INVALID",
+            "EOT_REJECTED_DECISION_READY",
+            "EVIDENCE_REQUIRED"
+          ],
+          "audit_event": true
+        }
+      ]
     }
   }
 }

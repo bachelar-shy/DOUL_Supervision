@@ -2405,19 +2405,58 @@
       ],
       "calculated_fields": [
         "notice_due",
-        "claim_status"
+        "time_bar_risk",
+        "claim_status",
+        "eot_status",
+        "baseline_update_status"
       ],
       "mode": "actionable",
       "allowed_commands": [
-        "decision:report",
-        "decision:acknowledge",
-        "decision:request_supplement",
-        "decision:resubmit",
-        "decision:decide",
-        "decision:dispatch",
-        "decision:verify",
-        "decision:close",
-        "decision:cancel"
+        "contract_notice:calculate_notice_due",
+        "contract_notice:submit_notice",
+        "contract_notice:record_acknowledgement",
+        "contract_notice:require_followup",
+        "contract_notice:preserve_rights_record",
+        "contract_notice:close_notice",
+        "contract_notice:close_notice",
+        "contract_notice:flag_time_bar_risk",
+        "contract_notice:flag_time_bar_risk",
+        "contract_notice:flag_time_bar_risk",
+        "contract_notice:flag_time_bar_risk",
+        "contract_notice:flag_time_bar_risk",
+        "contract_notice:flag_time_bar_risk",
+        "claim:submit_claim",
+        "claim:receive_claim",
+        "claim:request_substantiation",
+        "claim:start_entitlement_review",
+        "claim:start_entitlement_review",
+        "claim:start_quantum_review",
+        "claim:request_claim_decision",
+        "claim:approve_claim",
+        "claim:partially_approve_claim",
+        "claim:reject_claim",
+        "claim:dispute_claim",
+        "claim:record_claim_settlement",
+        "claim:close_claim",
+        "claim:close_claim",
+        "claim:close_claim",
+        "claim:close_claim",
+        "eot_request:submit_eot",
+        "eot_request:receive_eot",
+        "eot_request:start_time_impact_review",
+        "eot_request:start_eot_entitlement_review",
+        "eot_request:request_eot_decision",
+        "eot_request:approve_eot",
+        "eot_request:partially_approve_eot",
+        "eot_request:reject_eot",
+        "eot_request:dispute_eot",
+        "eot_request:request_baseline_update",
+        "eot_request:request_baseline_update",
+        "eot_request:confirm_baseline_update",
+        "eot_request:close_eot",
+        "eot_request:resolve_eot_dispute_approved",
+        "eot_request:resolve_eot_dispute_partially_approved",
+        "eot_request:resolve_eot_dispute_rejected"
       ],
       "raw_status_patch": false,
       "status_source": "domain.state; resultStatus and nextWorkAllowed remain separate",
@@ -2437,13 +2476,36 @@
         "notice_due": {
           "operator": "coalesce",
           "paths": [
+            "data.noticeDueAt",
             "dueAt"
           ],
           "missing_value": null
         },
+        "time_bar_risk": {
+          "operator": "coalesce",
+          "paths": [
+            "data.timeBarRisk"
+          ],
+          "missing_value": false
+        },
         "claim_status": {
           "operator": "coalesce",
           "paths": [
+            "status"
+          ],
+          "missing_value": null
+        },
+        "eot_status": {
+          "operator": "coalesce",
+          "paths": [
+            "status"
+          ],
+          "missing_value": null
+        },
+        "baseline_update_status": {
+          "operator": "coalesce",
+          "paths": [
+            "data.baselineRevisionRef",
             "status"
           ],
           "missing_value": null

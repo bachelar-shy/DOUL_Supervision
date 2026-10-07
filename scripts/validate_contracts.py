@@ -74,6 +74,31 @@ def validate_all():
     check(schedule_execution['delay_boundary']['delay_event_is_fact_not_entitlement'] is True and schedule_execution['delay_boundary']['delay_close_does_not_close_claim_or_eot'] is True,'Delay entitlement boundary changed')
     check(schedule_execution['recovery_boundary']['accepted_recovery_does_not_revise_baseline'] is True and schedule_execution['recovery_boundary']['accepted_recovery_does_not_approve_eot_or_cost'] is True,'Recovery/Baseline/EOT boundary changed')
     check(schedule_execution['activity_boundary']['percent_complete_100_does_not_change_inspection_or_handover'] is True,'Schedule Activity completion must not alter quality/handover state')
+    f08_machines={'contract_notice':'ContractNotice','claim':'Claim','eot_request':'EOTRequest'}
+    check(set(f08_machines)<=set(machines),'F-08 Contract Notice / Claim / EOT state machines are required')
+    for machine_name,subtype in f08_machines.items():
+        check(machines[machine_name]['object_type']=='WorkItem' and machines[machine_name]['subtype']==subtype,machine_name+' binding mismatch')
+    f08_execution=load('schema/contract_notice_claim_eot_execution_contract_v1.json')
+    check(f08_execution['status']=='contract_defined_backend_not_implemented','F-08 must not be reported as implemented before Backend/API acceptance')
+    check(f08_execution['principles']['delay_event_is_fact_not_entitlement'] is True and f08_execution['principles']['notice_submission_is_not_claim_recognition'] is True,'F-08 fact/entitlement boundary changed')
+    check(f08_execution['noticeDeadline']['time_bar_risk_is_parallel_flag_not_lifecycle_state'] is True and 'time_bar_risk' not in machines['contract_notice']['states'],'Time-bar risk must remain a parallel risk flag')
+    check(f08_execution['noticeDeadline']['overdue_sets_risk_flag_not_automatic_forfeiture'] is True,'Notice deadline overrun must not imply automatic forfeiture')
+    check(f08_execution['eotBaselineBridge']['eot_decision_never_mutates_existing_baseline'] is True and f08_execution['eotBaselineBridge']['baseline_revision_must_be_new_record'] is True,'EOT may not overwrite an effective Baseline')
+    check(f08_execution['eotBaselineBridge']['only_approved_or_partially_approved_eot_can_request_baseline_update'] is True and f08_execution['eotBaselineBridge']['baseline_revision_basis_is_exact_approved_eot_version'] is True,'EOT/Baseline exact-version bridge changed')
+    f08_policies={name:policy for name,policy in policies.items() if name.startswith('contract.')}
+    check(bool(f08_policies),'F-08 contract authorities are required')
+    for name,policy in f08_policies.items():
+        check(policy['official'] is True and not set(policy['actor_groups'])&{'AI','SYSTEM','INTEGRATION'},name+' must remain human official authority')
+    claim_outcomes={t['command'] for t in machines['claim']['transitions'] if t['from']=='decision_pending'}
+    check({'approve_claim','partially_approve_claim','reject_claim','dispute_claim'}<=claim_outcomes,'Claim Owner decision outcomes must remain explicit commands')
+    eot_outcomes={t['command'] for t in machines['eot_request']['transitions'] if t['from']=='decision_pending'}
+    check({'approve_eot','partially_approve_eot','reject_eot','dispute_eot'}<=eot_outcomes,'EOT Owner decision outcomes must remain explicit commands')
+    eot_submit=next((t for t in machines['eot_request']['transitions'] if t['from']=='draft' and t['command']=='submit_eot'),None)
+    check(bool(eot_submit) and {'delayEventRefs','noticeRefs','baselineScheduleRef','impactAnalysisRefs','daysClaimed'}<=set(eot_submit.get('required_payload_fields',[])),'EOT submission must require Delay + Notice + Baseline + impact + claimed days')
+    eot_baseline=next((t for t in machines['eot_request']['transitions'] if t['command']=='request_baseline_update'),None)
+    check(bool(eot_baseline) and eot_baseline['from'] in ['approved','partially_approved'] and 'eot_baseline_update_ready' in eot_baseline['guards'],'Only approved EOT may request Baseline revision')
+    register26=next(x for x in mapping['registers'] if x['register_id']=='26')
+    check(register26['raw_status_patch'] is False and 'eot_request:request_baseline_update' in register26['allowed_commands'],'Contract/Claim register must use domain commands, not raw status patch')
     source_import=load('schema/schedule_source_import_contract_v1.json')
     check(source_import['status']=='contract_defined_backend_not_implemented','Source import implementation must not be claimed without acceptance')
     check(source_import['atomicity']['schedule_and_all_activities_and_audit_and_idempotency_in_one_transaction'] and source_import['atomicity']['no_orphan_activity'],'Schedule import must be atomic')
