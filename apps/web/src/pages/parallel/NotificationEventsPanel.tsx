@@ -149,7 +149,7 @@ export function NotificationEventsPanel({
                   <span className="notification-events-read-state">{isRead ? "읽음" : "안 읽음"}</span>
                 </div>
                 <p className="notification-events-source">
-                  {notification.sourceRef.objectType} · v{notification.sourceRef.version}
+                  {notification.sourceRef.objectType} · {notification.sourceRef.objectId} · v{notification.sourceRef.version}
                 </p>
                 <dl>
                   <div><dt>발생 시각</dt><dd>{formatDate(notification.dueAt)}</dd></div>

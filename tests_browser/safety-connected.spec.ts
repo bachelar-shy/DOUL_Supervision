@@ -78,6 +78,7 @@ test("safety connected trace follows a real visible stop order without issuing c
   await page.getByRole("tab", { name: "안전 추적성", exact: true }).click();
   const panel = page.locator('[data-ui-component="safety-connected"]');
   await expect(panel).toBeVisible();
+  await panel.getByLabel("작업중지 원본", { exact: true }).selectOption({ label: `${title} · v1` });
   await expect(panel.getByText("읽기 전용 조회 · 공식 상태 변경 없음", { exact: true })).toBeVisible();
   await expect(panel.getByText(title, { exact: true })).toBeVisible();
   await expect(panel.getByText("영향 작업허가", { exact: true })).toBeVisible();
