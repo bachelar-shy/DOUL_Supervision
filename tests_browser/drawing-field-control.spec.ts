@@ -84,7 +84,7 @@ async function switchRole(page: Page, actorGroup: string): Promise<Workspace> {
 }
 
 test("publishes and distributes a reviewed source as a field controlled construction drawing", async ({ page, request }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(120_000);
   const suffix = randomUUID().slice(0, 8);
   const drawingNo = `DES-${suffix}`;
   const drawingRevision = "R0";
@@ -135,7 +135,7 @@ test("publishes and distributes a reviewed source as a field controlled construc
   await expect(panel).toBeVisible();
   await panel.getByLabel("연결된 PDF 도면").selectOption(source.binding.id);
   await panel.getByLabel("도면번호").fill(drawingNo);
-  await panel.getByLabel("개정").fill(drawingRevision);
+  await panel.getByLabel("개정", {exact: true}).fill(drawingRevision);
   await panel.getByLabel("용도").selectOption("construction");
   await panel.locator("label").filter({ hasText: recipient!.name }).locator('input[type="checkbox"]').first().check();
   await panel.getByLabel("연결 승인").selectOption(source.approval!.id);

@@ -128,7 +128,7 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     <div className="parallel-test-tabs" role="tablist" aria-label="테스트 모듈">{modules.map(module => <button key={module.id} type="button" role="tab" aria-selected={active === module.id} className={active === module.id ? "active" : ""} onClick={() => { setActive(module.id); setSelectedIndex(0); }}>{module.label}</button>)}</div>
     {active === "drawing-compare" && <Suspense fallback={<div role="status">도면 비교를 불러오는 중…</div>}><DrawingComparePanel key={`DrawingComparePanel:${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} /></Suspense>}
     {active === "drawings" && <DrawingSourceRegistrationPanel key={`DrawingSourceRegistrationPanel:${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onNavigate={onNavigate} />}
-    {active === "drawings" && <DrawingTechnicalApprovalPanel workspace={workspace} onOpenCommand={onOpenCommand} />}
+    {active === "drawings" && <DrawingTechnicalApprovalPanel client={client} workspace={workspace} onOpenCommand={onOpenCommand} />}
     {active === "drawings" && <DrawingFieldManagementPanel key={`DrawingFieldManagementPanel:${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "drawings" && <DrawingPdfBindingPanel client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "drawings" && <Suspense fallback={<div role="status">PDF 뷰어를 불러오는 중…</div>}><PdfViewerPanel key={`PdfViewerPanel:${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onSelectMarkup={selectMarkup} /></Suspense>}

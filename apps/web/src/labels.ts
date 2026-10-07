@@ -182,7 +182,7 @@ export const commands: Record<string, string> = {
   record_failure: "불합격 기록 확정",
   begin_review: "관찰 검토 시작",
   confirm: "관찰 확인",
-  reject: "관찰 제외",
+  reject: "반려",
   assign: "담당자 배정",
   start_correction: "시정 시작",
   request_reinspection: "재검측 요청",
