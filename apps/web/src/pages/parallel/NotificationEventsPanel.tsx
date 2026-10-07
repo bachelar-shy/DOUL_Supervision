@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { SupervisionClient } from "../../data/supervision-client";
 import type { Workspace } from "../../data/ui-contract";
+import { resolveNotificationSourceTarget } from "../../data/notification-target-client";
 import { ActionButton, Panel, SectionHeader } from "../../ui";
 import "./notification-events.css";
 
@@ -38,10 +39,14 @@ export function NotificationEventsPanel({
   client,
   workspace,
   onChanged,
+  onSelect,
+  onNavigate,
 }: {
   client: SupervisionClient;
   workspace: Workspace;
   onChanged?: () => void;
+  onSelect?: (id: string | null) => void;
+  onNavigate?: (route: string) => void;
 }) {
   const scopeKey = `${client.session?.projectId ?? workspace.project.id}:${client.session?.actor.roleAssignmentId ?? ""}`;
   const [inboxSnapshot, setInboxSnapshot] = useState<{ scopeKey: string; data: Inbox } | null>(null);
@@ -124,6 +129,12 @@ export function NotificationEventsPanel({
     }
   }, [client, onChanged, refresh, scopeKey]);
 
+  const openTarget = useCallback((id: string, route: string) => {
+    // AppShell navigation clears selection, so select the exact workspace row last.
+    onNavigate?.(route);
+    onSelect?.(id);
+  }, [onNavigate, onSelect]);
+
   return (
     <Panel className="notification-events-panel" aria-labelledby="notification-events-title">
       <SectionHeader
@@ -141,7 +152,9 @@ export function NotificationEventsPanel({
       )}
       {!loading && !error && inbox.items.length > 0 && (
         <ul className="notification-events-list">
-          {inbox.items.map(({ notification, isRead, readAt }) => (
+          {inbox.items.map(({ notification, isRead, readAt }) => {
+            const target = resolveNotificationSourceTarget(notification.sourceRef, notification.projectId, workspace);
+            return (
             <li key={notification.id} data-notification-id={notification.id} className={isRead ? "is-read" : "is-unread"}>
               <div className="notification-events-copy">
                 <div className="notification-events-heading">
@@ -151,6 +164,23 @@ export function NotificationEventsPanel({
                 <p className="notification-events-source">
                   {notification.sourceRef.objectType} · {notification.sourceRef.objectId} · v{notification.sourceRef.version}
                 </p>
+                {target.kind === "exact" && (
+                  <div className="notification-events-target" data-source-target="exact" data-source-route={target.route}>
+                    {(target.item.record.title || target.item.record.workName || (typeof target.item.record.data?.title === "string" && target.item.record.data.title)) && (
+                      <strong>{target.item.record.title || target.item.record.workName || target.item.record.data?.title as string}</strong>
+                    )}
+                    {onNavigate && <ActionButton onClick={() => openTarget(target.item.record.id, target.route)}>원본 보기</ActionButton>}
+                  </div>
+                )}
+                {target.kind === "past" && (
+                  <div className="notification-events-target" data-source-target="past" data-source-route={target.route}>
+                    <span>과거 버전, 변경 명령 불가</span>
+                    {onNavigate && <ActionButton onClick={() => openTarget(target.currentItem.record.id, target.route)}>현재 v{target.currentItem.record.version} 별도 보기</ActionButton>}
+                  </div>
+                )}
+                {target.kind === "unavailable" && (
+                  <p className="notification-events-target-unavailable">원본 기록을 현재 작업공간에서 열 수 없습니다.</p>
+                )}
                 <dl>
                   <div><dt>발생 시각</dt><dd>{formatDate(notification.dueAt)}</dd></div>
                   <div><dt>상태</dt><dd>앱에 저장됨 · {notification.status}</dd></div>
@@ -163,7 +193,7 @@ export function NotificationEventsPanel({
                 </ActionButton>
               )}
             </li>
-          ))}
+          );})}
         </ul>
       )}
     </Panel>
