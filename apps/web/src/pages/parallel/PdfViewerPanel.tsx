@@ -15,7 +15,7 @@ import {
   type PdfPinLocation,
 } from "../../data/pdf-pin-client";
 import { listPdfEvidenceSources, loadPdfEvidence, uploadPdfEvidence } from "../../data/pdf-viewer-client";
-import { createPdfDrawingMarkup, fetchPdfDrawingMarkups, type PdfDrawingMarkup, type PdfMarkupRect } from "../../data/pdf-markup-client";
+import { createPdfDrawingMarkup, deletePdfDrawingMarkup, editPdfDrawingMarkup, fetchPdfDrawingMarkup, fetchPdfDrawingMarkupHistory, fetchPdfDrawingMarkups, type PdfDrawingMarkup, type PdfMarkupHistoryItem, type PdfMarkupRect } from "../../data/pdf-markup-client";
 
 GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -67,6 +67,15 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
   const [markupText, setMarkupText] = useState("");
   const [pendingMarkup, setPendingMarkup] = useState<PdfMarkupRect | null>(null);
   const [selectedMarkupId, setSelectedMarkupId] = useState<string | null>(null);
+  const [selectedMarkup, setSelectedMarkup] = useState<PdfDrawingMarkup | null>(null);
+  const [markupHistory, setMarkupHistory] = useState<PdfMarkupHistoryItem[]>([]);
+  const [showMarkupHistory, setShowMarkupHistory] = useState(false);
+  const [showMarkupLayer, setShowMarkupLayer] = useState(true);
+  const [showPinLayer, setShowPinLayer] = useState(true);
+  const [editingMarkup, setEditingMarkup] = useState(false);
+  const [deletingMarkup, setDeletingMarkup] = useState(false);
+  const [markupReason, setMarkupReason] = useState("");
+  const [markupActionLoading, setMarkupActionLoading] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const docRef = useRef<PDFDocumentProxy | null>(null);
@@ -78,10 +87,12 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
   const previewFiles = useRef(new Map<string, File>());
   const activeDocumentUrl = useRef<string | null>(null);
   const markupSequence = useRef(0);
+  const markupDetailSequence = useRef(0);
   const markupContextSequence = useRef(0);
   const drawingStart = useRef<{ x: number; y: number; pointerId: number } | null>(null);
   const onSelectMarkupRef = useRef(onSelectMarkup);
   const markupAttemptRef = useRef<{ fingerprint: string; key: string } | null>(null);
+  const markupMutationAttempt = useRef<{ fingerprint: string; key: string } | null>(null);
   onSelectMarkupRef.current = onSelectMarkup;
 
   const selectedSource = sources.find((source) => source.id === selectedId);
@@ -119,6 +130,12 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     markupAttemptRef.current = null;
     setMarkupMode(false);
     setSelectedMarkupId(null);
+    setSelectedMarkup(null);
+    setMarkupHistory([]);
+    setEditingMarkup(false);
+    setDeletingMarkup(false);
+    setMarkupReason("");
+    markupMutationAttempt.current = null;
     onSelectMarkupRef.current?.(null);
   }, [markupContextKey]);
 
@@ -148,6 +165,27 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     });
     return () => { active = false; };
   }, [client, activeBinding?.id, committedViewport?.sequence, page, rendering, workspace.project.id, workspace.role.id]);
+
+  useEffect(() => {
+    if (!selectedMarkupId || !activeBinding) { setSelectedMarkup(null); setMarkupHistory([]); return; }
+    let active = true;
+    const sequence = ++markupDetailSequence.current;
+    void (async () => {
+      try {
+        const [detail, history] = await Promise.all([
+          fetchPdfDrawingMarkup(client, selectedMarkupId),
+          showMarkupHistory ? fetchPdfDrawingMarkupHistory(client, selectedMarkupId) : Promise.resolve([]),
+        ]);
+        if (active && sequence === markupDetailSequence.current && detail.bindingId === activeBinding.id && detail.page === page) {
+          setSelectedMarkup(detail);
+          setMarkupHistory(history);
+        }
+      } catch (reason) {
+        if (active && sequence === markupDetailSequence.current) setMarkupError(reason instanceof Error ? reason.message : "주석 상세를 불러오지 못했습니다.");
+      }
+    })();
+    return () => { active = false; };
+  }, [client, selectedMarkupId, showMarkupHistory, activeBinding?.id, page]);
 
   const cancelRender = useCallback(async () => {
     const task = renderRef.current;
@@ -480,9 +518,12 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     drawingStart.current = { ...point, pointerId: event.pointerId };
     markupAttemptRef.current = null;
     setPendingMarkup({ x1: point.x, y1: point.y, x2: point.x, y2: point.y });
-    setMarkupText("");
-    setSelectedMarkupId(null);
-    onSelectMarkupRef.current?.(null);
+    setMarkupText(editingMarkup && selectedMarkup ? selectedMarkup.text : "");
+    if (!editingMarkup) {
+      setSelectedMarkupId(null);
+      setSelectedMarkup(null);
+      onSelectMarkupRef.current?.(null);
+    }
   }
 
   function moveMarkupDraw(event: React.PointerEvent<SVGSVGElement>) {
@@ -514,7 +555,9 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     const requestSequence = markupContextSequence.current;
     const bindingId = activeBinding.id;
     const targetPage = page;
-    const payloadFingerprint = JSON.stringify({ bindingId, page: targetPage, rect: pendingMarkup, text: markupText.trim() });
+    const payloadFingerprint = JSON.stringify(editingMarkup && selectedMarkup
+      ? { operation: "edit", id: selectedMarkup.id, version: selectedMarkup.version, rect: pendingMarkup, text: markupText.trim(), reason: markupReason.trim() }
+      : { operation: "create", bindingId, page: targetPage, rect: pendingMarkup, text: markupText.trim() });
     if (markupAttemptRef.current?.fingerprint !== payloadFingerprint) {
       markupAttemptRef.current = { fingerprint: payloadFingerprint, key: crypto.randomUUID() };
     }
@@ -522,19 +565,79 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     setSavingMarkup(true);
     setMarkupError("");
     try {
-      const created = await createPdfDrawingMarkup(client, { bindingId, page: targetPage, rect: pendingMarkup, text: markupText, idempotencyKey });
+      const saved = editingMarkup && selectedMarkup
+        ? await editPdfDrawingMarkup(client, selectedMarkup.id, { expectedVersion: selectedMarkup.version, rect: pendingMarkup, text: markupText, reason: markupReason, idempotencyKey })
+        : await createPdfDrawingMarkup(client, { bindingId, page: targetPage, rect: pendingMarkup, text: markupText, idempotencyKey });
       if (requestSequence !== markupContextSequence.current || activeBinding?.id !== bindingId || page !== targetPage) return;
       setPendingMarkup(null);
       setMarkupText("");
+      setMarkupReason("");
+      setEditingMarkup(false);
       markupAttemptRef.current = null;
-      setMarkups((current) => [...current.filter((item) => item.id !== created.id), created]);
-      selectMarkup(created.id);
+      markupMutationAttempt.current = null;
+      setMarkups((current) => [...current.filter((item) => item.id !== saved.id), saved]);
+      setSelectedMarkup(saved);
+      selectMarkup(saved.id);
       onChanged?.();
     } catch (reason) {
-      if (requestSequence === markupContextSequence.current) setMarkupError(reason instanceof Error ? reason.message : "주석을 저장하지 못했습니다.");
+      if (requestSequence === markupContextSequence.current) {
+        setMarkupError(reason instanceof Error ? reason.message : "주석을 저장하지 못했습니다.");
+        if (editingMarkup && selectedMarkup) {
+          try {
+            const latest = await fetchPdfDrawingMarkup(client, selectedMarkup.id);
+            if (requestSequence === markupContextSequence.current) {
+              setSelectedMarkup(latest);
+              setMarkups((current) => [...current.filter((item) => item.id !== latest.id), latest]);
+              setPendingMarkup(null);
+              setEditingMarkup(false);
+              setMarkupError("주석 버전이 변경되어 최신 상태를 불러왔습니다. 변경 내용을 확인한 뒤 다시 수정하세요.");
+            }
+          } catch { /* retain original mutation error if refresh also fails */ }
+        }
+      }
     } finally {
       if (requestSequence === markupContextSequence.current) setSavingMarkup(false);
     }
+  }
+
+  function beginEditingMarkup() {
+    if (!selectedMarkup || !selectedMarkup.availableCommands?.some((item) => item.command === "edit")) return;
+    setMarkupMode(true);
+    setEditingMarkup(true);
+    setMarkupText(selectedMarkup.text);
+    setMarkupReason("");
+    setPendingMarkup({ ...selectedMarkup.rect });
+    markupAttemptRef.current = null;
+  }
+
+  async function deleteSelectedMarkup() {
+    if (!selectedMarkup || !selectedMarkup.availableCommands?.some((item) => item.command === "delete") || !markupReason.trim()) return;
+    const requestSequence = markupContextSequence.current;
+    const payload = { operation: "delete", id: selectedMarkup.id, version: selectedMarkup.version, reason: markupReason.trim() };
+    const fingerprint = JSON.stringify(payload);
+    if (markupMutationAttempt.current?.fingerprint !== fingerprint) markupMutationAttempt.current = { fingerprint, key: crypto.randomUUID() };
+    setMarkupActionLoading(true);
+    setMarkupError("");
+    try {
+      const deleted = await deletePdfDrawingMarkup(client, selectedMarkup.id, { expectedVersion: selectedMarkup.version, reason: markupReason, idempotencyKey: markupMutationAttempt.current.key });
+      if (requestSequence !== markupContextSequence.current) return;
+      setMarkups((current) => current.filter((item) => item.id !== deleted.id));
+      setSelectedMarkup(deleted);
+      onSelectMarkupRef.current?.(null);
+      const history = await fetchPdfDrawingMarkupHistory(client, deleted.id);
+      if (requestSequence !== markupContextSequence.current) return;
+      setMarkupHistory(history);
+      setShowMarkupHistory(true);
+      setDeletingMarkup(false);
+      setMarkupReason("");
+      markupMutationAttempt.current = null;
+      onChanged?.();
+    } catch (reason) {
+      if (requestSequence === markupContextSequence.current) {
+        setMarkupError(reason instanceof Error ? reason.message : "주석을 삭제하지 못했습니다.");
+        try { const latest = await fetchPdfDrawingMarkup(client, selectedMarkup.id); if (requestSequence === markupContextSequence.current) setSelectedMarkup(latest); } catch { /* show original conflict */ }
+      }
+    } finally { if (requestSequence === markupContextSequence.current) setMarkupActionLoading(false); }
   }
 
   async function savePendingPin() {
@@ -597,20 +700,32 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       {matchingBindings.length === 1 && <p className="pdf-binding-label">연결 도면 {matchingBindings[0].drawingRef.objectId} · v{matchingBindings[0].drawingRef.version} · 등록 증빙 v{matchingBindings[0].evidenceRef.version} · {matchingBindings[0].fileHash.slice(0, 12)}</p>}
       {activeBinding && <div className="pdf-markup-controls">
         <div className="pdf-markup-heading"><strong>주석</strong><span>{markupLoading ? "불러오는 중…" : markups.length + "개"} · 사각형 메모</span></div>
-        {isDemoAdmin ? <>
-          <button type="button" aria-pressed={markupMode} disabled={savingMarkup || rendering} onClick={() => { setMarkupMode((value) => !value); setPendingMarkup(null); setMarkupText(""); markupAttemptRef.current = null; }}>
-            {markupMode ? "주석 그리기 종료" : "사각형 메모 추가"}
-          </button>
-          {markupMode && <span>페이지에서 드래그해 영역을 지정하세요. 메모를 입력한 뒤 저장합니다.</span>}
-          {pendingMarkup && <label className="pdf-markup-memo">메모<textarea aria-label="주석 메모" maxLength={2000} rows={2} value={markupText} onChange={(event) => setMarkupText(event.target.value)} placeholder="이 영역에 대한 메모" /></label>}
-          {pendingMarkup && <button type="button" disabled={savingMarkup || rendering || !markupText.trim()} onClick={() => void savePendingMarkup()}>{savingMarkup ? "저장 중…" : "주석 저장"}</button>}
-        </> : <span>주석 등록은 데모 ADM에서 사용할 수 있습니다.</span>}
+        <div className="pdf-layer-toggles">
+          <label><input type="checkbox" checked={showMarkupLayer} onChange={(event) => setShowMarkupLayer(event.target.checked)} />주석 표시</label>
+          <label><input type="checkbox" checked={showPinLayer} onChange={(event) => setShowPinLayer(event.target.checked)} />위치 핀 표시</label>
+        </div>
+        {isDemoAdmin && <button type="button" aria-pressed={markupMode} disabled={savingMarkup || markupActionLoading || rendering} onClick={() => { setMarkupMode((value) => !value); setEditingMarkup(false); setPendingMarkup(null); setMarkupText(""); setMarkupReason(""); markupAttemptRef.current = null; }}>
+          {markupMode ? "주석 그리기 종료" : "사각형 메모 추가"}
+        </button>}
+        {markupMode && <span>페이지에서 드래그해 영역을 지정하세요. 메모를 입력한 뒤 저장합니다.</span>}
+        {pendingMarkup && isDemoAdmin && <label className="pdf-markup-memo">메모<textarea aria-label="주석 메모" maxLength={2000} rows={2} value={markupText} onChange={(event) => setMarkupText(event.target.value)} placeholder="이 영역에 대한 메모" /></label>}
+        {pendingMarkup && editingMarkup && <label className="pdf-markup-memo">수정 사유<textarea aria-label="주석 수정 사유" maxLength={500} rows={2} value={markupReason} onChange={(event) => setMarkupReason(event.target.value)} /></label>}
+        {pendingMarkup && <button type="button" disabled={savingMarkup || rendering || !markupText.trim() || (editingMarkup && !markupReason.trim())} onClick={() => void savePendingMarkup()}>{savingMarkup ? "저장 중…" : editingMarkup ? "수정 저장" : "주석 저장"}</button>}
         {markupError && <span role="alert" className="pdf-error-text">{markupError}</span>}
         {markups.length > 0 && <ul className="pdf-markup-list" aria-label="저장된 도면 주석">{markups.filter((item) => item.page === page).map((item) =>
-          <li key={item.id}><button type="button" className={selectedMarkupId === item.id ? "is-selected" : ""} onClick={() => selectMarkup(selectedMarkupId === item.id ? null : item.id)}>
-            p.{item.page} · {item.text}
+          <li key={item.id}><button type="button" className={selectedMarkupId === item.id ? "is-selected" : ""} onClick={() => { setEditingMarkup(false); setDeletingMarkup(false); setMarkupReason(""); selectMarkup(selectedMarkupId === item.id ? null : item.id); }}>
+            p.{item.page} · {item.text} · v{item.version}
           </button></li>)}
         </ul>}
+        {selectedMarkup && <div className="pdf-markup-detail">
+          <p>선택한 주석 · 버전 {selectedMarkup.version}{selectedMarkup.deletedAt ? " · 삭제됨" : ""}</p>
+          {selectedMarkup.availableCommands?.some((item) => item.command === "edit") && !editingMarkup && !deletingMarkup && <button type="button" onClick={beginEditingMarkup}>주석 수정</button>}
+          {selectedMarkup.availableCommands?.some((item) => item.command === "delete") && !deletingMarkup && !editingMarkup && <button type="button" onClick={() => { setDeletingMarkup(true); setMarkupReason(""); }}>주석 삭제</button>}
+          {deletingMarkup && <><p>이 주석을 삭제하면 새 이슈 연결에 사용할 수 없게 됩니다. 기존 이슈 연결과 이력은 보존됩니다.</p><label className="pdf-markup-memo">삭제 사유<textarea aria-label="주석 삭제 사유" maxLength={500} rows={2} value={markupReason} onChange={(event) => setMarkupReason(event.target.value)} /></label><button type="button" disabled={markupActionLoading || !markupReason.trim()} onClick={() => void deleteSelectedMarkup()}>{markupActionLoading ? "삭제 중…" : "삭제 확인"}</button><button type="button" onClick={() => { setDeletingMarkup(false); setMarkupReason(""); }}>취소</button></>}
+          {selectedMarkup.deleteReason && <p>삭제 사유: {selectedMarkup.deleteReason}</p>}
+          <button type="button" aria-expanded={showMarkupHistory} onClick={() => setShowMarkupHistory((value) => !value)}>{showMarkupHistory ? "이력 숨기기" : `이력 보기${selectedMarkup.historySummary ? ` (${selectedMarkup.historySummary.count})` : ""}`}</button>
+          {showMarkupHistory && <ol className="pdf-markup-history" aria-label="주석 이력">{markupHistory.map((snapshot) => <li key={snapshot.version}><strong>v{snapshot.version}</strong> · {snapshot.text}{snapshot.reason || snapshot.updateReason || snapshot.deleteReason ? ` · 사유: ${snapshot.reason || snapshot.updateReason || snapshot.deleteReason}` : ""}</li>)}</ol>}
+        </div>}
       </div>}
       {activeBinding && <div className="pdf-pin-controls">
         <label>위치 선택<select aria-label="핀을 연결할 위치" disabled={savingPin} value={selectedLocationRef} onChange={(event) => setSelectedLocationRef(event.target.value)}>
@@ -635,7 +750,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       <div className="pdf-canvas-viewport">
         <div className="pdf-canvas-stack" onClick={stagePin} aria-disabled={!isDemoAdmin || !activeBinding || !selectedLocation || rendering}>
           <canvas ref={canvasRef} aria-label={"PDF 페이지 " + page + " / " + pageCount} />
-          <svg className={"pdf-markup-layer" + (markupMode ? " is-drawing" : "")} aria-label="도면 주석 영역"
+          <svg className={"pdf-markup-layer" + (markupMode ? " is-drawing" : "")} aria-label="도면 주석 영역" style={{ visibility: showMarkupLayer ? "visible" : "hidden" }}
             viewBox={`0 0 ${Math.max(1, canvasSize.width)} ${Math.max(1, canvasSize.height)}`} preserveAspectRatio="none"
             onPointerDown={beginMarkupDraw} onPointerMove={moveMarkupDraw} onPointerUp={finishMarkupDraw}
             onPointerCancel={() => { drawingStart.current = null; setPendingMarkup(null); }}>
@@ -645,7 +760,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
               onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectMarkup(selectedMarkupId === item.id ? null : item.id); } }} />)}
             {pendingMarkupPoints && <polygon points={pendingMarkupPoints.map((point) => `${point.left},${point.top}`).join(" ")} className="pdf-markup-shape is-pending" />}
           </svg>
-          <div className="pdf-pin-layer" aria-label="도면 위치 핀">
+          <div className="pdf-pin-layer" aria-label="도면 위치 핀" style={{ visibility: showPinLayer ? "visible" : "hidden" }}>
             {overlayPins.map((pin, index) => <button
               type="button"
               key={pin.locationName + "-" + index}
