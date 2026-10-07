@@ -6,6 +6,8 @@ import { EvidenceRegistrationPanel } from "./parallel/EvidenceRegistrationPanel"
 import { WorkInboxActionsPanel } from "./WorkInboxActionsPanel";
 import { LocationEditorPanel } from "./parallel/LocationEditorPanel";
 import { SafetyConnectedPanel } from "./parallel/SafetyConnectedPanel";
+import { InspectionCaseFlowPanel } from "./parallel/InspectionCaseFlowPanel";
+import { DrawingPdfBindingPanel } from "./parallel/DrawingPdfBindingPanel";
 import { NotificationEventsPanel } from "./parallel/NotificationEventsPanel";
 
 const PdfViewerPanel = lazy(() => import("./parallel/PdfViewerPanel").then(module => ({ default: module.PdfViewerPanel })));
@@ -114,9 +116,11 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     <SectionHeader title="병렬 기능 통합 테스트" meta={`프로젝트 ${workspace.project.id}`} />
     <p className="muted">개발 API에서 조회한 원본 응답을 표시합니다. 조회 실패와 빈 결과를 구분합니다.</p>
     <div className="parallel-test-tabs" role="tablist" aria-label="테스트 모듈">{modules.map(module => <button key={module.id} type="button" role="tab" aria-selected={active === module.id} className={active === module.id ? "active" : ""} onClick={() => { setActive(module.id); setSelectedIndex(0); }}>{module.label}</button>)}</div>
+    {active === "drawings" && <DrawingPdfBindingPanel client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "drawings" && <Suspense fallback={<div role="status">PDF 뷰어를 불러오는 중…</div>}><PdfViewerPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} /></Suspense>}
     {active === "locations" && <LocationEditorPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} />}
-    {active === "notifications" && <NotificationEventsPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} />}
+    {active === "notifications" && <NotificationEventsPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onSelect={onSelect} onNavigate={onNavigate} />}
+    {active === "work-inbox" && <InspectionCaseFlowPanel client={client} workspace={workspace} onChanged={onChanged} onSelect={onSelect} onOpenCommand={onOpenCommand} />}
     {active === "work-inbox" && <WorkInboxActionsPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onNavigate={onNavigate} />}
     {active === "evidence-quarantine" && <EvidenceRegistrationPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "safety-traceability" && <SafetyConnectedPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onSelect={onSelect} onOpenCommand={onOpenCommand} />}
