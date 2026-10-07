@@ -104,16 +104,32 @@ class WorkInboxProjectionTests(unittest.TestCase):
         self.assertEqual(result["projectId"], PROJECT)
         self.assertEqual(result["roleAssignmentId"], ROLE["id"])
 
-    def test_only_engine_visibility_denials_are_hidden(self):
-        rows = [
-            ("Issue", "issue", record("hidden")),
-            ("Issue", "issue", record("broken")),
-        ]
+    def test_engine_read_scope_denials_are_hidden_but_contract_errors_surface(self):
+        denial_codes = {
+            "not-found": "NOT_FOUND",
+            "not-authorized": "NOT_AUTHORIZED",
+            "out-of-scope": "SCOPE_MISMATCH",
+            "other-organization": "ORGANIZATION_MISMATCH",
+            "unqualified": "QUALIFICATION_INVALID",
+        }
+        denial_rows = [("Issue", "issue", record(object_id)) for object_id in denial_codes]
+        rows = [*denial_rows, ("Issue", "issue", record("broken"))]
 
         def readable_with_engine_errors(item, session, role):
-            if item["id"] == "hidden":
-                raise ContractError("NOT_FOUND", "Record is not visible")
+            code = denial_codes.get(item["id"])
+            if code:
+                raise ContractError(code, "Engine denied record visibility")
             raise ContractError("QUALIFICATION_RULE_MISSING", "Project rules are incomplete")
+
+        denied = build_work_inbox(
+            StubEngine(denial_rows),
+            PROJECT,
+            SESSION,
+            ROLE,
+            readable=readable_with_engine_errors,
+            preflight=preflight,
+        )
+        self.assertEqual(denied["records"], [])
 
         with self.assertRaisesRegex(ContractError, "Project rules are incomplete"):
             build_work_inbox(
@@ -124,17 +140,6 @@ class WorkInboxProjectionTests(unittest.TestCase):
                 readable=readable_with_engine_errors,
                 preflight=preflight,
             )
-
-        visible_rows = [("Issue", "issue", record("hidden"))]
-        result = build_work_inbox(
-            StubEngine(visible_rows),
-            PROJECT,
-            SESSION,
-            ROLE,
-            readable=readable_with_engine_errors,
-            preflight=preflight,
-        )
-        self.assertEqual(result["records"], [])
 
     def test_role_scope_uses_authoritative_preflight_and_preserves_action_details(self):
         rows = [

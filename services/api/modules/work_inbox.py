@@ -30,7 +30,15 @@ INBOX_MACHINES = frozenset(
 )
 DEFAULT_PAGE_SIZE = 50
 MAX_PAGE_SIZE = 100
-_READ_DENIAL_CODES = frozenset({"NOT_AUTHORIZED", "NOT_FOUND"})
+_READ_DENIAL_CODES = frozenset(
+    {
+        "NOT_AUTHORIZED",
+        "NOT_FOUND",
+        "SCOPE_MISMATCH",
+        "ORGANIZATION_MISMATCH",
+        "QUALIFICATION_INVALID",
+    }
+)
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
