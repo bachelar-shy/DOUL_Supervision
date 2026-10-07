@@ -145,6 +145,7 @@ jobs:
             -w /workspace \
             api python -m unittest \
             tests_mvp.test_postgres_persistence.PostgresPersistenceIntegrationTests \
+            tests_mvp.test_schedule_source_import_postgres \
             -v 2>&1 | tee /tmp/postgres-integration-tests.txt
 
           grep -q '^OK$' /tmp/postgres-integration-tests.txt
