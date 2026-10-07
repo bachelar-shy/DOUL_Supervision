@@ -6,6 +6,7 @@ import io
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from services.api.modules.evidence.storage import (
     Boto3S3QuarantineStore,
@@ -228,6 +229,19 @@ class StreamingQuarantineUploaderTests(unittest.TestCase):
                 exposed = True
         self.assertFalse(exposed)
         self.assertEqual(list(Path(self.temp.name).iterdir()), [])
+
+    def test_remote_stream_closes_when_staging_file_creation_fails(self):
+        ref = self.store_bytes(b"original")
+        remote = io.BytesIO(b"original")
+        with patch.object(self.store, "open_quarantine", return_value=remote):
+            with patch(
+                "services.api.modules.evidence.storage.tempfile.NamedTemporaryFile",
+                side_effect=OSError("staging disk unavailable"),
+            ):
+                with self.assertRaisesRegex(OSError, "staging disk unavailable"):
+                    with self.uploader.open_verified(ref):
+                        self.fail("unreachable")
+        self.assertTrue(remote.closed)
 
     def test_open_verified_rejects_cross_project_key_before_storage_read(self):
         ref = self.store_bytes(b"original")

@@ -8,7 +8,7 @@ retained until an explicit governance disposition or reconciliation action.
 """
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 import hashlib
 import os
@@ -174,48 +174,49 @@ class StreamingQuarantineUploader:
             raise ValueError("reference SHA-256 is invalid")
 
         self._staging_dir.mkdir(parents=True, exist_ok=True)
-        try:
-            remote = self._store.open_quarantine(reference.key, reference.version_id)
-        except Exception as exc:
-            raise ObjectStorageError("quarantine object could not be opened") from exc
-
-        with tempfile.NamedTemporaryFile(
-            mode="w+b", prefix="doul-evidence-read-", dir=self._staging_dir, delete=True
-        ) as staged:
+        with ExitStack() as cleanup:
             try:
-                digest = hashlib.sha256()
-                byte_count = 0
-                while True:
-                    block = remote.read(self._read_size)
-                    if block in (b"", None):
-                        break
-                    if not isinstance(block, (bytes, bytearray, memoryview)):
-                        raise TypeError("object stream must return bytes")
-                    if not block:
-                        break
-                    if len(block) > self._read_size:
-                        raise UploadValidationError("object stream exceeded bounded read size")
-                    byte_count += len(block)
-                    if byte_count > reference.byte_count or byte_count > self._max_bytes:
-                        raise UploadValidationError("stored object exceeds declared size")
-                    digest.update(block)
-                    staged.write(block)
-
-                if byte_count != reference.byte_count:
-                    raise UploadValidationError("stored object size does not match reference")
-                if digest.hexdigest() != reference.sha256.lower():
-                    raise UploadValidationError("stored object SHA-256 does not match reference")
-            except (UploadValidationError, ValueError, TypeError):
-                raise
+                remote = self._store.open_quarantine(reference.key, reference.version_id)
             except Exception as exc:
-                raise ObjectStorageError("quarantine object read failed") from exc
-            finally:
-                close = getattr(remote, "close", None)
-                if callable(close):
-                    close()
-            staged.flush()
-            staged.seek(0)
-            yield staged
+                raise ObjectStorageError("quarantine object could not be opened") from exc
+            cleanup.callback(remote.close)
+
+            with tempfile.NamedTemporaryFile(
+                mode="w+b", prefix="doul-evidence-read-", dir=self._staging_dir, delete=True
+            ) as staged:
+                try:
+                    digest = hashlib.sha256()
+                    byte_count = 0
+                    while True:
+                        block = remote.read(self._read_size)
+                        if block in (b"", None):
+                            break
+                        if not isinstance(block, (bytes, bytearray, memoryview)):
+                            raise TypeError("object stream must return bytes")
+                        if not block:
+                            break
+                        if len(block) > self._read_size:
+                            raise UploadValidationError("object stream exceeded bounded read size")
+                        byte_count += len(block)
+                        if byte_count > reference.byte_count or byte_count > self._max_bytes:
+                            raise UploadValidationError("stored object exceeds declared size")
+                        digest.update(block)
+                        staged.write(block)
+
+                    if byte_count != reference.byte_count:
+                        raise UploadValidationError("stored object size does not match reference")
+                    if digest.hexdigest() != reference.sha256.lower():
+                        raise UploadValidationError("stored object SHA-256 does not match reference")
+                except (UploadValidationError, ValueError, TypeError):
+                    raise
+                except Exception as exc:
+                    raise ObjectStorageError("quarantine object read failed") from exc
+
+                # Close the remote response before exposing the verified local file.
+                cleanup.close()
+                staged.flush()
+                staged.seek(0)
+                yield staged
 
     def store_verified(
         self,
