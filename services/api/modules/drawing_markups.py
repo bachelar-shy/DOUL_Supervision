@@ -116,6 +116,56 @@ def _visible_markup(store, markup, actor, role):
     return result
 
 
+def _markup_history(store, markup):
+    history = store.meta.setdefault("drawingMarkupHistory", [])
+    items = [item for item in history if item.get("markupId") == markup.get("id")
+             and item.get("projectId") == markup.get("projectId")]
+    if not items:
+        snapshot = deepcopy(markup)
+        history.append({"markupId": markup["id"], "projectId": markup["projectId"],
+                        "version": markup["version"], "snapshot": snapshot,
+                        "createdAt": markup.get("createdAt"), "createdBy": markup.get("createdBy"),
+                        "reason": "Initial markup"})
+        items = [history[-1]]
+    items.sort(key=lambda item: item.get("version", 0))
+    return items
+
+
+def _markup_commands(actor, role, markup):
+    editable = (markup.get("deletedAt") is None and actor.get("actorGroup") == "ADM"
+                and role.get("actorGroup") == "ADM" and role.get("roleCode") == "project_admin"
+                and "render_document" in role.get("authorityCodes", []))
+    if editable:
+        return [{"command": "edit", "label": "Edit"}, {"command": "delete", "label": "Delete"}]
+    return []
+
+
+def _markup_projection(store, markup, actor, role, demo_enabled=True):
+    result = _visible_markup(store, markup, actor, role)
+    history = _markup_history(store, markup)
+    result["historySummary"] = {"count": len(history), "latestVersion": history[-1]["version"]}
+    result["availableCommands"] = _markup_commands(actor, role, markup) if demo_enabled else []
+    return result
+
+
+def _authorized_markup_replay(response, store, actor, role):
+    result = deepcopy(response)
+    link = result.get("issueLink")
+    if link is not None and _safe_issue_link(store, link, actor, role) is None:
+        result.pop("issueLink", None)
+    return result
+
+
+def _markup_audit(store, event, markup, actor, role, before, after, reason):
+    store.meta.setdefault("drawingMarkupAudit", []).append({
+        "event": event, "markupId": markup["id"], "projectId": markup["projectId"],
+        "bindingId": markup["bindingId"], "beforeRef": {"objectType": "DrawingMarkup", "objectId": markup["id"], "version": before},
+        "afterRef": {"objectType": "DrawingMarkup", "objectId": markup["id"], "version": after},
+        "reason": reason, "actorPartyId": actor["partyId"], "roleAssignmentId": role["id"],
+        "createdAt": store.engine.at(),
+    })
+
+
 def _check_current_ref(store, reference, object_type, project_id):
     require(_domain_ref(reference, object_type), "REFERENCE_INVALID", f"Expected current {object_type} reference")
     record = store.engine.resolve(reference, project_id)
@@ -158,16 +208,17 @@ def install_drawing_markup_routes(
         try:
             actor = identity(request)
             require(_valid_uuid(bindingId), "INVALID_REQUEST", "bindingId must be a UUID")
-            with store.transaction():
+            with store.transaction(True):
                 role = role_for(actor, project_id, request.headers.get("x-roleassignment-id"))
                 try:
                     _resolve_binding(store, project_id, bindingId, actor, role)
                 except ContractError:
                     return _error("NOT_FOUND", "Markup source unavailable", 404)
                 items = [
-                    _visible_markup(store, item, actor, role)
+                    _markup_projection(store, item, actor, role, demo_enabled)
                     for item in store.meta.get("drawingMarkups", [])
                     if item.get("projectId") == project_id and item.get("bindingId") == bindingId
+                    and item.get("deletedAt") is None
                 ]
                 return {"items": items}
         except ContractError as exc:
@@ -178,7 +229,7 @@ def install_drawing_markup_routes(
     def get_markup(project_id: str, markup_id: str, request: Request):
         try:
             actor = identity(request)
-            with store.transaction():
+            with store.transaction(True):
                 role = role_for(actor, project_id, request.headers.get("x-roleassignment-id"))
                 markup = next((item for item in store.meta.get("drawingMarkups", [])
                                if item.get("id") == markup_id and item.get("projectId") == project_id), None)
@@ -188,10 +239,159 @@ def install_drawing_markup_routes(
                     _authorize_markup_source(store, project_id, markup, actor, role)
                 except ContractError:
                     return _error("NOT_FOUND", "Markup unavailable", 404)
-                return _visible_markup(store, markup, actor, role)
+                return _markup_projection(store, markup, actor, role, demo_enabled)
         except ContractError as exc:
-            status = 401 if exc.code == "UNAUTHENTICATED" else 403 if exc.code == "NOT_AUTHORIZED" else 404
+            status = 401 if exc.code == "UNAUTHENTICATED" else 404
             return _error(exc.code, str(exc), status)
+
+    @app.get("/projects/{project_id}/parallel/drawing-markups/{markup_id}/history")
+    def get_markup_history(project_id: str, markup_id: str, request: Request):
+        try:
+            actor = identity(request)
+            with store.transaction(True):
+                role = role_for(actor, project_id, request.headers.get("x-roleassignment-id"))
+                markup = next((item for item in store.meta.get("drawingMarkups", [])
+                               if item.get("id") == markup_id and item.get("projectId") == project_id), None)
+                if markup is None:
+                    return _error("NOT_FOUND", "Markup unavailable", 404)
+                try:
+                    _authorize_markup_source(store, project_id, markup, actor, role)
+                except ContractError:
+                    return _error("NOT_FOUND", "Markup unavailable", 404)
+                items = _markup_history(store, markup)
+                return {"items": [deepcopy(item["snapshot"]) for item in items]}
+        except ContractError as exc:
+            status = 401 if exc.code == "UNAUTHENTICATED" else 404
+            return _error(exc.code, str(exc), status)
+
+    @app.put("/projects/{project_id}/parallel/drawing-markups/{markup_id}")
+    async def edit_markup(project_id: str, markup_id: str, request: Request):
+        try:
+            require(demo_enabled is True, "DEMO_ONLY", "Drawing markup edits are demo only")
+            actor = identity(request)
+            body = await _json_body(request)
+            require(set(body) == {"expectedVersion", "text", "rect", "reason"},
+                    "INVALID_REQUEST", "Unexpected or missing markup edit fields")
+            require(_positive_int(body.get("expectedVersion")), "INVALID_REQUEST", "expectedVersion must be positive")
+            require(isinstance(body.get("text"), str), "INVALID_REQUEST", "text must be plain text")
+            text = body["text"].strip()
+            require(0 < len(text) <= MAX_TEXT, "INVALID_REQUEST", "text must contain 1 to 2000 characters")
+            rect = body.get("rect")
+            require(isinstance(rect, dict) and set(rect) == {"x1", "y1", "x2", "y2"},
+                    "INVALID_REQUEST", "rect must contain exactly x1, y1, x2 and y2")
+            for coordinate in rect.values():
+                require(isinstance(coordinate, (int, float)) and not isinstance(coordinate, bool)
+                        and -MAX_COORD <= coordinate <= MAX_COORD and math.isfinite(coordinate),
+                        "INVALID_REQUEST", "Rectangle coordinates must be finite bounded numbers")
+            require(rect["x1"] < rect["x2"] and rect["y1"] < rect["y2"],
+                    "INVALID_REQUEST", "Rectangle must have positive width and height")
+            require(isinstance(body.get("reason"), str), "INVALID_REQUEST", "reason must be text")
+            reason = body["reason"].strip()
+            require(0 < len(reason) <= 500, "INVALID_REQUEST", "reason must contain 1 to 500 characters")
+            key = key_for(request)
+            require(isinstance(key, str) and 0 < len(key) <= MAX_KEY_LENGTH,
+                    "IDEMPOTENCY_KEY_INVALID", "Idempotency-Key must be 1 to 160 characters")
+            with store.transaction(True):
+                role = role_for(actor, project_id, request.headers.get("x-roleassignment-id"))
+                _markup_write_role(actor, role, project_id)
+                markup = next((item for item in store.meta.get("drawingMarkups", [])
+                               if item.get("id") == markup_id and item.get("projectId") == project_id), None)
+                if markup is None:
+                    return _error("NOT_FOUND", "Markup unavailable", 404)
+                try:
+                    _authorize_markup_source(store, project_id, markup, actor, role)
+                except ContractError:
+                    return _error("NOT_FOUND", "Markup unavailable", 404)
+                body_for_hash = {"expectedVersion": body["expectedVersion"], "text": body["text"],
+                                 "rect": rect, "reason": body["reason"]}
+                request_key = f"drawing-markup-edit:{project_id}:{actor['partyId']}:{key}"
+                fingerprint = _fingerprint(project_id, actor["partyId"], f"edit:{markup_id}", body_for_hash)
+                cached = store.requests.get(request_key)
+                if cached is not None:
+                    require(cached.get("hash") == fingerprint, "IDEMPOTENCY_CONFLICT", "Markup edit request changed")
+                    return JSONResponse(_authorized_markup_replay(cached["response"], store, actor, role), status_code=200)
+                require(markup.get("deletedAt") is None, "MARKUP_DELETED", "Deleted markups cannot be edited")
+                require(markup.get("version") == body["expectedVersion"], "VERSION_CONFLICT", "Markup version changed")
+                _markup_history(store, markup)
+                before = markup["version"]
+                updated = deepcopy(markup)
+                updated.update(version=before + 1, text=text, rect=deepcopy(rect),
+                               updatedAt=store.engine.at(), updatedBy=actor["partyId"], updateReason=reason)
+                markups = store.meta["drawingMarkups"]
+                markups[markups.index(markup)] = updated
+                store.meta["drawingMarkupHistory"].append({"markupId": markup_id, "projectId": project_id, "version": updated["version"],
+                                "snapshot": deepcopy(updated), "createdAt": updated["updatedAt"],
+                                "createdBy": actor["partyId"], "reason": reason})
+                _markup_audit(store, "drawing_markup_edited", updated, actor, role, before, updated["version"], reason)
+                response = _markup_projection(store, updated, actor, role, demo_enabled)
+                store.requests[request_key] = {"hash": fingerprint, "response": deepcopy(response)}
+                return JSONResponse(response, status_code=200)
+        except ContractError as exc:
+            code = exc.code
+            status = (401 if code == "UNAUTHENTICATED" else 403 if code in {"NOT_AUTHORIZED", "DEMO_ONLY"}
+                      else 404 if code in {"NOT_FOUND", "OBJECT_NOT_FOUND", "PROJECT_MISMATCH"}
+                      else 409 if code in {"IDEMPOTENCY_CONFLICT", "VERSION_CONFLICT", "MARKUP_DELETED"}
+                      else 413 if code == "PAYLOAD_TOO_LARGE" else 422)
+            return _error(code, str(exc), status)
+        except (KeyError, ValueError, TypeError):
+            return _error("INVALID_REQUEST", "Drawing markup edit is invalid", 422)
+
+    @app.delete("/projects/{project_id}/parallel/drawing-markups/{markup_id}")
+    async def delete_markup(project_id: str, markup_id: str, request: Request):
+        try:
+            require(demo_enabled is True, "DEMO_ONLY", "Drawing markup deletion is demo only")
+            actor = identity(request)
+            body = await _json_body(request)
+            require(set(body) == {"expectedVersion", "reason"},
+                    "INVALID_REQUEST", "Unexpected or missing markup delete fields")
+            require(_positive_int(body.get("expectedVersion")), "INVALID_REQUEST", "expectedVersion must be positive")
+            require(isinstance(body.get("reason"), str), "INVALID_REQUEST", "reason must be text")
+            reason = body["reason"].strip()
+            require(0 < len(reason) <= 500, "INVALID_REQUEST", "reason must contain 1 to 500 characters")
+            key = key_for(request)
+            require(isinstance(key, str) and 0 < len(key) <= MAX_KEY_LENGTH,
+                    "IDEMPOTENCY_KEY_INVALID", "Idempotency-Key must be 1 to 160 characters")
+            with store.transaction(True):
+                role = role_for(actor, project_id, request.headers.get("x-roleassignment-id"))
+                _markup_write_role(actor, role, project_id)
+                markup = next((item for item in store.meta.get("drawingMarkups", [])
+                               if item.get("id") == markup_id and item.get("projectId") == project_id), None)
+                if markup is None:
+                    return _error("NOT_FOUND", "Markup unavailable", 404)
+                try:
+                    _authorize_markup_source(store, project_id, markup, actor, role)
+                except ContractError:
+                    return _error("NOT_FOUND", "Markup unavailable", 404)
+                request_key = f"drawing-markup-delete:{project_id}:{actor['partyId']}:{key}"
+                fingerprint = _fingerprint(project_id, actor["partyId"], f"delete:{markup_id}", body)
+                cached = store.requests.get(request_key)
+                if cached is not None:
+                    require(cached.get("hash") == fingerprint, "IDEMPOTENCY_CONFLICT", "Markup delete request changed")
+                    return JSONResponse(_authorized_markup_replay(cached["response"], store, actor, role), status_code=200)
+                require(markup.get("deletedAt") is None, "MARKUP_DELETED", "Markup is already deleted")
+                require(markup.get("version") == body["expectedVersion"], "VERSION_CONFLICT", "Markup version changed")
+                _markup_history(store, markup)
+                before = markup["version"]
+                deleted = deepcopy(markup)
+                deleted.update(version=before + 1, deletedAt=store.engine.at(), deletedBy=actor["partyId"],
+                               deleteReason=reason)
+                store.meta["drawingMarkups"][store.meta["drawingMarkups"].index(markup)] = deleted
+                store.meta["drawingMarkupHistory"].append({"markupId": markup_id, "projectId": project_id, "version": deleted["version"],
+                                "snapshot": deepcopy(deleted), "createdAt": deleted["deletedAt"],
+                                "createdBy": actor["partyId"], "reason": reason})
+                _markup_audit(store, "drawing_markup_deleted", deleted, actor, role, before, deleted["version"], reason)
+                response = _markup_projection(store, deleted, actor, role, demo_enabled)
+                store.requests[request_key] = {"hash": fingerprint, "response": deepcopy(response)}
+                return JSONResponse(response, status_code=200)
+        except ContractError as exc:
+            code = exc.code
+            status = (401 if code == "UNAUTHENTICATED" else 403 if code in {"NOT_AUTHORIZED", "DEMO_ONLY"}
+                      else 404 if code in {"NOT_FOUND", "OBJECT_NOT_FOUND", "PROJECT_MISMATCH"}
+                      else 409 if code in {"IDEMPOTENCY_CONFLICT", "VERSION_CONFLICT", "MARKUP_DELETED"}
+                      else 413 if code == "PAYLOAD_TOO_LARGE" else 422)
+            return _error(code, str(exc), status)
+        except (KeyError, ValueError, TypeError):
+            return _error("INVALID_REQUEST", "Drawing markup delete is invalid", 422)
 
     @app.post("/projects/{project_id}/parallel/drawing-markups")
     async def create_markup(project_id: str, request: Request):
@@ -233,7 +433,7 @@ def install_drawing_markup_routes(
                     markup = next((item for item in store.meta.get("drawingMarkups", [])
                                    if item.get("id") == cached.get("id") and item.get("projectId") == project_id), None)
                     require(markup is not None, "IDEMPOTENCY_CONFLICT", "Markup replay is unavailable")
-                    return JSONResponse(_visible_markup(store, markup, actor, role), status_code=200)
+                    return JSONResponse(deepcopy(cached.get("response", markup)), status_code=200)
                 markups = store.meta.setdefault("drawingMarkups", [])
                 count = sum(item.get("bindingId") == binding["id"] and item.get("projectId") == project_id
                             for item in markups)
@@ -246,7 +446,14 @@ def install_drawing_markup_routes(
                     "createdBy": actor["partyId"],
                 }
                 markups.append(markup)
-                store.requests[request_key] = {"hash": fingerprint, "id": markup["id"]}
+                store.meta.setdefault("drawingMarkupHistory", []).append({
+                    "markupId": markup["id"], "projectId": project_id, "version": 1,
+                    "snapshot": deepcopy(markup), "createdAt": markup["createdAt"],
+                    "createdBy": actor["partyId"], "reason": "Initial markup",
+                })
+                markup_response = _markup_projection(store, markup, actor, role, demo_enabled)
+                store.requests[request_key] = {"hash": fingerprint, "id": markup["id"],
+                                               "response": deepcopy(markup_response)}
                 store.meta.setdefault("drawingMarkupAudit", []).append({
                     "event": "drawing_markup_created", "markupId": markup["id"], "version": 1,
                     "projectId": project_id, "bindingId": binding["id"],
@@ -254,7 +461,7 @@ def install_drawing_markup_routes(
                     "actorPartyId": actor["partyId"], "roleAssignmentId": role["id"],
                     "createdAt": markup["createdAt"],
                 })
-                return JSONResponse(deepcopy(markup), status_code=201)
+                return JSONResponse(markup_response, status_code=201)
         except ContractError as exc:
             code = exc.code
             status = (401 if code == "UNAUTHENTICATED" else 403 if code in {"NOT_AUTHORIZED", "DEMO_ONLY"}
@@ -322,6 +529,7 @@ def install_drawing_markup_routes(
                     response = cached.get("response")
                     require(isinstance(response, dict), "IDEMPOTENCY_CONFLICT", "Markup issue replay is unavailable")
                     return JSONResponse(deepcopy(response), status_code=200)
+                require(markup.get("deletedAt") is None, "MARKUP_DELETED", "Deleted markup cannot receive a new issue")
                 require(markup.get("version") == body["expectedMarkupVersion"],
                         "VERSION_CONFLICT", "Markup version changed")
                 existing = next((item for item in store.meta.get("drawingMarkupIssueLinks", [])
@@ -375,7 +583,7 @@ def install_drawing_markup_routes(
             code = exc.code
             status = (401 if code == "UNAUTHENTICATED" else 403 if code == "NOT_AUTHORIZED"
                       else 404 if code in {"NOT_FOUND", "OBJECT_NOT_FOUND", "PROJECT_MISMATCH"}
-                      else 409 if code in {"IDEMPOTENCY_CONFLICT", "REFERENCE_STALE", "VERSION_CONFLICT", "MARKUP_ALREADY_LINKED", "OBJECT_EXISTS"}
+                      else 409 if code in {"IDEMPOTENCY_CONFLICT", "REFERENCE_STALE", "VERSION_CONFLICT", "MARKUP_ALREADY_LINKED", "MARKUP_DELETED", "OBJECT_EXISTS"}
                       else 413 if code == "PAYLOAD_TOO_LARGE" else 422)
             return _error(code, str(exc), status)
         except (KeyError, ValueError, TypeError):
