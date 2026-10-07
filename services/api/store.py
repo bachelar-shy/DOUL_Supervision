@@ -66,6 +66,7 @@ class SQLiteSnapshotAdapter:
         self.documents._bytes={k:base64.b64decode(v) for k,v in state['documentBytes'].items()}
         self.engine.documents=deepcopy(self.documents._snapshots)
         self.meta=state['meta'];self.uploads=state['uploads'];self.requests=state['requests'];self.conflicts=state['conflicts']
+        self.engine.drawing_field_revisions = self.meta.get('drawingFieldRevisions', [])
 
     def _load(self):
         row=self.db.execute('SELECT payload FROM state WHERE id=1').fetchone()

@@ -25,6 +25,9 @@ export interface DrawingMarkupRecord {
   createdAt: string;
   createdBy: string;
   issueLink?: DrawingMarkupIssueLink;
+  deletedAt?: string;
+  deletedBy?: string;
+  reason?: string;
 }
 
 export interface DrawingMarkupIssueInput {

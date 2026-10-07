@@ -63,7 +63,7 @@ export function DrawingMarkupIssuePanel({ client, workspace, selectedMarkupId, o
       .catch(reason => { if (alive && sequence === requestId.current) setError(reason instanceof Error ? reason.message : String(reason)); })
       .finally(() => { if (alive && sequence === requestId.current) setLoading(false); });
     return () => { alive = false; requestId.current += 1; };
-  }, [client, selectedMarkupId, workspace.project.id, roleKey]);
+  }, [client, selectedMarkupId, workspace.project.id, roleKey, workspace.items]);
 
   const inspections = useMemo(() => workspace.items.filter(failedRoot), [workspace.items]);
   const selectedInspection = inspections.find(item => item.record.id === inspectionId);
@@ -75,7 +75,7 @@ export function DrawingMarkupIssuePanel({ client, workspace, selectedMarkupId, o
     && client.session?.actor.actorGroup === "SUP"
     && client.session?.projectId === workspace.project.id
     && client.session?.actor.roleAssignmentId === workspace.role.id
-    && !!markup && !markup.issueLink;
+    && !!markup && !markup.issueLink && !markup.deletedAt;
   const exactInspection = !!markup && !!selectedInspection && sameRef(selectedInspection.record.drawingRef, markup.drawingRef);
   const validObservation = !!selectedObservation && !!selectedInspection && scopeMatches(selectedInspection.record, selectedObservation.record);
 
@@ -152,6 +152,8 @@ export function DrawingMarkupIssuePanel({ client, workspace, selectedMarkupId, o
       {markup && <>
         <article className="drawing-markup-issue-markup">
           <strong>{markup.text}</strong>
+          {markup.deletedAt && <span>삭제된 주석 · 원본 이력과 기존 이슈 연결은 보존됩니다.</span>}
+          {markup.issueLink && markup.issueLink.markupVersion !== markup.version && <span>이슈 생성 당시 주석 v{markup.issueLink.markupVersion} · 현재 주석 v{markup.version}</span>}
           <span>주석 {markup.id} · v{markup.version} · 페이지 {markup.page}</span>
           <span>도면 {refText(markup.drawingRef)}</span>
           <span>PDF Evidence {refText(markup.evidenceRef)}</span>
