@@ -134,6 +134,13 @@ class DrawingPdfBindingTests(unittest.TestCase):
         for drawing_ref, evidence_ref in bad_cases:
             response = self.request(self.body(drawing_ref, evidence_ref))
             self.assertIn(response.status_code, (404, 422))
+        for malformed in (
+            {"objectType": "InformationItem", "objectId": "not-a-uuid", "version": 1},
+            {"objectType": "InformationItem", "objectId": self.drawing["id"], "version": True},
+            {"objectType": "InformationItem", "objectId": self.drawing["id"], "version": 0},
+        ):
+            response = self.request(self.body(drawing_ref=malformed), key="malformed-ref")
+            self.assertEqual(response.status_code, 422, response.text)
         wrong_mime = self.add_pdf(PDF, mime="image/png")
         response = self.request(self.body(evidence_ref=self.ref("Evidence", wrong_mime)), key="mime")
         self.assertEqual(response.status_code, 422, response.text)
@@ -157,10 +164,52 @@ class DrawingPdfBindingTests(unittest.TestCase):
         self.assertEqual(response.status_code, 422, response.text)
         self.assertEqual(self.store.meta.get("drawingPdfBindings", []), [])
 
+    def test_historical_exact_versions_bind_and_content_is_pinned(self):
+        changed_drawing = deepcopy(self.drawing)
+        changed_drawing["version"] = self.drawing["version"] + 1
+        with self.store.transaction(True):
+            self.store.engine._records[("InformationItem", changed_drawing["id"])] = deepcopy(changed_drawing)
+            self.store.engine._history[("InformationItem", changed_drawing["id"], changed_drawing["version"])] = deepcopy(changed_drawing)
+        changed = deepcopy(self.pdf_evidence)
+        changed["version"] = self.pdf_evidence["version"] + 1
+        changed["fileHash"] = sha256(b"%PDF-1.7\nnew version\n%%EOF\n").hexdigest()
+        changed["metadata"] = {**changed["metadata"], "name": "new-version.pdf"}
+        with self.store.transaction(True):
+            self.store.engine._records[("Evidence", changed["id"])] = deepcopy(changed)
+            self.store.engine._history[("Evidence", changed["id"], changed["version"])] = deepcopy(changed)
+        response = self.request(self.body())
+        self.assertEqual(response.status_code, 201, response.text)
+        binding = response.json()
+        content = self.client.get(
+            f"/projects/{self.project}/parallel/drawing-pdf-bindings/{binding['id']}/content")
+        self.assertEqual(content.status_code, 200, content.text)
+        self.assertEqual(content.content, PDF)
+        self.assertEqual(content.headers["content-type"], "application/pdf")
+        self.assertEqual(content.headers["cache-control"], "no-store")
+        wrong_project = self.client.get(
+            f"/projects/{uid()}/parallel/drawing-pdf-bindings/{binding['id']}/content")
+        self.assertEqual(wrong_project.status_code, 404)
+
     def test_admin_demo_gate_and_scope_revocation(self):
         supervisor = self.store.engine.get("RoleAssignment", self.store.meta["actors"]["SUP"]["roleAssignmentId"])
         denied = self.request(self.body(), role=supervisor)
         self.assertEqual(denied.status_code, 403, denied.text)
+        saved_authorities = deepcopy(self.role.get("authorityCodes", []))
+        with self.store.transaction(True):
+            self.store.engine._records[("RoleAssignment", self.role["id"])]["authorityCodes"] = []
+        denied = self.request(self.body(), key="no-render")
+        self.assertEqual(denied.status_code, 403, denied.text)
+        with self.store.transaction(True):
+            self.store.engine._records[("RoleAssignment", self.role["id"])]["authorityCodes"] = saved_authorities
+        wrong_actor = deepcopy(self.actor)
+        wrong_actor["actorGroup"] = "SUP"
+        old_identity = self.actor
+        self.actor = wrong_actor
+        try:
+            denied = self.request(self.body(), key="wrong-actor")
+            self.assertEqual(denied.status_code, 403, denied.text)
+        finally:
+            self.actor = old_identity
         no_demo_app = FastAPI()
         install_drawing_pdf_binding_routes(
             no_demo_app, self.store, identity=lambda _request: self.actor,

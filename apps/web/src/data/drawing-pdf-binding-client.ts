@@ -18,13 +18,19 @@ export interface DrawingPdfBinding {
   createdBy: string;
 }
 
+function projectEndpoint(client: SupervisionClient, projectId: string, path: string) {
+  if (client.session?.projectId !== projectId) throw new Error("현재 프로젝트가 일치하지 않습니다.");
+  return client.path(path);
+}
+
 function endpoint(client: SupervisionClient, projectId: string) {
-  return client.path(`/projects/${projectId}/parallel/drawing-pdf-bindings`);
+  if (client.session?.projectId !== projectId) throw new Error("현재 프로젝트가 일치하지 않습니다.");
+  return client.path("/parallel/drawing-pdf-bindings");
 }
 
 export async function listDrawingRevisions(client: SupervisionClient, projectId: string) {
   const result = await client.request<{ items: DrawingRevisionOption[] }>(
-    client.path(`/projects/${projectId}/parallel/drawings`),
+    projectEndpoint(client, projectId, "/parallel/drawings"),
   );
   return result.items;
 }
@@ -46,4 +52,10 @@ export function createDrawingPdfBinding(
     headers: { "Idempotency-Key": crypto.randomUUID() },
     body: JSON.stringify({ drawingRef, evidenceRef }),
   });
+}
+
+export function drawingPdfContent(client: SupervisionClient, bindingId: string): Promise<Blob> {
+  if (!client.session) throw new Error("로그인이 필요합니다.");
+  const facade = client as SupervisionClient & { drawingPdfContent(id: string): Promise<Blob> };
+  return facade.drawingPdfContent(bindingId);
 }

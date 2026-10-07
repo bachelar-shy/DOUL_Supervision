@@ -13,13 +13,15 @@ from typing import Callable
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from app.reference.validation import ContractError, require
 
 MAX_BINDING_KEY = 160
 MAX_PDF_BYTES = 20 * 1024 * 1024
 _HEX = re.compile(r"^[0-9a-f]{64}$")
+_UUID = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
+MAX_LIST_ITEMS = 500
 
 
 def _error(code: str, message: str, status: int):
@@ -27,7 +29,10 @@ def _error(code: str, message: str, status: int):
 
 
 def _domain_ref(value):
-    return isinstance(value, dict) and set(value) == {"objectType", "objectId", "version"}
+    return (isinstance(value, dict) and set(value) == {"objectType", "objectId", "version"}
+            and isinstance(value.get("objectId"), str) and bool(_UUID.fullmatch(value["objectId"]))
+            and isinstance(value.get("version"), int) and not isinstance(value.get("version"), bool)
+            and value["version"] >= 1)
 
 
 def _fingerprint(project_id, actor_id, body):
@@ -56,7 +61,7 @@ def install_drawing_pdf_binding_routes(
             with store.transaction():
                 role = role_for(actor, project_id, request.headers.get("x-roleassignment-id"))
                 bindings = []
-                for binding in store.meta.get("drawingPdfBindings", []):
+                for binding in store.meta.get("drawingPdfBindings", [])[-MAX_LIST_ITEMS:]:
                     if binding.get("projectId") != project_id:
                         continue
                     try:
@@ -74,17 +79,54 @@ def install_drawing_pdf_binding_routes(
             status = 401 if exc.code == "UNAUTHENTICATED" else 403 if exc.code == "NOT_AUTHORIZED" else 404
             return _error(exc.code, str(exc), status)
 
+    @app.get("/projects/{project_id}/parallel/drawing-pdf-bindings/{binding_id}/content")
+    def binding_content(project_id: str, binding_id: str, request: Request):
+        try:
+            actor = identity(request)
+            with store.transaction():
+                role = role_for(actor, project_id, request.headers.get("x-roleassignment-id"))
+                binding = next((item for item in store.meta.get("drawingPdfBindings", [])
+                                if item.get("id") == binding_id and item.get("projectId") == project_id), None)
+                if binding is None:
+                    return _error("NOT_FOUND", "PDF content unavailable", 404)
+                try:
+                    drawing = store.engine.resolve(binding["drawingRef"], project_id)
+                    evidence = store.engine.resolve(binding["evidenceRef"], project_id)
+                    if drawing.get("subtype") != "Drawing":
+                        return _error("NOT_FOUND", "PDF content unavailable", 404)
+                    authorize_source(store.engine, drawing, actor, role)
+                    authorize_source(store.engine, evidence, actor, role)
+                    content = store.blob(evidence["fileId"])
+                    actual_hash = hashlib.sha256(content).hexdigest()
+                    if (evidence.get("sourceType") != "original" or evidence.get("mediaType") != "document"
+                            or (evidence.get("metadata") or {}).get("mimeType") != "application/pdf"
+                            or actual_hash != binding.get("fileHash") or actual_hash != evidence.get("fileHash")
+                            or not content.startswith(b"%PDF-") or len(content) > MAX_PDF_BYTES):
+                        return _error("NOT_FOUND", "PDF content unavailable", 404)
+                except (ContractError, KeyError, OSError):
+                    return _error("NOT_FOUND", "PDF content unavailable", 404)
+                return Response(content, media_type="application/pdf", headers={
+                    "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
+                })
+        except ContractError as exc:
+            status = 401 if exc.code == "UNAUTHENTICATED" else 404
+            return _error("NOT_FOUND" if status == 404 else exc.code,
+                          "PDF content unavailable" if status == 404 else str(exc), status)
+
     @app.post("/projects/{project_id}/parallel/drawing-pdf-bindings")
     async def create_binding(project_id: str, request: Request):
         try:
             require(demo_enabled is True, "DEMO_ONLY", "PDF drawing binding is available only in demo mode")
             actor = identity(request)
+            body = await request.json()
             with store.transaction(True):
                 role = role_for(actor, project_id, request.headers.get("x-roleassignment-id"))
-                require(role.get("actorGroup") == "ADM" and role.get("roleCode") == "project_admin",
+                require(actor.get("actorGroup") == "ADM" and role.get("actorGroup") == "ADM"
+                        and role.get("roleCode") == "project_admin",
                         "NOT_AUTHORIZED", "Only the demo project administrator can bind drawing PDFs")
+                require("render_document" in role.get("authorityCodes", []),
+                        "NOT_AUTHORIZED", "Document rendering authority is required")
                 require(role.get("projectId") == project_id, "PROJECT_MISMATCH", "Project unavailable")
-                body = await request.json()
                 require(isinstance(body, dict) and set(body) == {"drawingRef", "evidenceRef"},
                         "INVALID_REQUEST", "Expected drawingRef and evidenceRef")
                 drawing_ref, evidence_ref = body["drawingRef"], body["evidenceRef"]
@@ -95,10 +137,6 @@ def install_drawing_pdf_binding_routes(
                 drawing = store.engine.resolve(drawing_ref, project_id)
                 evidence = store.engine.resolve(evidence_ref, project_id)
                 require(drawing.get("subtype") == "Drawing", "REFERENCE_TYPE_INVALID", "Source must be a Drawing")
-                require(store.engine.get("InformationItem", drawing["id"])["version"] == drawing_ref["version"],
-                        "REFERENCE_STALE", "Drawing ref must identify its exact current version")
-                require(store.engine.get("Evidence", evidence["id"])["version"] == evidence_ref["version"],
-                        "REFERENCE_STALE", "Evidence ref must identify its exact current version")
                 require(evidence.get("sourceType") == "original" and evidence.get("mediaType") == "document"
                         and (evidence.get("metadata") or {}).get("mimeType") == "application/pdf",
                         "EVIDENCE_INVALID", "Evidence must be an original PDF document")
