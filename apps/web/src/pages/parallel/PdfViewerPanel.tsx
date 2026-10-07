@@ -1,21 +1,44 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { getDocument, GlobalWorkerOptions, type PDFDocumentLoadingTask, type PDFDocumentProxy, type RenderTask } from "pdfjs-dist";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import "./pdf-viewer.css";
 import type { SupervisionClient } from "../../data/supervision-client";
-import type { RecordDTO, Workspace } from "../../data/ui-contract";
+import type { Workspace } from "../../data/ui-contract";
+import { cssPointToPdfPoint, pdfPointToCssPoint, type CssPoint, type PdfViewport } from "../../data/pdf-coordinate";
+import {
+  fetchDrawingPdfBindings,
+  fetchPdfPinLocations,
+  sameDomainRef,
+  savePdfLocationAnchor,
+  type DrawingPdfBinding,
+  type PdfDrawingAnchor,
+  type PdfPinLocation,
+} from "../../data/pdf-pin-client";
 import { listPdfEvidenceSources, loadPdfEvidence, uploadPdfEvidence } from "../../data/pdf-viewer-client";
 
 GlobalWorkerOptions.workerSrc = workerSrc;
 
 interface Props { client: SupervisionClient; workspace: Workspace; onChanged?: () => void }
 type Status = { kind: "idle" | "loading" | "ready" | "error"; message?: string };
+interface CommittedViewport { page: number; viewport: PdfViewport; sequence: number }
+interface PinView { locationName: string; point: CssPoint; anchor: PdfDrawingAnchor }
+
+function validAnchor(value: unknown): value is PdfDrawingAnchor {
+  if (!value || typeof value !== "object") return false;
+  const anchor = value as Record<string, unknown>;
+  return !!anchor.drawingRef && typeof anchor.drawingRef === "object"
+    && Number.isInteger(anchor.page) && Number(anchor.page) > 0
+    && Number.isFinite(anchor.x) && Number.isFinite(anchor.y)
+    && anchor.coordinateSystem === "pdf_points";
+}
 
 export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
   const sources = useMemo(() => listPdfEvidenceSources(workspace), [workspace]);
   const [selectedId, setSelectedId] = useState("");
+  const [selectedBindingId, setSelectedBindingId] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [uploading, setUploading] = useState(false);
+  const [savingPin, setSavingPin] = useState(false);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(0);
   const [zoom, setZoom] = useState(1);
@@ -23,17 +46,50 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<number[]>([]);
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [bindings, setBindings] = useState<DrawingPdfBinding[]>([]);
+  const [locations, setLocations] = useState<PdfPinLocation[]>([]);
+  const [bindingError, setBindingError] = useState("");
+  const [locationsError, setLocationsError] = useState("");
+  const [directoryLoading, setDirectoryLoading] = useState(true);
+  const [selectedLocationRef, setSelectedLocationRef] = useState("");
+  const [pendingPin, setPendingPin] = useState<{ location: PdfPinLocation; anchor: PdfDrawingAnchor } | null>(null);
+  const [committedViewport, setCommittedViewport] = useState<CommittedViewport | null>(null);
+  const [rendering, setRendering] = useState(false);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const docRef = useRef<PDFDocumentProxy | null>(null);
   const loadingRef = useRef<PDFDocumentLoadingTask | null>(null);
   const renderRef = useRef<RenderTask | null>(null);
   const loadSequence = useRef(0);
   const searchSequence = useRef(0);
+  const renderSequence = useRef(0);
   const previewFiles = useRef(new Map<string, File>());
   const activeDocumentUrl = useRef<string | null>(null);
-  const renderedDocumentSequence = useRef(0);
-  const [searchError, setSearchError] = useState("");
 
+  const selectedSource = sources.find((source) => source.id === selectedId);
+  const matchingBindings = useMemo(() => {
+    if (!selectedId) return [];
+    return bindings.filter((binding) => binding.projectId === workspace.project.id
+      && binding.evidenceRef.objectType === "InformationItem"
+      && binding.evidenceRef.objectId === selectedId);
+  }, [bindings, selectedId, workspace.project.id]);
+  const boundOnlyEvidence = useMemo(() => {
+    const listed = new Set(sources.map((source) => source.id));
+    const seen = new Set<string>();
+    return bindings.filter((binding) => {
+      if (binding.projectId !== workspace.project.id || listed.has(binding.evidenceRef.objectId)
+        || seen.has(binding.evidenceRef.objectId)) return false;
+      seen.add(binding.evidenceRef.objectId);
+      return true;
+    });
+  }, [bindings, sources, workspace.project.id]);
+  const activeBinding = matchingBindings.length === 1
+    ? matchingBindings[0]
+    : matchingBindings.find((binding) => binding.id === selectedBindingId);
+  const isDemoAdmin = workspace.demo && client.session?.actor.actorGroup === "ADM";
+  const selectedLocation = locations.find((location) => location.reference.objectId === selectedLocationRef);
 
   const cancelRender = useCallback(async () => {
     const task = renderRef.current;
@@ -44,11 +100,83 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
     }
   }, []);
 
+  const pinContextSequence = useRef(0);
+  const pinContextKey = [workspace.project.id, workspace.role.id, selectedId, activeBinding?.id ?? "", activeBinding?.evidenceRef.version ?? "", activeBinding?.drawingRef.version ?? "", selectedLocationRef, page].join(":");
+  const reloadLocations = useCallback(async (expectedSequence = pinContextSequence.current) => {
+    try {
+      const latest = await fetchPdfPinLocations(client);
+      if (expectedSequence === pinContextSequence.current) {
+        setLocations(latest);
+        setLocationsError("");
+      }
+      return latest;
+    } catch (reason) {
+      if (expectedSequence === pinContextSequence.current) {
+        setLocationsError(reason instanceof Error ? reason.message : "위치 연결을 불러오지 못했습니다.");
+      }
+      throw reason;
+    }
+  }, [client]);
+
+  useLayoutEffect(() => {
+    ++pinContextSequence.current;
+    setPendingPin(null);
+    setSavingPin(false);
+  }, [pinContextKey]);
+
+  useEffect(() => {
+    let active = true;
+    setDirectoryLoading(true);
+    setBindingError("");
+    setLocationsError("");
+    Promise.allSettled([fetchDrawingPdfBindings(client), fetchPdfPinLocations(client)]).then(([bindingResult, locationResult]) => {
+      if (!active) return;
+      if (bindingResult.status === "fulfilled") setBindings(bindingResult.value);
+      else setBindingError(bindingResult.reason instanceof Error ? bindingResult.reason.message : "도면 PDF 연결을 불러오지 못했습니다.");
+      if (locationResult.status === "fulfilled") setLocations(locationResult.value);
+      else setLocationsError(locationResult.reason instanceof Error ? locationResult.reason.message : "위치 연결을 불러오지 못했습니다.");
+      setDirectoryLoading(false);
+    });
+    return () => { active = false; };
+  }, [client, workspace.project.id, workspace.role.id, workspace.items]);
+
+  useEffect(() => {
+    setSelectedBindingId("");
+    setPendingPin(null);
+    setCommittedViewport(null);
+  }, [selectedId]);
+
+  useEffect(() => {
+    setPendingPin(null);
+  }, [selectedBindingId, selectedSource?.record.version, matchingBindings.map((binding) => binding.evidenceRef.version).join(",")]);
+
+  useEffect(() => {
+    if (!isDemoAdmin) setPendingPin(null);
+  }, [isDemoAdmin]);
+
   useEffect(() => {
     let active = true;
     const sequence = ++loadSequence.current;
-    renderedDocumentSequence.current = sequence;
     setSearchError("");
+    setCommittedViewport(null);
+    if (selectedId && directoryLoading) {
+      setStatus({ kind: "loading", message: "도면 PDF 연결을 확인하는 중…" });
+      return () => { active = false; };
+    }
+    if (selectedId && matchingBindings.length > 1 && !activeBinding) {
+      setStatus({ kind: "idle", message: "연결된 도면 버전을 선택하세요." });
+      setPageCount(0);
+      setCommittedViewport(null);
+      void (async () => {
+        await cancelRender();
+        try { await loadingRef.current?.destroy(); } catch { /* previous document shutdown */ }
+        loadingRef.current = null;
+        docRef.current = null;
+        if (activeDocumentUrl.current) URL.revokeObjectURL(activeDocumentUrl.current);
+        activeDocumentUrl.current = null;
+      })();
+      return () => { active = false; };
+    }
     if (!selectedId) {
       setStatus({ kind: "idle" });
       setPage(1);
@@ -64,7 +192,9 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
       return () => { active = false; };
     }
     setStatus({ kind: "loading", message: "PDF를 불러오는 중…" });
-    setPage(1); setPageCount(0); setMatches([]);
+    setPage(1);
+    setPageCount(0);
+    setMatches([]);
     void (async () => {
       try {
         await cancelRender();
@@ -74,7 +204,12 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
         if (activeDocumentUrl.current) URL.revokeObjectURL(activeDocumentUrl.current);
         activeDocumentUrl.current = null;
         const file = previewFiles.current.get(selectedId);
-        const blob = file ?? await loadPdfEvidence(client, selectedId);
+        let blob: Blob;
+        if (activeBinding) {
+          blob = await client.drawingPdfContent(activeBinding.id);
+        } else {
+          blob = file ?? await loadPdfEvidence(client, selectedId);
+        }
         if (!active || sequence !== loadSequence.current) return;
         const url = URL.createObjectURL(blob);
         activeDocumentUrl.current = url;
@@ -99,7 +234,7 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
       }
     })();
     return () => { active = false; };
-  }, [client, selectedId, cancelRender]);
+  }, [client, selectedId, activeBinding?.id, matchingBindings.length, directoryLoading, cancelRender]);
 
   useEffect(() => () => {
     ++loadSequence.current;
@@ -117,35 +252,73 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
 
   useEffect(() => {
     const doc = docRef.current;
-    const canvas = canvasRef.current;
-    if (!doc || !canvas || status.kind !== "ready") return;
+    const visibleCanvas = canvasRef.current;
+    if (!doc || !visibleCanvas || status.kind !== "ready") return;
     let active = true;
+    const sequence = ++renderSequence.current;
+    setRendering(true);
     void (async () => {
       await cancelRender();
-      const sequence = renderedDocumentSequence.current;
-      if (!active || sequence !== loadSequence.current || docRef.current !== doc) return;
+      if (!active || sequence !== renderSequence.current || docRef.current !== doc) return;
+      let scratchCanvas: HTMLCanvasElement | null = null;
       try {
         const pdfPage = await doc.getPage(page);
-        if (!active || sequence !== loadSequence.current || docRef.current !== doc) return;
-        const viewport = pdfPage.getViewport({ scale: zoom, rotation });
+        if (!active || sequence !== renderSequence.current || docRef.current !== doc) return;
+        const effectiveRotation = ((pdfPage.rotate || 0) + rotation) % 360;
+        const viewport = pdfPage.getViewport({ scale: zoom, rotation: effectiveRotation });
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const cap = Math.sqrt(8_000_000 / (viewport.width * viewport.height * dpr * dpr));
         const outputScale = Math.min(dpr, cap, 2);
-        canvas.width = Math.max(1, Math.floor(viewport.width * outputScale));
-        canvas.height = Math.max(1, Math.floor(viewport.height * outputScale));
-        canvas.style.width = `${Math.floor(viewport.width)}px`;
-        canvas.style.height = `${Math.floor(viewport.height)}px`;
-        const task = pdfPage.render({ canvas, viewport, transform: outputScale === 1 ? undefined : [outputScale, 0, 0, outputScale, 0, 0] });
+        const width = Math.max(1, Math.floor(viewport.width * outputScale));
+        const height = Math.max(1, Math.floor(viewport.height * outputScale));
+        scratchCanvas = document.createElement("canvas");
+        scratchCanvas.width = width;
+        scratchCanvas.height = height;
+        const task = pdfPage.render({
+          canvas: scratchCanvas,
+          viewport,
+          transform: outputScale === 1 ? undefined : [outputScale, 0, 0, outputScale, 0, 0],
+        });
         renderRef.current = task;
         await task.promise;
-        if (active && sequence === loadSequence.current && docRef.current === doc) pdfPage.cleanup();
+        if (!active || sequence !== renderSequence.current || docRef.current !== doc) return;
+
+        // Commit pixels and the matching viewport together only after a complete page render.
+        visibleCanvas.width = width;
+        visibleCanvas.height = height;
+        visibleCanvas.style.width = viewport.width + "px";
+        visibleCanvas.style.height = "auto";
+        const context = visibleCanvas.getContext("2d");
+        if (!context) throw new Error("캔버스를 사용할 수 없습니다.");
+        context.drawImage(scratchCanvas, 0, 0);
+        const rect = visibleCanvas.getBoundingClientRect();
+        setCanvasSize({ width: rect.width, height: rect.height });
+        setCommittedViewport({ page, viewport, sequence });
+        setRendering(false);
+        pdfPage.cleanup();
         if (renderRef.current === task) renderRef.current = null;
       } catch (reason) {
-        if (active && !(reason instanceof Error && reason.name === "RenderingCancelledException")) setStatus({ kind: "error", message: "페이지를 그리지 못했습니다." });
+        if (active && sequence === renderSequence.current && !(reason instanceof Error && reason.name === "RenderingCancelledException")) {
+          setStatus({ kind: "error", message: "페이지를 그리지 못했습니다." });
+          setRendering(false);
+        }
+      } finally {
+        if (scratchCanvas) { scratchCanvas.width = 0; scratchCanvas.height = 0; }
       }
     })();
     return () => { active = false; };
   }, [page, zoom, rotation, status.kind, cancelRender, pageCount]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      const rect = canvas.getBoundingClientRect();
+      setCanvasSize((current) => current.width === rect.width && current.height === rect.height ? current : { width: rect.width, height: rect.height });
+    });
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [status.kind]);
 
   useEffect(() => {
     const doc = docRef.current;
@@ -174,24 +347,74 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
     return () => { active = false; };
   }, [query, selectedId, pageCount]);
 
+  const overlayPins = useMemo<PinView[]>(() => {
+    if (!activeBinding || !committedViewport || committedViewport.page !== page || canvasSize.width <= 0 || canvasSize.height <= 0) return [];
+    const anchored = locations.flatMap((location) => location.drawingAnchors.flatMap((value) => {
+      if (!validAnchor(value) || !sameDomainRef(value.drawingRef, activeBinding.drawingRef) || value.page !== page) return [];
+      const point = pdfPointToCssPoint(committedViewport.viewport, canvasSize, { x: value.x, y: value.y });
+      return point ? [{ locationName: location.name, point, anchor: value }] : [];
+    }));
+    if (pendingPin && sameDomainRef(pendingPin.anchor.drawingRef, activeBinding.drawingRef) && pendingPin.anchor.page === page) {
+      const point = pdfPointToCssPoint(committedViewport.viewport, canvasSize, pendingPin.anchor);
+      if (point) anchored.push({ locationName: pendingPin.location.name + " · 미저장", point, anchor: pendingPin.anchor });
+    }
+    return anchored;
+  }, [activeBinding, committedViewport, page, canvasSize, locations, pendingPin]);
+
   async function chooseFile(file?: File) {
     if (!file) return;
-    setUploading(true); setStatus({ kind: "loading", message: "업로드 중…" });
+    setUploading(true);
+    setStatus({ kind: "loading", message: "업로드 중…" });
     try {
       const record = await uploadPdfEvidence(client, workspace, file);
-      const id = record.id;
       previewFiles.current.clear();
-      previewFiles.current.set(id, file);
-      setSelectedId(id);
+      previewFiles.current.set(record.id, file);
+      setSelectedId(record.id);
       onChanged?.();
     } catch (reason) {
       setStatus({ kind: "error", message: reason instanceof Error ? reason.message : "PDF 업로드를 완료하지 못했습니다." });
     } finally { setUploading(false); }
   }
 
-  const registerSource = (source: { id: string; name: string; mime: string; record: RecordDTO; drawing: boolean }) => (
-    <option key={source.id} value={source.id}>{source.drawing ? "도면 연결 · " : "증빙 · "}{source.name}</option>
-  );
+  function stagePin(event: React.MouseEvent<HTMLDivElement>) {
+    if (!isDemoAdmin || !activeBinding || !selectedLocation || !committedViewport || rendering
+      || committedViewport.page !== page || !canvasRef.current || !(event.target instanceof HTMLCanvasElement)) return;
+    const point = cssPointToPdfPoint(committedViewport.viewport, canvasRef.current.getBoundingClientRect(), event.clientX, event.clientY);
+    if (!point) return;
+    setPendingPin({
+      location: selectedLocation,
+      anchor: { drawingRef: activeBinding.drawingRef, page, x: point.x, y: point.y, coordinateSystem: "pdf_points" },
+    });
+  }
+
+  async function savePendingPin() {
+    if (!pendingPin || !isDemoAdmin) return;
+    const requestSequence = pinContextSequence.current;
+    setSavingPin(true);
+    setLocationsError("");
+    try {
+      await savePdfLocationAnchor(client, pendingPin.location, pendingPin.anchor);
+      if (requestSequence !== pinContextSequence.current) return;
+      setPendingPin(null);
+      const latest = await reloadLocations(requestSequence);
+      if (requestSequence !== pinContextSequence.current) return;
+      const updated = latest.find((location) => location.reference.objectId === pendingPin.location.reference.objectId);
+      if (updated) setSelectedLocationRef(updated.reference.objectId);
+      onChanged?.();
+    } catch (reason) {
+      const statusCode = reason && typeof reason === "object" && "status" in reason ? Number((reason as { status: unknown }).status) : 0;
+      if (requestSequence !== pinContextSequence.current) return;
+      setPendingPin(null);
+      if (statusCode === 409) {
+        try { await reloadLocations(requestSequence); } catch { /* error already shown */ }
+        if (requestSequence === pinContextSequence.current) setLocationsError("위치가 다른 곳에서 변경되어 핀을 저장하지 못했습니다. 최신 정보로 다시 불러왔습니다.");
+      } else {
+        setLocationsError(reason instanceof Error ? reason.message : "핀을 저장하지 못했습니다.");
+      }
+    } finally {
+      if (requestSequence === pinContextSequence.current) setSavingPin(false);
+    }
+  }
 
   return <section aria-label="PDF 도면 뷰어" className="pdf-viewer-panel">
     <header className="pdf-viewer-header">
@@ -199,27 +422,70 @@ export function PdfViewerPanel({ client, workspace, onChanged }: Props) {
       <label className="pdf-upload-button">PDF 업로드<input data-testid="pdf-upload" type="file" accept="application/pdf,.pdf" disabled={uploading} onChange={(event) => { void chooseFile(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} /></label>
     </header>
     <div className="pdf-toolbar">
-      <label className="pdf-source-label">원본 선택<select aria-label="PDF 원본 선택" value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
-        <option value="">PDF 원본 선택…</option>{sources.map(registerSource)}
-        {selectedId && !sources.some((source) => source.id === selectedId) && <option value={selectedId}>업로드한 PDF · {selectedId}</option>}
+      <label className="pdf-source-label">원본 선택<select aria-label="PDF 원본 선택" disabled={savingPin} value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
+        <option value="">PDF 원본 선택…</option>{sources.map((source) => <option key={source.id} value={source.id}>증빙 · {source.name}</option>)}
+        {boundOnlyEvidence.map((binding) => <option key={binding.evidenceRef.objectId} value={binding.evidenceRef.objectId}>등록된 역사 원본 · {binding.evidenceRef.objectId} · v{binding.evidenceRef.version}</option>)}
+        {selectedId && !sources.some((source) => source.id === selectedId) && !boundOnlyEvidence.some((binding) => binding.evidenceRef.objectId === selectedId) && <option value={selectedId}>업로드한 PDF · {selectedId}</option>}
       </select></label>
       <label className="pdf-search-label">문서 검색<input type="search" aria-label="문서 검색" placeholder="텍스트 검색 (2자 이상)" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
-      <span className="pdf-match-count" aria-live="polite">{searchError || (searching ? "검색 중…" : query.length >= 2 ? `${matches.length}개 페이지` : "")}</span>
+      <span className="pdf-match-count" aria-live="polite">{searchError || (searching ? "검색 중…" : query.length >= 2 ? matches.length + "개 페이지" : "")}</span>
     </div>
     {status.kind === "error" && <p className="pdf-state pdf-error" role="alert">{status.message}</p>}
     {status.kind === "loading" && <p className="pdf-state" role="status">{status.message}</p>}
     {status.kind === "idle" && !selectedId && <p className="pdf-state">등록된 PDF를 선택하거나 새 PDF를 업로드하세요.</p>}
+    {status.kind === "idle" && selectedId && status.message && <p className="pdf-state">{status.message}</p>}
+
+    {selectedId && <>
+      {directoryLoading && <p role="status" className="pdf-state">도면 연결과 위치 정보를 불러오는 중…</p>}
+      {bindingError && <p role="alert" className="pdf-error">{bindingError}</p>}
+      {locationsError && <p role="alert" className="pdf-error">{locationsError}</p>}
+      {!directoryLoading && matchingBindings.length === 0 && <p className="pdf-state">이 PDF 증빙에 등록된 정확한 도면 연결이 없습니다. 연결을 등록한 뒤 핀을 사용할 수 있습니다.</p>}
+      {matchingBindings.length > 1 && <label className="pdf-source-label">도면 버전 선택<select aria-label="도면 버전 선택" disabled={savingPin} value={activeBinding?.id ?? ""} onChange={(event) => setSelectedBindingId(event.target.value)}>
+        <option value="">도면 버전을 선택하세요…</option>
+        {matchingBindings.map((binding) => <option key={binding.id} value={binding.id}>{binding.drawingRef.objectId} · v{binding.drawingRef.version} · 증빙 v{binding.evidenceRef.version}</option>)}
+      </select></label>}
+      {matchingBindings.length === 1 && <p className="pdf-binding-label">연결 도면 {matchingBindings[0].drawingRef.objectId} · v{matchingBindings[0].drawingRef.version} · 등록 증빙 v{matchingBindings[0].evidenceRef.version} · {matchingBindings[0].fileHash.slice(0, 12)}</p>}
+      {activeBinding && <div className="pdf-pin-controls">
+        <label>위치 선택<select aria-label="핀을 연결할 위치" disabled={savingPin} value={selectedLocationRef} onChange={(event) => setSelectedLocationRef(event.target.value)}>
+          <option value="">위치를 선택하세요…</option>
+          {locations.map((location) => <option key={location.reference.objectId} value={location.reference.objectId}>{location.name}</option>)}
+        </select></label>
+        <span>{isDemoAdmin ? "페이지를 클릭해 미저장 핀을 놓은 뒤 저장하세요." : "위치 핀은 데모 ADM에서만 저장할 수 있습니다."}</span>
+        {pendingPin && <button type="button" onClick={() => void savePendingPin()} disabled={savingPin || rendering}>{savingPin ? "저장 중…" : "위치 핀 저장"}</button>}
+      </div>}
+    </>}
+
     {status.kind === "ready" && <>
       <div className="pdf-page-controls">
-        <button type="button" aria-label="이전 페이지" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>‹</button>
+        <button type="button" aria-label="이전 페이지" disabled={page <= 1 || savingPin} onClick={() => setPage((value) => Math.max(1, value - 1))}>‹</button>
         <label>페이지 <input aria-label="페이지 번호" type="number" min={1} max={pageCount} value={page} onChange={(event) => { const next = Number(event.target.value); if (next >= 1 && next <= pageCount) setPage(next); }} /> / {pageCount}</label>
-        <button type="button" aria-label="다음 페이지" disabled={page >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>›</button>
-        <button type="button" aria-label="축소" onClick={() => setZoom((value) => Math.max(.5, +(value - .1).toFixed(1)))}>−</button><span>{Math.round(zoom * 100)}%</span>
-        <button type="button" aria-label="확대" onClick={() => setZoom((value) => Math.min(2.5, +(value + .1).toFixed(1)))}>＋</button>
-        <button type="button" aria-label="회전" onClick={() => setRotation((value) => (value + 90) % 360)}>회전</button>
+        <button type="button" aria-label="다음 페이지" disabled={page >= pageCount || savingPin} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>›</button>
+        <button type="button" aria-label="축소" disabled={savingPin} onClick={() => setZoom((value) => Math.max(.5, +(value - .1).toFixed(1)))}>−</button><span>{Math.round(zoom * 100)}%</span>
+        <button type="button" aria-label="확대" disabled={savingPin} onClick={() => setZoom((value) => Math.min(2.5, +(value + .1).toFixed(1)))}>＋</button>
+        <button type="button" aria-label="회전" disabled={savingPin} onClick={() => setRotation((value) => (value + 90) % 360)}>회전</button>
         {matches.map((match) => <button type="button" key={match} onClick={() => setPage(match)}>검색 결과 {match}</button>)}
       </div>
-      <div className="pdf-canvas-viewport"><canvas ref={canvasRef} aria-label={`PDF 페이지 ${page} / ${pageCount}`} /></div>
+      <div className="pdf-canvas-viewport">
+        <div className="pdf-canvas-stack" onClick={stagePin} aria-disabled={!isDemoAdmin || !activeBinding || !selectedLocation || rendering}>
+          <canvas ref={canvasRef} aria-label={"PDF 페이지 " + page + " / " + pageCount} />
+          <div className="pdf-pin-layer" aria-label="도면 위치 핀">
+            {overlayPins.map((pin, index) => <button
+              type="button"
+              key={pin.locationName + "-" + index}
+              className={"pdf-location-pin" + (pin.locationName.includes("미저장") ? " is-pending" : "")}
+              data-testid={pin.locationName.includes("미저장") ? "pdf-pin-preview" : "pdf-location-pin"}
+              data-pdf-x={pin.anchor.x}
+              data-pdf-y={pin.anchor.y}
+              data-pdf-page={pin.anchor.page}
+              style={{ left: pin.point.left, top: pin.point.top }}
+              title={pin.locationName}
+              aria-label={pin.locationName + " 위치 핀"}
+              onClick={(event) => event.stopPropagation()}
+            >{index + 1}</button>)}
+          </div>
+        </div>
+      </div>
+      {rendering && <p role="status" className="pdf-rendering-state">페이지를 표시하는 중…</p>}
       <footer className="pdf-readonly-note">읽기 전용 미리보기 · 업로드한 원본은 변경하지 않습니다.</footer>
     </>}
   </section>;
