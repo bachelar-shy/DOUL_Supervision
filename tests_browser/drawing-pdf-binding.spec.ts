@@ -80,7 +80,7 @@ test("uses synthetic Drawing/PDF fixtures and registers the technical binding th
   await panel.getByRole("button", { name: "선택한 버전 연결" }).click();
   expect((await saved).status()).toBe(201);
   expect(submittedBodies).toEqual([{ drawingRef, evidenceRef }]);
-  await expect(panel.getByText(new RegExp(fixtureBinding(actualProjectId).fileHash))).toBeVisible();
+  await expect(panel.getByRole("list", {name: "저장된 도면 PDF 연결"}).getByText(new RegExp(fixtureBinding(actualProjectId).fileHash))).toBeVisible();
   await expect(panel.getByRole("button", { name: "이 도면 버전은 이미 PDF와 연결됨" })).toBeDisabled();
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
