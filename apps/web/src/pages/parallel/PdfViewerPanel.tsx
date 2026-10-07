@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getDocument, GlobalWorkerOptions, type PDFDocumentLoadingTask, type PDFDocumentProxy, type RenderTask } from "pdfjs-dist";
+import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import "./pdf-viewer.css";
 import type { SupervisionClient } from "../../data/supervision-client";
 import type { RecordDTO, Workspace } from "../../data/ui-contract";
 import { listPdfEvidenceSources, loadPdfEvidence, uploadPdfEvidence } from "../../data/pdf-viewer-client";
 
-GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
+GlobalWorkerOptions.workerSrc = workerSrc;
 
 interface Props { client: SupervisionClient; workspace: Workspace }
 type Status = { kind: "idle" | "loading" | "ready" | "error"; message?: string };
@@ -28,7 +29,10 @@ export function PdfViewerPanel({ client, workspace }: Props) {
   const renderRef = useRef<RenderTask | null>(null);
   const loadSequence = useRef(0);
   const searchSequence = useRef(0);
-  const localUrls = useRef(new Map<string, string>());
+  const previewFiles = useRef(new Map<string, File>());
+  const activeDocumentUrl = useRef<string | null>(null);
+  const renderedDocumentSequence = useRef(0);
+  const [searchError, setSearchError] = useState("");
 
 
   const cancelRender = useCallback(async () => {
@@ -41,25 +45,48 @@ export function PdfViewerPanel({ client, workspace }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!selectedId) return;
     let active = true;
     const sequence = ++loadSequence.current;
+    renderedDocumentSequence.current = sequence;
+    setSearchError("");
+    if (!selectedId) {
+      setStatus({ kind: "idle" });
+      setPage(1);
+      setPageCount(0);
+      void (async () => {
+        await cancelRender();
+        try { await loadingRef.current?.destroy(); } catch { /* previous document shutdown */ }
+        loadingRef.current = null;
+        docRef.current = null;
+        if (activeDocumentUrl.current) URL.revokeObjectURL(activeDocumentUrl.current);
+        activeDocumentUrl.current = null;
+      })();
+      return () => { active = false; };
+    }
     setStatus({ kind: "loading", message: "PDF를 불러오는 중…" });
     setPage(1); setPageCount(0); setMatches([]);
     void (async () => {
       try {
         await cancelRender();
-        await loadingRef.current?.destroy();
+        try { await loadingRef.current?.destroy(); } catch { /* previous document shutdown */ }
         loadingRef.current = null;
         docRef.current = null;
-        const existing = localUrls.current.get(selectedId);
-        const blob = existing ? null : await loadPdfEvidence(client, selectedId);
+        if (activeDocumentUrl.current) URL.revokeObjectURL(activeDocumentUrl.current);
+        activeDocumentUrl.current = null;
+        const file = previewFiles.current.get(selectedId);
+        const blob = file ?? await loadPdfEvidence(client, selectedId);
         if (!active || sequence !== loadSequence.current) return;
-        const url = existing ?? URL.createObjectURL(blob!);
+        const url = URL.createObjectURL(blob);
+        activeDocumentUrl.current = url;
         const task = getDocument({ url, maxImageSize: 8_000_000 });
         loadingRef.current = task;
         const doc = await task.promise;
-        if (!active || sequence !== loadSequence.current) { await task.destroy(); return; }
+        if (!active || sequence !== loadSequence.current) {
+          await task.destroy();
+          URL.revokeObjectURL(url);
+          if (activeDocumentUrl.current === url) activeDocumentUrl.current = null;
+          return;
+        }
         docRef.current = doc;
         setPageCount(doc.numPages);
         setStatus({ kind: "ready" });
@@ -77,11 +104,15 @@ export function PdfViewerPanel({ client, workspace }: Props) {
   useEffect(() => () => {
     ++loadSequence.current;
     ++searchSequence.current;
-    void cancelRender();
-    void loadingRef.current?.destroy();
-
-    for (const url of localUrls.current.values()) URL.revokeObjectURL(url);
-    localUrls.current.clear();
+    void (async () => {
+      await cancelRender();
+      try { await loadingRef.current?.destroy(); } catch { /* unmount cleanup */ }
+      loadingRef.current = null;
+      docRef.current = null;
+      if (activeDocumentUrl.current) URL.revokeObjectURL(activeDocumentUrl.current);
+      activeDocumentUrl.current = null;
+      previewFiles.current.clear();
+    })();
   }, [cancelRender]);
 
   useEffect(() => {
@@ -91,9 +122,11 @@ export function PdfViewerPanel({ client, workspace }: Props) {
     let active = true;
     void (async () => {
       await cancelRender();
-      if (!active) return;
+      const sequence = renderedDocumentSequence.current;
+      if (!active || sequence !== loadSequence.current || docRef.current !== doc) return;
       try {
         const pdfPage = await doc.getPage(page);
+        if (!active || sequence !== loadSequence.current || docRef.current !== doc) return;
         const viewport = pdfPage.getViewport({ scale: zoom, rotation });
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const cap = Math.sqrt(8_000_000 / (viewport.width * viewport.height * dpr * dpr));
@@ -105,7 +138,7 @@ export function PdfViewerPanel({ client, workspace }: Props) {
         const task = pdfPage.render({ canvas, viewport, transform: outputScale === 1 ? undefined : [outputScale, 0, 0, outputScale, 0, 0] });
         renderRef.current = task;
         await task.promise;
-        if (active) pdfPage.cleanup();
+        if (active && sequence === loadSequence.current && docRef.current === doc) pdfPage.cleanup();
         if (renderRef.current === task) renderRef.current = null;
       } catch (reason) {
         if (active && !(reason instanceof Error && reason.name === "RenderingCancelledException")) setStatus({ kind: "error", message: "페이지를 그리지 못했습니다." });
@@ -119,6 +152,7 @@ export function PdfViewerPanel({ client, workspace }: Props) {
     const term = query.trim().toLocaleLowerCase();
     const sequence = ++searchSequence.current;
     setMatches([]);
+    setSearchError("");
     if (!doc || term.length < 2) { setSearching(false); return; }
     let active = true;
     setSearching(true);
@@ -133,6 +167,8 @@ export function PdfViewerPanel({ client, workspace }: Props) {
           if (content.items.some((item) => "str" in item && item.str.toLocaleLowerCase().includes(term))) found.push(number);
         }
         if (active && sequence === searchSequence.current) setMatches(found);
+      } catch {
+        if (active && sequence === searchSequence.current) setSearchError("문서 텍스트를 검색할 수 없습니다.");
       } finally { if (active && sequence === searchSequence.current) setSearching(false); }
     })();
     return () => { active = false; };
@@ -144,8 +180,7 @@ export function PdfViewerPanel({ client, workspace }: Props) {
     try {
       const record = await uploadPdfEvidence(client, workspace, file);
       const id = record.id;
-      const url = URL.createObjectURL(file);
-      localUrls.current.set(id, url);
+      previewFiles.current.set(id, file);
       setSelectedId(id);
       setStatus({ kind: "ready" });
     } catch (reason) {
@@ -168,7 +203,7 @@ export function PdfViewerPanel({ client, workspace }: Props) {
         {selectedId && !sources.some((source) => source.id === selectedId) && <option value={selectedId}>업로드한 PDF · {selectedId}</option>}
       </select></label>
       <label className="pdf-search-label">문서 검색<input type="search" aria-label="문서 검색" placeholder="텍스트 검색 (2자 이상)" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
-      <span className="pdf-match-count" aria-live="polite">{searching ? "검색 중…" : query.length >= 2 ? `${matches.length}개 페이지` : ""}</span>
+      <span className="pdf-match-count" aria-live="polite">{searchError || (searching ? "검색 중…" : query.length >= 2 ? `${matches.length}개 페이지` : "")}</span>
     </div>
     {status.kind === "error" && <p className="pdf-state pdf-error" role="alert">{status.message}</p>}
     {status.kind === "loading" && <p className="pdf-state" role="status">{status.message}</p>}
