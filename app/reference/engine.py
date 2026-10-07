@@ -293,10 +293,22 @@ class Engine:
             for field in ['requestedAt','submittedAt','reviewedAt','acceptedAt','activatedAt','monitoringStartedAt','completedAt','effectivenessResult']:
                 require(field not in record['data'],'IMMUTABLE_FIELD',field+' is server-derived')
             record['data']['requestedAt']=self.at()
+        if machine=='contract_notice':
+            for field in ['dueCalculationConfirmed','timeBarRisk','timeBarRiskAt','submittedAt','acknowledgedAt','preservedAt','closedAt']:
+                require(field not in record['data'],'IMMUTABLE_FIELD',field+' is server-derived')
+            record['data']['dueCalculationConfirmed']=False
+            record['data']['timeBarRisk']=False
+        if machine=='claim':
+            for field in ['decisionOutcome','submittedAt','receivedAt','reviewedAt','decisionAt','settledAt','closedAt']:
+                require(field not in record['data'],'IMMUTABLE_FIELD',field+' is server-derived')
+        if machine=='eot_request':
+            for field in ['decisionOutcome','baselineRevisionBasisRef','submittedAt','receivedAt','timeImpactReviewedAt','entitlementReviewedAt','decisionAt','baselineUpdateRequestedAt','closedAt']:
+                require(field not in record['data'],'IMMUTABLE_FIELD',field+' is server-derived')
         validate(record,self.schemas[kind],self.schemas)
         if machine=='schedule_progress':self._schedule_progress_submission_complete(self._fields(record))
         if machine=='delay_event':self._delay_event_create_ready(self._fields(record))
         if machine=='recovery_plan':self._recovery_request_ready(self._fields(record))
+        if machine=='contract_notice':self._contract_notice_identify_ready(self._fields(record))
         if machine=='safety_stop_order':
             return self._create_safety_stop_order(record,request,party_id,role_id,key)
         self._save(kind,record)
@@ -531,6 +543,37 @@ class Engine:
             'recovery_effective_evidence':self._recovery_effective_evidence,
             'recovery_ineffective_evidence':self._recovery_ineffective_evidence,
             'recovery_completion_ready':self._recovery_completion_ready,
+            'contract_notice_due_ready':self._contract_notice_due_ready,
+            'contract_notice_submission_ready':self._contract_notice_submission_ready,
+            'contract_notice_ack_ready':self._contract_notice_ack_ready,
+            'contract_notice_followup_ready':self._contract_notice_followup_ready,
+            'contract_notice_preservation_ready':self._contract_notice_preservation_ready,
+            'contract_notice_time_bar_risk_ready':self._contract_notice_time_bar_risk_ready,
+            'contract_notice_close_ready':self._contract_notice_close_ready,
+            'claim_submission_ready':self._claim_submission_ready,
+            'claim_receipt_ready':self._claim_receipt_ready,
+            'claim_substantiation_request_ready':self._claim_substantiation_request_ready,
+            'claim_entitlement_review_ready':self._claim_entitlement_review_ready,
+            'claim_quantum_review_ready':self._claim_quantum_review_ready,
+            'claim_decision_request_ready':self._claim_decision_request_ready,
+            'claim_approved_decision_ready':self._claim_approved_decision_ready,
+            'claim_partially_approved_decision_ready':self._claim_partially_approved_decision_ready,
+            'claim_rejected_decision_ready':self._claim_rejected_decision_ready,
+            'claim_disputed_decision_ready':self._claim_disputed_decision_ready,
+            'claim_settlement_ready':self._claim_settlement_ready,
+            'claim_close_ready':self._claim_close_ready,
+            'eot_submission_ready':self._eot_submission_ready,
+            'eot_receipt_ready':self._eot_receipt_ready,
+            'eot_time_review_ready':self._eot_time_review_ready,
+            'eot_entitlement_review_ready':self._eot_entitlement_review_ready,
+            'eot_decision_request_ready':self._eot_decision_request_ready,
+            'eot_approved_decision_ready':self._eot_approved_decision_ready,
+            'eot_partially_approved_decision_ready':self._eot_partially_approved_decision_ready,
+            'eot_rejected_decision_ready':self._eot_rejected_decision_ready,
+            'eot_disputed_decision_ready':self._eot_disputed_decision_ready,
+            'eot_baseline_update_ready':self._eot_baseline_update_ready,
+            'eot_baseline_revision_confirmed':self._eot_baseline_revision_confirmed,
+            'eot_rejected_close_ready':self._eot_rejected_close_ready,
         }
         if name in checks:checks[name](r)
         else:
@@ -601,6 +644,35 @@ class Engine:
             if field:data[field]=stamp
             if command=='mark_recovery_effective':data['effectivenessResult']='effective'
             if command=='mark_recovery_ineffective':data['effectivenessResult']='ineffective'
+        if machine=='contract_notice':
+            data=record['data'];stamp=self.at()
+            if command=='calculate_notice_due':data['dueCalculationConfirmed']=True
+            if command=='submit_notice':data['submittedAt']=stamp
+            if command=='record_acknowledgement':data['acknowledgedAt']=stamp
+            if command=='preserve_rights_record':data['preservedAt']=stamp
+            if command=='flag_time_bar_risk':data.update(timeBarRisk=True,timeBarRiskAt=stamp)
+            if command=='close_notice':data['closedAt']=stamp
+        if machine=='claim':
+            data=record['data'];stamp=self.at()
+            if command=='submit_claim':data['submittedAt']=stamp
+            if command=='receive_claim':data['receivedAt']=stamp
+            if command in ['start_entitlement_review','start_quantum_review','request_claim_decision']:data['reviewedAt']=stamp
+            outcomes={'approve_claim':'approved','partially_approve_claim':'partially_approved','reject_claim':'rejected','dispute_claim':'disputed'}
+            if command in outcomes:data.update(decisionOutcome=outcomes[command],decisionAt=stamp)
+            if command=='record_claim_settlement':data['settledAt']=stamp
+            if command=='close_claim':data['closedAt']=stamp
+        if machine=='eot_request':
+            data=record['data'];stamp=self.at()
+            if command=='submit_eot':data['submittedAt']=stamp
+            if command=='receive_eot':data['receivedAt']=stamp
+            if command=='start_time_impact_review':data['timeImpactReviewedAt']=stamp
+            if command in ['start_eot_entitlement_review','request_eot_decision']:data['entitlementReviewedAt']=stamp
+            outcomes={'approve_eot':'approved','partially_approve_eot':'partially_approved','reject_eot':'rejected','dispute_eot':'disputed','resolve_eot_dispute_approved':'approved','resolve_eot_dispute_partially_approved':'partially_approved','resolve_eot_dispute_rejected':'rejected'}
+            if command in outcomes:data.update(decisionOutcome=outcomes[command],decisionAt=stamp)
+            if command=='request_baseline_update':
+                data['baselineRevisionBasisRef']={'objectType':'WorkItem','objectId':record['id'],'version':record['version']}
+                data['baselineUpdateRequestedAt']=stamp
+            if command in ['confirm_baseline_update','close_eot']:data['closedAt']=stamp
 
     def _all_true(self, value, keys):
         return isinstance(value,dict) and all(value.get(key) is True for key in keys)
@@ -829,18 +901,19 @@ class Engine:
         r=self._fields(r)
         for reference in r.get('equipmentRefs',[]):
             equipment=self._current_reference(reference,r['projectId'],object_type='Asset',subtype='Equipment')
-            available=False
-            for (kind,object_id),record in self._records.items():
+            inspections=[]
+            for sequence,((kind,object_id),record) in enumerate(self._records.items()):
                 if kind!='WorkItem' or record.get('subtype')!='SafetyEquipmentInspection' or record['projectId']!=r['projectId']:
                     continue
                 target=record.get('data',{}).get('equipmentRef',{})
-                if target.get('objectId')!=equipment['id'] or record.get('status')!='passed':
+                if target.get('objectId')!=equipment['id']:
                     continue
                 current=self.get('WorkItem',object_id)
-                if current.get('data',{}).get('equipmentAvailable') is True:
-                    available=True
-                    break
-            if not available:
+                inspections.append((current.get('createdAt',''),sequence,current))
+            if not inspections:
+                return False
+            current_inspection=max(inspections,key=lambda item:(item[0],item[1]))[2]
+            if current_inspection.get('status')!='passed' or current_inspection.get('data',{}).get('equipmentAvailable') is not True:
                 return False
         return True
 
@@ -945,7 +1018,7 @@ class Engine:
 
     def _approved_schedule_revision_basis(self, reference, project_id):
         if not reference:return False
-        try:obj=self._current_reference(reference,project_id)
+        try:obj=self.resolve(reference,project_id)
         except ContractError:return False
         if reference['objectType']=='Decision':return obj.get('decision')=='approved' and obj.get('status') in ['decided','executing','verified','closed']
         if reference['objectType']=='Approval':return obj.get('status')=='approved'
@@ -1095,11 +1168,18 @@ class Engine:
     def _recovery_decision_approved(self,r):
         self._recovery_submission_complete(r)
         require(r.get('ownerDecisionRequired') is True,'RECOVERY_DECISION_APPROVED','Owner decision flag is required')
+        expected_target={'objectType':'WorkItem','objectId':r['id'],'version':r['version']}
         decisions=[]
         for reference in r.get('decisionRefs',[]):
             decision=self._current_reference(reference,r['projectId'],object_type='Decision')
-            if decision.get('decision')=='approved' and decision.get('status') in ['decided','executing','verified','closed']:decisions.append(decision)
-        require(bool(decisions),'RECOVERY_DECISION_APPROVED','Approved Owner Decision required')
+            if (
+                decision.get('targetRef')==expected_target
+                and all(decision.get(field)==r.get(field) for field in ['packageId','locationId','discipline'])
+                and decision.get('decision')=='approved'
+                and decision.get('status') in ['decided','executing','verified','closed']
+            ):
+                decisions.append(decision)
+        require(bool(decisions),'RECOVERY_DECISION_APPROVED','Approved Owner Decision for the exact current Recovery Plan version required')
 
     def _recovery_activation_ready(self,r):
         require(bool(r.get('acceptedAt')),'RECOVERY_ACTIVATION_READY','Recovery Plan must be accepted before activation')
@@ -1119,6 +1199,191 @@ class Engine:
     def _recovery_completion_ready(self,r):
         require(r.get('effectivenessResult') in ['effective','ineffective'] and bool(r.get('effectivenessSummary','').strip()),'RECOVERY_COMPLETION_READY','Recovery effectiveness decision required before completion')
         if r.get('effectivenessResult')=='ineffective':require(bool(r.get('followupPlanRef')) or bool(r.get('contractTrackRefs')),'RECOVERY_COMPLETION_READY','Ineffective Recovery requires a follow-up path')
+
+    def _contract_ref(self, reference, project_id, *, object_type=None, subtype=None, statuses=None):
+        require(isinstance(reference,dict),'REFERENCE_INVALID','Contract workflow reference must be an object')
+        if object_type is not None:require(reference.get('objectType')==object_type,'REFERENCE_TYPE_INVALID',object_type)
+        obj=self.resolve(reference,project_id)
+        if subtype is not None:require(obj.get('subtype')==subtype,'REFERENCE_TYPE_INVALID',subtype)
+        if statuses is not None:require(obj.get('status') in statuses,'REFERENCE_STATUS_INVALID',obj.get('status',''))
+        return obj
+
+    def _contract_refs(self, references, project_id, *, object_type=None, subtype=None, statuses=None, allow_empty=False):
+        require(isinstance(references,list) and (allow_empty or bool(references)),'REFERENCE_REQUIRED','Contract workflow references are required')
+        require(len({(x.get('objectType'),x.get('objectId'),x.get('version')) for x in references})==len(references),'REFERENCE_DUPLICATE','Contract workflow references must be unique')
+        return [self._contract_ref(x,project_id,object_type=object_type,subtype=subtype,statuses=statuses) for x in references]
+
+    def _contract_notice_identify_ready(self,r):
+        required=['noticeNo','eventRef','clauseRef','contractRuleRef','awareAt','eventAt','senderPartyId','recipientPartyId','subject']
+        require(all(r.get(x) not in [None,'',[]] for x in required),'CONTRACT_NOTICE_IDENTIFY_READY','Notice trigger, clause, rule, parties, dates and subject are required')
+        self._contract_ref(r['eventRef'],r['projectId'],object_type='WorkItem')
+        self._contract_ref(r['clauseRef'],r['projectId'],object_type='Requirement')
+        self._contract_ref(r['contractRuleRef'],r['projectId'],object_type='Requirement')
+        require(instant(r['eventAt'])<=instant(r['awareAt']),'CONTRACT_NOTICE_IDENTIFY_READY','Awareness date cannot precede event date')
+
+    def _contract_notice_due_ready(self,r):
+        self._contract_notice_identify_ready(r)
+        require(bool(r.get('noticeDueAt')),'CONTRACT_NOTICE_DUE_READY','Human-confirmed notice due date is required')
+        require(instant(r['awareAt'])<=instant(r['noticeDueAt']),'CONTRACT_NOTICE_DUE_READY','Notice due date cannot precede awareness date')
+
+    def _contract_notice_submission_ready(self,r):
+        self._contract_notice_due_ready(r)
+        require(r.get('dueCalculationConfirmed') is True,'CONTRACT_NOTICE_SUBMISSION_READY','Official notice due date needs human confirmation')
+        require(bool(r.get('evidenceIds')),'CONTRACT_NOTICE_SUBMISSION_READY','Notice submission needs preserved current evidence')
+
+    def _contract_notice_ack_ready(self,r):
+        require(bool(r.get('acknowledgementRef')),'CONTRACT_NOTICE_ACK_READY','Acknowledgement exact reference is required')
+        self._contract_ref(r['acknowledgementRef'],r['projectId'])
+        require(bool(r.get('evidenceIds')),'CONTRACT_NOTICE_ACK_READY','Acknowledgement receipt evidence is required')
+
+    def _contract_notice_followup_ready(self,r):
+        require(bool(r.get('followupDueAt')),'CONTRACT_NOTICE_FOLLOWUP_READY','Follow-up due date is required')
+        if r.get('acknowledgedAt'):require(instant(r['acknowledgedAt'])<=instant(r['followupDueAt']),'CONTRACT_NOTICE_FOLLOWUP_READY','Follow-up due date cannot precede acknowledgement')
+
+    def _contract_notice_preservation_ready(self,r):
+        refs=r.get('continuingRecordRefs')
+        self._contract_refs(refs,r['projectId'])
+        require(bool(r.get('evidenceIds')),'CONTRACT_NOTICE_PRESERVATION_READY','Rights-preservation record needs current evidence')
+
+    def _contract_notice_time_bar_risk_ready(self,r):
+        require(bool(r.get('noticeDueAt')),'CONTRACT_NOTICE_TIME_BAR_RISK_READY','Notice due date is required')
+        require(instant(self.at())>instant(r['noticeDueAt']),'CONTRACT_NOTICE_TIME_BAR_RISK_READY','Notice deadline has not elapsed')
+        require(r.get('timeBarRisk') is not True,'CONTRACT_NOTICE_TIME_BAR_RISK_READY','Time-bar risk is already recorded')
+
+    def _contract_notice_close_ready(self,r):
+        refs=r.get('downstreamCaseRefs')
+        require(isinstance(refs,list),'CONTRACT_NOTICE_CLOSE_READY','Downstream case references must be explicitly recorded, including an empty list')
+        self._contract_refs(refs,r['projectId'],allow_empty=True)
+
+    def _claim_submission_ready(self,r):
+        required=['claimNo','noticeRefs','eventRefs','clauseRefs','claimType','reliefRequested','entitlementBasis','chronology']
+        require(all(r.get(x) not in [None,'',[]] for x in required),'CLAIM_SUBMISSION_READY','Claim notice, event, clause, relief, entitlement basis and chronology are required')
+        self._contract_refs(r['noticeRefs'],r['projectId'],object_type='WorkItem',subtype='ContractNotice',statuses=['submitted','acknowledged','followup_required','preserved','closed'])
+        self._contract_refs(r['eventRefs'],r['projectId'],object_type='WorkItem')
+        self._contract_refs(r['clauseRefs'],r['projectId'],object_type='Requirement')
+        if r.get('evidenceRefs') is not None:self._contract_refs(r['evidenceRefs'],r['projectId'],object_type='Evidence',allow_empty=True)
+        if r.get('claimType') in ['cost','time_and_cost']:
+            require(isinstance(r.get('amountClaimed'),(int,float)) and bool(r.get('currency')),'CLAIM_SUBMISSION_READY','Cost claim needs claimed amount and currency')
+        if r.get('claimType') in ['time','time_and_cost']:
+            require(bool(r.get('timeImpactRef')),'CLAIM_SUBMISSION_READY','Time claim needs exact time-impact reference')
+            self._contract_ref(r['timeImpactRef'],r['projectId'])
+        if r.get('costImpactRef'):self._contract_ref(r['costImpactRef'],r['projectId'])
+
+    def _claim_receipt_ready(self,r):
+        self._claim_submission_ready(r)
+
+    def _claim_substantiation_request_ready(self,r):
+        require(isinstance(r.get('substantiationRequirements'),list) and bool(r['substantiationRequirements']),'CLAIM_SUBSTANTIATION_REQUEST_READY','Missing substantiation items must be explicit')
+
+    def _claim_entitlement_review_ready(self,r):
+        require(bool(r.get('entitlementAssessment','').strip()),'CLAIM_ENTITLEMENT_REVIEW_READY','Entitlement assessment is required')
+
+    def _claim_quantum_review_ready(self,r):
+        require(bool(r.get('recommendation','').strip()),'CLAIM_QUANTUM_REVIEW_READY','Claim recommendation is required')
+        if r.get('claimType') in ['cost','time_and_cost']:
+            require(isinstance(r.get('amountAssessed'),(int,float)),'CLAIM_QUANTUM_REVIEW_READY','Cost claim needs assessed amount')
+
+    def _claim_decision_request_ready(self,r):
+        self._claim_quantum_review_ready(r)
+
+    def _contract_owner_decision(self,r,expected):
+        decision=self._contract_ref(r.get('decisionRef'),r['projectId'],object_type='Decision',statuses=['decided','executing','verified','closed'])
+        target=decision.get('targetRef')
+        require(target=={'objectType':'WorkItem','objectId':r['id'],'version':r['version']},'CONTRACT_DECISION_TARGET_INVALID','Owner Decision must target the exact contract-track version')
+        require(decision.get('decision')==expected,'CONTRACT_DECISION_OUTCOME_INVALID','Owner Decision outcome does not match contract-track command')
+        return decision
+
+    def _claim_approved_decision_ready(self,r):
+        self._contract_owner_decision(r,'approved')
+        if r.get('claimType') in ['cost','time_and_cost']:
+            require(isinstance(r.get('amountApproved'),(int,float)),'CLAIM_APPROVED_DECISION_READY','Approved cost claim needs approved amount')
+            require(r['amountApproved']<=r['amountClaimed'],'CLAIM_APPROVED_DECISION_READY','Approved amount cannot exceed claimed amount')
+
+    def _claim_partially_approved_decision_ready(self,r):
+        self._claim_approved_decision_ready(r)
+        require(r.get('disputedItems') is not None,'CLAIM_PARTIALLY_APPROVED_DECISION_READY','Partial approval must preserve disputed items')
+        if r.get('claimType') in ['cost','time_and_cost']:require(r['amountApproved']<r['amountClaimed'],'CLAIM_PARTIALLY_APPROVED_DECISION_READY','Partial approval must remain below claimed amount')
+
+    def _claim_rejected_decision_ready(self,r):
+        self._contract_owner_decision(r,'rejected')
+
+    def _claim_disputed_decision_ready(self,r):
+        self._contract_owner_decision(r,'returned')
+        require(isinstance(r.get('disputedItems'),list) and bool(r['disputedItems']),'CLAIM_DISPUTED_DECISION_READY','Disputed claim items are required')
+
+    def _claim_settlement_ready(self,r):
+        require(bool(r.get('settlementRef')),'CLAIM_SETTLEMENT_READY','Settlement exact reference is required')
+        self._contract_ref(r['settlementRef'],r['projectId'])
+        if r.get('implementationRefs') is not None:self._contract_refs(r['implementationRefs'],r['projectId'],allow_empty=True)
+
+    def _claim_close_ready(self,r):
+        refs=r.get('implementationRefs')
+        require(isinstance(refs,list),'CLAIM_CLOSE_READY','Implementation references must be explicitly recorded, including an empty list')
+        if r.get('status') in ['approved','partially_approved','settled']:require(bool(refs),'CLAIM_CLOSE_READY','Approved or settled claim needs implementation references before close')
+        self._contract_refs(refs,r['projectId'],allow_empty=True)
+
+    def _eot_submission_ready(self,r):
+        required=['eotNo','delayEventRefs','noticeRefs','baselineScheduleRef','impactAnalysisRefs','daysClaimed']
+        require(all(r.get(x) not in [None,'',[]] for x in required),'EOT_SUBMISSION_READY','EOT delay, notice, baseline, impact and claimed days are required')
+        self._contract_refs(r['delayEventRefs'],r['projectId'],object_type='WorkItem',subtype='DelayEvent')
+        self._contract_refs(r['noticeRefs'],r['projectId'],object_type='WorkItem',subtype='ContractNotice',statuses=['submitted','acknowledged','followup_required','preserved','closed'])
+        baseline=self._contract_ref(r['baselineScheduleRef'],r['projectId'],object_type='InformationItem',subtype='Schedule',statuses=['effective'])
+        require(baseline.get('schedule',{}).get('scheduleKind')=='baseline','EOT_SUBMISSION_READY','EOT must reference an effective contractual Baseline')
+        self._contract_refs(r['impactAnalysisRefs'],r['projectId'])
+        require(isinstance(r.get('daysClaimed'),(int,float)) and r['daysClaimed']>0,'EOT_SUBMISSION_READY','EOT claimed days must be greater than zero')
+
+    def _eot_receipt_ready(self,r):
+        self._eot_submission_ready(r)
+
+    def _eot_time_review_ready(self,r):
+        require(bool(r.get('timeImpactAssessment','').strip()),'EOT_TIME_REVIEW_READY','Time-impact assessment is required')
+        require(isinstance(r.get('daysAssessed'),(int,float)) and r['daysAssessed']>=0,'EOT_TIME_REVIEW_READY','Assessed days are required')
+        require(bool(r.get('assessedCompletionDate')),'EOT_TIME_REVIEW_READY','Assessed completion date is required')
+
+    def _eot_entitlement_review_ready(self,r):
+        require(bool(r.get('entitlementAssessment','').strip()),'EOT_ENTITLEMENT_REVIEW_READY','EOT entitlement assessment is required')
+
+    def _eot_decision_request_ready(self,r):
+        require(bool(r.get('recommendation','').strip()),'EOT_DECISION_REQUEST_READY','EOT recommendation is required')
+
+    def _eot_approved_decision_ready(self,r):
+        self._contract_owner_decision(r,'approved')
+        require(isinstance(r.get('daysApproved'),(int,float)) and r['daysApproved']>0,'EOT_APPROVED_DECISION_READY','Approved EOT days are required')
+        require(r['daysApproved']<=r['daysClaimed'],'EOT_APPROVED_DECISION_READY','Approved EOT days cannot exceed claimed days')
+        require(bool(r.get('revisedCompletionDate')),'EOT_APPROVED_DECISION_READY','Revised contractual completion date is required')
+        require(r['daysApproved']==r['daysClaimed'],'EOT_APPROVED_DECISION_READY','Full approval must equal claimed EOT days')
+
+    def _eot_partially_approved_decision_ready(self,r):
+        self._contract_owner_decision(r,'approved')
+        require(isinstance(r.get('daysApproved'),(int,float)) and 0<r['daysApproved']<r['daysClaimed'],'EOT_PARTIALLY_APPROVED_DECISION_READY','Partial approval must be greater than zero and below claimed EOT days')
+        require(bool(r.get('revisedCompletionDate')),'EOT_PARTIALLY_APPROVED_DECISION_READY','Revised contractual completion date is required')
+
+    def _eot_rejected_decision_ready(self,r):
+        self._contract_owner_decision(r,'rejected')
+
+    def _eot_disputed_decision_ready(self,r):
+        self._contract_owner_decision(r,'returned')
+        require(bool(r.get('disputeReason','').strip()),'EOT_DISPUTED_DECISION_READY','EOT dispute reason is required')
+
+    def _eot_baseline_update_ready(self,r):
+        require(r.get('decisionOutcome') in ['approved','partially_approved'],'EOT_BASELINE_UPDATE_READY','Only approved EOT may request Baseline revision')
+        require(isinstance(r.get('daysApproved'),(int,float)) and r['daysApproved']>0 and bool(r.get('revisedCompletionDate')),'EOT_BASELINE_UPDATE_READY','Approved days and revised completion date are required')
+
+    def _eot_baseline_revision_confirmed(self,r):
+        basis=r.get('baselineRevisionBasisRef')
+        require(bool(basis),'EOT_BASELINE_REVISION_CONFIRMED','Approved EOT exact-version basis is required')
+        approved=self.resolve(basis,r['projectId'])
+        require(basis.get('objectType')=='WorkItem' and approved.get('subtype')=='EOTRequest' and approved.get('status') in ['approved','partially_approved'],'EOT_BASELINE_REVISION_CONFIRMED','Baseline revision basis must be an approved historical EOT version')
+        reference=r.get('baselineRevisionRef')
+        baseline=self._contract_ref(reference,r['projectId'],object_type='InformationItem',subtype='Schedule',statuses=['effective'])
+        schedule=baseline.get('schedule',{})
+        require(schedule.get('scheduleKind')=='baseline','EOT_BASELINE_REVISION_CONFIRMED','Baseline revision must be contractual Baseline')
+        require(reference.get('objectId')!=r['baselineScheduleRef'].get('objectId'),'EOT_BASELINE_REVISION_CONFIRMED','EOT approval requires a new Baseline record, not mutation of the existing Baseline')
+        require(schedule.get('revisionBasisRef')==basis,'EOT_BASELINE_REVISION_CONFIRMED','Baseline revision must cite the exact approved EOT version')
+        require(schedule.get('contractualCompletionAt')==r.get('revisedCompletionDate'),'EOT_BASELINE_REVISION_CONFIRMED','Baseline contractual completion must match approved EOT decision')
+
+    def _eot_rejected_close_ready(self,r):
+        require(r.get('decisionOutcome')=='rejected','EOT_REJECTED_CLOSE_READY','Only rejected EOT may close without Baseline revision')
 
     def _activate_schedule_baseline(self,before,proposed,request,party_id,role_id,key):
         prior=self._effective_baselines(proposed,exclude_id=proposed['id'])

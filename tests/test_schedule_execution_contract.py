@@ -194,6 +194,77 @@ class ScheduleExecutionContractTests(unittest.TestCase):
         self.assertTrue(self.contract['recovery_boundary']['accepted_recovery_does_not_revise_baseline'])
         self.assertTrue(self.contract['recovery_boundary']['accepted_recovery_does_not_approve_eot_or_cost'])
 
+    def test_recovery_owner_decision_must_target_exact_current_recovery_version(self):
+        baseline=self.make_baseline();progress=self.freeze_progress(baseline);delay=self.delay(baseline,progress)
+        delay=self.f.command('delay_event',delay,'notify',{},'SUP')
+        recovery=self.f.create('recovery_plan',dict(title='Recovery Decision Plan',data={'triggerDelayEventRefs':[self.f.ref('WorkItem',delay['id'])]}),'SUP')
+        recovery=self.f.command('recovery_plan',recovery,'begin_recovery_draft',{},'CON')
+        payload=dict(
+            recoveryPlanNo='RP-DECISION-001',
+            targetMilestoneIds=['M1'],
+            targetCompletionAt='2026-12-31T00:00:00Z',
+            currentForecastCompletionAt='2027-01-15T00:00:00Z',
+            proposedForecastCompletionAt='2026-12-31T00:00:00Z',
+            strategy='Owner decision required',
+            qualityImpact='none',
+            safetyImpact='none',
+            costImpact='separate',
+            contractImpact='Owner decision required',
+            qualityStandardsRelaxed=False,
+            safetyStandardsRelaxed=False,
+            recoveryScheduleRef=self.recovery_schedule(),
+            ownerDecisionRequired=True,
+            monitoringPeriod='weekly',
+            monitoringKpis=['completion'],
+        )
+        recovery=self.f.command('recovery_plan',recovery,'submit_recovery',payload,'CON')
+        recovery=self.f.command('recovery_plan',recovery,'receive_recovery',{},'SUP')
+        recovery=self.f.command('recovery_plan',recovery,'start_recovery_review',{},'SUP')
+        recovery=self.f.command('recovery_plan',recovery,'request_recovery_decision',{},'SUP')
+        self.assertEqual(recovery['status'],'decision_pending')
+
+        def decision(target_ref, title, **scope_changes):
+            oid=uid()
+            scope=self.f.scope()
+            scope.update(scope_changes)
+            self.f.engine.bootstrap('Decision',dict(
+                id=oid,projectId=self.f.project,status='decided',title=title,
+                targetRef=target_ref,options=[{'id':'approve'}],impact={'schedule':'recovery'},
+                recommendation='approve',actionIds=[],decision='approved',
+                decisionReason='Owner approved',decisionAt=AT,**scope))
+            return self.f.ref('Decision',oid)
+
+        wrong=decision(self.f.ref('InformationItem',baseline['id']),'Wrong target')
+        with self.assertRaisesRegex(ContractError,'exact current Recovery Plan version'):
+            self.f.command('recovery_plan',recovery,'accept_recovery',{'decisionRefs':[wrong]},'SUP')
+
+        other=self.f.create('recovery_plan',dict(title='Other Recovery',data={'triggerDelayEventRefs':[self.f.ref('WorkItem',delay['id'])]}),'SUP')
+        other_decision=decision(self.f.ref('WorkItem',other['id']),'Other recovery target')
+        with self.assertRaisesRegex(ContractError,'exact current Recovery Plan version'):
+            self.f.command('recovery_plan',recovery,'accept_recovery',{'decisionRefs':[other_decision]},'SUP')
+
+        stale_target={'objectType':'WorkItem','objectId':recovery['id'],'version':recovery['version']-1}
+        stale=decision(stale_target,'Stale recovery version')
+        with self.assertRaisesRegex(ContractError,'exact current Recovery Plan version'):
+            self.f.command('recovery_plan',recovery,'accept_recovery',{'decisionRefs':[stale]},'SUP')
+
+        wrong_scope=decision(self.f.ref('WorkItem',recovery['id']),'Wrong scope',locationId=uid())
+        with self.assertRaisesRegex(ContractError,'exact current Recovery Plan version'):
+            self.f.command('recovery_plan',recovery,'accept_recovery',{'decisionRefs':[wrong_scope]},'SUP')
+
+        stale_decision=decision(self.f.ref('WorkItem',recovery['id']),'Stale Decision ref')
+        current_decision=self.f.engine.get('Decision',stale_decision['objectId'])
+        current_decision['version']+=1
+        current_decision['updatedAt']=self.f.engine.at()
+        self.f.engine._save('Decision',current_decision)
+        with self.assertRaises(ContractError) as stale_error:
+            self.f.command('recovery_plan',recovery,'accept_recovery',{'decisionRefs':[stale_decision]},'SUP')
+        self.assertEqual(stale_error.exception.code,'REFERENCE_STALE')
+
+        exact=decision(self.f.ref('WorkItem',recovery['id']),'Exact recovery decision')
+        recovery=self.f.command('recovery_plan',recovery,'accept_recovery',{'decisionRefs':[exact]},'SUP')
+        self.assertEqual(recovery['status'],'accepted_for_execution')
+
     def test_recovery_effectiveness_is_command_derived(self):
         baseline=self.make_baseline();progress=self.freeze_progress(baseline);delay=self.delay(baseline,progress)
         delay=self.f.command('delay_event',delay,'notify',{},'SUP')

@@ -598,6 +598,88 @@ class ScheduleHttpPersistenceTests(unittest.TestCase):
         self.assertEqual(replay.status_code, 200, replay.text)
         self.assertEqual(replay.json(), accepted.json())
 
+    def test_recovery_owner_decision_must_target_exact_current_recovery_version_http(self):
+        baseline = self.create_effective_baseline()
+        progress, _, _ = self.freeze_progress(baseline)
+        delay = self.create_delay(baseline, progress)
+        response = self.command("delay-events", delay, "notify", "SUP")
+        self.assertEqual(response.status_code, 200, response.text)
+        delay = response.json()["record"]
+
+        response = self.client.post(
+            f"/projects/{self.project_id}/recovery-plans",
+            headers={**self.headers["SUP"], "Idempotency-Key": uid()},
+            json={
+                "roleAssignmentId": self.sessions["SUP"]["actor"]["roleAssignmentId"],
+                "clientObjectId": uid(),
+                "payload": {
+                    **self.scope,
+                    "title": "Owner decision Recovery",
+                    "evidenceIds": [self.evidence_id],
+                    "data": {"triggerDelayEventRefs": [self.ref(delay, "WorkItem")]},
+                },
+            },
+        )
+        self.assertEqual(response.status_code, 201, response.text)
+        recovery = response.json()["record"]
+        response = self.command("recovery-plans", recovery, "begin_recovery_draft", "CON")
+        self.assertEqual(response.status_code, 200, response.text)
+        recovery = response.json()["record"]
+
+        payload = {
+            "recoveryPlanNo": "RP-DECISION-HTTP",
+            "targetMilestoneIds": ["M1"],
+            "targetCompletionAt": "2026-12-31T00:00:00Z",
+            "currentForecastCompletionAt": "2027-01-15T00:00:00Z",
+            "proposedForecastCompletionAt": "2026-12-31T00:00:00Z",
+            "strategy": "Owner decision required",
+            "qualityImpact": "none",
+            "safetyImpact": "none",
+            "costImpact": "separate",
+            "contractImpact": "Owner decision required",
+            "qualityStandardsRelaxed": False,
+            "safetyStandardsRelaxed": False,
+            "recoveryScheduleRef": self.bootstrap_recovery_schedule(),
+            "ownerDecisionRequired": True,
+            "monitoringPeriod": "weekly",
+            "monitoringKpis": ["completion"],
+        }
+        for command, actor, command_payload in [
+            ("submit_recovery", "CON", payload),
+            ("receive_recovery", "SUP", {}),
+            ("start_recovery_review", "SUP", {}),
+            ("request_recovery_decision", "SUP", {}),
+        ]:
+            response = self.command("recovery-plans", recovery, command, actor, command_payload)
+            self.assertEqual(response.status_code, 200, response.text)
+            recovery = response.json()["record"]
+
+        wrong = self.bootstrap_revision_decision(baseline)
+        rejected = self.command(
+            "recovery-plans",
+            recovery,
+            "accept_recovery",
+            "SUP",
+            {"decisionRefs": [wrong]},
+        )
+        self.assertEqual(rejected.status_code, 409, rejected.text)
+        self.assertEqual(rejected.json()["code"], "RECOVERY_DECISION_APPROVED")
+        self.assertEqual(
+            self.app.state.store.engine.get("WorkItem", recovery["id"])["status"],
+            "decision_pending",
+        )
+
+        exact = self.bootstrap_revision_decision(recovery)
+        accepted = self.command(
+            "recovery-plans",
+            recovery,
+            "accept_recovery",
+            "SUP",
+            {"decisionRefs": [exact]},
+        )
+        self.assertEqual(accepted.status_code, 200, accepted.text)
+        self.assertEqual(accepted.json()["record"]["status"], "accepted_for_execution")
+
     def test_delay_and_recovery_persist_without_mutating_entitlement_or_baseline(self):
         baseline = self.create_effective_baseline()
         progress, _, _ = self.freeze_progress(baseline)

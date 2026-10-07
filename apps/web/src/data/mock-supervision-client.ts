@@ -8,7 +8,7 @@ import type {
   WorkItem,
   Workspace,
 } from "./ui-contract";
-import type { SupervisionClient, UploadOptions } from "./supervision-client";
+import type { ScheduleSourceImportDetail, ScheduleSourceImportInput, ScheduleSourceImportResult, SupervisionClient, UploadOptions } from "./supervision-client";
 import { createMockWorkspace } from "./mock-workspace";
 import { registerProjectionCatalog } from "./register-projection-catalog.generated";
 
@@ -66,6 +66,17 @@ export class MockSupervisionClient implements SupervisionClient {
     _options: UploadOptions,
     _progress?: (offset: number, total: number) => void,
   ): Promise<RecordDTO> {
+    return previewOnly();
+  }
+
+  importScheduleSource(
+    _input: ScheduleSourceImportInput,
+    _key?: string,
+  ): Promise<ScheduleSourceImportResult> {
+    return previewOnly();
+  }
+
+  scheduleSourceImportDetail(_objectId: string): Promise<ScheduleSourceImportDetail> {
     return previewOnly();
   }
 
