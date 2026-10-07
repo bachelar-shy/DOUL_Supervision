@@ -46,7 +46,7 @@ export function DrawingSourceRegistrationPanel({ client, workspace, onChanged, o
       <ActionButton onClick={prepare} disabled={busy}>새 개정 등록 검토</ActionButton>
     </div> : <p>도면 원본 등록은 설계자 개발 역할에서 진행하십시오. 승인과 현장 배포는 별도 절차입니다.</p>}
     {error && <p role="alert">{error}</p>}
-    {result && <div role="status"><p>등록 완료: {result.drawing.title} · 개정 {String(result.drawing.revision)} · 원본 v{result.drawing.version}</p><p>검토 요청: {result.approval ? '접수 대기' : '요청하지 않음'} · 현장 사용 전 승인·배포 확인 필요</p>{result.approval && onNavigate && <ActionButton onClick={() => onNavigate('approvals')}>승인 검토 화면</ActionButton>}</div>}
+    {result && <div role="status"><p>등록 완료: {result.drawing.title} · 개정 {String(result.drawing.revision)} · 원본 v{result.drawing.version}</p><p>검토 요청: {result.approval ? '접수 대기' : '요청하지 않음'} · 현장 사용 전 승인·배포 확인 필요</p>{result.approval && onNavigate && <ActionButton onClick={() => document.querySelector('[aria-label="도면 기술 승인"]')?.scrollIntoView({ behavior: 'smooth' })}>승인 검토 화면</ActionButton>}</div>}
     {confirming && <section role="dialog" aria-modal="true" aria-label="새 도면 개정 등록 확인" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"><div className="max-w-xl rounded-lg bg-white p-6"><h3>새 도면 개정 등록 확인</h3><p>{title} · 개정 {revision}</p><p>원본을 변경하지 않고 새 기록으로 등록합니다. 검토 요청은 승인 완료를 의미하지 않습니다.</p>{error && <p role="alert">{error}</p>}<ActionButton onClick={() => setConfirming(false)} disabled={busy}>취소</ActionButton><ActionButton onClick={() => void submit()} disabled={busy}>{busy ? '등록 중…' : '확인 후 개정 등록'}</ActionButton></div></section>}
   </Panel></section>;
 }

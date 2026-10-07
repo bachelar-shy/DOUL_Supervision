@@ -23,10 +23,11 @@ const scopeMatches = (inspection: RecordDTO, observation: RecordDTO) =>
 
 interface PendingRequest { key: string; body: DrawingMarkupIssueInput }
 
-export function DrawingMarkupIssuePanel({ client, workspace, selectedMarkupId, onChanged, onSelect, onNavigate }: {
+export function DrawingMarkupIssuePanel({ client, workspace, selectedMarkupId, refreshVersion = 0, onChanged, onSelect, onNavigate }: {
   client: SupervisionClient;
   workspace: Workspace;
   selectedMarkupId: string | null;
+  refreshVersion?: number;
   onChanged?: () => void;
   onSelect?: (id: string | null) => void;
   onNavigate?: (route: string) => void;
@@ -63,7 +64,7 @@ export function DrawingMarkupIssuePanel({ client, workspace, selectedMarkupId, o
       .catch(reason => { if (alive && sequence === requestId.current) setError(reason instanceof Error ? reason.message : String(reason)); })
       .finally(() => { if (alive && sequence === requestId.current) setLoading(false); });
     return () => { alive = false; requestId.current += 1; };
-  }, [client, selectedMarkupId, workspace.project.id, roleKey, workspace.items]);
+  }, [client, selectedMarkupId, workspace.project.id, roleKey, workspace.items, refreshVersion]);
 
   const inspections = useMemo(() => workspace.items.filter(failedRoot), [workspace.items]);
   const selectedInspection = inspections.find(item => item.record.id === inspectionId);

@@ -120,15 +120,15 @@ export async function fetchPdfDrawingMarkupHistory(client: SupervisionClient, id
     const parsed = parsePdfDrawingMarkup(snapshot);
     if (!parsed || (typeof entry.markupId === "string" && entry.markupId !== parsed.id)) return [];
     const reason = typeof entry.reason === "string" ? entry.reason
-      : typeof snapshot.updateReason === "string" ? snapshot.updateReason
-        : typeof snapshot.deleteReason === "string" ? snapshot.deleteReason
+      : typeof snapshot.deleteReason === "string" ? snapshot.deleteReason
+        : typeof snapshot.updateReason === "string" ? snapshot.updateReason
           : parsed.version === 1 ? "Initial markup" : undefined;
-    const eventAt = typeof entry.createdAt === "string" ? entry.createdAt
-      : typeof snapshot.updatedAt === "string" ? snapshot.updatedAt
-        : typeof snapshot.deletedAt === "string" ? snapshot.deletedAt : snapshot.createdAt;
-    const eventBy = typeof entry.createdBy === "string" ? entry.createdBy
-      : typeof snapshot.updatedBy === "string" ? snapshot.updatedBy
-        : typeof snapshot.deletedBy === "string" ? snapshot.deletedBy : snapshot.createdBy;
+    const eventAt = entry.snapshot && typeof entry.createdAt === "string" ? entry.createdAt
+      : typeof snapshot.deletedAt === "string" ? snapshot.deletedAt
+        : typeof snapshot.updatedAt === "string" ? snapshot.updatedAt : snapshot.createdAt;
+    const eventBy = entry.snapshot && typeof entry.createdBy === "string" ? entry.createdBy
+      : typeof snapshot.deletedBy === "string" ? snapshot.deletedBy
+        : typeof snapshot.updatedBy === "string" ? snapshot.updatedBy : snapshot.createdBy;
     return [{ ...parsed,
       ...(reason ? { reason } : {}),
       ...(typeof snapshot.updateReason === "string" ? { updateReason: snapshot.updateReason } : {}),

@@ -624,7 +624,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       if (requestSequence !== markupContextSequence.current) return;
       setMarkups((current) => current.filter((item) => item.id !== deleted.id));
       setSelectedMarkup(deleted);
-      onSelectMarkupRef.current?.(null);
+      onSelectMarkupRef.current?.(deleted.id);
       const history = await fetchPdfDrawingMarkupHistory(client, deleted.id);
       if (requestSequence !== markupContextSequence.current) return;
       setMarkupHistory(history);

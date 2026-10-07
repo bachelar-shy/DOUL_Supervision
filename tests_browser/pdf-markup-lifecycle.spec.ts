@@ -133,7 +133,7 @@ test("edits and tombstones a rectangle memo while preserving its version history
   await expect(viewer.getByRole("button", { name: "주석 수정" })).toBeVisible();
 
   await viewer.getByRole("button", { name: /이력 보기/ }).click();
-  await expect(viewer.getByRole("list", { name: "주석 이력" }).getByText(new RegExp(memo))).toBeVisible();
+  await expect(viewer.getByRole("list", { name: "주석 이력" }).getByText(new RegExp(`^v1 · ${memo}`))).toBeVisible();
   await expect(viewer.getByRole("list", { name: "주석 이력" }).getByText(new RegExp(revisedMemo))).toBeVisible();
   await expect(viewer.getByRole("list", { name: "주석 이력" }).getByText(/clarified note/)).toBeVisible();
   await viewer.getByRole("button", { name: "주석 삭제" }).click();

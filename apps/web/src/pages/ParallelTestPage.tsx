@@ -8,6 +8,7 @@ import { LocationEditorPanel } from "./parallel/LocationEditorPanel";
 import { SafetyConnectedPanel } from "./parallel/SafetyConnectedPanel";
 import { InspectionCaseFlowPanel } from "./parallel/InspectionCaseFlowPanel";
 import { DrawingPdfBindingPanel } from "./parallel/DrawingPdfBindingPanel";
+import { DrawingTechnicalApprovalPanel } from "./parallel/DrawingTechnicalApprovalPanel";
 import { DrawingFieldManagementPanel } from "./parallel/DrawingFieldManagementPanel";
 import { DrawingSourceRegistrationPanel } from "./parallel/DrawingSourceRegistrationPanel";
 import { DrawingMarkupIssuePanel } from "./parallel/DrawingMarkupIssuePanel";
@@ -45,6 +46,8 @@ function stringify(value: unknown) { return JSON.stringify(value, null, 2) ?? ""
 export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onSelect, onOpenCommand }: { client: SupervisionClient; workspace: Workspace; onNavigate: (route: string) => void; onChanged?: () => void; onSelect?: (id: string | null) => void; onOpenCommand?: (item: WorkItem, action: CommandDescriptor) => void }) {
   const [active, setActive] = useState<ModuleId>("drawings");
   const [selectedMarkupId, setSelectedMarkupId] = useState<string | null>(null);
+  const [markupRefreshVersion, setMarkupRefreshVersion] = useState(0);
+  const selectMarkup = useCallback((id: string | null) => { setSelectedMarkupId(id); setMarkupRefreshVersion(value => value + 1); }, []);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedSafetyId, setSelectedSafetyId] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -125,10 +128,11 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     <div className="parallel-test-tabs" role="tablist" aria-label="테스트 모듈">{modules.map(module => <button key={module.id} type="button" role="tab" aria-selected={active === module.id} className={active === module.id ? "active" : ""} onClick={() => { setActive(module.id); setSelectedIndex(0); }}>{module.label}</button>)}</div>
     {active === "drawing-compare" && <Suspense fallback={<div role="status">도면 비교를 불러오는 중…</div>}><DrawingComparePanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} /></Suspense>}
     {active === "drawings" && <DrawingSourceRegistrationPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onNavigate={onNavigate} />}
+    {active === "drawings" && <DrawingTechnicalApprovalPanel workspace={workspace} onOpenCommand={onOpenCommand} />}
     {active === "drawings" && <DrawingFieldManagementPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "drawings" && <DrawingPdfBindingPanel client={client} workspace={workspace} onChanged={onChanged} />}
-    {active === "drawings" && <Suspense fallback={<div role="status">PDF 뷰어를 불러오는 중…</div>}><PdfViewerPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onSelectMarkup={setSelectedMarkupId} /></Suspense>}
-    {active === "drawings" && <DrawingMarkupIssuePanel client={client} workspace={workspace} selectedMarkupId={selectedMarkupId} onChanged={onChanged} onSelect={onSelect} onNavigate={onNavigate} />}
+    {active === "drawings" && <Suspense fallback={<div role="status">PDF 뷰어를 불러오는 중…</div>}><PdfViewerPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onSelectMarkup={selectMarkup} /></Suspense>}
+    {active === "drawings" && <DrawingMarkupIssuePanel client={client} workspace={workspace} selectedMarkupId={selectedMarkupId} refreshVersion={markupRefreshVersion} onChanged={onChanged} onSelect={onSelect} onNavigate={onNavigate} />}
     {active === "locations" && <LocationEditorPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "notifications" && <NotificationEventsPanel key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onSelect={onSelect} onNavigate={onNavigate} />}
     {active === "work-inbox" && <InspectionCaseFlowPanel client={client} workspace={workspace} onChanged={onChanged} onSelect={onSelect} onOpenCommand={onOpenCommand} />}

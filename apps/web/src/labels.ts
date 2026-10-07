@@ -92,6 +92,9 @@ export const states: Record<string, string> = {
   baseline_update_pending: "기준공정 개정 대기",
 };
 export const commands: Record<string, string> = {
+  review: "기술 검토 시작",
+  approve: "기술 승인",
+  revoke: "승인 철회",
   "submit_baseline": "기준공정 제출",
   "receive_baseline": "기준공정 접수",
   "return_baseline": "기준공정 보완 요청",
