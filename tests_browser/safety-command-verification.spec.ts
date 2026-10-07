@@ -91,7 +91,14 @@ test("selected current SafetyStopOrder uses server actions and refuses a guarded
   expect(uiWrites).toEqual([]);
 
   await acknowledge.click();
-  await page.getByRole("dialog").getByRole("button", { name: "확인 후 실행", exact: true }).click();
+  const acknowledgeDialog = page.getByRole("dialog");
+  const commandEvidence = acknowledgeDialog.getByLabel("명령 증빙 ID", { exact: true });
+  if (await commandEvidence.count()) await commandEvidence.fill(context.evidenceId);
+  const acknowledgeResponse = page.waitForResponse(response => response.request().method() === "POST" && response.url().endsWith(`/safety-stop-orders/${stop.id}/acknowledge-stop`));
+  await acknowledgeDialog.getByRole("button", { name: "확인 후 실행", exact: true }).click();
+  const acknowledgedCommand = await acknowledgeResponse;
+  expect(acknowledgedCommand.status(), await acknowledgedCommand.text()).toBe(200);
+  expect((await acknowledgedCommand.json()).record).toMatchObject({ id: stop.id, status: "acknowledged", version: stop.version + 1 });
   await expect.poll(async () => {
     const current = await request.get(`/api/projects/${sup.projectId}/safety-stop-orders/${stop.id}`, { headers: headers(con) });
     return (await current.json()).status;
