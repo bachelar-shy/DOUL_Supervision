@@ -99,6 +99,7 @@ def build_work_inbox(
     preflight: Callable[[str, dict[str, Any], dict[str, Any], dict[str, Any]], list[dict[str, Any]]],
     limit: int = DEFAULT_PAGE_SIZE,
     cursor: str | None = None,
+    has_candidates: Callable[[str, dict[str, Any], dict[str, Any], dict[str, Any]], bool] | None = None,
 ) -> dict[str, Any]:
     """Build a page of records with existing command candidates for one role.
 
@@ -117,7 +118,10 @@ def build_work_inbox(
         raise ValueError(f"limit must be between 1 and {MAX_PAGE_SIZE}")
 
     after = _decode_cursor(cursor)
-    candidates: list[tuple[datetime, str, dict[str, Any]]] = []
+    # Entries hold only sort keys, machine identity and (on the compatibility
+    # path) candidate data. The optimized path does not retain a copied record
+    # or action list for every item while it computes the page.
+    candidates: list[tuple[datetime, str, str, str, dict[str, Any] | None, list[dict[str, Any]] | None]] = []
 
     for (kind, object_id), raw_record in engine._records.items():
         machine = engine._record_machines.get((kind, object_id))
@@ -135,40 +139,52 @@ def build_work_inbox(
                 continue
             raise
 
-        command_candidates = preflight(machine, record, session, role)
-        if not command_candidates:
+        command_candidates = None
+        if has_candidates is None:
+            command_candidates = preflight(machine, record, session, role)
+            if not command_candidates:
+                continue
+        elif not has_candidates(machine, record, session, role):
             continue
 
         updated_at = _updated_at(record)
-        candidates.append(
-            (
-                updated_at,
-                object_id,
-                {
-                    "machine": machine,
-                    "record": deepcopy(record),
-                    "commandCandidates": deepcopy(command_candidates),
-                },
-            )
-        )
+        # The legacy path keeps its callback result and detached record, so
+        # callback behavior and returned values remain unchanged. The fast
+        # path only retains identifiers until the requested page is known.
+        legacy_record = record if has_candidates is None else None
+        candidates.append((updated_at, object_id, kind, machine, legacy_record, command_candidates))
 
     candidates.sort(key=lambda item: (-_micros(item[0]), item[1]))
     total = len(candidates)
+    start = 0
     if after is not None:
         after_updated_at, after_id = after
-        candidates = [
-            item
-            for item in candidates
+        start = next((
+            index for index, item in enumerate(candidates)
             if item[0] < after_updated_at
             or (item[0] == after_updated_at and item[1] > after_id)
-        ]
-    page = candidates[:limit]
-    next_cursor = _encode_cursor(page[-1][0], page[-1][1]) if len(candidates) > limit and page else None
+        ), len(candidates))
+    page = candidates[start : start + limit]
+    has_more = start + len(page) < total
+    next_cursor = _encode_cursor(page[-1][0], page[-1][1]) if has_more and page else None
+
+    records = []
+    for _, object_id, kind, machine, legacy_record, command_candidates in page:
+        record = legacy_record if legacy_record is not None else engine.get(kind, object_id)
+        if command_candidates is None:
+            command_candidates = preflight(machine, record, session, role)
+            if not command_candidates:
+                raise RuntimeError("has_candidates disagreed with preflight for a paged record")
+        records.append(deepcopy({
+            "machine": machine,
+            "record": record,
+            "commandCandidates": command_candidates,
+        }))
 
     return {
         "projectId": project_id,
         "roleAssignmentId": role["id"],
-        "records": [item for _, _, item in page],
+        "records": records,
         "total": total,
         "limit": limit,
         "nextCursor": next_cursor,
