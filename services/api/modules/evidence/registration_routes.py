@@ -125,7 +125,7 @@ def install_evidence_registration_routes(
                 return JSONResponse(record, status_code=201)
         except ContractError as exc:
             code = exc.code
-            status = 401 if code == "UNAUTHENTICATED" else 403 if code == "NOT_AUTHORIZED" else 404 if code in {"NOT_FOUND", "PROJECT_MISMATCH"} else 413 if code == "PAYLOAD_TOO_LARGE" else 422
+            status = 401 if code == "UNAUTHENTICATED" else 403 if code == "NOT_AUTHORIZED" else 404 if code in {"NOT_FOUND", "PROJECT_MISMATCH"} else 409 if code == "IDEMPOTENCY_CONFLICT" else 413 if code == "PAYLOAD_TOO_LARGE" else 422
             return _fail(code, str(exc), status)
         except (ValueError, OSError, json.JSONDecodeError):
             return _fail("INVALID_REQUEST", "Registration request or quarantine object is invalid", 422)

@@ -280,6 +280,16 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             quarantine_root=evidence_root / 'evidence-quarantine',
             staging_root=evidence_root / 'evidence-staging',
         )
+        from services.api.modules.evidence.registration_routes import install_evidence_registration_routes
+        install_evidence_registration_routes(app, store=store, get_actor=identity,
+            get_role=lambda project_id, request, actor: role_for(actor, project_id, request.headers.get('x-roleassignment-id')),
+            key_for=key_for, quarantine_root=evidence_root / 'evidence-quarantine', sniff=sniff)
+        from services.api.modules.location.edit_routes import register_location_edit_routes
+        register_location_edit_routes(app, store=store, identity=identity, role_for=role_for, demo_enabled=demo)
+
+    from services.api.modules.notification_events import reconcile_notification_events, read_receipts_for_projection
+    from services.api.modules.notification_routes import install_notification_read_route
+    install_notification_read_route(app, store, identity=identity, role_for=role_for)
 
     @app.get('/ready')
     def ready():
@@ -367,10 +377,20 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     def parallel_notifications(project_id:str,request:Request):
         session=identity(request)
         with store.transaction():
+            role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+        # Reconciliation writes only actor-addressed event notices, never SLA deadlines.
+        reconcile_notification_events(store)
+        with store.transaction():
             role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
-            # Only canonical persisted DTOs; SLA/deadline intents are never synthesized.
-            notifications=[deepcopy(record) for (kind,_),record in store.engine._records.items() if kind=='Notification']
-            receipts=store.meta.get('notificationReadReceipts',{})
+            notifications=[]
+            for (kind,_),record in store.engine._records.items():
+                if kind!='Notification' or record.get('projectId')!=project_id or record.get('recipientPartyId')!=session['partyId']: continue
+                try:
+                    source=store.engine.resolve(record['sourceRef'],project_id)
+                    readable(source,session,role)
+                except ContractError: continue
+                notifications.append(deepcopy(record))
+            receipts=read_receipts_for_projection(store)
             try:return project_notification_inbox(notifications,recipient_party_id=session['partyId'],accessible_project_ids=[project_id],read_receipts=receipts)
             except NotificationProjectionError as exc:raise ContractError('INVALID_REQUEST',str(exc))
 

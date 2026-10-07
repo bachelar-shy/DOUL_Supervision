@@ -113,7 +113,7 @@ class EvidenceRegistrationTests(unittest.TestCase):
         first = self.register(self.body(key, digest))
         self.assertEqual(first.status_code, 201, first.text)
         conflict = self.register({**self.body(key, digest), "fileName": "changed.png"})
-        self.assertEqual(conflict.status_code, 422)
+        self.assertEqual(conflict.status_code, 409)
         count = len([1 for kind, _ in self.store.engine._records if kind == "Evidence"])
         self.assertEqual(count, self.baseline_evidence_count + 1)
 
