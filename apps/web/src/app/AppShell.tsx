@@ -18,6 +18,7 @@ import {
   ContractPage,
   DocumentPage,
   OwnerGovernancePage,
+  ParallelTestPage,
   RegisterPage,
   SafetyPage,
   SchedulePage,
@@ -457,6 +458,9 @@ export function AppShell({ client }: { client: SupervisionClient }) {
               )}
               {safeRoute === "admin" && (
                 <AdminPage client={client} workspace={workspace} />
+              )}
+              {safeRoute === "parallel-test" && (
+                <ParallelTestPage client={client} workspace={workspace} onNavigate={nav} />
               )}
             </>
           )}

@@ -15,6 +15,7 @@ export const routes: readonly UiRoute[] = [
   { id: "registers", label: "관리대장", icon: "table" },
   { id: "rfis", label: "설계질의", icon: "layers" },
   { id: "admin", label: "배치·권한", icon: "users" },
+  { id: "parallel-test", label: "병렬 기능 테스트", icon: "layers" },
 ];
 
 const allRouteIds = routes.map((route) => route.id);

@@ -10,3 +10,4 @@ export { TodayPage } from "./TodayPage";
 export { WorkbenchPage } from "./WorkbenchPage";
 
 export { SchedulePage } from "./SchedulePage";
+export { ParallelTestPage } from "./ParallelTestPage";
