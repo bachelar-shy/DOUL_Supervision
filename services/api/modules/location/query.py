@@ -8,6 +8,8 @@ authority, or write behavior is introduced here.
 from collections import deque
 from copy import deepcopy
 
+from app.reference.validation import ContractError, require
+
 
 def _ref(location_id, version):
     return {
@@ -25,7 +27,62 @@ def _sort_key(record):
     )
 
 
-def query_location_tree(engine, project_id):
+def _authoritative_version(record, kind):
+    version = record.get("version")
+    require(
+        isinstance(version, int) and not isinstance(version, bool) and version >= 1,
+        "AUTHORITATIVE_VERSION_INVALID",
+        f"{kind} must have a valid authoritative version",
+    )
+    return version
+
+
+def _is_visibility_denial(error):
+    return error.code in {"SCOPE_MISMATCH", "NOT_FOUND", "ORGANIZATION_MISMATCH"}
+
+
+def _authorize_read(engine, record, party_id, role_id, *, is_location=False):
+    # Location records identify themselves with `id`; Engine.authorize_read
+    # evaluates the existing location scope against `locationId`.
+    authorization_record = (
+        dict(record, locationId=record["id"]) if is_location else record
+    )
+    try:
+        engine.authorize_read(authorization_record, party_id, role_id)
+        return True
+    except ContractError as error:
+        if _is_visibility_denial(error):
+            return False
+        raise
+
+
+def _readable_drawing_anchors(engine, anchors, project_id, party_id, role_id):
+    readable = []
+    for anchor in anchors:
+        if not isinstance(anchor, dict):
+            continue
+        drawing_ref = anchor.get("drawingRef")
+        if (
+            not isinstance(drawing_ref, dict)
+            or drawing_ref.get("objectType") != "InformationItem"
+            or not isinstance(drawing_ref.get("objectId"), str)
+            or not isinstance(drawing_ref.get("version"), int)
+            or isinstance(drawing_ref.get("version"), bool)
+            or drawing_ref["version"] < 1
+        ):
+            continue
+        try:
+            drawing = engine.resolve(drawing_ref, project_id=project_id)
+        except ContractError:
+            # Missing, malformed, or foreign-project references are not
+            # returned to a caller who cannot safely resolve them.
+            continue
+        if _authorize_read(engine, drawing, party_id, role_id):
+            readable.append(deepcopy(anchor))
+    return readable
+
+
+def query_location_tree(engine, project_id, *, party_id=None, role_id=None):
     """Return the current locations for one project as a safe flat tree.
 
     items is ordered breadth-first from the project roots. Each item has a
@@ -35,16 +92,35 @@ def query_location_tree(engine, project_id):
     is broken only in treeParentRef at its lexically smallest ID; the source
     references remain untouched and every cycle member is marked.
 
-    The function is read-only and deliberately does not infer permissions or
-    mutate stored records. Callers must perform project authorization before
-    exposing this projection.
+    Supplying party_id and role_id applies the existing engine read policy to
+    every returned location and filters inaccessible locations and drawing
+    anchors. The pair is mandatory for API use. Omitting both is reserved for
+    trusted internal callers; it does not authorize an HTTP response.
+
+    The function is read-only and does not mutate stored records or infer
+    authority beyond Engine.authorize_read.
     """
+    require(
+        (party_id is None) == (role_id is None),
+        "AUTHENTICATION_CONTEXT_INVALID",
+        "party_id and role_id must be supplied together",
+    )
+    authenticated = party_id is not None
     project = engine.get("Project", project_id)
+    _authoritative_version(project, "Project")
     locations = {
         object_id: deepcopy(record)
         for (kind, object_id), record in engine._records.items()
         if kind == "Location" and record.get("projectId") == project_id
     }
+    if authenticated:
+        locations = {
+            location_id: record
+            for location_id, record in locations.items()
+            if _authorize_read(engine, record, party_id, role_id, is_location=True)
+        }
+    for record in locations.values():
+        _authoritative_version(record, "Location")
 
     parent_by_id = {}
     issues_by_id = {location_id: [] for location_id in locations}
@@ -56,7 +132,13 @@ def query_location_tree(engine, project_id):
             # This also covers a parent record in a different project. Do not
             # return its identifier or any details from outside this project.
             parent_by_id[location_id] = None
-            issues_by_id[location_id].append("PARENT_NOT_IN_PROJECT")
+            hidden_parent = engine._records.get(("Location", parent_id), {})
+            issue_code = (
+                "PARENT_NOT_VISIBLE"
+                if hidden_parent.get("projectId") == project_id
+                else "PARENT_NOT_IN_PROJECT"
+            )
+            issues_by_id[location_id].append(issue_code)
         else:
             parent_by_id[location_id] = parent_id
 
@@ -128,7 +210,7 @@ def query_location_tree(engine, project_id):
 
     def reference_for(location_id):
         record = locations[location_id]
-        return _ref(location_id, record.get("version", 1))
+        return _ref(location_id, record["version"])
 
     items = []
     for location_id in ordered_ids:
@@ -145,7 +227,7 @@ def query_location_tree(engine, project_id):
             "projectRef": {
                 "objectType": "Project",
                 "objectId": project["id"],
-                "version": project.get("version", 1),
+                "version": project["version"],
             },
             "name": record["name"],
             "semanticAnchor": record["semanticAnchor"],
@@ -163,7 +245,17 @@ def query_location_tree(engine, project_id):
             "hierarchyIssues": sorted(set(issues_by_id[location_id])),
         }
         if "drawingAnchors" in record:
-            item["drawingAnchors"] = deepcopy(record["drawingAnchors"])
+            item["drawingAnchors"] = (
+                _readable_drawing_anchors(
+                    engine,
+                    record["drawingAnchors"],
+                    project_id,
+                    party_id,
+                    role_id,
+                )
+                if authenticated
+                else deepcopy(record["drawingAnchors"])
+            )
         items.append(item)
 
     hierarchy_issues = [
@@ -185,7 +277,7 @@ def query_location_tree(engine, project_id):
         "projectRef": {
             "objectType": "Project",
             "objectId": project["id"],
-            "version": project.get("version", 1),
+            "version": project["version"],
         },
         "rootRefs": [reference_for(location_id) for location_id in root_ids],
         "items": items,
