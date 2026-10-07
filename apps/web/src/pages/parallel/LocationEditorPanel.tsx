@@ -6,7 +6,7 @@ type LocationRow = {
   reference: { objectId: string; version: number };
   name: string;
   semanticAnchor: string;
-  parentRef?: { objectId: string } | null;
+  treeParentRef?: { objectId: string } | null;
   drawingAnchors?: Array<{
     drawingRef: { objectType: string; objectId: string; version: number };
     page: number;
@@ -87,7 +87,7 @@ export function LocationEditorPanel({ client, workspace, onChanged }: {
   useEffect(() => {
     setName(selected?.name ?? "");
     setSemanticAnchor(selected?.semanticAnchor ?? "");
-    setParentId(selected?.parentRef?.objectId ?? "");
+    setParentId(selected?.treeParentRef?.objectId ?? "");
     setDrawingJson(JSON.stringify(selected?.drawingAnchors ?? [], null, 2));
   }, [selected]);
 
