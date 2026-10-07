@@ -142,11 +142,11 @@ test("edits and tombstones a rectangle memo while preserving its version history
   expect(deleted.status()).toBe(200);
   expect(deleted.request().headers()["idempotency-key"]).toBeTruthy();
   expect(deleted.request().postDataJSON()).toMatchObject({ expectedVersion: 2, reason: "superseded drawing note" });
-  expect(await deleted.json()).toMatchObject({ id: created.id, version: 2, deletedAt: expect.any(String), deleteReason: "superseded drawing note" });
+  expect(await deleted.json()).toMatchObject({ id: created.id, version: 3, deletedAt: expect.any(String), deleteReason: "superseded drawing note" });
   const tombstone = await api(`/parallel/drawing-markups/${created.id}`);
   expect(await tombstone.json()).toMatchObject({ id: created.id, deletedAt: expect.any(String) });
   const historyResponse = await api(`/parallel/drawing-markups/${created.id}/history`);
-  expect((await historyResponse.json() as { items: unknown[] }).items).toHaveLength(2);
+  expect((await historyResponse.json() as { items: unknown[] }).items).toHaveLength(3);
   const listAfterDelete = await api(`/parallel/drawing-markups?bindingId=${encodeURIComponent(binding.id)}`);
   expect((await listAfterDelete.json() as { items: Array<{ id: string }> }).items.some((item) => item.id === created.id)).toBe(false);
 

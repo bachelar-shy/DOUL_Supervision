@@ -24,7 +24,7 @@ export interface PdfDrawingMarkup {
 export interface CreatePdfMarkupInput { bindingId: string; page: number; rect: PdfMarkupRect; text: string; idempotencyKey?: string }
 export interface EditPdfMarkupInput { expectedVersion: number; text: string; rect: PdfMarkupRect; reason: string; idempotencyKey?: string }
 export interface DeletePdfMarkupInput { expectedVersion: number; reason: string; idempotencyKey?: string }
-export interface PdfMarkupHistoryItem extends Omit<PdfDrawingMarkup, "deletedAt" | "deletedBy" | "deleteReason"> { reason?: string; editedAt?: string; editedBy?: string; deletedAt?: string | null; deletedBy?: string | null; deleteReason?: string | null; updateReason?: string }
+export interface PdfMarkupHistoryItem extends Omit<PdfDrawingMarkup, "deletedAt" | "deletedBy" | "deleteReason"> { reason?: string; editedAt?: string; editedBy?: string; deletedAt?: string | null; deletedBy?: string | null; deleteReason?: string | null; updateReason?: string; eventAt?: string; eventBy?: string }
 
 export function parseMarkupCommands(value: unknown): PdfDrawingMarkup["availableCommands"] {
   if (!Array.isArray(value)) return [];
@@ -113,8 +113,17 @@ export async function fetchPdfDrawingMarkupHistory(client: SupervisionClient, id
   const value = await client.request<unknown>(client.path("/parallel/drawing-markups/" + encodeURIComponent(id) + "/history"));
   if (!value || typeof value !== "object" || !Array.isArray((value as { items?: unknown }).items)) return [];
   return (value as { items: unknown[] }).items.flatMap((item) => {
-    const parsed = parsePdfDrawingMarkup(item);
-    return parsed ? [{ ...parsed, ...(typeof (item as Record<string, unknown>).reason === "string" ? { reason: (item as Record<string, unknown>).reason as string } : {}), ...(typeof (item as Record<string, unknown>).updateReason === "string" ? { updateReason: (item as Record<string, unknown>).updateReason as string } : {}), ...(typeof (item as Record<string, unknown>).deleteReason === "string" ? { deleteReason: (item as Record<string, unknown>).deleteReason as string } : {}) }] : [];
+    if (!item || typeof item !== "object") return [];
+    const entry = item as Record<string, unknown>;
+    const parsed = parsePdfDrawingMarkup(entry.snapshot);
+    if (!parsed || (typeof entry.markupId === "string" && entry.markupId !== parsed.id)) return [];
+    return [{ ...parsed,
+      ...(typeof entry.reason === "string" ? { reason: entry.reason } : {}),
+      ...(typeof entry.updateReason === "string" ? { updateReason: entry.updateReason } : {}),
+      ...(typeof entry.deleteReason === "string" ? { deleteReason: entry.deleteReason } : {}),
+      ...(typeof entry.createdAt === "string" ? { eventAt: entry.createdAt } : {}),
+      ...(typeof entry.createdBy === "string" ? { eventBy: entry.createdBy } : {}),
+    }];
   });
 }
 
