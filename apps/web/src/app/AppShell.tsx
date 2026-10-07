@@ -15,6 +15,7 @@ import {
   AdminPage,
   CapturePage,
   CommandModal,
+  ContractPage,
   DocumentPage,
   OwnerGovernancePage,
   RegisterPage,
@@ -300,7 +301,9 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   ? "역할별 추천에서 시작해 29개 표준 관리대장을 서버 권한 범위에서 조회합니다."
                   : safeRoute === "safety"
                     ? "작업허가, 작업중지, 재개 Gate와 장비 안전상태를 서버 원본 기준으로 확인합니다."
-                    : "현장 기록 · 승인 기준 · 조치 이력을 하나로 확인합니다."
+                    : safeRoute === "contract"
+                      ? "계약통지, 클레임, 공기연장을 기술검토와 발주처 계약결정이 섞이지 않도록 서버 원본 기준으로 추적합니다."
+                      : "현장 기록 · 승인 기준 · 조치 이력을 하나로 확인합니다."
             }
             details={
               safeRoute === "today" ? (
@@ -371,7 +374,11 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                           ? "rfis"
                           : item.machine === "action"
                             ? "actions"
-                            : "owner",
+                            : ["contract_notice", "claim", "eot_request"].includes(
+                                  item.machine,
+                                )
+                              ? "contract"
+                              : "owner",
                     );
                     setSelected(item.record.id);
                   }}
@@ -381,6 +388,18 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                 <SchedulePage client={client} workspace={workspace} selected={selected}
                   current={current} online={online} onSelect={setSelected} refresh={refresh}
                   onOpenCommand={(item, action) => setDialog({ item, action })} />
+              )}
+              {safeRoute === "contract" && (
+                <ContractPage
+                  client={client}
+                  workspace={workspace}
+                  selected={selected}
+                  current={current}
+                  online={online}
+                  onSelect={setSelected}
+                  refresh={refresh}
+                  onOpenCommand={(item, action) => setDialog({ item, action })}
+                />
               )}
               {safeRoute === "safety" && (
                 <SafetyPage
@@ -402,7 +421,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   onOpenCommand={(item, action) => setDialog({ item, action })}
                 />
               )}
-              {!["owner", "safety", "schedule"].includes(safeRoute) && machineForRoute[safeRoute] && (
+              {!["owner", "safety", "schedule", "contract"].includes(safeRoute) && machineForRoute[safeRoute] && (
                 <WorkbenchPage
                   route={safeRoute}
                   role={role}

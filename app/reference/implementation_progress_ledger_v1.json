@@ -86,7 +86,7 @@
     },
     {
       "functionId": "F-08",
-      "currentStage": "backend_api_implemented",
+      "currentStage": "integration_passed",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "35_Contract_Notice_Claim_EOT_Functional_Contract.md",
@@ -94,10 +94,15 @@
         "app/schema/contract_notice_claim_eot_execution_contract_v1.json",
         "tests/test_contract_notice_claim_eot_execution_contract.py",
         "tests_mvp/test_contract_notice_claim_eot_http.py",
+        "tests_browser/contract.spec.ts",
+        "apps/web/src/pages/ContractPage.tsx",
+        "apps/web/src/pages/CommandModal.tsx",
+        "apps/web/src/app/routes.ts",
+        "packages/client/src/index.ts",
         "services/api/main.py",
         "services/api/persistence.py"
       ],
-      "note": "B-P7 HTTP/SQLite persistence acceptance completed for Contract Notice, Claim and EOT, including time-bar risk, exact Owner Decision targeting, idempotency/version conflict, restart persistence and F-04 Baseline revision handoff. UI connection, cross-workstream browser E2E and field validation remain."
+      "note": "F-08 Contract Notice / Claim / EOT is integrated through the Web workspace and real API. Browser E2E verifies Notice creation/due-date calculation/evidence-backed submission, Claim/EOT collection routing, Owner authority denial, responsive layouts, and cross-workstream regressions; Backend HTTP/SQLite acceptance still verifies time-bar risk, exact Owner Decision targeting, idempotency/version conflict, restart persistence and F-04 Baseline revision handoff. Pilot/field validation remains."
     },
     {
       "functionId": "F-09",

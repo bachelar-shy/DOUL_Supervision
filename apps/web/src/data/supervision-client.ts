@@ -21,6 +21,9 @@ const workflowCollections: Record<string, string> = {
   safety_permit: "safety-permits",
   safety_stop_order: "safety-stop-orders",
   safety_equipment_inspection: "safety-equipment-inspections",
+  contract_notice: "contract-notices",
+  claim: "claims",
+  eot_request: "eot-requests",
 };
 
 export interface UploadOptions {
