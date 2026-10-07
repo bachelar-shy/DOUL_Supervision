@@ -128,7 +128,7 @@ test("registers an Issue and corrective Action from a selected saved markup afte
   await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
   const viewer = page.getByLabel("PDF 도면 뷰어");
   await viewer.getByLabel("PDF 원본 선택").selectOption(binding!.evidenceRef.objectId);
-  const savedMarkup = viewer.getByRole("button", { name: new RegExp(markupText) });
+  const savedMarkup = viewer.getByLabel("저장된 도면 주석").getByRole("button", { name: new RegExp(markupText) });
   await expect(savedMarkup).toBeVisible();
   await savedMarkup.click();
   const panel = page.getByTestId("drawing-markup-issue");

@@ -164,7 +164,7 @@ export function DrawingMarkupIssuePanel({ client, workspace, selectedMarkupId, o
           {actionRef && onNavigate && <ActionButton onClick={() => { onNavigate("actions"); onSelect?.(actionRef.objectId); }}>시정조치 보기</ActionButton>}
         </div>}
         {!linkedIssue && <>
-          <p className="drawing-markup-issue-note">주석은 기술 참조로만 사용합니다. Issue 등록은 기존 실패 원 검측과 확인된 관찰을 선택하고 SUP가 확인한 뒤 서버에 요청합니다.</p>
+          <p className="drawing-markup-issue-note">주석은 기술 참조로만 사용합니다. Issue 등록은 기존 실패 원 검측과 확인된 관찰을 선택하고 감리자가 확인한 뒤 서버에 요청합니다.</p>
           <label>실패 원 검측
             <select aria-label="실패 원 검측" value={inspectionId} onChange={event => { setInspectionId(event.target.value); setObservationId(""); invalidatePending(); }}>
               <option value="">원 검측 선택</option>
