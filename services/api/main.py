@@ -13,6 +13,8 @@ import os
 import re
 from pathlib import Path
 import secrets
+import tempfile
+from typing import Optional
 from threading import RLock
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -37,6 +39,11 @@ from .application import (
     start_media_analysis,
 )
 from .persistence import PersistencePort, create_local_persistence
+from .modules.drawing_revisions import list_drawing_revision_records, build_drawing_revision_context
+from .modules.work_inbox import build_work_inbox, InboxCursorError
+from .modules.notification_inbox import project_notification_inbox, NotificationProjectionError
+from .modules.business_traceability import build_safety_stop_traceability
+from .modules.location.query import query_location_tree
 
 ROOT=Path(__file__).resolve().parents[2]
 SPEC=json.loads((ROOT/'app/api/openapi.yaml').read_text())
@@ -256,6 +263,24 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             results.append(dict(command=transition['command'],to=transition['to'],authority=transition['authority'],fields=fields,requiresEvidence=transition['required_evidence'],ready=failure is None,requiresInput=bool(fields) or bool(transition['required_evidence'] and failure and failure['code']=='EVIDENCE_REQUIRED'),blockedReason=failure,expectedVersion=record['version']))
         return results
 
+    # Local evidence quarantine is demo-only and uses isolated per-database roots.
+    if demo:
+        if db_path == ':memory:':
+            app.state.evidence_demo_root = tempfile.mkdtemp(prefix='doul-evidence-demo-')
+            evidence_root = Path(app.state.evidence_demo_root)
+        else:
+            evidence_root = Path(db_path).resolve().parent
+        from services.api.modules.evidence.test_routes import install_evidence_quarantine_routes
+        install_evidence_quarantine_routes(
+            app,
+            get_actor=identity,
+            get_role=lambda project_id, request, actor: role_for(
+                actor, project_id, request.headers.get('x-roleassignment-id')
+            ),
+            quarantine_root=evidence_root / 'evidence-quarantine',
+            staging_root=evidence_root / 'evidence-staging',
+        )
+
     @app.get('/ready')
     def ready():
         try:
@@ -284,6 +309,81 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         token=secrets.token_urlsafe(32)
         with session_lock:sessions[token]=dict(a,expires=datetime.now(timezone.utc)+timedelta(hours=8))
         return dict(accessToken=token,projectId=project,actor=a,mode='LOCAL_DEMO_NOT_PRODUCTION')
+
+    # Read-only parallel workspace projections use the same identity, active
+    # project role, and engine authorization checks as existing project routes.
+    @app.get('/projects/{project_id}/parallel/drawings')
+    def parallel_drawings(project_id:str,request:Request,object_id:Optional[str]=None,version:Optional[int]=None):
+        session=identity(request)
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            if object_id is None and version is None:
+                return {'projectId':project_id,'items':list_drawing_revision_records(store.engine,project_id,session['partyId'],role['id'])}
+            require(object_id is not None and version is not None,'REFERENCE_INVALID','object_id and version must be supplied together')
+            return build_drawing_revision_context(store.engine,project_id,{'objectType':'InformationItem','objectId':object_id,'version':version},session['partyId'],role['id'])
+
+    @app.get('/projects/{project_id}/parallel/locations')
+    def parallel_locations(project_id:str,request:Request):
+        session=identity(request)
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            class LocationTreeReadAdapter:
+                """Apply role location scope to Location, whose schema has no work scope."""
+                def __getattr__(self, name):
+                    return getattr(store.engine, name)
+
+                def authorize_read(self, record, party_id, role_id):
+                    location_id = record.get('id')
+                    if ('Location', location_id) not in store.engine._records:
+                        return store.engine.authorize_read(record, party_id, role_id)
+                    require(party_id == session['partyId'] and role_id == role['id'], 'NOT_AUTHORIZED', 'Role does not belong to this session')
+                    require(record.get('projectId') == project_id, 'PROJECT_MISMATCH', 'Project unavailable')
+                    # Location has no discipline/package fields, so preserve the
+                    # policy's actor, authority, and role-code checks directly;
+                    # apply its existing location scope below without inventing
+                    # missing schema values.
+                    policy = store.engine.policies['render_document']
+                    require(role.get('actorGroup') in policy['actor_groups'], 'NOT_AUTHORIZED', 'render_document')
+                    require('render_document' in role.get('authorityCodes', []), 'NOT_AUTHORIZED', 'render_document')
+                    require(not policy['role_codes'] or role.get('roleCode') in policy['role_codes'], 'NOT_AUTHORIZED', 'Role code cannot perform this duty')
+                    require(store.engine._scope(role.get('locationIds', []), location_id, True), 'SCOPE_MISMATCH', 'locationId')
+                    return role
+
+            return query_location_tree(
+                LocationTreeReadAdapter(), project_id,
+                party_id=session['partyId'], role_id=role['id']
+            )
+
+    @app.get('/projects/{project_id}/parallel/work-inbox')
+    def parallel_work_inbox(project_id:str,request:Request,limit:int=50,cursor:Optional[str]=None):
+        session=identity(request)
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            try:return build_work_inbox(store.engine,project_id,session,role,readable=readable,preflight=preflight,limit=limit,cursor=cursor)
+            except InboxCursorError as exc:raise ContractError('INVALID_REQUEST',str(exc))
+            except ValueError as exc:raise ContractError('INVALID_REQUEST',str(exc))
+
+    @app.get('/projects/{project_id}/parallel/notifications')
+    def parallel_notifications(project_id:str,request:Request):
+        session=identity(request)
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            # Only canonical persisted DTOs; SLA/deadline intents are never synthesized.
+            notifications=[deepcopy(record) for (kind,_),record in store.engine._records.items() if kind=='Notification']
+            receipts=store.meta.get('notificationReadReceipts',{})
+            try:return project_notification_inbox(notifications,recipient_party_id=session['partyId'],accessible_project_ids=[project_id],read_receipts=receipts)
+            except NotificationProjectionError as exc:raise ContractError('INVALID_REQUEST',str(exc))
+
+    @app.get('/projects/{project_id}/parallel/safety-traceability')
+    def parallel_safety_traceability(project_id:str,request:Request,object_id:str,version:int):
+        session=identity(request)
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            valid_id(object_id)
+            ref={'objectType':'WorkItem','objectId':object_id,'version':version}
+            root=store.engine.resolve(ref,project_id)
+            require(root['projectId']==project_id,'PROJECT_MISMATCH','Project unavailable')
+            return build_safety_stop_traceability(store.engine,ref,session['partyId'],role['id'])
 
     @app.get('/projects/{project_id}/workspace')
     def workspace(project_id:str,request:Request):
