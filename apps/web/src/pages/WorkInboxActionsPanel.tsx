@@ -42,7 +42,7 @@ export function WorkInboxActionsPanel({ client, workspace, onChanged, onNavigate
       if (alive.current && requestId.current === id) setError(e instanceof Error ? e.message : String(e));
     } finally { if (alive.current && requestId.current === id) setLoading(false); }
   }, [client, roleKey]);
-  useEffect(() => { alive.current = true; setCursor(null); setCursorStack([]); void load(null); return () => { alive.current = false; requestId.current++; }; }, [load, roleKey]);
+  useEffect(() => { alive.current = true; setCursor(null); setCursorStack([]); const timer = window.setTimeout(() => { void load(null); }, 0); return () => { window.clearTimeout(timer); alive.current = false; requestId.current++; }; }, [load, roleKey]);
   const rows = useMemo(() => page.records ?? [], [page.records]);
   async function execute(payload: Fields, evidenceIds: string[]) {
     if (!dialog || submitting) return;
