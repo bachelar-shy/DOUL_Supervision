@@ -276,6 +276,17 @@ class SignatureVerificationHTTPTests(unittest.TestCase):
         self.assertEqual(document["status"], "final")
         self.assertEqual(signatures, [])
 
+    def test_derived_evidence_cannot_be_submitted_as_a_wet_original(self):
+        store = self.app.state.store
+        with store.transaction(True):
+            evidence = store.engine.get('Evidence', self.original_evidence_id)
+            evidence.update(sourceType='derived', version=evidence['version'] + 1)
+            store.engine._save('Evidence', evidence)
+        response = self.sign(self.sign_body(method='wet_original_verified', originalFileId=evidence['fileId']))
+        self.assertEqual(response.status_code, 409, response.text)
+        self.assertEqual(response.json()['code'], 'SIGNATURE_ORIGINAL_REQUIRED')
+        self.assertEqual(self.verifier.calls, [])
+
 
 if __name__ == "__main__":
     unittest.main()

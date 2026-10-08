@@ -111,6 +111,7 @@ def load_verified_original_file(
     ]
     require(len(matches) == 1, "SIGNATURE_ORIGINAL_REQUIRED", "Stored original evidence is unavailable")
     evidence = matches[0]
+    require(evidence.get('sourceType') == 'original', 'SIGNATURE_ORIGINAL_REQUIRED', 'Legal original evidence must retain its original source provenance')
     engine.authorize_read(evidence, party_id, role_assignment["id"])
     try:
         content = blob_loader(original_file_id)
