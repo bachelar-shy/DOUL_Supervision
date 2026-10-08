@@ -1,11 +1,91 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
-import { randomUUID } from "node:crypto";
+import { randomUUID, randomBytes } from "node:crypto";
+import { spawn, type ChildProcess } from "node:child_process";
+import { createServer } from "node:net";
+import { mkdirSync, rmSync } from "node:fs";
+import { resolve, join, delimiter } from "node:path";
 import { commands, fields } from "../apps/web/src/labels";
 
-const fixtureToken = "local-payment-browser-fixture-token";
-const apiOrigin = "http://127.0.0.1:8793";
 const paymentRoute = "/#/payment";
 const expectedVersions = new Map<string, number>();
+let fixtureToken = "";
+let apiOrigin = "";
+let fixtureProcess: ChildProcess | undefined;
+let fixtureDatabase = "";
+let fixtureStderr = "";
+
+if (process.env.PAYMENT_TEST_CHROMIUM) {
+  test.use({ launchOptions: { executablePath: process.env.PAYMENT_TEST_CHROMIUM, args: ["--no-sandbox"] } });
+}
+
+async function availablePort(): Promise<number> {
+  const server = createServer();
+  await new Promise<void>((resolveListen, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => resolveListen());
+  });
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("Could not allocate a local fixture port");
+  const port = address.port;
+  await new Promise<void>((resolveClose, reject) => server.close((error) => error ? reject(error) : resolveClose()));
+  return port;
+}
+
+test.beforeAll(async () => {
+  const port = await availablePort();
+  fixtureToken = randomBytes(32).toString("hex");
+  apiOrigin = `http://127.0.0.1:${port}`;
+  fixtureDatabase = join(process.cwd(), "work", `payment-browser-${randomUUID()}.sqlite3`);
+  mkdirSync(join(process.cwd(), "work"), { recursive: true });
+  const python = process.env.PAYMENT_TEST_PYTHON || process.env.DOUL_TEST_PYTHON || resolve(process.cwd(), ".venv/bin/python");
+  const script = resolve(process.cwd(), "tests_browser/support/payment_api_fixture.py");
+  fixtureProcess = spawn(python, [script, "--database", fixtureDatabase, "--port", String(port)], {
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      PAYMENT_TEST_FIXTURE_TOKEN: fixtureToken,
+      PYTHONPATH: [process.cwd(), process.env.PYTHONPATH].filter(Boolean).join(delimiter),
+    },
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+  fixtureProcess.stderr?.on("data", (chunk: Buffer) => { fixtureStderr += chunk.toString(); });
+  const deadline = Date.now() + 30_000;
+  let lastError: unknown;
+  while (Date.now() < deadline) {
+    if (fixtureProcess.exitCode !== null) throw new Error(`Payment fixture exited early (${fixtureProcess.exitCode}): ${fixtureStderr}`);
+    try {
+      const response = await fetch(`${apiOrigin}/health`);
+      if (response.ok) return;
+    } catch (error) { lastError = error; }
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 150));
+  }
+  fixtureProcess.kill("SIGTERM");
+  throw new Error(`Payment API fixture did not become healthy: ${String(lastError)}`);
+}, 45_000);
+
+test.afterAll(async () => {
+  if (fixtureProcess && fixtureProcess.exitCode === null) {
+    const child = fixtureProcess;
+    child.kill("SIGTERM");
+    await new Promise<void>((resolveExit) => child.once("exit", () => resolveExit()));
+  }
+  fixtureProcess = undefined;
+  if (fixtureDatabase) {
+    for (const path of [fixtureDatabase, `${fixtureDatabase}-wal`, `${fixtureDatabase}-shm`]) rmSync(path, { force: true });
+  }
+});
+
+test.beforeEach(async ({ page }) => {
+  // Keep the normal app page and controls, but bridge its /api requests to this
+  // test's isolated live Uvicorn app. route.fetch forwards real HTTP; it does
+  // not synthesize API records or command responses.
+  await page.route("**/api/**", async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const path = requestUrl.pathname.replace(/^\/api/, "");
+    const response = await route.fetch({ url: `${apiOrigin}${path}${requestUrl.search}` });
+    await route.fulfill({ response });
+  });
+});
 
 type Session = { projectId: string; accessToken: string; actor: { roleAssignmentId: string; actorGroup: string } };
 type Ref = { objectType: string; objectId: string; version: number };
@@ -21,7 +101,7 @@ type Fixture = {
 };
 
 async function login(request: APIRequestContext, actorGroup: string): Promise<Session> {
-  const response = await request.post("/api/dev/sessions", { data: { actorGroup } });
+  const response = await request.post(`${apiOrigin}/dev/sessions`, { data: { actorGroup } });
   expect(response.status()).toBe(200);
   return response.json();
 }
@@ -160,11 +240,13 @@ async function selectRecord(page: Page, title: string) {
 }
 
 async function getWorkspace(request: APIRequestContext, session: Session) {
-  const response = await request.get(`/api/projects/${session.projectId}/workspace`, { headers: auth(session) });
+  const response = await request.get(`${apiOrigin}/projects/${session.projectId}/workspace`, { headers: auth(session) });
   expect(response.status()).toBe(200);
   return response.json();
 }
 
+// Owner Decisions are trusted exact-version fixtures here; this case covers
+// payment workflow use of those decisions, not Owner Decision authoring.
 test("real UI/API payment chain preserves server quantities, exact Owner decisions and append-only partial-payment corrections", async ({ page, request }) => {
   expectedVersions.clear();
   const seeded = await fixture(request);
