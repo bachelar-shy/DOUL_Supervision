@@ -1,0 +1,12 @@
+{
+  "branch": "goal/mvp-completion-v1",
+  "baseCommit": "943d1dd0a3056c34bff9015292b59b4cfe49c197",
+  "checkpointCommit": "Resolve this file's latest commit with git log -1 --format=%H -- design/development/agents/root-handoff.json",
+  "completed": ["Merged validated PR128", "Allocated six isolated Luna/high worktrees with explicit shared file ownership"],
+  "inProgress": ["Canonical payment collection facade", "Authoritative creation capability DTO", "Payment, i18n, capability, operations and acceptance workers"],
+  "validation": {"currentChanges": "Pending integrated verification", "priorBase": "PR128 CI eight checks passed"},
+  "remaining": ["Integrate worker commits and wire server capabilities and payment UI", "Address audit gaps without changing Product semantics", "Run appropriate full regression and live adapter verification", "Update ledger conservatively", "Obtain actual authorized pilot configuration and field evidence"],
+  "restart": ["Inspect git status and git worktree list", "Read all agent handoffs and active agent messages", "Confirm fixture availability before live PostgreSQL tests", "Continue unfinished work; preserve other workers' changes"],
+  "testFixtures": {"postgresContainer": "doul-goal-postgres", "hostPort": 15432, "database": "doul_goal_test", "ownedTemporary": true},
+  "userEnvironment": "Chrome browser, ChatGPT Codex; previous Windows desktop-app assumption was corrected"
+}

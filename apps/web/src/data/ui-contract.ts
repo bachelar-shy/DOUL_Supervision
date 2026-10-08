@@ -2,6 +2,7 @@ import type { DomainRef, RecordDTO } from "@doul/client";
 
 export type {
   CommandDescriptor,
+  CreationCapability,
   Fields,
   FormSchema,
   HumanRole,

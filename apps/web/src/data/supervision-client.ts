@@ -24,6 +24,9 @@ const workflowCollections: Record<string, string> = {
   contract_notice: "contract-notices",
   claim: "claims",
   eot_request: "eot-requests",
+  contract_boq: "contract-boqs",
+  quantity_measurement: "quantity-measurements",
+  payment_claim: "payment-claims",
 };
 
 export interface UploadOptions {

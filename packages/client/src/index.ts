@@ -236,10 +236,17 @@ export interface Workspace {
     requirementRef: DomainRef;
     drawingRef: DomainRef;
     evidenceId: string;
+    creationCapabilities?: Record<string, CreationCapability>;
   };
   participants: { partyId: string; name: string; actorGroup: HumanRole }[];
   formSchemas: Record<string, FormSchema>;
   demo: boolean;
+}
+export interface CreationCapability {
+  status: "available" | "unauthorized" | "prerequisites_missing" | "unavailable";
+  canCreate: boolean;
+  authority: string;
+  reasons: string[];
 }
 export const collections: Record<string, string> = {
   inspection: "inspections",

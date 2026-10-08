@@ -1,0 +1,36 @@
+{
+  "goal": "DOUL Supervision Korean, Vietnamese and English field MVP",
+  "status": "in_progress",
+  "integrationBase": "943d1dd0a3056c34bff9015292b59b4cfe49c197",
+  "mergedPrerequisites": [{"pr": 128, "validation": "Eight CI checks passed at e429b46 before merge"}],
+  "coordination": {
+    "model": "gpt-6-luna",
+    "reasoning": "high",
+    "sharedFilesOwner": "root",
+    "workers": {
+      "payment-api": "goal/payment-api-v1",
+      "payment-ui": "goal/payment-ui-v1",
+      "i18n": "goal/i18n-integration-v1",
+      "create-capabilities": "goal/create-capabilities-v1",
+      "operations": "goal/operational-validation-v1",
+      "acceptance-audit": "goal/acceptance-audit-v1"
+    }
+  },
+  "requiredEvidence": [
+    "quality closed loop and separate owner report closure",
+    "safety permit, equipment, stop, remedy, verification, explicit lift and resume",
+    "baseline, progress, delay, recovery, Notice/EOT, owner decision and approved baseline revision",
+    "verified quantity, recommendation, owner approval, individual payment and append-only correction history",
+    "project-scoped exact-version files, drawings, location, inbox, notifications and durable idempotency",
+    "Korean, Vietnamese and English mandatory UI, errors, formats and reports",
+    "automated regression, actual storage, large-data performance, memory and backup restore",
+    "actual field pilot acceptance with consistent ledger and evidence"
+  ],
+  "additionalMandatoryScenario": "AC-HO-01 commissioning, handover and warranty appears in the existing mandatory pilot catalog; audit implementation gaps before claiming overall acceptance",
+  "completionRules": {
+    "developmentVerificationIsPilot": false,
+    "actualPilotPerformed": false,
+    "quotaRecoveryAloneGuaranteesExecution": false,
+    "resume": "When the platform resumes execution, inspect handoffs, Git/worktrees, running tasks and worker changes; continue from the last verified checkpoint without deleting uncommitted work."
+  }
+}
