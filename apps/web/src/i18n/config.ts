@@ -11,12 +11,15 @@ import {
 } from "@doul/localization";
 
 function initialLanguage(): AppLanguage {
-  const stored = window.localStorage.getItem(localeStorageKey);
+  let stored: string | null = null;
+  try { stored = typeof window === "undefined" ? null : window.localStorage.getItem(localeStorageKey); }
+  catch { /* Storage policy does not prevent using the default display language. */ }
   if (stored) return normalizeLanguage(stored);
   return defaultLanguage;
 }
 
 function synchronizeDocumentLanguage(language: string) {
+  if (typeof document === "undefined") return;
   const normalized = normalizeLanguage(language);
   document.documentElement.lang =
     appLanguages.find((candidate) => candidate.code === normalized)?.tag ??
@@ -42,7 +45,8 @@ void i18n.use(initReactI18next).init({
 
 synchronizeDocumentLanguage(i18n.resolvedLanguage ?? i18n.language);
 i18n.on("languageChanged", (language) => {
-  window.localStorage.setItem(localeStorageKey, normalizeLanguage(language));
+  try { if (typeof window !== "undefined") window.localStorage.setItem(localeStorageKey, normalizeLanguage(language)); }
+  catch { /* The selected language still applies when browser storage is unavailable. */ }
   synchronizeDocumentLanguage(language);
 });
 
