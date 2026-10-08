@@ -1,0 +1,53 @@
+{
+  "branch": "goal/create-capabilities-v1",
+  "checkpoint": "pending commit",
+  "scope": "Request-scoped immutable configuration lookup view for work-inbox authorization; no API wiring included.",
+  "profile": {
+    "fixture": "/workspace/work/doul-goal/operations/scripts/benchmark_work_inbox_http.py",
+    "capture": "/tmp/doul-issue124-before.prof",
+    "adapter": "PostgresSnapshotAdapter",
+    "records": 50000,
+    "projectRowsScanned": 45000,
+    "rounds": 2,
+    "pageSize": 1,
+    "profiledCalls": {
+      "Engine.authorize": 90025,
+      "Engine.get": 90052,
+      "workInboxEligibleRows": 45006,
+      "main.readable": 45008,
+      "Engine.authorize_read": 45008,
+      "main.has_command_candidates": 45007,
+      "deepcopyCallsIncludingRecursion": 22173573,
+      "deepcopyPrimitiveCalls": 90068
+    },
+    "profiledCumulativeSeconds": {
+      "Engine.authorize": 25.727,
+      "Engine.get": 22.022,
+      "main.readable": 13.474,
+      "Engine.authorize_read": 13.313,
+      "main.has_command_candidates": 13.187,
+      "deepcopy": 35.077
+    },
+    "notes": [
+      "Counts/timings are cProfile data from the real HTTP route, before API wiring of the new view.",
+      "The profiler added substantial overhead (about 40 seconds across two measured requests); those wall times are not benchmark evidence and are intentionally omitted.",
+      "The profile also showed a separate clone_for_preview/preflight cost; it was left out of this scoped change."
+    ]
+  },
+  "implementation": [
+    "ReadAuthorizationView delegates authorize, authorize_read, _qualified, _scope, and resolve to the exact Engine implementations rebound to the view.",
+    "Only RoleAssignment, Project, and Qualification are cached; values come from Engine.get deepcopies wrapped with the standard read-only mapping/sequence views.",
+    "Record reads delegate to Engine.get; Engine.at remains delegated so every call checks current time. The view must be constructed inside each held read transaction."
+  ],
+  "tests": [
+    "tests_mvp.test_read_authorization_view: decision parity across human fixture roles, inbox records, and transition authorities.",
+    "Explicit expiry, missing/revoked qualification, fresh request role invalidation, recursive immutability, descendant scope, and internal report recipient cases.",
+    "tests_mvp.test_parallel_workspace_api and tests_mvp.test_wave3_inbox_composition passed before API route wiring."
+  ],
+  "todo": [
+    "Root owns main.py wiring: request-local readable and has_candidates closures use the view; preflight must continue using the real Engine.",
+    "After wiring, rerun focused parity/API tests and the live 50k HTTP project-filtering/pagination benchmark. Report exact median/p95/second-page/CPU/RSS deltas against b85c928.",
+    "Do not claim latency readiness until the post-wiring live HTTP measurement supports it; the prior snapshot patch still measured 7.75s median."
+  ],
+  "restart": "Cherry-pick this helper/tests/handoff commit onto the active capabilities branch. Do not include the parent-owned services/api/main.py worktree diff."
+}
