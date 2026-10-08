@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import type { DomainRef, RecordDTO, Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
+import { ApiError } from "../data/supervision-client";
+import { reasonLabel } from "../labels";
 import i18n from "../i18n/config";
 import { recordReference } from "../data/record-reference";
 
@@ -181,7 +183,7 @@ export function OwnerDecisionAuthoringPanel({
       attempt.current = null;
       await onCreated(result.record);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : text.error);
+      setError(cause instanceof ApiError ? reasonLabel(cause.detail.code) : text.error);
     } finally {
       setBusy(false);
     }
