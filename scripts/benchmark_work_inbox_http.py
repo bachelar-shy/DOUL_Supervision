@@ -23,7 +23,8 @@ import urllib.parse
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+APP_ROOT = ROOT
+sys.path.insert(0, str(APP_ROOT))
 
 
 def cpu_rss(pid: int) -> tuple[int, int]:
@@ -39,7 +40,7 @@ def docker_run(arguments: list[str], *, check: bool = True) -> subprocess.Comple
     for key in ("DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_TLS", "DOCKER_TLS_VERIFY", "DOCKER_CERT_PATH"):
         env.pop(key, None)
     result = subprocess.run(["docker", "--host=unix:///var/run/docker.sock", *arguments],
-                            cwd=ROOT, env=env, text=True, stdout=subprocess.PIPE,
+                            cwd=APP_ROOT, env=env, text=True, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, timeout=180)
     if check and result.returncode:
         raise RuntimeError(f"Docker command failed: {result.stderr[-2000:]}")
@@ -66,10 +67,18 @@ def main() -> int:
     parser.add_argument("--visible-fraction-denominator", type=int, default=10)
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--page-size", type=int, default=1)
+    parser.add_argument("--app-root", type=Path, default=ROOT,
+                        help="application checkout to benchmark (defaults to this script's checkout)")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.records < 100 or args.visible_fraction_denominator < 2 or args.rounds < 2 or not 1 <= args.page_size <= 100:
         parser.error("need >=100 rows, filter denominator >=2, 2+ rounds, and page size 1..100")
+    app_root = args.app_root.resolve()
+    if not (app_root / "services/api/main.py").is_file():
+        parser.error("--app-root must point to a checkout containing services/api/main.py")
+    global APP_ROOT
+    APP_ROOT = app_root
+    sys.path.insert(0, str(APP_ROOT))
 
     container = "doul-goal-ops-inbox-postgres"
     docker_run(["run", "-d", "--name", container,
@@ -148,8 +157,8 @@ def main() -> int:
                 f"uvicorn.run(create_app(demo=True,persistence=p),host='127.0.0.1',port={port},log_level='critical',access_log=False)"
             )
             server = subprocess.Popen(
-                [sys.executable, "-c", server_code], cwd=ROOT,
-                env=dict(os.environ, PYTHONPATH=str(ROOT)),
+                [sys.executable, "-c", server_code], cwd=APP_ROOT,
+                env=dict(os.environ, PYTHONPATH=str(APP_ROOT)),
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             )
         try:
@@ -248,6 +257,7 @@ def main() -> int:
                 "limitations": [
                     "Synthetic duplicate issue records only; one local API process and PostgreSQL snapshot development persistence",
                     "API process CPU and PostgreSQL cgroup CPU are separate; PostgreSQL stores one JSON snapshot, not normalized work rows",
+                    "Exact total scans matching project membership for each request, so this path remains linear in snapshot size",
                     "No API latency SLO or p95 budget was found in the inspected storage/performance contracts",
                     "Authorization uses the real demo role and scope checks; no browser rendering or concurrent clients",
                 ],
