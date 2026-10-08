@@ -14,7 +14,7 @@ import {
   type PaymentMachine,
 } from "../data/payment-workspace";
 import { describeCommandAvailability } from "../data/ui-presentation";
-import { commands, reasonLabel, states } from "../labels";
+import { commands, creationCapabilityLabel, reasonLabel, states } from "../labels";
 import { ActionButton, Panel, SectionHeader, StatusBadge } from "../ui";
 import { ActionGate, DetailPane } from "../ui/catalog";
 import { WorkbenchTemplate } from "../ui/templates";
@@ -215,12 +215,14 @@ function CreateDraft({
         ? { ...common, boq: { boqNo: number.trim(), revision, currency, lineItems: [] } }
         : kind === "quantity_measurement"
           ? { ...common, data: { measurementNo: number.trim(), ...(periodStart ? { periodStart } : {}), ...(periodEnd ? { periodEnd } : {}) } }
-          : { ...common, data: { paymentClaimNo: number.trim(), currency, ...(periodStart ? { periodStart } : {}), ...(periodEnd ? { periodEnd } : {}), paymentRecords: [] } };
+          : { ...common, data: { paymentClaimNo: number.trim(), currency, ...(periodStart ? { periodStart } : {}), ...(periodEnd ? { periodEnd } : {}) } };
       const result = await client.create(kind, payload, identity.current.id, identity.current.key);
       identity.current = { id: crypto.randomUUID(), key: crypto.randomUUID() };
       await onCreated(result.record.id);
     } catch (e) {
-      setError(e instanceof ApiError ? `${reasonLabel(e.detail.code)} ${e.message}` : e instanceof Error ? e.message : String(e));
+      const localMessages = [t("offlineSave"), t("mockSave"), t("requiredFields")];
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code)
+        : e instanceof Error && localMessages.includes(e.message) ? e.message : t("error"));
     } finally { setBusy(false); }
   }
 
@@ -281,10 +283,10 @@ export function MeasurementPaymentPage({
             <ActionButton disabled={!online || client.kind === "mock" || !canCreate} onClick={() => setCreating(machine)}>{t("create")}</ActionButton>
           </div>
           {!canCreate && <p className="payment-capability-note" role="note">
-            {createCapability?.reasons?.length ? createCapability.reasons.join(" · ") : t("createUnavailable")}
+            {creationCapabilityLabel(createCapability)}
           </p>}
-          <p className="muted">화면은 원본 값과 서버가 제공한 명령을 표시합니다. 단계 사이의 수량·금액은 서로 합치거나 다시 계산하지 않습니다.</p>
-          {loadError && <div role="alert" className="error-box">{loadError}<button onClick={() => void refresh().catch((e) => setLoadError(String(e)))}>{t("retry")}</button></div>}
+          <p className="muted">{t("calculationBoundary")}</p>
+          {loadError && <div role="alert" className="error-box">{loadError}<button onClick={() => void refresh().catch(() => setLoadError(t("error")))}>{t("retry")}</button></div>}
           <div className="payment-record-list">
             {items.length ? items.map((item) => {
               const data = paymentRecordData(item);

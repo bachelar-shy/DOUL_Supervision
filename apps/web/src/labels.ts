@@ -1,4 +1,5 @@
 import i18n from "./i18n/config";
+import type { CreationCapability } from "./data/ui-contract";
 import {
   koreanCommands,
   koreanFields,
@@ -53,3 +54,8 @@ export const reasonLabel = (code?: string) =>
         ? koreanReasonLabel(code) || legacyKoreanReasonLabel(code)
         : i18n.t("reason.default"),
   });
+
+export const creationCapabilityLabel = (capability?: CreationCapability) =>
+  i18n.t(`creation.${capability?.status === "unauthorized" ? "unauthorized"
+    : capability?.status === "prerequisites_missing" ? "prerequisites"
+    : capability?.status === "unavailable" ? "unavailable" : "unknown"}`);

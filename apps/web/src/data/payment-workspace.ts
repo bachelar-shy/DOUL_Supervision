@@ -18,7 +18,7 @@ export type PaymentLabelKey =
   | "tableDescription" | "rate" | "contractAmount" | "draftBoundary" | "selectToInspect"
   | "noCommands" | "backToList" | "closeDialog" | "offlineSave" | "mockSave" | "requiredFields" | "saving" | "sourceVersion"
   | "recordPayment" | "recordCorrection" | "recordCancellation" | "ownerDecision" | "decisionReason" | "decisionReference" | "recommendedSnapshot"
-  | "formula" | "rounding" | "reservation" | "paymentEvidence";
+  | "formula" | "rounding" | "reservation" | "paymentEvidence" | "calculationBoundary";
 
 export const paymentLabelKeys: readonly PaymentLabelKey[] = [
   "title", "description", "boq", "measurements", "claims", "claimed", "verified", "blocked",
@@ -35,9 +35,11 @@ export const paymentLabelKeys: readonly PaymentLabelKey[] = [
   "ownerDecision", "decisionReason", "decisionReference", "recommendedSnapshot",
   "formula", "rounding", "reservation",
   "paymentEvidence",
+  "calculationBoundary",
 ];
 
 export const paymentFallbackLabels: Record<PaymentLabelKey, string> = {
+  calculationBoundary: "화면은 원본 값과 서버가 제공한 명령을 표시합니다. 단계 사이의 수량·금액은 서로 합치거나 다시 계산하지 않습니다.",
   title: "물량 · 기성 · 지급", description: "Contract BOQ 기준, 현장 물량 검증, 지급추천, 발주처 결정과 실제 지급 이력을 연결합니다.",
   boq: "계약 BOQ", measurements: "물량 측정", claims: "기성 신청", claimed: "청구", verified: "검증",
   blocked: "보류", recommended: "감리 추천", approved: "발주처 승인", paid: "지급", disputed: "분쟁",
