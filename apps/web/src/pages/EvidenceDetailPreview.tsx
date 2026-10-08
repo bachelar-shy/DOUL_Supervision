@@ -261,27 +261,26 @@ export function EvidenceDetailPreview({
               label={tr("evidence.summary.mediaType")}
               value={evidenceMediaLabel(evidence.mediaType)}
             />
-            <EvidenceField label="촬영 시각" value={formatDate(evidence.capturedAt)} />
+            <EvidenceField label={tr("evidence.summary.capturedAt")} value={formatDate(evidence.capturedAt)} />
             <EvidenceField
-              label="서버 등록 시각"
+              label={tr("evidence.summary.uploadedAt")}
               value={formatDate(evidence.uploadedAt)}
             />
-            <EvidenceField label="파일 크기" value={formatBytes(metadata.byteCount)} />
+            <EvidenceField label={tr("evidence.summary.fileSize")} value={formatBytes(metadata.byteCount)} />
             <EvidenceField
-              label="위치 / 공종"
+              label={tr("evidence.summary.locationDiscipline")}
               value={
                 <>
-                  {textValue(evidence.locationId) || "정보 없음/확인 필요"} /{" "}
-                  {textValue(evidence.discipline) || "정보 없음/확인 필요"}
+                  {textValue(evidence.locationId) || tr("evidence.value.noInfoCheck")} /{" "}
+                  {textValue(evidence.discipline) || tr("evidence.value.noInfoCheck")}
                 </>
               }
             />
           </div>
           <div className="notice">
-            <strong>판정 경계</strong>
+            <strong>{tr("evidence.boundary.title")}</strong>
             <p>
-              증빙 등록 또는 분석 결과의 존재만으로 검측 합격, 승인, 이슈 종결이
-              결정되지 않습니다. 공식 판정은 별도의 권한 있는 업무 절차를 따릅니다.
+              {tr("evidence.boundary.description")}
             </p>
           </div>
         </div>
@@ -289,92 +288,91 @@ export function EvidenceDetailPreview({
       provenance={
         <div className="space-y-4">
           <div className="grid gap-2 sm:grid-cols-2">
-            <EvidenceField label="증빙 ID" value={evidence.id} mono />
+            <EvidenceField label={tr("evidence.provenance.id")} value={evidence.id} mono />
             <EvidenceField
-              label="제출자"
+              label={tr("evidence.provenance.submitter")}
               value={
                 workspace.participants.find(
                   (party) => party.partyId === evidence.submittedBy,
                 )?.name ||
                 textValue(evidence.submittedBy) ||
-                "정보 없음/확인 필요"
+                tr("evidence.value.noInfoCheck")
               }
             />
             <EvidenceField
-              label="원천 당사자"
+              label={tr("evidence.provenance.sourceParty")}
               value={
                 workspace.participants.find(
                   (party) => party.partyId === evidence.sourcePartyId,
                 )?.name ||
                 textValue(evidence.sourcePartyId) ||
-                "정보 없음/확인 필요"
+                tr("evidence.value.noInfoCheck")
               }
             />
             <EvidenceField
-              label="책임 조직"
+              label={tr("evidence.provenance.responsibleOrganization")}
               value={
                 textValue(evidence.responsibleOrganizationId) ||
-                "정보 없음/확인 필요"
+                tr("evidence.value.noInfoCheck")
               }
               mono
             />
             <EvidenceField
-              label="패키지"
-              value={textValue(evidence.packageId) || "정보 없음/확인 필요"}
+              label={tr("evidence.provenance.package")}
+              value={textValue(evidence.packageId) || tr("evidence.value.noInfoCheck")}
               mono
             />
             <EvidenceField
-              label="위치"
-              value={textValue(evidence.locationId) || "정보 없음/확인 필요"}
+              label={tr("evidence.provenance.location")}
+              value={textValue(evidence.locationId) || tr("evidence.value.noInfoCheck")}
               mono
             />
           </div>
 
           {evidence.sourceType === "derived" ? (
             <div className="rounded-sm border border-border bg-slate-50 p-4">
-              <span className="eyebrow">파생 연결</span>
+              <span className="eyebrow">{tr("evidence.derived.title")}</span>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <EvidenceField
-                  label="원본 증빙"
+                  label={tr("evidence.derived.original")}
                   value={
                     originalEvidence
                       ? `${recordTitle(originalEvidence)} · ${originalEvidence.id}`
-                      : originalEvidenceId || "정보 없음/확인 필요"
+                      : originalEvidenceId || tr("evidence.value.noInfoCheck")
                   }
                   mono
                 />
                 <EvidenceField
-                  label="파생 작업"
+                  label={tr("evidence.derived.run")}
                   value={
                     textValue(evidence.derivationRunId) ||
-                    "정보 없음/확인 필요"
+                    tr("evidence.value.noInfoCheck")
                   }
                   mono
                 />
                 <EvidenceField
-                  label="원본 시간범위"
+                  label={tr("evidence.derived.sourceRange")}
                   value={
                     sourceRange
                       ? `${numericValue(sourceRange.startMs) ?? "?"}–${numericValue(sourceRange.endMs) ?? "?"} ms`
-                      : "정보 없음/확인 필요"
+                      : tr("evidence.value.noInfoCheck")
                   }
                 />
                 <EvidenceField
-                  label="Frame / PTS"
+                  label={tr("evidence.derived.framePts")}
                   value={
                     sourceRange
                       ? `#${numericValue(sourceRange.frameIndex) ?? "?"} / ${numericValue(sourceRange.ptsMs) ?? "?"} ms`
-                      : "정보 없음/확인 필요"
+                      : tr("evidence.value.noInfoCheck")
                   }
                 />
               </div>
             </div>
           ) : (
             <div className="notice">
-              <strong>원본 증빙</strong>
+              <strong>{tr("evidence.original.title")}</strong>
               <p>
-                이 기록은 원본으로 보존됩니다. 파생 이미지·전사·분석 결과가
-                생성되더라도 원본을 대체하지 않습니다.
+                {tr("evidence.original.description")}
               </p>
             </div>
           )}
@@ -385,13 +383,13 @@ export function EvidenceDetailPreview({
           <div className="grid gap-2">
             <EvidenceField
               label="SHA-256"
-              value={textValue(evidence.fileHash) || "정보 없음/확인 필요"}
+              value={textValue(evidence.fileHash) || tr("evidence.value.noInfoCheck")}
               mono
             />
             <div className="grid gap-2 sm:grid-cols-2">
               <EvidenceField
-                label="파일 ID"
-                value={textValue(evidence.fileId) || "정보 없음/확인 필요"}
+                label={tr("evidence.technical.fileId")}
+                value={textValue(evidence.fileId) || tr("evidence.value.noInfoCheck")}
                 mono
               />
               <EvidenceField
@@ -399,31 +397,31 @@ export function EvidenceDetailPreview({
                 value={
                   textValue(metadata.mimeType) ||
                   preview.mime ||
-                  "정보 없음/확인 필요"
+                  tr("evidence.value.noInfoCheck")
                 }
                 mono
               />
               <EvidenceField
-                label="재생 길이"
+                label={tr("evidence.technical.duration")}
                 value={
                   numericValue(evidence.durationMs) === null
-                    ? "정보 없음/확인 필요"
+                    ? tr("evidence.value.noInfoCheck")
                     : `${(numericValue(evidence.durationMs)! / 1000).toFixed(3)} s`
                 }
               />
               <EvidenceField
-                label="Frame 수"
-                value={numericValue(evidence.frameCount) ?? "정보 없음/확인 필요"}
+                label={tr("evidence.technical.frameCount")}
+                value={numericValue(evidence.frameCount) ?? tr("evidence.value.noInfoCheck")}
               />
-              <EvidenceField label="Domain version" value={`v${evidence.version}`} />
+              <EvidenceField label={tr("evidence.technical.sourceVersion")} value={`v${evidence.version}`} />
               <EvidenceField
-                label="마지막 갱신"
+                label={tr("evidence.technical.updatedAt")}
                 value={formatDate(evidence.updatedAt)}
               />
             </div>
           </div>
           <details className="technical">
-            <summary>서버 메타데이터</summary>
+            <summary>{tr("evidence.technical.serverMetadata")}</summary>
             <pre>{JSON.stringify(metadata, null, 2)}</pre>
           </details>
         </div>

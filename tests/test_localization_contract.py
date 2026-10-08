@@ -131,5 +131,162 @@ class LocalizationContractTests(unittest.TestCase):
         self.assertGreaterEqual(len(re.findall(r"[가-힣]", machine_master)), 15)
 
 
+    def test_active_a4_form_fields_have_visible_terms_in_all_three_languages(self):
+        catalog_source = (
+            ROOT / "packages/localization/src/form-field-labels.ts"
+        ).read_text()
+        labels = re.findall(
+            r'^\s+"([^"]+)": \{ ko: "([^"]+)", vi: "([^"]+)", en: "([^"]+)" \},',
+            catalog_source,
+            flags=re.MULTILINE,
+        )
+        self.assertEqual(len(labels), len({row[0] for row in labels}))
+        schema = json.loads(
+            (ROOT / "app/forms/form_data_schemas_v1.json").read_text()
+        )["forms"]
+        active = ["FM-09", "FM-12", "FM-19", "FM-20", "FM-21"]
+        expected = {
+            field
+            for form_id in active
+            for field in schema[form_id]["scalar_fields"]
+        }
+        self.assertEqual({row[0] for row in labels}, expected)
+        for field, korean, vietnamese, english in labels:
+            for language_label in (korean, vietnamese, english):
+                self.assertTrue(language_label.strip(), field)
+        doc_page = (ROOT / "apps/web/src/pages/DocumentPage.tsx").read_text()
+        self.assertIn("formFieldLabel(f, i18n.resolvedLanguage", doc_page)
+        self.assertIn("name={f}", doc_page)
+
+    def test_field_capture_and_document_ui_have_no_hardcoded_korean(self):
+        paths = [
+            "apps/web/src/pages/CapturePage.tsx",
+            "apps/web/src/pages/DocumentPage.tsx",
+            "apps/web/src/pages/shared.tsx",
+            "apps/web/src/pages/evidence-utils.ts",
+            "apps/web/src/ui/index.tsx",
+        ]
+        offenders = [
+            path
+            for path in paths
+            if re.search(r"[가-힣]", (ROOT / path).read_text())
+        ]
+        self.assertEqual(offenders, [])
+
+    def test_new_locale_keys_have_korean_vietnamese_and_english_labels(self):
+        src = (ROOT / "packages/localization/src/index.ts").read_text()
+        relevant_files = [
+            "apps/web/src/app/AppShell.tsx",
+            "apps/web/src/pages/CapturePage.tsx",
+            "apps/web/src/pages/DocumentPage.tsx",
+            "apps/web/src/pages/shared.tsx",
+            "apps/web/src/pages/evidence-utils.ts",
+            "apps/web/src/ui/index.tsx",
+        ]
+        callsites = "\n".join((ROOT / path).read_text() for path in relevant_files)
+        required_keys = set(re.findall(
+            r'(?:\bt|i18n\.t)\("((?:capture|document|record|floorPlan|app|ui|evidence)\.[^"]+)"',
+            callsites,
+        ))
+        required_keys.discard("document.form.")
+        for form_id in ("FM-09", "FM-12", "FM-19", "FM-20", "FM-21"):
+            required_keys.add(f"document.form.{form_id}")
+        for key in sorted(required_keys):
+            occurrences = re.findall(
+                r'^\s*"' + re.escape(key) + r'":\s*"[^"]*",?',
+                src,
+                flags=re.MULTILINE,
+            )
+            self.assertEqual(len(occurrences), 3, f"Incomplete locale coverage for {key}")
+
+
+    def test_contract_screen_uses_identical_translation_keys_in_all_locales(self):
+        catalog = (ROOT / "packages/localization/src/contract-translations.ts").read_text()
+
+        def translations(locale):
+            block = re.search(
+                r"export const contract" + locale + r" = \{([\s\S]*?)\} as const;",
+                catalog,
+            )
+            self.assertIsNotNone(block, locale)
+            return dict(re.findall(
+                r'^\s*"(contract\.[^"]+)": "([^"]*)",?',
+                block.group(1),
+                flags=re.MULTILINE,
+            ))
+
+        masters = translations("Ko")
+        self.assertGreaterEqual(len(masters), 90)
+        for locale in ("Vi", "En"):
+            draft = translations(locale)
+            self.assertEqual(masters.keys(), draft.keys(), locale)
+            for key, value in draft.items():
+                self.assertTrue(value.strip(), (locale, key))
+                self.assertEqual(
+                    set(re.findall(r"\{\{([^}]+)\}\}", masters[key])),
+                    set(re.findall(r"\{\{([^}]+)\}\}", value)),
+                    (locale, key),
+                )
+
+        page = (ROOT / "apps/web/src/pages/ContractPage.tsx").read_text()
+        self.assertIsNone(re.search(r"[가-힣]", page))
+        used_keys = set(re.findall(r'tr\("(contract\.[^"]+)"', page))
+        self.assertFalse(used_keys - masters.keys())
+        self.assertIn('tr("contract.create.mockPreviewNotice")', page)
+        self.assertIn('disabled={busy || !online || client.kind === "mock"}', page)
+
+    def test_evidence_detail_master_and_draft_keys_match(self):
+        catalog = (ROOT / "packages/localization/src/index.ts").read_text()
+        drafts = (
+            ROOT / "packages/localization/src/evidence-translations.ts"
+        ).read_text()
+
+        def from_block(source, start, end):
+            block = source.split(start, 1)[1].split(end, 1)[0]
+            return dict(re.findall(
+                r'^\s*"(evidence\.[^"]+)": "([^"]*)",?',
+                block,
+                flags=re.MULTILINE,
+            ))
+
+        ko = from_block(catalog, "const ko = {", "} as const;")
+        self.assertGreaterEqual(len(ko), 40)
+        for locale, start, end in (
+            ("Vi", "const vi: DraftTranslationDictionary = {", "};"),
+            ("En", "const en: DraftTranslationDictionary = {", "};"),
+        ):
+            inline = from_block(catalog, start, end)
+            extra = from_block(
+                drafts, f"export const evidenceDraft{locale} = {{", "} as const;"
+            )
+            self.assertFalse(inline.keys() & extra.keys())
+            translated = dict(inline, **extra)
+            self.assertEqual(ko.keys(), translated.keys(), locale)
+            for key, master in ko.items():
+                self.assertTrue(translated[key].strip(), (locale, key))
+                self.assertEqual(
+                    set(re.findall(r"\{\{([^}]+)\}\}", master)),
+                    set(re.findall(r"\{\{([^}]+)\}\}", translated[key])),
+                    (locale, key),
+                )
+
+        page = (ROOT / "apps/web/src/pages/EvidenceDetailPreview.tsx").read_text()
+        self.assertIsNone(re.search(r"[가-힣]", page))
+        used_keys = set(re.findall(r'tr\("(evidence\.[^"]+)"', page))
+        self.assertFalse(used_keys - ko.keys())
+        self.assertIn('JSON.stringify(metadata, null, 2)', page)
+
+    def test_draft_locales_remain_unapproved(self):
+        src = (ROOT / "packages/localization/src/index.ts").read_text()
+        for language in ("vi", "en"):
+            block = src.split('code: "' + language + '"', 1)[1].split("},", 1)[0]
+            self.assertIn('translationStatus: "draft"', block)
+        for locale in ("vi", "en"):
+            setting = next(
+                item for item in self.contract["initialLocales"]
+                if item["language"] == locale
+            )
+            self.assertEqual(setting["status"], "draft_requires_field_review")
+
 if __name__ == "__main__":
     unittest.main()

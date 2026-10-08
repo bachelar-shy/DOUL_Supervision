@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { formFieldLabel } from "@doul/localization";
 import type { FormSchema, RecordDTO, Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
 import { DocumentWorkspaceTemplate } from "../ui/templates";
@@ -46,6 +48,7 @@ export function DocumentPage({
   online: boolean;
   refresh: () => Promise<void>;
 }) {
+  const { t, i18n } = useTranslation();
   const [form, setForm] = useState("FM-20");
   const [source, setSource] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
@@ -70,7 +73,7 @@ export function DocumentPage({
               ? x.machine === "issue"
               : x.machine === "report",
         );
-      if (!item) throw new Error("문서 원본을 선택하십시오.");
+      if (!item) throw new Error(t("document.error.noSource"));
       const doc = await client.render(
         form,
         [recordRef(item)],
@@ -89,11 +92,11 @@ export function DocumentPage({
     <PageBoundary name="documents">
       <DocumentWorkspaceTemplate>
       <section className="panel editor-pane">
-        <h2>데이터 연결 문서</h2>
+        <h2>{t("document.editor.title")}</h2>
         <label>
-          DOUL 양식
+          {t("document.form.label")}
           <select
-            aria-label="문서 양식"
+            aria-label={t("document.form.aria")}
             value={form}
             onChange={(e) => {
               setForm(e.target.value);
@@ -101,27 +104,21 @@ export function DocumentPage({
               setValues({});
             }}
           >
-            {[
-              ["FM-20", "발주처 즉시보고"],
-              ["FM-19", "주간보고"],
-              ["FM-21", "의사결정 요청서"],
-              ["FM-12", "부적합 보고서"],
-              ["FM-09", "검수기록"],
-            ].map(([id, t]) => (
+            {(["FM-20", "FM-19", "FM-21", "FM-12", "FM-09"] as const).map((id) => (
               <option key={id} value={id}>
-                {id} · {t}
+                {id} · {t("document.form." + id)}
               </option>
             ))}
           </select>
         </label>
         <label>
-          원본 기록
+          {t("document.source.label")}
           <select
             value={source}
             onChange={(e) => setSource(e.target.value)}
-            aria-label="문서 원본 선택"
+            aria-label={t("document.source.aria")}
           >
-            <option value="">양식에 맞는 원본 자동 선택</option>
+            <option value="">{t("document.source.auto")}</option>
             {sources.map((x) => (
               <option value={x.record.id} key={x.record.id}>
                 {recordTitle(x.record)} · v{x.record.version}
@@ -130,24 +127,24 @@ export function DocumentPage({
           </select>
         </label>
         <div className="notice">
-          미리보기는 초안입니다. 발행본은 원본 버전·템플릿·출력 해시를
-          보존합니다.
+          {t("document.notice.draft")}
         </div>
         <details open>
-          <summary>초안 작성 항목</summary>
+          <summary>{t("document.section.draftFields")}</summary>
           <div className="document-fields">
             {Object.entries(schema.scalar_fields).map(([f, r]) => (
               <label key={f}>
-                {f}
+                {formFieldLabel(f, i18n.resolvedLanguage ?? i18n.language)}
                 {r.required ? " *" : ""}
                 <input
+                  name={f}
                   value={values[f] || ""}
                   placeholder={
                     r.type === "date-time"
                       ? "2026-10-05T09:00:00+07:00"
                       : r.type === "boolean"
                         ? "true / false"
-                        : "원본 연결 또는 직접 입력"
+                        : t("document.placeholder.manual")
                   }
                   onChange={(e) =>
                     setValues({ ...values, [f]: e.target.value })
@@ -162,14 +159,14 @@ export function DocumentPage({
           onClick={() => void preview()}
           disabled={busy || !online}
         >
-          {busy ? "원본 버전으로 생성 중…" : "초안 HTML 생성"}
+          {busy ? t("document.action.generating") : t("document.action.createHtml")}
         </button>
         <div className="two-buttons">
           <button className="secondary" disabled>
-            DOCX 연동 전
+            {t("document.action.docxPending")}
           </button>
           <button className="secondary" disabled>
-            PDF 연동 전
+            {t("document.action.pdfPending")}
           </button>
         </div>
         {err && (
@@ -180,22 +177,24 @@ export function DocumentPage({
       </section>
       <section className="preview-pane">
         <div className="preview-header">
-          <b>A4 미리보기</b>
-          <span>초안 · 법정 발행본 아님</span>
+          <b>{t("document.preview.title")}</b>
+          <span>{t("document.preview.draftOnly")}</span>
         </div>
         {html ? (
-          <iframe title="문서 초안 미리보기" sandbox="" srcDoc={html} />
+          <iframe title={t("document.preview.aria")} sandbox="" srcDoc={html} />
         ) : (
           <div className="paper-empty">
             <Icon name="document" />
-            <h2>문서를 원본 데이터에 연결합니다.</h2>
-            <p>왼쪽에서 양식과 기록을 선택해 초안을 만드십시오.</p>
+            <h2>{t("document.preview.emptyTitle")}</h2>
+            <p>{t("document.preview.emptyHelp")}</p>
           </div>
         )}
         {snapshot && (
           <small className="snapshot-note">
-            스냅샷 {snapshot.id.slice(0, 8)} · 출력 해시{" "}
-            {String(snapshot.renderHash).slice(0, 20)}…
+            {t("document.preview.snapshot", {
+              id: snapshot.id.slice(0, 8),
+              hash: String(snapshot.renderHash).slice(0, 20),
+            })}
           </small>
         )}
       </section>
