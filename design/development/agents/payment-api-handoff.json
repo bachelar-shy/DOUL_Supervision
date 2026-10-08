@@ -94,5 +94,45 @@
       "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_contracts.test_handover_contract tests_mvp.test_handover_http -q",
       "DOUL_TEST_POSTGRES_DSN='postgresql://doul:goal_test@127.0.0.1:15432/doul_goal_test' /workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_handover_postgres -q"
     ]
+  },
+  "followup_security_hardening": {
+    "commit": "1ee1693",
+    "scope": "AC-HO-01 gate hardening based on root review: authorized WarrantyClaim report creation, exact in-scope/current references, current qualified technical witnesses, current equipment availability/certification, linked and chronological warranty reinspection, and typed exact closure proofs.",
+    "engine_hook_required": "Root must add validate_creation(self,machine,record,party_id,role) after Engine.create calls _common(record,role) for the three F-07 machines. This branch intentionally does not commit app/reference/engine.py; local verification temporarily overlaid 9848203 and added only that hook.",
+    "behavior": {
+      "warranty_report_create": "WarrantyClaim creation now runs the report gate after actor authorization/common checks, requiring accepted handover scope and period, current defect Issue, exact scope, and original evidence.",
+      "reinspection": "Requires exact related Issue, current correction cycle, after-remedy timestamp, new immutable Inspection, verified corrective Action refs for this Issue/scope/cycle, and Action verification before reinspection.",
+      "closure": "closureRef accepts only an exact approved Decision for the claim version or its linked verified-closed Issue; arbitrary project drawings/documents are rejected.",
+      "witness": "Witness role assignment must be current and scope-matched. SUP/DES qualification uses Engine._qualified (project rank, validity, revocation and discipline rules); OWN presence is scope checked without adding a technical qualification requirement.",
+      "equipment": "SafetyEquipmentInspection readiness requires passed/completed status, server-derived equipmentAvailable true, and current certificate/calibration checks."
+    },
+    "tests": [
+      {
+        "command": "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_handover_http tests_contracts.test_handover_contract -q",
+        "result": "PASS; 11 tests (4 HTTP workflow/security cases and 7 contract tests), using temporary local Engine overlay and create hook."
+      },
+      {
+        "command": "DOUL_TEST_POSTGRES_DSN='postgresql://doul:goal_test@127.0.0.1:15432/doul_goal_test' /workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_handover_postgres -q",
+        "result": "PASS against PostgreSQL 16; 4 inherited HTTP cases across isolated schemas, using temporary local Engine overlay and create hook."
+      },
+      {
+        "command": "/workspace/DOUL_Supervision/work/priority-venv/bin/python scripts/product_schema_validation.py",
+        "result": "PASS."
+      },
+      {
+        "command": "git diff --check",
+        "result": "PASS."
+      }
+    ],
+    "remaining": [
+      "Root must add and commit the Engine.create validate_creation hook and independently rerun acceptance against integrated Engine/main wiring.",
+      "Parent requested that no claim of full AC-HO-01 acceptance be made until their additional integration/CI review completes.",
+      "No pilot or site verification was performed or claimed."
+    ],
+    "restartCommands": [
+      "cd /workspace/work/doul-goal/payment-api",
+      "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_handover_http tests_contracts.test_handover_contract -q",
+      "DOUL_TEST_POSTGRES_DSN='postgresql://doul:goal_test@127.0.0.1:15432/doul_goal_test' /workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_handover_postgres -q"
+    ]
   }
 }
