@@ -1,3 +1,5 @@
+import { completionFieldKo } from "./completion-domain-translations";
+
 export const legacyKoreanRoles: Record<string, string> = {
   SUP: "감리",
   CON: "시공사",
@@ -457,6 +459,7 @@ export const legacyKoreanFields: Record<string, string> = {
   calibrationRefs: "교정성적서 참조",
   preUseCheckComplete: "사용 전 점검 완료",
   reinspectionRefs: "재점검 참조",
+  ...completionFieldKo,
 };
 export const legacyKoreanReasonLabel = (code?: string) =>
   ({
