@@ -10,7 +10,7 @@
 다른 기기 접속용 Tailscale HTTPS 포트 10002 추가는 자동 승인 검토에서 차단되어 실행하지 않았다. 공개 인터넷 Funnel은 요청 범위에 포함하지 않는다.
 
 API 실행: 기존 프로젝트 가상환경의 Python으로 `python -m services.api --demo --database .local/parallel-demo.sqlite3 --port 8801`.
-화면 실행: `DOUL_TEST_API_TARGET=http://127.0.0.1:8801 npm run dev --workspace apps/web -- --host 127.0.0.1 --port 5191 --strictPort`.
+화면 실행: `DOUL_TEST_ALLOWED_HOST=automation-macmini.tail0e9ef7.ts.net DOUL_TEST_API_TARGET=http://127.0.0.1:8801 npm run dev --workspace apps/web -- --host 127.0.0.1 --port 5191 --strictPort`.
 프로세스 식별 파일과 로그는 `.local/parallel-api-process.json`, `.local/parallel-web-process.json`, `.local/parallel-api.log`, `.local/parallel-web.log`에 있다.
 서버 재시작 시 이 테스트 작업 경로와 해당 PID의 명령을 확인한다. 다른 서비스는 종료하지 않는다. 맥미니 재부팅 자동시작은 구성하지 않았다.
 
@@ -43,3 +43,7 @@ Context7 확인: Starlette Request.stream (https://github.com/kludex/starlette/b
 ## Tailscale 접속 추가
 
 2026-10-07 사용자 명시 승인으로 Tailscale Serve HTTPS 10002를 추가했다. 접속: https://automation-macmini.tail0e9ef7.ts.net:10002/#/parallel-test . Tailscale 내부 전용이며 해당 포트의 Funnel은 활성화하지 않았다. 기존 443/8443/10000 설정은 유지했다. Vite의 허용 호스트는 DOUL_TEST_ALLOWED_HOST=automation-macmini.tail0e9ef7.ts.net 이다. 이 주소에서 화면과 /api/health 응답을 확인했다. 해제 명령: Tailscale CLI의 serve --https=10002 off.
+
+## 2026-10-08 접속 확인
+
+기존 Tailscale HTTPS 10002 경로에서 Vite가 호스트를 거부(403)하는 것을 확인했다. 기존 DOUL_TEST_ALLOWED_HOST 설정에 정확한 automation-macmini.tail0e9ef7.ts.net 호스트를 전달해 프런트만 재시작했으며 HTTPS 200을 확인했다. 모든 호스트를 허용하거나 Tailscale/Funnel 설정을 변경하지 않았다. 위 실행 명령에도 허용 호스트를 반영했다.

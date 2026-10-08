@@ -9,17 +9,18 @@ from services.api.modules.drawing_impacts import (
     affected_records, reconcile_drawing_impacts_in_transaction, install_drawing_impact_routes,
 )
 from services.api.store import SQLiteSnapshotAdapter
-from tests_mvp.test_inspection_authoring import InspectionAuthoringTests
+from tests_mvp import test_inspection_authoring as authoring_fixtures
+from tests_mvp import test_wave3_drawing_markups as markup_fixtures
 
 
 class DrawingImpactTests(unittest.TestCase):
-    ref = staticmethod(InspectionAuthoringTests.ref)
-    add_pdf = InspectionAuthoringTests.add_pdf
-    _build_app = InspectionAuthoringTests._build_app
-    post = InspectionAuthoringTests.post
+    ref = staticmethod(authoring_fixtures.InspectionAuthoringTests.ref)
+    add_pdf = authoring_fixtures.InspectionAuthoringTests.add_pdf
+    _build_app = authoring_fixtures.InspectionAuthoringTests._build_app
+    post = authoring_fixtures.InspectionAuthoringTests.post
 
     def setUp(self):
-        InspectionAuthoringTests.setUp(self)
+        authoring_fixtures.InspectionAuthoringTests.setUp(self)
         response = self.post()
         self.assertEqual(response.status_code, 201, response.text)
         self.inspection = response.json()['record']
@@ -113,3 +114,34 @@ class DrawingImpactTests(unittest.TestCase):
             selected = affected_records(self.store, self.source_ref)
         self.assertFalse(any(kind == 'Action' for kind, _ in selected))
         self.assertNotIn(self.inspection['id'], [record['id'] for _, record in selected])
+
+    def test_linked_issue_and_corrective_action_receive_exact_notices(self):
+        self.actor = deepcopy(self.store.meta['actors']['ADM'])
+        self.role = self.store.engine.get('RoleAssignment', self.actor['roleAssignmentId'])
+        markup = markup_fixtures.DrawingMarkupTests.create_markup(self).json()
+        failed, observation = markup_fixtures.DrawingMarkupTests.issue_fixture(self)
+        self.assertEqual(failed['drawingRef'], self.source_ref)
+        self.actor = deepcopy(self.store.meta['actors']['SUP'])
+        self.role = self.store.engine.get('RoleAssignment', self.actor['roleAssignmentId'])
+        body = markup_fixtures.DrawingMarkupTests.issue_body(self, failed, observation)
+        response = self.client.post(
+            f"/projects/{self.project}/parallel/drawing-markups/{markup['id']}/issues",
+            json=body, headers=markup_fixtures.DrawingMarkupTests.headers(self, 'impact-issue'))
+        self.assertEqual(response.status_code, 201, response.text)
+        result = response.json()
+        self.withdraw()
+        expected = [('Inspection', failed), ('Issue', result['issue']), ('Action', result['correctiveAction'])]
+        for kind, record in expected:
+            notices = [self.store.engine.get('Notification', identifier)
+                       for identifier in self.notices()
+                       if self.store.engine.get('Notification', identifier)['sourceRef'] == self.ref(kind, record)]
+            self.assertEqual(len(notices), 1, kind)
+            self.assertEqual(notices[0]['recipientPartyId'], record.get('responsiblePartyId') or record['createdBy'])
+            self.assertEqual(self.store.engine.get(kind, record['id']), record)
+        self.reconcile()
+        for kind, record in expected:
+            self.assertEqual(sum(self.store.engine.get('Notification', identifier)['sourceRef'] == self.ref(kind, record)
+                                 for identifier in self.notices()), 1)
+
+    headers = markup_fixtures.DrawingMarkupTests.headers
+    markup_body = markup_fixtures.DrawingMarkupTests.markup_body

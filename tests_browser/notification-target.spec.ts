@@ -62,3 +62,24 @@ test("unknown domain references and machine kinds cannot become guessed navigati
     workspace,
   )).toEqual({ kind: "unavailable" });
 });
+
+test("canonical drawing-impact references require matching type, machine, project and exact version", () => {
+  for (const [objectType, machine, route] of [
+    ["Inspection", "inspection", "inspections"], ["Issue", "issue", "issues"], ["Action", "action", "actions"],
+  ]) {
+    const workspace = {project: {id: "project-1"}, items: [{
+      machine, record: {id: "item-1", projectId: "project-1", version: 2},
+    }]} as unknown as Workspace;
+    expect(resolveNotificationSourceTarget({objectType, objectId: "item-1", version: 2}, "project-1", workspace))
+      .toMatchObject({kind: "exact", route});
+    expect(resolveNotificationSourceTarget({objectType, objectId: "item-1", version: 1}, "project-1", workspace))
+      .toMatchObject({kind: "past", route});
+    expect(resolveNotificationSourceTarget({objectType, objectId: "item-1", version: 3}, "project-1", workspace))
+      .toEqual({kind: "unavailable"});
+    expect(resolveNotificationSourceTarget({objectType, objectId: "item-1", version: 2}, "other-project", workspace))
+      .toEqual({kind: "unavailable"});
+    const mismatch = {...workspace, items: [{...workspace.items[0], machine: "safety_permit"}]};
+    expect(resolveNotificationSourceTarget({objectType, objectId: "item-1", version: 2}, "project-1", mismatch))
+      .toEqual({kind: "unavailable"});
+  }
+});

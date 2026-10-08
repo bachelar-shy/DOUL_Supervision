@@ -84,7 +84,7 @@ async function switchRole(page: Page, actorGroup: string): Promise<Workspace> {
 }
 
 test("publishes and distributes a reviewed source as a field controlled construction drawing", async ({ page, request }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
   const suffix = randomUUID().slice(0, 8);
   const drawingNo = `DES-${suffix}`;
   const drawingRevision = "R0";
@@ -202,7 +202,7 @@ test("publishes and distributes a reviewed source as a field controlled construc
   await switchRole(page, "SUP");
   await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
   const supRow = page.getByTestId(`drawing-field-record-${fieldRecord.id}`);
-  await expect(supRow.getByRole("button", { name: "현장 사용본 발행" })).toBeVisible();
+  await expect(supRow.getByRole("button", { name: "현장 사용본 발행" })).toBeVisible({timeout: 30000});
   const releaseResponse = page.waitForResponse(response => response.url().endsWith(`/parallel/drawing-field-revisions/${fieldRecord.id}/commands`)
     && response.request().method() === "POST");
   await supRow.getByRole("button", { name: "현장 사용본 발행" }).click();
@@ -249,4 +249,71 @@ test("publishes and distributes a reviewed source as a field controlled construc
   await expect(conRow.getByRole("button", { name: "변경 이력 보기" })).toBeVisible();
   await conRow.getByRole("button", { name: "변경 이력 보기" }).click();
   await expect(conRow.getByText("수령 확인", { exact: true })).toBeVisible();
+
+  // Use real authoring, withdrawal and notification APIs; no response mocking.
+  const conSession = await responseJson<Session>(
+    await request.post("/api/dev/sessions", { data: { actorGroup: "CON" } }), 200);
+  const base = `/api/projects/${conSession.projectId}`;
+  type Options = {
+    drawings: Array<{ domainRef: DomainRef; locations: Array<{id: string}> }>;
+    requirements: Array<{domainRef: DomainRef}>; evidence: Array<{domainRef: DomainRef}>;
+  };
+  const options = await responseJson<Options>(
+    await request.get(`${base}/inspection-authoring/options`, { headers: headers(conSession) }), 200);
+  const chosen = options.drawings.find(item => item.domainRef.objectId === source.drawing.id)!;
+  expect(chosen).toBeTruthy();
+  const context = await responseJson<Options>(await request.get(
+    `${base}/inspection-authoring/options`, { headers: headers(conSession),
+      params: { drawing_id: chosen.domainRef.objectId, drawing_version: chosen.domainRef.version, location_id: chosen.locations[0].id } }), 200);
+  expect(context.requirements.length).toBeGreaterThan(0);
+  expect(context.evidence.length).toBeGreaterThan(0);
+  const inspection = await responseJson<{record: {id: string; version: number; status: string; drawingRef: DomainRef; workName: string}}>(
+    await request.post(`${base}/inspection-authoring/drafts`, { headers: headers(conSession, true), data: {
+      objectId: randomUUID(), drawingRef: chosen.domainRef, locationId: chosen.locations[0].id,
+      requirementRefs: [context.requirements[0].domainRef], evidenceRefs: [context.evidence[0].domainRef],
+      workName: `도면 회수 재확인 ${suffix}`, selfInspectionComplete: false,
+      precheck: {drawing: false, material: false, test: false, previous: false, change: false}, holdPoint: true,
+    } }), 201);
+  const withdrew = await responseJson<FieldRecord>(await request.post(
+    `${base}/parallel/drawing-field-revisions/${fieldRecord.id}/commands`, {
+      headers: headers(adminSession, true), data: {command: "withdraw", expectedVersion: acknowledged.version,
+        payload: {reason: "현장 기준 변경에 따른 도면 회수 통합 검증"}},
+    }), 200);
+  expect(withdrew.status).toBe("withdrawn");
+  type Notice = { notification: {id: string; sourceRef: DomainRef}; drawingImpact?: {drawingRef: DomainRef; incidentId: string} };
+  const readInbox = async () => responseJson<{items: Notice[]}>(await request.get(
+    `${base}/parallel/notifications`, {headers: headers(conSession)}), 200);
+  const inbox = await readInbox();
+  const matching = inbox.items.filter(item => item.drawingImpact
+    && item.notification.sourceRef.objectId === inspection.record.id);
+  expect(matching).toHaveLength(1);
+  expect(matching[0].drawingImpact!.drawingRef).toEqual(chosen.domainRef);
+  expect(matching[0].notification.sourceRef).toEqual({
+    objectType: "Inspection", objectId: inspection.record.id, version: inspection.record.version,
+  });
+  expect((await readInbox()).items.filter(item => item.notification.id === matching[0].notification.id)).toHaveLength(1);
+
+  // The draft was authored by the API; reload the UI workspace before resolving its exact source.
+  const refreshed = page.waitForResponse(response => response.url().endsWith("/workspace") && response.ok());
+  await page.reload();
+  await responseJson<Workspace>(await refreshed, 200);
+  const {workspace: refreshedWorkspace} = await captureSession(page, "CON");
+  expect(refreshedWorkspace.items.some(item => item.record.id === inspection.record.id)).toBe(true);
+  await page.getByRole("tab", {name: "알림", exact: true}).click();
+  const noticeRow = page.locator(`[data-notification-id="${matching[0].notification.id}"]`);
+  await expect(noticeRow).toContainText("도면 변경에 따른 업무 재확인");
+  await expect(noticeRow).toContainText(inspection.record.workName);
+  await noticeRow.getByRole("button", {name: "원본 보기", exact: true}).click();
+  await expect(page).toHaveURL(/#\/inspections/);
+  await expect(page.getByRole("heading", {name: inspection.record.workName, exact: true})).toBeVisible();
+
+  // Withdrawal does not rewrite the original inspection; fresh drafts are blocked.
+  const after = await responseJson<Workspace>(await request.get(`${base}/workspace`, {headers: headers(conSession)}), 200);
+  const saved = after.items.find(item => item.record.id === inspection.record.id)!;
+  expect(saved.record.status).toBe(inspection.record.status);
+  expect(saved.record.version).toBe(inspection.record.version);
+  expect(saved.record.drawingRef).toEqual(chosen.domainRef);
+  const available = await responseJson<Options>(await request.get(
+    `${base}/inspection-authoring/options`, {headers: headers(conSession)}), 200);
+  expect(available.drawings.some(item => item.domainRef.objectId === source.drawing.id)).toBe(false);
 });
