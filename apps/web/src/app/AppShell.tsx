@@ -59,24 +59,32 @@ export function AppShell({ client }: { client: SupervisionClient }) {
     action: CommandDescriptor;
   } | null>(null);
   const sequence = useRef(0);
+  const refreshSequence = useRef(0);
+  const activeRole = useRef(role);
   const refresh = useCallback(async () => {
+    if (client.session?.actor.actorGroup !== activeRole.current) return;
+    const generation = sequence.current;
+    const n = ++refreshSequence.current;
+    const current = () => generation === sequence.current && n === refreshSequence.current;
     setLoading(true);
     try {
-      setWorkspace(await client.workspace());
+      const next = await client.workspace();
+      if (!current()) return;
+      setWorkspace(next);
       setError("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "연결 오류");
+      if (current()) setError(e instanceof Error ? e.message : "연결 오류");
     } finally {
-      setLoading(false);
+      if (current()) setLoading(false);
     }
   }, [client]);
   useEffect(() => {
     const n = ++sequence.current;
     client
       .login(role)
-      .then(() => client.workspace())
+      .then(() => n === sequence.current ? client.workspace() : undefined)
       .then((w) => {
-        if (n === sequence.current) setWorkspace(w);
+        if (w && n === sequence.current) { setWorkspace(w); setError(""); }
       })
       .catch((e) => {
         if (n === sequence.current) setError(String(e));
@@ -84,6 +92,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
       .finally(() => {
         if (n === sequence.current) setLoading(false);
       });
+    return () => { ++sequence.current; };
   }, [client, role]);
   useEffect(() => {
     let timer = 0;
@@ -257,6 +266,10 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                 aria-label="개발 역할 선택"
                 value={role}
                 onChange={(e) => {
+                  ++sequence.current;
+                  activeRole.current = e.target.value as HumanRole;
+                  setDialog(null);
+                  setError("");
                   setWorkspace(null);
                   setLoading(true);
                   setRole(e.target.value as HumanRole);
