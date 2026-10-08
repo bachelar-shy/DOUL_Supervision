@@ -36,6 +36,42 @@
     "page100": "HTTP request exceeded the fixture's 60-second timeout.",
     "meaning": "Authorization input caching improved page 1, but page 100 remains a blocking performance limit."
   },
+  "evidenceAfterOverlay": {
+    "integratedSourceCommit": "ff0fb39937a022d3f9c882a919f109e0a7de2095",
+    "artifact": "/workspace/work/doul-goal/operations/design/verification/issue124-live-http-after-ff0fb39-20261008.json",
+    "pageSizeOne": {
+      "samplesMs": [3368.844, 3642.823, 3556.668],
+      "medianMs": 3556.668,
+      "nearestRankP95Ms": 3642.823,
+      "secondPageMs": 3937.922,
+      "apiCpuMs": 10170,
+      "peakRssBytes": 553418752,
+      "postgresCpuUsec": 444986,
+      "checks": "project total and two non-overlapping cursor pages passed"
+    },
+    "pageSize100": {
+      "samplesMs": [7934.841, 4695.261],
+      "medianMs": 6315.051,
+      "nearestRankP95Ms": 7934.841,
+      "secondPageMs": 3871.909,
+      "apiCpuMs": 11310,
+      "peakRssBytes": 544403456,
+      "postgresCpuUsec": 630045,
+      "checks": "project total and two non-overlapping 100-row cursor pages passed"
+    },
+    "comparisonToAuthorizationViewOnly": {
+      "medianPageOneImprovementPercent": 46.2,
+      "p95PageOneImprovementPercent": 45.0,
+      "secondPageImprovementPercent": 41.0,
+      "apiCpuImprovementPercent": 47.9
+    },
+    "limitations": [
+      "Synthetic records, one API process, and development JSON snapshot persistence; not production or concurrent-client evidence.",
+      "Exact totals still scan project membership and remain linear in snapshot size.",
+      "No latency SLO was found; performance acceptance/M4 signoff is not claimed.",
+      "Page-size-100 p95 is the max of two samples, not a stable percentile estimate."
+    ]
+  },
   "tests": [
     "tests_mvp.test_command_preview: default deep clone and borrowed overlay state isolation, recursively immutable nested borrowed data including tuple contents, clone-local writes, and unknown-runtime-attribute fallback.",
     "Every seeded transition is compared across all fixture states and human roles against default deep clone; source state remains identical.",
@@ -44,9 +80,8 @@
     "All six tests in tests_mvp.test_command_preview pass."
   ],
   "todo": [
-    "Root wires borrow_runtime=True only into work-inbox preflight; every other caller keeps the deep-clone default.",
-    "Run focused tests after API wiring and the live 50k HTTP page-1 and page-100 fixture. Report exact deltas and verify rights, totals, and pagination still match.",
-    "If any required Engine method mutates a borrowed raw nested value or relies on a concrete dict/list type, retain default clone for that path and expand isolation coverage before enabling it."
+    "The performance change is measured but not SLO-qualified. Set a latency target before claiming field readiness.",
+    "If any Engine method mutates a borrowed raw nested value or relies on a concrete dict/list type, retain the default clone for that path and expand isolation coverage before enabling it."
   ],
   "restart": "Cherry-pick the overlay implementation/tests/handoff commit onto root integration; leave services/api/main.py to root."
 }
