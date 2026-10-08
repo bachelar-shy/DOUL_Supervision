@@ -6,6 +6,7 @@ import type { SupervisionClient } from "../data/supervision-client";
 import { ApiError } from "../data/supervision-client";
 import type {
   CommandDescriptor,
+  CreationCapability,
   RecordDTO,
   WorkItem,
   Workspace,
@@ -32,19 +33,8 @@ const contractMachines = [
 
 type ContractMachine = (typeof contractMachines)[number];
 
-type CreationCapability = {
-  machine: string;
-  authority: string | null;
-  status: "available" | "unauthorized" | "prerequisites_missing" | "unavailable";
-  canCreate: boolean;
-  reasons: string[];
-};
-
 function creationCapability(workspace: Workspace, machine: string) {
-  const context = workspace.context as Workspace["context"] & {
-    creationCapabilities?: Record<string, CreationCapability>;
-  };
-  return context.creationCapabilities?.[machine];
+  return workspace.context.creationCapabilities?.[machine];
 }
 
 function creationUnavailableReason(

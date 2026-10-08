@@ -45,6 +45,7 @@ from .modules.work_inbox import build_work_inbox, InboxCursorError
 from .modules.notification_inbox import project_notification_inbox, NotificationProjectionError
 from .modules.business_traceability import build_safety_stop_traceability
 from .modules.location.query import query_location_tree
+from .creation_capabilities import build_creation_capabilities
 
 ROOT=Path(__file__).resolve().parents[2]
 SPEC=json.loads((ROOT/'app/api/openapi.yaml').read_text())
@@ -459,7 +460,12 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                 items.append(dict(machine=machine or supporting or ('evidence' if kind=='Evidence' else 'document'),record=deepcopy(r),actions=preflight(machine,r,session,role) if machine else []))
             visible_ids={x['record']['id'] for x in items}
             audits=[x for x in store.engine.audit_events if x['projectId']==project_id and x['objectRef']['objectId'] in visible_ids][-50:]
-            return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context=({k:v for k,v in store.meta.items() if k in ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId']} if store.meta.get('projectId')==project_id else {'projectId':project_id}),participants=[dict(partyId=r['partyId'],name=store.engine.get('Party',r['partyId'])['name'],actorGroup=r['actorGroup']) for (kind,_),r in store.engine._records.items() if kind=='RoleAssignment' and r['projectId']==project_id and r['active'] and r['actorGroup'] in ['SUP','CON','OWN','DES','ADM']],formSchemas=store.documents.schemas,demo=demo)
+            context=({k:deepcopy(v) for k,v in store.meta.items() if k in ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId']} if store.meta.get('projectId')==project_id else {'projectId':project_id})
+            context['creationCapabilities']=build_creation_capabilities(
+                store.engine,project_id,session['partyId'],role,context.get('scope'),
+                queue_enabled=app.state.queue_enabled,
+            )
+            return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context=context,participants=[dict(partyId=r['partyId'],name=store.engine.get('Party',r['partyId'])['name'],actorGroup=r['actorGroup']) for (kind,_),r in store.engine._records.items() if kind=='RoleAssignment' and r['projectId']==project_id and r['active'] and r['actorGroup'] in ['SUP','CON','OWN','DES','ADM']],formSchemas=store.documents.schemas,demo=demo)
 
     @app.get('/projects/{project_id}/roles')
     def roles(project_id:str,request:Request):

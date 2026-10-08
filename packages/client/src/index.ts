@@ -59,7 +59,7 @@ export interface CommandDescriptor {
   command: string;
   to: string;
   fields: string[];
-  authority: string;
+  authority: string | null;
   requiresInput: boolean;
   ready: boolean;
   blockedReason?: Failure | null;
