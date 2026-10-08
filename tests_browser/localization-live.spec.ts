@@ -31,6 +31,9 @@ for (const width of [390, 768, 1440]) {
     await page.setViewportSize({ width, height: 940 });
     await page.goto("/#/today");
     await expect(page.getByRole("combobox", { name: "개발 역할 선택" })).toBeVisible();
+    // Wait for the initial SUP workspace: otherwise its in-flight response can
+    // be mistaken for the first CON workspace on slower CI runners.
+    await expect(page.getByText("우선 확인할 업무", { exact: true })).toBeVisible();
 
     const rolePicker = page.locator(".topbar .role-picker select").nth(1);
     const languagePicker = page.locator(".topbar .role-picker select").first();
@@ -47,9 +50,11 @@ for (const width of [390, 768, 1440]) {
     // Role switches are genuine /dev/sessions + authorized /workspace reads.
     for (const role of ["CON", "OWN", "SUP"] as const) {
       await languagePicker.selectOption("ko");
-      const responsePromise = page.waitForResponse(
-        (response) => response.url().endsWith("/workspace") && response.ok(),
-      );
+      const responsePromise = page.waitForResponse(async (response) => {
+        if (!response.url().endsWith("/workspace") || !response.ok()) return false;
+        const candidate = (await response.json()) as WorkspaceResponse;
+        return candidate.role.actorGroup === role;
+      });
       await rolePicker.selectOption(role);
       const body = (await (await responsePromise).json()) as WorkspaceResponse;
       expect(body.role.actorGroup).toBe(role);
@@ -62,6 +67,12 @@ for (const width of [390, 768, 1440]) {
       const list = page.locator(`[data-ui-page="${route}"] .record-list`);
       const selectedRow = list.locator(".record-row").first();
       await expect(selectedRow).toBeVisible();
+      // The UI must also finish rendering the authorized response, not a
+      // previous-role snapshot, before comparing business invariants.
+      await expect.poll(async () => {
+        const id = await selectedRow.getAttribute("data-record-id");
+        return body.items.some((item) => item.record.id === id);
+      }).toBeTruthy();
       const recordId = await selectedRow.getAttribute("data-record-id");
       const current = body.items.find((item) => item.record.id === recordId);
       expect(current, "rendered record must originate in the authorized workspace").toBeDefined();
