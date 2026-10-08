@@ -1,6 +1,6 @@
 {
   "branch": "goal/create-capabilities-v1",
-  "checkpoint": "pending commit",
+  "checkpoint": "0ed5dd37326d67329608c6c7da98f216f62f0b8f",
   "scope": "Opt-in lazy isolated Engine runtime overlay for command previews. Default deep-clone behavior is unchanged; API flag wiring remains root-owned.",
   "design": {
     "api": "clone_for_preview(engine, borrow_runtime=True)",
