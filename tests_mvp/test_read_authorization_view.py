@@ -153,13 +153,22 @@ class ReadAuthorizationViewTests(unittest.TestCase):
             if machine == "report"
         )
         report["status"] = "review"
+        recipient = self.meta["actors"]["DES"]
+        report["report"]["recipients"] = [recipient["partyId"]]
         owner = self.meta["actors"]["OWN"]
-        for party_id in (owner["partyId"], actor["partyId"]):
-            owner_role = owner["roleAssignmentId"] if party_id == owner["partyId"] else role_id
+        for party_id, report_role in (
+            (owner["partyId"], owner["roleAssignmentId"]),
+            (actor["partyId"], role_id),
+            (recipient["partyId"], recipient["roleAssignmentId"]),
+        ):
             self.assertEqual(
-                outcome(lambda: self.engine.authorize_read(report, party_id, owner_role)),
-                outcome(lambda: self.view.authorize_read(report, party_id, owner_role)),
+                outcome(lambda: self.engine.authorize_read(report, party_id, report_role)),
+                outcome(lambda: self.view.authorize_read(report, party_id, report_role)),
             )
+        self.assertEqual(
+            outcome(lambda: self.view.authorize_read(report, owner["partyId"], owner["roleAssignmentId"]))[0:2],
+            ("error", "NOT_FOUND"),
+        )
 
 
 if __name__ == "__main__":
