@@ -60,3 +60,8 @@ export interface DrawingImpactIncident {
     responsiblePartyId: string;
   }>;
 }
+
+export interface DrawingImpactHistory extends DrawingImpactIncident {
+  resolvedAt: string | null;
+  state: "active" | "restored";
+}
