@@ -65,7 +65,7 @@ test("Korean, Vietnamese and English field views switch without changing form id
   await expect(page.getByLabel(formFieldLabels["urgent.fact"].ko)).toBeVisible();
 });
 
-for (const width of [390, 1440]) {
+for (const width of [390, 768, 1440]) {
   test(`Localized capture/document layouts do not overflow at ${width}px`, async ({
     page,
   }) => {
@@ -235,7 +235,7 @@ test("Exact decimal formatting preserves large amounts and long fractional strin
   expect(output.negativeZero).toBe("-$0.00000000000000000012");
 });
 
-for (const width of [390, 1440]) {
+for (const width of [390, 768, 1440]) {
   test("Contract and evidence details remain within viewport at " + width + "px", async ({ page }) => {
     await page.setViewportSize({ width, height: 920 });
     await page.goto("/#/contract");
