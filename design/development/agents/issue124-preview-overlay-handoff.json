@@ -1,0 +1,52 @@
+{
+  "branch": "goal/create-capabilities-v1",
+  "checkpoint": "pending commit",
+  "scope": "Opt-in lazy isolated Engine runtime overlay for command previews. Default deep-clone behavior is unchanged; API flag wiring remains root-owned.",
+  "design": {
+    "api": "clone_for_preview(engine, borrow_runtime=True)",
+    "borrowedRuntimeMaps": [
+      "_records",
+      "_history",
+      "_idempotency",
+      "_record_machines",
+      "_notifications",
+      "documents"
+    ],
+    "writeSurfaces": [
+      "Map assignments/deletions stay in a clone-local overlay.",
+      "Audit history is an immutable borrowed sequence with clone-local append.",
+      "Escalation keys are copied; unknown runtime attributes are deep-copied as a safety fallback.",
+      "Static Engine contracts are shared as with the existing preview clone."
+    ],
+    "safety": [
+      "Base dictionaries, lists, and tuple contents are exposed through recursive immutable borrowed views; nested mutation raises TypeError.",
+      "Engine.get still deep-copies records before command mutation; _save and related map updates write to local overlays.",
+      "Each preview receives a fresh overlay. The caller must keep it within the source read transaction.",
+      "The existing deep clone remains the default fallback."
+    ]
+  },
+  "evidenceBeforeOverlay": {
+    "sourceCommit": "01da66421f13baae7d8e51e4c2f715e3466ab26c",
+    "benchmark": "50k rows, 45k project rows, 3 live TCP rounds; project filtering and two non-overlapping page-1 rows passed.",
+    "page1MedianMs": 6613.292,
+    "page1P95Ms": 6628.291,
+    "apiCpuMs": 19520,
+    "peakRssBytes": 543797248,
+    "postgresCpuUsec": 520888,
+    "page100": "HTTP request exceeded the fixture's 60-second timeout.",
+    "meaning": "Authorization input caching improved page 1, but page 100 remains a blocking performance limit."
+  },
+  "tests": [
+    "tests_mvp.test_command_preview: default deep clone and borrowed overlay state isolation, recursively immutable nested borrowed data including tuple contents, clone-local writes, and unknown-runtime-attribute fallback.",
+    "Every seeded transition is compared across all fixture states and human roles against default deep clone; source state remains identical.",
+    "Fresh permission revocation/version changes are checked in both preview modes.",
+    "Related SafetyPermit/SafetyStopOrder linked-record checks are compared for both preview modes; failed guard leaves source state unchanged.",
+    "All six tests in tests_mvp.test_command_preview pass."
+  ],
+  "todo": [
+    "Root wires borrow_runtime=True only into work-inbox preflight; every other caller keeps the deep-clone default.",
+    "Run focused tests after API wiring and the live 50k HTTP page-1 and page-100 fixture. Report exact deltas and verify rights, totals, and pagination still match.",
+    "If any required Engine method mutates a borrowed raw nested value or relies on a concrete dict/list type, retain default clone for that path and expand isolation coverage before enabling it."
+  ],
+  "restart": "Cherry-pick the overlay implementation/tests/handoff commit onto root integration; leave services/api/main.py to root."
+}
