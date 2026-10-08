@@ -56,7 +56,7 @@ export function DrawingImpactPanel({ client, workspace, drawingRef, incidentId, 
     {!ready && <p role="status">영향 업무를 불러오는 중…</p>}
     {ready?.error && <p role="alert">영향 업무를 불러오지 못했습니다. {ready.error}</p>}
     {ready && !ready.error && <>
-      {bindingId ? <ActionButton onClick={() => setPreview(value => !value)}>{preview ? "도면 원본 닫기" : "해당 버전 도면 원본 보기"}</ActionButton>
+      {bindingId ? <ActionButton onClick={() => { setPdf(null); setPreview(value => !value); }}>{preview ? "도면 원본 닫기" : "해당 버전 도면 원본 보기"}</ActionButton>
         : <p>해당 버전의 PDF 원본을 현재 권한으로 열 수 없습니다.</p>}
       {preview && bindingId && !visiblePdf && <p role="status">도면 원본을 불러오는 중…</p>}
       {preview && visiblePdf?.error && <p role="alert">도면 원본을 열 수 없습니다. {visiblePdf.error}</p>}

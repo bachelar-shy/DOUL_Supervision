@@ -292,6 +292,15 @@ test("publishes and distributes a reviewed source as a field controlled construc
     objectType: "Inspection", objectId: inspection.record.id, version: inspection.record.version,
   });
   expect((await readInbox()).items.filter(item => item.notification.id === matching[0].notification.id)).toHaveLength(1);
+  const impacts = await responseJson<{items: Array<{
+    incidentId: string; drawingRef: DomainRef; items: Array<{sourceRef: DomainRef; machine: string; title: string}>;
+  }> }>(await request.get(`${base}/parallel/drawing-impacts`, {headers: headers(conSession)}), 200);
+  const incident = impacts.items.find(item => item.incidentId === matching[0].drawingImpact!.incidentId)!;
+  expect(incident).toBeTruthy();
+  expect(incident.drawingRef).toEqual(chosen.domainRef);
+  expect(incident.items.some(item => item.sourceRef.objectId === inspection.record.id
+    && item.sourceRef.version === inspection.record.version && item.machine === "inspection")).toBe(true);
+
 
   // The draft was authored by the API; reload the UI workspace before resolving its exact source.
   const refreshed = page.waitForResponse(response => response.url().endsWith("/workspace") && response.ok());
@@ -303,7 +312,17 @@ test("publishes and distributes a reviewed source as a field controlled construc
   const noticeRow = page.locator(`[data-notification-id="${matching[0].notification.id}"]`);
   await expect(noticeRow).toContainText("도면 변경에 따른 업무 재확인");
   await expect(noticeRow).toContainText(inspection.record.workName);
-  await noticeRow.getByRole("button", {name: "원본 보기", exact: true}).click();
+  await noticeRow.getByRole("button", {name: "영향 업무 보기", exact: true}).click();
+  const impactPanel = page.getByTestId("drawing-impact-panel");
+  await expect(impactPanel).toBeVisible();
+  await expect(impactPanel.getByTestId("impact-drawing-ref")).toContainText(chosen.domainRef.objectId);
+  await expect(impactPanel.getByTestId("impact-drawing-ref")).toContainText(`v${chosen.domainRef.version}`);
+  const impactWork = impactPanel.locator(`[data-impact-work="${inspection.record.id}"]`);
+  await expect(impactWork).toContainText(inspection.record.workName);
+  await expect(impactWork).toContainText(`v${inspection.record.version}`);
+  await impactPanel.getByRole("button", {name: "해당 버전 도면 원본 보기", exact: true}).click();
+  await expect(impactPanel.locator('iframe[title="해당 버전 도면 원본"]')).toHaveAttribute("src", /^blob:/);
+  await impactWork.getByRole("button", {name: "업무 원본 보기", exact: true}).click();
   await expect(page).toHaveURL(/#\/inspections/);
   await expect(page.getByRole("heading", {name: inspection.record.workName, exact: true})).toBeVisible();
 
