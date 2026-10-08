@@ -61,12 +61,14 @@
       "apps/web/src/data/completion-workspace.ts",
       "tests_browser/completion-handover-page.spec.ts"
     ],
+    "follow_up_commit": "d353e623bb0840ebe1813266c4d2209d3d6a7c6d",
     "implementation": {
       "api_boundary": "Page uses the SupervisionClient facade for create, Workspace WorkItems and their server-provided actions, and server creationCapabilities. It does not calculate readiness, infer rights, or synthesize commands.",
       "separate_records": "Commissioning packages, handover packages, and warranty claims remain separate items and tabs. Commissioning result history retains failed and later passed tests; handover shows exact scope, accepted documents and reservations; warranty shows defect, remedy, reinspection and closeout history.",
       "profile_references": "Creation accepts only exact active scoped Requirement refs from workspace.context.referenceCatalog whose applicability has the required commissioningProfile, handoverProfile, or warrantyPeriod object. The generic default requirementRef is never presented as a profile. Create remains unavailable if the required exact profile is not readable in scope.",
       "create_payloads": "Create forms send the schema-required separate data shapes, exact typed refs, and empty optional reference arrays; server commands and guards determine the next valid actions.",
-      "localization": "CompletionLabelKey/completionLabelKeys are exported from apps/web/src/data/completion-workspace.ts. Page accepts labels?: Partial<Record<CompletionLabelKey,string>>. Root maps completion.<key> dictionary labels and global command/state maps."
+      "localization": "CompletionLabelKey/completionLabelKeys are exported from apps/web/src/data/completion-workspace.ts. Page accepts labels?: Partial<Record<CompletionLabelKey,string>>. Root maps completion.<key> dictionary labels and global command/state maps.",
+      "accepted_handover_evidence": "Submitted document refs and server-accepted document refs are shown in separate sections; submitted scope and server-accepted scope are separate fields."
     },
     "required_root_wiring": [
       "Add #/completion route and navigation entry using CompletionHandoverPage.",
