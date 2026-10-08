@@ -1,0 +1,15 @@
+{
+  "issue": 124,
+  "sourceCommit": "01da66421f13baae7d8e51e4c2f715e3466ab26c",
+  "sourceCheckout": "clean detached worktree; exact commit 01da66421f13baae7d8e51e4c2f715e3466ab26c",
+  "scope": "Live TCP HTTP request to FastAPI/PostgreSQLSnapshotAdapter with 50,000 persisted synthetic records; GET /projects/{project_id}/parallel/work-inbox?limit=100",
+  "attempt": {
+    "roundsRequested": 2,
+    "pageSize": 100,
+    "clientTimeoutSeconds": 60
+  },
+  "result": "timed-out-before-response",
+  "observed": "First page request did not return before urllib client timeout; no page payload, total, project-filter assertion, cursor proof, or completed resource interval is available for this attempt.",
+  "cleanup": "Benchmark helper stopped its API process and removed only its disposable doul-goal-ops-inbox-postgres container.",
+  "limitation": "This records a >60 second page-size-100 request attempt; it does not claim an exact completion latency or a completed max-page benchmark."
+}
