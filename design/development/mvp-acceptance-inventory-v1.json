@@ -360,8 +360,8 @@
         "07_Forms_Document_Control.md",
         "04A_Vietnam_Mandatory_Documents_Forms.md"
       ],
-      "finding": "The web client defaults document rendering to Korean; inspected product UI uses Korean literals and ko-KR formatting. No EN/VI/KR locale catalogs, locale selection/fallback, translated report templates, or multilingual snapshot tests were found. Existing document policy says Vietnamese is the legal completion-document baseline and permits additional languages by agreement; it does not itself prove that all required report output is available in ko/vi/en.",
-      "gap": "If required reports must be produced in Korean, Vietnamese and English, implement locale-aware UI/report rendering and exact-source language tests; preserve Vietnamese legal original and agreed bilingual versions with source/version provenance."
+      "finding": "The acceptance scope requires required reports in Korean, Vietnamese and English. The web client defaults document rendering to Korean; inspected product UI uses Korean literals and ko-KR formatting. No EN/VI/KR locale catalogs, locale selection/fallback, translated report templates, or multilingual snapshot tests were found. Existing document policy says Vietnamese is the legal completion-document baseline and permits additional languages by agreement; that policy is not implementation evidence.",
+      "gap": "Implement locale-aware required-report UI/rendering in ko/vi/en and exact-source language tests; preserve the Vietnamese legal original and agreed bilingual versions with source/version provenance."
     }
   ],
   "pilotPrerequisites": {
