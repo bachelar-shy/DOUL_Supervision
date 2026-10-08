@@ -21,6 +21,8 @@ const booleanFields = new Set([
   "prestartVerified",
   "completionConfirmed",
   "preUseCheckComplete",
+  "acceptanceCriteriaMet",
+  "warrantyTrigger",
 ]);
 
 const jsonFields = new Set([
@@ -32,6 +34,10 @@ const jsonFields = new Set([
   "restrictionConditions",
   "disputedItems",
   "substantiationRequirements",
+  "ownerReservationInputs",
+  "acceptedScope",
+  "precommissioningChecklist",
+  "missingItems",
 ]);
 
 const numericFields = new Set([
@@ -55,6 +61,9 @@ const multipleReferenceFields = new Set([
 const selectableReferenceFields = new Set([
   ...multipleReferenceFields,
   "decisionRef",
+  "ownerDecisionRef",
+  "reinspectionRef",
+  "testResultRef",
   "baselineScheduleRef",
   "baselineRevisionRef",
 ]);
@@ -107,7 +116,11 @@ function referenceOptions(
             (current.record.data?.baselineScheduleRef as DomainRef | undefined)
               ?.objectId),
     );
-  else if (field === "decisionRef")
+  else if (field === "reinspectionRef")
+    candidates = candidates.filter((item) => item.machine === "inspection");
+  else if (field === "testResultRef")
+    candidates = candidates.filter((item) => item.machine === "evidence");
+  else if (field === "decisionRef" || field === "ownerDecisionRef")
     candidates = candidates.filter((item) => {
       if (item.machine !== "decision") return false;
       const target = item.record.targetRef as DomainRef | undefined;

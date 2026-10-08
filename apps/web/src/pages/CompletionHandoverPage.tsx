@@ -352,7 +352,7 @@ function CreateDraft({
   const drawSelect = (key: string, labelKey: CompletionLabelKey, options: CompletionReferenceOption[], multiple = false) => (
     <RefSelect key={key} label={t(labelKey)} options={options}
       value={multiple ? (Array.isArray(value(key)) ? value(key) as string[] : []) : (value(key) as string)}
-      onChange={(next) => multiple ? setMany(key, next) : setSingle(key, next)} multiple emptyLabel={t("noReferences")} />
+      onChange={(next) => multiple ? setMany(key, next) : setSingle(key, next)} multiple={multiple} emptyLabel={t("noReferences")} />
   );
 
   return <div className="modal-backdrop"><section className="modal completion-modal" role="dialog" aria-modal="true" aria-label={`${t(tab.key)} · ${t("create")}`}>
