@@ -29,6 +29,7 @@ from .application import (
     add_derived_frame,
     analysis_review_package,
     build_inspection_case,
+    closeout_reporting_complete,
     complete_media_analysis,
     create_case_owner_report,
     create_issue_package,
@@ -769,8 +770,9 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                         report.get('status') in ['acknowledged','followup','verified','closed']
                         for report in closeout_reports
                     ),
-                    ownerReportingComplete=any(
-                        report.get('status')=='closed' for report in closeout_reports
+                    ownerReportingComplete=(
+                        group['readiness']['ownerReportingComplete']
+                        and closeout_reporting_complete(closeout_reports)
                     ),
                 )
                 groups.append(dict(
