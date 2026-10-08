@@ -29153,6 +29153,13 @@
             "type": "string",
             "format": "uuid"
           },
+          "correctiveActionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "uniqueItems": true
+          },
           "previousInspectionId": {
             "type": "string",
             "format": "uuid"
@@ -35022,8 +35029,7 @@
               "objectType": {
                 "enum": [
                   "Decision",
-                  "Issue",
-                  "InformationItem"
+                  "Issue"
                 ]
               },
               "objectId": {
@@ -36131,6 +36137,13 @@
               "relatedIssueId": {
                 "type": "string",
                 "format": "uuid"
+              },
+              "correctiveActionRefs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DomainRef"
+                },
+                "uniqueItems": true
               },
               "previousInspectionId": {
                 "type": "string",
@@ -46901,8 +46914,7 @@
                       "objectType": {
                         "enum": [
                           "Decision",
-                          "Issue",
-                          "InformationItem"
+                          "Issue"
                         ]
                       },
                       "objectId": {

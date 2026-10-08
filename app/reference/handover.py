@@ -112,8 +112,15 @@ def _profile(engine, reference, record, key):
     return rule
 
 
-def _same_scope(source, target):
-    return all(source.get(field) == target.get(field) for field in ("packageId", "locationId", "discipline", "responsibleOrganizationId"))
+def _in_scope(source, target, location_ids=None, *, same_organization=False):
+    locations = set(location_ids or [source.get("locationId")])
+    same = (target.get("projectId") == source.get("projectId")
+            and target.get("packageId") == source.get("packageId")
+            and target.get("discipline") == source.get("discipline")
+            and target.get("locationId") in locations)
+    if same_organization:
+        same = same and target.get("responsibleOrganizationId") == source.get("responsibleOrganizationId")
+    return same
 
 
 def _approved_drawing(engine, record):
@@ -125,7 +132,8 @@ def _approved_drawing(engine, record):
 
 def _requirement_refs(engine, record):
     refs = record.get("requirementRefs") or []
-    _refs(engine, refs, record["projectId"], "Requirement", statuses={"active"}, code="REQUIREMENT_STALE", nonempty=True)
+    requirements = _refs(engine, refs, record["projectId"], "Requirement", statuses={"active"}, code="REQUIREMENT_STALE", nonempty=True)
+    require(all(_in_scope(record, requirement) for requirement in requirements), "SCOPE_MISMATCH", "Requirement references must match the exact package/location/discipline scope")
     return refs
 
 
@@ -174,6 +182,12 @@ def initialize_create(engine, machine, record):
         data.update(remedyEvidenceIds=[], reinspectionHistoryRefs=[], closureEvidenceRefs=[])
 
 
+def validate_creation(engine, machine, record, party_id, role):
+    """Validate F-07 creation after the Engine has authenticated the actor."""
+    if machine == "warranty_claim":
+        _warranty(engine, "warranty_report_ready", record, role)
+
+
 def _commissioning(engine, guard, record, role):
     data = _data(record)
     project = record["projectId"]
@@ -186,18 +200,20 @@ def _commissioning(engine, guard, record, role):
         _approved_drawing(engine, record)
         procedures = _refs(engine, data.get("testProcedureRefs"), project, "InformationItem", current=True, code="COMMISSIONING_PROCEDURE_INVALID", nonempty=True)
         for procedure in procedures:
-            require(procedure.get("subtype") == "MethodStatement" and procedure.get("status") in _ACCEPTED_REF_STATUSES, "COMMISSIONING_PROCEDURE_INVALID", "Test procedure must be a current approved MethodStatement")
+            require(_in_scope(record, procedure) and procedure.get("subtype") == "MethodStatement" and procedure.get("status") in _ACCEPTED_REF_STATUSES, "COMMISSIONING_PROCEDURE_INVALID", "Test procedure must be a current in-scope approved MethodStatement")
         required_procedures = profile.get("requiredTestProcedureRefs")
         require(isinstance(required_procedures, list), "CONTRACT_PROFILE_REQUIRED", "Commissioning profile must define requiredTestProcedureRefs")
         require(set(map(_ref_key, required_procedures)) <= set(map(_ref_key, data.get("testProcedureRefs", []))), "COMMISSIONING_PROCEDURE_INVALID", "Profile-required current test procedures are missing")
         _refs(engine, data.get("prerequisiteInspectionRefs"), project, "Inspection", current=True, code="COMMISSIONING_PREREQUISITE_INVALID", nonempty=True)
         for item in data.get("prerequisiteInspectionRefs", []):
             inspection = _ref(engine, item, project, "Inspection", current=True, code="COMMISSIONING_PREREQUISITE_INVALID")
-            require(inspection.get("resultStatus") == "pass" and inspection.get("nextWorkAllowed") is True and inspection.get("status") in {"passed", "completed"}, "COMMISSIONING_PREREQUISITE_INVALID", "Prerequisite inspection must pass and release its hold point")
+            require(_in_scope(record, inspection, same_organization=True) and inspection.get("resultStatus") == "pass" and inspection.get("nextWorkAllowed") is True and inspection.get("status") in {"passed", "completed"}, "COMMISSIONING_PREREQUISITE_INVALID", "Prerequisite inspection must be in scope, pass and release its hold point")
             if inspection.get("locationId"):
                 require(engine._scope(role.get("locationIds", []), inspection["locationId"], True), "SCOPE_MISMATCH", "Prerequisite inspection exceeds active role location scope")
-        _refs(engine, data.get("materialReadinessRefs"), project, ["WorkItem", "InformationItem"], current=True, code="COMMISSIONING_MATERIAL_NOT_READY")
-        _refs(engine, data.get("equipmentReadinessRefs"), project, ["WorkItem", "InformationItem"], current=True, code="COMMISSIONING_EQUIPMENT_NOT_READY")
+        for reference, readiness in zip(data.get("materialReadinessRefs", []), _refs(engine, data.get("materialReadinessRefs"), project, ["WorkItem", "InformationItem"], current=True, code="COMMISSIONING_MATERIAL_NOT_READY")):
+            require(_in_scope(record, readiness), "COMMISSIONING_MATERIAL_NOT_READY", "Material readiness reference is outside package scope")
+        for reference, readiness in zip(data.get("equipmentReadinessRefs", []), _refs(engine, data.get("equipmentReadinessRefs"), project, ["WorkItem", "InformationItem"], current=True, code="COMMISSIONING_EQUIPMENT_NOT_READY")):
+            require(_in_scope(record, readiness), "COMMISSIONING_EQUIPMENT_NOT_READY", "Equipment readiness reference is outside package scope")
         _refs(engine, data.get("calibrationRefs"), project, ["InformationItem", "Requirement"], current=True, code="COMMISSIONING_CALIBRATION_INVALID")
         _refs(engine, data.get("utilityReadinessRefs"), project, ["Evidence", "InformationItem"], current=True, code="COMMISSIONING_UTILITIES_INVALID")
         _refs(engine, data.get("safetyPermitRefs"), project, "WorkItem", current=True, code="COMMISSIONING_SAFETY_PERMIT_INVALID")
@@ -207,13 +223,18 @@ def _commissioning(engine, guard, record, role):
         require(set(map(_ref_key, required_integrated)) <= set(map(_ref_key, data.get("integratedTestRefs", []))), "COMMISSIONING_INTEGRATED_TEST_INVALID", "Profile-required integrated tests are missing")
         for reference, result in zip(data.get("calibrationRefs", []), _refs(engine, data.get("calibrationRefs", []), project, ["InformationItem", "Requirement"], current=True, code="COMMISSIONING_CALIBRATION_INVALID")):
             if reference["objectType"] == "Requirement":
-                require(result.get("status") == "active", "COMMISSIONING_CALIBRATION_INVALID", "Calibration Requirement must be active")
+                require(_in_scope(record, result) and result.get("status") == "active", "COMMISSIONING_CALIBRATION_INVALID", "Calibration Requirement must be active in package scope")
             else:
-                require(result.get("subtype") == "Certificate", "COMMISSIONING_CALIBRATION_INVALID", "Calibration evidence must be an accepted Certificate InformationItem")
+                require(_in_scope(record, result) and result.get("subtype") == "Certificate", "COMMISSIONING_CALIBRATION_INVALID", "Calibration evidence must be an in-scope accepted Certificate InformationItem")
                 _date_current(result, engine, "COMMISSIONING_CALIBRATION_INVALID")
         for reference, result in zip(data.get("utilityReadinessRefs", []), _refs(engine, data.get("utilityReadinessRefs", []), project, ["Evidence", "InformationItem"], current=True, code="COMMISSIONING_UTILITIES_INVALID")):
+            require(_in_scope(record, result), "COMMISSIONING_UTILITIES_INVALID", "Utility/temporary-condition evidence is outside package scope")
             if reference["objectType"] == "InformationItem":
                 require(result.get("status") in _ACCEPTED_REF_STATUSES, "COMMISSIONING_UTILITIES_INVALID", "Utility/temporary-condition record is not accepted")
+        for permit in _refs(engine, data.get("safetyPermitRefs"), project, "WorkItem", current=True, code="COMMISSIONING_SAFETY_PERMIT_INVALID"):
+            require(_in_scope(record, permit, same_organization=True), "COMMISSIONING_SAFETY_PERMIT_INVALID", "Safety permit is outside package scope")
+        integrated = _refs(engine, data.get("integratedTestRefs"), project, ["Evidence", "InformationItem"], current=True, code="COMMISSIONING_INTEGRATED_TEST_INVALID")
+        require(all(_in_scope(record, item) for item in integrated), "COMMISSIONING_INTEGRATED_TEST_INVALID", "Integrated test evidence is outside package scope")
     elif guard == "commissioning_prerequisites_ready":
         _commissioning(engine, "commissioning_scope_current", record, role)
         profile = _profile(engine, data["commissioningProfileRef"], record, "commissioningProfile")
@@ -260,6 +281,25 @@ def _commissioning(engine, guard, record, role):
                                and engine._scope(assignment.get("locationIds", []), record.get("locationId"), True)
                                and engine._scope(assignment.get("disciplines", []), record.get("discipline"))]
                 require(party.get("projectId") == project and party_id != record.get("createdBy") and bool(assignments), "COMMISSIONING_WITNESS_REQUIRED", "Witness must be an independent project technical/Owner participant assigned to this scope")
+                current_assignments = [assignment for assignment in assignments
+                                       if assignment.get("validFrom") and assignment.get("validTo")
+                                       and instant(assignment["validFrom"]) <= instant(engine.at()) < instant(assignment["validTo"])]
+                require(bool(current_assignments), "COMMISSIONING_WITNESS_REQUIRED", "Witness assignment must be valid at the test time")
+                qualified = False
+                qualification_error = None
+                for assignment in current_assignments:
+                    if assignment.get("actorGroup") == "OWN":
+                        qualified = True
+                        break
+                    try:
+                        engine._qualified(record, assignment)
+                        qualified = True
+                        break
+                    except ContractError as exc:
+                        qualification_error = exc
+                if not qualified and qualification_error is not None:
+                    raise qualification_error
+                require(qualified, "COMMISSIONING_WITNESS_QUALIFICATION_REQUIRED", "Technical witness needs a verified current qualification for this discipline")
     elif guard == "commissioning_test_result_ready":
         result_ref = data.get("testResultRef")
         _ref(engine, result_ref, project, "Evidence", current=True, code="COMMISSIONING_TEST_RESULT_REQUIRED")
@@ -280,7 +320,7 @@ def _commissioning(engine, guard, record, role):
         issues = _refs(engine, data.get("punchIssueRefs", []), project, "Issue", subtypes="Punch", current=True, code="COMMISSIONING_PUNCH_REQUIRED", nonempty=True)
         actions = _refs(engine, data.get("correctionActionRefs", []), project, "Action", current=True, code="COMMISSIONING_PUNCH_ACTION_REQUIRED", nonempty=True)
         issue_ids = {x["id"] for x in issues}
-        require(all(x.get("relatedIssueId") in issue_ids for x in actions), "COMMISSIONING_PUNCH_ACTION_REQUIRED", "Punch correction Actions must belong to a referenced Punch Issue")
+        require(all(x.get("relatedIssueId") in issue_ids and _in_scope(record, x, same_organization=True) for x in actions), "COMMISSIONING_PUNCH_ACTION_REQUIRED", "Punch correction Actions must belong to a referenced in-scope Punch Issue")
         require(any(x.get("status") in _ISSUE_OPEN for x in issues), "COMMISSIONING_PUNCH_REQUIRED", "Punch Issue must remain open while in punch resolution")
     elif guard == "commissioning_retest_ready":
         refs = _refs(engine, data.get("retestBasisRefs", []), project, "Action", current=True, code="COMMISSIONING_RETEST_BASIS_REQUIRED", nonempty=True)
@@ -314,7 +354,7 @@ def _handover(engine, guard, record, role):
             require(engine._scope(role.get("locationIds", []), location_id, True), "SCOPE_MISMATCH", "Handover location exceeds active role location scope")
         asset_records = _refs(engine, assets, project, "Asset", current=True, code="HANDOVER_SCOPE_MISMATCH")
         for asset in asset_records:
-            require(asset.get("locationId") in locations and _same_scope(record, asset), "HANDOVER_SCOPE_MISMATCH", "Handover asset lies outside the exact submitted package/location/discipline scope")
+            require(_in_scope(record, asset, locations), "HANDOVER_SCOPE_MISMATCH", "Handover asset lies outside the exact submitted package/location/discipline scope")
         if profile is None:
             profile = _profile(engine, data.get("handoverProfileRef"), record, "handoverProfile")
         _requirement_refs(engine, record)
@@ -322,13 +362,13 @@ def _handover(engine, guard, record, role):
         packages = _refs(engine, data.get("commissioningPackageRefs", []), project, "WorkItem", subtypes="CommissioningPackage", current=True, code="HANDOVER_COMMISSIONING_REQUIRED", nonempty=True)
         for package in packages:
             require(package.get("status") in {"ready_for_handover", "closed"} and package.get("data", {}).get("readinessStatus") == "ready", "HANDOVER_COMMISSIONING_REQUIRED", "Only ready commissioned packages can be handed over")
-            require(_same_scope(record, package), "SCOPE_MISMATCH", "Commissioning package does not match handover scope")
+            require(_in_scope(record, package, locations, same_organization=True), "SCOPE_MISMATCH", "Commissioning package does not match handover scope")
         required_packages = profile.get("requiredCommissioningPackageRefs", [])
         require(set(map(_ref_key, required_packages)) <= set(map(_ref_key, data["commissioningPackageRefs"])), "HANDOVER_COMMISSIONING_REQUIRED", "Profile-required CommissioningPackages are missing")
         _handover_documents(engine, record, profile)
         issue_records = _refs(engine, data.get("openIssueRefs", []), project, "Issue", current=True, code="HANDOVER_ISSUE_REFERENCE_INVALID")
         for issue in issue_records:
-            require(_same_scope(record, issue) and issue.get("status") in _ISSUE_OPEN, "HANDOVER_ISSUE_REFERENCE_INVALID", "Open issue reference must be current and in the submitted package scope")
+            require(_in_scope(record, issue, locations, same_organization=True) and issue.get("status") in _ISSUE_OPEN, "HANDOVER_ISSUE_REFERENCE_INVALID", "Open issue reference must be current and in the submitted package scope")
     if guard == "handover_package_submission_ready":
         return
     if guard == "handover_return_ready":
@@ -389,10 +429,10 @@ def _warranty(engine, guard, record, role):
             require(engine._scope(role.get("locationIds", []), location_id, True), "SCOPE_MISMATCH", "Warranty defect location exceeds active role scope")
         asset_records = _refs(engine, assets, project, "Asset", current=True, code="WARRANTY_SCOPE_MISMATCH")
         for asset in asset_records:
-            require(asset.get("locationId") in locations, "WARRANTY_SCOPE_MISMATCH", "Warranty asset lies outside exact defect location scope")
+            require(_in_scope(record, asset, locations), "WARRANTY_SCOPE_MISMATCH", "Warranty asset lies outside exact defect location scope")
         require(data.get("defectDescription") and data.get("causeDescription") and data.get("operationalImpact"), "WARRANTY_CAUSE_IMPACT_REQUIRED", "Defect observation, cause and operational impact are required")
         issue = _ref(engine, data.get("issueRef"), project, "Issue", current=True, code="WARRANTY_ISSUE_REQUIRED")
-        require(issue.get("subtype") in {"Defect", "Punch", "NCR"} and _same_scope(record, issue), "WARRANTY_ISSUE_REQUIRED", "A current defect Issue in the warranty scope is required")
+        require(issue.get("subtype") in {"Defect", "Punch", "NCR"} and _in_scope(record, issue, data["defectScope"]["locationIds"], same_organization=True), "WARRANTY_ISSUE_REQUIRED", "A current defect Issue in the warranty scope is required")
         if guard == "warranty_remedy_required_ready":
             require(data.get("responseDueAt"), "WARRANTY_RESPONSE_DUE_INVALID", "Supervisor must record a response deadline from the exact contract period")
             require(instant(data["responseDueAt"]) >= observed, "WARRANTY_RESPONSE_DUE_INVALID", "Contract response deadline cannot precede the defect observation")
@@ -410,16 +450,36 @@ def _warranty(engine, guard, record, role):
     elif guard == "warranty_remedy_required_ready":
         actions = _refs(engine, data.get("actionRefs", []), project, "Action", current=True, code="WARRANTY_ACTION_REQUIRED", nonempty=True)
         issue_id = data["issueRef"]["objectId"]
-        require(all(a.get("relatedIssueId") == issue_id and a.get("status") not in {"closed", "cancelled", "superseded"} for a in actions), "WARRANTY_ACTION_REQUIRED", "Remedy Actions must address this Issue and remain open")
+        require(all(a.get("relatedIssueId") == issue_id and _in_scope(record, a, data["defectScope"]["locationIds"], same_organization=True) and a.get("status") not in {"closed", "cancelled", "superseded"} for a in actions), "WARRANTY_ACTION_REQUIRED", "Remedy Actions must address this Issue in exact scope and remain open")
         require(instant(data["responseDueAt"]) > instant(engine.at()), "WARRANTY_RESPONSE_DUE_INVALID", "Response deadline has passed")
     elif guard == "warranty_remedy_start_ready":
         actions = _refs(engine, data.get("actionRefs", []), project, "Action", current=True, code="WARRANTY_ACTION_REQUIRED", nonempty=True)
-        require(all(a.get("responsibleOrganizationId") == record.get("responsibleOrganizationId") and a.get("status") in {"assigned", "in_progress"} for a in actions), "WARRANTY_ACTION_REQUIRED", "Contractor may start only its assigned, accepted corrective Actions")
+        require(all(_in_scope(record, a, data["defectScope"]["locationIds"], same_organization=True) and a.get("status") in {"assigned", "in_progress"} for a in actions), "WARRANTY_ACTION_REQUIRED", "Contractor may start only its assigned, accepted in-scope corrective Actions")
     elif guard == "warranty_remedy_submission_ready":
         require(bool(record.get("evidenceIds")) and bool(data.get("remedySummary", "").strip()), "WARRANTY_REMEDY_EVIDENCE_REQUIRED", "Remedy submission needs a summary and preserved evidence")
     elif guard in {"warranty_reinspection_passed", "warranty_reinspection_failed"}:
         inspection = _ref(engine, data.get("reinspectionRef"), project, "Inspection", current=True, code="WARRANTY_REINSPECTION_REQUIRED")
-        require(inspection.get("relatedIssueId") in (None, data["issueRef"]["objectId"]), "WARRANTY_REINSPECTION_SCOPE_MISMATCH", "Reinspection must apply to the linked defect Issue")
+        require(_in_scope(record, inspection, data["defectScope"]["locationIds"], same_organization=True) and inspection.get("relatedIssueId") == data["issueRef"]["objectId"], "WARRANTY_REINSPECTION_SCOPE_MISMATCH", "Reinspection must apply to the linked defect Issue in the exact warranty scope")
+        require(data.get("remedySubmittedAt"), "WARRANTY_REINSPECTION_REQUIRED", "Remedy must be submitted before reinspection")
+        inspected_at = inspection.get("inspectedAt") or inspection.get("updatedAt")
+        require(inspected_at and instant(inspected_at) >= instant(data["remedySubmittedAt"]) and instant(inspected_at) <= instant(engine.at()), "WARRANTY_REINSPECTION_CHRONOLOGY_INVALID", "Inspection must be dated after the submitted remedy and no later than the current time")
+        defect_issue = _ref(engine, data["issueRef"], project, "Issue", current=True, code="WARRANTY_ISSUE_REQUIRED")
+        require(inspection.get("correctionCycle") == defect_issue.get("correctionCycle"), "WARRANTY_REINSPECTION_CYCLE_INVALID", "Reinspection must belong to the current defect correction cycle")
+        correction_refs = inspection.get("correctiveActionRefs")
+        require(isinstance(correction_refs, list) and bool(correction_refs), "WARRANTY_REINSPECTION_ACTION_REQUIRED", "Reinspection must record the corrective Actions it verifies")
+        corrections = _refs(engine, correction_refs, project, "Action", current=True, statuses=_ACTION_VERIFIED, code="WARRANTY_REINSPECTION_ACTION_REQUIRED", nonempty=True)
+        linked_action_refs = data.get("actionRefs", [])
+        linked_actions = [_ref(engine, x, project, "Action", current=False, code="WARRANTY_REINSPECTION_ACTION_REQUIRED") for x in linked_action_refs]
+        require({x["id"] for x in corrections} == {x["objectId"] for x in linked_action_refs}
+                and all(x.get("relatedIssueId") == data["issueRef"]["objectId"]
+                        and x.get("correctionCycle") == defect_issue.get("correctionCycle")
+                        and _in_scope(record, x, data["defectScope"]["locationIds"], same_organization=True)
+                        for x in corrections + linked_actions),
+                "WARRANTY_REINSPECTION_ACTION_REQUIRED", "Reinspection must verify every current corrective Action linked to this exact defect")
+        require(all((x.get("verifiedAt") or x.get("completedAt") or x.get("updatedAt")) and instant(x.get("verifiedAt") or x.get("completedAt") or x.get("updatedAt")) <= instant(inspected_at) for x in corrections),
+                "WARRANTY_REINSPECTION_CHRONOLOGY_INVALID", "Corrective Actions must be verified before the reinspection date")
+        history_ids = {x.get("objectId") for x in data.get("reinspectionHistoryRefs", [])}
+        require(inspection["id"] not in history_ids, "WARRANTY_REINSPECTION_DUPLICATE", "Every reinspection cycle must use a new immutable Inspection record")
         if guard == "warranty_reinspection_passed":
             require(inspection.get("resultStatus") == "pass" and inspection.get("status") in {"passed", "completed"} and inspection.get("nextWorkAllowed") is True, "WARRANTY_REINSPECTION_FAILED", "Remedy cannot be accepted without a passing released reinspection")
         else:
@@ -430,14 +490,12 @@ def _warranty(engine, guard, record, role):
         period = _profile(engine, data["warrantyPeriodRef"], record, "warrantyPeriod")
         close_group = period.get("closeAuthorityActorGroup")
         require(close_group in {"SUP", "OWN"} and role.get("actorGroup") == close_group, "WARRANTY_CLOSE_AUTHORITY_UNCONFIGURED", "The exact contract warranty Requirement must select SUP or OWN as close authority")
-        closure = _ref(engine, data.get("closureRef"), project, ["Decision", "Issue", "InformationItem"], current=True, code="WARRANTY_CLOSURE_PROOF_REQUIRED")
+        closure = _ref(engine, data.get("closureRef"), project, ["Decision", "Issue"], current=True, code="WARRANTY_CLOSURE_PROOF_REQUIRED")
         closure_ref = data["closureRef"]
         if closure_ref["objectType"] == "Decision":
             require(closure.get("targetRef") == {"objectType":"WorkItem", "objectId":record["id"], "version":record["version"]} and closure.get("decision") == "approved", "WARRANTY_CLOSURE_PROOF_REQUIRED", "Closure Decision must approve this exact WarrantyClaim version")
-        elif closure_ref["objectType"] == "Issue":
-            require(closure["id"] == data["issueRef"]["objectId"] and closure.get("status") in {"closed", "verified"}, "WARRANTY_CLOSURE_PROOF_REQUIRED", "Closure Issue must be the linked defect and verified closed")
         else:
-            require(closure.get("status") in _ACCEPTED_REF_STATUSES and closure.get("projectId") == project, "WARRANTY_CLOSURE_PROOF_REQUIRED", "Closure information must be accepted in this project")
+            require(closure["id"] == data["issueRef"]["objectId"] and closure.get("status") in {"closed", "verified"}, "WARRANTY_CLOSURE_PROOF_REQUIRED", "Closure Issue must be the linked defect and verified closed")
         require(bool(record.get("evidenceIds")), "WARRANTY_CLOSURE_PROOF_REQUIRED", "Closure evidence is required")
         if close_group == "OWN":
             decision_ref = data.get("ownerDecisionRef")
@@ -566,7 +624,8 @@ def _latest_test(data):
 def _evidence(engine, evidence_ids, record, role):
     for evidence_id in evidence_ids:
         evidence = engine.get("Evidence", evidence_id)
-        require(evidence.get("projectId") == record["projectId"], "EVIDENCE_INVALID", evidence_id)
+        locations = record.get("data", {}).get("defectScope", {}).get("locationIds") if record.get("subtype") == "WarrantyClaim" else None
+        require(_in_scope(record, evidence, locations) if locations else _in_scope(record, evidence), "EVIDENCE_INVALID", evidence_id)
         engine._evidence_access(evidence_id, record, role)
 
 
@@ -576,18 +635,29 @@ def _accepted_readiness(engine, references, project_id, code, *, work_subtypes):
         require(record.get("status") in _ACCEPTED_REF_STATUSES, code, "Referenced material/equipment is not accepted/current")
         if reference["objectType"] == "WorkItem":
             require(record.get("subtype") in work_subtypes, code, "Readiness WorkItem has the wrong material/equipment subtype")
+            if record.get("subtype") == "SafetyEquipmentInspection":
+                inspection_data = record.get("data", {})
+                require(record.get("status") in {"passed", "completed"}, code, "Safety equipment inspection must pass")
+                require(inspection_data.get("equipmentAvailable") is True,
+                        code, "Equipment inspection must explicitly record the equipment as available")
+                try:
+                    engine._require_equipment_documents_current(record)
+                except ContractError as exc:
+                    raise ContractError(code, "Equipment inspection and its current certificate/calibration records must be valid") from exc
         else:
             require(record.get("subtype") in {"Certificate", "GeneralDocument"}, code, "Readiness InformationItem is not an accepted certificate/document")
+            _date_current(record, engine, code)
     return records
 
 
 def _reservation_inputs(engine, record, inputs, expected_issues, *, allow_unaccepted):
     require(isinstance(inputs, list), "HANDOVER_RESERVATIONS_REQUIRED", "Reservation list is required")
     issue_ids = {x["objectId"] for x in expected_issues}
+    locations = record["data"]["handoverScope"]["locationIds"]
     seen = set()
     for item in inputs:
         issue = _ref(engine, item.get("issueRef"), record["projectId"], "Issue", current=True, code="HANDOVER_RESERVATION_INVALID")
-        require(issue["id"] in issue_ids and issue.get("status") in _ISSUE_OPEN and _same_scope(record, issue), "HANDOVER_RESERVATION_INVALID", "Reservation must identify a current open issue in this package")
+        require(issue["id"] in issue_ids and issue.get("status") in _ISSUE_OPEN and _in_scope(record, issue, locations, same_organization=True), "HANDOVER_RESERVATION_INVALID", "Reservation must identify a current open issue in this package")
         require(issue["id"] not in seen, "HANDOVER_RESERVATION_INVALID", "Issue may appear in only one reservation")
         seen.add(issue["id"])
         owner = engine.get("Party", item.get("ownerPartyId"))
@@ -595,8 +665,10 @@ def _reservation_inputs(engine, record, inputs, expected_issues, *, allow_unacce
                        if kind == "RoleAssignment" and assignment.get("partyId") == item.get("ownerPartyId")
                        and assignment.get("projectId") == record["projectId"] and assignment.get("active")
                        and engine._scope(assignment.get("packageIds", []), record.get("packageId"))
-                       and engine._scope(assignment.get("locationIds", []), record.get("locationId"), True)
-                       and engine._scope(assignment.get("disciplines", []), record.get("discipline"))]
+                       and engine._scope(assignment.get("locationIds", []), issue.get("locationId"), True)
+                       and engine._scope(assignment.get("disciplines", []), record.get("discipline"))
+                       and assignment.get("validFrom") and assignment.get("validTo")
+                       and instant(assignment["validFrom"]) <= instant(engine.at()) < instant(assignment["validTo"])]
         require(owner.get("projectId") == record["projectId"] and bool(owner_roles), "HANDOVER_RESERVATION_INVALID", "Reservation owner must be an active project participant assigned to this scope")
         require(bool(item.get("closureRequirement", "").strip()), "HANDOVER_RESERVATION_INVALID", "Reservation must state its closure requirement")
         require(instant(item.get("dueAt", "")) >= instant(engine.at()), "HANDOVER_RESERVATION_INVALID", "Reservation due date cannot be in the past")
@@ -622,9 +694,12 @@ def _handover_documents(engine, record, profile):
         require(bool(records), "HANDOVER_DOCUMENTS_INCOMPLETE", f"Required document set {key} is empty")
         for reference, item in zip(refs, records):
             if reference["objectType"] == "InformationItem":
-                require(item.get("subtype") in subtypes and item.get("status") in _ACCEPTED_REF_STATUSES, "HANDOVER_DOCUMENTS_INCOMPLETE", f"{key} reference is not the accepted document type/status")
+                require(_in_scope(record, item, record["data"]["handoverScope"]["locationIds"]) and item.get("subtype") in subtypes and item.get("status") in _ACCEPTED_REF_STATUSES, "HANDOVER_DOCUMENTS_INCOMPLETE", f"{key} reference is not an accepted, current document in the exact handover scope")
             else:
-                require(item.get("status") in _ACCEPTED_REF_STATUSES and bool(item.get("snapshot", item.get("data"))), "HANDOVER_DOCUMENTS_INCOMPLETE", f"{key} snapshot is not a current accepted record")
+                sources = item.get("sourceDomainRefs", [])
+                require(item.get("status") in _ACCEPTED_REF_STATUSES and bool(item.get("sourcePayload")) and bool(sources), "HANDOVER_DOCUMENTS_INCOMPLETE", f"{key} snapshot is not a current accepted, traceable record")
+                source_records = _refs(engine, sources, record["projectId"], current=True, code="HANDOVER_DOCUMENTS_INCOMPLETE", nonempty=True)
+                require(all(_in_scope(record, source, record["data"]["handoverScope"]["locationIds"]) for source in source_records), "HANDOVER_DOCUMENTS_INCOMPLETE", f"{key} snapshot contains a source outside this handover scope")
 
 
 def _technical_handover_ready(data, profile):

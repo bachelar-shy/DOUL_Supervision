@@ -91,6 +91,13 @@ class HandoverContractTests(unittest.TestCase):
         self.assertEqual(warranty["properties"]["closeAuthorityActorGroup"]["enum"], ["SUP", "OWN"])
         self.assertIn("responseDueHours", warranty["required"])
 
+    def test_warranty_close_and_reinspection_references_are_exact_typed_links(self):
+        closure_types = self.schemas["WarrantyClaimData"]["properties"]["closureRef"]["properties"]["objectType"]["enum"]
+        self.assertEqual(closure_types, ["Decision", "Issue"])
+        correction_refs = self.schemas["Inspection"]["properties"]["correctiveActionRefs"]
+        self.assertTrue(correction_refs["uniqueItems"])
+        self.assertEqual(correction_refs["items"]["$ref"], "#/components/schemas/DomainRef")
+
 
 if __name__ == "__main__":
     unittest.main()
