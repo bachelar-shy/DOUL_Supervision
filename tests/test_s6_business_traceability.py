@@ -84,7 +84,7 @@ class SafetyStopTraceabilityTests(unittest.TestCase):
         self.engine.add("Issue", "issue-a", self.project, version=6, status="reinspection",
                         locationId="loc-a", drawingRef=ref("InformationItem", "drawing-a", 4),
                         evidenceIds=["evidence-a"], actionIds=["action-a"], inspectionIds=["inspection-a"])
-        self.engine.add("InformationItem", "report-a", self.project, version=9, subtype="OwnerReport", status="issued",
+        self.engine.add("InformationItem", "report-a", self.project, version=9, subtype="Report", status="issued",
                         locationId="loc-a", evidenceIds=["evidence-a"],
                         report={"sourceDomainRefs": [ref("WorkItem", "stop-a", 2)]})
         self.stop = self.engine.add(
@@ -127,6 +127,55 @@ class SafetyStopTraceabilityTests(unittest.TestCase):
         self.assertTrue(result["readOnly"])
         self.assertFalse(result["officialStateChanged"])
         self.assertEqual(self.engine.current, before)
+
+    def test_wrong_relation_types_and_report_subtypes_are_sanitized(self):
+        for field in ("issueRefs", "correctiveActionRefs", "resumeVerificationRefs", "ownerReportRefs"):
+            with self.subTest(field=field):
+                self.setUp()
+                self.stop["data"][field] = [ref("WorkItem", "permit-a", 7)]
+                result = self.run_trace()
+                self.assertFalse(any(row["relation"] == field for row in result["links"]))
+                diagnostics = [d for d in result["diagnostics"] if d["sourceField"] == "data." + field]
+                self.assertEqual(diagnostics, [{"relation": field, "sourceField": "data." + field,
+                    "status": "invalid_reference", "target": None}])
+                self.assertNotIn("permit-a", repr(diagnostics))
+                if field == "issueRefs":
+                    self.assertFalse(any(row["relation"].startswith("issue.") for row in result["links"]))
+        for subtype in ("Drawing", "OwnerReport"):
+            with self.subTest(subtype=subtype):
+                self.setUp()
+                self.engine.add("InformationItem", "wrong-report", self.project, subtype=subtype)
+                self.stop["data"]["ownerReportRefs"] = [ref("InformationItem", "wrong-report", 1)]
+                result = self.run_trace()
+                self.assertFalse(any(row["relation"] == "ownerReportRefs" for row in result["links"]))
+
+    def test_resolved_identity_and_versions_cannot_be_substituted(self):
+        for change in ({"id": "different-id"}, {"version": 7}, {"objectType": "Action"}):
+            with self.subTest(change=change):
+                self.setUp()
+                self.engine.history[("Issue", "issue-a", 6)].update(change)
+                result = self.run_trace()
+                self.assertFalse(any(row["relation"] == "issueRefs" for row in result["links"]))
+                self.assertTrue(any(d["sourceField"] == "data.issueRefs" and d["status"] == "invalid_reference"
+                    for d in result["diagnostics"]))
+        self.setUp()
+        self.engine.current[("Action", "action-a")]["objectType"] = "Issue"
+        result = self.run_trace()
+        self.assertFalse(any(row["relation"] == "issue.actionIds" for row in result["links"]))
+
+    def test_historical_version_is_not_replaced_by_current_record(self):
+        self.engine.add("Issue", "issue-a", self.project, version=7, status="closed")
+        result = self.run_trace()
+        linked = next(row for row in result["links"] if row["relation"] == "issueRefs")
+        self.assertEqual(linked["reference"]["version"], 6)
+        self.assertEqual(linked["record"]["status"], "reinspection")
+
+    def test_non_drawing_source_and_malformed_versions_are_not_followed(self):
+        self.stop["drawingRef"] = ref("WorkItem", "permit-a", 7)
+        for version in (True, 0, "6"):
+            self.stop["data"]["issueRefs"] = [ref("Issue", "issue-a", version)]
+            result = self.run_trace()
+            self.assertFalse(any(row["relation"] in {"stopOrder.drawing", "issueRefs"} for row in result["links"]))
 
     def test_does_not_infer_issue_from_same_location(self):
         self.engine.add("Issue", "unlinked-issue", self.project, version=1, status="open", locationId="loc-a")

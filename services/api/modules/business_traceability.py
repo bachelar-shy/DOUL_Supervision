@@ -13,8 +13,16 @@ _LINK_FIELDS = (
     ("resumeVerificationRefs", "resumeVerificationRefs"),
     ("ownerReportRefs", "ownerReportRefs"),
 )
+_EXPECTED_TYPES = {
+    "affectedPermitRefs": "WorkItem",
+    "issueRefs": "Issue",
+    "correctiveActionRefs": "Action",
+    "resumeVerificationRefs": "Inspection",
+    "ownerReportRefs": "InformationItem",
+}
 _EXPECTED_SUBTYPES = {
     "affectedPermitRefs": "SafetyPermit",
+    "ownerReportRefs": "Report",
 }
 _ISSUE_ID_FIELDS = (("actionIds", "Action"), ("inspectionIds", "Inspection"))
 _AUTHORIZATION_DENIAL_CODES = {
@@ -29,6 +37,17 @@ _AUTHORIZATION_DENIAL_CODES = {
     "QUALIFICATION_INVALID",
     "SCOPE_MISMATCH",
 }
+
+
+def _valid_version(value):
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def _matches_record(record, kind, object_id, version=None):
+    return (record.get("id") == object_id
+            and record.get("objectType", kind) == kind
+            and _valid_version(record.get("version"))
+            and (version is None or record["version"] == version))
 
 
 def _diagnostic(relation, source_field, status):
@@ -84,8 +103,12 @@ def _authorize_link(engine, record, party_id, role_id, relation, source_field, d
 
 
 def _add_domain_ref(engine, ref, project_id, party_id, role_id, relation,
-                    source_field, rows, diagnostics, *, expected_subtype=None):
+                    source_field, rows, diagnostics, *, expected_type, expected_subtype=None):
     if not isinstance(ref, dict) or not {"objectType", "objectId", "version"} <= set(ref):
+        diagnostics.append(_diagnostic(relation, source_field, "invalid_reference"))
+        return None
+    if (ref["objectType"] != expected_type or not isinstance(ref["objectId"], str)
+            or not ref["objectId"] or not _valid_version(ref["version"])):
         diagnostics.append(_diagnostic(relation, source_field, "invalid_reference"))
         return None
     try:
@@ -93,7 +116,8 @@ def _add_domain_ref(engine, ref, project_id, party_id, role_id, relation,
     except ContractError as error:
         diagnostics.append(_diagnostic(relation, source_field, _classify_error(error)))
         return None
-    if expected_subtype and record.get("subtype") != expected_subtype:
+    if (not _matches_record(record, expected_type, ref["objectId"], ref["version"])
+            or (expected_subtype and record.get("subtype") != expected_subtype)):
         diagnostics.append(_diagnostic(relation, source_field, "invalid_reference"))
         return None
     if not _authorize_link(engine, record, party_id, role_id, relation, source_field, diagnostics):
@@ -123,6 +147,9 @@ def _add_current_id(engine, object_type, object_id, project_id, party_id, role_i
     if record.get("projectId") != project_id:
         diagnostics.append(_diagnostic(relation, source_field, "foreign_project"))
         return None
+    if not _matches_record(record, object_type, object_id):
+        diagnostics.append(_diagnostic(relation, source_field, "invalid_reference"))
+        return None
     authorization_record = record
     if object_type == "Location":
         # Engine scope checks use locationId, while the Location object schema
@@ -150,7 +177,7 @@ def _trace_context(engine, record, project_id, party_id, role_id, relation_prefi
         _add_domain_ref(
             engine, drawing_ref, project_id, party_id, role_id,
             relation_prefix + ".drawing", source_field_prefix + ".drawingRef",
-            rows, diagnostics, expected_subtype="Drawing",
+            rows, diagnostics, expected_type="InformationItem", expected_subtype="Drawing",
         )
     location_id = record.get("locationId")
     if location_id:
@@ -180,8 +207,12 @@ def build_safety_stop_traceability(engine, stop_order_ref, party_id, role_id):
         raise ContractError("REFERENCE_INVALID", "SafetyStopOrder reference is invalid")
     if stop_order_ref.get("objectType") != "WorkItem":
         raise ContractError("REFERENCE_TYPE_INVALID", "SafetyStopOrder must be a WorkItem")
+    if (not isinstance(stop_order_ref["objectId"], str) or not stop_order_ref["objectId"]
+            or not _valid_version(stop_order_ref["version"])):
+        raise ContractError("REFERENCE_INVALID", "SafetyStopOrder reference is invalid")
     root = engine.resolve(stop_order_ref)
-    if root.get("subtype") != "SafetyStopOrder":
+    if (not _matches_record(root, "WorkItem", stop_order_ref["objectId"], stop_order_ref["version"])
+            or root.get("subtype") != "SafetyStopOrder"):
         raise ContractError("REFERENCE_TYPE_INVALID", "WorkItem is not a SafetyStopOrder")
     engine.authorize_read(root, party_id, role_id)
 
@@ -200,6 +231,7 @@ def build_safety_stop_traceability(engine, stop_order_ref, party_id, role_id):
             linked = _add_domain_ref(
                 engine, ref, project_id, party_id, role_id,
                 relation, "data." + field, rows, diagnostics,
+                expected_type=_EXPECTED_TYPES[field],
                 expected_subtype=_EXPECTED_SUBTYPES.get(field),
             )
             if linked is not None:
