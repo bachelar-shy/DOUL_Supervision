@@ -1,0 +1,51 @@
+{
+  "task": "DOUL Supervision F-05 Measurement / Payment workspace UI",
+  "branch": "goal/payment-ui-v1",
+  "base": "943d1dd",
+  "commits": [
+    "613983b27b268f737f8e43ac8e7020c6389fa981"
+  ],
+  "files": [
+    "apps/web/src/pages/MeasurementPaymentPage.tsx",
+    "apps/web/src/pages/measurement-payment.css",
+    "apps/web/src/data/payment-workspace.ts",
+    "tests_browser/payment-workspace.spec.ts"
+  ],
+  "implementation": {
+    "api_boundary": "Page uses the SupervisionClient facade for draft creation, WorkItem records for server state, each WorkItem.actions list for availableCommands, and server creationCapabilities for create affordances.",
+    "record_shapes": {
+      "contract_boq": "record.boq",
+      "quantity_measurement": "record.data",
+      "payment_claim": "record.data",
+      "payment_records": "record.data.paymentRecords[]"
+    },
+    "financial_display": "Keeps decimal strings intact and displays claimed, verified, blocked, recommended, approved, paid, and disputed values independently. No UI valuation or eligibility calculation.",
+    "history": "Renders each actual payment/correction/cancellation record with amount, currency, date, payment reference, record ID, evidence IDs, and superseded record/reason when supplied.",
+    "localization": "PaymentLabelKey/paymentLabelKeys are exported from apps/web/src/data/payment-workspace.ts. The page accepts labels?: Partial<Record<PaymentLabelKey, string>>. Root should map the i18n payment.<key> dictionary into labels; global commands/states maps provide localized command/status labels."
+  },
+  "required_root_wiring": [
+    "Add #/payment route and navigation entry using MeasurementPaymentPage.",
+    "Pass the existing client, workspace, selected/current item, online state, onSelect, onOpenCommand, and refresh props.",
+    "Pass workspace.context.creationCapabilities as createCapabilities (machine keyed descriptors with canCreate/status/authority/reasons); absent capability remains unavailable.",
+    "Pass localized payment labels keyed by PaymentLabelKey; do not add a client-side create permission fallback.",
+    "Add contract_boq, quantity_measurement, and payment_claim collection mappings in SupervisionClient workflowCollections so generic facade create/execute calls reach the correct API collections."
+  ],
+  "validation": {
+    "passed": [
+      "npm run typecheck --workspace apps/web",
+      "npm run web:build",
+      "npm run check:ui-boundary",
+      "npx playwright test --config=work/payment.playwright.config.ts --grep 'Payment endpoints reject' (1 passed; isolated API 8793 and web 5183)"
+    ],
+    "pending": [
+      "Run full payment-workspace browser spec after #/payment route and localization props are integrated.",
+      "Run a UI-browser full BOQ → verified measurement → recommendation → Owner decision → partial payment/correction chain after supported trusted payment-rule and released-inspection HTTP fixtures are available. API workflow acceptance is maintained by payment_api; its initial fixture seeds the payment calculation Requirement and released Inspection directly, so that test does not currently prove browser-driven close-loop completion."
+    ]
+  },
+  "next_steps": [
+    "Root integrates shared route/facade/client wiring and i18n dictionaries.",
+    "Run the first browser test to verify UI create capability and real API-backed claim draft creation.",
+    "Run both browser tests on the payment UI branch after root wiring.",
+    "Do not describe the payment UI browser acceptance as a completed pilot or completed full AC-PAY closed loop until the supported HTTP fixture chain is run through the UI."
+  ]
+}
