@@ -1,0 +1,54 @@
+{
+  "version": "1.0",
+  "auditBranch": "goal/acceptance-audit-v1",
+  "baseCommit": "943d1dd",
+  "inventory": "design/development/mvp-acceptance-inventory-v1.json",
+  "priorityForParallelDevelopment": [
+    {
+      "rank": 1,
+      "workstream": "commissioning_handover_warranty",
+      "reason": "AC-HO-01 is contract-only; no domain machine, HTTP API, connected UI or execution tests exist. This is the largest capability-completion gap.",
+      "deliverable": "Contract-bound state and authority model, persistent API commands/read models, connected workflow UI, full rejection/retest/partial-acceptance/warranty-close acceptance tests.",
+      "acceptanceBoundary": "Do not count form fields or mock UI as implementation; test Commissioning Pass != Handover and Handover != Warranty close."
+    },
+    {
+      "rank": 2,
+      "workstream": "safety_ac_s_01_and_issue_112",
+      "reason": "Backend acceptance exists and ledger is stale per open issue #112; remaining UI gap is the end-to-end remediation/reverification/explicit lift/resume flow.",
+      "deliverable": "Promote F-03 only to backend_api_implemented with exact existing evidence; add real API-backed browser E2E through all AC-S-01 steps and negative paths.",
+      "acceptanceBoundary": "Synthetic staging is development validation; it is not pilot verification. Do not mark AC-S-01 integration pass from only premature-resume guard screen."
+    },
+    {
+      "rank": 3,
+      "workstream": "required_report_locales",
+      "reason": "No locale catalogs or localized output proof found; inspected UI/report surfaces are Korean and legal completion documents require Vietnamese baseline, with English/Korean supplementary language depending on project agreement.",
+      "deliverable": "Locale selection and en/vi/ko report/document output with controlling-language provenance and locale snapshot tests, driven by the approved project language policy.",
+      "acceptanceBoundary": "Do not replace the Vietnamese legal original with a translation; record project-approved required languages."
+    },
+    {
+      "rank": 4,
+      "workstream": "payment_ac_pay_01",
+      "reason": "Current F-05 ledger and evidence establish structured contract only; no payment API/persistence/UI full flow found.",
+      "deliverable": "Real HTTP persistence plus connected measurement, recommendation, Owner approval/adjustment and separate paid-record lifecycle; rejection/revision/idempotency/version tests.",
+      "acceptanceBoundary": "Recommendation != approval; approval != actual payment."
+    },
+    {
+      "rank": 5,
+      "workstream": "quality_report_and_crosscutting_scenario_integration",
+      "reason": "Quality and Owner report have separate backend/UI pieces but lack one integrated scenario; AUTH/QUAL/ADM, storage failure and offline conflict also need targeted acceptance flows.",
+      "deliverable": "Prioritize exact missing scenarios from inventory and keep function/stage promotions bounded to proven subfeatures."
+    }
+  ],
+  "pilotBlockers": [
+    "No actual project Configuration Pack selected and validated.",
+    "No real pilot actor accounts/RoleAssignments, qualification validity, scope matrix, or P1–P4 owner report routing supplied.",
+    "No adopted legal form/original identifiers or project-approved report-language policy supplied.",
+    "No assigned backup/restore owner, outage contact, or media-provider/export/retention/cost decisions where applicable.",
+    "No site evidence or actual pilot acceptance snapshots; staging and synthetic fixtures do not satisfy pilot_verified."
+  ],
+  "nonGoals": [
+    "Do not label mock/demo/synthetic fixture calls as actual API or site pilot proof.",
+    "Do not promote a whole function because only a partial scenario or UI surface passed.",
+    "Do not fabricate missing account, role, qualification, routing, project, language-policy, or provider values."
+  ]
+}
