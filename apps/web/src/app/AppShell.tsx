@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarDays } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type {
   CommandDescriptor,
   Fields,
@@ -26,15 +27,12 @@ import {
 } from "../pages";
 import { Icon } from "../pages/shared";
 import { machineForRoute, mobileRoutes, roleRoutes, routes } from "./routes";
-
-function formatTodayDate(value: Date) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-  }).format(value);
-}
+import {
+  appLanguages,
+  changeAppLanguage,
+  type AppLanguage,
+} from "../i18n/config";
+import { formatLongDate } from "../i18n/format";
 
 function millisecondsUntilNextLocalDay(now: Date) {
   const next = new Date(now);
@@ -43,8 +41,15 @@ function millisecondsUntilNextLocalDay(now: Date) {
 }
 
 export function AppShell({ client }: { client: SupervisionClient }) {
+  const { t, i18n } = useTranslation();
+  const roleLabel = (value: HumanRole) =>
+    t(`roles.${value}`, { defaultValue: roles[value] });
+  const routeLabel = (value: (typeof routes)[number] | undefined) =>
+    value
+      ? t(value.labelKey ?? "", { defaultValue: value.label })
+      : "";
   const [role, setRole] = useState<HumanRole>("SUP");
-  const [todayDate, setTodayDate] = useState(() => formatTodayDate(new Date()));
+  const [todayDate, setTodayDate] = useState(() => formatLongDate(new Date()));
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [route, setRoute] = useState(location.hash.slice(2) || "today");
   const [selected, setSelected] = useState<string | null>(null);
@@ -64,11 +69,11 @@ export function AppShell({ client }: { client: SupervisionClient }) {
       setWorkspace(await client.workspace());
       setError("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "연결 오류");
+      setError(e instanceof Error ? e.message : t("app.error.connection"));
     } finally {
       setLoading(false);
     }
-  }, [client]);
+  }, [client, t]);
   useEffect(() => {
     const n = ++sequence.current;
     client
@@ -86,16 +91,17 @@ export function AppShell({ client }: { client: SupervisionClient }) {
   }, [client, role]);
   useEffect(() => {
     let timer = 0;
+    setTodayDate(formatLongDate(new Date()));
     const scheduleDateRefresh = () => {
       const now = new Date();
       timer = window.setTimeout(() => {
-        setTodayDate(formatTodayDate(new Date()));
+        setTodayDate(formatLongDate(new Date()));
         scheduleDateRefresh();
       }, millisecondsUntilNextLocalDay(now));
     };
     scheduleDateRefresh();
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [i18n.resolvedLanguage]);
   useEffect(() => {
     const net = () => setOnline(navigator.onLine);
     const hash = () => {
@@ -126,9 +132,12 @@ export function AppShell({ client }: { client: SupervisionClient }) {
   };
   const allowed = roleRoutes[role];
   const safeRoute = allowed.includes(route) ? route : "today";
-  const mobileItems = mobileRoutes[role].filter((item) =>
-    allowed.includes(item.id),
-  );
+  const mobileItems = mobileRoutes[role]
+    .filter((item) => allowed.includes(item.id))
+    .map((item) => ({
+      ...item,
+      label: t(item.labelKey ?? "", { defaultValue: item.label }),
+    }));
   const items = workspace?.items || [];
   const current = items.find((x) => x.record.id === selected) || null;
   async function perform(
@@ -137,12 +146,9 @@ export function AppShell({ client }: { client: SupervisionClient }) {
     payload: Fields = {},
     evidenceIds: string[] = [],
   ) {
-    if (!online)
-      throw new Error(
-        "오프라인입니다. 공식 제출은 연결 복구 후 다시 확인하십시오.",
-      );
+    if (!online) throw new Error(t("app.error.offline"));
     await client.execute(item, command, payload, evidenceIds);
-    setToast("서버에서 처리했습니다.");
+    setToast(t("app.toast.serverProcessed"));
     await refresh();
   }
   async function createInspection() {
@@ -184,7 +190,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         correctionCycle: 0,
         evidenceIds: item.record.evidenceIds || [],
       });
-      setToast("공식 이슈가 발행되었습니다.");
+      setToast(t("app.toast.issuePublished"));
       await refresh();
       nav("issues");
     } catch (e) {
@@ -200,12 +206,12 @@ export function AppShell({ client }: { client: SupervisionClient }) {
           </b>
           <small>SUPERVISION</small>
         </div>
-        <div className="workspace-label">PROJECT WORKSPACE</div>
+        <div className="workspace-label">{t("app.workspace")}</div>
         <div className="project-chip">
           <span className="project-mark">D</span>
           <div>
-            <strong>시범현장</strong>
-            <small>예시 데이터 · 개발용</small>
+            <strong>{t("app.sampleSite")}</strong>
+            <small>{t("app.sampleData")}</small>
           </div>
         </div>
         <NavigationList
@@ -213,9 +219,9 @@ export function AppShell({ client }: { client: SupervisionClient }) {
           onNavigate={nav}
           items={routes
             .filter((x) => allowed.includes(x.id))
-            .map(({ id, label, icon }) => ({
+            .map(({ id, label, labelKey, icon }) => ({
               id,
-              label,
+              label: t(labelKey ?? "", { defaultValue: label }),
               icon: <Icon name={icon} />,
               badge:
                 id === "observations"
@@ -228,7 +234,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
             }))}
         />
         <div className="side-bottom">
-          <span className="dot" /> 참조 계약 v2.1
+          <span className="dot" /> {t("app.contractRef")}
           <small>EXPLAIN · VERIFY · RECORD</small>
         </div>
       </aside>
@@ -236,22 +242,38 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         <header className="topbar">
           <button
             className="icon-button menu-toggle"
-            aria-label="메뉴 열기"
+            aria-label={t("app.menuOpen")}
             onClick={() => setMenu(!menu)}
           >
             <Icon name="layers" />
           </button>
           <div className="breadcrumbs">
-            DOUL / <b>{routes.find((x) => x.id === safeRoute)?.label}</b>
+            DOUL / <b>{routeLabel(routes.find((x) => x.id === safeRoute))}</b>
           </div>
           <div className="top-actions">
             <span className={"connection " + (!online ? "offline" : "")}>
-              {online ? "온라인" : "오프라인"}
+              {online ? t("app.connection.online") : t("app.connection.offline")}
             </span>
             <label className="role-picker">
-              개발 역할{" "}
+              {t("app.languagePicker")}{" "}
               <select
-                aria-label="개발 역할 선택"
+                aria-label={t("app.languagePickerAria")}
+                value={i18n.resolvedLanguage ?? i18n.language}
+                onChange={(e) =>
+                  void changeAppLanguage(e.target.value as AppLanguage)
+                }
+              >
+                {appLanguages.map((language) => (
+                  <option key={language.code} value={language.code}>
+                    {language.nativeName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="role-picker">
+              {t("app.rolePicker")}{" "}
+              <select
+                aria-label={t("app.rolePickerAria")}
                 value={role}
                 onChange={(e) => {
                   setWorkspace(null);
@@ -261,27 +283,24 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   nav("today");
                 }}
               >
-                {Object.entries(roles).map(([k, v]) => (
+                {Object.keys(roles).map((k) => (
                   <option key={k} value={k}>
-                    {v}
+                    {roleLabel(k as HumanRole)}
                   </option>
                 ))}
               </select>
             </label>
-            <span className="avatar">{roles[role][0]}</span>
+            <span className="avatar">{roleLabel(role)[0]}</span>
           </div>
         </header>
         <div className="demo-bar">
           {client.kind === "mock" ? (
             <>
-              UI Mock Preview · 실제 서버 동작이 아닙니다.{" "}
-              <span>업무 명령·업로드·발행은 실행하지 않습니다.</span>
+              {t("app.demo.mock")}{" "}
+              <span>{t("app.demo.mockDetail")}</span>
             </>
           ) : (
-            <>
-              개발 미리보기 · 실제 현장 기록이 아닙니다.{" "}
-              <span>법적 서명·AI·AR은 연동 전입니다.</span>
-            </>
+            <>{t("app.demo.live")}</>
           )}
         </div>
         {!online && (
@@ -292,8 +311,8 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         )}
         <main>
           <PageHeader
-            eyebrow={roles[role] + " 작업공간"}
-            title={routes.find((x) => x.id === safeRoute)?.label}
+            eyebrow={roleLabel(role) + " · " + t("app.workspace")}
+            title={routeLabel(routes.find((x) => x.id === safeRoute))}
             description={
               safeRoute === "today"
                 ? "확인이 필요한 업무부터, 증빙과 함께."

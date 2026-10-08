@@ -6,6 +6,15 @@ import { EvidenceDetailSheet } from "../ui/catalog";
 import { evidenceMediaLabel, evidenceSourceLabel } from "./evidence-utils";
 import { Icon } from "./shared";
 import { recordTitle } from "./record-utils";
+import { formatDateTime } from "../i18n/format";
+import i18n from "../i18n/config";
+
+function tr(
+  key: string,
+  values: Record<string, string | number | boolean> = {},
+) {
+  return i18n.t(key, values);
+}
 
 interface EvidencePreviewState {
   loading: boolean;
@@ -25,21 +34,15 @@ function numericValue(value: unknown) {
 
 function formatDate(value: unknown) {
   const source = textValue(value);
-  if (!source) return "정보 없음/확인 필요";
+  if (!source) return tr("evidence.value.noInfoCheck");
   const date = new Date(source);
   if (Number.isNaN(date.getTime())) return source;
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  return formatDateTime(date);
 }
 
 function formatBytes(value: unknown) {
   const bytes = numericValue(value);
-  if (bytes === null) return "정보 없음/확인 필요";
+  if (bytes === null) return tr("evidence.value.noInfoCheck");
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -47,7 +50,7 @@ function formatBytes(value: unknown) {
 
 function shortId(value: unknown) {
   const id = textValue(value);
-  return id ? id.slice(0, 12) : "정보 없음";
+  return id ? id.slice(0, 12) : tr("evidence.value.noInfo");
 }
 
 function EvidenceField({
@@ -90,7 +93,7 @@ function EvidenceMediaPreview({
         className="flex min-h-56 items-center justify-center rounded-sm border border-border bg-white text-xs text-slate-500"
         role="status"
       >
-        증빙 원본을 불러오는 중입니다.
+        {tr("evidence.preview.loading")}
       </div>
     );
   }
@@ -125,7 +128,7 @@ function EvidenceMediaPreview({
         preload="metadata"
         className="max-h-[52vh] w-full rounded-sm border border-border bg-black"
       >
-        영상 미리보기를 지원하지 않는 브라우저입니다.
+        {tr("evidence.preview.videoUnsupported")}
       </video>
     );
   }
@@ -133,7 +136,7 @@ function EvidenceMediaPreview({
     return (
       <div className="rounded-sm border border-border bg-white p-5">
         <audio src={preview.url} controls preload="metadata" className="w-full">
-          음성 미리보기를 지원하지 않는 브라우저입니다.
+          {tr("evidence.preview.audioUnsupported")}
         </audio>
       </div>
     );
@@ -142,7 +145,7 @@ function EvidenceMediaPreview({
     return (
       <iframe
         src={preview.url}
-        title={`${fileName} PDF 미리보기`}
+        title={tr("evidence.preview.pdfTitle", { name: fileName })}
         className="h-[52vh] w-full rounded-sm border border-border bg-white"
       />
     );
@@ -150,7 +153,7 @@ function EvidenceMediaPreview({
   if (preview.text !== undefined) {
     return (
       <pre className="max-h-[52vh] overflow-auto whitespace-pre-wrap break-words rounded-sm border border-border bg-white p-4 text-[11px] leading-5 text-slate-700">
-        {preview.text || "내용 없음"}
+        {preview.text || tr("evidence.preview.emptyText")}
       </pre>
     );
   }
@@ -158,10 +161,10 @@ function EvidenceMediaPreview({
     <div className="flex min-h-56 flex-col items-center justify-center rounded-sm border border-border bg-white px-5 text-center">
       <Icon name="document" />
       <strong className="mt-3 text-xs text-slate-700">
-        미리보기를 지원하지 않는 형식입니다.
+        {tr("evidence.preview.unsupported")}
       </strong>
       <small className="mt-2 text-[10px] text-slate-400">
-        파일 정보와 출처 연결은 아래 탭에서 확인할 수 있습니다.
+        {tr("evidence.preview.unsupportedHelp")}
       </small>
     </div>
   );
@@ -210,7 +213,7 @@ export function EvidenceDetailPreview({
             error:
               reason instanceof Error
                 ? reason.message
-                : "증빙 원본을 불러오지 못했습니다.",
+                : tr("evidence.preview.loadFailed"),
           });
         }
       });
@@ -251,11 +254,11 @@ export function EvidenceDetailPreview({
         <div className="space-y-4">
           <div className="grid gap-2 sm:grid-cols-2">
             <EvidenceField
-              label="증빙 구분"
+              label={tr("evidence.summary.sourceType")}
               value={evidenceSourceLabel(evidence.sourceType)}
             />
             <EvidenceField
-              label="미디어 유형"
+              label={tr("evidence.summary.mediaType")}
               value={evidenceMediaLabel(evidence.mediaType)}
             />
             <EvidenceField label="촬영 시각" value={formatDate(evidence.capturedAt)} />

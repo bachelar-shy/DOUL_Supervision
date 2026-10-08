@@ -5,7 +5,8 @@
   "workspaces": [
     "apps/web",
     "apps/mobile",
-    "packages/client"
+    "packages/client",
+    "packages/localization"
   ],
   "scripts": {
     "web": "npm run dev --workspace apps/web",

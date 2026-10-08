@@ -23,6 +23,8 @@ import { machineLabels } from "../app/routes";
 import { PageBoundary } from "./PageBoundary";
 import { recordRef, recordTitle } from "./record-utils";
 import { RecordList } from "./shared";
+import i18n from "../i18n/config";
+import { formatDateTime, formatNumber } from "../i18n/format";
 
 const contractMachines = [
   "contract_notice",
@@ -34,28 +36,34 @@ type ContractMachine = (typeof contractMachines)[number];
 
 const contractTabs: ReadonlyArray<{
   id: ContractMachine;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
 }> = [
   {
     id: "contract_notice",
-    label: "계약통지",
-    description:
-      "통지기한과 권리보전 기록을 추적합니다. 기한 초과 위험 표시는 권리상실 판정이 아닙니다.",
+    labelKey: "contract.tab.notice.label",
+    descriptionKey: "contract.tab.notice.description",
   },
   {
     id: "claim",
-    label: "클레임",
-    description:
-      "원 청구액, 감리 검토액, 발주처 승인액과 분쟁 잔액을 서로 다른 값으로 보존합니다.",
+    labelKey: "contract.tab.claim.label",
+    descriptionKey: "contract.tab.claim.description",
   },
   {
     id: "eot_request",
-    label: "공기연장(EOT)",
-    description:
-      "지연사건·계약통지·기준공정·영향분석을 연결하고 발주처 결정과 기준공정 개정을 분리합니다.",
+    labelKey: "contract.tab.eot.label",
+    descriptionKey: "contract.tab.eot.description",
   },
 ];
+
+function tr(key: string, values: Record<string, string | number> = {}) {
+  return i18n.t(key, values);
+}
+
+function tabLabel(machine: ContractMachine) {
+  const tab = contractTabs.find((item) => item.id === machine);
+  return tab ? tr(tab.labelKey) : machine;
+}
 
 function isContractMachine(value: string): value is ContractMachine {
   return contractMachines.includes(value as ContractMachine);
@@ -69,58 +77,61 @@ function objectValue(value: unknown): Record<string, unknown> {
 
 function refText(value: unknown) {
   const ref = objectValue(value);
-  if (typeof ref.objectId !== "string") return "기록 없음";
+  if (typeof ref.objectId !== "string") return tr("contract.value.none");
   return `${String(ref.objectType || "Object")} · ${ref.objectId.slice(0, 8)} · v${String(ref.version || "?")}`;
 }
 
 function formatDate(value: unknown) {
-  if (typeof value !== "string" || !value) return "기록 없음";
+  if (typeof value !== "string" || !value) return tr("contract.value.none");
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("ko-KR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  return formatDateTime(date);
 }
 
 function numberText(value: unknown, suffix = "") {
   return typeof value === "number" && Number.isFinite(value)
-    ? `${value.toLocaleString("ko-KR")}${suffix}`
-    : "기록 없음";
+    ? `${formatNumber(value)}${suffix}`
+    : tr("contract.value.none");
 }
 
 function NoticeBoundary({ record }: { record: RecordDTO }) {
   const data = objectValue(record.data);
   return (
     <StatusBoundaryGroup
-      title="계약통지 · 통지기한 상태 경계"
-      description="통지기한 초과는 서버의 timeBarRisk 병렬 표시입니다. UI가 권리상실이나 계약효과를 판정하지 않습니다."
+      title={tr("contract.notice.boundary.title")}
+      description={tr("contract.notice.boundary.description")}
       items={[
         {
           id: "notice-state",
-          label: "계약통지 상태",
-          value: states[record.status || ""] || record.status || "미정",
-          detail: "현재 ContractNotice 공식 상태",
+          label: tr("contract.notice.state.label"),
+          value:
+            states[record.status || ""] ||
+            record.status ||
+            tr("contract.value.undetermined"),
+          detail: tr("contract.notice.state.detail"),
         },
         {
           id: "notice-due",
-          label: "공식 통지기한",
+          label: tr("contract.notice.due.label"),
           value: formatDate(data.noticeDueAt),
           detail:
             data.dueCalculationConfirmed === true
-              ? "인간 권한으로 확인된 기한"
-              : "공식 기한 확인 전",
+              ? tr("contract.notice.due.confirmed")
+              : tr("contract.notice.due.pending"),
           tone:
             data.dueCalculationConfirmed === true ? "neutral" : "warning",
         },
         {
           id: "time-bar-risk",
-          label: "기한초과 위험",
-          value: data.timeBarRisk === true ? "위험 표시" : "위험 미표시",
+          label: tr("contract.notice.risk.label"),
+          value:
+            data.timeBarRisk === true
+              ? tr("contract.notice.risk.active")
+              : tr("contract.notice.risk.inactive"),
           detail:
             data.timeBarRisk === true
-              ? "위험 신호일 뿐 자동 권리상실 판정이 아님"
-              : "현재 서버 원본 기준",
+              ? tr("contract.notice.risk.activeDetail")
+              : tr("contract.notice.risk.inactiveDetail"),
           tone: data.timeBarRisk === true ? "critical" : "neutral",
         },
       ]}
@@ -132,38 +143,40 @@ function ClaimBoundary({ record }: { record: RecordDTO }) {
   const data = objectValue(record.data);
   return (
     <StatusBoundaryGroup
-      title="청구 · 검토 · 발주처 계약결정 경계"
-      description="감리의 기술·금액 검토는 발주처의 계약상 승인과 다릅니다. 원 청구액은 부분승인 이후에도 보존됩니다."
+      title={tr("contract.claim.boundary.title")}
+      description={tr("contract.claim.boundary.description")}
       items={[
         {
           id: "claimed",
-          label: "원 청구액",
+          label: tr("contract.claim.claimed.label"),
           value: numberText(
             data.amountClaimed,
             typeof data.currency === "string" ? ` ${data.currency}` : "",
           ),
-          detail: "시공사 원 청구값",
+          detail: tr("contract.claim.claimed.detail"),
         },
         {
           id: "assessed",
-          label: "감리 검토액",
+          label: tr("contract.claim.assessed.label"),
           value: numberText(
             data.amountAssessed,
             typeof data.currency === "string" ? ` ${data.currency}` : "",
           ),
-          detail: "기술·금액 검토 결과",
+          detail: tr("contract.claim.assessed.detail"),
           tone: "warning",
         },
         {
           id: "approved",
-          label: "발주처 승인액",
+          label: tr("contract.claim.approved.label"),
           value: numberText(
             data.amountApproved,
             typeof data.currency === "string" ? ` ${data.currency}` : "",
           ),
           detail: data.decisionOutcome
-            ? `계약결정: ${String(data.decisionOutcome)}`
-            : "발주처 계약결정 전",
+            ? tr("contract.claim.decision", {
+                outcome: String(data.decisionOutcome),
+              })
+            : tr("contract.claim.decisionPending"),
           tone:
             typeof data.amountApproved === "number" ? "positive" : "neutral",
         },
@@ -177,29 +190,40 @@ function EotBoundary({ record }: { record: RecordDTO }) {
   return (
     <>
       <StatusBoundaryGroup
-        title="공기연장 · 기준공정 개정 상태 경계"
-        description="공기연장 승인 자체는 기존 기준공정을 변경하지 않습니다. 승인 EOT exact version을 근거로 새 기준공정이 별도 승인·적용되어야 합니다."
+        title={tr("contract.eot.boundary.title")}
+        description={tr("contract.eot.boundary.description")}
         items={[
           {
             id: "claimed-days",
-            label: "청구 일수",
-            value: numberText(data.daysClaimed, "일"),
-            detail: "시공사 EOT 요청",
+            label: tr("contract.eot.claimed.label"),
+            value: numberText(
+              data.daysClaimed,
+              tr("contract.unit.daySuffix"),
+            ),
+            detail: tr("contract.eot.claimed.detail"),
           },
           {
             id: "assessed-days",
-            label: "감리 검토 일수",
-            value: numberText(data.daysAssessed, "일"),
-            detail: "공기영향 기술검토",
+            label: tr("contract.eot.assessed.label"),
+            value: numberText(
+              data.daysAssessed,
+              tr("contract.unit.daySuffix"),
+            ),
+            detail: tr("contract.eot.assessed.detail"),
             tone: "warning",
           },
           {
             id: "approved-days",
-            label: "발주처 승인 일수",
-            value: numberText(data.daysApproved, "일"),
+            label: tr("contract.eot.approved.label"),
+            value: numberText(
+              data.daysApproved,
+              tr("contract.unit.daySuffix"),
+            ),
             detail: data.revisedCompletionDate
-              ? `계약완료일 ${formatDate(data.revisedCompletionDate)}`
-              : "발주처 계약결정 전",
+              ? tr("contract.eot.completionDate", {
+                  date: formatDate(data.revisedCompletionDate),
+                })
+              : tr("contract.claim.decisionPending"),
             tone:
               typeof data.daysApproved === "number" ? "positive" : "neutral",
           },
@@ -207,16 +231,20 @@ function EotBoundary({ record }: { record: RecordDTO }) {
       />
       <Panel className="mt-3">
         <SectionHeader
-          title="기준공정 개정 연결"
-          meta={record.status === "closed" ? "연결 완료" : "별도 절차"}
+          title={tr("contract.eot.baselineLink.title")}
+          meta={
+            record.status === "closed"
+              ? tr("contract.eot.baselineLink.complete")
+              : tr("contract.eot.baselineLink.separate")
+          }
         />
         <div className="meta-grid">
           <div>
-            <small>승인 EOT exact version</small>
+            <small>{tr("contract.eot.baselineLink.basis")}</small>
             <b>{refText(data.baselineRevisionBasisRef)}</b>
           </div>
           <div>
-            <small>새 기준공정</small>
+            <small>{tr("contract.eot.baselineLink.newBaseline")}</small>
             <b>{refText(data.baselineRevisionRef)}</b>
           </div>
         </div>
@@ -238,27 +266,60 @@ function ContractDetails({ item }: { item: WorkItem }) {
 
   if (item.machine === "contract_notice") {
     rows.push(
-      ["계약통지 번호", String(data.noticeNo || "기록 없음")],
-      ["계약사건", refText(data.eventRef)],
-      ["사건 발생", formatDate(data.eventAt)],
-      ["인지 시각", formatDate(data.awareAt)],
-      ["통지 제목", String(data.subject || "기록 없음")],
+      [
+        tr("contract.details.noticeNo"),
+        String(data.noticeNo || tr("contract.value.none")),
+      ],
+      [tr("contract.details.event"), refText(data.eventRef)],
+      [tr("contract.details.eventAt"), formatDate(data.eventAt)],
+      [tr("contract.details.awareAt"), formatDate(data.awareAt)],
+      [
+        tr("contract.details.subject"),
+        String(data.subject || tr("contract.value.none")),
+      ],
     );
   } else if (item.machine === "claim") {
     rows.push(
-      ["클레임 번호", String(data.claimNo || "기록 없음")],
-      ["유형", String(data.claimType || "기록 없음")],
-      ["요구 구제", String(data.reliefRequested || "기록 없음")],
-      ["계약상 근거", String(data.entitlementBasis || "기록 없음")],
-      ["결정 결과", String(data.decisionOutcome || "결정 전")],
+      [
+        tr("contract.details.claimNo"),
+        String(data.claimNo || tr("contract.value.none")),
+      ],
+      [
+        tr("contract.details.type"),
+        String(data.claimType || tr("contract.value.none")),
+      ],
+      [
+        tr("contract.details.relief"),
+        String(data.reliefRequested || tr("contract.value.none")),
+      ],
+      [
+        tr("contract.details.entitlement"),
+        String(data.entitlementBasis || tr("contract.value.none")),
+      ],
+      [
+        tr("contract.details.decision"),
+        String(data.decisionOutcome || tr("contract.value.decisionPending")),
+      ],
     );
   } else {
     rows.push(
-      ["공기연장 번호", String(data.eotNo || "기록 없음")],
-      ["기준공정", refText(data.baselineScheduleRef)],
-      ["검토 완료예정일", formatDate(data.assessedCompletionDate)],
-      ["변경 계약완료일", formatDate(data.revisedCompletionDate)],
-      ["결정 결과", String(data.decisionOutcome || "결정 전")],
+      [
+        tr("contract.details.eotNo"),
+        String(data.eotNo || tr("contract.value.none")),
+      ],
+      [tr("contract.details.baseline"), refText(data.baselineScheduleRef)],
+      [
+        tr("contract.details.assessedCompletion"),
+        formatDate(data.assessedCompletionDate),
+      ],
+      [
+        tr("contract.details.revisedCompletion"),
+        formatDate(data.revisedCompletionDate),
+      ],
+      [
+        tr("contract.details.decision"),
+        String(data.decisionOutcome || tr("contract.value.decisionPending")),
+      ],
     );
   }
 
@@ -289,7 +350,7 @@ function CreateContractRecord({
   onClose: () => void;
   onCreated: (id: string) => Promise<void>;
 }) {
-  const tab = contractTabs.find((item) => item.id === machine)!;
+  const tabName = tabLabel(machine);
   const [title, setTitle] = useState("");
   const [number, setNumber] = useState("");
   const [eventId, setEventId] = useState("");
@@ -322,7 +383,7 @@ function CreateContractRecord({
       if (client.kind === "mock")
         throw new Error("UI Mock Preview에서는 공식 기록을 생성하지 않습니다.");
       if (!title.trim()) throw new Error("제목을 입력하십시오.");
-      if (!number.trim()) throw new Error(`${tab.label} 번호를 입력하십시오.`);
+      if (!number.trim()) throw new Error(`${tabName} 번호를 입력하십시오.`);
 
       let data: Record<string, unknown>;
       if (machine === "contract_notice") {
@@ -377,10 +438,10 @@ function CreateContractRecord({
         className="modal"
         role="dialog"
         aria-modal="true"
-        aria-label={`${tab.label} 기록 추가`}
+        aria-label={`${tabName} 기록 추가`}
       >
         <div className="section-heading">
-          <h2>{tab.label} 기록 추가</h2>
+          <h2>{tabName} 기록 추가</h2>
           <button
             type="button"
             className="icon-button"
@@ -404,9 +465,9 @@ function CreateContractRecord({
             />
           </label>
           <label>
-            {tab.label} 번호 *
+            {tabName} 번호 *
             <input
-              aria-label={`${tab.label} 번호 *`}
+              aria-label={`${tabName} 번호 *`}
               value={number}
               onChange={(event) => setNumber(event.target.value)}
             />
@@ -532,6 +593,8 @@ export function ContractPage({
   const activeMachine =
     current && isContractMachine(current.machine) ? current.machine : machine;
   const tab = contractTabs.find((item) => item.id === activeMachine)!;
+  const tabName = tabLabel(activeMachine);
+  const tabDescription = tr(tab.descriptionKey);
   const items = workspace.items.filter((item) => item.machine === activeMachine);
   const selectedItem =
     current && current.machine === activeMachine ? current : null;
@@ -557,24 +620,24 @@ export function ContractPage({
                 value={item.id}
                 className="min-h-11 flex-none px-1.5 text-xs"
               >
-                {item.label}
+                {tr(item.labelKey)}
               </TabsTrigger>
             ))}
           </TabsList>
           <div className="px-4 py-2.5 text-[10px] text-slate-500">
-            {tab.description}
+            {tabDescription}
           </div>
         </Tabs>
 
         <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
           <Panel className="list-pane">
-            <SectionHeader title={tab.label} meta={`${items.length}건`} />
+            <SectionHeader title={tabName} meta={`${items.length}건`} />
             <div className="schedule-list-actions">
               <ActionButton
                 disabled={!online || client.kind === "mock"}
                 onClick={() => setCreating(true)}
               >
-                {tab.label} 기록 추가
+                {tabName} 기록 추가
               </ActionButton>
             </div>
             <p className="muted">
@@ -591,7 +654,7 @@ export function ContractPage({
           <DetailPane>
             {!selectedItem ? (
               <div className="empty compact">
-                <h2>{tab.label} 상세</h2>
+                <h2>{tabName} 상세</h2>
                 <p>
                   목록에서 원본을 선택하면 계약 상태 경계, exact reference와 현재
                   역할에 대해 서버가 반환한 업무 명령을 확인할 수 있습니다.
@@ -608,7 +671,7 @@ export function ContractPage({
                 </button>
                 <div className="detail-head">
                   <div>
-                    <span className="eyebrow">{tab.label}</span>
+                    <span className="eyebrow">{tabName}</span>
                     <h2>{recordTitle(selectedItem.record)}</h2>
                     <p>
                       원본 v{selectedItem.record.version} · UI에서 상태나 계약효과를
