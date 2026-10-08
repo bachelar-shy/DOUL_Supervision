@@ -68,6 +68,9 @@ export function RecordList({
             className={
               "record-row " + (selected === x.record.id ? "selected" : "")
             }
+            data-record-id={x.record.id}
+            data-record-status={x.record.status || ""}
+            data-record-version={x.record.version}
             onClick={() => onSelect(x)}
           >
             <div className="record-icon">

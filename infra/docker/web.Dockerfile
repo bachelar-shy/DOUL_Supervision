@@ -8,11 +8,13 @@ COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/package.json
 COPY apps/mobile/package.json ./apps/mobile/package.json
 COPY packages/client/package.json ./packages/client/package.json
+COPY packages/localization/package.json ./packages/localization/package.json
 
 RUN --mount=type=cache,target=/root/.npm npm ci
 
 COPY apps/web ./apps/web
 COPY packages/client ./packages/client
+COPY packages/localization ./packages/localization
 
 RUN npm run web:build
 

@@ -728,7 +728,7 @@ export function ActionGate({
       data-ui-component="action-gate"
     >
       {actions.map((action) => (
-        <div key={action.id} className="command-option">
+        <div key={action.id} className="command-option" data-command-id={action.id}>
           {action.availabilityLabel ? (
             <div
               className={cn(

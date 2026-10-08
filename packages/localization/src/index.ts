@@ -82,6 +82,7 @@ export function languageDirection(value?: string | null): "ltr" | "rtl" {
 
 const ko = {
   "app.workspace": "프로젝트 작업공간",
+  "app.workspaceRole": "{{role}} 작업공간",
   "app.sampleSite": "시범현장",
   "app.sampleData": "예시 데이터 · 개발용",
   "app.connection.online": "온라인",
@@ -669,6 +670,7 @@ type DraftTranslationDictionary = Partial<Record<TranslationKey, string>>;
 
 const vi: DraftTranslationDictionary = {
   "app.workspace": "Không gian dự án",
+  "app.workspaceRole": "Không gian làm việc của {{role}}",
   "app.sampleSite": "Công trường thí điểm",
   "app.sampleData": "Dữ liệu mẫu · phát triển",
   "app.connection.online": "Trực tuyến",
@@ -920,6 +922,7 @@ const vi: DraftTranslationDictionary = {
 
 const en: DraftTranslationDictionary = {
   "app.workspace": "Project workspace",
+  "app.workspaceRole": "{{role}} workspace",
   "app.sampleSite": "Pilot site",
   "app.sampleData": "Sample data · development",
   "app.connection.online": "Online",
