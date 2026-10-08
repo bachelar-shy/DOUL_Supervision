@@ -1,20 +1,22 @@
+import i18n from "../i18n/config";
+
 export function evidenceMediaLabel(value: unknown) {
   const labels: Record<string, string> = {
-    photo: "사진",
-    video: "영상",
-    audio: "음성",
-    document: "문서",
-    measurement: "측정",
+    photo: i18n.t("evidence.media.photo"),
+    video: i18n.t("evidence.media.video"),
+    audio: i18n.t("evidence.media.audio"),
+    document: i18n.t("evidence.media.document"),
+    measurement: i18n.t("evidence.media.measurement"),
   };
   return typeof value === "string" && value.trim()
     ? labels[value] || value
-    : "유형 미상";
+    : i18n.t("evidence.media.unknown");
 }
 
 export function evidenceSourceLabel(value: unknown) {
   return value === "derived"
-    ? "파생 증빙"
+    ? i18n.t("evidence.source.derived")
     : value === "original"
-      ? "원본 증빙"
-      : "출처 확인 필요";
+      ? i18n.t("evidence.source.original")
+      : i18n.t("evidence.source.unknown");
 }

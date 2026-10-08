@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
 import { CaptureTemplate } from "../ui/templates";
@@ -61,6 +62,7 @@ export function CapturePage({
   refresh: () => Promise<void>;
   notify: (s: string) => void;
 }) {
+  const { t } = useTranslation();
   const [pending, setPending] = useState<LocalCapture[]>([]);
   const [progress, setProgress] = useState("");
   const [error, setError] = useState("");
@@ -104,7 +106,7 @@ export function CapturePage({
   async function intake(file: File) {
     try {
       if (file.size > 64 * 1024 * 1024)
-        throw new Error("개발용 업로드는 64MB 이하입니다.");
+        throw new Error(t("capture.error.maxSize"));
       const bytes = await file.arrayBuffer();
       const hash = Array.from(
         new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
@@ -122,7 +124,7 @@ export function CapturePage({
         capturedAt: new Date().toISOString(),
       });
       await load();
-      notify("원본을 기기에 저장했습니다. 아직 제출되지 않았습니다.");
+      notify(t("capture.toast.saved"));
     } catch (e) {
       setError(String(e));
     }
@@ -130,7 +132,7 @@ export function CapturePage({
 
   async function send(p: LocalCapture) {
     setError("");
-    setProgress("전송 시작");
+    setProgress(t("capture.progress.start"));
     try {
       await client.upload(
         new Uint8Array(p.bytes),
@@ -148,7 +150,7 @@ export function CapturePage({
       await captures("delete", p.id);
       await load();
       await refresh();
-      notify("서버 해시 확인 후 증빙을 등록했습니다.");
+      notify(t("capture.toast.registered"));
     } catch (e) {
       setError(String(e));
     } finally {
@@ -161,20 +163,19 @@ export function CapturePage({
       <CaptureTemplate>
         <section className="panel">
           <div className="section-heading">
-            <h2>현장 기록 가져오기</h2>
-            <span>원본 보존</span>
+            <h2>{t("capture.intake.title")}</h2>
+            <span>{t("capture.intake.original")}</span>
           </div>
           <div className="capture-drop">
             <Icon name="camera" />
-            <h2>사진·영상·음성을 기록합니다.</h2>
+            <h2>{t("capture.intake.headline")}</h2>
             <p>
-              촬영 위치는 수동 선택값입니다. 자동 측위·AI 판정은 실행하지
-              않습니다.
+              {t("capture.intake.help")}
             </p>
             <label className="primary upload-label">
-              파일 선택
+              {t("capture.intake.chooseFile")}
               <input
-                aria-label="증빙 파일 선택"
+                aria-label={t("capture.intake.fileAria")}
                 type="file"
                 accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,audio/mpeg,audio/wav,application/pdf"
                 onChange={(e) => {
@@ -185,9 +186,9 @@ export function CapturePage({
               />
             </label>
             <label className="secondary upload-label">
-              카메라 촬영
+              {t("capture.intake.camera")}
               <input
-                aria-label="카메라 사진 촬영"
+                aria-label={t("capture.intake.cameraAria")}
                 type="file"
                 accept="image/*"
                 capture="environment"
@@ -199,7 +200,7 @@ export function CapturePage({
             </label>
           </div>
 
-          <h3>기기 저장 · 제출 대기 {pending.length}건</h3>
+          <h3>{t("capture.pending.heading", { count: pending.length })}</h3>
           {pending.map((p) => (
             <div className="pending-row" key={p.id}>
               <div>
@@ -214,7 +215,7 @@ export function CapturePage({
                 disabled={!online || !!progress}
                 onClick={() => void send(p)}
               >
-                서버 전송
+                {t("capture.pending.send")}
               </button>
             </div>
           ))}
@@ -228,28 +229,27 @@ export function CapturePage({
 
         <div className="right-stack">
           <section className="panel">
-            <h2>현재 촬영 맥락</h2>
+            <h2>{t("capture.context.title")}</h2>
             <div className="meta-grid">
               <div>
-                <small>건물 / 층</small>
-                <b>A동 / 2층</b>
+                <small>{t("capture.context.buildingFloor")}</small>
+                <b>{t("capture.context.sampleBuildingFloor")}</b>
               </div>
               <div>
-                <small>위치 방식</small>
-                <b>수동 지정</b>
+                <small>{t("capture.context.method")}</small>
+                <b>{t("capture.context.manual")}</b>
               </div>
             </div>
             <FloorPlan />
             <div className="notice">
-              기기에 저장된 파일은 전송 버튼을 누르기 전까지 서버 증빙이 아닙니다.
-              재연결 시 자동 승인·종결하지 않습니다.
+              {t("capture.context.notice")}
             </div>
           </section>
 
           <section className="panel">
             <div className="section-heading">
-              <h2>서버 증빙</h2>
-              <span>{evidenceItems.length}건</span>
+              <h2>{t("capture.evidence.title")}</h2>
+              <span>{t("common.count", { count: evidenceItems.length })}</span>
             </div>
             <EvidenceViewer
               items={evidenceItems.map((item) => ({
@@ -259,17 +259,17 @@ export function CapturePage({
                   <>
                     {evidenceMediaLabel(item.record.mediaType)} ·{" "}
                     {evidenceSourceLabel(item.record.sourceType)} ·{" "}
-                    {item.record.fileHash?.slice(0, 12) || "해시 없음"}…
+                    {item.record.fileHash?.slice(0, 12) || t("capture.evidence.noHash")}…
                   </>
                 ),
                 icon: <Icon name="document" />,
-                ariaLabel: `${recordTitle(item.record)} 상세보기`,
+                ariaLabel: t("capture.evidence.open", { name: recordTitle(item.record) }),
                 selected: item.record.id === selectedEvidenceId,
                 onSelect: () => setSelectedEvidenceId(item.record.id),
               }))}
               footer={
                 <button className="secondary wide" disabled>
-                  AI 분석 · 서비스 미연결
+                  {t("capture.evidence.aiDisconnected")}
                 </button>
               }
             />

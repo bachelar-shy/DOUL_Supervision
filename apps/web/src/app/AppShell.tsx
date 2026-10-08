@@ -296,8 +296,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         </div>
         {!online && (
           <div role="alert" className="offline-bar">
-            오프라인 · 보이는 화면은 마지막 조회본입니다. 승인·종결은 온라인
-            재검증 전까지 확정되지 않습니다.
+            {t("app.offlineReadOnly")}
           </div>
         )}
         <main>
@@ -306,14 +305,14 @@ export function AppShell({ client }: { client: SupervisionClient }) {
             title={routeLabel(routes.find((x) => x.id === safeRoute))}
             description={
               safeRoute === "today"
-                ? "확인이 필요한 업무부터, 증빙과 함께."
+                ? t("app.page.todayDescription")
                 : safeRoute === "registers"
-                  ? "역할별 추천에서 시작해 29개 표준 관리대장을 서버 권한 범위에서 조회합니다."
+                  ? t("app.page.registersDescription")
                   : safeRoute === "safety"
-                    ? "작업허가, 작업중지, 재개 Gate와 장비 안전상태를 서버 원본 기준으로 확인합니다."
+                    ? t("app.page.safetyDescription")
                     : safeRoute === "contract"
-                      ? "계약통지, 클레임, 공기연장을 기술검토와 발주처 계약결정이 섞이지 않도록 서버 원본 기준으로 추적합니다."
-                      : "현장 기록 · 승인 기준 · 조치 이력을 하나로 확인합니다."
+                      ? t("app.page.contractDescription")
+                      : t("app.page.defaultDescription")
             }
             details={
               safeRoute === "today" ? (
@@ -332,7 +331,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   disabled={loading || !online}
                 >
                   <Icon name="refresh" />
-                  새로고침
+                  {t("app.action.refresh")}
                 </ActionButton>
                 {role === "SUP" && (
                   <ActionButton
@@ -340,7 +339,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                     onClick={() => nav("capture")}
                   >
                     <Icon name="camera" />
-                    현장 촬영
+                    {t("app.action.capture")}
                   </ActionButton>
                 )}
               </>
@@ -348,23 +347,23 @@ export function AppShell({ client }: { client: SupervisionClient }) {
           />
           {error && (
             <div role="alert" className="error-box">
-              <strong>처리되지 않았습니다.</strong> {error}
-              <button onClick={() => setError("")} aria-label="오류 닫기">
+              <strong>{t("app.error.unprocessed")}</strong> {error}
+              <button onClick={() => setError("")} aria-label={t("app.error.dismiss")}>
                 ×
               </button>
             </div>
           )}
           {!workspace && loading ? (
             <div className="loading-panel">
-              프로젝트와 유효 권한을 불러오고 있습니다…
+              {t("app.loading.workspace")}
             </div>
           ) : !workspace ? (
             <EmptyState
-              title="개발 API에 연결할 수 없습니다."
-              description="localhost:8791의 API를 먼저 실행하십시오."
+              title={t("app.error.apiUnavailable")}
+              description={t("app.error.apiHelp")}
               action={
                 <ActionButton onClick={() => void refresh()}>
-                  다시 연결
+                  {t("app.action.retry")}
                 </ActionButton>
               }
             />
@@ -476,7 +475,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
           )}
         </main>
         <footer className="app-footer">
-          DOUL INTERNATIONAL <span>업무 원본 · 증빙 · 검증 · 기록</span>
+          DOUL INTERNATIONAL <span>{t("app.footer.tagline")}</span>
         </footer>
       </div>
       <MobileNavigation

@@ -401,22 +401,22 @@ function CreateContractRecord({
     setBusy(true);
     setErr("");
     try {
-      if (!online) throw new Error("연결 복구 후 다시 제출하십시오.");
+      if (!online) throw new Error(tr("contract.error.offline"));
       if (client.kind === "mock")
-        throw new Error("UI Mock Preview에서는 공식 기록을 생성하지 않습니다.");
-      if (!title.trim()) throw new Error("제목을 입력하십시오.");
-      if (!number.trim()) throw new Error(`${tabName} 번호를 입력하십시오.`);
+        throw new Error(tr("contract.error.mockCreate"));
+      if (!title.trim()) throw new Error(tr("contract.error.titleRequired"));
+      if (!number.trim()) throw new Error(tr("contract.error.numberRequired", { tab: tabName }));
 
       let data: Record<string, unknown>;
       if (machine === "contract_notice") {
         const event = eventItems.find((item) => item.record.id === eventId);
         const senderPartyId = client.session?.actor.partyId;
-        if (!event) throw new Error("계약사건 원본을 선택하십시오.");
-        if (!senderPartyId) throw new Error("현재 로그인 사용자를 확인할 수 없습니다.");
-        if (!recipientPartyId) throw new Error("수신자를 선택하십시오.");
-        if (!subject.trim()) throw new Error("통지 제목을 입력하십시오.");
+        if (!event) throw new Error(tr("contract.error.eventRequired"));
+        if (!senderPartyId) throw new Error(tr("contract.error.senderRequired"));
+        if (!recipientPartyId) throw new Error(tr("contract.error.recipientRequired"));
+        if (!subject.trim()) throw new Error(tr("contract.error.subjectRequired"));
         if (Number.isNaN(Date.parse(eventAt)) || Number.isNaN(Date.parse(awareAt)))
-          throw new Error("사건 발생·인지 시각은 시간대가 포함된 날짜여야 합니다.");
+          throw new Error(tr("contract.error.dateRequired"));
 
         data = {
           noticeNo: number.trim(),
@@ -460,36 +460,40 @@ function CreateContractRecord({
         className="modal"
         role="dialog"
         aria-modal="true"
-        aria-label={`${tabName} 기록 추가`}
+        aria-label={tr("contract.create.dialogAria", { tab: tabName })}
       >
         <div className="section-heading">
-          <h2>{tabName} 기록 추가</h2>
+          <h2>{tr("contract.create.title", { tab: tabName })}</h2>
           <button
             type="button"
             className="icon-button"
-            aria-label="대화상자 닫기"
+            aria-label={tr("contract.create.closeAria")}
             onClick={onClose}
           >
             ×
           </button>
         </div>
         <p className="muted">
-          생성 권한과 범위는 제출 시 서버가 다시 검증합니다. UI가 계약 권한을
-          확정하지 않습니다.
+          {tr("contract.create.description")}
         </p>
+        {client.kind === "mock" ? (
+          <div role="status" className="notice">
+            {tr("contract.create.mockPreviewNotice")}
+          </div>
+        ) : null}
         <div className="modal-fields">
           <label>
-            제목 *
+            {tr("contract.create.titleField")}
             <input
-              aria-label="제목 *"
+              aria-label={tr("contract.create.titleField")}
               value={title}
               onChange={(event) => setTitle(event.target.value)}
             />
           </label>
           <label>
-            {tabName} 번호 *
+            {tr("contract.create.numberField", { tab: tabName })}
             <input
-              aria-label={`${tabName} 번호 *`}
+              aria-label={tr("contract.create.numberField", { tab: tabName })}
               value={number}
               onChange={(event) => setNumber(event.target.value)}
             />
@@ -497,13 +501,13 @@ function CreateContractRecord({
           {machine === "contract_notice" ? (
             <>
               <label>
-                계약사건 원본 *
+                {tr("contract.create.eventField")}
                 <select
-                  aria-label="계약사건 원본 *"
+                  aria-label={tr("contract.create.eventField")}
                   value={eventId}
                   onChange={(event) => setEventId(event.target.value)}
                 >
-                  <option value="">원본 선택</option>
+                  <option value="">{tr("contract.create.eventSelect")}</option>
                   {eventItems.map((item) => (
                     <option key={item.record.id} value={item.record.id}>
                       {machineLabels[item.machine] || item.machine} ·{" "}
@@ -513,13 +517,13 @@ function CreateContractRecord({
                 </select>
               </label>
               <label>
-                수신자 *
+                {tr("contract.create.recipientField")}
                 <select
-                  aria-label="수신자 *"
+                  aria-label={tr("contract.create.recipientField")}
                   value={recipientPartyId}
                   onChange={(event) => setRecipientPartyId(event.target.value)}
                 >
-                  <option value="">수신자 선택</option>
+                  <option value="">{tr("contract.create.recipientSelect")}</option>
                   {recipients.map((party) => (
                     <option key={party.partyId} value={party.partyId}>
                       {party.name} · {party.actorGroup}
@@ -528,39 +532,36 @@ function CreateContractRecord({
                 </select>
               </label>
               <label>
-                통지 제목 *
+                {tr("contract.create.subjectField")}
                 <input
-                  aria-label="통지 제목 *"
+                  aria-label={tr("contract.create.subjectField")}
                   value={subject}
                   onChange={(event) => setSubject(event.target.value)}
                 />
               </label>
               <label>
-                사건 발생 시각 *
+                {tr("contract.create.eventAtField")}
                 <input
-                  aria-label="사건 발생 시각 *"
+                  aria-label={tr("contract.create.eventAtField")}
                   value={eventAt}
                   onChange={(event) => setEventAt(event.target.value)}
                 />
               </label>
               <label>
-                인지 시각 *
+                {tr("contract.create.awareAtField")}
                 <input
-                  aria-label="인지 시각 *"
+                  aria-label={tr("contract.create.awareAtField")}
                   value={awareAt}
                   onChange={(event) => setAwareAt(event.target.value)}
                 />
               </label>
               <div className="notice">
-                계약조항·통지기한 규정은 현재 프로젝트의 versioned Contract
-                Requirement를 exact reference로 연결합니다.
+                {tr("contract.create.noticeHelp")}
               </div>
             </>
           ) : (
             <div className="notice">
-              초안에는 식별번호만 등록합니다. 제출 단계의 계약통지·지연사건·
-              기준공정·영향분석 등은 서버가 제공한 command fields에서 연결하고
-              다시 검증합니다.
+              {tr("contract.create.draftHelp")}
             </div>
           )}
         </div>
@@ -571,14 +572,14 @@ function CreateContractRecord({
         ) : null}
         <div className="modal-actions">
           <button className="secondary" onClick={onClose} disabled={busy}>
-            취소
+            {tr("contract.create.cancel")}
           </button>
           <button
             className="primary"
             disabled={busy || !online || client.kind === "mock"}
             onClick={() => void submit()}
           >
-            {busy ? "서버 검증 중…" : "기록 추가"}
+            {busy ? tr("contract.create.validating") : tr("contract.create.submit")}
           </button>
         </div>
       </section>
@@ -659,13 +660,13 @@ export function ContractPage({
 
         <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
           <Panel className="list-pane">
-            <SectionHeader title={tabName} meta={`${items.length}건`} />
+            <SectionHeader title={tabName} meta={tr("contract.page.count", { count: items.length })} />
             <div className="schedule-list-actions">
               <ActionButton
                 disabled={!online || client.kind === "mock" || !canCreate}
                 onClick={() => setCreating(true)}
               >
-                {tabName} 기록 추가
+                {tr("contract.page.createAction", { tab: tabName })}
               </ActionButton>
             </div>
             {!canCreate ? (
@@ -678,8 +679,7 @@ export function ContractPage({
               </p>
             ) : null}
             <p className="muted">
-              생성·전이 권한은 버튼 표시와 관계없이 서버가 현재 역할·범위·원본
-              버전으로 재검증합니다.
+              {tr("contract.page.serverAuthorityNotice")}
             </p>
             <RecordList
               items={items}
@@ -691,10 +691,9 @@ export function ContractPage({
           <DetailPane>
             {!selectedItem ? (
               <div className="empty compact">
-                <h2>{tabName} 상세</h2>
+                <h2>{tr("contract.page.detailTitle", { tab: tabName })}</h2>
                 <p>
-                  목록에서 원본을 선택하면 계약 상태 경계, exact reference와 현재
-                  역할에 대해 서버가 반환한 업무 명령을 확인할 수 있습니다.
+                  {tr("contract.page.emptyDescription")}
                 </p>
               </div>
             ) : (
@@ -704,21 +703,20 @@ export function ContractPage({
                   className="mobile-back"
                   onClick={() => onSelect(null)}
                 >
-                  ← 목록
+                  {tr("contract.page.back")}
                 </button>
                 <div className="detail-head">
                   <div>
                     <span className="eyebrow">{tabName}</span>
                     <h2>{recordTitle(selectedItem.record)}</h2>
                     <p>
-                      원본 v{selectedItem.record.version} · UI에서 상태나 계약효과를
-                      직접 변경하지 않습니다.
+                      {tr("contract.page.originalVersion", { version: selectedItem.record.version })}
                     </p>
                   </div>
                   <StatusBadge status={selectedItem.record.status}>
                     {states[selectedItem.record.status || ""] ||
                       selectedItem.record.status ||
-                      "원본 보존"}
+                      tr("contract.value.sourcePreserved")}
                   </StatusBadge>
                 </div>
 
@@ -729,8 +727,8 @@ export function ContractPage({
 
                 <div className="detail-section">
                   <SectionHeader
-                    title="가능한 업무 명령"
-                    meta="서버 권한 · 선행조건"
+                    title={tr("contract.page.actionsTitle")}
+                    meta={tr("contract.page.actionsMeta")}
                   />
                   {selectedItem.actions.length ? (
                     <ActionGate
@@ -756,13 +754,13 @@ export function ContractPage({
                     />
                   ) : (
                     <div className="empty compact">
-                      현재 역할과 상태에서 가능한 명령이 없습니다.
+                      {tr("contract.page.noActions")}
                     </div>
                   )}
                 </div>
 
                 <details className="technical">
-                  <summary>연결 원본 · exact version 확인</summary>
+                  <summary>{tr("contract.page.technicalSummary")}</summary>
                   <pre>{JSON.stringify(selectedItem.record, null, 2)}</pre>
                 </details>
               </>
