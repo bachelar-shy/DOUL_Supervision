@@ -61,14 +61,15 @@
       "apps/web/src/data/completion-workspace.ts",
       "tests_browser/completion-handover-page.spec.ts"
     ],
-    "follow_up_commit": "d353e623bb0840ebe1813266c4d2209d3d6a7c6d",
+    "follow_up_commit": "38cc731",
     "implementation": {
       "api_boundary": "Page uses the SupervisionClient facade for create, Workspace WorkItems and their server-provided actions, and server creationCapabilities. It does not calculate readiness, infer rights, or synthesize commands.",
       "separate_records": "Commissioning packages, handover packages, and warranty claims remain separate items and tabs. Commissioning result history retains failed and later passed tests; handover shows exact scope, accepted documents and reservations; warranty shows defect, remedy, reinspection and closeout history.",
       "profile_references": "Creation accepts only exact active scoped Requirement refs from workspace.context.referenceCatalog whose applicability has the required commissioningProfile, handoverProfile, or warrantyPeriod object. The generic default requirementRef is never presented as a profile. Create remains unavailable if the required exact profile is not readable in scope.",
       "create_payloads": "Create forms send the schema-required separate data shapes, exact typed refs, and empty optional reference arrays; server commands and guards determine the next valid actions.",
       "localization": "CompletionLabelKey/completionLabelKeys are exported from apps/web/src/data/completion-workspace.ts. Page accepts labels?: Partial<Record<CompletionLabelKey,string>>. Root maps completion.<key> dictionary labels and global command/state maps.",
-      "accepted_handover_evidence": "Submitted document refs and server-accepted document refs are shown in separate sections; submitted scope and server-accepted scope are separate fields."
+      "accepted_handover_evidence": "Submitted document refs and server-accepted document refs are shown in separate sections; submitted scope and server-accepted scope are separate fields.",
+      "warranty_create_evidence": "Warranty report create accepts only user-selected Evidence refs from server-filtered workspace.context.referenceCatalog.evidence and maps their objectIds to top-level evidenceIds. No synthetic or default context evidence is submitted."
     },
     "required_root_wiring": [
       "Add #/completion route and navigation entry using CompletionHandoverPage.",
@@ -80,17 +81,21 @@
       "passed": [
         "npm run typecheck --workspace apps/web",
         "npm run check:ui-boundary",
-        "npm run web:build"
+        "npm run web:build before route integration",
+        "npx tsc -p apps/web/tsconfig.app.json --noEmit --pretty false --noUnusedLocals false after evidence selector update",
+        "Root reports npm run typecheck --workspace apps/web passed on integrated commit 468d68d"
       ],
       "pending": [
-        "Run tests_browser/completion-handover-page.spec.ts after #/completion route and localization wiring are integrated.",
-        "Run the API worker's commissioning → handover acceptance-with-reservations/partial handover → warranty remedy/reinspection/closure HTTP chain after its F-07 implementation is merged. The page has not been represented as a full closed-loop pilot."
+        "Focused completion-handover-page and payment-workspace Playwright specs were not run. The root node_modules inventory does not match the current lock; a private npm ci in a detached test worktree ran out of disk space (stopped and cleaned).",
+        "The completion browser spec injects three presentation WorkItems into a real API workspace response; treat it as a mocked UI presentation test, not API acceptance or closed-loop workflow evidence.",
+        "Run the focused completion and payment browser specs against a lock-verified install on ports 8793/5183. The payment spec uses the real HTTP API; full AC-HO HTTP/browser closure remains a separate backend acceptance requirement."
       ]
     },
     "next_steps": [
-      "Root integrates the route, facade mapping, and completion dictionaries.",
-      "Run the focused browser test on ports 8793/5183 and fix any integration issues.",
-      "Verify available commands and profile/reference selectors against the merged backend API; do not claim the full real workflow closed until end-to-end acceptance passes."
-    ]
+      "Root runs tests_browser/completion-handover-page.spec.ts and tests_browser/payment-workspace.spec.ts with a lock-verified dependency install and isolated API/web ports.",
+      "Record actual browser results here; keep the completion fixture presentation-only and do not label it closed-loop acceptance.",
+      "Do not claim the full AC-HO workflow closed until the API worker acceptance chain and any required browser workflow both pass against merged backend hardening."
+    ],
+    "integrated_root_commit": "468d68d (root reported route, facade, dictionaries, and evidence catalog integrated)"
   }
 }
