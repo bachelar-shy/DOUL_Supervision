@@ -1,10 +1,10 @@
 name: platform-operational-environments
 on:
   pull_request:
-    paths: ['services/deployment/**', 'services/recovery/**', 'services/api/**', 'services/runtime_config.py', 'services/worker/**', 'infra/compose/compose.operational.yml', 'infra/compose/compose.staging.yml', 'infra/compose/compose.pilot.yml', 'infra/docker/operational*', 'tests_mvp/test_deployment*.py', 'tests_runtime/deployment*.py', 'tests_runtime/safety_operational.py', 'tests_runtime/test_safety_operational_unit.py', '.github/workflows/platform-deployment.yml']
+    paths: ['apps/web/**', 'packages/client/**', 'packages/localization/**', 'package.json', 'package-lock.json', '.dockerignore', 'services/deployment/**', 'services/recovery/**', 'services/api/**', 'services/runtime_config.py', 'services/worker/**', 'infra/compose/compose.operational.yml', 'infra/compose/compose.staging.yml', 'infra/compose/compose.pilot.yml', 'infra/docker/operational*', 'tests_mvp/test_deployment*.py', 'tests_runtime/deployment*.py', 'tests_runtime/safety_operational.py', 'tests_runtime/test_safety_operational_unit.py', '.github/workflows/platform-deployment.yml']
   push:
     branches: [main]
-    paths: ['services/deployment/**', 'services/recovery/**', 'services/api/**', 'services/runtime_config.py', 'services/worker/**', 'infra/compose/compose.operational.yml', 'infra/compose/compose.staging.yml', 'infra/compose/compose.pilot.yml', 'infra/docker/operational*', 'tests_mvp/test_deployment*.py', 'tests_runtime/deployment*.py', 'tests_runtime/safety_operational.py', 'tests_runtime/test_safety_operational_unit.py', '.github/workflows/platform-deployment.yml']
+    paths: ['apps/web/**', 'packages/client/**', 'packages/localization/**', 'package.json', 'package-lock.json', '.dockerignore', 'services/deployment/**', 'services/recovery/**', 'services/api/**', 'services/runtime_config.py', 'services/worker/**', 'infra/compose/compose.operational.yml', 'infra/compose/compose.staging.yml', 'infra/compose/compose.pilot.yml', 'infra/docker/operational*', 'tests_mvp/test_deployment*.py', 'tests_runtime/deployment*.py', 'tests_runtime/safety_operational.py', 'tests_runtime/test_safety_operational_unit.py', '.github/workflows/platform-deployment.yml']
 permissions:
   contents: read
 jobs:
