@@ -198,6 +198,7 @@ class PostgresSnapshotAdapter:
         }
         self.engine.documents = deepcopy(self.documents._snapshots)
         self.meta = state["meta"]
+        self.engine.drawing_field_revisions = self.meta.get("drawingFieldRevisions", [])
         self.uploads = state["uploads"]
         self.requests = state["requests"]
         self.conflicts = state["conflicts"]

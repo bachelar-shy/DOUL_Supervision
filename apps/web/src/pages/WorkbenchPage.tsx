@@ -1,6 +1,9 @@
+import type { SupervisionClient } from "../data/supervision-client";
+import { InspectionAuthoringPanel } from "./InspectionAuthoringPanel";
 import type {
   CommandDescriptor,
   HumanRole,
+  RecordDTO,
   WorkItem,
   Workspace,
 } from "../data/ui-contract";
@@ -23,7 +26,8 @@ export interface WorkbenchPageProps {
   online: boolean;
   onSelect: (id: string | null) => void;
   onOpenCommand: (item: WorkItem, action: CommandDescriptor) => void;
-  onCreateInspection: () => Promise<void>;
+  client: SupervisionClient;
+  onInspectionCreated: (record: RecordDTO) => Promise<void>;
   onCreateIssue: (item: WorkItem) => Promise<void>;
 }
 
@@ -36,7 +40,8 @@ export function WorkbenchPage({
   online,
   onSelect,
   onOpenCommand,
-  onCreateInspection,
+  client,
+  onInspectionCreated,
   onCreateIssue,
 }: WorkbenchPageProps) {
   const WorkbenchLayout =
@@ -55,12 +60,7 @@ export function WorkbenchPage({
             <span>{visibleItems.length}건</span>
           </div>
           {route === "inspections" && role === "CON" && (
-            <button
-              className="secondary wide"
-              onClick={() => void onCreateInspection()}
-            >
-              예시 자체검측 추가
-            </button>
+            <InspectionAuthoringPanel client={client} workspace={workspace} online={online} onCreated={onInspectionCreated} />
           )}
           <RecordList
             items={visibleItems}
@@ -92,7 +92,7 @@ export function WorkbenchPage({
               <div className="meta-grid">
                 <div>
                   <small>위치</small>
-                  <b>A동 2층 / C-5</b>
+                  <b>{current.record.locationId || "위치 정보 없음"}</b>
                 </div>
                 <div>
                   <small>원본 버전</small>
@@ -104,7 +104,7 @@ export function WorkbenchPage({
                 </div>
                 <div>
                   <small>담당 범위</small>
-                  <b>건축 / 시범 패키지</b>
+                  <b>{current.record.discipline || "분야 정보 없음"} / {current.record.packageId || "패키지 정보 없음"}</b>
                 </div>
               </div>
 

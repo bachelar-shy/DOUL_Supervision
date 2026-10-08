@@ -12,6 +12,12 @@ from app.reference.engine import uid
 from app.reference.validation import require
 
 
+def closeout_reporting_complete(reports):
+    """Every non-cancelled closeout revision must close; labels replace nothing."""
+    active = [report for report in reports if report.get('status') != 'cancelled']
+    return bool(active) and all(report.get('status') == 'closed' for report in active)
+
+
 def _record(engine, kind, object_id, project_id):
     record = engine.get(kind, object_id)
     require(
@@ -123,9 +129,7 @@ def build_inspection_case(engine, inspection_id):
                 report.get('status') in ['acknowledged','followup','verified','closed']
                 for report in closeout_reports
             ),
-            ownerReportingComplete=any(
-                report.get('status')=='closed' for report in closeout_reports
-            ),
+            ownerReportingComplete=closeout_reporting_complete(closeout_reports),
         )
         linked_issues.append(
             dict(

@@ -41,7 +41,7 @@
     },
     {
       "functionId": "F-04",
-      "currentStage": "backend_api_implemented",
+      "currentStage": "integration_passed",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "46_Product_Functional_Baseline_v1_Validation.md",
@@ -53,9 +53,16 @@
         "tests_mvp/test_postgres_persistence.py",
         "services/api/README.md",
         "services/api/persistence.py",
-        "services/api/postgres_store.py"
+        "services/api/postgres_store.py",
+        "tests_browser/schedule.spec.ts",
+        "tests_browser/schedule-delay-evidence.spec.ts",
+        "tests_browser/workspace.spec.ts",
+        "tests_browser/zz-schedule-contract-closed-loop.spec.ts",
+        "tests_mvp/test_schedule_source_import_http.py",
+        "tests_mvp/test_schedule_source_import_postgres.py",
+        "design/verification/priority-issues-validation.json"
       ],
-      "note": "B-P3 HTTP/persistence acceptance completed for Schedule Baseline, Progress, DelayEvent and RecoveryPlan. UI connection, cross-workstream integration and pilot verification remain."
+      "note": "AC-SCH-01 passed through real source imports, approvals, UI commands, Owner decisions and effective baseline revision. All browser tests, contract/API tests including PostgreSQL, and source-commit GitHub CI passed. Synthetic staging validation only; pilot acceptance remains unverified."
     },
     {
       "functionId": "F-05",
@@ -103,9 +110,13 @@
         "apps/web/src/app/routes.ts",
         "packages/client/src/index.ts",
         "services/api/main.py",
-        "services/api/persistence.py"
+        "services/api/persistence.py",
+        "tests_browser/zz-schedule-contract-closed-loop.spec.ts",
+        "tests_mvp/test_schedule_source_import_http.py",
+        "tests_mvp/test_schedule_source_import_postgres.py",
+        "design/verification/priority-issues-validation.json"
       ],
-      "note": "F-08 Contract Notice / Claim / EOT is integrated through the Web workspace and real API. Browser E2E verifies Notice creation/due-date calculation/evidence-backed submission, Claim/EOT collection routing, Owner authority denial, responsive layouts, and cross-workstream regressions; Backend HTTP/SQLite acceptance still verifies time-bar risk, exact Owner Decision targeting, idempotency/version conflict, restart persistence and F-04 Baseline revision handoff. Pilot/field validation remains."
+      "note": "AC-SCH-01 passed through real source imports, approvals, UI commands, Owner decisions and effective baseline revision. All browser tests, contract/API tests including PostgreSQL, and source-commit GitHub CI passed. Synthetic staging validation only; pilot acceptance remains unverified."
     },
     {
       "functionId": "F-09",

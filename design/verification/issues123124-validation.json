@@ -1,0 +1,131 @@
+{
+  "issues": [
+    123,
+    124
+  ],
+  "date": "2026-10-08",
+  "branch": "integration/parallel-test-v1",
+  "source_base": "64b670458810015c407f60cb0b4bc9635b5f5b75",
+  "source_sha256": {
+    "app/reference/engine.py": "8589a36319f71306c11fc672814c271226006b589e2d9f437016d28966d9c3bf",
+    "app/reference/read_views.py": "6aa3c28f5156b44df4e56aed30c8684000e994c5eb2343706998c8f81963867e",
+    "services/api/modules/work_inbox.py": "0cd1f255a01f2002c8ba90fc8829fbed4c2cecde86b2e3c31549ea39cb4f284a",
+    "services/api/modules/evidence/storage.py": "4a52ba95d6858e0e64a7f7c4d2c4c40798fce15d47035835b65816dafd174405",
+    "services/api/modules/evidence/test_routes.py": "83ab840484f5525061f3bbc74dd1bd016e26fe2372c1346247d0221a410d8e85",
+    "tests/test_s2_versioned_retries.py": "9a904b224289dce2d86ee8ee75e5be8d1fb8896698a4cd1a4b0524cc44895e90",
+    "tests/test_s4_bounded_inbox.py": "72085112b2570135a95864626a899df13081f3631b87e7060b704f779e746d7d",
+    "scripts/benchmark_work_inbox.py": "3abef7923eeaa87ae6f0ff7308ba2565a1e8037b65cbab8935f4ecb71d7f6594"
+  },
+  "environment": {
+    "root": "/Users/automation/work/doul-parallel-test",
+    "platform": "darwin",
+    "machine": "arm64",
+    "errors": [],
+    "python": {
+      "lock": "/Users/automation/work/doul-parallel-test/services/api/requirements.lock",
+      "lock_sha256": "28a03caa3f56730428cf987a7b77e6b358c77487a5fccf621eb423d4698ddad4",
+      "profile": "production-api",
+      "requested_executable": "/Users/automation/work/dependency-cache/7f788163d5a13c941c3f0ed1acddd2ec862403934947de423565638a3c7d015b/bin/python",
+      "executable": "/Users/automation/work/dependency-cache/7f788163d5a13c941c3f0ed1acddd2ec862403934947de423565638a3c7d015b/bin/python",
+      "version": "3.12.13",
+      "prefix": "/Users/automation/work/dependency-cache/7f788163d5a13c941c3f0ed1acddd2ec862403934947de423565638a3c7d015b",
+      "base_prefix": "/Users/automation/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none",
+      "inventory_sha256": "cd48a176af0e09bfcaf90500389f0837b7069e663c4ef752e488e82c8deb0556",
+      "pip_check": "No broken requirements found.",
+      "errors": []
+    },
+    "ok": true
+  },
+  "tests": {
+    "contracts": {
+      "discovered": 294,
+      "status": "passed"
+    },
+    "api": {
+      "discovered": 336,
+      "skipped": 35,
+      "status": "passed"
+    },
+    "new_versioned_s3_sdk": 16,
+    "new_bounded_inbox": 8,
+    "new_local_upload_api": 5
+  },
+  "benchmark": {
+    "scope": "Projection-only; cheap synthetic guards/preflight, shared immutable nested source payload",
+    "excludes": [
+      "source engine construction",
+      "real authorization/dependency reads",
+      "command-preview clone",
+      "API/store transaction",
+      "persistence IO",
+      "process RSS/native memory"
+    ],
+    "measurements": [
+      {
+        "records": 3500,
+        "limit": 1,
+        "rounds": 3,
+        "samples": [
+          {
+            "wall_ms": 5.086541001219302,
+            "cpu_ms": 5.088000000000002,
+            "record_gets": 1,
+            "preflights": 1
+          },
+          {
+            "wall_ms": 5.071208004665095,
+            "cpu_ms": 5.073000000000001,
+            "record_gets": 1,
+            "preflights": 1
+          },
+          {
+            "wall_ms": 5.085459000838455,
+            "cpu_ms": 5.0870000000000015,
+            "record_gets": 1,
+            "preflights": 1
+          }
+        ],
+        "median_wall_ms": 5.085459000838455,
+        "median_cpu_ms": 5.0870000000000015,
+        "projection_peak_python_bytes": 11742,
+        "projection_retained_python_bytes": 4870
+      },
+      {
+        "records": 50000,
+        "limit": 1,
+        "rounds": 3,
+        "samples": [
+          {
+            "wall_ms": 72.07975000346778,
+            "cpu_ms": 72.08200000000001,
+            "record_gets": 1,
+            "preflights": 1
+          },
+          {
+            "wall_ms": 72.51208299567224,
+            "cpu_ms": 72.51599999999999,
+            "record_gets": 1,
+            "preflights": 1
+          },
+          {
+            "wall_ms": 71.82795900007477,
+            "cpu_ms": 71.817,
+            "record_gets": 1,
+            "preflights": 1
+          }
+        ],
+        "median_wall_ms": 72.07975000346778,
+        "median_cpu_ms": 72.08200000000001,
+        "projection_peak_python_bytes": 11862,
+        "projection_retained_python_bytes": 4990
+      }
+    ]
+  },
+  "limits": [
+    "Live S3/RustFS and Browser E2E not run",
+    "Projection benchmark excludes source setup, real guards, preview clone, API/store transaction, IO and process RSS",
+    "Exact total still scans membership; persistence index is an adapter extension, not implemented",
+    "Conditional-write idempotency applies while active quarantined objects are retained; disposed upload IDs require owner-ledger rejection",
+    "Legacy remote objects were not migrated/deleted; fresh IDs are required for new-protocol uploads"
+  ]
+}

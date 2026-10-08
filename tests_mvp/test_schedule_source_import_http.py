@@ -63,6 +63,38 @@ class ScheduleSourceImportTests(existing.ScheduleHttpPersistenceTests):
         self.assertEqual(response.json()['code'],code,response.text)
         self.assertEqual(json.loads(json.dumps(self.app.state.store.export_state())),before)
 
+    def test_historical_approved_revision_basis_survives_live_version_advance(self):
+        baseline = self.create_effective_baseline()
+        basis = self.bootstrap_revision_decision(baseline)
+        with self.app.state.store.transaction(True):
+            engine = self.app.state.store.engine
+            current = engine.get('Decision', basis['objectId'])
+            engine._save('Decision', dict(current, version=current['version'] + 1, status='executing'))
+        package = self.package(changes={'revision': 'B1', 'revisionBasisRef': basis})
+        imported = self.imported(package)['record']
+        self.assertEqual(imported['schedule']['revisionBasisRef'], basis)
+        self.assertEqual(self.app.state.store.engine.resolve(basis, self.project_id)['status'], 'decided')
+
+    def test_unapproved_and_wrong_scope_revision_basis_import_rolls_back(self):
+        baseline = self.create_effective_baseline()
+        for case in ['unapproved', 'wrong_scope']:
+            with self.subTest(case=case):
+                basis = self.bootstrap_revision_decision(baseline)
+                with self.app.state.store.transaction(True):
+                    engine = self.app.state.store.engine
+                    record = engine.get('Decision', basis['objectId'])
+                    if case == 'unapproved':
+                        record['decision'] = 'rejected'
+                    else:
+                        record['locationId'] = uid()
+                    engine._save('Decision', record)
+                package = self.package(changes={'revision': 'B1', 'revisionBasisRef': basis})
+                before = json.loads(json.dumps(self.app.state.store.export_state()))
+                response = self.submit(package)
+                self.assertEqual(response.status_code, 409 if case == 'unapproved' else 403, response.text)
+                self.assertEqual(response.json()['code'], 'SCHEDULE_REVISION_BASIS_INVALID' if case == 'unapproved' else 'SCOPE_MISMATCH')
+                self.assertEqual(json.loads(json.dumps(self.app.state.store.export_state())), before)
+
     def test_import_atomic_derived_refs_audit_and_original_history(self):
         activities=[dict(clientObjectId=uid(),data=dict(activityId='A1',wbsPath='1',activityName='Critical',critical=True),successorActivityIds=['A2']),
                     dict(clientObjectId=uid(),data=dict(activityId='A2',wbsPath='1',activityName='Next'),predecessorActivityIds=['A1'])]

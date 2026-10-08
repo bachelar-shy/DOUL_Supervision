@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 from uuid import uuid4
 
+from .read_views import readonly
 from .validation import ContractError, instant, require, validate
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,11 +78,26 @@ class Engine:
         source = self._history if version is not None else self._records
         key = (kind, object_id, version) if version is not None else (kind, object_id)
         require(key in source, 'OBJECT_NOT_FOUND', str(key))
-        value=deepcopy(source[key])
-        if version is None and kind=='WorkItem' and value.get('subtype')=='SafetyEquipmentInspection':
-            if value.get('data',{}).get('equipmentAvailable') is True and not self._equipment_documents_current(value):
-                value['data']['equipmentAvailable']=False
+        value = self._current_read_source(kind, source[key]) if version is None else source[key]
+        return deepcopy(value)
+
+    def _current_read_source(self, kind, value):
+        if kind == 'WorkItem' and value.get('subtype') == 'SafetyEquipmentInspection':
+            if value.get('data', {}).get('equipmentAvailable') is True and not self._equipment_documents_current(value):
+                # Overlay only the derived flag, borrowing all other nested data.
+                return {**value, 'data': {**value['data'], 'equipmentAvailable': False}}
         return value
+
+    def iter_work_inbox_records(self, project_id, machines):
+        """Query adapter boundary; persistent adapters can use project indexes.
+
+        These borrowed views are valid only while the caller holds the store's
+        read/transaction boundary. Guards must treat all nested values as read-only.
+        """
+        for (kind, object_id), raw in self._records.items():
+            machine = self._record_machines.get((kind, object_id))
+            if machine in machines and raw.get('projectId') == project_id:
+                yield kind, object_id, machine, readonly(self._current_read_source(kind, raw))
 
     def resolve(self, reference, project_id=None):
         record = self.get(reference['objectType'], reference['objectId'], reference['version'])
@@ -193,7 +209,7 @@ class Engine:
         if record.get('drawingRef') and not allow_stale_baseline:
             drawing = self.resolve(record['drawingRef'],record['projectId'])
             current = self.get('InformationItem',drawing['id'])
-            require(drawing.get('subtype')=='Drawing' and drawing.get('status')=='approved' and current['version']==drawing['version'], 'DRAWING_STALE', drawing['id'])
+            require(drawing.get('subtype')=='Drawing' and current['version']==drawing['version'] and self._drawing_has_approval(drawing) and self._drawing_field_usable(drawing), 'DRAWING_STALE', drawing['id'])
         for evidence_id in record.get('evidenceIds', []):
             self._evidence_access(evidence_id, record, role)
         for check in record.get('checkResults', []):
@@ -204,6 +220,94 @@ class Engine:
         for inspection_id in record.get('upstreamInspectionIds', []):
             inspection = self.get('Inspection', inspection_id)
             require(inspection['projectId']==record['projectId'] and inspection.get('nextWorkAllowed') is True, 'HOLD_NOT_RELEASED', inspection_id)
+
+    def _drawing_has_approval(self, drawing):
+        # Existing approved source migrations retain their established behavior.
+        if drawing.get('status') == 'approved':
+            return True
+        target = dict(objectType='InformationItem', objectId=drawing['id'], version=drawing['version'])
+        return any(kind == 'Approval' and approval.get('projectId') == drawing['projectId']
+                   and approval.get('approvalKind') == 'technical' and approval.get('targetRef') == target
+                   and approval.get('status') == 'approved'
+                   and ('expiresAt' not in approval or instant(self.at()) < instant(approval['expiresAt']))
+                   for (kind, _), approval in self._records.items())
+
+    def _drawing_field_usable(self, drawing):
+        target = dict(objectType='InformationItem', objectId=drawing['id'], version=drawing['version'])
+        revisions = getattr(self, 'drawing_field_revisions', [])
+        managed = [r for r in revisions if r.get('projectId') == drawing['projectId'] and r.get('drawingRef') == target]
+        if not managed:
+            return drawing.get('status') == 'approved'  # legacy, unmanaged baselines
+
+        def not_expired(approval):
+            now = instant(self.at())
+            return all(key not in approval or instant(approval[key]) > now
+                       for key in ('validTo', 'expiresAt', 'validUntil'))
+
+        def same_ref(left, right):
+            return isinstance(left, dict) and isinstance(right, dict) and all(
+                left.get(key) == right.get(key)
+                for key in ('objectType', 'objectId', 'version'))
+
+        for revision in managed:
+            if revision.get('status') != 'released' or revision.get('issuedFor') != 'construction':
+                continue
+            try:
+                revision_data = revision.get('data') or {}
+                approval_ref = revision.get('approvalRef') or revision_data.get('approvalRef')
+                approval = self._current_reference(approval_ref, drawing['projectId'], object_type='Approval')
+                if (approval.get('approvalKind') != 'technical' or approval.get('status') != 'approved'
+                        or not same_ref(approval.get('targetRef'), target) or not not_expired(approval)):
+                    continue
+                evidence = self._current_reference(revision.get('evidenceRef'), drawing['projectId'], object_type='Evidence')
+                if (evidence.get('sourceType') != 'original' or evidence.get('mediaType') != 'document'
+                        or (evidence.get('metadata') or {}).get('mimeType') != 'application/pdf'):
+                    continue
+                changes_valid = True
+                for reference in revision.get('changeRefs', []):
+                    change = self._current_reference(reference, drawing['projectId'],
+                                                     object_type='WorkItem', subtype='ChangeRequest')
+                    if change.get('status') not in {'approved', 'revised_information_issued', 'implemented'}:
+                        changes_valid = False
+                        break
+                    change_drawing_ref = change.get('drawingRef') or change.get('targetRef')
+                    if change_drawing_ref is not None and not same_ref(change_drawing_ref, target):
+                        changes_valid = False
+                        break
+                    linked_refs = change.get('relatedRefs') or (change.get('data') or {}).get('references') or []
+                    drawing_links = [ref for ref in linked_refs
+                                     if isinstance(ref, dict) and ref.get('objectType') == 'InformationItem']
+                    if drawing_links and not any(same_ref(ref, target) for ref in drawing_links):
+                        changes_valid = False
+                        break
+                    change_data = change.get('data') or {}
+                    change_approval_ref = change.get('approvalRef') or change_data.get('approvalRef')
+                    if change_approval_ref is not None:
+                        change_approval = self._current_reference(
+                            change_approval_ref, drawing['projectId'], object_type='Approval')
+                        change_target = dict(objectType='WorkItem', objectId=change['id'], version=change['version'])
+                        if (change_approval.get('status') != 'approved'
+                                or not same_ref(change_approval.get('targetRef'), change_target)
+                                or not not_expired(change_approval)):
+                            changes_valid = False
+                            break
+                if not changes_valid:
+                    continue
+                required = set(revision.get('requiredRecipientPartyIds', []))
+                received = {receipt.get('recipientPartyId') for receipt in revision.get('receipts', [])
+                            if receipt.get('deliveredAt') and receipt.get('receivedAt')
+                            and not receipt.get('returnedAt')}
+                if not required or not required.issubset(received):
+                    continue
+                if any(other.get('projectId') == drawing['projectId']
+                       and other.get('id') != revision.get('id')
+                       and other.get('drawingNo') == revision.get('drawingNo')
+                       and other.get('status') == 'released' for other in revisions):
+                    continue
+                return True
+            except (ContractError, KeyError, TypeError, ValueError):
+                continue
+        return False
 
     def _evidence_access(self, evidence_id, record, role):
             evidence = self.get('Evidence', evidence_id)
