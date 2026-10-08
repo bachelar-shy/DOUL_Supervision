@@ -2,11 +2,43 @@
   "branch": "goal/mvp-completion-v1",
   "baseCommit": "943d1dd0a3056c34bff9015292b59b4cfe49c197",
   "checkpointCommit": "Resolve this file's latest commit with git log -1 --format=%H -- design/development/agents/root-handoff.json",
-  "completed": ["Merged validated PR128", "Allocated six isolated Luna/high worktrees with explicit shared file ownership"],
-  "inProgress": ["Canonical payment collection facade", "Authoritative creation capability DTO", "Payment, i18n, capability, operations and acceptance workers"],
-  "validation": {"currentChanges": "Pending integrated verification", "priorBase": "PR128 CI eight checks passed"},
-  "remaining": ["Integrate worker commits and wire server capabilities and payment UI", "Address audit gaps without changing Product semantics", "Run appropriate full regression and live adapter verification", "Update ledger conservatively", "Obtain actual authorized pilot configuration and field evidence"],
-  "restart": ["Inspect git status and git worktree list", "Read all agent handoffs and active agent messages", "Confirm fixture availability before live PostgreSQL tests", "Continue unfinished work; preserve other workers' changes"],
-  "testFixtures": {"postgresContainer": "doul-goal-postgres", "hostPort": 15432, "database": "doul_goal_test", "ownedTemporary": true},
+  "completed": [
+    "Merged PR128 after all eight checks passed",
+    "Integrated six Luna/high workstreams: payment, authoritative create capability/reference catalogs, ko/vi/en UI/report rendering, commissioning/handover/warranty APIs and UI, operations and acceptance audit",
+    "Reviewed current authority/qualification/version/evidence/amount boundaries and added strict trusted signature adapter contract",
+    "Verified real PostgreSQL/S3 synthetic adapter and encrypted backup/restore behavior",
+    "Removed request read-cache duplication and per-row full preview copies; retained exact authorization and immutable-source tests"
+  ],
+  "inProgress": [
+    "Final browser regression, separate mock locale suite and integrated evidence reconciliation",
+    "Container/package and GitHub CI verification before sequential integration"
+  ],
+  "validation": {
+    "evidence": "design/verification/goal-mvp-checkpoint-20261008.json",
+    "contracts": "319 PASS",
+    "api": "388 PASS; 5 optional document tests separately PASS",
+    "documentRuntime": "5 PASS",
+    "integrationCI": "pending"
+  },
+  "remaining": [
+    "Submit isolated integration branch as PR and pass current-head required checks before merge",
+    "Reconcile only proven issue completion and preserve incomplete full scenario/pilot status",
+    "Complete remaining full connected browser acceptance without weakening legal/state/equipment prerequisites",
+    "Configure actual project, production legal signature provider and adopted forms/language policy; obtain real authorized pilot actors/evidence",
+    "Resolve dependency audit release blockers and obtain actual field/performance/restore acceptance"
+  ],
+  "restart": [
+    "Inspect git status and worktree list, active agents, Goal/checkpoint and all latest worker handoffs",
+    "Root clean dependencies are preserved in /tmp/doul-goal-root-deps/node_modules; workspace node_modules symlink with absolute @doul workspace links. Reinstall exact lock if ephemeral /tmp is replaced",
+    "Production Python: work/priority-venv; document-only union lock environment: work/document-verification-venv",
+    "Confirm owned PostgreSQL fixture availability on 15432 and no concurrent destructive fixture operations",
+    "Read final test logs/evidence and continue unfinished work without deleting other changes"
+  ],
+  "testFixtures": {
+    "postgresContainer": "doul-goal-postgres",
+    "hostPort": 15432,
+    "database": "doul_goal_test",
+    "ownedTemporary": true
+  },
   "userEnvironment": "Chrome browser, ChatGPT Codex; previous Windows desktop-app assumption was corrected"
 }

@@ -1,13 +1,13 @@
 {
-  "date": "2026-10-05",
+  "date": "2026-10-08",
   "scope": "npm dependency tree including development tools",
   "totals": {
     "info": 0,
     "low": 0,
     "moderate": 7,
-    "high": 16,
+    "high": 21,
     "critical": 0,
-    "total": 23
+    "total": 28
   },
   "rootAdvisories": {
     "braces": {
@@ -45,5 +45,5 @@
     }
   },
   "releaseStatus": "BLOCKED_PENDING_REMEDIATION",
-  "note": "Package counts include transitive propagation, not 23 distinct vulnerabilities. No forced SDK downgrade was performed."
+  "note": "Counts include transitive propagation, not 28 distinct vulnerabilities. Actual clean locked root audit found braces, node-forge and uuid advisories. Latest available braces 3.0.3 and node-forge 1.4.0 remain affected; suggested forced Expo/shadcn SDK downgrades were not performed. Dependency release approval remains blocked; browser/development tests do not waive remediation."
 }

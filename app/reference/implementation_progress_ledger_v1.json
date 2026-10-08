@@ -14,9 +14,11 @@
       "currentStage": "contract_confirmed",
       "stageStatus": "accepted",
       "evidenceRefs": [
-        "46_Product_Functional_Baseline_v1_Validation.md"
+        "46_Product_Functional_Baseline_v1_Validation.md",
+        "tests_mvp/test_quality_closed_loop_http.py",
+        "design/verification/goal-mvp-checkpoint-20261008.json"
       ],
-      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+      "note": "Partial development evidence now includes synthetic-fixture real HTTP FAIL→Issue→Action→failed reinspection→new correction cycle→signed/released pass→SUP close, with separate Owner Report closure. MockTrustedVerifier represents only the external signature boundary. Full connected-browser acceptance, production legal verifier and actual field evidence remain unproven; no whole-function promotion."
     },
     {
       "functionId": "F-02",
@@ -73,15 +75,20 @@
     },
     {
       "functionId": "F-05",
-      "currentStage": "contract_confirmed",
+      "currentStage": "backend_api_implemented",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "32_Progress_Measurement_Payment_Functional_Contract.md",
         "46_Product_Functional_Baseline_v1_Validation.md",
         "app/schema/measurement_payment_execution_contract_v1.json",
-        "tests/test_measurement_payment_execution_contract.py"
+        "tests/test_measurement_payment_execution_contract.py",
+        "tests_mvp/test_measurement_payment_http.py",
+        "tests_mvp/test_measurement_payment_postgres.py",
+        "tests_browser/payment-workspace.spec.ts",
+        "design/development/agents/payment-api-handoff.json",
+        "design/verification/goal-mvp-checkpoint-20261008.json"
       ],
-      "note": "B-P4 Product execution contract structured and validated for ContractBOQ exact-version history, QuantityMeasurement verification/payment-eligibility separation, PaymentClaim claimed/verified/recommended/ownerApproved/paid amount boundaries, decimal strings, duplicate-claim guards, unapproved Variation exclusion, cumulative reconciliation and partial-payment tracking. Backend HTTP/database acceptance is still required before promotion."
+      "note": "ContractBOQ, QuantityMeasurement and PaymentClaim persistent HTTP workflow acceptance passed locally and on PostgreSQL 16, including exact decimal/rule checks, Owner adjustment, individual partial payments and append-only correction/cancellation history. Trusted upstream Requirements, accepted Inspection and Decisions are fixture seeded. Connected Payment UI browser evidence is partial and does not prove all AC-PAY-01 commands through the UI; no integration or pilot promotion."
     },
     {
       "functionId": "F-06",
@@ -94,12 +101,18 @@
     },
     {
       "functionId": "F-07",
-      "currentStage": "contract_confirmed",
+      "currentStage": "backend_api_implemented",
       "stageStatus": "accepted",
       "evidenceRefs": [
-        "46_Product_Functional_Baseline_v1_Validation.md"
+        "46_Product_Functional_Baseline_v1_Validation.md",
+        "app/reference/handover.py",
+        "tests_contracts/test_handover_contract.py",
+        "tests_mvp/test_handover_http.py",
+        "tests_mvp/test_handover_postgres.py",
+        "design/development/agents/payment-api-handoff.json",
+        "design/verification/goal-mvp-checkpoint-20261008.json"
       ],
-      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+      "note": "CommissioningPackage, HandoverPackage and WarrantyClaim machine create/transition acceptance passed through persistent HTTP and PostgreSQL 16, including failed-test history/retest, separate Owner partial handover/reservations/warranty close, scoped qualified witnesses, current equipment certificates and exact chronological linked closure proofs. Explicit contractual profiles and upstream Asset/Inspection/Issue/Action records are trusted synthetic fixtures. Completion UI currently has mock display coverage; full connected AC-HO-01/browser and actual project/pilot acceptance remain unproven."
     },
     {
       "functionId": "F-08",
