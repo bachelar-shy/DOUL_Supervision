@@ -55,7 +55,7 @@ function RefSelect({
   onChange: (value: string | string[]) => void; multiple?: boolean; disabled?: boolean; emptyLabel: string;
 }) {
   return <label className="completion-field">{label}
-    <select aria-label={label} value={value} multiple={multiple} disabled={disabled}
+    <select aria-label={label} value={multiple ? (Array.isArray(value) ? value : []) : (Array.isArray(value) ? value[0] ?? "" : value)} multiple={multiple} disabled={disabled}
       onChange={(event) => onChange(multiple
         ? Array.from(event.currentTarget.selectedOptions, (option) => option.value)
         : event.currentTarget.value)}>

@@ -45,6 +45,8 @@ jobs:
         run: |
           npx playwright install --with-deps chromium
           npx playwright test
+      - name: Isolated mock localization tests
+        run: npx playwright test --config playwright.localization.config.ts
       - name: Android and iOS JavaScript bundles (not signed native builds)
         working-directory: apps/mobile
         run: npx expo export --platform ios --platform android --output-dir ../../.local/mobile-export

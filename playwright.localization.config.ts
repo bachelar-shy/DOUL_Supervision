@@ -4,7 +4,7 @@ import { defineConfig } from "@playwright/test";
 // Python venv, demo database, or active web server.
 export default defineConfig({
   testDir: "./tests_browser",
-  testMatch: "localization.spec.ts",
+  testMatch: "localization-mock.spec.ts",
   fullyParallel: false,
   workers: 1,
   timeout: 30000,

@@ -388,9 +388,9 @@ test("safety workspace keeps permit, stop, resume gate, and equipment states sep
     '[data-ui-component="status-boundary-group"]',
   );
   await expect(permitBoundary).toContainText("허가 상태");
-  await expect(permitBoundary).toContainText("Work Authorized");
+  await expect(permitBoundary).toContainText("작업 허용");
   await expect(permitBoundary).toContainText("작업 미허용");
-  await expect(permitBoundary).toContainText("연결 Stop");
+  await expect(permitBoundary).toContainText("연결 작업중지");
 
   await workspace.getByRole("tab", { name: "작업중지", exact: true }).click();
   await page
