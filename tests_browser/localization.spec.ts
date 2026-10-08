@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { formatDecimalExact } from "../apps/web/src/i18n/decimal-format";
+import { formFieldLabels } from "@doul/localization";
 
 async function chooseLanguage(page: Page, currentAria: string, language: string) {
   await page.getByRole("combobox", { name: currentAria }).selectOption(language);
@@ -30,7 +31,7 @@ test("Korean, Vietnamese and English field views switch without changing form id
   await chooseLanguage(page, "표시 언어 선택", "vi");
   await expect(page.locator("html")).toHaveAttribute("lang", "vi-VN");
   await expect(page.getByRole("heading", { name: "Tài liệu liên kết dữ liệu" })).toBeVisible();
-  await expect(page.getByText("Tình hình khẩn cấp và sự việc", { exact: true })).toBeVisible();
+  await expect(page.getByLabel(formFieldLabels["urgent.fact"].vi)).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Chọn biểu mẫu tài liệu" })).toHaveValue("FM-20");
   await expect(factInput).toHaveValue("SITE-FACT-001");
   expect(
@@ -50,7 +51,7 @@ test("Korean, Vietnamese and English field views switch without changing form id
   await chooseLanguage(page, "Chọn ngôn ngữ hiển thị", "en");
   await expect(page.locator("html")).toHaveAttribute("lang", "en-US");
   await expect(page.getByRole("heading", { name: "Data-linked document" })).toBeVisible();
-  await expect(page.getByText("Urgent facts", { exact: true })).toBeVisible();
+  await expect(page.getByLabel(formFieldLabels["urgent.fact"].en)).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Document form" })).toHaveValue("FM-20");
   expect(renderRequests).toBe(0);
 
@@ -61,7 +62,7 @@ test("Korean, Vietnamese and English field views switch without changing form id
 
   await chooseLanguage(page, "Select display language", "ko");
   await expect(page.locator("html")).toHaveAttribute("lang", "ko-KR");
-  await expect(page.getByText("긴급 상황·사실관계", { exact: true })).toBeVisible();
+  await expect(page.getByLabel(formFieldLabels["urgent.fact"].ko)).toBeVisible();
 });
 
 for (const width of [390, 1440]) {
@@ -99,15 +100,21 @@ test("Contract notice editor translates in place without creating or changing a 
   await expect(surface).toBeVisible();
   const add = surface.getByRole("button", { name: "계약통지 기록 추가", exact: true });
   await expect(add).toBeEnabled();
+  const createAction = surface.locator(".schedule-list-actions button");
+  const createActionEnabled = await createAction.isEnabled();
+  expect(createActionEnabled).toBe(true);
   await add.click();
 
   const dialog = page.locator('[role="dialog"].modal');
   await expect(dialog).toHaveAttribute("aria-label", "계약통지 기록 추가");
-  await expect(dialog.getByText(/미리보기 모드에서는 입력 화면만 확인/)).toBeVisible();
+  await expect(dialog.getByText(/생성 권한과 범위는 제출 시 서버가 다시 검증/)).toBeVisible();
   const titleInput = dialog.getByRole("textbox", { name: "제목 *", exact: true });
   const numberInput = dialog.getByRole("textbox", { name: "계약통지 번호 *", exact: true });
   await titleInput.fill("SITE-CONTRACT-001");
   await numberInput.fill("NT-001");
+  const submitButton = () => dialog.getByRole("button", { name: "기록 추가", exact: true });
+  const submitEnabled = await submitButton().isEnabled();
+  expect(submitEnabled).toBe(true);
 
   let mutationRequests = 0;
   page.on("request", (request) => {
@@ -117,19 +124,26 @@ test("Contract notice editor translates in place without creating or changing a 
   const locale = page.locator(".topbar .role-picker select").first();
   await locale.selectOption("vi");
   await expect(dialog).toHaveAttribute("aria-label", "Thêm hồ sơ Thông báo hợp đồng");
+  await expect(dialog.getByText(/Máy chủ sẽ kiểm tra lại quyền và phạm vi tại thời điểm nộp/)).toBeVisible();
   await expect(dialog.locator("input").first()).toHaveValue("SITE-CONTRACT-001");
   await expect(dialog.locator("input").nth(1)).toHaveValue("NT-001");
-  await expect(dialog.getByRole("button", { name: "Thêm hồ sơ" })).toBeDisabled();
-  await expect(dialog.getByText(/Giao diện không quyết định thẩm quyền/)).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Thêm hồ sơ" })).toBeEnabled();
+  expect(await createAction.isEnabled()).toBe(createActionEnabled);
+  expect(await dialog.getByRole("button", { name: "Thêm hồ sơ" }).isEnabled()).toBe(submitEnabled);
 
   await locale.selectOption("en");
   await expect(dialog).toHaveAttribute("aria-label", "Add Contract notice record");
+  await expect(dialog.getByText(/The server rechecks permissions and scope at submission/)).toBeVisible();
   await expect(dialog.getByRole("combobox", { name: "Original contract event *" })).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "Add record" })).toBeDisabled();
+  await expect(dialog.getByRole("button", { name: "Add record" })).toBeEnabled();
+  expect(await createAction.isEnabled()).toBe(createActionEnabled);
+  expect(await dialog.getByRole("button", { name: "Add record" }).isEnabled()).toBe(submitEnabled);
   await expect(dialog.locator("input").first()).toHaveValue("SITE-CONTRACT-001");
 
   await locale.selectOption("ko");
   await expect(dialog).toHaveAttribute("aria-label", "계약통지 기록 추가");
+  expect(await createAction.isEnabled()).toBe(createActionEnabled);
+  expect(await submitButton().isEnabled()).toBe(submitEnabled);
   await dialog.getByRole("button", { name: "대화상자 닫기" }).click();
   await surface.getByRole("tab", { name: "클레임", exact: true }).click();
   await expect(surface.getByRole("button", { name: "클레임 기록 추가" })).toBeVisible();
@@ -142,31 +156,57 @@ test("Evidence summary, origin, and technical metadata translate without changin
   page,
 }) => {
   await page.goto("/#/capture");
-  await page.locator('[data-ui-component="evidence-viewer"]').getByRole("button").first().click();
+  const evidenceRow = page.locator('[data-ui-component="evidence-viewer"] button').first();
+  await expect(evidenceRow).toBeVisible();
+  const rawTitle = await evidenceRow.locator("strong").innerText();
+  await evidenceRow.click();
   const sheet = page.locator('[data-ui-component="evidence-detail-sheet"]');
   await expect(sheet).toBeVisible();
   await expect(sheet.getByText("판정 경계", { exact: true })).toBeVisible();
-  await expect(sheet).toContainText("EVD-UI-001");
+  await expect(sheet.getByRole("heading").first()).toHaveText(rawTitle);
+  let mutationRequests = 0;
+  page.on("request", (request) => {
+    if (request.method() !== "GET" && request.url().includes("/api/")) mutationRequests += 1;
+  });
+
+  const readFieldValue = async (label: string) =>
+    sheet.getByText(label, { exact: true }).locator("..").locator("div").innerText();
+  await sheet.getByRole("tab", { name: "출처·연결" }).click();
+  const evidenceId = await readFieldValue("증빙 ID");
+  expect(evidenceId.trim()).not.toBe("");
+  await sheet.getByRole("tab", { name: "기술정보" }).click();
+  const sourceVersion = await readFieldValue("원본 기록 버전");
 
   const locale = page.locator(".topbar .role-picker select").first();
   await locale.selectOption("vi");
   await expect(page.locator("html")).toHaveAttribute("lang", "vi-VN");
+  await expect(sheet.getByRole("heading").first()).toHaveText(rawTitle);
+  await sheet.getByRole("tab", { name: "Thông tin cơ bản" }).click();
   await expect(sheet.getByText("Ranh giới quyết định", { exact: true })).toBeVisible();
   await sheet.getByRole("tab", { name: "Nguồn gốc · Liên kết" }).click();
+  await expect(await readFieldValue("Mã minh chứng")).toBe(evidenceId);
   await expect(sheet.getByText(/Hồ sơ này được lưu giữ dưới dạng gốc/)).toBeVisible();
   await sheet.getByRole("tab", { name: "Thông tin kỹ thuật" }).click();
   await expect(sheet.getByText("Phiên bản hồ sơ gốc", { exact: true })).toBeVisible();
-  await expect(sheet).toContainText("EVD-UI-001");
+  await expect(await readFieldValue("Phiên bản hồ sơ gốc")).toBe(sourceVersion);
 
   await locale.selectOption("en");
+  await expect(sheet.getByRole("heading").first()).toHaveText(rawTitle);
   await expect(sheet.getByRole("tab", { name: "Technical details" })).toBeVisible();
   await expect(sheet.getByText("Source record version", { exact: true })).toBeVisible();
+  await expect(await readFieldValue("Source record version")).toBe(sourceVersion);
   await sheet.getByRole("tab", { name: "Provenance · Links" }).click();
+  await expect(await readFieldValue("Evidence ID")).toBe(evidenceId);
   await expect(sheet.getByText(/Derived images, transcripts and analysis results do not replace it/)).toBeVisible();
 
   await locale.selectOption("ko");
+  await expect(sheet.getByRole("heading").first()).toHaveText(rawTitle);
+  await sheet.getByRole("tab", { name: "출처·연결" }).click();
+  await expect(await readFieldValue("증빙 ID")).toBe(evidenceId);
+  await sheet.getByRole("tab", { name: "기술정보" }).click();
+  await expect(await readFieldValue("원본 기록 버전")).toBe(sourceVersion);
   await expect(sheet.getByRole("tab", { name: "출처·연결" })).toBeVisible();
-  await expect(sheet).toContainText("EVD-UI-001");
+  expect(mutationRequests).toBe(0);
 });
 
 test("Exact decimal formatting preserves large amounts and long fractional strings in Chromium", async ({
