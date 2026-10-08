@@ -100,7 +100,7 @@ def build_creation_capabilities(
             result[machine] = entry
             continue
 
-        probe = {"projectId": project_id, **scope}
+        probe = {**scope, "projectId": project_id}
         try:
             engine.authorize(probe, authority, party_id, role["id"])
         except ContractError as exc:

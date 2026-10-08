@@ -237,6 +237,10 @@ export interface Workspace {
     drawingRef: DomainRef;
     evidenceId: string;
     creationCapabilities?: Record<string, CreationCapability>;
+    referenceCatalog?: {
+      requirements: Array<{ ref: DomainRef; record: RecordDTO }>;
+      assets: Array<{ ref: DomainRef; record: RecordDTO }>;
+    };
   };
   participants: { partyId: string; name: string; actorGroup: HumanRole }[];
   formSchemas: Record<string, FormSchema>;

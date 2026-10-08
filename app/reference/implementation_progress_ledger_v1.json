@@ -29,15 +29,22 @@
     },
     {
       "functionId": "F-03",
-      "currentStage": "contract_confirmed",
+      "currentStage": "backend_api_implemented",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "46_Product_Functional_Baseline_v1_Validation.md",
         "30_Safety_Permit_Stop_Resume_Functional_Contract.md",
         "app/schema/state_machines_v1.json",
-        "app/schema/authority_matrix_v1.json"
+        "app/schema/authority_matrix_v1.json",
+        "app/schema/safety_execution_contract_v1.json",
+        "tests_mvp/test_safety_http.py",
+        "services/api/main.py",
+        "services/api/store.py",
+        "services/api/persistence.py",
+        "app/reference/engine.py",
+        "design/verification/priority-issues-validation.json"
       ],
-      "note": "Product execution contract is machine-backed; remain contract_confirmed until Backend API implementation acceptance evidence exists."
+      "note": "Actual FastAPI/SQLite backend acceptance covers permit/equipment persistence, restart, idempotency, latest equipment/certification/current-evidence gates and atomic Stop handling. Permit approval remains separate from workAuthorized and Stop lift from permit Resume. Seven Safety HTTP tests passed again on the Goal integration branch. Full UI/field acceptance and adopted signed acceptance evidence remain separate; no pilot promotion."
     },
     {
       "functionId": "F-04",

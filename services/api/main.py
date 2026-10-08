@@ -46,6 +46,7 @@ from .modules.notification_inbox import project_notification_inbox, Notification
 from .modules.business_traceability import build_safety_stop_traceability
 from .modules.location.query import query_location_tree
 from .creation_capabilities import build_creation_capabilities
+from .reference_catalog import build_reference_catalog
 
 ROOT=Path(__file__).resolve().parents[2]
 SPEC=json.loads((ROOT/'app/api/openapi.yaml').read_text())
@@ -466,6 +467,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                 store.engine,project_id,session['partyId'],role,context.get('scope'),
                 queue_enabled=app.state.queue_enabled,
             )
+            context['referenceCatalog']=build_reference_catalog(store.engine,project_id,session['partyId'],role['id'])
             return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context=context,participants=[dict(partyId=r['partyId'],name=store.engine.get('Party',r['partyId'])['name'],actorGroup=r['actorGroup']) for (kind,_),r in store.engine._records.items() if kind=='RoleAssignment' and r['projectId']==project_id and r['active'] and r['actorGroup'] in ['SUP','CON','OWN','DES','ADM']],formSchemas=store.documents.schemas,demo=demo)
 
     @app.get('/projects/{project_id}/roles')
