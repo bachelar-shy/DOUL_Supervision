@@ -24,7 +24,7 @@ export type CompletionLabelKey =
   | "notSet" | "yes" | "no" | "backToList" | "noCommands" | "createUnavailable" | "closeDialog" | "requiredHandoverScope"
   | "retestPreserved" | "partialHandoverBoundary" | "warrantyClosureBoundary"
   | "profileRequired" | "profileScopeNote" | "profileUnavailable" | "warrantyRequiredFields" | "evidenceRefs" | "error"
-  | "commandAvailable" | "commandBlocked";
+  | "commandAvailable" | "commandBlocked" | "readinessReady" | "readinessNotReady";
 
 export const completionLabelKeys: readonly CompletionLabelKey[] = [
   "title", "description", "commissioning", "handover", "warranty", "commissioningDescription",
@@ -44,6 +44,7 @@ export const completionLabelKeys: readonly CompletionLabelKey[] = [
   "createUnavailable", "closeDialog", "requiredHandoverScope", "retestPreserved", "partialHandoverBoundary", "warrantyClosureBoundary",
   "profileRequired", "profileScopeNote", "profileUnavailable", "warrantyRequiredFields", "evidenceRefs", "error",
   "commandAvailable", "commandBlocked",
+  "readinessReady", "readinessNotReady",
 ];
 
 export const completionFallbackLabels: Record<CompletionLabelKey, string> = {
@@ -83,6 +84,7 @@ export const completionFallbackLabels: Record<CompletionLabelKey, string> = {
   evidenceRefs: "근거 증빙",
   error: "요청을 완료하지 못했습니다. 입력값과 선행조건을 확인하십시오.",
   commandAvailable: "실행 가능", commandBlocked: "선행조건 대기",
+  readinessReady: "준비 완료", readinessNotReady: "준비 미완료",
   retestPreserved: "재시험 후에도 실패한 시험결과는 이력에 유지됩니다.",
   partialHandoverBoundary: "부분인수는 정확한 인수 범위와 미결 유보사항을 그대로 유지합니다.",
   warrantyClosureBoundary: "보증 하자 종결은 인수와 별도이며 서버 제공 명령으로만 처리합니다.",

@@ -305,7 +305,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         )}
         <main>
           <PageHeader
-            eyebrow={roleLabel(role) + " · " + t("app.workspace")}
+            eyebrow={t("mobile.roleWorkspace", { role: roleLabel(role) })}
             title={routeLabel(routes.find((x) => x.id === safeRoute))}
             description={
               safeRoute === "today"

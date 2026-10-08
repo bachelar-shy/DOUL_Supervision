@@ -100,7 +100,7 @@ test("Contract create affordance follows the server capability", async ({
   });
   await expect(create).toBeDisabled();
   await expect(page.getByTestId("creation-capability-reason")).toContainText(
-    "현재 역할에는 이 기록의 생성 권한이 없습니다.",
+    "현재 역할은 초안을 작성할 권한이 없습니다.",
   );
   await create.click({ force: true });
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -236,7 +236,7 @@ test("Claim and EOT drafts follow server capabilities and the API rejects owner 
   });
   await expect(ownerCreate).toBeDisabled();
   await expect(page.getByTestId("creation-capability-reason")).toContainText(
-    "현재 역할에는 이 기록의 생성 권한이 없습니다.",
+    "현재 역할은 초안을 작성할 권한이 없습니다.",
   );
   let uiClaimPosts = 0;
   const countUiClaimPosts = (url: URL, method: string) => {

@@ -91,8 +91,8 @@ test("mock completion UI presentation keeps commissioning, handover, and warrant
   await workspace.getByRole("button", { name: /UI Commissioning Record/ }).click();
   await expect(workspace.locator(".completion-history")).toHaveCount(1);
   await expect(workspace).toContainText("Initial pressure leak");
-  await expect(workspace).toContainText("test-fail");
-  await expect(workspace).toContainText("test-pass");
+  await expect(workspace.locator('[title="Evidence · test-fail-1 · v1"]')).toBeVisible();
+  await expect(workspace.locator('[title="Evidence · test-pass-1 · v1"]').first()).toBeVisible();
   await expect(workspace.locator(".completion-commands button")).toHaveCount(1);
 
   await tabs.nth(1).click();
@@ -106,7 +106,7 @@ test("mock completion UI presentation keeps commissioning, handover, and warrant
   await workspace.getByRole("button", { name: /UI Warranty Record/ }).click();
   await expect(workspace).toContainText("Vibration above expected threshold");
   await expect(workspace).toContainText("Coupling re-torqued");
-  await expect(workspace).toContainText("inspection-rework");
+  await expect(workspace.locator('[title="Inspection · inspection-rework-1 · v1"]')).toBeVisible();
 
   const locale = page.locator(".top-actions .role-picker select").first();
   await locale.selectOption("en");

@@ -70,20 +70,31 @@ function RefSelect({
 
 function FieldGrid({ items, t }: { items: Array<[string, unknown]>; t?: (key: CompletionLabelKey) => string }) {
   return <dl className="completion-meta-grid">{items.map(([label, value], index) => <div key={`${label}-${index}`}>
-    <dt>{label}</dt><dd>{t ? displayValue(value, t) : completionText(value)}</dd>
+    <dt>{label}</dt><dd title={referenceTitle(value)}>{t ? displayValue(value, t) : completionText(value)}</dd>
   </div>)}</dl>;
 }
 
 function displayValue(value: unknown, t: (key: CompletionLabelKey) => string) {
   if (typeof value === "boolean") return t(value ? "yes" : "no");
-  if (typeof value === "string" && states[value]) return states[value];
   return completionText(value);
+}
+
+function controlledValue(value: unknown, t: (key: CompletionLabelKey) => string) {
+  if (value === "ready") return t("readinessReady");
+  if (value === "not_ready") return t("readinessNotReady");
+  return typeof value === "string" && states[value] ? states[value] : displayValue(value, t);
+}
+
+function referenceTitle(value: unknown): string | undefined {
+  const ref=object(value);
+  return typeof ref.objectType === "string" && typeof ref.objectId === "string" && typeof ref.version === "number"
+    ? `${ref.objectType} · ${ref.objectId} · v${ref.version}` : undefined;
 }
 
 function ReferenceList({ label, value }: { label: string; value: unknown }) {
   const refs = values(value);
   return <div className="completion-reference-list"><span>{label}</span>
-    {refs.length ? <ul>{refs.map((ref, index) => <li key={`${completionText(ref)}-${index}`}>{completionText(ref)}</li>)}</ul> : <p>—</p>}
+    {refs.length ? <ul>{refs.map((ref, index) => <li title={referenceTitle(ref)} key={`${completionText(ref)}-${index}`}>{completionText(ref)}</li>)}</ul> : <p>—</p>}
   </div>;
 }
 
@@ -94,14 +105,14 @@ function CommissioningDetail({ item, t }: { item: WorkItem; t: (key: CompletionL
   return <>
     <div className="completion-summary">
       <div><span>{t("status")}</span><strong>{states[item.record.status || ""] || item.record.status || "—"}</strong></div>
-      <div><span>{t("readiness")}</span><strong>{displayValue(data.readinessStatus, t)}</strong></div>
-      <div><span>{t("testResult")}</span><strong>{displayValue(latest.outcome ?? data.lastTestOutcome, t)}</strong></div>
+      <div><span>{t("readiness")}</span><strong>{controlledValue(data.readinessStatus, t)}</strong></div>
+      <div><span>{t("testResult")}</span><strong>{controlledValue(latest.outcome ?? data.lastTestOutcome, t)}</strong></div>
       <div><span>{t("testHistory")}</span><strong>{history.length}</strong></div>
     </div>
     <section className="completion-section"><SectionHeader title={t("commissioning")} />
       <FieldGrid t={t} items={[
         [t("number"), data.commissioningNo], [t("system"), data.system], [t("profileRef"), data.commissioningProfileRef],
-        [t("readiness"), data.readinessStatus], [t("testResultRef"), latest.testResultRef],
+        [t("readiness"), controlledValue(data.readinessStatus, t)], [t("testResultRef"), latest.testResultRef],
         [t("criteriaMet"), latest.acceptanceCriteriaMet], [t("recordedAt"), dateText(latest.recordedAt ?? data.lastTestResultAt)],
       ]} />
       <div className="completion-reference-grid">
@@ -124,7 +135,7 @@ function CommissioningDetail({ item, t }: { item: WorkItem; t: (key: CompletionL
       {history.length ? <ol className="completion-history">{history.map((value, index) => {
         const result = object(value);
         return <li key={String(result.testResultRef ? completionText(result.testResultRef) : index)}>
-          <div><strong>{displayValue(result.outcome, t)}</strong><span>{dateText(result.recordedAt ?? result.submittedAt)}</span></div>
+          <div><strong>{controlledValue(result.outcome, t)}</strong><span>{dateText(result.recordedAt ?? result.submittedAt)}</span></div>
           <FieldGrid t={t} items={[[t("criteriaMet"), result.acceptanceCriteriaMet], [t("testResultRef"), result.testResultRef], [t("reworkReason"), result.failureReason]]} />
         </li>;
       })}</ol> : <p className="muted">—</p>}
@@ -148,7 +159,7 @@ function HandoverDetail({ item, t }: { item: WorkItem; t: (key: CompletionLabelK
     <div className="completion-summary">
       <div><span>{t("status")}</span><strong>{states[item.record.status || ""] || item.record.status || "—"}</strong></div>
       <div><span>{t("handoverReady")}</span><strong>{displayValue(data.handoverReady, t)}</strong></div>
-      <div><span>{t("readiness")}</span><strong>{displayValue(data.readinessStatus, t)}</strong></div>
+      <div><span>{t("readiness")}</span><strong>{controlledValue(data.readinessStatus, t)}</strong></div>
       <div><span>{t("reservations")}</span><strong>{reservations.length}</strong></div>
     </div>
     <section className="completion-section"><SectionHeader title={t("scope")} />
@@ -157,7 +168,7 @@ function HandoverDetail({ item, t }: { item: WorkItem; t: (key: CompletionLabelK
         [t("system"), scope.system], [t("locationIds"), scope.locationIds], [t("assetRefs"), scope.assetRefs],
         [t("acceptedScope"), acceptedScope.scopeId ? acceptedScope : undefined],
         [t("ownerAcceptance"), data.ownerAcceptanceRef], [t("handoverDate"), dateText(data.handoverDate)],
-        [t("warrantyTrigger"), data.warrantyStartAt],
+        [t("warrantyTrigger"), dateText(data.warrantyStartAt)],
       ]} />
       <ReferenceList label={t("commissioningRefs")} value={data.commissioningPackageRefs} />
     </section>
