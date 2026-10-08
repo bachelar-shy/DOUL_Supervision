@@ -1,12 +1,13 @@
 {
   "branch": "goal/i18n-integration-v1",
-  "lastcommit": "aca2e4e",
+  "lastcommit": "2ea02ab",
   "done": [
     "Integrated PR 120 localization foundation commits 08ea87e and e51b1e2.",
     "Added ko/vi/en shared UI, payment, owner, register, and error dictionaries; added payment command/state labels.",
     "Added locale-aware UI date/number/money presentation helpers and migrated affected UI surfaces.",
     "Added server-side localized document title/field/table-label catalog for all current 36 forms, locale formatting helpers, review metadata, and contract tests.",
-    "Added all completion page labels in ko/vi/en, including profile/readiness references, plus global AC-HO state/command translations using API-confirmed names.",
+    "Added all 105 current completion page labels in ko/vi/en, including evidence references and profile/readiness fields, plus global AC-HO state/command translations using API-confirmed names.",
+    "Added global pass/fail result labels for commissioning test history.",
     "Added ContractPage creation-reason translation keys for offline, mock, missing context, unauthorized, prerequisites, unavailable, and unknown cases.",
     "Made string currency formatting exact for large integers and arbitrary fractional scale; added a Chromium regression test."
   ],
