@@ -118,7 +118,8 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     : matchingBindings.find((binding) => binding.id === selectedBindingId);
   const isDemoAdmin = workspace.demo && client.session?.actor.actorGroup === "ADM";
   const selectedLocation = locations.find((location) => location.reference.objectId === selectedLocationRef);
-  const markupContextKey = [workspace.project.id, workspace.role.id, selectedId, activeBinding?.id ?? "", page, committedViewport?.sequence ?? ""].join(":");
+  const markupSelectionKey = [workspace.project.id, workspace.role.id, selectedId, activeBinding?.id ?? "", page].join(":");
+  const markupContextKey = `${markupSelectionKey}:${committedViewport?.sequence ?? ""}`;
 
   useLayoutEffect(() => {
     ++markupContextSequence.current;
@@ -129,15 +130,20 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     setSavingMarkup(false);
     markupAttemptRef.current = null;
     setMarkupMode(false);
-    setSelectedMarkupId(null);
-    setSelectedMarkup(null);
-    setMarkupHistory([]);
     setEditingMarkup(false);
     setDeletingMarkup(false);
     setMarkupReason("");
     markupMutationAttempt.current = null;
-    onSelectMarkupRef.current?.(null);
   }, [markupContextKey]);
+
+  // A redraw invalidates geometry and mutation attempts, but the selected
+  // server record remains the same. Clear it only when its read scope changes.
+  useLayoutEffect(() => {
+    setSelectedMarkupId(null);
+    setSelectedMarkup(null);
+    setMarkupHistory([]);
+    onSelectMarkupRef.current?.(null);
+  }, [markupSelectionKey]);
 
   useEffect(() => () => {
     ++markupContextSequence.current;
