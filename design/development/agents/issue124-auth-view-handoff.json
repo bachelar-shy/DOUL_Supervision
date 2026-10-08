@@ -1,6 +1,6 @@
 {
   "branch": "goal/create-capabilities-v1",
-  "checkpoint": "pending commit",
+  "checkpoint": "0010d8412dada434950f172404514872e090ef72",
   "scope": "Request-scoped immutable configuration lookup view for work-inbox authorization; no API wiring included.",
   "profile": {
     "fixture": "/workspace/work/doul-goal/operations/scripts/benchmark_work_inbox_http.py",
