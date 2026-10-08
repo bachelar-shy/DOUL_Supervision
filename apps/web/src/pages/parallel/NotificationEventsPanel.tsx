@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { SupervisionClient } from "../../data/supervision-client";
-import type { Workspace } from "../../data/ui-contract";
+import type { DrawingImpactNotice, Workspace } from "../../data/ui-contract";
 import { resolveNotificationSourceTarget } from "../../data/notification-target-client";
 import { ActionButton, Panel, SectionHeader } from "../../ui";
 import "./notification-events.css";
@@ -15,7 +15,7 @@ type Notification = {
   channel: "in_app" | "push" | "email_adapter";
   status: string;
 };
-type InboxItem = { notification: Notification; isRead: boolean; readAt: string | null };
+type InboxItem = { notification: Notification; isRead: boolean; readAt: string | null; drawingImpact?: DrawingImpactNotice };
 type Inbox = { items: InboxItem[]; total: number; unreadCount: number };
 
 function asInbox(value: unknown): Inbox {
@@ -152,15 +152,16 @@ export function NotificationEventsPanel({
       )}
       {!loading && !error && inbox.items.length > 0 && (
         <ul className="notification-events-list">
-          {inbox.items.map(({ notification, isRead, readAt }) => {
+          {inbox.items.map(({ notification, isRead, readAt, drawingImpact }) => {
             const target = resolveNotificationSourceTarget(notification.sourceRef, notification.projectId, workspace);
             return (
             <li key={notification.id} data-notification-id={notification.id} className={isRead ? "is-read" : "is-unread"}>
               <div className="notification-events-copy">
                 <div className="notification-events-heading">
-                  <strong>내 업무 변경</strong>
+                  <strong>{drawingImpact?.title ?? "내 업무 변경"}</strong>
                   <span className="notification-events-read-state">{isRead ? "읽음" : "안 읽음"}</span>
                 </div>
+                {drawingImpact && <p data-drawing-impact={drawingImpact.incidentId}>{drawingImpact.message}</p>}
                 <p className="notification-events-source">
                   {notification.sourceRef.objectType} · {notification.sourceRef.objectId} · v{notification.sourceRef.version}
                 </p>

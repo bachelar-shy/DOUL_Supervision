@@ -29,3 +29,23 @@ test("notification read receipt survives reload without changing delivery status
   await expect(restored).toContainText("앱에 저장됨 · queued");
   await expect(restored.getByRole("button", { name: "읽음으로 표시", exact: true })).toHaveCount(0);
 });
+
+test("drawing impact notice shows server guidance with the original source", async ({ page }) => {
+  await page.route("**/parallel/notifications", async route => {
+    const response = await route.fetch();
+    const data = await response.json();
+    expect(data.items.length).toBeGreaterThan(0);
+    data.items[0].drawingImpact = {
+      incidentId: "display-fixture",
+      drawingRef: { objectType: "InformationItem", objectId: "fixture", version: 1 },
+      title: "도면 변경에 따른 업무 재확인",
+      message: "구 개정 도면의 사용 조건이 변경되었습니다. 연결 업무를 확인하십시오.",
+      reason: "FIELD_SOURCE_UNAVAILABLE", occurredAt: data.items[0].notification.dueAt,
+    };
+    await route.fulfill({ response, json: data });
+  });
+  await page.goto("/#/parallel-test");
+  await page.getByRole("tab", { name: "알림", exact: true }).click();
+  await expect(page.getByText("도면 변경에 따른 업무 재확인", { exact: true })).toBeVisible();
+  await expect(page.locator('[data-drawing-impact="display-fixture"]')).toContainText("연결 업무를 확인하십시오");
+});

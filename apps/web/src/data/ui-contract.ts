@@ -35,3 +35,12 @@ export interface UiStatusSummary {
   evidenceCount: number;
   availableCommands: readonly string[];
 }
+
+export type DrawingImpactNotice = {
+  incidentId: string;
+  drawingRef: { objectType: string; objectId: string; version: number };
+  title: string;
+  message: string;
+  reason: string;
+  occurredAt: string;
+};

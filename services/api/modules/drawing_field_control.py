@@ -309,6 +309,10 @@ def _audit(store, event, revision, actor, role, *, before=None, reason=None, at=
                   "approvalRef": deepcopy(revision.get("approvalRef")), "changeRefs": deepcopy(revision.get("changeRefs", []))}, "reason": reason,
     })
 
+    if event in {'superseded', 'withdraw'}:
+        from services.api.modules.drawing_impacts import reconcile_drawing_impacts_in_transaction
+        reconcile_drawing_impacts_in_transaction(store, revision['projectId'])
+
 
 def _readable_projection(store, project_id, revision, actor, role):
     binding = _binding_for(store, project_id, revision.get("bindingId"))

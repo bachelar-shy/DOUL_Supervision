@@ -310,6 +310,9 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     from services.api.modules.inspection_authoring import install_inspection_authoring_routes
     install_inspection_authoring_routes(app, store, identity=identity, role_for=role_for, key_for=key_for)
 
+    from services.api.modules.drawing_impacts import install_drawing_impact_routes, reconcile_drawing_impacts_in_transaction
+    install_drawing_impact_routes(app, store, identity=identity, role_for=role_for)
+
     from services.api.modules.notification_events import reconcile_notification_events, read_receipts_for_projection
     from services.api.modules.notification_routes import install_notification_read_route
     install_notification_read_route(app, store, identity=identity, role_for=role_for)
@@ -403,6 +406,8 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             role_for(session,project_id,request.headers.get('x-roleassignment-id'))
         # Reconciliation writes only actor-addressed event notices, never SLA deadlines.
         reconcile_notification_events(store)
+        with store.transaction(True):
+            reconcile_drawing_impacts_in_transaction(store, project_id)
         with store.transaction():
             role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
             notifications=[]
@@ -414,7 +419,15 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                 except ContractError: continue
                 notifications.append(deepcopy(record))
             receipts=read_receipts_for_projection(store)
-            try:return project_notification_inbox(notifications,recipient_party_id=session['partyId'],accessible_project_ids=[project_id],read_receipts=receipts)
+            try:
+                inbox = project_notification_inbox(notifications,recipient_party_id=session['partyId'],accessible_project_ids=[project_id],read_receipts=receipts)
+                for item in inbox['items']:
+                    notice = store.meta.get('drawingImpactNotices', {}).get(item['notification']['id'])
+                    if notice:
+                        try: readable(store.engine.resolve(notice['drawingRef'], project_id), session, role)
+                        except ContractError: continue
+                        item['drawingImpact'] = deepcopy(notice)
+                return inbox
             except NotificationProjectionError as exc:raise ContractError('INVALID_REQUEST',str(exc))
 
     @app.get('/projects/{project_id}/parallel/safety-traceability')
