@@ -11,6 +11,9 @@ import binascii
 from copy import deepcopy
 from datetime import datetime, timezone
 import json
+from heapq import nsmallest
+from collections.abc import Mapping
+from app.reference.read_views import readonly
 from typing import Callable, Any
 
 from app.reference.validation import ContractError, instant
@@ -95,11 +98,11 @@ def build_work_inbox(
     session: dict[str, Any],
     role: dict[str, Any],
     *,
-    readable: Callable[[dict[str, Any], dict[str, Any], dict[str, Any]], Any],
-    preflight: Callable[[str, dict[str, Any], dict[str, Any], dict[str, Any]], list[dict[str, Any]]],
+    readable: Callable[[Mapping[str, Any], dict[str, Any], dict[str, Any]], Any],
+    preflight: Callable[[str, Mapping[str, Any], dict[str, Any], dict[str, Any]], list[dict[str, Any]]],
     limit: int = DEFAULT_PAGE_SIZE,
     cursor: str | None = None,
-    has_candidates: Callable[[str, dict[str, Any], dict[str, Any], dict[str, Any]], bool] | None = None,
+    has_candidates: Callable[[str, Mapping[str, Any], dict[str, Any], dict[str, Any]], bool] | None = None,
 ) -> dict[str, Any]:
     """Build a page of records with existing command candidates for one role.
 
@@ -109,6 +112,13 @@ def build_work_inbox(
     candidate. A candidate is not a guarantee that work is ready or pending.
     The output intentionally preserves each machine's own status and candidate
     details rather than collapsing them into a new inbox state.
+
+    Guard callbacks receive lazy read-only mappings during candidate exploration.
+    Returned records are detached current reads. total is exact for this request;
+    a cursor is a live keyset boundary, not a frozen snapshot across requests.
+    Updates that cross the boundary can be missed/repeated until a fresh traversal.
+    API callers hold a store transaction so authorization/sort/page reads agree.
+
     """
     if not isinstance(project_id, str) or not project_id:
         raise ValueError("project_id is required")
@@ -118,67 +128,74 @@ def build_work_inbox(
         raise ValueError(f"limit must be between 1 and {MAX_PAGE_SIZE}")
 
     after = _decode_cursor(cursor)
-    # Entries hold only sort keys, machine identity and (on the compatibility
-    # path) candidate data. The optimized path does not retain a copied record
-    # or action list for every item while it computes the page.
-    candidates: list[tuple[datetime, str, str, str, dict[str, Any] | None, list[dict[str, Any]] | None]] = []
+    # The production composition supplies a cheap authority/status membership
+    # check. Compatibility callers without it must preflight to count matches,
+    # but neither path deep-copies all records or retains all candidate payloads.
+    total = 0
 
-    for (kind, object_id), raw_record in engine._records.items():
-        machine = engine._record_machines.get((kind, object_id))
-        if machine not in INBOX_MACHINES or raw_record.get("projectId") != project_id:
-            continue
+    def source_rows():
+        adapter = getattr(engine, "iter_work_inbox_records", None)
+        if adapter is not None:
+            yield from adapter(project_id, INBOX_MACHINES)
+            return
+        for (kind, object_id), raw in engine._records.items():
+            machine = engine._record_machines.get((kind, object_id))
+            if machine in INBOX_MACHINES and raw.get("projectId") == project_id:
+                yield kind, object_id, machine, readonly(raw)
 
-        record = engine.get(kind, object_id)
-        try:
-            readable(record, session, role)
-        except ContractError as exc:
-            # The engine deliberately uses NOT_FOUND to conceal records that
-            # exist but are not visible to this role. Other contract errors
-            # indicate a broken callback or record and must remain observable.
-            if exc.code in _READ_DENIAL_CODES:
+    def eligible_entries():
+        nonlocal total
+        for kind, object_id, machine, record in source_rows():
+            # Recheck project even when a future persistence adapter supplies rows.
+            if machine not in INBOX_MACHINES or record.get("projectId") != project_id:
                 continue
-            raise
-
-        command_candidates = None
-        if has_candidates is None:
-            command_candidates = preflight(machine, record, session, role)
-            if not command_candidates:
+            try:
+                readable(record, session, role)
+            except ContractError as exc:
+                if exc.code in _READ_DENIAL_CODES:
+                    continue
+                raise
+            commands = None
+            if has_candidates is None:
+                commands = preflight(machine, record, session, role)
+                if not commands:
+                    continue
+            elif not has_candidates(machine, record, session, role):
                 continue
-        elif not has_candidates(machine, record, session, role):
-            continue
+            total += 1
+            updated_at = _updated_at(record)
+            if after is not None and not (
+                updated_at < after[0] or (updated_at == after[0] and object_id > after[1])
+            ):
+                continue
+            yield updated_at, object_id, kind, machine, record.get("version"), commands
 
-        updated_at = _updated_at(record)
-        # The legacy path keeps its callback result and detached record, so
-        # callback behavior and returned values remain unchanged. The fast
-        # path only retains identifiers until the requested page is known.
-        legacy_record = record if has_candidates is None else None
-        candidates.append((updated_at, object_id, kind, machine, legacy_record, command_candidates))
-
-    candidates.sort(key=lambda item: (-_micros(item[0]), item[1]))
-    total = len(candidates)
-    start = 0
-    if after is not None:
-        after_updated_at, after_id = after
-        start = next((
-            index for index, item in enumerate(candidates)
-            if item[0] < after_updated_at
-            or (item[0] == after_updated_at and item[1] > after_id)
-        ), len(candidates))
-    page = candidates[start : start + limit]
-    has_more = start + len(page) < total
+    # A streaming bounded heap retains at most limit+1 entries. Exact total still
+    # requires examining visible project membership; it is not claimed to be O(limit).
+    selected = nsmallest(limit + 1, eligible_entries(), key=lambda item: (-_micros(item[0]), item[1]))
+    page = selected[:limit]
+    has_more = len(selected) > limit
     next_cursor = _encode_cursor(page[-1][0], page[-1][1]) if has_more and page else None
 
     records = []
-    for _, object_id, kind, machine, legacy_record, command_candidates in page:
-        record = legacy_record if legacy_record is not None else engine.get(kind, object_id)
-        if command_candidates is None:
-            command_candidates = preflight(machine, record, session, role)
-            if not command_candidates:
+    for updated_at, object_id, kind, machine, version, commands in page:
+        record = engine.get(kind, object_id)
+        if (
+            record.get("projectId") != project_id
+            or record.get("version") != version
+            or _updated_at(record) != updated_at
+        ):
+            raise ContractError("VERSION_CONFLICT", "Work inbox changed during projection; restart pagination")
+        # Never return a record using only the earlier borrowed-view authorization.
+        readable(record, session, role)
+        if commands is None:
+            commands = preflight(machine, record, session, role)
+            if not commands:
                 raise RuntimeError("has_candidates disagreed with preflight for a paged record")
         records.append(deepcopy({
             "machine": machine,
             "record": record,
-            "commandCandidates": command_candidates,
+            "commandCandidates": commands,
         }))
 
     return {

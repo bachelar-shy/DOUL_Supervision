@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 from uuid import uuid4
 
+from .read_views import readonly
 from .validation import ContractError, instant, require, validate
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,11 +78,26 @@ class Engine:
         source = self._history if version is not None else self._records
         key = (kind, object_id, version) if version is not None else (kind, object_id)
         require(key in source, 'OBJECT_NOT_FOUND', str(key))
-        value=deepcopy(source[key])
-        if version is None and kind=='WorkItem' and value.get('subtype')=='SafetyEquipmentInspection':
-            if value.get('data',{}).get('equipmentAvailable') is True and not self._equipment_documents_current(value):
-                value['data']['equipmentAvailable']=False
+        value = self._current_read_source(kind, source[key]) if version is None else source[key]
+        return deepcopy(value)
+
+    def _current_read_source(self, kind, value):
+        if kind == 'WorkItem' and value.get('subtype') == 'SafetyEquipmentInspection':
+            if value.get('data', {}).get('equipmentAvailable') is True and not self._equipment_documents_current(value):
+                # Overlay only the derived flag, borrowing all other nested data.
+                return {**value, 'data': {**value['data'], 'equipmentAvailable': False}}
         return value
+
+    def iter_work_inbox_records(self, project_id, machines):
+        """Query adapter boundary; persistent adapters can use project indexes.
+
+        These borrowed views are valid only while the caller holds the store's
+        read/transaction boundary. Guards must treat all nested values as read-only.
+        """
+        for (kind, object_id), raw in self._records.items():
+            machine = self._record_machines.get((kind, object_id))
+            if machine in machines and raw.get('projectId') == project_id:
+                yield kind, object_id, machine, readonly(self._current_read_source(kind, raw))
 
     def resolve(self, reference, project_id=None):
         record = self.get(reference['objectType'], reference['objectId'], reference['version'])
