@@ -23,7 +23,8 @@ export type CompletionLabelKey =
   | "offlineSave" | "mockSave" | "requiredFields" | "saving" | "sourceVersion"
   | "notSet" | "yes" | "no" | "backToList" | "noCommands" | "createUnavailable" | "closeDialog" | "requiredHandoverScope"
   | "retestPreserved" | "partialHandoverBoundary" | "warrantyClosureBoundary"
-  | "profileRequired" | "profileScopeNote" | "profileUnavailable" | "warrantyRequiredFields" | "evidenceRefs";
+  | "profileRequired" | "profileScopeNote" | "profileUnavailable" | "warrantyRequiredFields" | "evidenceRefs" | "error"
+  | "commandAvailable" | "commandBlocked";
 
 export const completionLabelKeys: readonly CompletionLabelKey[] = [
   "title", "description", "commissioning", "handover", "warranty", "commissioningDescription",
@@ -41,7 +42,8 @@ export const completionLabelKeys: readonly CompletionLabelKey[] = [
   "closureEvidence", "closeout", "reference", "selectReference", "noReferences", "serverBoundary", "offlineSave",
   "mockSave", "requiredFields", "saving", "sourceVersion", "notSet", "yes", "no", "backToList", "noCommands",
   "createUnavailable", "closeDialog", "requiredHandoverScope", "retestPreserved", "partialHandoverBoundary", "warrantyClosureBoundary",
-  "profileRequired", "profileScopeNote", "profileUnavailable", "warrantyRequiredFields", "evidenceRefs",
+  "profileRequired", "profileScopeNote", "profileUnavailable", "warrantyRequiredFields", "evidenceRefs", "error",
+  "commandAvailable", "commandBlocked",
 ];
 
 export const completionFallbackLabels: Record<CompletionLabelKey, string> = {
@@ -79,6 +81,8 @@ export const completionFallbackLabels: Record<CompletionLabelKey, string> = {
   profileUnavailable: "이 범위에서 사용할 수 있는 적용 프로파일 참조가 워크스페이스에 없습니다.",
   warrantyRequiredFields: "인수 참조, 발견 시각, 하자 범위, 설명·원인·운영 영향과 연결 이슈를 입력하십시오.",
   evidenceRefs: "근거 증빙",
+  error: "요청을 완료하지 못했습니다. 입력값과 선행조건을 확인하십시오.",
+  commandAvailable: "실행 가능", commandBlocked: "선행조건 대기",
   retestPreserved: "재시험 후에도 실패한 시험결과는 이력에 유지됩니다.",
   partialHandoverBoundary: "부분인수는 정확한 인수 범위와 미결 유보사항을 그대로 유지합니다.",
   warrantyClosureBoundary: "보증 하자 종결은 인수와 별도이며 서버 제공 명령으로만 처리합니다.",

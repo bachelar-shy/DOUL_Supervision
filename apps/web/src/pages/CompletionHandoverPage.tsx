@@ -16,7 +16,8 @@ import {
   type CompletionReferenceOption,
 } from "../data/completion-workspace";
 import { describeCommandAvailability } from "../data/ui-presentation";
-import { commands, reasonLabel, states } from "../labels";
+import { commands, creationCapabilityLabel, reasonLabel, states } from "../labels";
+import { formatDateTime } from "../i18n/format";
 import { ActionButton, Panel, SectionHeader, StatusBadge } from "../ui";
 import { ActionGate, DetailPane } from "../ui/catalog";
 import { WorkbenchTemplate } from "../ui/templates";
@@ -40,9 +41,10 @@ function keyForRef(ref: DomainRef) { return `${ref.objectType}:${ref.objectId}:$
 
 function dateText(value: unknown) {
   if (typeof value !== "string" || !value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.valueOf()) ? value : date.toLocaleString();
+  return formatDateTime(value);
 }
+
+class LocalizedFormError extends Error {}
 
 function values(value: unknown): unknown[] { return Array.isArray(value) ? value : []; }
 
@@ -68,8 +70,14 @@ function RefSelect({
 
 function FieldGrid({ items, t }: { items: Array<[string, unknown]>; t?: (key: CompletionLabelKey) => string }) {
   return <dl className="completion-meta-grid">{items.map(([label, value], index) => <div key={`${label}-${index}`}>
-    <dt>{label}</dt><dd>{typeof value === "boolean" && t ? t(value ? "yes" : "no") : completionText(value)}</dd>
+    <dt>{label}</dt><dd>{t ? displayValue(value, t) : completionText(value)}</dd>
   </div>)}</dl>;
+}
+
+function displayValue(value: unknown, t: (key: CompletionLabelKey) => string) {
+  if (typeof value === "boolean") return t(value ? "yes" : "no");
+  if (typeof value === "string" && states[value]) return states[value];
+  return completionText(value);
 }
 
 function ReferenceList({ label, value }: { label: string; value: unknown }) {
@@ -86,8 +94,8 @@ function CommissioningDetail({ item, t }: { item: WorkItem; t: (key: CompletionL
   return <>
     <div className="completion-summary">
       <div><span>{t("status")}</span><strong>{states[item.record.status || ""] || item.record.status || "—"}</strong></div>
-      <div><span>{t("readiness")}</span><strong>{completionText(data.readinessStatus)}</strong></div>
-      <div><span>{t("testResult")}</span><strong>{completionText(latest.outcome ?? data.lastTestOutcome)}</strong></div>
+      <div><span>{t("readiness")}</span><strong>{displayValue(data.readinessStatus, t)}</strong></div>
+      <div><span>{t("testResult")}</span><strong>{displayValue(latest.outcome ?? data.lastTestOutcome, t)}</strong></div>
       <div><span>{t("testHistory")}</span><strong>{history.length}</strong></div>
     </div>
     <section className="completion-section"><SectionHeader title={t("commissioning")} />
@@ -116,7 +124,7 @@ function CommissioningDetail({ item, t }: { item: WorkItem; t: (key: CompletionL
       {history.length ? <ol className="completion-history">{history.map((value, index) => {
         const result = object(value);
         return <li key={String(result.testResultRef ? completionText(result.testResultRef) : index)}>
-          <div><strong>{completionText(result.outcome)}</strong><span>{dateText(result.recordedAt ?? result.submittedAt)}</span></div>
+          <div><strong>{displayValue(result.outcome, t)}</strong><span>{dateText(result.recordedAt ?? result.submittedAt)}</span></div>
           <FieldGrid t={t} items={[[t("criteriaMet"), result.acceptanceCriteriaMet], [t("testResultRef"), result.testResultRef], [t("reworkReason"), result.failureReason]]} />
         </li>;
       })}</ol> : <p className="muted">—</p>}
@@ -139,8 +147,8 @@ function HandoverDetail({ item, t }: { item: WorkItem; t: (key: CompletionLabelK
   return <>
     <div className="completion-summary">
       <div><span>{t("status")}</span><strong>{states[item.record.status || ""] || item.record.status || "—"}</strong></div>
-      <div><span>{t("handoverReady")}</span><strong>{completionText(data.handoverReady)}</strong></div>
-      <div><span>{t("readiness")}</span><strong>{completionText(data.readinessStatus)}</strong></div>
+      <div><span>{t("handoverReady")}</span><strong>{displayValue(data.handoverReady, t)}</strong></div>
+      <div><span>{t("readiness")}</span><strong>{displayValue(data.readinessStatus, t)}</strong></div>
       <div><span>{t("reservations")}</span><strong>{reservations.length}</strong></div>
     </div>
     <section className="completion-section"><SectionHeader title={t("scope")} />
@@ -254,12 +262,12 @@ function CreateDraft({
   async function save() {
     setError(""); setBusy(true);
     try {
-      if (!online) throw new Error(t("offlineSave"));
-      if (client.kind === "mock") throw new Error(t("mockSave"));
-      if (!title.trim() || !number.trim()) throw new Error(t("requiredFields"));
-      if (!oneRef(requiredProfileKey)) throw new Error(t("profileRequired"));
-      if (machine === "handover_package" && (!scopeId.trim() || !system.trim() || !locationId)) throw new Error(t("requiredHandoverScope"));
-      if (machine === "warranty_claim" && (!oneRef("handoverRef") || !oneRef("issueRef") || !observedAt || !scopeId.trim() || !system.trim() || !locationId || !defectDescription.trim() || !causeDescription.trim() || !operationalImpact.trim())) throw new Error(t("warrantyRequiredFields"));
+      if (!online) throw new LocalizedFormError(t("offlineSave"));
+      if (client.kind === "mock") throw new LocalizedFormError(t("mockSave"));
+      if (!title.trim() || !number.trim()) throw new LocalizedFormError(t("requiredFields"));
+      if (!oneRef(requiredProfileKey)) throw new LocalizedFormError(t("profileRequired"));
+      if (machine === "handover_package" && (!scopeId.trim() || !system.trim() || !locationId)) throw new LocalizedFormError(t("requiredHandoverScope"));
+      if (machine === "warranty_claim" && (!oneRef("handoverRef") || !oneRef("issueRef") || !observedAt || !scopeId.trim() || !system.trim() || !locationId || !defectDescription.trim() || !causeDescription.trim() || !operationalImpact.trim())) throw new LocalizedFormError(t("warrantyRequiredFields"));
       const { minimumQualificationRank: _minimumQualificationRank, ...scope } = workspace.context.scope;
       const subtype = machine === "commissioning_package" ? "CommissioningPackage" : machine === "handover_package" ? "HandoverPackage" : "WarrantyClaim";
       let data: Record<string, unknown>;
@@ -319,7 +327,7 @@ function CreateDraft({
       identity.current = { id: crypto.randomUUID(), key: crypto.randomUUID() };
       await onCreated(result.record.id);
     } catch (e) {
-      setError(e instanceof ApiError ? `${reasonLabel(e.detail.code)} ${e.message}` : e instanceof Error ? e.message : String(e));
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : e instanceof LocalizedFormError ? e.message : t("error"));
     } finally { setBusy(false); }
   }
 
@@ -396,7 +404,7 @@ function CreateDraft({
       </>}
     </div>
     <p className="completion-profile-note">{profileOptions.length ? t("profileScopeNote") : t("profileUnavailable")}</p>
-    {!capability?.canCreate && <p className="completion-capability-note">{capability?.reasons?.length ? capability.reasons.join(" · ") : t("createUnavailable")}</p>}
+    {!capability?.canCreate && <p className="completion-capability-note">{capability ? creationCapabilityLabel(capability) : t("createUnavailable")}</p>}
     <p className="completion-boundary">{t("serverBoundary")}</p>
     {error && <div role="alert" className="error-box">{error}</div>}
     <div className="modal-actions"><button className="secondary" onClick={onClose} disabled={busy}>{t("cancel")}</button>
@@ -435,8 +443,8 @@ export function CompletionHandoverPage({
       <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
         <Panel className="list-pane">
           <SectionHeader title={t(tab.key)} meta={`${items.length}`} />
-          <div className="completion-create-action"><ActionButton disabled={!online || client.kind === "mock" || !capability?.canCreate} onClick={() => setCreating(machine)}>{t("create")}</ActionButton></div>
-          {!capability?.canCreate && <p className="completion-capability-note">{capability?.reasons?.length ? capability.reasons.join(" · ") : t("createUnavailable")}</p>}
+          <div data-ui-component="completion-create-action" className="completion-create-action"><ActionButton disabled={!online || client.kind === "mock" || !capability?.canCreate} onClick={() => setCreating(machine)}>{t("create")}</ActionButton></div>
+          {!capability?.canCreate && <p className="completion-capability-note">{capability ? creationCapabilityLabel(capability) : t("createUnavailable")}</p>}
           <p className="muted">{t(tab.description)}</p>
           <div className="completion-record-list">
             {items.length ? items.map((item) => {
@@ -465,8 +473,8 @@ export function CompletionHandoverPage({
                 const label = commands[action.command] || action.command.replace(/_/g, " ");
                 return <ActionGate key={action.command} actions={[{
                   id: action.command, label, availability: availability.availability,
-                  availabilityLabel: availability.label,
-                  reason: availability.reason || (action.blockedReason ? reasonLabel(action.blockedReason.code) : undefined),
+                  availabilityLabel: t(action.ready ? "commandAvailable" : "commandBlocked"),
+                  reason: !online ? t("offlineSave") : action.blockedReason ? reasonLabel(action.blockedReason.code) : availability.disabled ? reasonLabel() : undefined,
                   disabled: availability.disabled || client.kind === "mock",
                   onAction: () => onOpenCommand(selectedItem, action),
                 }]} />;

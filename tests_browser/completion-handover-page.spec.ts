@@ -47,7 +47,8 @@ const completionFixtures = [
   },
 ];
 
-test("completion workspace keeps commissioning, handover, and warranty records separate and shows their histories", async ({ page }) => {
+test("mock completion UI presentation keeps commissioning, handover, and warranty records separate across locales", async ({ page }) => {
+  // Test-only records isolate rendering; this spec does not exercise server workflow acceptance.
   await page.route(/\/api\/projects\/[^/]+\/workspace(?:\?.*)?$/, async (route) => {
     const response = await route.fetch();
     const workspace = await response.json();
@@ -79,12 +80,12 @@ test("completion workspace keeps commissioning, handover, and warranty records s
   const tabs = workspace.getByRole("tab");
   await expect(tabs).toHaveCount(3);
 
-  await workspace.getByRole("button", { name: /기록 추가/ }).click();
+  await workspace.locator('[data-ui-component="completion-create-action"] button').click();
   const createDialog = page.getByRole("dialog");
   const profileOptions = await createDialog.locator("select").first().locator("option").allTextContents();
   expect(profileOptions.join(" ")).toContain("Commissioning profile");
   expect(profileOptions.join(" ")).not.toContain("Generic requirement");
-  await createDialog.getByRole("button", { name: /닫기/ }).click();
+  await createDialog.locator(".section-heading button").click();
 
   await tabs.nth(0).click();
   await workspace.getByRole("button", { name: /UI Commissioning Record/ }).click();
@@ -106,4 +107,23 @@ test("completion workspace keeps commissioning, handover, and warranty records s
   await expect(workspace).toContainText("Vibration above expected threshold");
   await expect(workspace).toContainText("Coupling re-torqued");
   await expect(workspace).toContainText("inspection-rework");
+
+  const locale = page.locator(".top-actions .role-picker select").first();
+  await locale.selectOption("en");
+  await tabs.nth(0).click();
+  await workspace.getByRole("button", { name: /UI Commissioning Record/ }).click();
+  await expect(tabs.nth(0)).toHaveText("Commissioning");
+  await expect(workspace).toContainText("Test history");
+  const englishDate = await workspace.locator(".completion-history > li").first().locator("span").textContent();
+
+  await locale.selectOption("vi");
+  await expect(tabs.nth(0)).toHaveText("Chạy thử");
+  await expect(workspace).toContainText("Lịch sử thử nghiệm");
+  const vietnameseDate = await workspace.locator(".completion-history > li").first().locator("span").textContent();
+  expect(vietnameseDate).not.toBe(englishDate);
+
+  await locale.selectOption("ko");
+  await expect(tabs.nth(0)).toHaveText("시운전");
+  await expect(workspace).toContainText("시험 이력");
+  await expect(workspace).toContainText("Initial pressure leak");
 });
