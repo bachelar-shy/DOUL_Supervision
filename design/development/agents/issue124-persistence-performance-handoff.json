@@ -1,0 +1,51 @@
+{
+  "branch": "goal/create-capabilities-v1",
+  "commit": "b85c9280253abc2eff27b88d8b9bea5c8f42ae04",
+  "scope": "Issue #124 snapshot read transaction cost in SQLite and PostgreSQL adapters",
+  "done": [
+    "Removed a second full export_state plus deepcopy from each successful read transaction.",
+    "Read transactions retain the loaded JSON payload as the rollback image and decode it only when an exception requires restoring the in-memory snapshot.",
+    "Kept write transaction persistence, PostgreSQL row locking, SQLite transaction isolation, and cross-instance reload behavior unchanged.",
+    "Added focused SQLite exception restoration/cross-instance/no-second-export tests and PostgreSQL adapter unit coverage that rejects export_state during a successful read."
+  ],
+  "benchmark": {
+    "fixture": "/workspace/work/doul-goal/operations/scripts/benchmark_work_inbox_http.py",
+    "afterCommitEvidence": "/tmp/doul-goal-ops-http-after-b85c928-clean.json",
+    "beforeEvidence": "/workspace/work/doul-goal/operations/design/verification/issue124-live-http-20261008.json",
+    "datasetRows": 50000,
+    "pageSize": 1,
+    "rounds": 3,
+    "before": {
+      "medianMs": 9534.947,
+      "p95Ms": 10192.732,
+      "secondPageMs": 12463.539,
+      "apiCpuMs": 28160,
+      "peakRssBytes": 595529728,
+      "postgresCpuUsec": 1067082
+    },
+    "after": {
+      "samplesMs": [7476.328, 7826.356, 7747.128],
+      "medianMs": 7747.128,
+      "p95Ms": 7826.356,
+      "secondPageMs": 9297.059,
+      "apiCpuMs": 22690,
+      "peakRssBytes": 543535104,
+      "postgresCpuUsec": 677080
+    },
+    "verification": "Live TCP HTTP project-filtered totals and two non-overlapping pages passed.",
+    "limitations": [
+      "Synthetic duplicate issues, one local API process, and development snapshot persistence; not production traffic.",
+      "No API latency SLO was found in the inspected contracts; remaining 7.75s median is still a significant latency limit.",
+      "The benchmark measures wall time, process CPU/RSS, and PostgreSQL cgroup CPU; no stack profiler trace was captured."
+    ]
+  },
+  "tests": [
+    "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_snapshot_read_performance tests_mvp.test_postgres_persistence.PostgresSnapshotAdapterUnitTests -v",
+    "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_persistence_boundary tests_mvp.test_deployment -v"
+  ],
+  "todo": [
+    "Continue profiling the remaining full JSON load/restore and work-inbox projection path before selecting another optimization.",
+    "Retain the live 50k HTTP project-filtering and pagination fixture for before/after validation; do not treat projection-only microbenchmarks as a substitute."
+  ],
+  "restart": "Use the existing /workspace/work/doul-goal/capabilities checkout at b85c928 or cherry-pick the commit. Parent-owned services/api/main.py changes were not included in this checkpoint."
+}
