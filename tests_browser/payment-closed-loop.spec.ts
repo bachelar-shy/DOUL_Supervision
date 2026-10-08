@@ -179,14 +179,20 @@ async function setField(dialog: Locator, field: string, value: unknown) {
   const locator = dialog.getByLabel(name, { exact: true })
     .or(dialog.getByRole("textbox", { name, exact: true }))
     .or(dialog.getByRole("combobox", { name, exact: true }))
+    .or(dialog.getByRole("listbox", { name, exact: true }))
     .or(dialog.getByRole("spinbutton", { name, exact: true }));
-  const encoded = typeof value === "string" ? value : JSON.stringify(value);
   if (await locator.count()) {
     const tag = await locator.evaluate((element) => element.tagName.toLowerCase());
     if (tag === "select") {
-      await locator.selectOption(encoded);
+      const isMultiple = await locator.evaluate((element) => (element as HTMLSelectElement).multiple);
+      if (isMultiple) {
+        const options = Array.isArray(value) ? value.map((entry) => JSON.stringify(entry)) : [JSON.stringify(value)];
+        await locator.selectOption(options);
+      } else {
+        await locator.selectOption(typeof value === "string" ? value : JSON.stringify(value));
+      }
     } else {
-      await locator.fill(encoded);
+      await locator.fill(typeof value === "string" ? value : JSON.stringify(value));
     }
     return;
   }
