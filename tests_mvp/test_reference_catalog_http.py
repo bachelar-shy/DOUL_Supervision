@@ -89,6 +89,28 @@ class ReferenceCatalogHTTPTests(unittest.TestCase):
             self.assertEqual(value['ref']['objectType'], 'Inspection')
             self.assertEqual(value['ref']['version'], value['record']['version'])
 
+    def test_decision_catalog_excludes_foreign_and_unreadable_records(self):
+        store = self.app.state.store
+        with store.transaction(True):
+            source = next(record for (kind, _), record in store.engine._records.items()
+                          if kind == 'Decision')
+            upstream = deepcopy(source)
+            upstream.update(id=uid(), version=1)
+            foreign = deepcopy(upstream)
+            foreign.update(id=uid(), projectId=uid())
+            outside = deepcopy(upstream)
+            outside.update(id=uid(), locationId=uid())
+            for record in (upstream, foreign, outside):
+                store.engine.bootstrap('Decision', record)
+        values = self.catalog()['decisions']
+        ids = [value['ref']['objectId'] for value in values]
+        self.assertIn(upstream['id'], ids)
+        self.assertNotIn(foreign['id'], ids)
+        self.assertNotIn(outside['id'], ids)
+        for value in values:
+            self.assertEqual(value['ref']['objectType'], 'Decision')
+            self.assertEqual(value['ref']['version'], value['record']['version'])
+
     def test_expired_requirements_are_excluded_and_assignment_changes_take_effect(self):
         store = self.app.state.store
         before = self.catalog()

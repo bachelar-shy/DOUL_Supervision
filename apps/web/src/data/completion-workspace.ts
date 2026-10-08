@@ -130,17 +130,14 @@ export function completionReferenceOptions(workspace: Workspace): CompletionRefe
   const referenceCatalog = workspace.context.referenceCatalog as typeof workspace.context.referenceCatalog & {
     evidence?: Array<{ ref: DomainRef; record: Record<string, unknown> }>;
   };
-  for (const entry of [...(referenceCatalog?.requirements || []), ...(referenceCatalog?.assets || []), ...(referenceCatalog?.evidence || []), ...(referenceCatalog?.informationItems || []), ...(referenceCatalog?.inspections || [])]) {
+  for (const entry of [...(referenceCatalog?.requirements || []), ...(referenceCatalog?.assets || []), ...(referenceCatalog?.evidence || []), ...(referenceCatalog?.informationItems || []), ...(referenceCatalog?.inspections || []), ...(referenceCatalog?.decisions || [])]) {
     add(entry.ref, typeof entry.record.title === "string" ? entry.record.title : undefined, entry.record);
   }
-  add(workspace.context.requirementRef, "Project requirement");
-  add(workspace.context.drawingRef, "Current drawing");
   workspace.items.forEach((item) => {
     add(recordReference(item), item.record.title);
     if (item.machine === "requirement") {
       add({ objectType: "Requirement", objectId: item.record.id, version: item.record.version }, item.record.title);
     }
-    collectExactRefs(item.record, add);
   });
   return Array.from(refs.values());
 }
@@ -187,14 +184,4 @@ export function isDomainRef(value: unknown): value is DomainRef {
 
 function isCompletionMachine(value: string): value is CompletionMachine {
   return value === "commissioning_package" || value === "handover_package" || value === "warranty_claim";
-}
-
-function collectExactRefs(value: unknown, add: (ref: unknown) => void, depth = 0) {
-  if (depth > 8 || !value || typeof value !== "object") return;
-  if (Array.isArray(value)) {
-    value.forEach((item) => collectExactRefs(item, add, depth + 1));
-    return;
-  }
-  if (isDomainRef(value)) add(value);
-  Object.values(value as Record<string, unknown>).forEach((item) => collectExactRefs(item, add, depth + 1));
 }
