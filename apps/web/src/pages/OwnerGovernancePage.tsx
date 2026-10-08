@@ -1,4 +1,6 @@
-import type { CommandDescriptor, WorkItem, Workspace } from "../data/ui-contract";
+import type { CommandDescriptor, RecordDTO, WorkItem, Workspace } from "../data/ui-contract";
+import type { SupervisionClient } from "../data/supervision-client";
+import { OwnerDecisionAuthoringPanel } from "./OwnerDecisionAuthoringPanel";
 import { describeCommandAvailability } from "../data/ui-presentation";
 import { commands, states } from "../labels";
 import { EmptyState, StatusBadge } from "../ui";
@@ -42,6 +44,8 @@ function impactRows(value: unknown) {
 }
 
 export interface OwnerGovernancePageProps {
+  client: SupervisionClient;
+  onCreated: (record: RecordDTO) => Promise<void>;
   workspace: Workspace;
   selected: string | null;
   current: WorkItem | null;
@@ -51,6 +55,8 @@ export interface OwnerGovernancePageProps {
 }
 
 export function OwnerGovernancePage({
+  client,
+  onCreated,
   workspace,
   selected,
   current,
@@ -95,6 +101,7 @@ export function OwnerGovernancePage({
 
   return (
     <PageBoundary name="owner" data-owner-governance="true">
+      <OwnerDecisionAuthoringPanel client={client} workspace={workspace} online={online} onCreated={onCreated} />
       <div
         className="grid gap-3 md:grid-cols-3"
         data-ui-component="owner-governance-summary"

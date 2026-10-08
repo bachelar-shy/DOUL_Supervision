@@ -212,7 +212,7 @@ function CreateDraft({
       const scope = { ...workspace.context.scope };
       const common = { ...scope, subtype: kind === "contract_boq" ? "ContractBOQ" : kind === "quantity_measurement" ? "QuantityMeasurement" : "PaymentClaim", title: title.trim() };
       const payload = kind === "contract_boq"
-        ? { ...common, revision: revision.trim(), boq: { boqNo: number.trim(), revision: revision.trim(), currency, lineItems: [] } }
+        ? { ...common, revision: revision.trim(), boq: { boqNo: number.trim(), revision: revision.trim(), currency } }
         : kind === "quantity_measurement"
           ? { ...common, data: { measurementNo: number.trim(), ...(periodStart ? { periodStart } : {}), ...(periodEnd ? { periodEnd } : {}) } }
           : { ...common, data: { paymentClaimNo: number.trim(), currency, ...(periodStart ? { periodStart } : {}), ...(periodEnd ? { periodEnd } : {}) } };

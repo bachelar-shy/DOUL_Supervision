@@ -434,6 +434,8 @@ export function AppShell({ client }: { client: SupervisionClient }) {
               )}
               {safeRoute === "owner" && (
                 <OwnerGovernancePage
+                  client={client}
+                  onCreated={async (record) => { await refresh(); setSelected(record.id); }}
                   workspace={workspace}
                   selected={selected}
                   current={current}

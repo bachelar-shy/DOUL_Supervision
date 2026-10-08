@@ -42,6 +42,10 @@ const jsonFields = new Set([
   "options",
   "recommendation",
   "impact",
+  "lineItems",
+  "deductionComponents",
+  "variationComponents",
+  "provisionalSumRules",
 ]);
 
 const numericFields = new Set([
