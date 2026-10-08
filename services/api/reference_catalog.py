@@ -5,10 +5,10 @@ from app.reference.validation import ContractError, instant
 
 
 def build_reference_catalog(engine, project_id, party_id, role_id):
-    result = {'requirements': [], 'assets': [], 'evidence': [], 'informationItems': []}
+    result = {'requirements': [], 'assets': [], 'evidence': [], 'informationItems': [], 'inspections': []}
     now = instant(engine.at())
     for (kind, _), record in engine._records.items():
-        if kind not in {'Requirement', 'Asset', 'Evidence', 'InformationItem'} or record.get('projectId') != project_id:
+        if kind not in {'Requirement', 'Asset', 'Evidence', 'InformationItem', 'Inspection'} or record.get('projectId') != project_id:
             continue
         if kind == 'Evidence' and record.get('status') == 'deleted':
             continue
@@ -21,7 +21,7 @@ def build_reference_catalog(engine, project_id, party_id, role_id):
             engine.authorize_read(record, party_id, role_id)
         except ContractError:
             continue
-        result[{'Requirement': 'requirements', 'Asset': 'assets', 'Evidence': 'evidence', 'InformationItem': 'informationItems'}[kind]].append({
+        result[{'Requirement': 'requirements', 'Asset': 'assets', 'Evidence': 'evidence', 'InformationItem': 'informationItems', 'Inspection': 'inspections'}[kind]].append({
             'ref': {'objectType': kind, 'objectId': record['id'], 'version': record['version']},
             'record': deepcopy(record),
         })

@@ -242,6 +242,7 @@ export interface Workspace {
       assets: Array<{ ref: DomainRef; record: RecordDTO }>;
       evidence?: Array<{ ref: DomainRef; record: RecordDTO }>;
       informationItems?: Array<{ ref: DomainRef; record: RecordDTO }>;
+      inspections?: Array<{ ref: DomainRef; record: RecordDTO }>;
     };
   };
   participants: { partyId: string; name: string; actorGroup: HumanRole }[];

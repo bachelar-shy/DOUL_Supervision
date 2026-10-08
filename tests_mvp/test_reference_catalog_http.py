@@ -66,6 +66,29 @@ class ReferenceCatalogHTTPTests(unittest.TestCase):
             store.engine._save('RoleAssignment', role)
         self.assertEqual(self.catalog()['informationItems'], [])
 
+    def test_upstream_inspection_without_machine_binding_remains_read_scoped(self):
+        store = self.app.state.store
+        with store.transaction(True):
+            source = next(record for (kind, _), record in store.engine._records.items()
+                          if kind == 'Inspection')
+            upstream = deepcopy(source)
+            upstream.update(id=uid(), version=1)
+            foreign = deepcopy(upstream)
+            foreign.update(id=uid(), projectId=uid())
+            outside = deepcopy(upstream)
+            outside.update(id=uid(), locationId=uid())
+            for record in (upstream, foreign, outside):
+                store.engine.bootstrap('Inspection', record)
+        values = self.catalog()['inspections']
+        ids = [value['ref']['objectId'] for value in values]
+        self.assertIn(upstream['id'], ids)
+        self.assertNotIn(foreign['id'], ids)
+        self.assertNotIn(outside['id'], ids)
+        self.assertNotIn(('Inspection', upstream['id']), store.engine._record_machines)
+        for value in values:
+            self.assertEqual(value['ref']['objectType'], 'Inspection')
+            self.assertEqual(value['ref']['version'], value['record']['version'])
+
     def test_expired_requirements_are_excluded_and_assignment_changes_take_effect(self):
         store = self.app.state.store
         before = self.catalog()
