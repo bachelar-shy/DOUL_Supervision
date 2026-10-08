@@ -44,16 +44,16 @@ function creationUnavailableReason(
   online: boolean,
   mock: boolean,
 ) {
-  if (!online) return "연결이 복구되어야 서버 생성 기능을 확인할 수 있습니다.";
-  if (mock) return "UI Mock Preview에서는 공식 기록을 생성하지 않습니다.";
-  if (!capability) return "서버 생성 권한 정보를 불러올 수 없습니다.";
+  if (!online) return i18n.t('creation.offline');
+  if (mock) return i18n.t('creation.mock');
+  if (!capability) return i18n.t('creation.missing');
   if (capability.status === "unauthorized")
-    return "현재 역할에는 이 기록의 생성 권한이 없습니다.";
+    return i18n.t('creation.unauthorized');
   if (capability.status === "prerequisites_missing")
-    return "프로젝트 범위 또는 자격 선행조건을 확인해야 합니다.";
+    return i18n.t('creation.prerequisites');
   if (capability.status === "unavailable")
-    return "현재 연결에서 생성 기능을 사용할 수 없습니다.";
-  return "서버가 생성 권한을 확인하지 못했습니다.";
+    return i18n.t('creation.unavailable');
+  return i18n.t('creation.unknown');
 }
 
 const contractTabs: ReadonlyArray<{

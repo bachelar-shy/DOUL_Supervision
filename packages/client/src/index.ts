@@ -250,7 +250,7 @@ export interface Workspace {
 export interface CreationCapability {
   status: "available" | "unauthorized" | "prerequisites_missing" | "unavailable";
   canCreate: boolean;
-  authority: string;
+  authority: string | null;
   reasons: string[];
 }
 export const collections: Record<string, string> = {

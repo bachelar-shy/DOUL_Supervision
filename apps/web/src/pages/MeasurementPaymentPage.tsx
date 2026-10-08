@@ -21,6 +21,7 @@ import { WorkbenchTemplate } from "../ui/templates";
 import { PageBoundary } from "./PageBoundary";
 import { recordTitle } from "./record-utils";
 import "./measurement-payment.css";
+import { formatCurrency, formatDateTime } from "../i18n/format";
 
 const tabs: Array<{ id: PaymentMachine; key: PaymentLabelKey }> = [
   { id: "contract_boq", key: "boq" },
@@ -37,12 +38,12 @@ function object(value: unknown): Record<string, unknown> {
 function dateText(value: unknown) {
   if (typeof value !== "string" || !value) return "—";
   const date = new Date(value);
-  return Number.isNaN(date.valueOf()) ? value : date.toLocaleDateString();
+  return Number.isNaN(date.valueOf()) ? value : formatDateTime(date);
 }
 
 function amount(value: unknown, currency: unknown) {
   const raw = paymentText(value, "—");
-  return raw === "—" ? raw : `${raw}${currency ? ` ${paymentText(currency)}` : ""}`;
+  return raw === "—" ? raw : formatCurrency(raw, typeof currency === 'string' ? currency : undefined);
 }
 
 function PaymentSummary({ item, t }: { item: WorkItem; t: (key: PaymentLabelKey) => string }) {
