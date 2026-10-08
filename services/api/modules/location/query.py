@@ -8,7 +8,7 @@ authority, or write behavior is introduced here.
 from collections import deque
 from copy import deepcopy
 
-from app.reference.validation import ContractError, require
+from app.reference.validation import ContractError, instant, require
 
 
 def _ref(location_id, version):
@@ -94,7 +94,8 @@ def query_location_tree(engine, project_id, *, party_id=None, role_id=None):
     is broken only in treeParentRef at its lexically smallest ID; the source
     references remain untouched and every cycle member is marked.
 
-    Supplying party_id and role_id applies the existing engine read policy to
+    Supplying party_id and role_id validates current project membership before
+    reading project metadata, then applies the existing engine read policy to
     every returned location and filters inaccessible locations and drawing
     anchors. The pair is mandatory for API use. Omitting both is reserved for
     trusted internal callers; it does not authorize an HTTP response.
@@ -108,6 +109,17 @@ def query_location_tree(engine, project_id, *, party_id=None, role_id=None):
         "party_id and role_id must be supplied together",
     )
     authenticated = party_id is not None
+    if authenticated:
+        # Membership is independent of child visibility. Never return project
+        # metadata merely because there are no locations to authorize.
+        role = engine.get("RoleAssignment", role_id)
+        require(role["partyId"] == party_id, "NOT_AUTHORIZED",
+                "Role does not belong to authenticated party")
+        require(role["projectId"] == project_id, "PROJECT_MISMATCH",
+                "Project assignment mismatch")
+        now = instant(engine.at())
+        require(role["active"] and instant(role["validFrom"]) <= now < instant(role["validTo"]),
+                "ASSIGNMENT_EXPIRED", "Inactive or out of deployment period")
     project = engine.get("Project", project_id)
     _authoritative_version(project, "Project")
     locations = {

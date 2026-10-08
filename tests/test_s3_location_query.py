@@ -1,4 +1,6 @@
+from datetime import datetime, timedelta, timezone
 import unittest
+from unittest.mock import patch
 
 from app.reference.engine import Engine, uid
 from app.reference.validation import ContractError
@@ -369,6 +371,76 @@ class LocationTreeQueryTests(unittest.TestCase):
             )
 
         self.assertEqual(raised.exception.code, "NOT_AUTHORIZED")
+
+    def test_foreign_role_cannot_return_empty_project_metadata(self):
+        party_id, role_id = self.add_reader_role([])
+        original_get = self.engine.get
+        with patch.object(self.engine, "get", wraps=original_get) as reader:
+            with self.assertRaises(ContractError) as raised:
+                query_location_tree(self.engine, self.other_project_id,
+                                    party_id=party_id, role_id=role_id)
+        self.assertEqual(raised.exception.code, "PROJECT_MISMATCH")
+        self.assertNotIn(("Project", self.other_project_id),
+                         [call.args for call in reader.call_args_list])
+
+    def test_authorized_empty_project_has_valid_root_and_no_fabricated_locations(self):
+        party_id, role_id = self.add_reader_role([])
+        result = query_location_tree(self.engine, self.project_id,
+                                     party_id=party_id, role_id=role_id)
+        self.assertEqual(result, {
+            "projectRef": {"objectType": "Project", "objectId": self.project_id, "version": 1},
+            "rootRefs": [], "items": [], "hierarchyIssues": [], "cycleRefs": [],
+        })
+        # Trusted internal reads remain explicitly separate from API identity.
+        self.assertEqual(query_location_tree(self.engine, self.other_project_id)["items"], [])
+
+    def test_empty_project_rejects_mismatched_party_even_without_child_authorization(self):
+        party_id, role_id = self.add_reader_role([])
+        with patch.object(self.engine, "authorize_read") as children:
+            with self.assertRaises(ContractError) as raised:
+                query_location_tree(self.engine, self.project_id,
+                                    party_id=uid(), role_id=role_id)
+        self.assertEqual(raised.exception.code, "NOT_AUTHORIZED")
+        children.assert_not_called()
+
+    def test_empty_project_rechecks_authoritative_active_and_time_window(self):
+        party_id, role_id = self.add_reader_role([])
+        now = datetime.now(timezone.utc)
+        self.engine.now = lambda: now
+        original = self.engine.get("RoleAssignment", role_id)
+        def timestamp(value):
+            return value.isoformat().replace("+00:00", "Z")
+        invalid = [
+            dict(original, active=False),
+            dict(original, validTo=timestamp(now)),
+            dict(original, validTo=timestamp(now - timedelta(seconds=1))),
+            dict(original, validFrom=timestamp(now + timedelta(seconds=1))),
+        ]
+        for changed in invalid:
+            with self.subTest(active=changed["active"], validFrom=changed["validFrom"],
+                              validTo=changed["validTo"]):
+                self.engine._save("RoleAssignment", original)
+                self.assertEqual(query_location_tree(self.engine, self.project_id,
+                    party_id=party_id, role_id=role_id)["items"], [])
+                self.engine._save("RoleAssignment", changed)
+                with self.assertRaises(ContractError) as raised:
+                    query_location_tree(self.engine, self.project_id,
+                                        party_id=party_id, role_id=role_id)
+                self.assertEqual(raised.exception.code, "ASSIGNMENT_EXPIRED")
+        current = dict(original, validFrom=timestamp(now), validTo=timestamp(now + timedelta(seconds=1)))
+        self.engine._save("RoleAssignment", current)
+        self.assertEqual(query_location_tree(self.engine, self.project_id,
+            party_id=party_id, role_id=role_id)["items"], [])
+
+    def test_membership_gate_preserves_valid_all_hidden_tree(self):
+        hidden = self.add_location(name="Private", discipline="architecture",
+                                   package_id=self.package_id)
+        party_id, role_id = self.add_reader_role([])
+        result = query_location_tree(self.engine, self.project_id,
+                                     party_id=party_id, role_id=role_id)
+        self.assertEqual(result["items"], [])
+        self.assertNotIn(hidden["id"], repr(result))
+        self.assertEqual(result["projectRef"]["objectId"], self.project_id)
 
     def test_authenticated_arguments_must_be_supplied_as_a_pair(self):
         with self.assertRaises(ContractError) as raised:
