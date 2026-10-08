@@ -543,6 +543,8 @@ def format_document_value(value, language, field_type=None, field_path="", curre
             number = Decimal(raw)
         except InvalidOperation:
             return raw
+        if not number.is_finite():
+            return raw
         negative = number < 0
         number = abs(number)
         normalized = format(number, "f")

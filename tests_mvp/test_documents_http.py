@@ -1,4 +1,6 @@
 import unittest
+from copy import deepcopy
+from html import escape
 from fastapi.testclient import TestClient
 from services.api.main import create_app
 from app.reference.engine import uid
@@ -37,6 +39,45 @@ class DocumentHTTPTests(unittest.TestCase):
         self.client.post('/projects/'+self.project+'/owner-reports/'+self.report['id']+'/acknowledge',headers={'Authorization':'Bearer '+owner['accessToken'],'Idempotency-Key':uid()},json=dict(roleAssignmentId=owner['actor']['roleAssignmentId'],expectedVersion=self.report['version'],payload={},evidenceIds=[]))
         after=self.client.get(path,headers=self.h).content
         self.assertEqual(before,after)
+
+    def test_three_language_previews_freeze_display_catalog_without_mutating_sources(self):
+        from app.reference.document_localization import document_localization, format_document_value
+        data=deepcopy(self.body['data'])
+        fact='원본 사실 / Nguyễn <现场>'
+        date='2026-05-06T14:30:00+07:00'
+        with self.app.state.store.transaction(True):
+            source=self.app.state.store.engine.get('InformationItem',self.report['id'])
+            source['report']['facts']=fact
+            source['version']+=1
+            self.app.state.store.engine._save('InformationItem',source)
+        self.body['sourceDomainRefs'][0]['version']=source['version']
+        put(data,'urgent.fact',fact)
+        put(data,'urgent.occurred_at',date)
+        original=self.app.state.store.engine.get('InformationItem',self.report['id'])
+        outputs=[]
+        for language in ('ko','vi','en'):
+            body={**self.body,'data':data,'language':language}
+            response=self.client.post('/projects/'+self.project+'/forms/FM-20/preview',
+                headers={**self.h,'Idempotency-Key':uid()},json=body)
+            self.assertEqual(response.status_code,200,response.text)
+            document=response.json()
+            catalog=document_localization('FM-20',language)
+            self.assertEqual(document['sourcePayload']['localization'],catalog)
+            self.assertEqual(document['sourcePayload']['sources'][0]['record'],original)
+            self.assertEqual(document['sourcePayload']['data']['urgent']['fact'],fact)
+            path='/projects/'+self.project+'/documents/'+document['id']+'/content'
+            content=self.client.get(path,headers=self.h).text
+            self.assertIn('<html lang="'+language+'">',content)
+            self.assertIn(escape(catalog['title']),content)
+            self.assertIn(escape(catalog['fields']['urgent.fact']),content)
+            self.assertIn(escape(fact),content)
+            self.assertIn(format_document_value(date,language,'date-time'),content)
+            replay=self.client.get(path,headers=self.h).text
+            self.assertEqual(content,replay)
+            outputs.append(content)
+        self.assertEqual(len(set(outputs)),3)
+        self.assertEqual(self.app.state.store.engine.get('InformationItem',self.report['id']),original)
+
 
     def test_no_fake_docx_pdf(self):
         for output in ['docx','pdf']:
