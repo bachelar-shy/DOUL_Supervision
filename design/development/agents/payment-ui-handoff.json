@@ -47,5 +47,48 @@
     "Run the first browser test to verify UI create capability and real API-backed claim draft creation.",
     "Run both browser tests on the payment UI branch after root wiring.",
     "Do not describe the payment UI browser acceptance as a completed pilot or completed full AC-PAY closed loop until the supported HTTP fixture chain is run through the UI."
-  ]
+  ],
+  "completion_handover": {
+    "task": "AC-HO-01 Commissioning / Handover / Warranty workspace UI",
+    "branch": "goal/payment-ui-v1",
+    "commits": [
+      "9b6367fe7b828e93c5b54d2c68de6ecbe83910fc (read-only scoped Requirement / Asset reference catalog DTO and API endpoint cherry-pick)",
+      "b7e9e8789b09f7b795f099c99abc223de9b4676e"
+    ],
+    "files": [
+      "apps/web/src/pages/CompletionHandoverPage.tsx",
+      "apps/web/src/pages/completion-handover.css",
+      "apps/web/src/data/completion-workspace.ts",
+      "tests_browser/completion-handover-page.spec.ts"
+    ],
+    "implementation": {
+      "api_boundary": "Page uses the SupervisionClient facade for create, Workspace WorkItems and their server-provided actions, and server creationCapabilities. It does not calculate readiness, infer rights, or synthesize commands.",
+      "separate_records": "Commissioning packages, handover packages, and warranty claims remain separate items and tabs. Commissioning result history retains failed and later passed tests; handover shows exact scope, accepted documents and reservations; warranty shows defect, remedy, reinspection and closeout history.",
+      "profile_references": "Creation accepts only exact active scoped Requirement refs from workspace.context.referenceCatalog whose applicability has the required commissioningProfile, handoverProfile, or warrantyPeriod object. The generic default requirementRef is never presented as a profile. Create remains unavailable if the required exact profile is not readable in scope.",
+      "create_payloads": "Create forms send the schema-required separate data shapes, exact typed refs, and empty optional reference arrays; server commands and guards determine the next valid actions.",
+      "localization": "CompletionLabelKey/completionLabelKeys are exported from apps/web/src/data/completion-workspace.ts. Page accepts labels?: Partial<Record<CompletionLabelKey,string>>. Root maps completion.<key> dictionary labels and global command/state maps."
+    },
+    "required_root_wiring": [
+      "Add #/completion route and navigation entry using CompletionHandoverPage.",
+      "Pass client, workspace, selected/current item, online state, onSelect, onOpenCommand, refresh, and localized labels props.",
+      "Keep creationCapabilities server-derived; absent capability or required scoped profile keeps create unavailable.",
+      "Keep commissioning_package, handover_package, and warranty_claim workflow collection mappings in the generic client facade."
+    ],
+    "validation": {
+      "passed": [
+        "npm run typecheck --workspace apps/web",
+        "npm run check:ui-boundary",
+        "npm run web:build"
+      ],
+      "pending": [
+        "Run tests_browser/completion-handover-page.spec.ts after #/completion route and localization wiring are integrated.",
+        "Run the API worker's commissioning → handover acceptance-with-reservations/partial handover → warranty remedy/reinspection/closure HTTP chain after its F-07 implementation is merged. The page has not been represented as a full closed-loop pilot."
+      ]
+    },
+    "next_steps": [
+      "Root integrates the route, facade mapping, and completion dictionaries.",
+      "Run the focused browser test on ports 8793/5183 and fix any integration issues.",
+      "Verify available commands and profile/reference selectors against the merged backend API; do not claim the full real workflow closed until end-to-end acceptance passes."
+    ]
+  }
 }
