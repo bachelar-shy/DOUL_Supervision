@@ -4,6 +4,7 @@ import type { SupervisionClient } from "../../data/supervision-client";
 import { getInspectionCase } from "../../data/inspection-case-flow-client";
 import type { InspectionCase } from "../../data/inspection-case-flow-client";
 import { commands } from "../../labels";
+import { InspectionCaseAuthoringPanel } from "./InspectionCaseAuthoringPanel";
 import "./inspection-case-flow.css";
 
 const titleOf = (item: WorkItem) => item.record.title || item.record.workName || item.record.subtype || item.record.id;
@@ -28,7 +29,7 @@ function LinkedRecord({ item, workspace, onOpenCommand }: { item: WorkItem; work
     {!current && <small className="inspection-case-muted">최신 작업공간과 버전이 일치하지 않아 명령을 열 수 없습니다.</small>}
   </article>;
 }
-function CaseIssue({ group, workspace, onOpenCommand }: { group: InspectionCase["issues"][number]; workspace: Workspace; onOpenCommand?: (item: WorkItem, action: CommandDescriptor) => void }) {
+function CaseIssue({ client, inspectionId, online, onChanged, group, workspace, onOpenCommand }: { client: SupervisionClient; inspectionId: string; online: boolean; onChanged: () => Promise<void>; group: InspectionCase["issues"][number]; workspace: Workspace; onOpenCommand?: (item: WorkItem, action: CommandDescriptor) => void }) {
   const readiness = group.readiness as unknown as Record<string, unknown>;
   const related: Array<[string, WorkItem[]]> = [["관찰", group.observations], ["시정조치", group.correctiveActions], ["재검측", group.inspections], ["발주자 보고", group.ownerReports]];
   return <article className="inspection-case-issue">
@@ -38,13 +39,14 @@ function CaseIssue({ group, workspace, onOpenCommand }: { group: InspectionCase[
     <LinkedRecord item={group.issue} workspace={workspace} onOpenCommand={onOpenCommand} />
     {related.map(([label, items]) => <section className="inspection-case-related" key={label}><h4>{label} <span>({items.length})</span></h4>
       {items.length ? items.map(item => <LinkedRecord key={`${item.machine}:${item.record.id}:${item.record.version}`} item={item} workspace={workspace} onOpenCommand={onOpenCommand} />) : <p className="inspection-case-muted">서버에서 연결된 기록이 없습니다.</p>}
-      {label === "발주자 보고" && <p className="inspection-case-muted">보고 초안 생성과 발송·접수는 별도 절차입니다. 이 패널은 보고를 만들거나 보내지 않습니다.</p>}
+      {label === "발주자 보고" && <p className="inspection-case-muted">보고 초안 생성과 발송·접수는 별도 절차입니다. 초안 작성 후 발행과 수령 확인을 각각 진행하십시오.</p>}
     </section>)}
+    <InspectionCaseAuthoringPanel client={client} workspace={workspace} inspectionId={inspectionId} group={group} online={online} onChanged={onChanged} />
   </article>;
 }
 
-export function InspectionCaseFlowPanel({ client, workspace, onSelect, onOpenCommand }: {
-  client: SupervisionClient; workspace: Workspace; onChanged?: () => void; onSelect?: (id: string | null) => void;
+export function InspectionCaseFlowPanel({ client, workspace, online, onChanged, onSelect, onOpenCommand }: {
+  client: SupervisionClient; workspace: Workspace; online: boolean; onChanged?: () => void; onSelect?: (id: string | null) => void;
   onOpenCommand?: (item: WorkItem, action: CommandDescriptor) => void;
 }) {
   const inspections = useMemo(() => workspace.items.filter(item => item.machine === "inspection"), [workspace.items]);
@@ -80,7 +82,7 @@ export function InspectionCaseFlowPanel({ client, workspace, onSelect, onOpenCom
     {loading && <p role="status">검측 사례 그래프를 조회하는 중…</p>}{error && <div role="alert" className="inspection-case-error">{error}</div>}
     {graph && <><div className="inspection-case-summary" role="status"><strong>서버 판정 · {graph.readiness.complete ? "사례 완료" : "진행 중"}</strong><span>열린 Issue {graph.readiness.openIssueIds.length}</span><span>발주자 보고 대기 {graph.readiness.ownerReportingPendingIssueIds.length}</span><span>{graph.issues.length}개 연결 Issue</span></div>
       {!graph.issues.length && <p className="inspection-case-empty">이 검측에 서버가 연결한 Issue가 없습니다. 다른 검측 사례를 선택할 수 있습니다.</p>}
-      <div className="inspection-case-issues">{graph.issues.map(group => <CaseIssue key={group.issue.record.id} group={group} workspace={workspace} onOpenCommand={onOpenCommand} />)}</div>
+      <div className="inspection-case-issues">{graph.issues.map(group => <CaseIssue key={group.issue.record.id} client={client} inspectionId={graph.rootInspection.record.id} online={online} onChanged={async () => { await onChanged?.(); await load(graph.rootInspection.record.id); }} group={group} workspace={workspace} onOpenCommand={onOpenCommand} />)}</div>
       {!!graph.ownerReports.length && <section className="inspection-case-related inspection-case-overall-reports"><h3>사례 발주자 보고</h3>{graph.ownerReports.map(report => <LinkedRecord key={report.record.id} item={report} workspace={workspace} onOpenCommand={onOpenCommand} />)}<p className="inspection-case-muted">이 화면은 발주자 보고를 발송하거나 접수 처리하지 않습니다.</p></section>}
       {!!graph.timeline.length && <details className="inspection-case-timeline"><summary>서버 감사 이력 ({graph.timeline.length})</summary><ol>{graph.timeline.map(event => <li key={event.id}><time>{event.at}</time><strong>{event.command}</strong><span>{event.beforeState} → {event.afterState}</span><small>{event.objectRef.objectType} · {event.objectRef.objectId} · v{event.objectRef.version}</small></li>)}</ol></details>}
     </>}

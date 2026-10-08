@@ -43,7 +43,7 @@ function displayLabel(value: unknown, index: number) {
 }
 function stringify(value: unknown) { return JSON.stringify(value, null, 2) ?? ""; }
 
-export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onSelect, onOpenCommand }: { client: SupervisionClient; workspace: Workspace; onNavigate: (route: string) => void; onChanged?: () => void; onSelect?: (id: string | null) => void; onOpenCommand?: (item: WorkItem, action: CommandDescriptor) => void }) {
+export function ParallelTestPage({ client, workspace, online, onNavigate, onChanged, onSelect, onOpenCommand }: { client: SupervisionClient; workspace: Workspace; online: boolean; onNavigate: (route: string) => void; onChanged?: () => void; onSelect?: (id: string | null) => void; onOpenCommand?: (item: WorkItem, action: CommandDescriptor) => void }) {
   const [active, setActive] = useState<ModuleId>("drawings");
   const [selectedMarkupId, setSelectedMarkupId] = useState<string | null>(null);
   const [markupRefreshVersion, setMarkupRefreshVersion] = useState(0);
@@ -135,7 +135,7 @@ export function ParallelTestPage({ client, workspace, onNavigate, onChanged, onS
     {active === "drawings" && <DrawingMarkupIssuePanel client={client} workspace={workspace} selectedMarkupId={selectedMarkupId} refreshVersion={markupRefreshVersion} onChanged={onChanged} onSelect={onSelect} onNavigate={onNavigate} />}
     {active === "locations" && <LocationEditorPanel key={`LocationEditorPanel:${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "notifications" && <NotificationEventsPanel key={`NotificationEventsPanel:${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onSelect={onSelect} onNavigate={onNavigate} />}
-    {active === "work-inbox" && <InspectionCaseFlowPanel client={client} workspace={workspace} onChanged={onChanged} onSelect={onSelect} onOpenCommand={onOpenCommand} />}
+    {active === "work-inbox" && <InspectionCaseFlowPanel client={client} workspace={workspace} online={online} onChanged={onChanged} onSelect={onSelect} onOpenCommand={onOpenCommand} />}
     {active === "work-inbox" && <WorkInboxActionsPanel key={`WorkInboxActionsPanel:${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onNavigate={onNavigate} />}
     {active === "evidence-quarantine" && <EvidenceRegistrationPanel key={`EvidenceRegistrationPanel:${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} />}
     {active === "safety-traceability" && <SafetyConnectedPanel key={`SafetyConnectedPanel:${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} onChanged={onChanged} onSelect={onSelect} onOpenCommand={onOpenCommand} />}
