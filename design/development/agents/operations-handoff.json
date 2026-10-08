@@ -1,6 +1,6 @@
 {
   "branch": "goal/operational-validation-v1",
-  "lastcommit": "461ccc86060bbe8b7151d552d49638f8929c34cc",
+  "lastcommit": "ca281297cb14852dbc54bd638531ff5b6ef45385",
   "tests": [
     {
       "command": "python -m py_compile scripts/benchmark_work_inbox_http.py scripts/validate_live_full_recovery.py scripts/validate_live_postgres_backup.py scripts/validate_live_s3_quarantine.py",
@@ -45,6 +45,14 @@
     {
       "command": "/workspace/DOUL_Supervision/work/priority-venv/bin/python scripts/benchmark_work_inbox_http.py --app-root /tmp/doul-root-01da664 --records 50000 --rounds 2 --page-size 100 --output /tmp/doul-goal-ops-http-after-root-01da664-p100.json",
       "result": "the first live HTTP page-size-100 request exceeded the 60-second client timeout; no response or completed page/filter/cursor proof; helper cleaned its own process/container. Evidence: design/verification/issue124-live-http-max-page-root-01da664-20261008.json."
+    },
+    {
+      "command": "/workspace/DOUL_Supervision/work/priority-venv/bin/python scripts/benchmark_work_inbox_http.py --app-root /tmp/doul-root-ff0fb39 --records 50000 --rounds 3 --page-size 1 --output /tmp/doul-goal-ops-http-after-ff0fb39-p1.json",
+      "result": "passed against clean detached source commit ff0fb39937a022d3f9c882a919f109e0a7de2095; samples 3368.844/3642.823/3556.668ms, median 3556.668ms, nearest-rank p95 3642.823ms, second page 3937.922ms; API CPU 10170ms, peak RSS 553418752B, PostgreSQL cgroup CPU +444986us; total/project filtering and disjoint cursor pages passed."
+    },
+    {
+      "command": "/workspace/DOUL_Supervision/work/priority-venv/bin/python scripts/benchmark_work_inbox_http.py --app-root /tmp/doul-root-ff0fb39 --records 50000 --rounds 2 --page-size 100 --output /tmp/doul-goal-ops-http-after-ff0fb39-p100.json",
+      "result": "passed against clean detached source commit ff0fb39937a022d3f9c882a919f109e0a7de2095; request samples 7934.841/4695.261ms, median 6315.051ms, nearest-rank p95 7934.841ms, second page 3871.909ms; API CPU 11310ms, peak RSS 544403456B, PostgreSQL cgroup CPU +630045us; total/project filtering and disjoint 100-row cursor pages passed. Evidence in design/verification/issue124-live-http-after-ff0fb39-20261008.json."
     }
   ],
   "completed": [
@@ -55,17 +63,17 @@
     "Disposable operational fixtures and validation scripts are committed in 8044872e2b782d79e588e860f449d84934252a9f.",
     "Repeated the 50k real TCP benchmark against a clean detached b85c928 optimization checkout and preserved before/after metrics in design/verification/issue124-live-http-after-b85c928-20261008.json; median latency improved 18.8%, API CPU 19.4%, peak RSS 8.7%, PostgreSQL CPU 36.6%, but latency remains significant.",
     "Reran page-size-1 over real TCP HTTP against clean root commit 01da66421f13baae7d8e51e4c2f715e3466ab26c; filtering, total and cursor pagination passed. Compared with clean b85c928 run: median 6.61s, nearest-rank p95 6.63s, second page 6.67s; API CPU 19.52s, peak RSS 543797248B, PostgreSQL cgroup CPU +520888us.",
-    "Tried PostgreSQL-backed page-size-100 against exact root commit; first response exceeded 60s and is explicitly recorded as a timeout, not a completed benchmark."
+    "Tried PostgreSQL-backed page-size-100 against exact root commit; first response exceeded 60s and is explicitly recorded as a timeout, not a completed benchmark.",
+    "Reran actual page-size-1 and page-size-100 HTTP requests against clean detached commit ff0fb39937a022d3f9c882a919f109e0a7de2095. Both passed total/project filter and distinct cursor-page checks; previously timed-out page-size-100 now completed in 4.70s and 7.93s. Full metrics and prior comparison in design/verification/issue124-live-http-after-ff0fb39-20261008.json."
   ],
   "gaps": [
     "No contract API latency SLO or p95 budget was found; the HTTP measurements are a significant latency limitation, not a performance pass.",
     "Recovery evidence is a synthetic disposable development rehearsal, not site RPO/RTO, production backup/restore certification, or production-scale performance evidence.",
     "The local volume had tight overlay space; disposable recovery used bounded tmpfs. No operational fixtures remain running.",
     "A preliminary run against the capability worktree while it contained unrelated uncommitted signing changes is included only as explicitly labeled non-commit-exact context; the primary comparison uses a clean detached b85c928 worktree.",
-    "The current page-size-100 request is unusable: it exceeded the 60s HTTP client timeout before returning. M4/performance acceptance remains unverified; no API latency SLO or p95 budget was found.",
-    "Exact work-inbox totals still scan project membership linearly. Root is pursuing preview runtime-isolation optimization; rerun page-size-1 and page-size-100 against its exact clean commit when ready. Keep profiler time excluded from latency measurements."
+    "The exact ff0fb39 run passed both page sizes, but short local samples do not establish a production latency SLO or M4/performance acceptance; no API latency SLO/p95 budget exists in inspected contracts. Exact total remains linear in project membership."
   ],
-  "restart": "Operations evidence is committed on goal/operational-validation-v1 at 461ccc86060bbe8b7151d552d49638f8929c34cc. Page-size-1 at exact root commit 01da664 is complete; page-size-100 exceeded 60s and remains unusable. After root lands preview runtime-isolation optimization, create a clean detached worktree at that exact commit and rerun scripts/benchmark_work_inbox_http.py --app-root <clean-worktree> --records 50000 --rounds 3 --page-size 1 --output <unique-page1-json>, then bounded --rounds 2 --page-size 100 --output <unique-page100-json>; preserve timeout outcomes and do not overwrite earlier evidence. Report source SHA, filtering/cursor proof, wall latency, API CPU/RSS and PostgreSQL cgroup CPU; do not profile these wall samples.",
+  "restart": "Operational evidence is committed on goal/operational-validation-v1 at ca281297cb14852dbc54bd638531ff5b6ef45385. Exact clean ff0fb39 page-size-1 and page-size-100 runs are complete and documented in design/verification/issue124-live-http-after-ff0fb39-20261008.json; the previously timed-out 01da664 page-size-100 result remains preserved for comparison. Root reports subsequent signature fix 3ae7777 and document-runtime metadata fix fd66539 do not change the inbox benchmark path. If future changes alter inbox preflight/runtime behavior, benchmark a clean detached worktree at that exact commit with page 1 (3 rounds) then page 100 (2 rounds), preserve unique output names, report filtering/cursor proof and process/database metrics, and do not profile timed requests.",
   "contractReferences": {
     "storageOperations": "infra/storage-operations.md sections 2-4, 6-7, 9; specifies object/version integrity, private access, encryption, clean restore, and leaves RPO/RTO to #46, but sets no API latency SLO",
     "backupRestore": "infra/backup/README.md and infra/backup/RECOVERY_RUNBOOK.md; PostgreSQL-only backup slice is not full object recovery and Pilot still needs consistency boundary, object-version recovery, secret recovery, RPO/RTO, and approval",
