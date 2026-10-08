@@ -19,14 +19,23 @@
     "documentRuntime": {
       "passed": 5,
       "log": "work/goal-document-runtime.log",
-      "boundary": "DOCX renderer/hash and frozen catalog tests. Actual LibreOffice/PDF container conversion awaits GitHub platform-document CI."
+      "boundary": "Five local locked-runtime tests PASS. Prior 97cee102 head actual platform-document CI PASS; latest-head CI is blocked before start by account billing."
     },
-    "staticUI": "UI boundary, web/mobile typecheck, lint and web build PASS. Existing lint and bundle-size warnings retained.",
-    "lockedDependencies": "Production Python and clean npm lock inventory PASS before temporary dependencies were relocated without changing content.",
-    "fullBrowser": "Final suite running after locale fixture, intentional caption and exact-reference assertions were corrected; no permission/state/evidence assertions dropped.",
-    "mockLocalization": "Separate suite pending worker verification; isolated config now runs separately in CI.",
-    "dockerWeb": "Localization manifest and source COPY added. Local build canceled due temporary host disk exhaustion; no local Docker-build PASS claimed. Full CI Compose build/smoke pending.",
-    "githubCI": "Not yet submitted"
+    "staticUI": "Current web/mobile typecheck, UI boundary and lint PASS (existing warnings retained); exact-lock web build PASS (work/goal-physical-web-build.log).",
+    "lockedDependencies": "Fresh exact-lock npm ci, physical repository workspace tree and dependency inventory PASS (work/goal-physical-dependencies.log); previous dependency trees preserved. Production Python lock unchanged.",
+    "fullBrowser": "Prior full regression: 81 PASS (work/goal-browser-final.log). Latest authoring/catalog changes: two focused case/completion presentation tests PASS (work/goal-case-wiring-isolated-fixed.log); full current-head regression pending.",
+    "mockLocalization": "6 PASS in separate mock-only suite; actual API localization 10 PASS separately. No field acceptance claim.",
+    "dockerWeb": "Localization COPY corrected for web and operational proxy images; prior 97cee102 actual container/operational CI PASS. Latest-head CI blocked before start; no current-head acceptance claim.",
+    "githubCI": {
+      "pr": 129,
+      "lastPushedHead": "cfdca52ff0d8b56a3e8c4135ceb969e3e4d8b0f2",
+      "status": "BLOCKED_ACCOUNT_BILLING_BEFORE_JOB_START",
+      "run": 37860451176,
+      "evidence": "User supplied GitHub annotation: job was not started because recent account payments have failed or spending limit needs to be increased. All eight workflows have no execution steps.",
+      "resume": "Account owner resolves Billing & plans; push completed verified integration checkpoint and require all latest exact-head checks before merge. Do not treat earlier-head successes as current acceptance."
+    },
+    "referenceCatalog": "3 actual HTTP authorization tests PASS including exact current InformationItem refs, project/location exclusion and changed assignment visibility.",
+    "paymentBrowser": "Worker default-config real HTTP browser flow PASS (21.6s) with trusted exact-version upstream Owner Decision fixtures. Root integration being rerun after canonical reference-select UI improvement; no full function/pilot promotion."
   },
   "operations": {
     "s3": "Actual RustFS versioned private store retry/version/quarantine verification: 11 tests PASS; synthetic fixtures only.",

@@ -10,18 +10,19 @@
     "Removed request read-cache duplication and per-row full preview copies; retained exact authorization and immutable-source tests"
   ],
   "inProgress": [
-    "Final browser regression, separate mock locale suite and integrated evidence reconciliation",
-    "Container/package and GitHub CI verification before sequential integration"
+    "Complete current-head Payment/Quality/Commissioning-Handover-Warranty connected browser acceptance",
+    "Finish mandatory ko/vi/en parallel panels and run current-head full regression",
+    "Preserve draft PR129 until billing-blocked GitHub checks can execute and pass"
   ],
   "validation": {
     "evidence": "design/verification/goal-mvp-checkpoint-20261008.json",
     "contracts": "319 PASS",
     "api": "388 PASS; 5 optional document tests separately PASS",
     "documentRuntime": "5 PASS",
-    "integrationCI": "pending"
+    "integrationCI": "BLOCKED_ACCOUNT_BILLING_BEFORE_JOB_START; user confirmed annotation on run37860451176"
   },
   "remaining": [
-    "Submit isolated integration branch as PR and pass current-head required checks before merge",
+    "Account owner resolves GitHub Billing & plans; latest exact-head eight CI checks must pass before PR129 merge",
     "Reconcile only proven issue completion and preserve incomplete full scenario/pilot status",
     "Complete remaining full connected browser acceptance without weakening legal/state/equipment prerequisites",
     "Configure actual project, production legal signature provider and adopted forms/language policy; obtain real authorized pilot actors/evidence",
@@ -32,7 +33,8 @@
     "Root clean dependencies are preserved in /tmp/doul-goal-root-deps/node_modules; workspace node_modules symlink with absolute @doul workspace links. Reinstall exact lock if ephemeral /tmp is replaced",
     "Production Python: work/priority-venv; document-only union lock environment: work/document-verification-venv",
     "Confirm owned PostgreSQL fixture availability on 15432 and no concurrent destructive fixture operations",
-    "Read final test logs/evidence and continue unfinished work without deleting other changes"
+    "Read final test logs/evidence and continue unfinished work without deleting other changes",
+    "Node dependencies now physical repository node_modules from fresh exact-lock npm ci; prior /tmp dependency trees preserved. Root isolated scratch browser uses web5189/API8789; pass explicit loopback DOUL_API_ALLOWED_ORIGINS for self-hosted fixture tests."
   ],
   "testFixtures": {
     "postgresContainer": "doul-goal-postgres",
