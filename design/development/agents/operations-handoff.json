@@ -1,0 +1,53 @@
+{
+  "branch": "goal/operational-validation-v1",
+  "lastcommit": "8044872e2b782d79e588e860f449d84934252a9f",
+  "tests": [
+    {
+      "command": "python -m py_compile scripts/benchmark_work_inbox_http.py scripts/validate_live_full_recovery.py scripts/validate_live_postgres_backup.py scripts/validate_live_s3_quarantine.py",
+      "result": "passed"
+    },
+    {
+      "command": "docker compose -f infra/verification/compose.ops-recovery.yml config --quiet",
+      "result": "passed"
+    },
+    {
+      "command": "Parse all design/verification/issue*-20261008.json evidence files",
+      "result": "passed; five valid JSON files"
+    },
+    {
+      "command": "scripts/validate_live_s3_quarantine.py --output design/verification/issue123-live-rustfs-20261008.json",
+      "result": "passed against disposable RustFS 1.0.1; 11 checks including version preconditions, version/content/hash verification, quarantine metadata, anonymous denial, and cleanup"
+    },
+    {
+      "command": "scripts/validate_live_postgres_backup.py --output design/verification/issue46-live-postgres-restore-20261008.json",
+      "result": "passed against disposable PostgreSQL 16; verified encrypted database backup manifest/checksum and clean-target restore consistency; backup and sidecar permissions 0600"
+    },
+    {
+      "command": "scripts/validate_live_full_recovery.py --output design/verification/issue46-live-db-object-recovery-20261008.json",
+      "result": "passed; synthetic encrypted database plus versioned RustFS object recovery, object history and DB/blob fingerprints preserved, wrong key/tamper rejected before mutation, writer resumed, promotion unapproved"
+    },
+    {
+      "command": "scripts/benchmark_work_inbox_http.py --records 50000 --rounds 3 --page-size 1 --output design/verification/issue124-live-http-20261008.json",
+      "result": "live TCP HTTP run passed project filtering and non-overlapping pagination checks but measured significant latency: median 9534.947 ms, nearest-rank p95 10192.732 ms, second page 12463.539 ms; API CPU 28160 ms, peak RSS 595529728 bytes, PostgreSQL cgroup CPU delta 1067082 usec"
+    },
+    {
+      "command": "scripts/benchmark_work_inbox_http.py --records 50000 --rounds 2 --page-size 100 --output design/verification/issue124-live-http-max-page-20261008.json",
+      "result": "SQLite-backed exploratory max-page request exceeded the 60-second HTTP client timeout; documented separately and not represented as a PostgreSQL result"
+    }
+  ],
+  "completed": [
+    "Live S3-compatible RustFS validation for conditional versioned quarantine behavior.",
+    "PostgreSQL backup and clean-target restore validation.",
+    "Combined encrypted database and versioned object recovery rehearsal.",
+    "50k-record live HTTP benchmark with process CPU/RSS, PostgreSQL cgroup CPU, filtering and pagination evidence.",
+    "Disposable operational fixtures and validation scripts are committed in 8044872e2b782d79e588e860f449d84934252a9f."
+  ],
+  "gaps": [
+    "No contract API latency SLO or p95 budget was found; the HTTP measurements are a significant latency limitation, not a performance pass.",
+    "The 50k route uses PostgresSnapshotAdapter storing a single JSON snapshot; exact total counts scan project membership, and full snapshot copies contribute latency. The max-page over-time evidence is from SQLite only.",
+    "Performance worker /root/capabilities is profiling and optimizing read transaction/full-state-copy behavior in store.py/postgres_store.py. Re-run the same 50k live TCP benchmark after that patch lands, preserving the before result.",
+    "Recovery evidence is a synthetic disposable development rehearsal, not site RPO/RTO, production backup/restore certification, or production-scale performance evidence.",
+    "The local volume had tight overlay space; disposable recovery used bounded tmpfs. No operational fixtures remain running."
+  ],
+  "restart": "From /workspace/work/doul-goal/operations on goal/operational-validation-v1, keep this checkpoint and evidence. After /root/capabilities reports its optimization commit ready, rerun /workspace/DOUL_Supervision/work/priority-venv/bin/python scripts/benchmark_work_inbox_http.py --records 50000 --rounds 3 --page-size 1 --output /tmp/doul-goal-ops-http-after.json; report before/after latency, CPU and RSS without overwriting baseline. Then update this handoff/evidence and notify /root for integration."
+}
