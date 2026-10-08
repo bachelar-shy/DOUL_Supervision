@@ -62,7 +62,7 @@ class Wave1APIFunctionalIntegrationTests(unittest.TestCase):
         scope = self.app.state.store.meta["scope"]
         registration = {
             "roleAssignmentId": self.role_id,
-            "quarantineKey": f"evidence/{self.project}/{upload_id}/{digest}",
+            "quarantineKey": uploaded.json()["quarantineKey"],
             "sha256": digest,
             "sourcePartyId": self.session["actor"]["partyId"],
             "fileName": "field-evidence.png",

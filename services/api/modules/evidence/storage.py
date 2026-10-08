@@ -26,6 +26,14 @@ class ObjectStorageError(RuntimeError):
     """Storage did not confirm quarantine persistence."""
 
 
+class UploadContentConflict(ObjectStorageError):
+    """The logical upload ID is already bound to different content/metadata."""
+
+
+class UploadReconciliationRequired(ObjectStorageError):
+    """The remote outcome is unknown; retry/reconcile without deleting objects."""
+
+
 @dataclass(frozen=True)
 class QuarantinedObject:
     """Reference to a verified, project-scoped object that remains quarantined.
@@ -54,7 +62,12 @@ class QuarantineObjectStore(Protocol):
         content_type: str,
         sha256: str,
     ) -> str | None:
-        """Store a complete verified stream under a private quarantine key."""
+        """Conditionally persist an immutable private quarantine slot.
+
+        Matching metadata must reuse the confirmed reference; changed digest,
+        length or media type raises UploadContentConflict. An unconfirmed remote
+        outcome raises UploadReconciliationRequired. Never delete on failure.
+        """
         ...
 
     def open_quarantine(
@@ -92,16 +105,61 @@ class Boto3S3QuarantineStore:
         sha256: str,
     ) -> str | None:
         object_key = self._key(key)
-        # No ACL is sent: the bucket's private policy remains authoritative.
-        result = self._client.put_object(
-            Bucket=self._bucket,
-            Key=object_key,
-            Body=body,
-            ContentLength=content_length,
-            ContentType=content_type,
-            Metadata={"classification": "quarantine", "sha256": sha256},
-        )
+        # Conditional writes, not a HEAD-then-PUT check, arbitrate concurrent
+        # writers. This must not fall back to an unconditional PUT on providers
+        # that do not support IfNoneMatch.
+        try:
+            result = self._client.put_object(
+                Bucket=self._bucket,
+                Key=object_key,
+                Body=body,
+                ContentLength=content_length,
+                ContentType=content_type,
+                Metadata={"classification": "quarantine", "sha256": sha256},
+                IfNoneMatch="*",
+            )
+        except Exception as exc:
+            response = getattr(exc, "response", None) or {}
+            code = str(response.get("Error", {}).get("Code", ""))
+            status = response.get("ResponseMetadata", {}).get("HTTPStatusCode", 0)
+            if code in {"PreconditionFailed", "412", "ConditionalRequestConflict", "409"} or status in {409, 412}:
+                return self._reconcile(object_key, content_length, content_type, sha256)
+            if self._uncertain(exc) or code in {"RequestTimeout", "RequestTimeoutException", "408"} or status == 408 or (isinstance(status, int) and status >= 500):
+                return self._reconcile(object_key, content_length, content_type, sha256)
+            raise ObjectStorageError("quarantine conditional write failed") from exc
         version_id = result.get("VersionId")
+        return str(version_id) if version_id is not None else None
+
+    @staticmethod
+    def _uncertain(exc: Exception) -> bool:
+        if isinstance(exc, (TimeoutError, ConnectionError)):
+            return True
+        # Keep the boundary importable without the optional object SDK.
+        try:
+            from botocore.exceptions import (
+                ConnectionClosedError, ConnectTimeoutError, EndpointConnectionError, ReadTimeoutError,
+            )
+        except ImportError:
+            return False
+        return isinstance(exc, (ConnectionClosedError, ConnectTimeoutError, EndpointConnectionError, ReadTimeoutError))
+
+    def _reconcile(self, object_key: str, content_length: int, content_type: str, sha256: str) -> str | None:
+        try:
+            current = self._client.head_object(Bucket=self._bucket, Key=object_key)
+        except Exception as exc:
+            # A missing/unreadable object after 409/timeout is not a successful
+            # upload. The caller can retry the same conditional write later.
+            raise UploadReconciliationRequired("quarantine outcome is not yet confirmed") from exc
+        metadata = current.get("Metadata", {})
+        if (
+            current.get("DeleteMarker")
+            or metadata.get("classification") != "quarantine"
+            or metadata.get("sha256") != sha256
+            or current.get("ContentLength") != content_length
+            or current.get("ContentType") != content_type
+        ):
+            raise UploadContentConflict("upload ID is already bound to different content or metadata")
+        version_id = current.get("VersionId")
         return str(version_id) if version_id is not None else None
 
     def open_quarantine(
@@ -119,8 +177,9 @@ class StreamingQuarantineUploader:
     A disk-backed temporary file bounds staging storage by max_bytes, while this
     adapter's in-memory source/readback chunks are limited to read_size (excluding
     buffers internal to the caller or object-storage SDK). Staging files are
-    deleted on success and failure. The deterministic project/upload/hash key
-    makes same-content retries idempotent within a project.
+    deleted on success and failure. The project/upload ID is a single immutable
+    content slot. A conditional object-store write makes concurrent same-content
+    retries reuse its confirmed version; changed content/metadata conflicts.
     Remote quarantine objects are not automatically deleted: retention and
     disposition require a separate explicit policy.
     """
@@ -286,7 +345,7 @@ class StreamingQuarantineUploader:
             staged.flush()
             staged.seek(0)
             object_key = (
-                f"{self._key_prefix}/{project_id}/{upload_id}/{actual_digest}"
+                f"{self._key_prefix}/{project_id}/{upload_id}/original"
             )
             try:
                 version_id = self._store.put_quarantine(
@@ -296,11 +355,13 @@ class StreamingQuarantineUploader:
                     content_type=content_type,
                     sha256=actual_digest,
                 )
+            except ObjectStorageError:
+                raise
             except Exception as exc:
                 # Do not report success or try to delete: a remote timeout may
                 # have an uncertain outcome. Deterministic retry + reconciliation
                 # handles that state without inventing an official record.
-                raise ObjectStorageError("quarantine persistence was not confirmed") from exc
+                raise UploadReconciliationRequired("quarantine persistence was not confirmed") from exc
 
         return QuarantinedObject(
             project_id=project_id,

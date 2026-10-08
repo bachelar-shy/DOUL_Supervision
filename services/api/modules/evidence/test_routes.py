@@ -17,7 +17,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.reference.validation import ContractError, require
-from .storage import StreamingQuarantineUploader, UploadValidationError
+from .storage import (
+    StreamingQuarantineUploader, UploadValidationError, ObjectStorageError,
+    UploadContentConflict, UploadReconciliationRequired,
+)
 
 DEFAULT_MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 _UPLOAD_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
@@ -31,12 +34,13 @@ class LocalFilesystemQuarantineStore:
         if not _UPLOAD_ID.fullmatch(project_id) or not _UPLOAD_ID.fullmatch(actor_id):
             raise ValueError("project and actor IDs must be safe opaque IDs")
         self.root = Path(root).resolve() / project_id / actor_id
+        self.project_id = project_id
 
     def _target(self, key: str) -> Path:
         parts = key.split("/")
-        if (len(parts) != 4 or parts[0] != "evidence" or
+        if (len(parts) != 4 or parts[0] != "evidence" or parts[1] != self.project_id or
                 any(not _UPLOAD_ID.fullmatch(p) for p in parts[1:3]) or
-                not _SHA256.fullmatch(parts[3])):
+                (parts[3] != "original" and not _SHA256.fullmatch(parts[3]))):
             raise ValueError("unsafe quarantine key")
         path = self.root / parts[2] / (parts[3].lower() + ".blob")
         if not path.resolve().is_relative_to(self.root):
@@ -47,6 +51,40 @@ class LocalFilesystemQuarantineStore:
                        content_type: str, sha256: str) -> str | None:
         target = self._target(key)
         target.parent.mkdir(parents=True, exist_ok=True)
+        # The demo filesystem has no object-store conditional request. A
+        # cross-process advisory lock serializes only this logical upload slot.
+        # It is not a lock on the whole project or a substitute for a production DB.
+        import fcntl
+        with (target.parent / ".upload.lock").open("a+b") as guard:
+            fcntl.flock(guard.fileno(), fcntl.LOCK_EX)
+            try:
+                return self._put_locked(target, key, body, content_length, content_type, sha256)
+            finally:
+                fcntl.flock(guard.fileno(), fcntl.LOCK_UN)
+
+    def _put_locked(self, target, key, body, content_length, content_type, sha256):
+        sidecar = target.with_suffix(".json")
+        if target.exists() or sidecar.exists():
+            if not target.is_file() or not sidecar.is_file():
+                raise UploadReconciliationRequired("quarantine object and metadata require reconciliation")
+            try:
+                entry = json.loads(sidecar.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as exc:
+                raise UploadReconciliationRequired("quarantine metadata could not be confirmed") from exc
+            if (
+                entry.get("key") != key
+                or entry.get("sha256") != sha256.lower()
+                or entry.get("byteCount") != content_length
+                or target.stat().st_size != content_length
+                or entry.get("contentType") != content_type
+                or entry.get("status") != "quarantined"
+            ):
+                raise UploadContentConflict("upload ID is already bound to different content or metadata")
+            return None
+        if any(target.parent.glob("*.blob")) or any(target.parent.glob("*.json")):
+            # Existing v1 hash paths remain readable/registerable. Do not silently
+            # create a second v2 slot under an already-used legacy upload ID.
+            raise UploadReconciliationRequired("upload ID already has another object path; reconcile or use a new upload ID")
         temporary = None
         sidecar_temporary = None
         try:
@@ -84,7 +122,7 @@ class LocalFilesystemQuarantineStore:
         values = []
         if not self.root.exists():
             return values
-        for sidecar in self.root.glob("*/[0-9a-fA-F]*.json"):
+        for sidecar in self.root.glob("*/*.json"):
             try:
                 entry = json.loads(sidecar.read_text(encoding="utf-8"))
             except (OSError, ValueError):
@@ -172,12 +210,18 @@ def install_evidence_quarantine_routes(
                         )
                     except UploadValidationError as exc:
                         return _fail("UPLOAD_INVALID", str(exc), 400)
+                    except UploadContentConflict as exc:
+                        return _fail("QUARANTINE_UPLOAD_CONFLICT", str(exc), 409)
+                    except UploadReconciliationRequired as exc:
+                        return _fail("QUARANTINE_RECONCILIATION_REQUIRED", str(exc), 503)
+                    except ObjectStorageError:
+                        return _fail("OBJECT_STORAGE_UNAVAILABLE", "Quarantine storage is unavailable", 503)
             finally:
                 if staged_path is not None:
                     staged_path.unlink(missing_ok=True)
             return {"projectId": stored.project_id, "uploadId": upload_id,
                     "byteCount": stored.byte_count, "sha256": stored.sha256,
-                    "contentType": stored.content_type, "status": "quarantined"}
+                    "contentType": stored.content_type, "status": "quarantined", "quarantineKey": stored.key}
         except ContractError as exc:
             code = exc.code
             status = 401 if code == "UNAUTHENTICATED" else 403 if code == "NOT_AUTHORIZED" else 404 if code == "PROJECT_MISMATCH" else 413 if code == "PAYLOAD_TOO_LARGE" else 422

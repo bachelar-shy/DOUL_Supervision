@@ -79,6 +79,7 @@ class ParallelEvidenceUploadTests(unittest.TestCase):
         self.assertEqual(payload["status"], "quarantined")
         self.assertEqual(payload["byteCount"], len(body))
         self.assertEqual(payload["sha256"], hashlib.sha256(body).hexdigest())
+        self.assertEqual(payload["quarantineKey"], "evidence/project_1/upload_1/original")
 
         listing = self.client.get("/projects/project_1/parallel/evidence-quarantine", headers=self.headers)
         self.assertEqual(listing.status_code, 200, listing.text)
@@ -96,7 +97,7 @@ class ParallelEvidenceUploadTests(unittest.TestCase):
         body = b"same-content retry" * 128
         digest = hashlib.sha256(body).hexdigest()
         store = LocalFilesystemQuarantineStore(self.root / "quarantine", "project_1", "party_owner")
-        key = f"evidence/project_1/upload_1/{digest}"
+        key = "evidence/project_1/upload_1/original"
 
         def write_one():
             return store.put_quarantine(
@@ -112,6 +113,55 @@ class ParallelEvidenceUploadTests(unittest.TestCase):
         self.assertEqual(len(store.list_quarantine()), 1)
         self.assertEqual(list(target.parent.glob("*.tmp")), [])
         self.assertEqual(list(target.parent.glob(".*.tmp")), [])
+
+    def test_retry_reuses_one_local_object_without_replacing_original(self):
+        body = b"same original"
+        self.assertEqual(self.upload(body).status_code, 200)
+        store = LocalFilesystemQuarantineStore(self.root / "quarantine", "project_1", "party_owner")
+        target = store._target("evidence/project_1/upload_1/original")
+        first = target.stat()
+        self.assertEqual(self.upload(body).status_code, 200)
+        second = target.stat()
+        self.assertEqual((first.st_ino, first.st_mtime_ns), (second.st_ino, second.st_mtime_ns))
+        self.assertEqual(len(store.list_quarantine()), 1)
+
+    def test_same_upload_id_changed_content_or_type_returns_conflict(self):
+        self.assertEqual(self.upload(b"first").status_code, 200)
+        for body, headers in [(b"other", {}), (b"first", {"Content-Type": "text/plain"})]:
+            with self.subTest(body=body, headers=headers):
+                response = self.upload(body, headers=headers)
+                self.assertEqual(response.status_code, 409, response.text)
+                self.assertEqual(response.json()["code"], "QUARANTINE_UPLOAD_CONFLICT")
+        store = LocalFilesystemQuarantineStore(self.root / "quarantine", "project_1", "party_owner")
+        self.assertEqual(store._target("evidence/project_1/upload_1/original").read_bytes(), b"first")
+
+    def test_partial_local_commit_requires_reconciliation_without_overwrite(self):
+        self.assertEqual(self.upload(b"original").status_code, 200)
+        store = LocalFilesystemQuarantineStore(self.root / "quarantine", "project_1", "party_owner")
+        target = store._target("evidence/project_1/upload_1/original")
+        target.with_suffix(".json").unlink()
+        response = self.upload(b"original")
+        self.assertEqual(response.status_code, 503, response.text)
+        self.assertEqual(response.json()["code"], "QUARANTINE_RECONCILIATION_REQUIRED")
+        self.assertEqual(target.read_bytes(), b"original")
+
+    def test_legacy_objects_remain_readable_but_used_ids_are_not_silently_migrated(self):
+        body = b"legacy original"
+        digest = hashlib.sha256(body).hexdigest()
+        store = LocalFilesystemQuarantineStore(self.root / "quarantine", "project_1", "party_owner")
+        key = f"evidence/project_1/upload_1/{digest}"
+        store.put_quarantine(key, BytesIO(body), content_length=len(body),
+            content_type="application/octet-stream", sha256=digest)
+        response = self.upload(body)
+        self.assertEqual(response.status_code, 503, response.text)
+        self.assertEqual(store.list_quarantine()[0]["key"], key)
+        with store.open_quarantine(key) as original:
+            self.assertEqual(original.read(), body)
+
+    def test_local_key_cannot_cross_project_namespace(self):
+        store = LocalFilesystemQuarantineStore(self.root / "quarantine", "project_1", "party_owner")
+        with self.assertRaises(ValueError):
+            store._target("evidence/project_other/upload_1/original")
 
     def test_bad_hash_is_rejected_and_staging_is_removed(self):
         response = self.upload(b"tampered", sha="0" * 64)

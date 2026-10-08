@@ -105,7 +105,7 @@ class StreamingQuarantineUploaderTests(unittest.TestCase):
         self.assertTrue(source.read_sizes)
         self.assertTrue(all(size == 4096 for size in source.read_sizes))
         self.assertEqual(ref.project_id, "project_1")
-        self.assertEqual(ref.key, f"evidence/project_1/upload_123/{hashlib.sha256(content).hexdigest()}")
+        self.assertEqual(ref.key, "evidence/project_1/upload_123/original")
         stored, metadata = self.store.objects[ref.key]
         self.assertEqual(stored, content)
         self.assertEqual(ref.byte_count, len(content))
@@ -206,6 +206,7 @@ class StreamingQuarantineUploaderTests(unittest.TestCase):
         self.assertEqual(client.put_args["Metadata"]["classification"], "quarantine")
         self.assertEqual(client.put_args["Metadata"]["sha256"], hashlib.sha256(b"remote").hexdigest())
         self.assertNotIn("ACL", client.put_args)
+        self.assertEqual(client.put_args["IfNoneMatch"], "*")
         with store.open_quarantine("project_1/upload_123/abc", "version-2") as remote:
             self.assertEqual(remote.read(), b"remote")
         self.assertEqual(client.get_args["VersionId"], "version-2")
