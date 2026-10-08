@@ -24,6 +24,7 @@ export interface RegisterProjectionRow {
 export interface UiRoute {
   id: string;
   label: string;
+  labelKey?: string;
   icon: string;
 }
 

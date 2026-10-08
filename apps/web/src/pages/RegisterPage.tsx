@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Eye, RefreshCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import { koreanRegisterRecordFieldLabels } from "@doul/localization";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -49,33 +52,40 @@ const recordDetailFields = [
   "updatedAt",
 ] as const;
 
-const recordFieldLabels: Record<string, string> = {
-  status: "원본 상태",
-  subtype: "하위 유형",
-  discipline: "분야",
-  locationId: "위치",
-  packageId: "패키지",
-  revision: "개정",
-  dueAt: "처리 기한",
-  createdAt: "생성 시각",
-  updatedAt: "갱신 시각",
-};
-
 function sourceType(row: RegisterProjectionRow) {
   return row.sourceDomainRefs[0]?.objectType || "Unknown";
+}
+
+function registerName(
+  definition: RegisterProjectionDefinition,
+  t: TFunction,
+) {
+  return t(`register.name.${definition.id}`, {
+    defaultValue: definition.name,
+  });
 }
 
 function sourceTypeOptionLabel(
   objectType: string,
   definition: RegisterProjectionDefinition,
+  t: TFunction,
 ) {
   const source = definition.sources.find((item) => item.objectType === objectType);
-  const subtype = source?.subtype ? ` / ${source.subtype}` : "";
+  const subtype = source?.subtype
+    ? ` / ${t(`register.subtype.${source.subtype}`, {
+        defaultValue: source.subtype,
+      })}`
+    : "";
   return `${registerSourceLabel(objectType)}${subtype}`;
 }
 
-function registerModeLabel(definition: RegisterProjectionDefinition) {
-  return definition.mode === "actionable" ? "업무 연결형" : "조회형";
+function registerModeLabel(
+  definition: RegisterProjectionDefinition,
+  t: TFunction,
+) {
+  return definition.mode === "actionable"
+    ? t("register.mode.actionable")
+    : t("register.mode.readonly");
 }
 
 function RegisterDetail({
@@ -85,6 +95,7 @@ function RegisterDetail({
   row: RegisterProjectionRow;
   definition: RegisterProjectionDefinition;
 }) {
+  const { t } = useTranslation();
   const ref = row.sourceDomainRefs[0];
   const detailFields = recordDetailFields.filter(
     (key) => row.data[key] !== undefined && row.data[key] !== null,
@@ -93,23 +104,30 @@ function RegisterDetail({
   return (
     <div className="space-y-5 py-4 text-sm">
       <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs leading-5 text-muted-foreground">
-        이 화면은 원본 업무 객체의 읽기 전용 Projection입니다. 상태 변경은 해당
-        업무 화면의 명령과 권한 검증을 통해서만 수행됩니다.
+        {t("register.detail.readonlyNotice")}
       </div>
 
       <section>
-        <h3 className="mb-2 text-xs font-semibold text-foreground">원본 객체</h3>
+        <h3 className="mb-2 text-xs font-semibold text-foreground">
+          {t("register.detail.sourceObject")}
+        </h3>
         <dl className="grid grid-cols-[110px_minmax(0,1fr)] gap-x-3 gap-y-2 text-xs">
-          <dt className="text-muted-foreground">유형</dt>
+          <dt className="text-muted-foreground">{t("register.detail.type")}</dt>
           <dd>{registerSourceLabel(ref?.objectType)}</dd>
-          <dt className="text-muted-foreground">원본 ID</dt>
-          <dd className="break-all font-mono">{ref?.objectId || "미확인"}</dd>
-          <dt className="text-muted-foreground">원본 버전</dt>
+          <dt className="text-muted-foreground">{t("register.detail.sourceId")}</dt>
+          <dd className="break-all font-mono">
+            {ref?.objectId || t("common.unknown")}
+          </dd>
+          <dt className="text-muted-foreground">
+            {t("register.detail.sourceVersion")}
+          </dt>
           <dd>v{ref?.version ?? "-"}</dd>
           {detailFields.map((key) => (
             <FragmentPair
               key={key}
-              label={recordFieldLabels[key] || key}
+              label={t(`register.recordField.${key}`, {
+                defaultValue: koreanRegisterRecordFieldLabels[key] || key,
+              })}
               value={formatRegisterValue(row.data[key], key)}
             />
           ))}
@@ -118,7 +136,7 @@ function RegisterDetail({
 
       <section>
         <h3 className="mb-2 text-xs font-semibold text-foreground">
-          계산·Projection 필드
+          {t("register.detail.calculatedFields")}
         </h3>
         <dl className="grid grid-cols-[140px_minmax(0,1fr)] gap-x-3 gap-y-2 text-xs">
           {definition.calculatedFields.map((field) => (
@@ -133,7 +151,9 @@ function RegisterDetail({
       </section>
 
       <section>
-        <h3 className="mb-2 text-xs font-semibold text-foreground">연결 원본</h3>
+        <h3 className="mb-2 text-xs font-semibold text-foreground">
+          {t("register.detail.linkedSources")}
+        </h3>
         <div className="space-y-2">
           {row.sourceDomainRefs.map((item) => (
             <div
@@ -176,6 +196,7 @@ export function RegisterPage({
   client: SupervisionClient;
   workspace: Workspace;
 }) {
+  const { t } = useTranslation();
   const entrySpec = roleRegisterEntries[workspace.role.actorGroup];
   const [registerId, setRegisterId] = useState(entrySpec.defaultRegisterId);
   const [rows, setRows] = useState<RegisterProjectionRow[]>([]);
@@ -197,7 +218,11 @@ export function RegisterPage({
     const toItem = (id: string) => {
       const item = byId.get(id);
       return item
-        ? { id: item.id, name: item.name, modeLabel: registerModeLabel(item) }
+        ? {
+            id: item.id,
+            name: registerName(item, t),
+            modeLabel: registerModeLabel(item, t),
+          }
         : null;
     };
     return {
@@ -206,12 +231,16 @@ export function RegisterPage({
         .filter((item): item is NonNullable<typeof item> => item !== null),
       groups: registerNavigationGroups.map((group) => ({
         ...group,
+        label: t(group.labelKey, { defaultValue: group.label }),
+        description: t(group.descriptionKey, {
+          defaultValue: group.description,
+        }),
         items: group.registerIds
           .map(toItem)
           .filter((item): item is NonNullable<typeof item> => item !== null),
       })),
     };
-  }, [entrySpec]);
+  }, [entrySpec, t]);
 
   async function load() {
     const sequence = ++requestSequence.current;
@@ -227,7 +256,7 @@ export function RegisterPage({
       if (sequence !== requestSequence.current) return;
       setRows([]);
       setError(
-        e instanceof Error ? e.message : "관리대장을 불러오지 못했습니다.",
+        e instanceof Error ? e.message : t("register.error.load"),
       );
     } finally {
       if (sequence === requestSequence.current) setLoading(false);
@@ -249,7 +278,7 @@ export function RegisterPage({
         if (sequence !== requestSequence.current) return;
         setRows([]);
         setError(
-          e instanceof Error ? e.message : "관리대장을 불러오지 못했습니다.",
+          e instanceof Error ? e.message : t("register.error.load"),
         );
       })
       .finally(() => {
@@ -261,7 +290,7 @@ export function RegisterPage({
         requestSequence.current += 1;
       }
     };
-  }, [client, registerId]);
+  }, [client, registerId, t]);
 
   function changeRegister(nextRegisterId: string) {
     // Invalidate any in-flight manual refresh before the new selection renders.
@@ -308,7 +337,7 @@ export function RegisterPage({
     () => [
       {
         id: "source",
-        header: "원본",
+        header: t("register.column.source"),
         className: "min-w-28",
         cell: (row) => {
           const ref = row.sourceDomainRefs[0];
@@ -326,7 +355,7 @@ export function RegisterPage({
       },
       {
         id: "record",
-        header: "기록",
+        header: t("register.column.record"),
         className: "min-w-60 max-w-80",
         cell: (row) => (
           <div className="space-y-1 whitespace-normal">
@@ -334,7 +363,7 @@ export function RegisterPage({
               {registerRowTitle(row)}
             </strong>
             <span className="block text-[9px] text-slate-400">
-              {row.data.locationId || "위치 미지정"}
+              {row.data.locationId || t("register.value.locationUnspecified")}
               {row.data.discipline ? ` · ${row.data.discipline}` : ""}
             </span>
           </div>
@@ -342,11 +371,13 @@ export function RegisterPage({
       },
       {
         id: "status",
-        header: "원본 상태",
+        header: t("register.column.sourceStatus"),
         className: "min-w-28",
         cell: (row) => (
           <StatusBadge status={row.data.status}>
-            {states[row.data.status || ""] || row.data.status || "상태 없음"}
+            {states[row.data.status || ""] ||
+              row.data.status ||
+              t("register.value.statusNone")}
           </StatusBadge>
         ),
       },
@@ -370,12 +401,12 @@ export function RegisterPage({
       ),
       {
         id: "detail",
-        header: "상세",
+        header: t("register.column.detail"),
         className: "w-20 text-right",
         cell: (row) => (
           <DetailDrawer
             title={registerRowTitle(row)}
-            description={`${definition.id} ${definition.name} · 읽기 전용 Projection`}
+            description={`${definition.id} ${registerName(definition, t)} · ${t("register.detail.readonlyProjection")}`}
             trigger={
               <Button
                 type="button"
@@ -384,7 +415,7 @@ export function RegisterPage({
                 className="h-8 gap-1 text-[10px]"
               >
                 <Eye aria-hidden="true" className="size-3.5" />
-                보기
+                {t("register.detail.view")}
               </Button>
             }
           >
@@ -393,32 +424,31 @@ export function RegisterPage({
         ),
       },
     ],
-    [definition],
+    [definition, t],
   );
 
   return (
     <RegisterTemplate
       header={
         <SectionHeader
-          title="29개 표준 관리대장"
-          meta={`${definition.id} · ${definition.name}`}
+          title={t("register.page.title")}
+          meta={`${definition.id} · ${registerName(definition, t)}`}
         />
       }
       notice={
         <div className="mb-4 grid gap-3 rounded-lg border border-border bg-slate-50 p-3 text-[10px] leading-5 text-slate-500 md:grid-cols-[1fr_auto] md:items-center">
-          <span>
-            관리대장은 업무 원본을 재작성하지 않는 읽기 전용 Projection입니다.
-            원본 상태는 업무 화면의 권한·명령·Gate를 통해 변경됩니다.
-          </span>
+          <span>{t("register.page.notice")}</span>
           <span className="font-medium text-slate-700">
-            {workspace.project.name} · {definition.mode === "actionable" ? "업무 연결형" : "조회형"}
+            {workspace.project.name} · {registerModeLabel(definition, t)}
           </span>
         </div>
       }
     >
       <RegisterNavigator
-        roleLabel={entrySpec.label}
-        roleDescription={entrySpec.description}
+        roleLabel={t(entrySpec.labelKey, { defaultValue: entrySpec.label })}
+        roleDescription={t(entrySpec.descriptionKey, {
+          defaultValue: entrySpec.description,
+        })}
         activeId={registerId}
         recommendedItems={navigationItems.recommendedItems}
         groups={navigationItems.groups}
@@ -427,18 +457,24 @@ export function RegisterPage({
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[10px] leading-5 text-slate-400">
         <span className="font-medium text-slate-600">
-          현재 대장 · {definition.id} {definition.name}
+          {t("register.page.current", {
+            id: definition.id,
+            name: registerName(definition, t),
+          })}
         </span>
         <span>
-          원본 {definition.sources.length}종 · 계산필드{" "}
-          {definition.calculatedFields.length}개 · {registerModeLabel(definition)}
+          {t("register.page.summary", {
+            sourceCount: definition.sources.length,
+            fieldCount: definition.calculatedFields.length,
+            mode: registerModeLabel(definition, t),
+          })}
         </span>
       </div>
 
       <FilterBar
         query={query}
         onQueryChange={setQuery}
-        queryPlaceholder="제목, 상태, 위치, ID 검색"
+        queryPlaceholder={t("register.search.placeholder")}
         actions={
           <Button
             type="button"
@@ -449,23 +485,23 @@ export function RegisterPage({
             onClick={() => void load()}
           >
             <RefreshCw aria-hidden="true" className="size-3.5" />
-            새로고침
+            {t("register.refresh")}
           </Button>
         }
       >
         <Select value={sourceFilter} onValueChange={setSourceFilter}>
           <SelectTrigger
-            aria-label="원본 유형 필터"
+            aria-label={t("register.filter.sourceAria")}
             size="sm"
             className="min-w-36 bg-white text-[10px]"
           >
-            <SelectValue placeholder="원본 유형" />
+            <SelectValue placeholder={t("register.filter.sourcePlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">원본 전체</SelectItem>
+            <SelectItem value="all">{t("register.filter.sourceAll")}</SelectItem>
             {sourceOptions.map((option) => (
               <SelectItem key={option} value={option}>
-                {sourceTypeOptionLabel(option, definition)}
+                {sourceTypeOptionLabel(option, definition, t)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -473,14 +509,14 @@ export function RegisterPage({
 
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger
-            aria-label="상태 필터"
+            aria-label={t("register.filter.statusAria")}
             size="sm"
             className="min-w-32 bg-white text-[10px]"
           >
-            <SelectValue placeholder="상태" />
+            <SelectValue placeholder={t("register.filter.statusPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">상태 전체</SelectItem>
+            <SelectItem value="all">{t("register.filter.statusAll")}</SelectItem>
             {statusOptions.map((status) => (
               <SelectItem key={status} value={status}>
                 {states[status] || status}
@@ -493,11 +529,11 @@ export function RegisterPage({
       {error ? (
         <EmptyState
           compact
-          title="관리대장을 불러오지 못했습니다."
+          title={t("register.error.load")}
           description={error}
           action={
             <Button type="button" variant="outline" onClick={() => void load()}>
-              다시 시도
+              {t("register.retry")}
             </Button>
           }
         />
@@ -506,10 +542,13 @@ export function RegisterPage({
           <div className="mt-3 flex items-center justify-between text-[10px] text-slate-400">
             <span>
               {loading
-                ? "조회 중…"
-                : `전체 ${rows.length}건 · 표시 ${filteredRows.length}건`}
+                ? t("register.loading.short")
+                : t("register.count.summary", {
+                    total: rows.length,
+                    visible: filteredRows.length,
+                  })}
             </span>
-            <span>원본 상태 직접 수정 없음</span>
+            <span>{t("register.noDirectStateEdit")}</span>
           </div>
           <RegisterTable
             rows={filteredRows}
@@ -518,7 +557,9 @@ export function RegisterPage({
               `${row.sourceDomainRefs[0]?.objectType}:${row.sourceDomainRefs[0]?.objectId}:${row.sourceDomainRefs[0]?.version}`
             }
             emptyMessage={
-              loading ? "관리대장을 조회하고 있습니다." : "조건에 맞는 기록이 없습니다."
+              loading
+                ? t("register.loading.long")
+                : t("register.empty.filtered")
             }
           />
         </>

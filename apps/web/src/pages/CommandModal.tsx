@@ -1,5 +1,6 @@
 import { scheduleInputs } from "../data/schedule-fields.generated";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   CommandDescriptor,
   DomainRef,
@@ -76,10 +77,11 @@ function referenceOptions(
   field: string,
   workspace: Workspace,
   current: WorkItem,
+  currentRequirementLabel: string,
 ): Array<{ label: string; ref: DomainRef }> {
   if (!selectableReferenceFields.has(field)) return [];
   if (field === "clauseRefs") {
-    return [{ label: "현재 계약 Requirement", ref: workspace.context.requirementRef }];
+    return [{ label: currentRequirementLabel, ref: workspace.context.requirementRef }];
   }
 
   let candidates = workspace.items;
@@ -191,6 +193,7 @@ export function CommandModal({
   onClose: () => void;
   onSubmit: (p: Fields, evidenceIds: string[]) => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       dialog.action.fields.map((f) => [
@@ -222,7 +225,11 @@ export function CommandModal({
             !Number.isFinite(number) ||
             (inputType === "integer" && !Number.isInteger(number))
           )
-            throw new Error(`${fields[f] || f}: 숫자를 입력하십시오.`);
+            throw new Error(
+              t("commandModal.numberRequired", {
+                field: fields[f] || f,
+              }),
+            );
           payload[f] = number;
           continue;
         }
@@ -239,7 +246,7 @@ export function CommandModal({
         .filter(Boolean);
       const uniqueEvidenceIds = [...new Set(evidenceIds)];
       if (dialog.action.requiresEvidence && !uniqueEvidenceIds.length) {
-        throw new Error("이 명령에는 현재 단계의 증빙 ID가 필요합니다.");
+        throw new Error(t("commandModal.evidenceRequired"));
       }
       await onSubmit(payload, uniqueEvidenceIds);
     } catch (e) {
@@ -264,15 +271,16 @@ export function CommandModal({
           <h2>{title}</h2>
           <button
             className="icon-button"
-            aria-label="대화상자 닫기"
+            aria-label={t("commandModal.closeAria")}
             onClick={onClose}
           >
             <Icon name="close" />
           </button>
         </div>
         <p className="muted">
-          원본 v{dialog.item.record.version} 기준 · 제출할 때 권한과 선행조건을
-          다시 검증합니다.
+          {t("commandModal.basis", {
+            version: dialog.item.record.version,
+          })}
         </p>
         <div className="modal-fields">
           {dialog.action.fields.map((f) => (
@@ -285,9 +293,15 @@ export function CommandModal({
                     setValues({ ...values, [f]: e.target.value })
                   }
                 >
-                  <option value="approved">승인</option>
-                  <option value="rejected">거절</option>
-                  <option value="returned">보완 요청</option>
+                  <option value="approved">
+                    {t("commandModal.decision.approved")}
+                  </option>
+                  <option value="rejected">
+                    {t("commandModal.decision.rejected")}
+                  </option>
+                  <option value="returned">
+                    {t("commandModal.decision.returned")}
+                  </option>
                 </select>
               ) : f === "changeRequired" ? (
                 <select
@@ -296,8 +310,12 @@ export function CommandModal({
                     setValues({ ...values, [f]: e.target.value })
                   }
                 >
-                  <option value="false">필요 없음</option>
-                  <option value="true">설계변경 필요</option>
+                  <option value="false">
+                    {t("commandModal.changeRequired.false")}
+                  </option>
+                  <option value="true">
+                    {t("commandModal.changeRequired.true")}
+                  </option>
                 </select>
               ) : (booleanFields.has(f) || scheduleInputs[dialog.item.machine]?.commandFields[f]?.type === "boolean") ? (
                 <select
@@ -306,9 +324,11 @@ export function CommandModal({
                     setValues({ ...values, [f]: e.target.value })
                   }
                 >
-                  {scheduleInputs[dialog.item.machine] && <option value="">선택</option>}
-                  <option value="false">아니오</option>
-                  <option value="true">예</option>
+                  {scheduleInputs[dialog.item.machine] && (
+                    <option value="">{t("commandModal.select")}</option>
+                  )}
+                  <option value="false">{t("common.no")}</option>
+                  <option value="true">{t("common.yes")}</option>
                 </select>
               ) : f === "responsiblePartyId" ? (
                 <select
@@ -317,14 +337,19 @@ export function CommandModal({
                     setValues({ ...values, [f]: e.target.value })
                   }
                 >
-                  <option value="">담당자 선택</option>
+                  <option value="">{t("commandModal.partySelect")}</option>
                   {workspace.participants.map((p) => (
                     <option value={p.partyId} key={p.partyId}>
                       {roles[p.actorGroup]} · {p.name}
                     </option>
                   ))}
                 </select>
-              ) : referenceOptions(f, workspace, dialog.item).length ? (
+              ) : referenceOptions(
+                  f,
+                  workspace,
+                  dialog.item,
+                  t("commandModal.currentRequirement"),
+                ).length ? (
                 <select
                   multiple={multipleReferenceFields.has(f)}
                   value={
@@ -347,9 +372,14 @@ export function CommandModal({
                   }}
                 >
                   {!multipleReferenceFields.has(f) && (
-                    <option value="">참조 선택</option>
+                    <option value="">{t("commandModal.referenceSelect")}</option>
                   )}
-                  {referenceOptions(f, workspace, dialog.item).map(
+                  {referenceOptions(
+                    f,
+                    workspace,
+                    dialog.item,
+                    t("commandModal.currentRequirement"),
+                  ).map(
                     ({ label, ref }) => {
                       const value = JSON.stringify(ref);
                       return (
@@ -368,7 +398,9 @@ export function CommandModal({
                     setValues({ ...values, [f]: e.target.value })
                   }
                   placeholder={
-                    f.endsWith("At") ? "RFC3339 · 시간대 포함" : fields[f] || f
+                    f.endsWith("At")
+                      ? t("commandModal.timeHint")
+                      : fields[f] || f
                   }
                 />
               )}
@@ -378,25 +410,22 @@ export function CommandModal({
         {dialog.action.requiresEvidence ? (
           <div className="modal-fields">
             <label>
-              명령 증빙 ID
+              {t("commandModal.evidenceIds")}
               <textarea
                 rows={2}
                 value={evidenceText}
                 onChange={(e) => setEvidenceText(e.target.value)}
-                placeholder="예: EVD-001, EVD-002"
-                aria-label="명령 증빙 ID"
+                placeholder={t("commandModal.evidencePlaceholder")}
+                aria-label={t("commandModal.evidenceIds")}
               />
               <span className="muted">
-                이 명령 단계의 근거를 명시하십시오. 기존 기록의 증빙은 자동 재사용하지 않습니다.
+                {t("commandModal.evidenceHelp")}
               </span>
             </label>
           </div>
         ) : null}
         {!dialog.action.fields.length && (
-          <div className="notice">
-            이 동작은 서버에 기록됩니다. 근거와 현재 상태를 확인한 뒤
-            실행하십시오.
-          </div>
+          <div className="notice">{t("commandModal.warning")}</div>
         )}
         {err && (
           <div role="alert" className="error-box">
@@ -405,14 +434,16 @@ export function CommandModal({
         )}
         <div className="modal-actions">
           <button className="secondary" onClick={onClose} disabled={busy}>
-            취소
+            {t("commandModal.cancel")}
           </button>
           <button
             className="primary"
             onClick={() => void submit()}
             disabled={busy}
           >
-            {busy ? "검증 중…" : "확인 후 실행"}
+            {busy
+              ? t("commandModal.validating")
+              : t("commandModal.execute")}
           </button>
         </div>
       </section>
