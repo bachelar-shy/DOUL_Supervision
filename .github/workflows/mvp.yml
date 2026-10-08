@@ -36,6 +36,7 @@ jobs:
         run: |
           npm run check:ui-boundary
           .venv/bin/python scripts/generate_schedule_ui.py --check
+          .venv/bin/python scripts/generate_command_ui.py --check
       - name: Typecheck and responsive web build
         run: |
           npm run typecheck

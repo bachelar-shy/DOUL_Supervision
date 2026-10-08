@@ -1,4 +1,5 @@
 import { scheduleInputs } from "../data/schedule-fields.generated";
+import { commandInputs } from "../data/command-fields.generated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
@@ -237,11 +238,11 @@ export function CommandModal({
       for (const f of dialog.action.fields) {
         const v = values[f];
         if (!v?.trim()) continue;
-        const inputType = scheduleInputs[dialog.item.machine]?.commandFields[f]?.type;
+        const inputType = commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.type ?? scheduleInputs[dialog.item.machine]?.commandFields[f]?.type;
         if (
           inputType === "integer" ||
           inputType === "number" ||
-          numericFields.has(f)
+          (!inputType && numericFields.has(f))
         ) {
           const number = Number(v);
           if (
@@ -256,9 +257,9 @@ export function CommandModal({
           payload[f] = number;
           continue;
         }
-        payload[f] = inputType === "boolean" || booleanFields.has(f)
+        payload[f] = inputType === "boolean" || (!inputType && booleanFields.has(f))
           ? v === "true"
-          : inputType === "object" || inputType === "array" || jsonFields.has(f) ||
+          : inputType === "object" || inputType === "array" || (!inputType && jsonFields.has(f)) ||
               (!inputType && /Ids$|Refs$|Ref$|^references$/.test(f))
             ? (JSON.parse(v) as Json)
             : v;
@@ -347,7 +348,7 @@ export function CommandModal({
                     {t("commandModal.changeRequired.true")}
                   </option>
                 </select>
-              ) : (booleanFields.has(f) || scheduleInputs[dialog.item.machine]?.commandFields[f]?.type === "boolean") ? (
+              ) : (commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.type === "boolean" || booleanFields.has(f) || scheduleInputs[dialog.item.machine]?.commandFields[f]?.type === "boolean") ? (
                 <select
                   value={values[f]}
                   onChange={(e) =>
