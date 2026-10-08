@@ -505,6 +505,11 @@ class Engine:
                     require(payload[field]==record['schedule'].get(field), 'IMMUTABLE_FIELD', 'Imported source content requires a new source package: '+field)
         proposed=deepcopy(record)
         target=proposed.setdefault('data',{}) if kind=='WorkItem' else proposed['report'] if machine=='report' else proposed['schedule'] if machine in ['schedule_baseline','schedule_progress'] else proposed['boq'] if machine=='contract_boq' else proposed
+        if machine=='payment_claim' and command in ['record_payment','record_additional_payment','correct_payment_record','cancel_payment_record'] and 'externalSystemRef' not in payload:
+            # This is a per-record input. Do not let the previous payment's
+            # projected reference leak into the uniqueness guard for a later
+            # command that intentionally omits an ERP/system reference.
+            target.pop('externalSystemRef',None)
         for field,value in payload.items():
             if machine in ['schedule_baseline','schedule_progress']:
                 if field=='revision':
