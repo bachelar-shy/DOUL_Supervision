@@ -13,6 +13,7 @@ import {
 } from "../../data/drawing-field-client";
 import { ActionButton, Panel, SectionHeader } from "../../ui";
 import "./drawing-field-management.css";
+import { DrawingImpactPanel } from "./DrawingImpactPanel";
 
 const refLabel = (ref: DomainRef | null) => ref ? `${ref.objectType} · ${ref.objectId} · v${ref.version}` : "연결 없음";
 const refKey = (ref: DomainRef) => `${ref.objectType}:${ref.objectId}:${ref.version}`;
@@ -59,11 +60,13 @@ interface PendingAction {
   key: string;
 }
 
-export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOpenSourceRegistration }: {
+export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOpenSourceRegistration, onSelect, onNavigate }: {
   client: SupervisionClient;
   workspace: Workspace;
   onChanged?: () => void | Promise<void>;
   onOpenSourceRegistration?: () => void;
+  onSelect?: (id: string | null) => void;
+  onNavigate?: (route: string) => void;
 }) {
   const projectId = workspace.project.id;
   const session = client.session;
@@ -89,6 +92,7 @@ export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOp
   const [basisSelections, setBasisSelections] = useState<Record<string, { approvalRef: DomainRef | null; changeRefs: DomainRef[] }>>({});
   const [history, setHistory] = useState<Record<string, unknown>[] | null>(null);
   const [historyFor, setHistoryFor] = useState("");
+  const [impactSelection, setImpactSelection] = useState<{ scope: string; ref: DomainRef } | null>(null);
   const registrationPending = useRef<{ body: string; key: string } | null>(null);
   const alive = useRef(true);
   const sequence = useRef(0);
@@ -407,6 +411,7 @@ export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOp
                 <ActionButton disabled={busy} onClick={() => prepareAction(row, item)}>{labelCommand(item)}</ActionButton>
               </div>;
             })}
+            <ActionButton onClick={() => setImpactSelection({ scope: scopeKey, ref: row.drawingRef })}>영향 업무 보기</ActionButton>
             <button type="button" className="drawing-field-history-button" onClick={() => void showHistory(row)}>변경 이력 보기</button>
             {historyFor === row.id && <div className="drawing-field-history" aria-live="polite">
               {history === null ? <p>이력을 조회하고 있습니다…</p> : history.length ? history.map((entry, index) => {
@@ -427,6 +432,7 @@ export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOp
         })}
       </div>
     </Panel>
+    {impactSelection?.scope === scopeKey && <DrawingImpactPanel key={JSON.stringify([scopeKey, impactSelection.ref])} client={client} workspace={workspace} drawingRef={impactSelection.ref} onSelect={onSelect} onNavigate={onNavigate} />}
     {pending && <div className="drawing-field-scrim"><section role="dialog" aria-modal="true" aria-labelledby="drawing-field-confirm-title" className="drawing-field-dialog">
       <h2 id="drawing-field-confirm-title">{commandLabels[pending.command] || pending.command} 확인</h2>
       <p>{selectedRevision?.drawingNo} · 개정 {selectedRevision?.revision} · {selectedRevision?.id} · 현재 v{pending.expectedVersion}</p>

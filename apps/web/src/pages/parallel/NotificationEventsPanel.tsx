@@ -5,6 +5,7 @@ import type { DrawingImpactNotice, Workspace } from "../../data/ui-contract";
 import { resolveNotificationSourceTarget } from "../../data/notification-target-client";
 import { ActionButton, Panel, SectionHeader } from "../../ui";
 import "./notification-events.css";
+import { DrawingImpactPanel } from "./DrawingImpactPanel";
 
 type Notification = {
   id: string;
@@ -54,6 +55,7 @@ export function NotificationEventsPanel({
   const [busy, setBusy] = useState<{ scopeKey: string; id: string } | null>(null);
   const [errorSnapshot, setErrorSnapshot] = useState<{ scopeKey: string; message: string } | null>(null);
   const [refreshIndex, setRefreshIndex] = useState(0);
+  const [impactSelection, setImpactSelection] = useState<{ scope: string; notice: DrawingImpactNotice } | null>(null);
   const inbox = inboxSnapshot?.scopeKey === scopeKey ? inboxSnapshot.data : { items: [], total: 0, unreadCount: 0 };
   const error = errorSnapshot?.scopeKey === scopeKey ? errorSnapshot.message : "";
   const busyId = busy?.scopeKey === scopeKey ? busy.id : "";
@@ -161,7 +163,7 @@ export function NotificationEventsPanel({
                   <strong>{drawingImpact?.title ?? "내 업무 변경"}</strong>
                   <span className="notification-events-read-state">{isRead ? "읽음" : "안 읽음"}</span>
                 </div>
-                {drawingImpact && <p data-drawing-impact={drawingImpact.incidentId}>{drawingImpact.message}</p>}
+                {drawingImpact && <><p data-drawing-impact={drawingImpact.incidentId}>{drawingImpact.message}</p><ActionButton onClick={() => setImpactSelection({ scope: scopeKey, notice: drawingImpact })}>영향 업무 보기</ActionButton></>}
                 <p className="notification-events-source">
                   {notification.sourceRef.objectType} · {notification.sourceRef.objectId} · v{notification.sourceRef.version}
                 </p>
@@ -197,6 +199,7 @@ export function NotificationEventsPanel({
           );})}
         </ul>
       )}
+      {impactSelection?.scope === scopeKey && <DrawingImpactPanel key={JSON.stringify([scopeKey, impactSelection.notice])} client={client} workspace={workspace} drawingRef={impactSelection.notice.drawingRef} incidentId={impactSelection.notice.incidentId} onSelect={onSelect} onNavigate={onNavigate} />}
     </Panel>
   );
 }

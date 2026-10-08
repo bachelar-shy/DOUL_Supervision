@@ -44,3 +44,19 @@ export type DrawingImpactNotice = {
   reason: string;
   occurredAt: string;
 };
+
+export interface DrawingImpactIncident {
+  incidentId: string;
+  drawingRef: DomainRef;
+  title?: string;
+  revision?: string;
+  reason: string;
+  occurredAt: string;
+  items: Array<{
+    sourceRef: DomainRef;
+    machine: string;
+    title: string;
+    status: string;
+    responsiblePartyId: string;
+  }>;
+}
