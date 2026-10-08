@@ -10,7 +10,7 @@
   ],
   "benchmark": {
     "fixture": "/workspace/work/doul-goal/operations/scripts/benchmark_work_inbox_http.py",
-    "afterCommitEvidence": "/tmp/doul-goal-ops-http-after-b85c928-clean.json",
+    "afterCommitEvidence": "/workspace/work/doul-goal/operations/design/verification/issue124-live-http-after-b85c928-20261008.json",
     "beforeEvidence": "/workspace/work/doul-goal/operations/design/verification/issue124-live-http-20261008.json",
     "datasetRows": 50000,
     "pageSize": 1,
