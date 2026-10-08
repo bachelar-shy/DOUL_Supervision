@@ -2,6 +2,7 @@ export { AdminPage } from "./AdminPage";
 export { CapturePage } from "./CapturePage";
 export { CommandModal } from "./CommandModal";
 export { ContractPage } from "./ContractPage";
+export { MeasurementPaymentPage } from "./MeasurementPaymentPage";
 export { DocumentPage } from "./DocumentPage";
 export { OwnerGovernancePage } from "./OwnerGovernancePage";
 export { RegisterPage } from "./RegisterPage";

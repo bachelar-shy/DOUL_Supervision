@@ -47,6 +47,12 @@ export const routes: readonly UiRoute[] = [
     icon: "report",
   },
   {
+    id: "payment",
+    label: "Payment",
+    labelKey: "payment.title",
+    icon: "table",
+  },
+  {
     id: "safety",
     label: "Safety",
     labelKey: "navigation.safety",
@@ -158,11 +164,12 @@ export const roleRoutes: Record<HumanRole, readonly string[]> = {
     "safety",
     "schedule",
     "contract",
+    "payment",
     "rfis",
     "documents",
     "registers",
   ],
-  OWN: ["today", "schedule", "contract", "owner", "issues", "documents", "registers"],
+  OWN: ["today", "schedule", "contract", "payment", "owner", "issues", "documents", "registers"],
   DES: ["today", "rfis", "capture", "documents", "registers"],
   ADM: allRouteIds,
 };

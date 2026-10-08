@@ -17,6 +17,7 @@ import {
   CapturePage,
   CommandModal,
   ContractPage,
+  MeasurementPaymentPage,
   DocumentPage,
   OwnerGovernancePage,
   ParallelTestPage,
@@ -28,6 +29,7 @@ import {
 } from "../pages";
 import { Icon } from "../pages/shared";
 import { machineForRoute, mobileRoutes, roleRoutes, routes } from "./routes";
+import { paymentLabelKeys } from "../data/payment-workspace";
 import {
   appLanguages,
   changeAppLanguage,
@@ -408,6 +410,16 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   onSelect={setSelected}
                   refresh={refresh}
                   onOpenCommand={(item, action) => setDialog({ item, action })}
+                />
+              )}
+              {safeRoute === "payment" && (
+                <MeasurementPaymentPage
+                  client={client} workspace={workspace} selected={selected}
+                  current={current} online={online} onSelect={setSelected}
+                  refresh={refresh}
+                  onOpenCommand={(item, action) => setDialog({ item, action })}
+                  createCapabilities={workspace.context.creationCapabilities}
+                  labels={Object.fromEntries(paymentLabelKeys.map(key => [key, t(`payment.${key}`)]))}
                 />
               )}
               {safeRoute === "safety" && (

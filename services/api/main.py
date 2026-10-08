@@ -126,7 +126,7 @@ def sniff(data):
     raise ContractError('MIME_INVALID','Supported development formats: JSON/ PNG/JPEG/GIF/WebP/MP4/WebM/WAV/MP3/PDF')
 
 
-def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=None, document_runtime=None, authentication=None):
+def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=None, document_runtime=None, authentication=None, signature_verifier=None):
     from services.runtime_config import environment
     stage=environment()
     if demo and stage!='development':raise RuntimeError('Demonstration mode is forbidden outside development')
@@ -145,6 +145,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     store=persistence if persistence is not None else create_local_persistence(db_path,demo=True)
     app=FastAPI(title='DOUL Supervision API',version='0.1.0',docs_url='/api-docs' if demo else None,openapi_url='/openapi.json' if demo else None,redoc_url=None)
     app.state.document_runtime=document_runtime
+    app.state.signature_verifier=signature_verifier
     if document_runtime is None and os.getenv('DOUL_DOCUMENT_RUNTIME') == 'local':
         from services.document_runtime.render import LocalDocumentRuntime
         app.state.document_runtime=LocalDocumentRuntime(os.environ['DOUL_DOCUMENT_CACHE'])
@@ -1082,10 +1083,23 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
 
     @app.post('/projects/{project_id}/documents/{document_id}/sign')
     async def sign(project_id:str,document_id:str,request:Request):
-        session=identity(request);body=await body_json(request);key_for(request);validate(body,SCHEMAS['SignRequest'],SCHEMAS)
-        with store.transaction():
+        session=identity(request);body=await body_json(request);key=key_for(request);validate(body,SCHEMAS['SignRequest'],SCHEMAS)
+        with store.transaction(True):
             role=role_for(session,project_id,body['roleAssignmentId']);d=store.documents.get(document_id);readable(d,session,role)
-            raise ContractError('ADAPTER_NOT_CONFIGURED','A trusted legal-signature verifier is required. Client assertions are never accepted as verified signatures.')
+            require(app.state.signature_verifier is not None,'ADAPTER_NOT_CONFIGURED','A trusted legal-signature verifier is required. Client assertions are never accepted as verified signatures.')
+            from .signature_verification import authorize_signing_request, load_verified_original_file, verify_and_sign
+            signing=dict(project_id=project_id,document_id=document_id,party_id=session['partyId'],
+                         role_assignment=role,signer_role=body['roleCode'],method=body['method'],document_hash=body['documentHash'])
+            authorize_signing_request(store.documents,**signing)
+            cached,request_key,fingerprint=application_replay('document-sign:'+document_id,key,project_id,session,body)
+            if cached is not None:return cached
+            result=verify_and_sign(app.state.signature_verifier,store.documents,**signing,
+                idempotency_key=key,original_file_id=body.get('originalFileId'),
+                original_file_loader=lambda file_id:load_verified_original_file(store.engine,
+                    project_id=project_id,party_id=session['partyId'],role_assignment=role,
+                    original_file_id=file_id,blob_loader=store.blob))
+            store.requests[request_key]={'hash':fingerprint,'result':deepcopy(result)}
+            return result
 
     @app.get('/projects/{project_id}/{collection}/{object_id}/available-actions')
     def available(project_id:str,collection:str,object_id:str,request:Request):

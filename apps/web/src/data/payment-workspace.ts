@@ -1,13 +1,8 @@
-import type { RecordDTO, WorkItem } from "./ui-contract";
+import type { CreationCapability, RecordDTO, WorkItem } from "./ui-contract";
 
 export type PaymentMachine = "contract_boq" | "quantity_measurement" | "payment_claim";
 
-export interface PaymentCreateCapability {
-  status: "available" | "unauthorized" | "prerequisites_missing" | "unavailable";
-  canCreate: boolean;
-  authority: string;
-  reasons: string[];
-}
+export type PaymentCreateCapability = CreationCapability;
 
 export type PaymentLabelKey =
   | "title" | "description" | "boq" | "measurements" | "claims"
