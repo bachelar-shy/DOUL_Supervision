@@ -14,6 +14,7 @@ import {
 import { ActionButton, Panel, SectionHeader } from "../../ui";
 import "./drawing-field-management.css";
 import { DrawingImpactPanel } from "./DrawingImpactPanel";
+import { formatDateTime } from "../../i18n/format";
 
 const refLabel = (ref: DomainRef | null) => ref ? `${ref.objectType} · ${ref.objectId} · v${ref.version}` : "연결 없음";
 const refKey = (ref: DomainRef) => `${ref.objectType}:${ref.objectId}:${ref.version}`;
@@ -369,7 +370,7 @@ export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOp
             <div className="drawing-field-receipts"><strong>배포 및 수령</strong>
               {row.requiredRecipientPartyIds.map(id => {
                 const receipt = receipts.find(item => item.recipientPartyId === id);
-                return <span key={id}>{receipt?.recipientName || participants.find(person => person.partyId === id)?.name || id} · {!receipt?.deliveredAt ? "미배포" : receipt.receivedAt ? "수령 확인" : "수령 대기"}{receipt?.deliveredAt ? ` · 배포 ${new Date(receipt.deliveredAt).toLocaleString("ko-KR")}` : ""}{receipt?.receivedAt ? ` · 수령 ${new Date(receipt.receivedAt).toLocaleString("ko-KR")}` : ""}{receipt?.returnedAt ? ` · 구본 회수 ${new Date(receipt.returnedAt).toLocaleString("ko-KR")}` : ""}</span>;
+                return <span key={id}>{receipt?.recipientName || participants.find(person => person.partyId === id)?.name || id} · {!receipt?.deliveredAt ? "미배포" : receipt.receivedAt ? "수령 확인" : "수령 대기"}{receipt?.deliveredAt ? ` · 배포 ${formatDateTime(receipt.deliveredAt)}` : ""}{receipt?.receivedAt ? ` · 수령 ${formatDateTime(receipt.receivedAt)}` : ""}{receipt?.returnedAt ? ` · 구본 회수 ${formatDateTime(receipt.returnedAt)}` : ""}</span>;
               })}
             </div>
             {rowCommands.map(item => {
@@ -418,7 +419,7 @@ export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOp
                 const event = String(entry.event || "");
                 const actor = participants.find(person => person.partyId === entry.actorPartyId);
                 const after = entry.after && typeof entry.after === "object" ? entry.after as Record<string, unknown> : {};
-                const occurredAt = typeof entry.occurredAt === "string" ? new Date(entry.occurredAt).toLocaleString("ko-KR") : "시간 미확인";
+                const occurredAt = typeof entry.occurredAt === "string" ? formatDateTime(entry.occurredAt) : "시간 미확인";
                 return <article key={String(entry.id || index)}>
                   <strong>{eventLabels[event] || "도면 관리 변경"}</strong>
                   <time>{occurredAt}</time>

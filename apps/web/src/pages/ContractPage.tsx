@@ -25,7 +25,7 @@ import { PageBoundary } from "./PageBoundary";
 import { recordRef, recordTitle } from "./record-utils";
 import { RecordList } from "./shared";
 import i18n from "../i18n/config";
-import { formatDateTime, formatNumber } from "../i18n/format";
+import { formatCurrency, formatDateTime } from "../i18n/format";
 
 const contractMachines = [
   "contract_notice",
@@ -110,9 +110,9 @@ function formatDate(value: unknown) {
   return formatDateTime(date);
 }
 
-function numberText(value: unknown, suffix = "") {
+function numberText(value: unknown, currency?: string) {
   return typeof value === "number" && Number.isFinite(value)
-    ? `${formatNumber(value)}${suffix}`
+    ? formatCurrency(value, currency)
     : tr("contract.value.none");
 }
 
@@ -173,7 +173,7 @@ function ClaimBoundary({ record }: { record: RecordDTO }) {
           label: tr("contract.claim.claimed.label"),
           value: numberText(
             data.amountClaimed,
-            typeof data.currency === "string" ? ` ${data.currency}` : "",
+            typeof data.currency === "string" ? data.currency : undefined,
           ),
           detail: tr("contract.claim.claimed.detail"),
         },
@@ -182,7 +182,7 @@ function ClaimBoundary({ record }: { record: RecordDTO }) {
           label: tr("contract.claim.assessed.label"),
           value: numberText(
             data.amountAssessed,
-            typeof data.currency === "string" ? ` ${data.currency}` : "",
+            typeof data.currency === "string" ? data.currency : undefined,
           ),
           detail: tr("contract.claim.assessed.detail"),
           tone: "warning",
@@ -192,7 +192,7 @@ function ClaimBoundary({ record }: { record: RecordDTO }) {
           label: tr("contract.claim.approved.label"),
           value: numberText(
             data.amountApproved,
-            typeof data.currency === "string" ? ` ${data.currency}` : "",
+            typeof data.currency === "string" ? data.currency : undefined,
           ),
           detail: data.decisionOutcome
             ? tr("contract.claim.decision", {

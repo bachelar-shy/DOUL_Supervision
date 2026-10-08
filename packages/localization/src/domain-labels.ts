@@ -1,3 +1,6 @@
+import { paymentCommandKo } from "./payment-command-translations";
+import { paymentStateKo } from "./payment-state-translations";
+
 export const roles: Record<string, string> = {
   SUP: "감리",
   CON: "시공사",
@@ -90,6 +93,7 @@ export const states: Record<string, string> = {
   settled: "합의",
   time_impact_review: "공기영향 검토",
   baseline_update_pending: "기준공정 개정 대기",
+  ...paymentStateKo,
 };
 export const commands: Record<string, string> = {
   "submit_baseline": "기준공정 제출",
@@ -236,6 +240,7 @@ export const commands: Record<string, string> = {
   submit_result: "장비검사 결과 제출",
   restrict: "장비 사용 제한",
   require_reinspection: "장비 재점검 요구",
+  ...paymentCommandKo,
 };
 export const fields: Record<string, string> = {
   importedAt: "원본 등록 시각",

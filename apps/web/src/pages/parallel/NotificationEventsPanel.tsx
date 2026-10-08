@@ -6,6 +6,7 @@ import { resolveNotificationSourceTarget } from "../../data/notification-target-
 import { ActionButton, Panel, SectionHeader } from "../../ui";
 import "./notification-events.css";
 import { DrawingImpactPanel } from "./DrawingImpactPanel";
+import { formatDateTime } from "../../i18n/format";
 
 type Notification = {
   id: string;
@@ -29,8 +30,7 @@ function asInbox(value: unknown): Inbox {
   };
 }
 function formatDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString("ko-KR");
+  return formatDateTime(value);
 }
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);

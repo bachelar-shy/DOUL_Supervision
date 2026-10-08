@@ -8,6 +8,18 @@ import {
   contractKo,
   contractVi,
 } from "./contract-translations";
+import { paymentEn, paymentKo, paymentVi } from "./payment-translations";
+import { ownerEn, ownerVi } from "./owner-translations";
+import { registerEn, registerVi } from "./register-translations";
+import {
+  paymentCommandEn,
+  paymentCommandVi,
+} from "./payment-command-translations";
+import { uiErrorEn, uiErrorKo, uiErrorVi } from "./ui-error-translations";
+import {
+  paymentStateEn,
+  paymentStateVi,
+} from "./payment-state-translations";
 import { evidenceDraftEn, evidenceDraftVi } from "./evidence-translations";
 
 export {
@@ -669,6 +681,9 @@ const ko = {
   "common.unknown": "미확인",
   ...scheduleKo,
   ...contractKo,
+  ...paymentKo,
+  ...uiErrorKo,
+  "navigation.parallelTest": "병렬 기능 테스트",
 } as const;
 
 export type TranslationKey = keyof typeof ko;
@@ -923,6 +938,13 @@ const vi: DraftTranslationDictionary = {
   ...scheduleVi,
   ...contractVi,
   ...evidenceDraftVi,
+  ...paymentVi,
+  ...ownerVi,
+  ...registerVi,
+  ...paymentCommandVi,
+  ...uiErrorVi,
+  ...paymentStateVi,
+  "navigation.parallelTest": "Kiểm thử tính năng song song",
 };
 
 const en: DraftTranslationDictionary = {
@@ -1174,6 +1196,13 @@ const en: DraftTranslationDictionary = {
   ...scheduleEn,
   ...contractEn,
   ...evidenceDraftEn,
+  ...paymentEn,
+  ...ownerEn,
+  ...registerEn,
+  ...paymentCommandEn,
+  ...uiErrorEn,
+  ...paymentStateEn,
+  "navigation.parallelTest": "Parallel feature tests",
 };
 
 export const resources = {

@@ -10,6 +10,7 @@ import {
   legacyKoreanReasonLabel,
   legacyKoreanRoles,
   legacyKoreanStates,
+  normalizeLanguage,
 } from "@doul/localization";
 
 function localizedRecord(
@@ -47,5 +48,8 @@ export const fields = localizedRecord("field", {
 });
 export const reasonLabel = (code?: string) =>
   i18n.t(`reason.${code || "default"}`, {
-    defaultValue: koreanReasonLabel(code) || legacyKoreanReasonLabel(code),
+    defaultValue:
+      normalizeLanguage(i18n.resolvedLanguage ?? i18n.language) === "ko"
+        ? koreanReasonLabel(code) || legacyKoreanReasonLabel(code)
+        : i18n.t("reason.default"),
   });

@@ -39,11 +39,16 @@ export function formatNumber(value: number) {
   return new Intl.NumberFormat(activeLocale()).format(value);
 }
 
-export function formatCurrency(value: number | string, currency = "VND") {
+export function formatCurrency(value: number | string, currency?: string) {
   const numeric = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(numeric)) return String(value);
-  return new Intl.NumberFormat(activeLocale(), {
-    style: "currency",
-    currency,
-  }).format(numeric);
+  if (!currency) return formatNumber(numeric);
+  try {
+    return new Intl.NumberFormat(activeLocale(), {
+      style: "currency",
+      currency,
+    }).format(numeric);
+  } catch {
+    return `${formatNumber(numeric)} ${currency}`;
+  }
 }

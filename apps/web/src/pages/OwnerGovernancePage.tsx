@@ -7,7 +7,7 @@ import { OwnerReportTemplate } from "../ui/templates";
 import { PageBoundary } from "./PageBoundary";
 import { RecordList } from "./shared";
 import { recordTitle } from "./record-utils";
-import { formatDateTime } from "../i18n/format";
+import { formatDateTime, formatNumber } from "../i18n/format";
 import i18n from "../i18n/config";
 
 function tr(
@@ -31,7 +31,13 @@ function impactRows(value: unknown) {
     value:
       item === null || item === undefined || item === ""
         ? tr("owner.value.noInfo")
-        : String(item),
+        : typeof item === "number"
+          ? formatNumber(item)
+          : typeof item === "boolean"
+            ? tr(item ? "common.yes" : "common.no")
+            : typeof item === "string" && /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(item)
+              ? formatDate(item)
+              : String(item),
   }));
 }
 
