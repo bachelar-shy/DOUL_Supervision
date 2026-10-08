@@ -35,8 +35,9 @@
     {
       "rank": 5,
       "workstream": "quality_report_and_crosscutting_scenario_integration",
-      "reason": "Quality and Owner report have separate backend/UI pieces but lack one integrated scenario; AUTH/QUAL/ADM, storage failure and offline conflict also need targeted acceptance flows.",
-      "deliverable": "Prioritize exact missing scenarios from inventory and keep function/stage promotions bounded to proven subfeatures."
+      "reason": "A new synthetic-fixture real-HTTP AC-Q flow now proves initial failure, confirmed observation, issue/action, failed reinspection and retry, current-cycle evidence closure, FM-09 signing through an explicitly test-only verifier, and the separate Owner report receipt/close lifecycle. Connected browser acceptance, real verifier/site evidence, and an evidence record from another authorized scope remain unproven.",
+      "deliverable": "Use tests_mvp/test_quality_closed_loop_http.py as bounded development evidence; add browser acceptance using actual connected UI. Extend cross-scope close selection only when a properly authorized second scope fixture exists, and retain AUTH/QUAL/ADM, storage failure, and offline conflict scenarios.",
+      "acceptanceBoundary": "The API test uses demo project configuration, synthetic evidence, and MockTrustedVerifier; it is not field, legal-provider, or pilot proof. Out-of-scope evidence creation is rejected at upload with SCOPE_MISMATCH, so no foreign-scope Evidence is fabricated for a closure test."
     }
   ],
   "pilotBlockers": [
