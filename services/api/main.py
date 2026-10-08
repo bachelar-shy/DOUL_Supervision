@@ -272,7 +272,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             if transition['from']!=record['status']:continue
             try:store.engine.authorize(record,transition['authority'],session['partyId'],role['id'])
             except ContractError:continue
-            preview=clone_for_preview(store.engine,borrow_runtime=borrow_runtime)
+            preview=clone_for_preview(store.engine,borrow_runtime=True) if borrow_runtime else clone_for_preview(store.engine)
             failure=None
             try:preview.execute(machine,record['id'],transition['command'],record['version'],payload or {},[],session['partyId'],role['id'],uid())
             except ContractError as exc:failure=error_body(exc)
