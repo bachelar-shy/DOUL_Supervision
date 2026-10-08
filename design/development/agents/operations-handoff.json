@@ -49,5 +49,10 @@
     "Recovery evidence is a synthetic disposable development rehearsal, not site RPO/RTO, production backup/restore certification, or production-scale performance evidence.",
     "The local volume had tight overlay space; disposable recovery used bounded tmpfs. No operational fixtures remain running."
   ],
-  "restart": "From /workspace/work/doul-goal/operations on goal/operational-validation-v1, keep this checkpoint and evidence. After /root/capabilities reports its optimization commit ready, rerun /workspace/DOUL_Supervision/work/priority-venv/bin/python scripts/benchmark_work_inbox_http.py --records 50000 --rounds 3 --page-size 1 --output /tmp/doul-goal-ops-http-after.json; report before/after latency, CPU and RSS without overwriting baseline. Then update this handoff/evidence and notify /root for integration."
+  "restart": "From /workspace/work/doul-goal/operations on goal/operational-validation-v1, keep this checkpoint and evidence. After /root/capabilities reports its optimization commit ready, rerun /workspace/DOUL_Supervision/work/priority-venv/bin/python scripts/benchmark_work_inbox_http.py --records 50000 --rounds 3 --page-size 1 --output /tmp/doul-goal-ops-http-after.json; report before/after latency, CPU and RSS without overwriting baseline. Then update this handoff/evidence and notify /root for integration.",
+  "contractReferences": {
+    "storageOperations": "infra/storage-operations.md sections 2-4, 6-7, 9; specifies object/version integrity, private access, encryption, clean restore, and leaves RPO/RTO to #46, but sets no API latency SLO",
+    "backupRestore": "infra/backup/README.md and infra/backup/RECOVERY_RUNBOOK.md; PostgreSQL-only backup slice is not full object recovery and Pilot still needs consistency boundary, object-version recovery, secret recovery, RPO/RTO, and approval",
+    "existingInboxBenchmark": "design/verification/work-inbox-issue124-benchmark.json; projection-only and explicitly excludes source construction, authorization/dependency reads, command-preview clone, API/store transaction, persistence IO, and process RSS; its 72ms 50k projection result is not comparable to live HTTP latency"
+  }
 }
