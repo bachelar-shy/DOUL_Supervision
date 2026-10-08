@@ -1,0 +1,28 @@
+{
+  "task": "Trusted signature verification adapter boundary",
+  "branch": "goal/create-capabilities-v1",
+  "root_api_wiring_commit": "9848203",
+  "helper_interface": {
+    "protocol": "SignatureVerifier.verify(SignatureVerificationRequest) -> Mapping receipt",
+    "preauthorization": "authorize_signing_request(documents, *, project_id, document_id, party_id, role_assignment, signer_role, method, document_hash) -> deep-copied current DocumentSnapshot",
+    "sign": "verify_and_sign(verifier, documents, *, project_id, document_id, party_id, role_assignment, signer_role, method, document_hash, idempotency_key, original_file_id=None, original_file_loader=None)",
+    "original_file_loader": "load_verified_original_file(engine, *, project_id, party_id, role_assignment, original_file_id, blob_loader) -> bytes"
+  },
+  "done": [
+    "Trusted adapter Protocol and immutable request carry the frozen document, preserved render bytes/hash, authenticated party/assignment, signer role, method, idempotency key, and server-loaded original bytes when wet-original verification is requested.",
+    "Preauthorization rechecks current document status/hash, read and sign authority, required signer role, and current qualification before route replay or adapter calls.",
+    "Verifier receipt must bind verified=true, partyId, exact documentHash, method, signerRole, and original file ID/hash where applicable before unchanged Documents.sign persists a signature.",
+    "Wet-original bytes resolve through one visible Evidence record in the same project and are rechecked against its stored file hash.",
+    "No production or default fake verifier was added. Missing adapter remains ADAPTER_NOT_CONFIGURED/501."
+  ],
+  "tests": [
+    "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_signature_verification_http -v",
+    "The HTTP suite has nine boundary cases and injects an explicitly labeled test-only mock trusted verifier; it does not prove external provider or legal-paper verification."
+  ],
+  "todo": [
+    "The root-owned API handler patch in 9848203 must be included in integration; its diff was applied locally to services/api/main.py for running these tests and must not be included in this agent's helper/test commit.",
+    "A real approved e-signature or wet-original verifier must be installed and operated before any signature record represents external proof. The injected test mock is not provider evidence.",
+    "Evaluate whether audit storage should preserve a provider receipt reference or hash beyond the existing document:sign request hash and Signature fields before production provider rollout."
+  ],
+  "operational_boundary": "Current work opens a trusted injection point and protects the HTTP boundary. It does not verify an actual external signature or prove wet-paper examination."
+}
