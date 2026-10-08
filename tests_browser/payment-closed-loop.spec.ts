@@ -113,10 +113,17 @@ async function setField(dialog: Locator, field: string, value: unknown) {
   throw new Error(`UI command form did not expose field ${field} (${fieldLabel(field)})`);
 }
 
-async function runCommand(page: Page, command: string, payload: Record<string, unknown> = {}, evidenceIds: string[] = []) {
+async function runCommand(
+  page: Page,
+  command: string,
+  payload: Record<string, unknown> = {},
+  evidenceIds: string[] = [],
+  configureDialog?: (dialog: Locator) => Promise<void>,
+) {
   await page.getByRole("button", { name: commandLabel(command), exact: true }).click();
   const dialog = page.getByRole("dialog", { name: commandLabel(command), exact: true });
   for (const [field, value] of Object.entries(payload)) await setField(dialog, field, value);
+  if (configureDialog) await configureDialog(dialog);
   if (evidenceIds.length) {
     const textareas = dialog.locator("textarea");
     await textareas.last().fill(evidenceIds.join(" "));
@@ -174,23 +181,30 @@ test("real UI/API payment chain preserves server quantities, exact Owner decisio
   await selectTab(page, "계약 BOQ");
   const boqDraft = await createDraft(page, "계약 BOQ", boqTitle, `BOQ-${suffix}`);
   const boqRef = (record: any): Ref => ({ objectType: "InformationItem", objectId: record.id, version: record.version });
+  let boqItemId = "";
   let boq = await runCommand(page, "submit_boq", {
     currency: "VND",
     contractRef: seeded.requirementRef,
     effectiveFrom: "2026-01-01T00:00:00Z",
     sourceFileRefs: [seeded.evidenceRef],
-    lineItems: [{
-      boqItemId: "ITEM-001", itemNo: "A.01", description: "Concrete work", unit: "m3",
-      contractQuantity: "100", unitRate: "20", contractAmount: "2000",
-      packageId: seeded.scope.packageId, discipline: seeded.scope.discipline,
-      locationScope: [seeded.scope.locationId], measurementRuleRef: seeded.requirementRef,
-      variationEligible: true, provisional: false,
-    }],
     provisionalSumRules: [],
     measurementRulesRef: seeded.requirementRef,
     roundingRule: "contract-currency-rule-v1",
     revisionBasisRefs: [],
-  }, [seeded.evidenceId]);
+  }, [seeded.evidenceId], async (dialog) => {
+    await dialog.getByRole("button", { name: "항목 추가", exact: true }).click();
+    const line = dialog.locator("fieldset[data-boq-item-id]").first();
+    boqItemId = (await line.getAttribute("data-boq-item-id")) || "";
+    expect(boqItemId).toBeTruthy();
+    await line.getByLabel("항목 번호", { exact: true }).fill("A.01");
+    await line.getByLabel("단위", { exact: true }).fill("m3");
+    await line.getByLabel("설명", { exact: true }).fill("Concrete work");
+    await line.getByLabel("계약 수량", { exact: true }).fill("100");
+    await line.getByLabel("단가", { exact: true }).fill("20");
+    await line.getByLabel("계약 금액", { exact: true }).fill("2000");
+    await line.getByLabel("기성 측정 규칙 참조", { exact: true }).selectOption(JSON.stringify(seeded.requirementRef));
+    await line.getByLabel("변경 대상 가능", { exact: true }).check();
+  });
   expect(boq.id).toBe(boqDraft.id);
   boq = await runCommand(page, "start_boq_review");
   boq = await runCommand(page, "request_boq_decision");
@@ -205,6 +219,7 @@ test("real UI/API payment chain preserves server quantities, exact Owner decisio
   await selectRecord(page, boqTitle);
   boq = await runCommand(page, "activate_boq");
   expect(boq.status).toBe("effective");
+  expect(boq.boq.lineItems[0].boqItemId).toBe(boqItemId);
   expect(boq.boq.lineItems[0].contractQuantity).toBe("100");
 
   await chooseRole(page, "CON");
@@ -215,7 +230,7 @@ test("real UI/API payment chain preserves server quantities, exact Owner decisio
     periodEnd: "2026-09-30T23:59:59Z",
     measuredAt: "2026-10-04T12:00:00Z",
     boqRef: boqRef(boq),
-    boqItemRef: { boqRef: boqRef(boq), boqItemId: "ITEM-001" },
+    boqItemRef: { boqRef: boqRef(boq), boqItemId },
     claimedQuantity: "80.125",
     unit: "m3",
     measurementMethod: "joint field measurement",
@@ -282,6 +297,7 @@ test("real UI/API payment chain preserves server quantities, exact Owner decisio
   const beforePay = claim.version;
   claim = await runCommand(page, "record_payment", {
     paymentAmount: "500", paidAt: "2026-10-04T12:00:00Z", paymentReference: `BANK-${suffix}`,
+    externalSystemRef: `ERP-${suffix}`,
   }, [seeded.evidenceId]);
   expect(claim.version).toBeGreaterThan(beforePay);
   const originalRecords = structuredClone(claim.data.paymentRecords);
@@ -294,6 +310,7 @@ test("real UI/API payment chain preserves server quantities, exact Owner decisio
     supersedesPaymentRecordId: originalRecords[0].recordId,
     paymentAmount: "450", paidAt: "2026-10-04T12:00:00Z",
     paymentReference: `BANK-CORR-${suffix}`,
+    externalSystemRef: `ERP-CORR-${suffix}`,
     correctionReason: "Bank advice corrected the first transfer",
   }, [seeded.evidenceId]);
   expect(claim.data.paymentRecords).toHaveLength(2);
