@@ -25,7 +25,7 @@ const completionFixtures = [
         handoverNo: "HO-UI-01", handoverReady: true, readinessStatus: "ready",
         handoverScope: { scopeId: "SCOPE-A", system: "Pump train A", locationIds: ["LOC-A"], assetRefs: [ref("Asset", "asset-a")] },
         handoverProfileRef: ref("Requirement", "req-handover-1"), acceptedDocumentRefs: [ref("InformationItem", "asbuilt-1")],
-        reservations: [{ issueRef: ref("Issue", "issue-open-1"), ownerPartyId: "OWNER-1", dueAt: "2026-10-30T00:00:00Z", requirement: "Replace acoustic insulation" }],
+        reservations: [{ issueRef: ref("Issue", "issue-open-1"), ownerPartyId: "OWNER-1", dueAt: "2026-10-30T00:00:00Z", closureRequirement: "Replace acoustic insulation" }],
         acceptedScope: { scopeId: "SCOPE-A", system: "Pump train A", locationIds: ["LOC-A"], assetRefs: [ref("Asset", "asset-a")] },
         warrantyStartAt: "2026-10-01T00:00:00Z",
       },
