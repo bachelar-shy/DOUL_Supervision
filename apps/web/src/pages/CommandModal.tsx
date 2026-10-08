@@ -385,6 +385,7 @@ export function CommandModal({
                   commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference,
                 ).length ? (
                 <select
+                  aria-label={fields[f] || f}
                   multiple={(commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f))}
                   value={
                     (commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f))
