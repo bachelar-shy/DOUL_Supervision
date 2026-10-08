@@ -220,6 +220,9 @@ async function createPassedReverification(
 }
 
 test("Safety real API loop keeps Permit authorization, Stop Lift, and Permit resume distinct", async ({ page, request }) => {
+  // This scenario performs multiple authenticated HTTP and UI transitions.
+  // CI measured more than 30 seconds; keep each state/authority assertion intact.
+  test.setTimeout(120000);
   const con = await login(request, "CON");
   const sup = await login(request, "SUP");
   expect(con.projectId).toBe(sup.projectId);
