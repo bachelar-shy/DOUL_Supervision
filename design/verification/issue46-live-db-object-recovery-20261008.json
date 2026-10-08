@@ -1,0 +1,28 @@
+{
+  "backupEncrypted": true,
+  "bundleSha256": "331f16fc488cc5a025282b06321d748601cdd8ea38532472c91c24f2cf75f4b0",
+  "checks": {
+    "databaseSnapshotAndBlobFingerprintMatches": true,
+    "previouslyRunningWriterServicesResumed": true,
+    "promotionRemainsUnapproved": true,
+    "restoredBucketAnonymousReadDenied": true,
+    "restoredObjectVersionHistoryMatches": true,
+    "sourceObjectVersionsAndDeleteMarkersPreserved": true,
+    "tamperedBundleRejectedBeforeTargetMutation": true,
+    "wrongEncryptionKeyRejectedBeforeTargetMutation": true
+  },
+  "composeProject": "doul-goal-ops-recovery",
+  "containerPrefix": "doul-goal-ops-recovery",
+  "ports": {
+    "postgres": 15434,
+    "s3": 19000
+  },
+  "restoreDurationSeconds": 0.849,
+  "restoredDatabase": "doul_restore_80c716dae6e4404fa092e209d8c02ec2",
+  "restoredObjectVersionCount": 5,
+  "scopeLimit": "Synthetic disposable source snapshot only; this does not certify a project/site recovery or set RPO/RTO.",
+  "service": "PostgreSQL 16 + RustFS 1.0.1",
+  "sourceObjectVersionCount": 5,
+  "status": "passed",
+  "totalDurationSeconds": 84.706
+}
