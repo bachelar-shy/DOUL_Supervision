@@ -260,13 +260,15 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             return True
         return False
 
+    from services.api.modules.command_preview import clone_for_preview
+
     def preflight(machine,record,session,role,payload=None):
         results=[]
         for transition in store.engine.machines[machine]['transitions']:
             if transition['from']!=record['status']:continue
             try:store.engine.authorize(record,transition['authority'],session['partyId'],role['id'])
             except ContractError:continue
-            preview=deepcopy(store.engine)
+            preview=clone_for_preview(store.engine)
             failure=None
             try:preview.execute(machine,record['id'],transition['command'],record['version'],payload or {},[],session['partyId'],role['id'],uid())
             except ContractError as exc:failure=error_body(exc)
