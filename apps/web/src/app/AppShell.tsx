@@ -380,19 +380,8 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   allowedRoutes={allowed}
                   onNavigate={nav}
                   onOpenItem={(item) => {
-                    nav(
-                      item.machine === "inspection"
-                        ? "inspections"
-                        : item.machine === "rfi"
-                          ? "rfis"
-                          : item.machine === "action"
-                            ? "actions"
-                            : ["contract_notice", "claim", "eot_request"].includes(
-                                  item.machine,
-                                )
-                              ? "contract"
-                              : "owner",
-                    );
+                    nav(Object.entries(machineForRoute).find(([, machines]) =>
+                      machines.includes(item.machine))?.[0] ?? "today");
                     setSelected(item.record.id);
                   }}
                 />
@@ -453,7 +442,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   onOpenCommand={(item, action) => setDialog({ item, action })}
                 />
               )}
-              {!["owner", "safety", "schedule", "contract"].includes(safeRoute) && machineForRoute[safeRoute] && (
+              {!["owner", "safety", "schedule", "contract", "payment", "completion"].includes(safeRoute) && machineForRoute[safeRoute] && (
                 <WorkbenchPage
                   route={safeRoute}
                   role={role}

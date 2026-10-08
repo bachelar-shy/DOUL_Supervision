@@ -202,6 +202,10 @@ export const machineForRoute: Record<string, readonly string[]> = {
   issues: ["issue"],
   actions: ["action"],
   contract: ["contract_notice", "claim", "eot_request"],
+  payment: ["contract_boq", "quantity_measurement", "payment_claim"],
+  completion: ["commissioning_package", "handover_package", "warranty_claim"],
+  safety: ["safety_permit", "safety_stop_order", "safety_equipment_inspection"],
+  schedule: ["schedule_baseline", "schedule_progress", "delay_event", "recovery_plan"],
   owner: ["report", "decision"],
   rfis: ["rfi"],
 };
