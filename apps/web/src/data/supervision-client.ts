@@ -27,6 +27,9 @@ const workflowCollections: Record<string, string> = {
   contract_boq: "contract-boqs",
   quantity_measurement: "quantity-measurements",
   payment_claim: "payment-claims",
+  commissioning_package: "commissioning-packages",
+  handover_package: "handover-packages",
+  warranty_claim: "warranty-claims",
 };
 
 export interface UploadOptions {
