@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
 
-FROM node:24-alpine AS build
+FROM node:24-bookworm-slim AS build
 
+RUN apt-get update && apt-get install -y --no-install-recommends python3 \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspace
 
 COPY package.json package-lock.json ./
@@ -14,11 +16,12 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 COPY apps/web ./apps/web
 COPY packages/client ./packages/client
 
+COPY scripts/dependency_environment.py ./scripts/dependency_environment.py
 RUN npm run web:build
 
 FROM nginxinc/nginx-unprivileged:alpine AS runtime
 
-COPY infra/docker/web-nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chmod=644 infra/docker/web-nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /workspace/apps/web/dist /usr/share/nginx/html
 
 EXPOSE 8080
