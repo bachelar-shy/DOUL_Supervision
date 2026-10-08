@@ -14,9 +14,9 @@
     {
       "rank": 2,
       "workstream": "safety_ac_s_01_and_issue_112",
-      "reason": "Backend acceptance exists and ledger is stale per open issue #112; remaining UI gap is the end-to-end remediation/reverification/explicit lift/resume flow.",
-      "deliverable": "Promote F-03 only to backend_api_implemented with exact existing evidence; add real API-backed browser E2E through all AC-S-01 steps and negative paths.",
-      "acceptanceBoundary": "Synthetic staging is development validation; it is not pilot verification. Do not mark AC-S-01 integration pass from only premature-resume guard screen."
+      "reason": "A new real API-backed browser flow proves a partial permit/Stop/remedy/reverification/lift/resume path with rights, stale-version, idempotency and stop-lift/permit-resume boundaries. AC-S-01 remains incomplete: equipmentRefs are empty, and Hold Point release is blocked by missing ACCEPTANCE_SIGNED configuration; no pilot evidence exists.",
+      "deliverable": "Use tests_browser/zz-safety-closed-loop.spec.ts as bounded development evidence; add authorized project equipment provisioning/current equipment-inspection evidence and configured legal acceptance signatures, then extend the same browser flow to those genuine records. Root owns the authoritative progress ledger; any F-03 promotion must reflect only scope evidenced after review.",
+      "acceptanceBoundary": "The browser proof uses synthetic dev sessions and demo records, does not prove real equipment readiness, and observes ACCEPTANCE_SIGNED on inspection release. Keep AC-S-01 partial and pilot_not_run; do not call passed-but-unreleased reinspection signed/released proof or invent Asset CRUD authority."
     },
     {
       "rank": 3,

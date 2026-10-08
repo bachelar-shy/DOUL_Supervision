@@ -42,26 +42,29 @@
     {
       "id": "AC-S-01",
       "domain": "safety",
-      "assessment": "backend_accepted_candidate; full_scenario_not_accepted",
+      "assessment": "partial_real_api_browser_integration; full_scenario_not_accepted",
       "contract": "confirmed",
-      "backendApi": "real_http_persistence_evidence_exists",
-      "ui": "partial_real_api_browser",
-      "integration": "partial_synthetic_staging_only",
+      "backendApi": "real_http_persistence; full_equipment_and_released_inspection_path_unproven",
+      "ui": "real_api_browser_partial_closed_loop",
+      "integration": "partial_real_api_browser_synthetic_fixture",
       "pilot": "not_run",
       "evidence": [
         "app/schema/safety_execution_contract_v1.json",
         "tests_mvp/test_safety_http.py",
         "tests_browser/safety-command-verification.spec.ts",
         "design/verification/priority-issues-validation.json",
-        "https://github.com/bachelar-shy/DOUL_Supervision/issues/112"
+        "https://github.com/bachelar-shy/DOUL_Supervision/issues/112",
+        "tests_browser/zz-safety-closed-loop.spec.ts"
       ],
-      "provenScope": "Real HTTP safety persistence, restart, current equipment/evidence gates, stale-version/idempotency/atomic stop behavior. Browser test issues acknowledge-stop through real API and proves premature resume is guarded. Synthetic staging operational validation records explicit stop-lift/resume separation, supervisor resume and contractor self-resume denial.",
+      "provenScope": "Real browser/API flow completes permit review/authorization/activation; creates and idempotently replays a Stop through HTTP; exercises browser acknowledgement, verified Action remedy linkage, resume request, supervisor verification and explicit lift; proves lift does not reactivate the Permit, then requires separate SUP permit-resume approval. It proves CON self-lift and contractor resume approval are denied, stale Stop version is rejected, and the permit retains the exact immutable Stop v1 reference after later Stop versions. The required Hold Point inspection release is attempted and rejected with ACCEPTANCE_SIGNED. All evidence uses synthetic development demo actors and records.",
       "gaps": [
-        "Browser/API acceptance flow does not complete remedy→reverification→explicit stop lift→authorized resume as one scenario.",
-        "Existing staging record is synthetic development/staging, not site acceptance; it does not promote the scenario to pilot_verified.",
-        "Issue #112 correctly requests F-03 ledger promotion only to backend_api_implemented; it explicitly excludes ui_connected because existing workspace UI test mocks some routes."
+        "This is a partial safety loop, not full AC-S-01 acceptance: there is no approved/published path to provision the Equipment asset/reference needed for a real equipment-backed Permit and current equipment inspection. The test uses equipmentRefs=[] and equipmentReady=true as demo input; neither proves equipment readiness.",
+        "The actual hold-point inspection reaches passed but release_next_work is rejected with ACCEPTANCE_SIGNED because the required approved legal acceptance snapshot/signatures are not configured. Resume verification therefore uses a passed, unreleased synthetic Inspection; do not treat this as signed/released inspection proof.",
+        "The stop is created through HTTP because the inspected safety UI exposes no creation command. Remedy Action and inspections are also created/transitioned through published HTTP endpoints; the browser exercises Permit/Stop transitions and displays the connected state.",
+        "Existing issue #112 asked to align the F-03 ledger only to backend_api_implemented and exclude ui_connected based on the then-existing mocks. This new real browser flow strengthens UI evidence, but does not justify full AC-S-01 or pilot promotion; root must update the authoritative ledger only after assessing its specific status vocabulary and remaining acceptance boundaries.",
+        "The flow uses dev CON/SUP sessions and synthetic evidence; it is not a field pilot and includes no selected project pack, actual work permit, equipment registry, project role assignments, or Owner/site acceptance."
       ],
-      "nextWork": "Resolve #112 evidence/ledger alignment separately; add real API-backed browser flow through explicit lift and resume, including denied paths, restart, stale version and idempotent replay."
+      "nextWork": "Add/identify an authorized project-level Equipment registry/trusted provisioning and real current safety-equipment inspection acceptance path; configure the adopted legal acceptance form and signer authority so an exact-version Hold Point inspection can be released; then extend the connected flow to use those records without demo readiness claims. Retain pilot_not_run until selected-project actors, assets, permit, evidence and site acceptance are supplied."
     },
     {
       "id": "AC-SCH-01",
@@ -373,7 +376,10 @@
       "Owner P1–P4 report routing, recipient references, acknowledgment/follow-up owners and due-time rules.",
       "Adopted DOUL forms and legal original-form identifiers, plus agreed report languages / controlling language.",
       "Named backup/restore accountable owner, restore contact, outage escalation line and an agreed recovery exercise window.",
-      "For enabled media: approved provider/runtime, data export/transfer decision, retention/deletion period, cost owner/limit, and representative approved field media set."
+      "For enabled media: approved provider/runtime, data export/transfer decision, retention/deletion period, cost owner/limit, and representative approved field media set.",
+      "For AC-S-01: authorized non-secret equipment register/asset IDs and tags, the approved project process for provisioning them, current inspection/certification state and validity, and qualified operator assignment; do not invent Asset CRUD authority.",
+      "For AC-S-01: adopted legal acceptance form and exact version/signature requirements for inspection release, plus active SUP/technical approver RoleAssignments and any required qualification scope.",
+      "For AC-S-01: actual work scope/permit references, method statement and risk/emergency-control revisions, permit validity window, accountable safety parties, and approved hazard/correction/reverification evidence references."
     ],
     "evidenceToCapture": [
       "Project/config version, build/commit, actor-role setup references with no secrets, and generated business object IDs/versions.",
