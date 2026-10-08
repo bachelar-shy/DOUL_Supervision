@@ -266,13 +266,13 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
 
     from services.api.modules.command_preview import clone_for_preview
 
-    def preflight(machine,record,session,role,payload=None):
+    def preflight(machine,record,session,role,payload=None,*,borrow_runtime=False):
         results=[]
         for transition in store.engine.machines[machine]['transitions']:
             if transition['from']!=record['status']:continue
             try:store.engine.authorize(record,transition['authority'],session['partyId'],role['id'])
             except ContractError:continue
-            preview=clone_for_preview(store.engine)
+            preview=clone_for_preview(store.engine,borrow_runtime=borrow_runtime)
             failure=None
             try:preview.execute(machine,record['id'],transition['command'],record['version'],payload or {},[],session['partyId'],role['id'],uid())
             except ContractError as exc:failure=error_body(exc)
@@ -416,7 +416,10 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                     return True
                 return False
 
-            try:return build_work_inbox(store.engine,project_id,session,role,readable=inbox_readable,preflight=preflight,has_candidates=inbox_has_candidates,limit=limit,cursor=cursor)
+            def inbox_preflight(machine,record,actor,assignment):
+                return preflight(machine,record,actor,assignment,borrow_runtime=True)
+
+            try:return build_work_inbox(store.engine,project_id,session,role,readable=inbox_readable,preflight=inbox_preflight,has_candidates=inbox_has_candidates,limit=limit,cursor=cursor)
             except InboxCursorError as exc:raise ContractError('INVALID_REQUEST',str(exc))
             except ValueError as exc:raise ContractError('INVALID_REQUEST',str(exc))
 

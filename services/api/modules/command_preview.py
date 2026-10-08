@@ -102,9 +102,11 @@ class _OverlayMap(MutableMapping):
 
     def __iter__(self):
         for key in self._base:
-            if key not in self._deleted and key not in self._writes:
+            if key not in self._deleted:
                 yield key
-        yield from self._writes
+        for key in self._writes:
+            if key not in self._base:
+                yield key
 
     def __len__(self):
         added = sum(1 for key in self._writes if key not in self._base)
