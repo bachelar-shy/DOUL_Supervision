@@ -32,6 +32,38 @@ const contractMachines = [
 
 type ContractMachine = (typeof contractMachines)[number];
 
+type CreationCapability = {
+  machine: string;
+  authority: string | null;
+  status: "available" | "unauthorized" | "prerequisites_missing" | "unavailable";
+  canCreate: boolean;
+  reasons: string[];
+};
+
+function creationCapability(workspace: Workspace, machine: string) {
+  const context = workspace.context as Workspace["context"] & {
+    creationCapabilities?: Record<string, CreationCapability>;
+  };
+  return context.creationCapabilities?.[machine];
+}
+
+function creationUnavailableReason(
+  capability: CreationCapability | undefined,
+  online: boolean,
+  mock: boolean,
+) {
+  if (!online) return "연결이 복구되어야 서버 생성 기능을 확인할 수 있습니다.";
+  if (mock) return "UI Mock Preview에서는 공식 기록을 생성하지 않습니다.";
+  if (!capability) return "서버 생성 권한 정보를 불러올 수 없습니다.";
+  if (capability.status === "unauthorized")
+    return "현재 역할에는 이 기록의 생성 권한이 없습니다.";
+  if (capability.status === "prerequisites_missing")
+    return "프로젝트 범위 또는 자격 선행조건을 확인해야 합니다.";
+  if (capability.status === "unavailable")
+    return "현재 연결에서 생성 기능을 사용할 수 없습니다.";
+  return "서버가 생성 권한을 확인하지 못했습니다.";
+}
+
 const contractTabs: ReadonlyArray<{
   id: ContractMachine;
   label: string;
@@ -531,6 +563,12 @@ export function ContractPage({
 
   const activeMachine =
     current && isContractMachine(current.machine) ? current.machine : machine;
+  const createCapability = creationCapability(workspace, activeMachine);
+  const canCreate =
+    online &&
+    client.kind !== "mock" &&
+    createCapability?.status === "available" &&
+    createCapability.canCreate === true;
   const tab = contractTabs.find((item) => item.id === activeMachine)!;
   const items = workspace.items.filter((item) => item.machine === activeMachine);
   const selectedItem =
@@ -571,12 +609,21 @@ export function ContractPage({
             <SectionHeader title={tab.label} meta={`${items.length}건`} />
             <div className="schedule-list-actions">
               <ActionButton
-                disabled={!online || client.kind === "mock"}
+                disabled={!online || client.kind === "mock" || !canCreate}
                 onClick={() => setCreating(true)}
               >
                 {tab.label} 기록 추가
               </ActionButton>
             </div>
+            {!canCreate ? (
+              <p role="status" className="muted" data-testid="creation-capability-reason">
+                {creationUnavailableReason(
+                  createCapability,
+                  online,
+                  client.kind === "mock",
+                )}
+              </p>
+            ) : null}
             <p className="muted">
               생성·전이 권한은 버튼 표시와 관계없이 서버가 현재 역할·범위·원본
               버전으로 재검증합니다.
@@ -670,7 +717,7 @@ export function ContractPage({
           </DetailPane>
         </WorkbenchTemplate>
 
-        {creating ? (
+        {creating && canCreate ? (
           <CreateContractRecord
             machine={activeMachine}
             client={client}

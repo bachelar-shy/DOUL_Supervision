@@ -74,6 +74,38 @@ async function createNotice(page: Page) {
   return { title, record };
 }
 
+test("Contract create affordance follows the server capability", async ({
+  page,
+}) => {
+  await page.route("**/workspace", async (route) => {
+    const response = await route.fetch();
+    const workspace = await response.json();
+    workspace.context.creationCapabilities = {
+      ...(workspace.context.creationCapabilities || {}),
+      contract_notice: {
+        machine: "contract_notice",
+        authority: "contract.notice.identify",
+        status: "unauthorized",
+        canCreate: false,
+        reasons: ["NOT_AUTHORIZED"],
+      },
+    };
+    await route.fulfill({ response, json: workspace });
+  });
+
+  await page.goto("/#/contract");
+  const create = page.getByRole("button", {
+    name: "계약통지 기록 추가",
+    exact: true,
+  });
+  await expect(create).toBeDisabled();
+  await expect(page.getByTestId("creation-capability-reason")).toContainText(
+    "현재 역할에는 이 기록의 생성 권한이 없습니다.",
+  );
+  await create.click({ force: true });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
 test("Contract Notice creates, calculates due date, and submits through real API", async ({
   page,
   request,
