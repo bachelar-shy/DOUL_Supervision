@@ -97,9 +97,18 @@ def import_source(store, project_id, package, party_id, role_id, key):
     source_ref = reference('InformationItem', oid)
     activity_refs = [reference('WorkItem', a['clientObjectId']) for a in package['activities']]
     schedule.update(activityCount=len(activity_refs), criticalPathRef=reference('WorkItem', critical['clientObjectId']))
-    for field in ['baselineScheduleRef', 'previousScheduleRef', 'correctionOfRef', 'revisionBasisRef']:
+    for field in ['baselineScheduleRef', 'previousScheduleRef', 'correctionOfRef']:
         if field in schedule:
             engine._current_reference(schedule[field], project_id)
+    if 'revisionBasisRef' in schedule:
+        # An EOT approval is an immutable historical basis. Requesting the
+        # baseline update advances the live EOT without rewriting that approval.
+        basis = engine.resolve(schedule['revisionBasisRef'], project_id)
+        engine.authorize_read(basis, party_id, role_id)
+        require(engine._approved_schedule_revision_basis(schedule['revisionBasisRef'], project_id),
+                'SCHEDULE_REVISION_BASIS_INVALID', 'Revision basis must be an exact approved version')
+        require(all(basis.get(field) == value for field, value in package['scope'].items()),
+                'SCOPE_MISMATCH', 'Revision basis scope differs from source scope')
     records = []
     for activity in package['activities']:
         data = deepcopy(activity['data'])

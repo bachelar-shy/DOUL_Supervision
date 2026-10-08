@@ -41,7 +41,7 @@
     },
     {
       "functionId": "F-04",
-      "currentStage": "backend_api_implemented",
+      "currentStage": "ui_connected",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "46_Product_Functional_Baseline_v1_Validation.md",
@@ -53,9 +53,12 @@
         "tests_mvp/test_postgres_persistence.py",
         "services/api/README.md",
         "services/api/persistence.py",
-        "services/api/postgres_store.py"
+        "services/api/postgres_store.py",
+        "tests_browser/schedule.spec.ts",
+        "tests_browser/schedule-delay-evidence.spec.ts",
+        "tests_browser/workspace.spec.ts"
       ],
-      "note": "B-P3 HTTP/persistence acceptance completed for Schedule Baseline, Progress, DelayEvent and RecoveryPlan. UI connection, cross-workstream integration and pilot verification remain."
+      "note": "Schedule, Delay and Recovery UI is connected to the real API with evidence, exact-version, idempotency, offline and permission boundaries. Full AC-SCH-01 integration and pilot acceptance remain distinct gates."
     },
     {
       "functionId": "F-05",
@@ -89,7 +92,7 @@
     },
     {
       "functionId": "F-08",
-      "currentStage": "integration_passed",
+      "currentStage": "ui_connected",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "35_Contract_Notice_Claim_EOT_Functional_Contract.md",
@@ -105,7 +108,7 @@
         "services/api/main.py",
         "services/api/persistence.py"
       ],
-      "note": "F-08 Contract Notice / Claim / EOT is integrated through the Web workspace and real API. Browser E2E verifies Notice creation/due-date calculation/evidence-backed submission, Claim/EOT collection routing, Owner authority denial, responsive layouts, and cross-workstream regressions; Backend HTTP/SQLite acceptance still verifies time-bar risk, exact Owner Decision targeting, idempotency/version conflict, restart persistence and F-04 Baseline revision handoff. Pilot/field validation remains."
+      "note": "Real API-connected Contract UI and focused HTTP/browser evidence exist. Full AC-SCH-01 browser acceptance and CI confirmation are required before integration_passed; pilot remains unverified."
     },
     {
       "functionId": "F-09",
