@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { createHash, randomUUID } from 'node:crypto';
 import { commands, fields } from '../apps/web/src/labels';
 
@@ -151,7 +151,14 @@ test('AC-SCH-01: live UI schedule → recovery → Owner EOT decision → approv
     return decision;
   }
 
-  const baseline = await activate(await importSource('baseline', 'B0'));
+  // The demo project is shared by the browser suite. Replace any effective
+  // baseline through an actual Owner decision rather than bypassing its gate.
+  const priorBaseline = workspace.items.find((item: any) => item.machine === 'schedule_baseline'
+    && item.record.status === 'effective'
+    && Object.entries(scope).every(([field, value]) => item.record[field] === value))?.record;
+  const initialBasis = priorBaseline ? ref(await decide(ref(priorBaseline)), 'Decision') : undefined;
+  const baseline = await activate(await importSource('baseline', 'B0',
+    initialBasis ? { revisionBasisRef: initialBasis } : {}));
   expect(baseline.status).toBe('effective');
   const originalSchedule = structuredClone(baseline.schedule);
   let progress = await importSource('progress_update', 'U1', { baselineScheduleRef: ref(baseline), forecastCompletionAt: '2027-01-15T00:00:00Z' });
