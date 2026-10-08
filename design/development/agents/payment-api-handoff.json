@@ -1,0 +1,47 @@
+{
+  "branch": "goal/payment-api-v1",
+  "baseCommit": "943d1dd",
+  "commits": [
+    "4c4d8265b41c41076bd72c0923b9aa529353fb97"
+  ],
+  "scope": "F-05 generic HTTP acceptance for ContractBOQ, QuantityMeasurement and PaymentClaim, including owner decision/payment record lifecycle",
+  "findings": {
+    "endpoints": "The three machines already use generic create/detail/command HTTP routes. No route or DTO generator change was needed.",
+    "fixedGap": "Payment record commands without externalSystemRef inherited the previous record's projected externalSystemRef before uniqueness validation. Engine.execute now clears that command-scoped input from the proposal when omitted; append-only paymentRecords remain unchanged.",
+    "dto": "Create wrapper is {roleAssignmentId, clientObjectId, payload}. ContractBOQ data is under record.boq. QuantityMeasurement and PaymentClaim fields are under record.data. Command wrapper is {roleAssignmentId, expectedVersion, payload, evidenceIds}; paths use kebab-case command names.",
+    "fixtureLimits": "The HTTP acceptance seeds the payment calculation Requirement/rule, accepted-and-released Inspection, and exact-target Decision fixtures directly inside committed store transactions. Evidence and Drawing refs are existing demo fixtures. ContractBOQ creation/approval/activation, quantity submission and verification, PaymentClaim submission/review/recommendation/owner adjustment/payment/correction/cancellation/close all use HTTP. These tests do not claim that the auxiliary Requirement, Inspection or Decision workflows were exercised through HTTP, nor do they claim pilot verification."
+  },
+  "tests": [
+    {
+      "command": "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_measurement_payment_http tests.test_measurement_payment_execution_contract -q",
+      "result": "PASS; 19 tests"
+    },
+    {
+      "command": "DOUL_TEST_POSTGRES_DSN='postgresql://doul:goal_test@127.0.0.1:15432/doul_goal_test' /workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_measurement_payment_postgres -q",
+      "result": "PASS against PostgreSQL 16; 4 tests total including 2 inherited local HTTP cases and 2 live PostgreSQL cases; each live case used its own temporary schema"
+    },
+    {
+      "command": "/workspace/DOUL_Supervision/work/priority-venv/bin/python scripts/dependency_environment.py --root /workspace/work/doul-goal/payment-api --python /workspace/DOUL_Supervision/work/priority-venv/bin/python --report work/payment-api-dependency-environment.json",
+      "result": "PASS; production API lock verified, no package changes"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS"
+    }
+  ],
+  "incompleteTasks": [
+    "Root owns the later createCapabilities wiring in services/api/main.py; payment API branch did not edit it.",
+    "UI/browser integration and acceptance are owned by payment-ui.",
+    "Auxiliary Requirement, Inspection, and Decision creation/lifecycle remain fixture-seeded in this acceptance; extend through their HTTP workflows if full cross-domain integration coverage is required.",
+    "No pilot/site validation was performed or claimed."
+  ],
+  "restartCommands": [
+    "cd /workspace/work/doul-goal/payment-api",
+    "/workspace/DOUL_Supervision/work/priority-venv/bin/python scripts/dependency_environment.py --root /workspace/work/doul-goal/payment-api --python /workspace/DOUL_Supervision/work/priority-venv/bin/python --report work/payment-api-dependency-environment.json",
+    "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_measurement_payment_http tests.test_measurement_payment_execution_contract -q",
+    "DOUL_TEST_POSTGRES_DSN='postgresql://doul:goal_test@127.0.0.1:15432/doul_goal_test' /workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_measurement_payment_postgres -q"
+  ],
+  "documentationSources": [
+    "FastAPI official TestClient guidance via Context7: https://fastapi.tiangolo.com/tutorial/testing/"
+  ]
+}
