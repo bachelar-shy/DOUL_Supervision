@@ -114,7 +114,7 @@ export function completionIdentity(item: WorkItem): string {
 
 export function completionReferenceOptions(workspace: Workspace): CompletionReferenceOption[] {
   const refs = new Map<string, CompletionReferenceOption>();
-  function add(ref: unknown, hint?: string) {
+  function add(ref: unknown, hint?: string, catalogRecord?: Record<string, unknown>) {
     if (!isDomainRef(ref)) return;
     const key = `${ref.objectType}:${ref.objectId}:${ref.version}`;
     if (refs.has(key)) return;
@@ -123,15 +123,15 @@ export function completionReferenceOptions(workspace: Workspace): CompletionRefe
     refs.set(key, {
       ref,
       label: `${title ? `${title} · ` : ""}${ref.objectType} · ${ref.objectId.slice(0, 8)} · v${ref.version}`,
-      ...(source?.record.status ? { status: source.record.status } : {}),
-      ...(source?.record.subtype ? { subtype: source.record.subtype } : {}),
+      ...(source?.record.status ? { status: source.record.status } : typeof catalogRecord?.status === "string" ? { status: catalogRecord.status } : {}),
+      ...(source?.record.subtype ? { subtype: source.record.subtype } : typeof catalogRecord?.subtype === "string" ? { subtype: catalogRecord.subtype } : {}),
     });
   }
   const referenceCatalog = workspace.context.referenceCatalog as typeof workspace.context.referenceCatalog & {
     evidence?: Array<{ ref: DomainRef; record: Record<string, unknown> }>;
   };
-  for (const entry of [...(referenceCatalog?.requirements || []), ...(referenceCatalog?.assets || []), ...(referenceCatalog?.evidence || [])]) {
-    add(entry.ref, typeof entry.record.title === "string" ? entry.record.title : undefined);
+  for (const entry of [...(referenceCatalog?.requirements || []), ...(referenceCatalog?.assets || []), ...(referenceCatalog?.evidence || []), ...(referenceCatalog?.informationItems || [])]) {
+    add(entry.ref, typeof entry.record.title === "string" ? entry.record.title : undefined, entry.record);
   }
   add(workspace.context.requirementRef, "Project requirement");
   add(workspace.context.drawingRef, "Current drawing");

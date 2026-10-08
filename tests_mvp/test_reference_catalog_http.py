@@ -41,6 +41,31 @@ class ReferenceCatalogHTTPTests(unittest.TestCase):
             self.assertEqual(value['record']['projectId'], self.project)
             self.assertEqual(value['ref']['version'], value['record']['version'])
 
+    def test_information_items_are_exact_current_and_read_authorized(self):
+        store = self.app.state.store
+        with store.transaction(True):
+            source = next(record for (kind, _), record in store.engine._records.items()
+                          if kind == 'InformationItem' and record.get('subtype') == 'Drawing')
+            foreign = deepcopy(source)
+            foreign.update(id=uid(), projectId=uid())
+            outside = deepcopy(source)
+            outside.update(id=uid(), locationId=uid())
+            store.engine._save('InformationItem', foreign)
+            store.engine._save('InformationItem', outside)
+        values = self.catalog()['informationItems']
+        ids = [value['ref']['objectId'] for value in values]
+        self.assertIn(source['id'], ids)
+        self.assertNotIn(foreign['id'], ids)
+        self.assertNotIn(outside['id'], ids)
+        for value in values:
+            self.assertEqual(value['ref']['objectType'], 'InformationItem')
+            self.assertEqual(value['ref']['version'], value['record']['version'])
+        with store.transaction(True):
+            role = store.engine.get('RoleAssignment', self.session['actor']['roleAssignmentId'])
+            role.update(locationIds=[uid()], version=role['version'] + 1)
+            store.engine._save('RoleAssignment', role)
+        self.assertEqual(self.catalog()['informationItems'], [])
+
     def test_expired_requirements_are_excluded_and_assignment_changes_take_effect(self):
         store = self.app.state.store
         before = self.catalog()
