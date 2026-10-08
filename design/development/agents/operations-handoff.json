@@ -45,7 +45,7 @@
     "Combined encrypted database and versioned object recovery rehearsal.",
     "50k-record live HTTP benchmark with process CPU/RSS, PostgreSQL cgroup CPU, filtering and pagination evidence.",
     "Disposable operational fixtures and validation scripts are committed in 8044872e2b782d79e588e860f449d84934252a9f.",
-    "Repeated the 50k real TCP benchmark against a clean detached b85c928 optimization checkout and preserved before/after metrics in design/verification/issue124-live-http-after-b85c928-20261008.json; median latency improved 18.7%, API CPU 19.4%, peak RSS 8.7%, PostgreSQL CPU 36.6%, but latency remains significant."
+    "Repeated the 50k real TCP benchmark against a clean detached b85c928 optimization checkout and preserved before/after metrics in design/verification/issue124-live-http-after-b85c928-20261008.json; median latency improved 18.8%, API CPU 19.4%, peak RSS 8.7%, PostgreSQL CPU 36.6%, but latency remains significant."
   ],
   "gaps": [
     "No contract API latency SLO or p95 budget was found; the HTTP measurements are a significant latency limitation, not a performance pass.",
