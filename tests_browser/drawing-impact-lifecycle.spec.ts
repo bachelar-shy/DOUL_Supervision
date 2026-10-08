@@ -49,32 +49,37 @@ test("restored historical event stays visible after current work clears and recu
 
 test("history failure has a retry and does not suppress current result", async ({ page }) => {
   await setup(page);
-  let attempt = 0;
-  await page.route("**/parallel/drawing-impacts/history", route => ++attempt === 1
+  await page.route("**/parallel/drawing-impacts", route => route.fulfill({ json: { items: [{ ...event("first-event", "active", null), title: "현재 영향 도면", items: [{ ...event("first-event", "active", null).items[0], title: "현재 미완료 검측 유지" }] }], total: 1 } }));
+  let retryRequested = false;
+  await page.route("**/parallel/drawing-impacts/history", route => !retryRequested
     ? route.fulfill({ status: 503, json: { message: "history-retry-fixture" } })
     : route.fulfill({ json: { items: [event("first-event", "restored", "2026-10-08T01:00:00Z")], total: 1 } }));
   await open(page);
   await expect(page.getByTestId("drawing-impact-history")).toContainText("발생·해소 이력을 불러오지 못했습니다");
-  await expect(page.getByTestId("drawing-impact-current")).toContainText("현재 조회 가능한 미완료 영향 업무가 없습니다");
+  await expect(page.getByTestId("drawing-impact-current")).toContainText("현재 미완료 검측 유지");
+  retryRequested = true;
   await page.getByTestId("drawing-impact-panel").getByRole("button", { name: "다시 조회", exact: true }).click();
   await expect(page.getByTestId("drawing-impact-history")).toContainText("복구 관측 2026-10-08T01:00:00Z");
   await expect(page.getByTestId("drawing-impact-history").getByRole("alert")).toHaveCount(0);
+  await expect(page.getByTestId("drawing-impact-current")).toContainText("현재 미완료 검측 유지");
 });
 
 test("obsolete history refresh cannot replace a newer response", async ({ page }) => {
   await setup(page);
-  let release!: () => void; let captured!: () => void;
+  let release!: () => void; let captured!: () => void; let delivered!: () => void;
+  const oldDelivered = new Promise<void>(resolve => { delivered = resolve; });
   const held = new Promise<void>(resolve => { release = resolve; });
   const ready = new Promise<void>(resolve => { captured = resolve; });
-  let attempt = 0;
+  let retryRequested = false;
   await page.route("**/parallel/drawing-impacts/history", async route => {
-    if (++attempt === 1) { captured(); await held; await route.fulfill({ json: { items: [event("first-event", "active", null)], total: 1 } }); }
+    if (!retryRequested) { captured(); await held; await route.fulfill({ json: { items: [event("first-event", "active", null)], total: 1 } }); delivered(); }
     else await route.fulfill({ json: { items: [event("first-event", "restored", "2026-10-08T02:00:00Z")], total: 1 } });
   });
   await open(page); await ready;
+  retryRequested = true;
   await page.getByTestId("drawing-impact-panel").getByRole("button", { name: "다시 조회", exact: true }).click();
   await expect(page.getByTestId("drawing-impact-history")).toContainText("복구 관측 2026-10-08T02:00:00Z");
-  release();
+  release(); await oldDelivered;
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   await expect(page.getByTestId("drawing-impact-history")).toContainText("사용 조건 복구 관측");
 });
