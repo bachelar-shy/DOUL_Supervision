@@ -259,11 +259,11 @@ function CreateDraft({
   const informationOptions = relevantOptions(["InformationItem", "DocumentSnapshot"]);
   const workItemOptions = relevantOptions(["WorkItem"]);
   const evidenceOptions = referenceOptions.filter((option) => option.ref.objectType === "Evidence");
-  const inspectionOptions = workItemOptions.filter((option) => workspace.items.some((item) => item.machine === "inspection" && item.record.id === option.ref.objectId));
+  const inspectionOptions = relevantOptions(["Inspection"]);
   const commissioningOptions = workItemOptions.filter((option) => workspace.items.some((item) => item.machine === "commissioning_package" && item.record.id === option.ref.objectId));
   const handoverOptions = workItemOptions.filter((option) => workspace.items.some((item) => item.machine === "handover_package" && item.record.id === option.ref.objectId));
-  const issueOptions = workItemOptions.filter((option) => workspace.items.some((item) => item.machine === "issue" && item.record.id === option.ref.objectId));
-  const actionOptions = workItemOptions.filter((option) => workspace.items.some((item) => item.machine === "action" && item.record.id === option.ref.objectId));
+  const issueOptions = relevantOptions(["Issue"]);
+  const actionOptions = relevantOptions(["Action"]);
   const locationOptions = [...new Set([workspace.context.scope.locationId, ...workspace.items.map((item) => item.record.locationId)].filter((value): value is string => typeof value === "string" && value.length > 0))];
   const refMap: RefMap = new Map(referenceOptions.map((option) => [keyForRef(option.ref), option.ref]));
   const value = (key: string) => selected[key] ?? "";

@@ -1,4 +1,5 @@
 import type { DomainRef, WorkItem, Workspace } from "./ui-contract";
+import { recordReference } from "./record-reference";
 
 export type CompletionMachine = "commissioning_package" | "handover_package" | "warranty_claim";
 
@@ -135,7 +136,7 @@ export function completionReferenceOptions(workspace: Workspace): CompletionRefe
   add(workspace.context.requirementRef, "Project requirement");
   add(workspace.context.drawingRef, "Current drawing");
   workspace.items.forEach((item) => {
-    add({ objectType: "WorkItem", objectId: item.record.id, version: item.record.version }, item.record.title);
+    add(recordReference(item), item.record.title);
     if (item.machine === "requirement") {
       add({ objectType: "Requirement", objectId: item.record.id, version: item.record.version }, item.record.title);
     }

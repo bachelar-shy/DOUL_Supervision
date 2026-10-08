@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import type { DomainRef, RecordDTO, Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
 import i18n from "../i18n/config";
+import { recordReference } from "../data/record-reference";
 
 type Locale = "ko" | "en" | "vi";
 type LabelKey =
@@ -69,19 +70,6 @@ export const ownerDecisionAuthoringLabels: Record<Locale, Labels> = {
   },
 };
 
-const objectTypeByMachine: Record<string, string> = {
-  observation: "Observation", inspection: "Inspection", issue: "Issue", rfi: "WorkItem",
-  change: "WorkItem", approval: "Approval", action: "Action", decision: "Decision",
-  report: "InformationItem", analysis_run: "AnalysisRun", safety_permit: "WorkItem",
-  safety_stop_order: "WorkItem", safety_equipment_inspection: "WorkItem",
-  schedule_baseline: "InformationItem", schedule_progress: "InformationItem",
-  delay_event: "WorkItem", recovery_plan: "WorkItem", contract_notice: "WorkItem",
-  claim: "WorkItem", eot_request: "WorkItem", contract_boq: "InformationItem",
-  quantity_measurement: "WorkItem", payment_claim: "WorkItem", commissioning_package: "WorkItem",
-  handover_package: "WorkItem", warranty_claim: "WorkItem", evidence: "Evidence",
-  document: "DocumentSnapshot",
-};
-
 const scopeFields = ["packageId", "locationId", "discipline", "responsibleOrganizationId"] as const;
 const impactFields = [
   ["scope", "impactScope"], ["cost", "impactCost"], ["schedule", "impactSchedule"],
@@ -94,10 +82,10 @@ function lang(): Locale {
 }
 
 function refForItem(item: Workspace["items"][number]): DomainRef | null {
-  const objectType = objectTypeByMachine[item.machine];
+  const ref = recordReference(item);
   const record = item.record;
-  if (!objectType || !record.id || !Number.isInteger(record.version) || record.version < 1) return null;
-  return { objectType, objectId: record.id, version: record.version };
+  if (!record.id || !Number.isInteger(record.version) || record.version < 1) return null;
+  return ref;
 }
 
 function recordLabel(record: RecordDTO, ref: DomainRef) {
