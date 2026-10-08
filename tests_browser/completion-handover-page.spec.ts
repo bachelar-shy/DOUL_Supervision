@@ -99,6 +99,7 @@ test("completion workspace keeps commissioning, handover, and warranty records s
   await expect(workspace).toContainText("SCOPE-A");
   await expect(workspace).toContainText("Replace acoustic insulation");
   await expect(workspace).toContainText("HO-UI-01");
+  await expect(workspace).toContainText("asbuilt-");
 
   await tabs.nth(2).click();
   await workspace.getByRole("button", { name: /UI Warranty Record/ }).click();

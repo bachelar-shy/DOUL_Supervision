@@ -133,6 +133,7 @@ const handoverDocumentFields: Array<[string, string]> = [
 function HandoverDetail({ item, t }: { item: WorkItem; t: (key: CompletionLabelKey) => string }) {
   const data = completionData(item);
   const scope = object(data.handoverScope);
+  const acceptedScope = object(data.acceptedScope);
   const reservations = values(data.reservations);
   const documentRefs = handoverDocumentFields.flatMap(([field]) => values(data[field]));
   return <>
@@ -146,14 +147,18 @@ function HandoverDetail({ item, t }: { item: WorkItem; t: (key: CompletionLabelK
       <FieldGrid t={t} items={[
         [t("number"), data.handoverNo], [t("profileRef"), data.handoverProfileRef], [t("scopeId"), scope.scopeId],
         [t("system"), scope.system], [t("locationIds"), scope.locationIds], [t("assetRefs"), scope.assetRefs],
+        [t("acceptedScope"), acceptedScope.scopeId ? acceptedScope : undefined],
         [t("ownerAcceptance"), data.ownerAcceptanceRef], [t("handoverDate"), dateText(data.handoverDate)],
         [t("warrantyTrigger"), data.warrantyStartAt],
       ]} />
       <ReferenceList label={t("commissioningRefs")} value={data.commissioningPackageRefs} />
     </section>
-    <section className="completion-section"><SectionHeader title={t("acceptedDocuments")} meta={`${documentRefs.length}`} />
+    <section className="completion-section"><SectionHeader title={t("submittedDocuments")} meta={`${documentRefs.length}`} />
       <div className="completion-document-grid">{handoverDocumentFields.map(([field, key]) => <ReferenceList key={field} label={t(key as CompletionLabelKey)} value={data[field]} />)}</div>
       <ReferenceList label={t("openIssueRefs")} value={data.openIssueRefs} />
+    </section>
+    <section className="completion-section"><SectionHeader title={t("acceptedDocuments")} meta={`${values(data.acceptedDocumentRefs).length}`} />
+      <ReferenceList label={t("acceptedDocuments")} value={data.acceptedDocumentRefs} />
     </section>
     <section className="completion-section"><SectionHeader title={t("reservations")} meta={`${reservations.length}`} />
       {reservations.length ? <ol className="completion-history">{reservations.map((value, index) => {

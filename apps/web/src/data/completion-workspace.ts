@@ -13,7 +13,7 @@ export type CompletionLabelKey =
   | "testResult" | "testHistory" | "outcome" | "criteriaMet" | "recordedAt" | "testResultRef"
   | "punchIssues" | "handoverReady" | "scope" | "scopeId" | "locationIds" | "assetRefs"
   | "commissioningRefs" | "asBuiltRefs" | "omManualRefs" | "trainingRefs" | "sparePartsRefs"
-  | "certificateRefs" | "statutoryAcceptanceRefs" | "openIssueRefs" | "acceptedDocuments"
+  | "certificateRefs" | "statutoryAcceptanceRefs" | "openIssueRefs" | "acceptedDocuments" | "submittedDocuments" | "acceptedScope"
   | "ownerAcceptance" | "handoverDate" | "reservations" | "reservationOwner" | "dueAt"
   | "partialScope" | "warrantyTrigger" | "handoverRef" | "warrantyPeriodRef" | "observedAt"
   | "defectScope" | "defectDescription" | "causeDescription" | "operationalImpact"
@@ -34,7 +34,7 @@ export const completionLabelKeys: readonly CompletionLabelKey[] = [
   "testResult", "testHistory", "outcome", "criteriaMet",
   "recordedAt", "testResultRef", "punchIssues", "handoverReady", "scope", "scopeId", "locationIds", "assetRefs",
   "commissioningRefs", "asBuiltRefs", "omManualRefs", "trainingRefs", "sparePartsRefs", "certificateRefs",
-  "statutoryAcceptanceRefs", "openIssueRefs", "acceptedDocuments", "ownerAcceptance", "handoverDate", "reservations",
+  "statutoryAcceptanceRefs", "openIssueRefs", "acceptedDocuments", "submittedDocuments", "acceptedScope", "ownerAcceptance", "handoverDate", "reservations",
   "reservationOwner", "dueAt", "partialScope", "warrantyTrigger", "handoverRef", "warrantyPeriodRef", "observedAt",
   "defectScope", "defectDescription", "causeDescription", "operationalImpact", "issueRef", "actionRefs",
   "responseDueAt", "remedySummary", "reworkReason", "remedyEvidence", "reinspectionRef", "reinspectionHistory",
@@ -61,7 +61,7 @@ export const completionFallbackLabels: Record<CompletionLabelKey, string> = {
   punchIssues: "Punch 이슈", handoverReady: "인수 준비", scope: "인수 범위", scopeId: "범위 ID", locationIds: "위치",
   assetRefs: "자산 참조", commissioningRefs: "시운전 패키지", asBuiltRefs: "준공도면", omManualRefs: "운영·유지보수 매뉴얼",
   trainingRefs: "교육 기록", sparePartsRefs: "예비품·공구", certificateRefs: "인증서", statutoryAcceptanceRefs: "법정 인수 기록",
-  openIssueRefs: "미결 이슈", acceptedDocuments: "수락된 문서", ownerAcceptance: "발주처 수락 참조", handoverDate: "인수일",
+  openIssueRefs: "미결 이슈", acceptedDocuments: "수락된 문서", submittedDocuments: "제출 문서", acceptedScope: "수락된 인수 범위", ownerAcceptance: "발주처 수락 참조", handoverDate: "인수일",
   reservations: "유보사항", reservationOwner: "유보 담당자", dueAt: "기한", partialScope: "부분인수 범위", warrantyTrigger: "보증 개시 조건",
   handoverRef: "인수 패키지 참조", warrantyPeriodRef: "보증기간 참조", observedAt: "발견 시각", defectScope: "하자 범위",
   defectDescription: "하자 설명", causeDescription: "원인 설명", operationalImpact: "운영 영향", issueRef: "연결 이슈",
