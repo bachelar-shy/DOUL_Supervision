@@ -301,6 +301,17 @@ test("publishes and distributes a reviewed source as a field controlled construc
   expect(incident.items.some(item => item.sourceRef.objectId === inspection.record.id
     && item.sourceRef.version === inspection.record.version && item.machine === "inspection")).toBe(true);
 
+  type ImpactHistory = {incidentId: string; drawingRef: DomainRef; state: "active" | "restored";
+    resolvedAt: string | null; items: Array<{sourceRef: DomainRef}>};
+  const impactHistory = await responseJson<{items: ImpactHistory[]; total: number}>(await request.get(
+    `${base}/parallel/drawing-impacts/history`, {headers: headers(conSession)}), 200);
+  const recorded = impactHistory.items.filter(item => item.incidentId === incident.incidentId);
+  expect(recorded).toHaveLength(1);
+  expect(recorded[0].drawingRef).toEqual(chosen.domainRef);
+  expect(recorded[0].state).toBe("active");
+  expect(recorded[0].resolvedAt).toBeNull();
+  expect(recorded[0].items.some(item => item.sourceRef.objectType === "Inspection"
+    && item.sourceRef.objectId === inspection.record.id && item.sourceRef.version === inspection.record.version)).toBe(true);
 
   // The draft was authored by the API; reload the UI workspace before resolving its exact source.
   const refreshed = page.waitForResponse(response => response.url().endsWith("/workspace") && response.ok());
@@ -320,6 +331,15 @@ test("publishes and distributes a reviewed source as a field controlled construc
   const impactWork = impactPanel.locator(`[data-impact-work="${inspection.record.id}"]`);
   await expect(impactWork).toContainText(inspection.record.workName);
   await expect(impactWork).toContainText(`v${inspection.record.version}`);
+  const historyEvent = impactPanel.getByTestId("drawing-impact-history")
+    .locator(`[data-impact-history-incident="${incident.incidentId}"]`);
+  await expect(historyEvent).toContainText("사용 조건 확인 필요");
+  await expect(historyEvent.locator(`[data-impact-history-work="${inspection.record.id}"]`))
+    .toContainText(`v${inspection.record.version}`);
+  await impactPanel.getByRole("button", {name: "다시 조회", exact: true}).click();
+  await expect(historyEvent).toBeVisible();
+  await expect(historyEvent).toHaveCount(1);
+  await expect(impactWork).toContainText(inspection.record.workName);
   await impactPanel.getByRole("button", {name: "해당 버전 도면 원본 보기", exact: true}).click();
   await expect(impactPanel.locator('iframe[title="해당 버전 도면 원본"]')).toHaveAttribute("src", /^blob:/);
   await impactWork.getByRole("button", {name: "업무 원본 보기", exact: true}).click();
