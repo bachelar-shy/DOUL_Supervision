@@ -63,6 +63,52 @@ class NotificationInboxProjectionTests(unittest.TestCase):
         self.assertEqual(NOTIFICATION, original)
         self.assertEqual(result["unreadCount"], 0)
 
+    def test_foreign_recipient_malformed_receipt_is_isolated(self):
+        foreign = {**NOTIFICATION, "recipientPartyId": OTHER}
+        receipts = {(OTHER, PROJECT, NOTIFICATION_ID): "not-a-timestamp"}
+        result = self.project([NOTIFICATION, foreign], read_receipts=receipts)
+
+        self.assertEqual(result, self.project([NOTIFICATION]))
+        self.assertFalse(result["items"][0]["isRead"])
+        self.assertIsNone(result["items"][0]["readAt"])
+        self.assertEqual(receipts[(OTHER, PROJECT, NOTIFICATION_ID)], "not-a-timestamp")
+
+    def test_foreign_project_malformed_receipt_is_isolated(self):
+        foreign = {**NOTIFICATION, "projectId": OTHER_PROJECT}
+        result = self.project(
+            [NOTIFICATION, foreign],
+            read_receipts={
+                (RECIPIENT, OTHER_PROJECT, NOTIFICATION_ID): "not-a-timestamp",
+                (OTHER, OTHER_PROJECT, NOTIFICATION_ID): None,
+                (RECIPIENT, PROJECT, NOTIFICATION_ID): "2026-10-07T09:00:00Z",
+            },
+        )
+
+        self.assertEqual(result["total"], 1)
+        self.assertEqual(result["unreadCount"], 0)
+        item = result["items"][0]
+        self.assertEqual(item["notification"], NOTIFICATION)
+        self.assertEqual(item["readAt"], "2026-10-07T09:00:00Z")
+        self.assertNotIn("acknowledgedAt", item["notification"])
+
+    def test_in_scope_malformed_receipt_without_visible_notification_still_fails(self):
+        with self.assertRaisesRegex(NotificationProjectionError, "readAt"):
+            self.project([], read_receipts={(RECIPIENT, PROJECT, NOTIFICATION_ID): "not-a-timestamp"})
+
+    def test_unscopable_foreign_structural_receipt_keys_still_fail(self):
+        for key in ((OTHER, OTHER_PROJECT), (OTHER, OTHER_PROJECT, ""), (OTHER, None, NOTIFICATION_ID)):
+            with self.subTest(key=key), self.assertRaisesRegex(NotificationProjectionError, "read receipt keys"):
+                self.project([NOTIFICATION], read_receipts={key: "not-a-timestamp"})
+
+    def test_empty_authorized_scope_ignores_valid_foreign_keys_content(self):
+        result = project_notification_inbox(
+            [NOTIFICATION],
+            recipient_party_id=RECIPIENT,
+            accessible_project_ids=(),
+            read_receipts={(RECIPIENT, PROJECT, NOTIFICATION_ID): "not-a-timestamp"},
+        )
+        self.assertEqual(result, {"items": [], "total": 0, "unreadCount": 0})
+
     def test_deadline_is_preserved_without_overdue_classification(self):
         result = self.project([NOTIFICATION])
         item = result["items"][0]

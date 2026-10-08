@@ -53,6 +53,9 @@ def project_notification_inbox(
     A receipt only decorates the projection; it never changes the Notification
     status or its acknowledgedAt field. The caller must provide projects already
     authorized for this recipient; an empty set yields an empty inbox.
+    Structurally valid receipts outside that recipient/project scope are ignored
+    before readAt validation; unscopable keys and malformed in-scope receipts
+    remain errors, even when their notification is not visible.
     """
     if not isinstance(recipient_party_id, str) or not recipient_party_id:
         raise NotificationProjectionError("recipient_party_id is required")
@@ -66,17 +69,24 @@ def project_notification_inbox(
     if any(not isinstance(project_id, str) or not project_id for project_id in allowed_projects):
         raise NotificationProjectionError("accessible_project_ids must contain non-empty strings")
 
-    receipts = {} if read_receipts is None else read_receipts
-    if not isinstance(receipts, Mapping):
+    supplied_receipts = {} if read_receipts is None else read_receipts
+    if not isinstance(supplied_receipts, Mapping):
         raise NotificationProjectionError("read_receipts must be a mapping")
-    for key, read_at in receipts.items():
+    receipts: dict[tuple[str, str, str], str] = {}
+    for key, read_at in supplied_receipts.items():
         if (
             not isinstance(key, tuple)
             or len(key) != 3
             or any(not isinstance(part, str) or not part for part in key)
         ):
             raise NotificationProjectionError("read receipt keys must be (recipientPartyId, projectId, notificationId)")
+        # Invalid structural keys cannot establish a safe tenant scope.
+        # Valid keys are scoped before validating their receipt content, so a
+        # different recipient/project's corrupt timestamp cannot break this inbox.
+        if key[0] != recipient_party_id or key[1] not in allowed_projects:
+            continue
         _parse_instant(read_at, "readAt")
+        receipts[key] = read_at
 
     visible: dict[tuple[str, str], tuple[datetime, dict[str, object], str | None]] = {}
 
