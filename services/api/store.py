@@ -68,10 +68,13 @@ class SQLiteSnapshotAdapter:
         self.meta=state['meta'];self.uploads=state['uploads'];self.requests=state['requests'];self.conflicts=state['conflicts']
         self.engine.drawing_field_revisions = self.meta.get('drawingFieldRevisions', [])
 
-    def _load(self):
+    def _load(self, return_payload=False):
         row=self.db.execute('SELECT payload FROM state WHERE id=1').fetchone()
-        if row:self.restore(json.loads(row[0]))
-        return bool(row)
+        if row:
+            payload=row[0]
+            self.restore(json.loads(payload))
+            return payload if return_payload else True
+        return None if return_payload else False
 
     def _save(self):
         payload=json.dumps(self.export_state(),ensure_ascii=False,allow_nan=False)
@@ -81,14 +84,15 @@ class SQLiteSnapshotAdapter:
     def transaction(self, write=False):
         with self.lock:
             self.db.execute('BEGIN IMMEDIATE' if write else 'BEGIN')
-            self._load()
-            before=deepcopy(self.export_state())
+            payload=self._load(return_payload=True)
             try:
                 yield self
                 if write:self._save()
                 self.db.execute('COMMIT')
             except BaseException:
-                self.db.execute('ROLLBACK');self.restore(before);raise
+                self.db.execute('ROLLBACK')
+                if payload is not None:self.restore(json.loads(payload))
+                raise
 
     def put_blob(self, file_id, content):
         self.db.execute('INSERT INTO blobs(id,content) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET content=excluded.content',(file_id,content))
