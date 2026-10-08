@@ -13,6 +13,7 @@ import { ApiError } from "../data/supervision-client";
 import { commands, fields, reasonLabel, roles } from "../labels";
 import { recordRef } from "./record-utils";
 import { Icon } from "./shared";
+import { HandoverReservationFields, type ReservationInput } from "./HandoverReservationFields";
 
 const booleanFields = new Set([
   "changeRequired",
@@ -38,6 +39,9 @@ const jsonFields = new Set([
   "acceptedScope",
   "precommissioningChecklist",
   "missingItems",
+  "options",
+  "recommendation",
+  "impact",
 ]);
 
 const numericFields = new Set([
@@ -154,6 +158,7 @@ function selectedReferenceValues(value: string): string[] {
 }
 
 function fieldDefault(field: string, w: Workspace, item: WorkItem): string {
+  if (field === "ownerReservationInputs") return JSON.stringify(item.record.data?.ownerReservationInputs ?? item.record.data?.reservationProposals ?? [], null, 2);
   const existing =
     item.record.data?.[field] ??
     (item.record.schedule as Record<string, Json> | undefined)?.[field] ??
@@ -296,7 +301,12 @@ export function CommandModal({
           })}
         </p>
         <div className="modal-fields">
-          {dialog.action.fields.map((f) => (
+          {dialog.action.fields.map((f) => f === "ownerReservationInputs" ? (
+            <div key={f}>
+              <span>{t("completion.reservations")}</span>
+              <HandoverReservationFields issues={((dialog.item.record.data?.openIssueRefs ?? []) as DomainRef[]).map((ref) => ({ ref, label: workspace.items.find((item) => item.record.id === ref.objectId)?.record.title ?? ref.objectId }))} participants={workspace.participants} value={JSON.parse(values[f] || "[]") as ReservationInput[]} onChange={(next) => setValues({ ...values, [f]: JSON.stringify(next) })} />
+            </div>
+          ) : (
             <label key={f}>
               {fields[f] || f}
               {f === "decision" ? (

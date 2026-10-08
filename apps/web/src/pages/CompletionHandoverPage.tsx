@@ -23,6 +23,7 @@ import { ActionGate, DetailPane } from "../ui/catalog";
 import { WorkbenchTemplate } from "../ui/templates";
 import { PageBoundary } from "./PageBoundary";
 import { recordTitle } from "./record-utils";
+import { HandoverReservationFields, type ReservationInput } from "./HandoverReservationFields";
 import "./completion-handover.css";
 
 const tabs: Array<{ id: CompletionMachine; key: CompletionLabelKey; description: CompletionLabelKey }> = [
@@ -187,7 +188,7 @@ function HandoverDetail({ item, t }: { item: WorkItem; t: (key: CompletionLabelK
             [t("reference"), reservation.issueRef], [t("reservationOwner"), reservation.ownerPartyId],
             [t("dueAt"), dateText(reservation.dueAt)], [t("partialScope"), reservation.scope],
           ]} />
-          <p>{completionText(reservation.requirement)}</p>
+          <p>{completionText(reservation.closureRequirement)}</p>
         </li>;
       })}</ol> : <p className="muted">—</p>}
       <p className="completion-boundary">{t("partialHandoverBoundary")}</p>
@@ -242,6 +243,7 @@ function CreateDraft({
   const [causeDescription, setCauseDescription] = useState("");
   const [operationalImpact, setOperationalImpact] = useState("");
   const [selected, setSelected] = useState<Record<string, string | string[]>>({});
+  const [reservationProposals, setReservationProposals] = useState<ReservationInput[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const identity = useRef({ id: crypto.randomUUID(), key: crypto.randomUUID() });
@@ -312,7 +314,8 @@ function CreateDraft({
           commissioningPackageRefs,
           asBuiltRefs: manyRefs("asBuiltRefs"), omManualRefs: manyRefs("omManualRefs"), trainingRefs: manyRefs("trainingRefs"),
           sparePartsRefs: manyRefs("sparePartsRefs"), certificateRefs: manyRefs("certificateRefs"),
-          statutoryAcceptanceRefs: manyRefs("statutoryAcceptanceRefs"), openIssueRefs: manyRefs("openIssueRefs"), reservationProposals: [],
+          statutoryAcceptanceRefs: manyRefs("statutoryAcceptanceRefs"), openIssueRefs: manyRefs("openIssueRefs"),
+          reservationProposals: reservationProposals.filter((entry) => manyRefs("openIssueRefs").some((ref) => keyForRef(ref) === keyForRef(entry.issueRef))),
         };
       } else {
         const period = oneRef("warrantyPeriodRef");
@@ -392,6 +395,7 @@ function CreateDraft({
         {docFields.map(([field, key]) => drawSelect(field, key, informationOptions, true))}
         {drawSelect("assetRefs", "assetRefs", referenceOptions.filter((option) => option.ref.objectType === "Asset"), true)}
         {drawSelect("openIssueRefs", "openIssueRefs", issueOptions, true)}
+        <HandoverReservationFields issues={manyRefs("openIssueRefs").map((ref) => ({ ref, label: issueOptions.find((option) => keyForRef(option.ref) === keyForRef(ref))?.label ?? ref.objectId }))} participants={workspace.participants} value={reservationProposals} onChange={setReservationProposals} />
       </>}
       {machine === "warranty_claim" && <>
         <RefSelect label={`${t("handoverRef")} *`} options={handoverOptions} value={(value("handoverRef") as string) || ""} onChange={(next) => setSingle("handoverRef", next)} emptyLabel={t("noReferences")} />
