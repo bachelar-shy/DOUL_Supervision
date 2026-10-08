@@ -21,6 +21,18 @@ import {
   paymentStateVi,
 } from "./payment-state-translations";
 import { evidenceDraftEn, evidenceDraftVi } from "./evidence-translations";
+import {
+  completionEn,
+  completionKo,
+  completionVi,
+} from "./completion-translations";
+import {
+  completionCommandEn,
+  completionCommandVi,
+  completionStateEn,
+  completionStateVi,
+} from "./completion-domain-translations";
+import { creationEn, creationKo, creationVi } from "./creation-translations";
 
 export {
   commands as koreanCommands,
@@ -322,7 +334,7 @@ const ko = {
   "command.answer": "설계 답변",
   "state.scheduled": "검측 예정",
   "state.requested": "접수 대기",
-  "state.passed": "적합 · 승인 전",
+  "state.passed": "통과 · 적합",
   "state.completed": "검측 완료",
   "state.in_progress": "진행 중",
   "state.candidate": "관찰 후보",
@@ -330,7 +342,7 @@ const ko = {
   "state.confirmed": "관찰 확인",
   "state.assigned": "배정됨",
   "state.issued": "발행 · 수령대기",
-  "state.reported": "결정 요청",
+  "state.reported": "보고됨",
   "state.awaiting_decision": "결정 대기",
   "state.closed": "종결",
   "state.ready_for_recheck": "재검측 대기",
@@ -682,6 +694,8 @@ const ko = {
   ...scheduleKo,
   ...contractKo,
   ...paymentKo,
+  ...completionKo,
+  ...creationKo,
   ...uiErrorKo,
   "navigation.parallelTest": "병렬 기능 테스트",
 } as const;
@@ -912,7 +926,7 @@ const vi: DraftTranslationDictionary = {
   "command.answer": "Trả lời thiết kế",
   "state.scheduled": "Đã lên lịch nghiệm thu",
   "state.requested": "Chờ tiếp nhận",
-  "state.passed": "Đạt · chưa phê duyệt tiếp",
+  "state.passed": "Đạt",
   "state.completed": "Nghiệm thu hoàn tất",
   "state.in_progress": "Đang thực hiện",
   "state.candidate": "Ghi nhận chờ xác nhận",
@@ -920,7 +934,7 @@ const vi: DraftTranslationDictionary = {
   "state.confirmed": "Đã xác nhận ghi nhận",
   "state.assigned": "Đã phân công",
   "state.issued": "Đã phát hành · chờ xác nhận nhận",
-  "state.reported": "Yêu cầu quyết định",
+  "state.reported": "Đã báo cáo",
   "state.awaiting_decision": "Chờ quyết định",
   "state.closed": "Đã đóng",
   "state.ready_for_recheck": "Chờ nghiệm thu lại",
@@ -939,6 +953,10 @@ const vi: DraftTranslationDictionary = {
   ...contractVi,
   ...evidenceDraftVi,
   ...paymentVi,
+  ...completionVi,
+  ...completionCommandVi,
+  ...completionStateVi,
+  ...creationVi,
   ...ownerVi,
   ...registerVi,
   ...paymentCommandVi,
@@ -1170,7 +1188,7 @@ const en: DraftTranslationDictionary = {
   "command.answer": "Submit design response",
   "state.scheduled": "Inspection scheduled",
   "state.requested": "Awaiting receipt",
-  "state.passed": "Compliant · not yet released",
+  "state.passed": "Passed · compliant",
   "state.completed": "Inspection complete",
   "state.in_progress": "In progress",
   "state.candidate": "Observation candidate",
@@ -1178,7 +1196,7 @@ const en: DraftTranslationDictionary = {
   "state.confirmed": "Observation confirmed",
   "state.assigned": "Assigned",
   "state.issued": "Issued · awaiting receipt",
-  "state.reported": "Decision requested",
+  "state.reported": "Reported",
   "state.awaiting_decision": "Awaiting decision",
   "state.closed": "Closed",
   "state.ready_for_recheck": "Awaiting reinspection",
@@ -1197,6 +1215,10 @@ const en: DraftTranslationDictionary = {
   ...contractEn,
   ...evidenceDraftEn,
   ...paymentEn,
+  ...completionEn,
+  ...completionCommandEn,
+  ...completionStateEn,
+  ...creationEn,
   ...ownerEn,
   ...registerEn,
   ...paymentCommandEn,

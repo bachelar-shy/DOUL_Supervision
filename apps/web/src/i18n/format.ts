@@ -1,5 +1,6 @@
 import i18n from "./config";
 import { intlLocaleFor } from "@doul/localization";
+import { formatDecimalExact } from "./decimal-format";
 
 function activeLocale() {
   return intlLocaleFor(i18n.resolvedLanguage ?? i18n.language);
@@ -40,7 +41,10 @@ export function formatNumber(value: number) {
 }
 
 export function formatCurrency(value: number | string, currency?: string) {
-  const numeric = typeof value === "number" ? value : Number(value);
+  if (typeof value === "string") {
+    return formatDecimalExact(value, activeLocale(), currency);
+  }
+  const numeric = value;
   if (!Number.isFinite(numeric)) return String(value);
   if (!currency) return formatNumber(numeric);
   try {

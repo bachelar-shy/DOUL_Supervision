@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { formatDecimalExact } from "../apps/web/src/i18n/decimal-format";
 
 async function chooseLanguage(page: Page, currentAria: string, language: string) {
   await page.getByRole("combobox", { name: currentAria }).selectOption(language);
@@ -166,6 +167,32 @@ test("Evidence summary, origin, and technical metadata translate without changin
   await locale.selectOption("ko");
   await expect(sheet.getByRole("tab", { name: "출처·연결" })).toBeVisible();
   await expect(sheet).toContainText("EVD-UI-001");
+});
+
+test("Exact decimal formatting preserves large amounts and long fractional strings in Chromium", async ({
+  page,
+}) => {
+  await page.goto("about:blank");
+  const source = formatDecimalExact.toString();
+  const output = await page.evaluate(({ functionSource }) => {
+    const formatter = new Function(`return (${functionSource})`)() as (
+      value: string,
+      locale: string,
+      currency?: string,
+    ) => string;
+    const amount = "9007199254740993.12345678901234567890";
+    return {
+      english: formatter(amount, "en-US", "USD"),
+      korean: formatter(amount, "ko-KR", "USD"),
+      vietnamese: formatter(amount, "vi-VN", "USD"),
+      negativeZero: formatter("-0.00000000000000000012", "en-US", "USD"),
+    };
+  }, { functionSource: source });
+
+  expect(output.english).toBe("$9,007,199,254,740,993.12345678901234567890");
+  expect(output.korean).toBe("US$9,007,199,254,740,993.12345678901234567890");
+  expect(output.vietnamese).toBe("9.007.199.254.740.993,12345678901234567890 US$");
+  expect(output.negativeZero).toBe("-$0.00000000000000000012");
 });
 
 for (const width of [390, 1440]) {
