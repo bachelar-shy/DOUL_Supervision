@@ -14,6 +14,7 @@ import { commands, fields, reasonLabel, roles } from "../labels";
 import { recordRef } from "./record-utils";
 import { Icon } from "./shared";
 import { HandoverReservationFields, type ReservationInput } from "./HandoverReservationFields";
+import { BOQLineItemFields } from "./BOQLineItemFields";
 
 const booleanFields = new Set([
   "changeRequired",
@@ -305,7 +306,9 @@ export function CommandModal({
           })}
         </p>
         <div className="modal-fields">
-          {dialog.action.fields.map((f) => f === "ownerReservationInputs" ? (
+          {dialog.action.fields.map((f) => f === "lineItems" && dialog.item.machine === "contract_boq" ? (
+            <BOQLineItemFields key={f} workspace={workspace} value={JSON.parse(values[f] || "[]") as Json[]} onChange={(next) => setValues({ ...values, [f]: JSON.stringify(next) })} />
+          ) : f === "ownerReservationInputs" ? (
             <div key={f}>
               <span>{t("completion.reservations")}</span>
               <HandoverReservationFields issues={((dialog.item.record.data?.openIssueRefs ?? []) as DomainRef[]).map((ref) => ({ ref, label: workspace.items.find((item) => item.record.id === ref.objectId)?.record.title ?? ref.objectId }))} participants={workspace.participants} value={JSON.parse(values[f] || "[]") as ReservationInput[]} onChange={(next) => setValues({ ...values, [f]: JSON.stringify(next) })} />

@@ -1,8 +1,9 @@
-import type { Json } from "../data/ui-contract";
+import type { Json, Workspace } from "../data/ui-contract";
 
 type Props = {
   value: Json[];
   onChange(value: Json[]): void;
+  workspace?: Workspace;
 };
 
 type LineItem = Record<string, Json>;
@@ -109,7 +110,7 @@ function textValue(value: Json | undefined): string {
   return typeof value === "string" ? value : value === undefined || value === null ? "" : String(value);
 }
 
-export function BOQLineItemFields({ value, onChange }: Props) {
+export function BOQLineItemFields({ value, onChange, workspace }: Props) {
   const locale = typeof document !== "undefined" ? document.documentElement.lang.slice(0, 2) : "en";
   const t = labels[locale === "ko" || locale === "vi" ? locale : "en"];
   const rows = value.map((item, index) => ({ item: objectValue(item), key: objectValue(item)?.boqItemId ?? `row-${index}` }));
@@ -141,9 +142,9 @@ export function BOQLineItemFields({ value, onChange }: Props) {
       contractQuantity: "",
       unitRate: "",
       contractAmount: "",
-      packageId: "",
-      discipline: "",
-      locationScope: [],
+      packageId: workspace?.context.scope.packageId ?? "",
+      discipline: workspace?.context.scope.discipline ?? "",
+      locationScope: workspace?.context.scope.locationId ? [workspace.context.scope.locationId] : [],
       measurementRuleRef: { objectType: "", objectId: "", version: 0 },
       variationEligible: false,
       provisional: false,
@@ -165,9 +166,9 @@ export function BOQLineItemFields({ value, onChange }: Props) {
         const reference = refValue(row);
         const locationScope = Array.isArray(row.locationScope) ? row.locationScope.map(textValue).join(", ") : "";
         return (
-          <fieldset key={String(key)} className="grid gap-3 rounded-md border p-3">
+          <fieldset key={String(key)} data-boq-item-id={textValue(row.boqItemId)} className="grid gap-3 rounded-md border p-3">
             <legend className="px-1 text-sm font-medium">{textValue(row.itemNo) || `${t.itemNo} ${index + 1}`}</legend>
-            <label className={fieldClass}>{t.itemId}<input className={inputClass} value={textValue(row.boqItemId)} readOnly /></label>
+            {!workspace && <label className={fieldClass}>{t.itemId}<input className={inputClass} value={textValue(row.boqItemId)} readOnly /></label>}
             <div className="grid gap-3 sm:grid-cols-2">
               <label className={fieldClass}>{t.itemNo}<input className={inputClass} value={textValue(row.itemNo)} onChange={event => update(index, { itemNo: event.target.value })} /></label>
               <label className={fieldClass}>{t.unit}<input className={inputClass} value={textValue(row.unit)} onChange={event => update(index, { unit: event.target.value })} /></label>
@@ -178,21 +179,24 @@ export function BOQLineItemFields({ value, onChange }: Props) {
               <label className={fieldClass}>{t.unitRate}<input className={inputClass} inputMode="decimal" value={textValue(row.unitRate)} onChange={event => update(index, { unitRate: event.target.value })} /></label>
               <label className={fieldClass}>{t.contractAmount}<input className={inputClass} inputMode="decimal" value={textValue(row.contractAmount)} onChange={event => update(index, { contractAmount: event.target.value })} /></label>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            {!workspace && <div className="grid gap-3 sm:grid-cols-2">
               <label className={fieldClass}>{t.packageId}<input className={inputClass} value={textValue(row.packageId)} onChange={event => update(index, { packageId: event.target.value })} /></label>
               <label className={fieldClass}>{t.discipline}<input className={inputClass} value={textValue(row.discipline)} onChange={event => update(index, { discipline: event.target.value })} /></label>
-            </div>
-            <label className={fieldClass}>{t.locationScope}<input className={inputClass} value={locationScope} onChange={event => update(index, { locationScope: event.target.value.split(",").map(part => part.trim()).filter(Boolean) })} /></label>
+            </div>}
+            {!workspace && <label className={fieldClass}>{t.locationScope}<input className={inputClass} value={locationScope} onChange={event => update(index, { locationScope: event.target.value.split(",").map(part => part.trim()).filter(Boolean) })} /></label>}
             <fieldset className="grid gap-3 rounded-md border p-3">
               <legend className="px-1 text-sm">{t.measurementRule}</legend>
-              <div className="grid gap-3 sm:grid-cols-3">
+              {workspace ? <select aria-label={t.measurementRule} className={inputClass} value={reference.objectId ? JSON.stringify(reference) : ""} onChange={(event) => update(index, { measurementRuleRef: event.target.value ? JSON.parse(event.target.value) as Json : {} })}>
+                <option value="">—</option>
+                {(workspace.context.referenceCatalog?.requirements ?? []).map((entry) => <option key={JSON.stringify(entry.ref)} value={JSON.stringify(entry.ref)}>{String(entry.record.title ?? entry.ref.objectId)} · v{entry.ref.version}</option>)}
+              </select> : <div className="grid gap-3 sm:grid-cols-3">
                 <label className={fieldClass}>{t.objectType}<input className={inputClass} value={textValue(reference.objectType)} onChange={event => updateReference(index, { objectType: event.target.value })} /></label>
                 <label className={fieldClass}>{t.objectId}<input className={inputClass} value={textValue(reference.objectId)} onChange={event => updateReference(index, { objectId: event.target.value })} /></label>
                 <label className={fieldClass}>{t.version}<input className={inputClass} inputMode="numeric" value={textValue(reference.version)} onChange={event => {
                   const versionText = event.target.value;
                   updateReference(index, { version: /^\d+$/.test(versionText) ? Number.parseInt(versionText, 10) : 0 });
                 }} /></label>
-              </div>
+              </div>}
             </fieldset>
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={row.variationEligible === true} onChange={event => update(index, { variationEligible: event.target.checked })} />{t.variationEligible}</label>
