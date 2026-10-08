@@ -88,7 +88,7 @@ test("completion workspace keeps commissioning, handover, and warranty records s
 
   await tabs.nth(0).click();
   await workspace.getByRole("button", { name: /UI Commissioning Record/ }).click();
-  await expect(workspace).toContainText("시험 결과 이력");
+  await expect(workspace.locator(".completion-history")).toHaveCount(1);
   await expect(workspace).toContainText("Initial pressure leak");
   await expect(workspace).toContainText("test-fail");
   await expect(workspace).toContainText("test-pass");

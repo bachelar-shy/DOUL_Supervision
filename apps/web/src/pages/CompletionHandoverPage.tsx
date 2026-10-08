@@ -237,6 +237,7 @@ function CreateDraft({
   const requiredProfileKey = machine === "commissioning_package" ? "commissioningProfileRef" : machine === "handover_package" ? "handoverProfileRef" : "warrantyPeriodRef";
   const informationOptions = relevantOptions(["InformationItem", "DocumentSnapshot"]);
   const workItemOptions = relevantOptions(["WorkItem"]);
+  const evidenceOptions = referenceOptions.filter((option) => option.ref.objectType === "Evidence");
   const inspectionOptions = workItemOptions.filter((option) => workspace.items.some((item) => item.machine === "inspection" && item.record.id === option.ref.objectId));
   const commissioningOptions = workItemOptions.filter((option) => workspace.items.some((item) => item.machine === "commissioning_package" && item.record.id === option.ref.objectId));
   const handoverOptions = workItemOptions.filter((option) => workspace.items.some((item) => item.machine === "handover_package" && item.record.id === option.ref.objectId));
@@ -311,6 +312,7 @@ function CreateDraft({
       const payload = {
         ...scope, subtype, title: title.trim(), data,
         ...(requirementRefs.length ? { requirementRefs } : {}),
+        ...(machine === "warranty_claim" ? { evidenceIds: manyRefs("evidenceIds").map((ref) => ref.objectId) } : {}),
         ...(oneRef("drawingRef") ? { drawingRef: oneRef("drawingRef") } : {}),
       };
       const result = await client.create(machine, payload, identity.current.id, identity.current.key);
@@ -378,6 +380,7 @@ function CreateDraft({
         {commonRequirementSelectors}
         <RefSelect label={`${t("issueRef")} *`} options={issueOptions} value={(value("issueRef") as string) || ""} onChange={(next) => setSingle("issueRef", next)} emptyLabel={t("noReferences")} />
         {drawSelect("actionRefs", "actionRefs", actionOptions, true)}
+        {drawSelect("evidenceIds", "evidenceRefs", evidenceOptions, true)}
         <label className="completion-field">{t("observedAt")} *<input type="datetime-local" value={observedAt} onChange={(event) => setObservedAt(event.target.value)} disabled={busy} /></label>
         <label className="completion-field">{t("responseDueAt")}<input type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} disabled={busy} /></label>
         <label className="completion-field completion-field-wide">{t("defectDescription")} *<textarea value={defectDescription} onChange={(event) => setDefectDescription(event.target.value)} disabled={busy} /></label>
