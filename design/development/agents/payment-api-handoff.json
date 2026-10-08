@@ -2,7 +2,8 @@
   "branch": "goal/payment-api-v1",
   "baseCommit": "943d1dd",
   "commits": [
-    "4c4d8265b41c41076bd72c0923b9aa529353fb97"
+    "4c4d8265b41c41076bd72c0923b9aa529353fb97",
+    "5c1c163"
   ],
   "scope": "F-05 generic HTTP acceptance for ContractBOQ, QuantityMeasurement and PaymentClaim, including owner decision/payment record lifecycle",
   "findings": {
@@ -43,5 +44,55 @@
   ],
   "documentationSources": [
     "FastAPI official TestClient guidance via Context7: https://fastapi.tiangolo.com/tutorial/testing/"
-  ]
+  ],
+  "followup_AC_HO_01": {
+    "commit": "5c1c163",
+    "scope": "Separate CommissioningPackage, HandoverPackage and WarrantyClaim WorkItem machines with typed scoped Requirement applicability profiles, contract guards, immutable server snapshots, generated API/TypeScript schemas, real HTTP acceptance, and PostgreSQL inheritance.",
+    "endpoints": {
+      "machines": {
+        "commissioning_package": "commissioning-packages",
+        "handover_package": "handover-packages",
+        "warranty_claim": "warranty-claims"
+      },
+      "dto": "All workflow records are WorkItems with fields under record.data. Create uses {roleAssignmentId, clientObjectId, payload}; command uses {roleAssignmentId, expectedVersion, payload, evidenceIds}.",
+      "engine_hook": "This branch relies on root-owned Engine/validator hook wiring from 9848203: initialize_create(engine,machine,record), check_guard(self,name,proposed,payload,party_id,role,command), and apply_effect(self,machine,command,proposed,payload,evidence_ids,party_id,role). Root must integrate those files before the branch runs without a hook overlay."
+    },
+    "profile_configuration": {
+      "commissioningProfile": "Exact active scoped Requirement applicability must define requiredPrecommissioningItemIds, requiredTestProcedureRefs, requiredIntegratedTestRefs, and every requires* boolean. Test procedures must be current approved MethodStatement InformationItems.",
+      "handoverProfile": "Exact active scoped Requirement applicability must define a non-empty requiredDocumentSets list and both warrantyTriggerOnPartialHandover and warrantyTriggerOnFinalHandover. When a trigger is true, warrantyPeriodStartAt must be explicit; no date is inferred from effectiveAt.",
+      "warrantyPeriod": "Exact active scoped Requirement applicability must define startsAt, endsAt, responseDueHours and closeAuthorityActorGroup SUP or OWN. WarrantyClaim period start must equal the start recorded by its exact accepted Handover.",
+      "configuration_boundary": "Product Contract 34 leaves contract document sets, warranty trigger dates/period, response SLA and close authority contract-specific. The backend requires these explicit Requirement values and has no default that could infer a legal trigger. The acceptance fixtures seed trusted Requirements directly; production profiles must be provisioned through the project configuration path before a user can create these objects."
+    },
+    "acceptance_scope": "Every F-07 WorkItem create/transition is exercised over HTTP. Trusted config and upstream accepted Inspection, Asset, InformationItem, Issue and Action fixtures are seeded directly. Retest evidence is uploaded through the HTTP evidence endpoint. No pilot/site verification is claimed.",
+    "tests": [
+      {
+        "command": "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_contracts.test_handover_contract -v",
+        "result": "PASS; 6 contract tests."
+      },
+      {
+        "command": "DOUL_TEST_POSTGRES_DSN=postgresql://doul:goal_test@127.0.0.1:15432/doul_goal_test /workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_handover_postgres -q",
+        "result": "PASS against PostgreSQL 16; 2 HTTP workflow cases, each using a unique temporary schema. Validated with root Engine hook code from 9848203 temporarily overlaid in this isolated worktree; the Engine file was restored afterward."
+      },
+      {
+        "command": "/workspace/DOUL_Supervision/work/priority-venv/bin/python scripts/dependency_environment.py --root . --python /workspace/DOUL_Supervision/work/priority-venv/bin/python --report work/handover-dependency-check.json --suite contracts",
+        "result": "PASS; production API lock verified; repository contract suite passed 294 tests using root Engine/validator hook versions from 9848203 temporarily overlaid and then restored."
+      },
+      {
+        "command": "git diff --check",
+        "result": "PASS."
+      }
+    ],
+    "incompleteTasks": [
+      "Integrate root-owned Engine and scripts/validate_contracts.py hook changes from 9848203 (and root-owned services/api/main.py creation-capability wiring) into this branch before standalone rerun.",
+      "Provision active scoped F-07 Requirement profiles through the project configuration path; the product contract does not specify contractual warranty dates, SLA values, required document sets or close actor for a real pilot, so no defaults were selected.",
+      "UI/browser acceptance remains owned by payment-ui; no field/pilot verification was performed."
+    ],
+    "restartCommands": [
+      "cd /workspace/work/doul-goal/payment-api",
+      "/workspace/DOUL_Supervision/work/priority-venv/bin/python scripts/generate_api.py",
+      "/workspace/DOUL_Supervision/work/priority-venv/bin/python scripts/generate_types.py",
+      "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_contracts.test_handover_contract tests_mvp.test_handover_http -q",
+      "DOUL_TEST_POSTGRES_DSN='postgresql://doul:goal_test@127.0.0.1:15432/doul_goal_test' /workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_handover_postgres -q"
+    ]
+  }
 }
