@@ -95,10 +95,6 @@ function recordLabel(record: RecordDTO, ref: DomainRef) {
   return `${title} · ${ref.objectType} · v${ref.version}`;
 }
 
-function optionKey(option: { id: string; label: string }) {
-  return `${option.id}:${option.label}`;
-}
-
 export interface OwnerDecisionAuthoringPanelProps {
   client: SupervisionClient;
   workspace: Workspace;
@@ -193,7 +189,7 @@ export function OwnerDecisionAuthoringPanel({
     : !capability?.canCreate ? text.unavailable : !targets.length ? text.missingTargets
       : !reports.length ? text.missingReports : "";
 
-  return <section className="panel grid gap-4 p-4" data-ui-component="owner-decision-authoring">
+  return <section className="panel min-w-0 grid gap-4 p-4" data-ui-component="owner-decision-authoring">
     <header className="grid gap-1">
       <h2 className="text-lg font-semibold">{text.title}</h2>
       <p className="text-sm text-muted-foreground">{text.description}</p>
@@ -201,49 +197,49 @@ export function OwnerDecisionAuthoringPanel({
     {disabledReason && <p className="rounded-sm border border-border bg-muted/40 p-3 text-sm" role="status">{disabledReason}</p>}
     <form className="grid gap-4" onSubmit={(event) => void save(event)}>
       <div className="grid gap-3 md:grid-cols-2">
-        <label className="grid gap-1 text-sm font-medium" htmlFor="decision-title">{text.recordTitle}
-          <input id="decision-title" className="min-h-10 rounded-sm border border-input bg-background px-3" value={title} maxLength={300} required disabled={busy} onChange={(event) => setTitle(event.target.value)} />
+        <label className="min-w-0 grid gap-1 text-sm font-medium" htmlFor="decision-title">{text.recordTitle}
+          <input id="decision-title" className="min-h-11 min-w-0 w-full rounded-sm border border-input bg-background px-3" value={title} maxLength={300} required disabled={busy} onChange={(event) => setTitle(event.target.value)} />
         </label>
-        <label className="grid gap-1 text-sm font-medium" htmlFor="decision-target">{text.target}
-          <select id="decision-target" className="min-h-10 rounded-sm border border-input bg-background px-3" value={targetKey} required disabled={busy || !targets.length} onChange={(event) => setTargetKey(event.target.value)}>
+        <label className="min-w-0 grid gap-1 text-sm font-medium" htmlFor="decision-target">{text.target}
+          <select id="decision-target" className="min-h-11 min-w-0 w-full rounded-sm border border-input bg-background px-3" value={targetKey} required disabled={busy || !targets.length} onChange={(event) => setTargetKey(event.target.value)}>
             <option value="">{targets.length ? text.targetEmpty : text.missingTargets}</option>
             {targets.map(({ ref, record }) => <option key={`${ref.objectType}:${ref.objectId}:${ref.version}`} value={`${ref.objectType}:${ref.objectId}:${ref.version}`}>{recordLabel(record, ref)}</option>)}
           </select>
         </label>
-        <label className="grid gap-1 text-sm font-medium" htmlFor="decision-report">{text.report}
-          <select id="decision-report" className="min-h-10 rounded-sm border border-input bg-background px-3" value={reportId} required disabled={busy || !reports.length} onChange={(event) => setReportId(event.target.value)}>
+        <label className="min-w-0 grid gap-1 text-sm font-medium" htmlFor="decision-report">{text.report}
+          <select id="decision-report" className="min-h-11 min-w-0 w-full rounded-sm border border-input bg-background px-3" value={reportId} required disabled={busy || !reports.length} onChange={(event) => setReportId(event.target.value)}>
             <option value="">{reports.length ? text.reportEmpty : text.missingReports}</option>
             {reports.map(({ ref, record }) => <option key={`${ref.objectId}:${ref.version}`} value={record.id}>{recordLabel(record, ref)}</option>)}
           </select>
         </label>
-        <label className="grid gap-1 text-sm font-medium" htmlFor="decision-due">{text.dueAt}
-          <input id="decision-due" type="datetime-local" className="min-h-10 rounded-sm border border-input bg-background px-3" value={dueAt} required disabled={busy} onChange={(event) => setDueAt(event.target.value)} />
+        <label className="min-w-0 grid gap-1 text-sm font-medium" htmlFor="decision-due">{text.dueAt}
+          <input id="decision-due" type="datetime-local" className="min-h-11 min-w-0 w-full rounded-sm border border-input bg-background px-3" value={dueAt} required disabled={busy} onChange={(event) => setDueAt(event.target.value)} />
         </label>
       </div>
 
       <fieldset className="grid gap-3 rounded-sm border border-border p-3" disabled={busy}>
         <legend className="px-1 text-sm font-semibold">{text.options}</legend>
-        {options.map((option, index) => <div className="grid gap-2 sm:grid-cols-[minmax(7rem,0.35fr)_1fr_auto]" key={`${index}-${optionKey(option)}`}>
-          <label className="grid gap-1 text-sm" htmlFor={`decision-option-id-${index}`}>{text.optionId}
-            <input id={`decision-option-id-${index}`} className="min-h-10 rounded-sm border border-input bg-background px-3" value={option.id} maxLength={40} required onChange={(event) => setOptions((current) => current.map((item, i) => i === index ? { ...item, id: event.target.value } : item))} />
+        {options.map((option, index) => <div className="grid gap-2 sm:grid-cols-[minmax(7rem,0.35fr)_1fr_auto]" key={index}>
+          <label className="min-w-0 grid gap-1 text-sm" htmlFor={`decision-option-id-${index}`}>{text.optionId}
+            <input id={`decision-option-id-${index}`} className="min-h-11 min-w-0 w-full rounded-sm border border-input bg-background px-3" value={option.id} maxLength={40} required onChange={(event) => setOptions((current) => current.map((item, i) => i === index ? { ...item, id: event.target.value } : item))} />
           </label>
-          <label className="grid gap-1 text-sm" htmlFor={`decision-option-label-${index}`}>{text.optionLabel}
-            <input id={`decision-option-label-${index}`} className="min-h-10 rounded-sm border border-input bg-background px-3" value={option.label} maxLength={300} required onChange={(event) => setOptions((current) => current.map((item, i) => i === index ? { ...item, label: event.target.value } : item))} />
+          <label className="min-w-0 grid gap-1 text-sm" htmlFor={`decision-option-label-${index}`}>{text.optionLabel}
+            <input id={`decision-option-label-${index}`} className="min-h-11 min-w-0 w-full rounded-sm border border-input bg-background px-3" value={option.label} maxLength={300} required onChange={(event) => setOptions((current) => current.map((item, i) => i === index ? { ...item, label: event.target.value } : item))} />
           </label>
           <button type="button" className="secondary self-end" disabled={options.length <= 1} onClick={() => setOptions((current) => current.filter((_, i) => i !== index))}>{text.removeOption}</button>
         </div>)}
         <button type="button" className="secondary justify-self-start" onClick={() => setOptions((current) => [...current, { id: `OPTION-${current.length + 1}`, label: "" }])}>{text.addOption}</button>
       </fieldset>
 
-      <label className="grid gap-1 text-sm font-medium" htmlFor="decision-recommendation">{text.recommendation}
+      <label className="min-w-0 grid gap-1 text-sm font-medium" htmlFor="decision-recommendation">{text.recommendation}
         <textarea id="decision-recommendation" className="min-h-24 rounded-sm border border-input bg-background p-3" value={recommendation} maxLength={3000} required disabled={busy} onChange={(event) => setRecommendation(event.target.value)} />
       </label>
 
       <fieldset className="grid gap-3 rounded-sm border border-border p-3" disabled={busy}>
         <legend className="px-1 text-sm font-semibold">{text.impact}</legend>
         <div className="grid gap-3 md:grid-cols-2">
-          {impactFields.map(([field, label]) => <label className="grid gap-1 text-sm" htmlFor={`decision-impact-${field}`} key={field}>{text[label]}
-            <input id={`decision-impact-${field}`} className="min-h-10 rounded-sm border border-input bg-background px-3" value={impact[field] || ""} maxLength={1000} onChange={(event) => setImpact((current) => ({ ...current, [field]: event.target.value }))} />
+          {impactFields.map(([field, label]) => <label className="min-w-0 grid gap-1 text-sm" htmlFor={`decision-impact-${field}`} key={field}>{text[label]}
+            <input id={`decision-impact-${field}`} className="min-h-11 min-w-0 w-full rounded-sm border border-input bg-background px-3" value={impact[field] || ""} maxLength={1000} onChange={(event) => setImpact((current) => ({ ...current, [field]: event.target.value }))} />
           </label>)}
         </div>
       </fieldset>
