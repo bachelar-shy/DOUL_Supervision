@@ -41,7 +41,7 @@
     },
     {
       "functionId": "F-04",
-      "currentStage": "ui_connected",
+      "currentStage": "integration_passed",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "46_Product_Functional_Baseline_v1_Validation.md",
@@ -56,9 +56,13 @@
         "services/api/postgres_store.py",
         "tests_browser/schedule.spec.ts",
         "tests_browser/schedule-delay-evidence.spec.ts",
-        "tests_browser/workspace.spec.ts"
+        "tests_browser/workspace.spec.ts",
+        "tests_browser/zz-schedule-contract-closed-loop.spec.ts",
+        "tests_mvp/test_schedule_source_import_http.py",
+        "tests_mvp/test_schedule_source_import_postgres.py",
+        "design/verification/priority-issues-validation.json"
       ],
-      "note": "Schedule, Delay and Recovery UI is connected to the real API with evidence, exact-version, idempotency, offline and permission boundaries. Full AC-SCH-01 integration and pilot acceptance remain distinct gates."
+      "note": "AC-SCH-01 passed through real source imports, approvals, UI commands, Owner decisions and effective baseline revision. All browser tests, contract/API tests including PostgreSQL, and source-commit GitHub CI passed. Synthetic staging validation only; pilot acceptance remains unverified."
     },
     {
       "functionId": "F-05",
@@ -92,7 +96,7 @@
     },
     {
       "functionId": "F-08",
-      "currentStage": "ui_connected",
+      "currentStage": "integration_passed",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "35_Contract_Notice_Claim_EOT_Functional_Contract.md",
@@ -106,9 +110,13 @@
         "apps/web/src/app/routes.ts",
         "packages/client/src/index.ts",
         "services/api/main.py",
-        "services/api/persistence.py"
+        "services/api/persistence.py",
+        "tests_browser/zz-schedule-contract-closed-loop.spec.ts",
+        "tests_mvp/test_schedule_source_import_http.py",
+        "tests_mvp/test_schedule_source_import_postgres.py",
+        "design/verification/priority-issues-validation.json"
       ],
-      "note": "Real API-connected Contract UI and focused HTTP/browser evidence exist. Full AC-SCH-01 browser acceptance and CI confirmation are required before integration_passed; pilot remains unverified."
+      "note": "AC-SCH-01 passed through real source imports, approvals, UI commands, Owner decisions and effective baseline revision. All browser tests, contract/API tests including PostgreSQL, and source-commit GitHub CI passed. Synthetic staging validation only; pilot acceptance remains unverified."
     },
     {
       "functionId": "F-09",
