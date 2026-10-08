@@ -1,4 +1,5 @@
 import { scheduleInputs } from "../data/schedule-fields.generated";
+import { completionReferenceOptions } from "../data/completion-workspace";
 import { commandInputs } from "../data/command-fields.generated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -97,8 +98,9 @@ function referenceOptions(
   workspace: Workspace,
   current: WorkItem,
   currentRequirementLabel: string,
+  referenceKind?: "single" | "multiple",
 ): Array<{ label: string; ref: DomainRef }> {
-  if (!selectableReferenceFields.has(field)) return [];
+  if (!selectableReferenceFields.has(field)) return referenceKind ? completionReferenceOptions(workspace) : [];
   if (field === "clauseRefs") {
     return [{ label: currentRequirementLabel, ref: workspace.context.requirementRef }];
   }
@@ -380,16 +382,17 @@ export function CommandModal({
                   workspace,
                   dialog.item,
                   t("commandModal.currentRequirement"),
+                  commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference,
                 ).length ? (
                 <select
-                  multiple={multipleReferenceFields.has(f)}
+                  multiple={(commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f))}
                   value={
-                    multipleReferenceFields.has(f)
+                    (commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f))
                       ? selectedReferenceValues(values[f])
                       : values[f]
                   }
                   onChange={(e) => {
-                    if (multipleReferenceFields.has(f)) {
+                    if ((commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f))) {
                       const refs = Array.from(e.currentTarget.selectedOptions).map(
                         (option) => JSON.parse(option.value) as DomainRef,
                       );
@@ -402,7 +405,7 @@ export function CommandModal({
                     }
                   }}
                 >
-                  {!multipleReferenceFields.has(f) && (
+                  {!(commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f)) && (
                     <option value="">{t("commandModal.referenceSelect")}</option>
                   )}
                   {referenceOptions(
@@ -410,6 +413,7 @@ export function CommandModal({
                     workspace,
                     dialog.item,
                     t("commandModal.currentRequirement"),
+                  commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference,
                   ).map(
                     ({ label, ref }) => {
                       const value = JSON.stringify(ref);
