@@ -1,6 +1,6 @@
 {
   "branch": "goal/i18n-integration-v1",
-  "lastcommit": "86389c9",
+  "lastcommit": "485d421",
   "done": [
     "Integrated PR 120 localization foundation commits 08ea87e and e51b1e2.",
     "Added ko/vi/en shared UI, payment, owner, register, and error dictionaries; added payment command/state labels.",
@@ -9,6 +9,7 @@
     "Added all current completion page labels in ko/vi/en, including evidence, profile/readiness, and generic error labels, plus global AC-HO state/command translations using API-confirmed names.",
     "Added global pass/fail result labels for commissioning test history.",
     "Added the payment calculation boundary label in ko/vi/en and retained shared creation capability and reason label mappings.",
+    "Added localized completion command availability labels and a generic completion request error label.",
     "Added ContractPage creation-reason translation keys for offline, mock, missing context, unauthorized, prerequisites, unavailable, and unknown cases.",
     "Made string currency formatting exact for large integers and arbitrary fractional scale; added a Chromium regression test."
   ],
@@ -20,7 +21,7 @@
     "python3 -m unittest tests.test_localization_contract -v (18 passed)",
     "DOUL_TEST_PYTHON=/workspace/DOUL_Supervision/work/priority-venv/bin/python npm run test:contracts (316 passed)",
     "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npx playwright test --config=playwright.localization.config.ts --reporter=line (8 passed, including exact decimal browser test)",
-    "Python parity audit: all 106 current completion keys and 80 payment keys have one label per locale; global known reason codes have all three locales.",
+    "Python parity audit: current completion/payment keys and the additional command status labels have one label per locale; global known reason codes have all three locales.",
     "git diff --check"
   ],
   "todo": [
