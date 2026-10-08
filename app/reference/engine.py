@@ -341,6 +341,9 @@ class Engine:
         if machine=='analysis_run':
             self._analysis_inspection_context(record)
         self._common(record,role)
+        if machine in {'commissioning_package','handover_package','warranty_claim'}:
+            from .handover import validate_creation
+            validate_creation(self,machine,record,party_id,role)
         if machine=='inspection':
             require(record['nextWorkAllowed'] is False and not set(record)&{'resultStatus','acceptanceDocumentId','approvalId'}, 'IMMUTABLE_FIELD', 'Inspection starts unreleased without result')
             require(bool(record.get('requirementRefs')) and bool(record.get('drawingRef')), 'INSPECTION_PACKAGE_COMPLETE', 'Inspection needs a requirement baseline and drawing')

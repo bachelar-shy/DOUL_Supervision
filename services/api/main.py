@@ -401,7 +401,22 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         session=identity(request)
         with store.transaction():
             role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
-            try:return build_work_inbox(store.engine,project_id,session,role,readable=readable,preflight=preflight,has_candidates=has_command_candidates,limit=limit,cursor=cursor)
+            from services.api.modules.read_authorization import ReadAuthorizationView
+            read_auth=ReadAuthorizationView(store.engine)
+
+            def inbox_readable(record,actor,assignment):
+                require(record['projectId']==assignment['projectId'],'PROJECT_MISMATCH','Project unavailable')
+                read_auth.authorize_read(record,actor['partyId'],assignment['id'])
+
+            def inbox_has_candidates(machine,record,actor,assignment):
+                for transition in store.engine.machines[machine]['transitions']:
+                    if transition['from']!=record['status']:continue
+                    try:read_auth.authorize(record,transition['authority'],actor['partyId'],assignment['id'])
+                    except ContractError:continue
+                    return True
+                return False
+
+            try:return build_work_inbox(store.engine,project_id,session,role,readable=inbox_readable,preflight=preflight,has_candidates=inbox_has_candidates,limit=limit,cursor=cursor)
             except InboxCursorError as exc:raise ContractError('INVALID_REQUEST',str(exc))
             except ValueError as exc:raise ContractError('INVALID_REQUEST',str(exc))
 
