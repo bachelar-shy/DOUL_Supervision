@@ -1,11 +1,14 @@
 {
   "branch": "goal/i18n-integration-v1",
-  "lastcommit": "0c59037",
+  "lastcommit": "a3d72bf",
   "done": [
     "Integrated PR 120 localization foundation commits 08ea87e and e51b1e2.",
     "Added ko/vi/en shared UI, payment, owner, register, and error dictionaries; added payment command/state labels.",
     "Added locale-aware UI date/number/money presentation helpers and migrated affected UI surfaces.",
-    "Added server-side localized document title/field/table-label catalog for all current 36 forms, locale formatting helpers, review metadata, and contract tests."
+    "Added server-side localized document title/field/table-label catalog for all current 36 forms, locale formatting helpers, review metadata, and contract tests.",
+    "Added all 90 completion page labels in ko/vi/en plus global AC-HO state/command translations using API-confirmed names.",
+    "Added ContractPage creation-reason translation keys for offline, mock, missing context, unauthorized, prerequisites, unavailable, and unknown cases.",
+    "Made string currency formatting exact for large integers and arbitrary fractional scale; added a Chromium regression test."
   ],
   "tests": [
     "npm run typecheck",
@@ -14,13 +17,12 @@
     "npm run lint --workspace apps/web (existing warnings only)",
     "python3 -m unittest tests.test_localization_contract -v (18 passed)",
     "DOUL_TEST_PYTHON=/workspace/DOUL_Supervision/work/priority-venv/bin/python npm run test:contracts (316 passed)",
-    "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npx playwright test --config=playwright.localization.config.ts --reporter=line (7 passed)",
+    "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npx playwright test --config=playwright.localization.config.ts --reporter=line (8 passed, including exact decimal browser test)",
     "git diff --check"
   ],
   "todo": [
-    "Add completion.<key> ko/vi/en translations and any missing global states/commands after payment UI worker sends its final completionLabelKeys list.",
     "Root must wire document_localization and format_document_value into documents.py and freeze catalog version/hash in snapshots; preserve statutory FM-09/10/11 Vietnamese language restrictions and source payload immutability.",
-    "Root owns final payment/capability routing and client/ui-contract integration; reconcile ContractPage changes carefully.",
+    "Root owns final payment/capability routing and client/ui-contract integration; reconcile ContractPage changes carefully and verify new creation.reason keys are used.",
     "Have qualified local reviewers verify Vietnamese/Korean report translations before representing them as approved; current catalog marks vi/en draft pending local review."
   ],
   "restart": "Continue on goal/i18n-integration-v1 in /workspace/work/doul-goal/i18n. Commits through 0c59037 are clean. The worktree's node_modules is installed, but shared overlay disk was full at the last check; npm/browser verification already completed. Do not push or merge remote."
