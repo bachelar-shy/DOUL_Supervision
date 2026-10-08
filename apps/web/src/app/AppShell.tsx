@@ -157,32 +157,6 @@ export function AppShell({ client }: { client: SupervisionClient }) {
     setToast("서버에서 처리했습니다.");
     await refresh();
   }
-  async function createInspection() {
-    if (!workspace) return;
-    try {
-      const r = await client.create("inspection", {
-        ...workspace.context.scope,
-        workName: "새 자체검측 · 예시",
-        selfInspectionComplete: true,
-        precheck: {
-          drawing: true,
-          material: true,
-          test: true,
-          previous: true,
-          change: true,
-        },
-        holdPoint: false,
-        nextWorkAllowed: false,
-        requirementRefs: [workspace.context.requirementRef],
-        drawingRef: workspace.context.drawingRef,
-        evidenceIds: [workspace.context.evidenceId],
-      });
-      await refresh();
-      setSelected(r.record.id);
-    } catch (e) {
-      setError(String(e));
-    }
-  }
   async function createIssue(item: WorkItem) {
     if (!workspace) return;
     try {
@@ -266,6 +240,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                 aria-label="개발 역할 선택"
                 value={role}
                 onChange={(e) => {
+                  if (e.target.value === activeRole.current) return;
                   ++sequence.current;
                   activeRole.current = e.target.value as HumanRole;
                   setDialog(null);
@@ -447,7 +422,8 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   online={online}
                   onSelect={setSelected}
                   onOpenCommand={(item, action) => setDialog({ item, action })}
-                  onCreateInspection={createInspection}
+                  client={client}
+                  onInspectionCreated={async record => { await refresh(); setSelected(record.id); }}
                   onCreateIssue={createIssue}
                 />
               )}

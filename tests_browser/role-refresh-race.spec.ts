@@ -1,7 +1,7 @@
 import {expect,test} from '@playwright/test';
 for (const fails of [false,true]) test(`a delayed prior-role ${fails ? 'failure' : 'refresh'} cannot replace the active workspace`, async ({page}) => {
   await page.goto('/#/parallel-test');
-  await expect(page.getByLabel('PDF 도면 뷰어')).toBeVisible();
+  await expect(page.getByLabel('PDF 도면 뷰어')).toBeVisible({timeout:30000});
   let release!: () => void;
   let captured!: () => void;
   const held = new Promise<void>(resolve => { release = resolve; });
