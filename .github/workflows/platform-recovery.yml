@@ -1,10 +1,10 @@
 name: platform-consistent-recovery
 on:
   pull_request:
-    paths: ['services/recovery/**', 'services/runtime_config.py', 'services/api/requirements.lock', 'infra/backup/**', 'infra/compose/**', 'tests_mvp/test_recovery.py', 'tests_runtime/recovery_live.py', '.github/workflows/platform-recovery.yml']
+    paths: ['app/**', 'services/api/**', 'services/recovery/**', 'services/runtime_config.py', 'services/api/requirements.lock', 'infra/backup/**', 'infra/compose/**', 'tests_mvp/test_recovery.py', 'tests_runtime/recovery_live.py', '.github/workflows/platform-recovery.yml']
   push:
     branches: [main]
-    paths: ['services/recovery/**', 'services/runtime_config.py', 'services/api/requirements.lock', 'infra/backup/**', 'infra/compose/**', 'tests_mvp/test_recovery.py', 'tests_runtime/recovery_live.py', '.github/workflows/platform-recovery.yml']
+    paths: ['app/**', 'services/api/**', 'services/recovery/**', 'services/runtime_config.py', 'services/api/requirements.lock', 'infra/backup/**', 'infra/compose/**', 'tests_mvp/test_recovery.py', 'tests_runtime/recovery_live.py', '.github/workflows/platform-recovery.yml']
 permissions:
   contents: read
 jobs:

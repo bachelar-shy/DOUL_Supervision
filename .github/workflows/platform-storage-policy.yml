@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/platform-storage-policy.yml"
       - "infra/storage_policy_v1.json"
+      - "app/schema/**"
       - "infra/storage-operations.md"
       - "infra/ci/validate_storage_policy.py"
       - "app/schema/domain_model_v2.json"
@@ -16,6 +17,7 @@ on:
     paths:
       - ".github/workflows/platform-storage-policy.yml"
       - "infra/storage_policy_v1.json"
+      - "app/schema/**"
       - "infra/storage-operations.md"
       - "infra/ci/validate_storage_policy.py"
       - "app/schema/domain_model_v2.json"
