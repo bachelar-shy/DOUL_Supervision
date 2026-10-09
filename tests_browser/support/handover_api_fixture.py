@@ -81,6 +81,7 @@ def main() -> None:
     reservation_action = setup.engine.get("Action", reservation_action_ref["objectId"])
     reservation_issue.update(version=reservation_issue["version"] + 1, title="F-07 browser reservation Punch",
                              actionIds=[reservation_action["id"]],
+                             inspectionIds=[setup.inspection_id],
                              responsiblePartyId=setup.store.meta["actors"]["CON"]["partyId"],
                              responsibleOrganizationId=setup.scope["responsibleOrganizationId"], dueAt=setup.tomorrow)
     reservation_action.update(version=reservation_action["version"] + 1, title="F-07 browser reservation action",
@@ -137,7 +138,7 @@ def main() -> None:
         "warrantyStartAt": warranty_start_at,
         "actors": {group: actor["partyId"] for group, actor in store.meta["actors"].items()},
         "responsibleOrganizationId": setup.scope["responsibleOrganizationId"],
-        "disclosure": "HandoverHttpTests seeds explicit F-07 Requirement profiles, approved InformationItems, and accepted upstream Requirement, drawing, Evidence, project-scoped Inspection, and Asset records. The fixture creates two scoped open Punch Issues and verified Actions using the test contract helper: one for commissioning fail/retest and one reserved for partial handover/warranty. It links exact current refs and source Evidence, selects the server-catalogued passed Inspection, and uploads a distinct retest Evidence through the HTTP upload endpoints. These are disclosed upstream prerequisites only. Browser-created commissioning and handover records, the Owner decision sequence, and the warranty claim use real UI and HTTP routes. The scenario stops at the current assigned/in-progress warranty Action gate; it does not claim remedy, reinspection, or warranty close.",
+        "disclosure": "HandoverHttpTests seeds explicit F-07 Requirement profiles, approved InformationItems, and accepted upstream Requirement, drawing, Evidence, project-scoped Inspection, and Asset records. The fixture creates two scoped open Punch Issues and verified Actions using the test contract helper: one for commissioning fail/retest and one reserved for partial handover/warranty. Both exact current Issue refs are linked to the passed source Inspection; this relationship is an explicit upstream fixture prerequisite so the authorized case UI can present the reserved warranty Punch for its later reinspection workflow. The fixture links exact current refs and source Evidence, selects the server-catalogued passed Inspection, and uploads a distinct retest Evidence through the HTTP upload endpoints. These are disclosed upstream prerequisites only. Browser-created commissioning and handover records, the Owner decision sequence, and the warranty claim use real UI and HTTP routes. The scenario stops at the server's current-reference boundary after actual correction, remedy, and reinspection transitions; it does not claim warranty acceptance or close.",
     }
     print(json.dumps(meta), flush=True)
     try:

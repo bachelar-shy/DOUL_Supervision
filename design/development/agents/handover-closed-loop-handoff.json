@@ -1,25 +1,24 @@
 {
   "branch": "goal/handover-closed-loop-v1",
-  "checkpointCommit": "pending-owned-checkpoint",
-  "scope": "Real HTTP-backed CompletionHandoverPage browser evidence for F-07 commissioning, partial handover, and the bounded warranty Action gate.",
+  "checkpointCommit": "1b2e4576238cb4cd17d5918b0dbbe01e185bfc2d",
+  "scope": "Real HTTP-backed CompletionHandoverPage browser evidence for F-07 commissioning, partial handover, and a warranty stale-reference boundary after actual UI Action/reinspection transitions.",
   "completed": [
     "Created commissioning package through Completion UI; exercised fail, Punch correction, signed reinspection, release, stale current Punch ref refresh, and close through authorized UI commands.",
     "Created handover draft with two Assets and a reservation through Completion UI; submitted readiness and owner review; SUP issued the Owner decision request and OWN acknowledged and submitted a decision through Owner UI.",
     "Accepted the exact reservation and recorded partial handover with a strict subset scope through Completion UI.",
-    "Created, reported, acknowledged, and assessed a Warranty claim through Completion UI; verified start_remedy remains disabled with server guard WARRANTY_ACTION_REQUIRED because its same-scope linked Action is still verified; claim state remains action_required.",
-    "Fixture uses the existing HTTP contract setup for explicitly disclosed upstream Requirement, InformationItem, Evidence, Inspection, Asset, Punch Issue, and verified Action prerequisites. Signature calls use a deterministic test-only MockTrustedVerifier and are not provider proof.",
+    "The complementary case creates a current linked Action through the ActionAuthoringPanel UI, assigns it through the authorized SUP UI, captures its exact assigned ref, starts the Warranty remedy, then starts/submits/verifies the Action through UI and submits the remedy with evidence.",
+    "The complementary case links the reserved Punch to the disclosed source Inspection in fixture setup, requests and executes a linked reinspection through UI, and observes REFERENCE_STALE when Warranty accept_remedy is attempted with the current server-catalogued reinspection ref and evidence because the Warranty's stored Issue ref predates Issue progression. The case stops there; it does not accept or close the Warranty claim.",
+    "Fixture uses the existing HTTP contract setup for explicitly disclosed upstream Requirement, InformationItem, Evidence, Inspection, Asset, Punch Issue, and verified Action prerequisites. Both seeded Punch Issues link to the disclosed passed source Inspection so the authorized case UI can present the reservation Punch for reinspection. Signature calls use a deterministic test-only MockTrustedVerifier and are not provider proof.",
     "Fixture origin is derived from Playwright baseURL; API and Chromium launch paths accept environment overrides; API child cleanup is bounded."
   ],
   "tests": {
-    "command": "DOUL_TEST_PYTHON=/workspace/DOUL_Supervision/work/priority-venv/bin/python HO_TEST_CHROMIUM=/usr/bin/chromium playwright test --config .local/playwright-handover.config.ts --output=/tmp/doul-handover-cap-results33 --reporter=list",
-    "result": "3 passed (33.5s): planned commissioning/missing procedure gate; Owner reservation draft; real commissioning-to-partial-handover and warranty Action gate.",
-    "scope": "The third case is intentionally partial. It does not prove warranty remedy, reinspection, or warranty close."
+    "command": "PATH=/workspace/DOUL_Supervision/node_modules/.bin:$PATH DOUL_TEST_PYTHON=/workspace/DOUL_Supervision/work/priority-venv/bin/python HO_TEST_CHROMIUM=/usr/bin/chromium playwright test --config .local/playwright-handover.config.ts --output=/tmp/doul-handover-cap-results47 --reporter=list",
+    "result": "4 passed (1.2m): planned commissioning/missing procedure gate; Owner reservation draft; commissioning through partial handover and Action gate; complementary UI Action/remedy/reinspection continuation ending at the stale Issue ref rejection.",
+    "scope": "Evidence reaches commissioning close, partial handover, remedy submission, and a real reinspection; Warranty accept_remedy is rejected with REFERENCE_STALE. Warranty acceptance/close and final FM09 release are not proven."
   },
   "todo": [
-    "Overlay root ActionAuthoringPanel UI integration commit 7aa25d7 as shared files only; do not commit shared UI overlays from this worktree.",
-    "If accessible Action authoring is available, extend with a complementary warranty continuation using normal authorized UI or actual authorized HTTP create/assign/start commands; keep any non-UI Action setup explicit and separate from the UI evidence claim.",
-    "Stop at and report the exact current-reference guard if Issue progression makes handover/warranty Issue refs stale; do not implement C2 reference reconciliation without Product decision.",
-    "Re-run focused browser spec and commit only owned test, fixture, and handoff files."
+    "Run all four owned browser cases together; commit only owned test, fixture, and handoff files. Shared root UI overlays are already present in this worktree for local execution and must not be committed from here.",
+    "Do not implement C2 reference reconciliation without Product decision. If policy is approved later, separately test preservation of the original Warranty Issue snapshot and audit history."
   ],
   "claims": [
     "Development/test evidence only; not a pilot or production readiness claim.",

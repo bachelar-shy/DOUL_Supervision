@@ -111,12 +111,13 @@ const commandFieldLabels: Record<string, RegExp> = {
   retestBasisRefs: /retestBasis|재시험 근거/i,
   punchIssueRefs: /punchIssue|punch issue|펀치|이슈/i,
   ownerDecisionRef: /owner decision reference|발주처 결정/i,
+  reinspectionRef: /reinspection reference|재검측 참조/i,
   acceptedScope: /acceptedScope|인수 범위/i,
   effectiveAt: /effectiveAt|적용 시각/i,
   warrantyTrigger: /warrantyTrigger|보증 개시 여부/i,
   actionRefs: /actionRefs|조치 참조/i,
   responseDueAt: /responseDueAt|조치 응답 기한/i,
-  remedySummary: /remedySummary|조치 내용/i,
+  remedySummary: /remedySummary|보수 요약/i,
   decisionReason: /decisionReason|결정 사유/i,
   selectedOption: /selectedOption|선택 옵션/i,
   evidenceIds: /evidence ids|명령 증빙 ID/i,
@@ -127,6 +128,9 @@ const workbenchFieldLabels: Record<string, RegExp> = {
   dueAt: /due at|기한|처리기한/i,
   actionIds: /action IDs|연결 조치 ID/i,
   closureEvidenceIds: /closureEvidenceIds|closure evidence|종결 증빙/i,
+  correction: /correction|시정.?조치 내용/i,
+  rootCause: /root cause|원인/i,
+  preventiveAction: /preventive action|재발방지 대책/i,
   "검측 항목·측정 결과": /검측 항목|check results/i,
   "접수 시각": /접수 시각|received at/i,
   "검측 예정시각": /검측 예정|scheduled at/i,
@@ -137,6 +141,7 @@ async function runCompletionCommand(
   command: RegExp,
   fields: Record<string, CommandInput> = {},
   evidenceIds: string[] = [],
+  expectedFailureCode?: string,
 ) {
   const workspace = page.locator("[data-ui-component='completion-handover-workspace']");
   const button = workspace.locator(".completion-commands").getByRole("button", { name: command });
@@ -186,13 +191,20 @@ async function runCompletionCommand(
     await evidenceInput.fill(evidenceIds.join(","));
   }
   const responsePromise = page.waitForResponse((response) => response.request().method() === "POST" && response.url().includes("/api/projects/") && !response.url().endsWith("/workspace"));
-  const refreshedWorkspace = page.waitForResponse((response) => response.request().method() === "GET" && response.url().includes("/workspace"));
+  const refreshedWorkspace = expectedFailureCode
+    ? undefined
+    : page.waitForResponse((response) => response.request().method() === "GET" && response.url().includes("/workspace"));
   await dialog.getByRole("button", { name: /execute|확인 후 실행/i }).click();
   const response = await responsePromise;
   const body = await response.json();
+  if (expectedFailureCode) {
+    expect(response.status(), JSON.stringify(body)).toBe(409);
+    expect(body.code).toBe(expectedFailureCode);
+    return body;
+  }
   expect(response.status(), JSON.stringify(body)).toBe(200);
   await expect(dialog).toHaveCount(0);
-  await refreshedWorkspace;
+  await refreshedWorkspace!;
   return body.record;
 }
 
@@ -405,7 +417,7 @@ test("real Completion UI preserves Owner reservation proposal inputs on a handov
   }
 });
 
-test("real Completion UI carries commissioning through Owner partial handover and records the warranty Action gate", async ({ page }) => {
+async function runCompletionHandoverScenario(page: Page, continueWarranty: boolean): Promise<void> {
   test.setTimeout(120000);
   const origin = testOrigin();
   const { child, base, fixture } = await startApi(origin);
@@ -784,28 +796,161 @@ test("real Completion UI carries commissioning through Owner partial handover an
     await workspace.getByRole("tab", { name: /warranty/i }).click();
     await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
     await runCompletionCommand(page, /assess warranty/i);
-    await runCompletionCommand(page, /require remedy/i, {
-      actionRefs: [fixture.reservationActionRef], responseDueAt: fixture.tomorrow,
-    });
+    if (!continueWarranty) {
+      await runCompletionCommand(page, /require remedy/i, {
+        actionRefs: [fixture.reservationActionRef], responseDueAt: fixture.tomorrow,
+      });
+    }
     await useRole(page, "CON");
     await workspace.getByRole("tab", { name: /warranty/i }).click();
     await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
     const statusBeforeMissingAction = latestWorkspace.items.find((item: any) => item.record.id === claimId).record.status;
     const linkedVerifiedAction = latestWorkspace.items.find((item: any) => item.record.id === fixture.reservationActionRef.objectId);
     expect(linkedVerifiedAction?.record.status).toBe("verified");
-    const startRemedy = latestWorkspace.items.find((item: any) => item.record.id === claimId).actions
-      .find((action: any) => action.command === "start_remedy");
-    expect(startRemedy?.ready).toBe(false);
-    expect(startRemedy?.blockedReason?.code).toBe("WARRANTY_ACTION_REQUIRED");
-    await expect(workspace.locator(".completion-commands").getByRole("button", { name: /start remedy/i })).toBeDisabled();
-    const claimAfterGuard = latestWorkspace.items.find((item: any) => item.record.id === claimId);
-    expect(claimAfterGuard.record.status).toBe(statusBeforeMissingAction);
-    expect(fixture.reservationActionRef.objectId).toBeTruthy();
-    // The accepted upstream Action is verified, while start_remedy needs a
-    // same-Issue, same-scope Action that is assigned or in progress. This
-    // checkpoint ends at that server-reported gate; later warranty remedy,
-    // reinspection, and close transitions are outside this case's proof.
+    if (!continueWarranty) {
+      const startRemedy = latestWorkspace.items.find((item: any) => item.record.id === claimId).actions
+        .find((action: any) => action.command === "start_remedy");
+      expect(startRemedy?.ready).toBe(false);
+      expect(startRemedy?.blockedReason?.code).toBe("WARRANTY_ACTION_REQUIRED");
+      await expect(workspace.locator(".completion-commands").getByRole("button", { name: /start remedy/i })).toBeDisabled();
+      const claimAfterGuard = latestWorkspace.items.find((item: any) => item.record.id === claimId);
+      expect(claimAfterGuard.record.status).toBe(statusBeforeMissingAction);
+      return;
+    }
+
+    // Create an in-scope Action through its UI, assign it through the SUP
+    // command, and use its exact assigned version for the warranty command.
+    await page.getByRole("navigation").getByRole("button", { name: /corrective actions/i }).click();
+    const actionWorkbench = page.locator("[data-workbench-route='actions']");
+    const actionAuthoring = page.locator("[data-ui-component='action-authoring-panel']");
+    await expect(actionAuthoring).toBeVisible();
+    const remedyActionTitle = "F-07 browser warranty corrective action";
+    await actionAuthoring.getByLabel(/action title/i).fill(remedyActionTitle);
+    const relatedIssue = actionAuthoring.getByLabel(/related issue/i);
+    const issueOption = relatedIssue.locator("option").filter({ hasText: fixture.reservationIssueRef.objectId });
+    await expect(issueOption, "select the exact current warranty Issue reference").toHaveCount(1);
+    await relatedIssue.selectOption(fixture.reservationIssueRef.objectId);
+    await actionAuthoring.getByLabel(/assignee/i).selectOption(fixture.actors.CON);
+    await actionAuthoring.getByLabel(/due date/i).fill(fixture.tomorrow.slice(0, 16));
+    const actionCreatedPromise = page.waitForResponse((response) => response.request().method() === "POST" && /\/actions$/.test(new URL(response.url()).pathname));
+    await actionAuthoring.getByRole("button", { name: /save action draft/i }).click();
+    const actionCreatedResponse = await actionCreatedPromise;
+    const actionCreatedBody = await actionCreatedResponse.json();
+    expect(actionCreatedResponse.status(), JSON.stringify(actionCreatedBody)).toBe(201);
+    const remedyActionId = actionCreatedBody.record.id as string;
+    await expect(actionWorkbench.getByRole("button", { name: new RegExp(remedyActionTitle) })).toBeVisible();
+
+    await useRole(page, "SUP");
+    await page.getByRole("navigation").getByRole("button", { name: /corrective actions/i }).click();
+    await runWorkbenchCommand(page, "actions", remedyActionTitle, /assign/i, {
+      responsiblePartyId: fixture.actors.CON, dueAt: fixture.tomorrow,
+    });
+    const assignedAction = latestWorkspace.items.find((item: any) => item.record.id === remedyActionId);
+    expect(assignedAction.record.status).toBe("assigned");
+    const assignedActionRef = { objectType: "Action", objectId: remedyActionId, version: assignedAction.record.version };
+
+    await useRole(page, "SUP");
+    await workspace.getByRole("tab", { name: /warranty/i }).click();
+    await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
+    await runCompletionCommand(page, /require remedy/i, {
+      actionRefs: [assignedActionRef], responseDueAt: fixture.tomorrow,
+    });
+    await useRole(page, "CON");
+    await workspace.getByRole("tab", { name: /warranty/i }).click();
+    await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
+    await runCompletionCommand(page, /start remedy/i);
+
+    // Start/submit the actual Action after Warranty has captured its assigned
+    // version. Any stale-reference guard on the next warranty transition is
+    // reported as a contract boundary, never worked around with a newer ref.
+    await page.getByRole("navigation").getByRole("button", { name: /corrective actions/i }).click();
+    await runWorkbenchCommand(page, "actions", remedyActionTitle, /start/i);
+    await runWorkbenchCommand(page, "actions", remedyActionTitle, /submit/i, {
+      correction: "Seal replaced and pressure-tested",
+      rootCause: "Seal failure at the accepted flange",
+      preventiveAction: "Add a second-person seal inspection before commissioning",
+    }, [fixture.evidenceId]);
+    await useRole(page, "SUP");
+    await page.getByRole("navigation").getByRole("button", { name: /corrective actions/i }).click();
+    await runWorkbenchCommand(page, "actions", remedyActionTitle, /verify/i, {}, [fixture.evidenceId]);
+    await useRole(page, "CON");
+    await workspace.getByRole("tab", { name: /warranty/i }).click();
+    await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
+    await runCompletionCommand(page, /submit remedy/i, { remedySummary: "Replaced seal and pressure-tested" }, [fixture.evidenceId]);
+    expect(latestWorkspace.items.find((item: any) => item.record.id === claimId).record.status).toBe("reinspection");
+
+    // Run the linked Issue reinspection through its existing case UI. The
+    // Issue transition changes its current version; the Warranty snapshot
+    // intentionally retains its prior Issue ref so any next boundary remains
+    // visible to the server instead of being silently rewritten in the test.
+    await useRole(page, "SUP");
+    await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
+    const reservationPunchTitle = "F-07 browser reservation Punch";
+    await runWorkbenchCommand(page, "issues", reservationPunchTitle, /assign|담당자 배정/i, {
+      responsiblePartyId: fixture.actors.CON,
+      responsibleOrganizationId: fixture.responsibleOrganizationId,
+      dueAt: fixture.tomorrow,
+      actionIds: [fixture.reservationActionRef.objectId, remedyActionId],
+    });
+    await useRole(page, "CON");
+    await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
+    await runWorkbenchCommand(page, "issues", reservationPunchTitle, /start correction|시정 시작/i);
+    await page.goto("/#/parallel-test");
+    await page.getByRole("tab", { name: /work inbox|작업함/i }).click();
+    const warrantyCasePanel = page.getByTestId("inspection-case-flow");
+    await warrantyCasePanel.getByLabel(/source inspection|root inspection|원 검측 선택/i).selectOption(fixture.inspectionRef.objectId);
+    const warrantyIssueCard = warrantyCasePanel.locator(".inspection-case-issue").filter({ hasText: reservationPunchTitle });
+    await expect(warrantyIssueCard).toBeVisible();
+    const warrantyReinspectionForm = warrantyIssueCard.getByRole("form", { name: /request linked reinspection|연결된 재검측 요청/i });
+    const warrantyReinspectionName = "F-07 browser warranty reinspection";
+    await warrantyReinspectionForm.getByLabel(/work name|작업명/i).fill(warrantyReinspectionName);
+    await warrantyReinspectionForm.getByLabel(/requested inspection time|재검측 요청 일시/i).fill(new Date(Date.now() + 3600000).toISOString().slice(0, 16));
+    await warrantyReinspectionForm.getByLabel(/contractor self inspection is complete|시공자 자체검측 완료/i).check();
+    for (const label of [/drawing checked|도면 확인/i, /material checked|자재 확인/i, /test checked|시험 확인/i, /previous work checked|선행 작업 확인/i, /changes checked|변경사항 확인/i]) {
+      await warrantyReinspectionForm.getByLabel(label).check();
+    }
+    await warrantyReinspectionForm.getByLabel(new RegExp(fixture.evidenceId)).check();
+    const warrantyReinspectionPost = page.waitForResponse((response) => response.request().method() === "POST" && /inspection-cases\/.*\/issues\/.*\/reinspections/.test(response.url()));
+    await warrantyReinspectionForm.getByRole("button", { name: /submit reinspection request|재검측 요청 제출/i }).click();
+    const warrantyReinspectionResponse = await warrantyReinspectionPost;
+    const warrantyReinspectionBody = await warrantyReinspectionResponse.json();
+    expect(warrantyReinspectionResponse.status(), JSON.stringify(warrantyReinspectionBody)).toBe(201);
+    const warrantyReinspectionId = warrantyReinspectionBody.reinspection.id as string;
+
+    await useRole(page, "SUP");
+    await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
+    await runWorkbenchCommand(page, "issues", reservationPunchTitle, /start reinspection|재검측 시작/i);
+    await page.getByRole("navigation").getByRole("button", { name: /inspection.*acceptance/i }).click();
+    await runWorkbenchCommand(page, "inspections", warrantyReinspectionName, /receive|접수/i, { "접수 시각": new Date().toISOString() });
+    await runWorkbenchCommand(page, "inspections", warrantyReinspectionName, /schedule|일정 배정/i, { "검측 예정시각": new Date(Date.now() + 3600000).toISOString() });
+    await runWorkbenchCommand(page, "inspections", warrantyReinspectionName, /start|시작/i);
+    const warrantyPassingChecks = JSON.stringify([{ itemId: "dimension", requirementRef: fixture.requirementRef, result: "pass", evidenceIds: [fixture.evidenceId, fixture.retestEvidenceId], measuredValue: 1, unit: "count" }]);
+    await runWorkbenchCommand(page, "inspections", warrantyReinspectionName, /submit results|결과 제출/i, { "검측 항목·측정 결과": warrantyPassingChecks }, [fixture.evidenceId, fixture.retestEvidenceId]);
+    await runWorkbenchCommand(page, "inspections", warrantyReinspectionName, /mark compliant|pass|적합 판정/i, {}, [fixture.evidenceId, fixture.retestEvidenceId]);
+    expect(latestWorkspace.items.find((item: any) => item.record.id === warrantyReinspectionId)?.record.status).toBe("passed");
+
+    await useRole(page, "SUP");
+    await page.getByRole("navigation").getByRole("button", { name: /commissioning.*handover.*warranty/i }).click();
+    await workspace.getByRole("tab", { name: /warranty/i }).click();
+    await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
+    const claimAfterReinspection = latestWorkspace.items.find((item: any) => item.record.id === claimId);
+    const reservationIssue = latestWorkspace.items.find((item: any) => item.record.id === fixture.reservationIssueRef.objectId);
+    expect(claimAfterReinspection.record.data.issueRef.version).toBeLessThan(reservationIssue.record.version);
+    const acceptRemedy = claimAfterReinspection.actions.find((action: any) => action.command === "accept_remedy");
+    expect(acceptRemedy?.fields).toContain("reinspectionRef");
+    const currentReinspectionRef = latestWorkspace.context.referenceCatalog.inspections
+      .find((entry: any) => entry.ref.objectId === warrantyReinspectionId)?.ref as Ref | undefined;
+    expect(currentReinspectionRef).toBeDefined();
+    await runCompletionCommand(page, /accept remedy/i, { reinspectionRef: currentReinspectionRef! }, [fixture.evidenceId], "REFERENCE_STALE");
   } finally {
     await stopApi(child);
   }
+}
+
+test("real Completion UI carries commissioning through partial handover and records the verified Action gate", async ({ page }) => {
+  await runCompletionHandoverScenario(page, false);
+});
+
+test("complementary warranty UI reaches the stale Issue reference gate after actual reinspection", async ({ page }) => {
+  await runCompletionHandoverScenario(page, true);
 });
