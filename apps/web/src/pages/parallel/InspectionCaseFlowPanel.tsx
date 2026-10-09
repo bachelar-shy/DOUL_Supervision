@@ -67,6 +67,19 @@ const copy: Record<Locale, Record<string, string>> = {
     openCommand: "열기",
     blocked: "차단됨",
     version: "v",
+    stage_corrective_action: "시정조치 진행",
+    stage_reinspection_request: "재검측 요청 준비",
+    stage_reinspection: "재검측 진행",
+    stage_closure: "종결 검토",
+    stage_owner_report: "발주자 보고",
+    stage_terminal: "종결 단계",
+    reason_ISSUE_NOT_IN_REINSPECTION: "Issue가 재검측 단계에 있지 않습니다",
+    reason_CURRENT_ACTIONS_NOT_VERIFIED: "현재 시정조치가 모두 검증되지 않았습니다",
+    reason_REINSPECTION_NOT_PASSED: "현재 재검측이 합격하지 않았습니다",
+    reason_CLOSURE_ACTION_EVIDENCE_REQUIRED: "시정조치 종결 증빙이 필요합니다",
+    reason_CLOSURE_REINSPECTION_EVIDENCE_REQUIRED: "재검측 종결 증빙이 필요합니다",
+    unknownStage: "확인되지 않은 단계",
+    unknownReason: "확인되지 않은 차단 사유",
   },
   vi: {
     header: "Luồng hồ sơ nghiệm thu",
@@ -121,6 +134,19 @@ const copy: Record<Locale, Record<string, string>> = {
     openCommand: "Mở",
     blocked: "Đang bị chặn",
     version: "v",
+    stage_corrective_action: "Đang thực hiện khắc phục",
+    stage_reinspection_request: "Chuẩn bị yêu cầu nghiệm thu lại",
+    stage_reinspection: "Đang nghiệm thu lại",
+    stage_closure: "Xem xét đóng Issue",
+    stage_owner_report: "Báo cáo Chủ đầu tư",
+    stage_terminal: "Giai đoạn kết thúc",
+    reason_ISSUE_NOT_IN_REINSPECTION: "Issue chưa ở giai đoạn nghiệm thu lại",
+    reason_CURRENT_ACTIONS_NOT_VERIFIED: "Chưa xác minh tất cả hành động khắc phục hiện tại",
+    reason_REINSPECTION_NOT_PASSED: "Nghiệm thu lại hiện tại chưa đạt",
+    reason_CLOSURE_ACTION_EVIDENCE_REQUIRED: "Cần có bằng chứng đóng hành động khắc phục",
+    reason_CLOSURE_REINSPECTION_EVIDENCE_REQUIRED: "Cần có bằng chứng đóng nghiệm thu lại",
+    unknownStage: "Giai đoạn chưa xác định",
+    unknownReason: "Lý do chặn chưa xác định",
   },
   en: {
     header: "Inspection case flow",
@@ -175,6 +201,19 @@ const copy: Record<Locale, Record<string, string>> = {
     openCommand: "Open",
     blocked: "Blocked",
     version: "v",
+    stage_corrective_action: "Corrective action in progress",
+    stage_reinspection_request: "Preparing reinspection request",
+    stage_reinspection: "Reinspection in progress",
+    stage_closure: "Closure review",
+    stage_owner_report: "Owner reporting",
+    stage_terminal: "Terminal stage",
+    reason_ISSUE_NOT_IN_REINSPECTION: "The Issue is not in reinspection",
+    reason_CURRENT_ACTIONS_NOT_VERIFIED: "Current corrective actions are not all verified",
+    reason_REINSPECTION_NOT_PASSED: "The current reinspection has not passed",
+    reason_CLOSURE_ACTION_EVIDENCE_REQUIRED: "Corrective action closure evidence is required",
+    reason_CLOSURE_REINSPECTION_EVIDENCE_REQUIRED: "Reinspection closure evidence is required",
+    unknownStage: "Unrecognized stage",
+    unknownReason: "Unrecognized blocker",
   },
 };
 
@@ -187,7 +226,19 @@ function errorLabel(cause: unknown): { code?: string; key?: string } {
   return { key: "loadError" };
 }
 
-function readinessValue(value: unknown, tx: (key: string) => string) {
+function readinessValue(key: string, value: unknown, tx: (key: string) => string) {
+  if (key === "stage") {
+    if (typeof value !== "string") return tx("unknownStage");
+    const label = tx(`stage_${value}`);
+    return label === `stage_${value}` ? tx("unknownStage") : label;
+  }
+  if (key === "closeBlockedReasons" && Array.isArray(value)) {
+    return value.length ? value.map(reason => {
+      const code = String(reason);
+      const label = tx(`reason_${code}`);
+      return label === `reason_${code}` ? tx("unknownReason") : label;
+    }).join(", ") : tx("none");
+  }
   if (typeof value === "boolean") return tx(value ? "yes" : "no");
   if (Array.isArray(value)) return value.length ? value.join(", ") : tx("none");
   return value == null || value === "" ? tx("none") : String(value);
@@ -254,7 +305,7 @@ function CaseIssue({ client, inspectionId, online, onChanged, group, workspace, 
   return <article className="inspection-case-issue">
     <div className="inspection-case-issue-title"><h3>{tx("issuePrefix")} · {titleOf(group.issue)}</h3><span>{tx("version")}{group.issue.record.version} · {status}</span></div>
     <p className="inspection-case-muted">{tx("serverReadiness")} · {tx("correctionCycle")} {group.currentCorrectionCycle}</p>
-    <div className="inspection-case-readiness">{Object.entries(readiness).filter(([key]) => key in readinessLabelKey).map(([key, value]) => <div key={key}><span>{tx(readinessLabelKey[key])}</span><strong>{readinessValue(value, tx)}</strong></div>)}</div>
+    <div className="inspection-case-readiness">{Object.entries(readiness).filter(([key]) => key in readinessLabelKey).map(([key, value]) => <div key={key}><span>{tx(readinessLabelKey[key])}</span><strong>{readinessValue(key, value, tx)}</strong></div>)}</div>
     <LinkedRecord item={group.issue} workspace={workspace} onOpenCommand={onOpenCommand} tx={tx} />
     {related.map(([label, items]) => <section className="inspection-case-related" key={label}><h4>{label} <span>({items.length})</span></h4>
       {items.length ? items.map(item => <LinkedRecord key={`${item.machine}:${item.record.id}:${item.record.version}`} item={item} workspace={workspace} onOpenCommand={onOpenCommand} tx={tx} />) : <p className="inspection-case-muted">{tx("noRelatedRecords")}</p>}
