@@ -1,0 +1,54 @@
+{
+  "asOf": "2026-10-09",
+  "integrationBranch": "goal/mvp-completion-v1",
+  "integrationHeadAtCheckpoint": "7c9a021",
+  "agentModel": "gpt-6-luna",
+  "reasoning": "high",
+  "completed": {
+    "quality": {
+      "branch": "goal/quality-connected-browser-v1",
+      "workerCommit": "71f74db",
+      "integratedCommits": [
+        "6b5ff07",
+        "b31990a",
+        "b5962a9"
+      ],
+      "verification": "Full real UI/API closed loop PASS; terminal Issue readiness display regression PASS; explicit test-only trusted verifier, synthetic upstream demo project, no field acceptance."
+    },
+    "equipment": {
+      "branch": "goal/safety-equipment-closed-loop-v1",
+      "workerCommit": "e72a7b5",
+      "integratedCommits": [
+        "eb3ee27",
+        "2d59a99"
+      ],
+      "verification": "Real UI/API Inspection fail/unavailable -> passing reinspection -> Permit activation PASS. Exact Asset/current upstream certificate/approved plan fixture boundary retained."
+    },
+    "f07ReferenceMetadata": {
+      "branch": "goal/command-refs-f07",
+      "workerCommit": "e2520af",
+      "integratedCommit": "6e0ffb8",
+      "verification": "Canonical narrowed Issue/Action DomainRef arrays classified multiple, custom BOQItemRef preserved. Generator checks and root web/mobile typecheck PASS."
+    }
+  },
+  "inProgress": {
+    "handover": "/root/capabilities: isolated F07 complete UI lifecycle, active Punch Issue correction/reinspection/closure prerequisites must remain honest. No HTTP mutation may be described as UI evidence.",
+    "safetyCombined": "/root/payment_api: extend own Equipment scenario to Stop creation/remedy/verification/lift/independent permit resume; report any missing UI prerequisites. Preserve current passing baseline.",
+    "authoringLocales": "/root/payment_ui: new authoring-localization browser spec for three languages and preserved official/draft state; root owns UI/shared files.",
+    "uuidCompatibility": "/root/operations: isolated proposed xcode UUID 11.1.1 override; no shared dependencies changed, validate actual Expo/iOS tooling before integration. Existing braces/node-forge release blockers remain."
+  },
+  "runningRootChecks": [
+    "work/goal-integrated-browser-85.log: 85-case current integration regression running; Equipment additional independent test already PASS",
+    "work/goal-current-api-final-catalog.log: completed 392 run, 387 pass, 5 optional document-runtime skips"
+  ],
+  "externalBlocker": {
+    "githubBilling": "User supplied annotation run37860451176: recent account payments failed or spending limit needs increase. Account owner resolves Billing & plans. No automatic spend changes. All latest exact-head required checks must PASS before merge.",
+    "pilot": "Actual project configuration, production signature provider, adopted forms/language policy, qualified field users/equipment/data and site acceptance not supplied."
+  },
+  "resume": [
+    "Inspect Git status/worktrees and active agents before edits; never delete pending work.",
+    "Read latest root/worker handoffs and logs; do not rerun completed scenarios without changed code or unresolved concern.",
+    "Root physical exact-lock npm workspace dependencies must remain intact; workers must not write through shared node_modules symlinks.",
+    "Usage recovery does not itself guarantee scheduling; continue when platform resumes execution."
+  ]
+}
