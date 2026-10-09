@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+import "./i18n/config";
 import "./index.css";
 import App from "./App.tsx";
 import "./design-system.css";

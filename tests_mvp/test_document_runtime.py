@@ -52,6 +52,16 @@ class DocumentRuntimeTests(unittest.TestCase):
         snapshot['renderHash']=sha256(html).hexdigest()
         with self.assertRaises(ValueError): validate_source(snapshot,html)
 
+    def test_localized_renderer_requires_consistent_frozen_catalog_even_with_transport_hash(self):
+        snapshot,html=long_snapshot('ko')
+        self.assertEqual(snapshot['rendererVersion'],'reference-html/2')
+        for key,value in [('title','Injected catalog'),('formId','FM-99'),('language','en')]:
+            bad=deepcopy(snapshot)
+            bad['sourcePayload']['localization'][key]=value
+            from services.document_runtime.render import canonical
+            bad['sourcePayloadHash']=sha256(canonical(bad['sourcePayload'])).hexdigest()
+            with self.assertRaises(ValueError): validate_source(bad,html)
+
 
 class DerivativeEndpointTests(DocumentHTTPTests):
     def test_explicit_derivative_download_does_not_change_source_snapshot(self):

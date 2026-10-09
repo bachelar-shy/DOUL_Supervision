@@ -3,6 +3,7 @@
 .github
 .local
 .venv
+work/
 node_modules
 **/node_modules
 dist

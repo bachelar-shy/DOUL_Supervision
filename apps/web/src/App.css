@@ -963,8 +963,9 @@ strong {
   padding-right: 8px;
 }
 .document-fields label {
-  font-family: monospace;
-  font-size: 10px;
+  font-family: inherit;
+  font-size: 11px;
+  overflow-wrap: anywhere;
 }
 .preview-pane {
   background: #e9edf2;
@@ -1195,8 +1196,10 @@ strong {
   .menu-toggle {
     display: grid;
   }
+  /* The full page heading supplies the route name on narrow screens.
+     Keep both language and role selectors visible without horizontal overflow. */
   .breadcrumbs {
-    font-size: 9px;
+    display: none;
   }
   .breadcrumbs b {
     padding-left: 4px;

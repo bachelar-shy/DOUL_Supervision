@@ -59,7 +59,7 @@ export interface CommandDescriptor {
   command: string;
   to: string;
   fields: string[];
-  authority: string;
+  authority: string | null;
   requiresInput: boolean;
   ready: boolean;
   blockedReason?: Failure | null;
@@ -227,7 +227,7 @@ export interface FormSchema {
 }
 export interface Workspace {
   project: { id: string; name: string };
-  role: { id: string; actorGroup: HumanRole; roleCode: string };
+  role: { id: string; actorGroup: HumanRole; roleCode: string; authorityCodes?: string[] };
   items: WorkItem[];
   audit: { id: string; command: string; at: string; afterState: string }[];
   context: {
@@ -236,10 +236,27 @@ export interface Workspace {
     requirementRef: DomainRef;
     drawingRef: DomainRef;
     evidenceId: string;
+    creationCapabilities?: Record<string, CreationCapability>;
+    referenceCatalog?: {
+      requirements: Array<{ ref: DomainRef; record: RecordDTO }>;
+      assets: Array<{ ref: DomainRef; record: RecordDTO }>;
+      evidence?: Array<{ ref: DomainRef; record: RecordDTO }>;
+      informationItems?: Array<{ ref: DomainRef; record: RecordDTO }>;
+      inspections?: Array<{ ref: DomainRef; record: RecordDTO }>;
+      decisions?: Array<{ ref: DomainRef; record: RecordDTO }>;
+      issues?: Array<{ ref: DomainRef; record: RecordDTO }>;
+      actions?: Array<{ ref: DomainRef; record: RecordDTO }>;
+    };
   };
   participants: { partyId: string; name: string; actorGroup: HumanRole }[];
   formSchemas: Record<string, FormSchema>;
   demo: boolean;
+}
+export interface CreationCapability {
+  status: "available" | "unauthorized" | "prerequisites_missing" | "unavailable";
+  canCreate: boolean;
+  authority: string | null;
+  reasons: string[];
 }
 export const collections: Record<string, string> = {
   inspection: "inspections",
@@ -525,12 +542,13 @@ export class ApiClient {
     data: object,
     final = false,
     language = "ko",
+    key = newKey(),
   ) {
     return this.request<RecordDTO>(
       this.path(`/forms/${formId}/${final ? "render" : "preview"}`),
       {
         method: "POST",
-        headers: { "Idempotency-Key": newKey() },
+        headers: { "Idempotency-Key": key },
         body: JSON.stringify({
           roleAssignmentId: this.session!.actor.roleAssignmentId,
           sourceDomainRefs,

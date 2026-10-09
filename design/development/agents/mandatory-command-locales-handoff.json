@@ -1,0 +1,38 @@
+{
+  "branch": "goal/mandatory-command-locales-v1",
+  "lastcommit": "3a32b1f7588f2a5ce0c3310c72f191aba8df4647",
+  "done": [
+    "Added packages/localization/src/mandatory-workflow-translations.ts with explicit mandatoryWorkflowKo, mandatoryWorkflowVi, and mandatoryWorkflowEn dictionaries.",
+    "Covered all 348 command/state keys across the 26 machines listed in mandatory-locale-input.json: 223 commands and 125 states.",
+    "Preserved every non-null resolved input translation exactly; filled 199 missing Vietnamese labels, 199 missing English labels, and 23 missing Korean labels.",
+    "Vietnamese and English translations are marked draft and pending native review. No workflow, authority, state, or domain-data behavior changed."
+  ],
+  "tests": [
+    "Static audit against app/schema/state_machines_v1.json: all command transitions and states from all 26 selected machines are covered, with no extra or missing keys.",
+    "Resource parity audit: each locale has the same 348 keys and all values are non-empty.",
+    "Input preservation audit: every non-null Korean, Vietnamese, and English value from work/mandatory-locale-input.json is unchanged.",
+    "git diff --check"
+  ],
+  "todo": [
+    "Root must import and merge these catalogs into packages/localization/src/index.ts and add any production parity check there.",
+    "Qualified native reviewers should verify the Vietnamese and English draft translations before approval; no native review was available for this checkpoint.",
+    "Run localization package and app typechecks after root wires the dictionaries."
+  ],
+  "restart": "Isolated worktree /workspace/work/doul-goal/mandatory-command-locales-v1 on goal/mandatory-command-locales-v1, based on root HEAD 8c73a13. Source checkpoint is 3a32b1f7588f2a5ce0c3310c72f191aba8df4647. The dictionaries are not wired into index.ts. Do not push or merge remote.",
+  "rootIntegration": {
+    "commits": [
+      "6e62e0d",
+      "de2dd14",
+      "6782291",
+      "f92f047"
+    ],
+    "status": "wired_and_locally_verified",
+    "guard": "scripts/check_mandatory_workflow_locales.mjs",
+    "coverage": "26 machines, 223 commands, 125 states, 348 keys per language; 623 existing translations unchanged",
+    "typecheck": "PASS work/goal-mandatory-locales-typecheck-final.log",
+    "build": "PASS work/goal-mandatory-locales-build-final.log",
+    "browser": "Separate actual localized 12 PASS work/goal-mandatory-locales-browser.log",
+    "nativeReview": "pending",
+    "note": "Original agent todo/restart above describes the isolated source checkpoint; root integration supersedes its unwired status."
+  }
+}

@@ -1,4 +1,5 @@
 import { useMemo, useState, type HTMLAttributes, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,12 +48,14 @@ export function NavigationList({
   items,
   activeId,
   onNavigate,
-  ariaLabel = "주 메뉴",
+  ariaLabel,
   className,
 }: NavigationListProps) {
+  const { t } = useTranslation();
+  const resolvedAriaLabel = ariaLabel ?? t("ui.navigation.mainAria");
   return (
     <nav
-      aria-label={ariaLabel}
+      aria-label={resolvedAriaLabel}
       className={cn("doul-navigation", className)}
       data-ui-component="navigation"
     >
@@ -70,7 +73,9 @@ export function NavigationList({
           {item.badge !== undefined && item.badge !== null ? (
             <i
               aria-label={
-                typeof item.badge === "number" ? `${item.badge}건` : undefined
+                typeof item.badge === "number"
+                  ? t("common.count", { count: item.badge })
+                  : undefined
               }
             >
               {item.badge}
@@ -102,13 +107,16 @@ export function MobileNavigation({
   moreOpen = false,
   moreActive = false,
   moreIcon,
-  moreLabel = "더보기",
-  ariaLabel = "모바일 메뉴",
+  moreLabel,
+  ariaLabel,
 }: MobileNavigationProps) {
+  const { t } = useTranslation();
+  const resolvedMoreLabel = moreLabel ?? t("ui.navigation.more");
+  const resolvedAriaLabel = ariaLabel ?? t("ui.navigation.mobileAria");
   return (
     <nav
       className="bottom-nav"
-      aria-label={ariaLabel}
+      aria-label={resolvedAriaLabel}
       data-ui-component="mobile-navigation"
     >
       {items.map((item) => (
@@ -131,7 +139,7 @@ export function MobileNavigation({
         onClick={onMore}
       >
         {moreIcon}
-        <span>{moreLabel}</span>
+        <span>{resolvedMoreLabel}</span>
       </button>
     </nav>
   );
@@ -149,13 +157,16 @@ export interface FilterBarProps extends HTMLAttributes<HTMLDivElement> {
 export function FilterBar({
   query,
   onQueryChange,
-  queryPlaceholder = "검색",
-  queryLabel = "목록 검색",
+  queryPlaceholder,
+  queryLabel,
   children,
   actions,
   className,
   ...props
 }: FilterBarProps) {
+  const { t } = useTranslation();
+  const resolvedQueryPlaceholder = queryPlaceholder ?? t("ui.filter.search");
+  const resolvedQueryLabel = queryLabel ?? t("ui.filter.listSearch");
   return (
     <div
       className={cn(
@@ -167,7 +178,7 @@ export function FilterBar({
     >
       {onQueryChange ? (
         <label className="relative min-w-52 flex-1 sm:max-w-80">
-          <span className="sr-only">{queryLabel}</span>
+          <span className="sr-only">{resolvedQueryLabel}</span>
           <Search
             aria-hidden="true"
             className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -175,7 +186,7 @@ export function FilterBar({
           <Input
             value={query ?? ""}
             onChange={(event) => onQueryChange(event.target.value)}
-            placeholder={queryPlaceholder}
+            placeholder={resolvedQueryPlaceholder}
             className="pl-9"
           />
         </label>
@@ -214,6 +225,7 @@ export function RegisterNavigator({
   groups: readonly RegisterNavigatorGroup[];
   onSelect: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
   const filteredGroups = useMemo(
@@ -236,7 +248,10 @@ export function RegisterNavigator({
         key={item.id}
         type="button"
         aria-current={active ? "page" : undefined}
-        aria-label={`${item.id} ${item.name} 열기`}
+        aria-label={t("registerNav.openAria", {
+          id: item.id,
+          name: item.name,
+        })}
         className={cn(
           "group grid min-h-14 w-full grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-2 rounded-sm border px-3 py-2.5 text-left transition-colors",
           active
@@ -281,17 +296,17 @@ export function RegisterNavigator({
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border bg-slate-50 px-4 py-3">
         <div>
           <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-primary">
-            관리대장 진입
+            {t("registerNav.entryEyebrow")}
           </span>
           <h3 className="mt-1 text-sm font-semibold text-slate-800">
-            {roleLabel} 추천 · 전체 29개
+            {t("registerNav.roleSummary", { role: roleLabel })}
           </h3>
           <p className="mt-1 max-w-2xl text-[10px] leading-5 text-slate-500">
             {roleDescription}
           </p>
         </div>
         <div className="rounded-sm border border-border bg-white px-2.5 py-2 text-[10px] text-slate-500">
-          추천은 진입 편의용 · 실제 조회 범위는 서버 권한 기준
+          {t("registerNav.serverScopeNotice")}
         </div>
       </div>
 
@@ -301,10 +316,10 @@ export function RegisterNavigator({
           className="w-full justify-start gap-5 border-b border-border bg-background px-4 py-1"
         >
           <TabsTrigger value="role" className="min-h-11 flex-none px-1.5 text-xs">
-            내 역할 추천
+            {t("registerNav.roleTab")}
           </TabsTrigger>
           <TabsTrigger value="all" className="min-h-11 flex-none px-1.5 text-xs">
-            전체 29개
+            {t("registerNav.allTab")}
           </TabsTrigger>
         </TabsList>
 
@@ -317,7 +332,7 @@ export function RegisterNavigator({
         <TabsContent value="all" className="m-0">
           <div className="border-b border-border p-3">
             <label className="relative block">
-              <span className="sr-only">관리대장 빠른 찾기</span>
+              <span className="sr-only">{t("registerNav.searchAria")}</span>
               <Search
                 aria-hidden="true"
                 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -325,7 +340,7 @@ export function RegisterNavigator({
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="관리대장 이름 또는 번호 검색"
+                placeholder={t("registerNav.searchPlaceholder")}
                 className="pl-9"
               />
             </label>
@@ -342,7 +357,9 @@ export function RegisterNavigator({
                       >
                         {group.label}
                         <span className="ml-1.5 font-normal text-slate-400">
-                          {group.items.length}개
+                          {t("registerNav.groupCount", {
+                            count: group.items.length,
+                          })}
                         </span>
                       </h4>
                       {group.description ? (
@@ -359,7 +376,7 @@ export function RegisterNavigator({
               </div>
             ) : (
               <div className="py-10 text-center text-xs text-slate-400">
-                검색 결과가 없습니다.
+                {t("registerNav.noResults")}
               </div>
             )}
           </div>
@@ -388,9 +405,12 @@ export function RegisterTable<T>({
   rows,
   columns,
   rowKey,
-  emptyMessage = "조회할 항목이 없습니다.",
+  emptyMessage,
   className,
 }: RegisterTableProps<T>) {
+  const { t } = useTranslation();
+  const resolvedEmptyMessage =
+    emptyMessage ?? t("ui.registerTable.empty");
   return (
     <div
       className={cn("table-scroll overflow-auto", className)}
@@ -438,7 +458,7 @@ export function RegisterTable<T>({
                 colSpan={columns.length}
                 className="h-24 text-center text-muted-foreground"
               >
-                {emptyMessage}
+                {resolvedEmptyMessage}
               </TableCell>
             </TableRow>
           )}
@@ -498,13 +518,15 @@ export interface EvidenceViewerItem {
 
 export function EvidenceViewer({
   items,
-  emptyMessage = "서버에 등록된 증빙이 없습니다.",
+  emptyMessage,
   footer,
 }: {
   items: readonly EvidenceViewerItem[];
   emptyMessage?: ReactNode;
   footer?: ReactNode;
 }) {
+  const { t } = useTranslation();
+  const resolvedEmptyMessage = emptyMessage ?? t("ui.evidence.empty");
   return (
     <div data-ui-component="evidence-viewer">
       {items.length ? (
@@ -542,7 +564,7 @@ export function EvidenceViewer({
           );
         })
       ) : (
-        <div className="empty compact">{emptyMessage}</div>
+        <div className="empty compact">{resolvedEmptyMessage}</div>
       )}
       {footer}
     </div>
@@ -568,6 +590,7 @@ export function EvidenceDetailSheet({
   provenance: ReactNode;
   technical: ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -589,13 +612,13 @@ export function EvidenceDetailSheet({
               className="sticky top-0 z-10 w-full justify-start gap-5 border-b border-border bg-background px-4 py-2"
             >
               <TabsTrigger value="summary" className="min-h-11 flex-none px-1.5 text-xs">
-                기본정보
+                {t("ui.evidence.tab.summary")}
               </TabsTrigger>
               <TabsTrigger value="provenance" className="min-h-11 flex-none px-1.5 text-xs">
-                출처·연결
+                {t("ui.evidence.tab.provenance")}
               </TabsTrigger>
               <TabsTrigger value="technical" className="min-h-11 flex-none px-1.5 text-xs">
-                기술정보
+                {t("ui.evidence.tab.technical")}
               </TabsTrigger>
             </TabsList>
             <TabsContent value="summary" className="p-4">

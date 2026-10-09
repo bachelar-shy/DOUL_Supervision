@@ -27,6 +27,10 @@ def validate_all():
         if isinstance(node,ast.Assign) and isinstance(node.value,ast.Dict) and any(isinstance(t,ast.Name) and t.id in ['predicates','checks'] for t in node.targets):
             guard_keys.update(k.value for k in node.value.keys if isinstance(k,ast.Constant))
     machine_bindings=load('reference/machine_bindings_v1.json')['machines']
+    if {'commissioning_package','handover_package','warranty_claim'} & set(machines):
+        from app.reference.handover import GUARDS
+        check(isinstance(GUARDS,dict) and all(callable(value) for value in GUARDS.values()),'Handover guard registry must contain executable checks')
+        guard_keys.update(GUARDS)
     check(set(machine_bindings)==set(machines),'Backend machine bindings must match Product machines exactly')
     safety_machines={
         'safety_permit':'SafetyPermit',

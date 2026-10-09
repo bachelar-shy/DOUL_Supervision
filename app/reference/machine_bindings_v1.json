@@ -93,6 +93,18 @@
     "payment_claim": {
       "collection": "payment-claims",
       "create_authority": "payment.claim.create"
+    },
+    "commissioning_package": {
+      "collection": "commissioning-packages",
+      "create_authority": "completion.commissioning.create"
+    },
+    "handover_package": {
+      "collection": "handover-packages",
+      "create_authority": "completion.handover.create"
+    },
+    "warranty_claim": {
+      "collection": "warranty-claims",
+      "create_authority": "completion.warranty.report"
     }
   }
 }

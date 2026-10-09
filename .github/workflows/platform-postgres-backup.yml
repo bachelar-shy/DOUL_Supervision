@@ -5,6 +5,8 @@ on:
     paths:
       - ".github/workflows/platform-postgres-backup.yml"
       - "infra/backup/**"
+      - "app/**"
+      - "services/api/**"
       - "infra/compose/compose.dev.yml"
       - "infra/docker/postgres-dev.Dockerfile"
   push:
@@ -12,6 +14,8 @@ on:
     paths:
       - ".github/workflows/platform-postgres-backup.yml"
       - "infra/backup/**"
+      - "app/**"
+      - "services/api/**"
       - "infra/compose/compose.dev.yml"
       - "infra/docker/postgres-dev.Dockerfile"
 

@@ -38,7 +38,20 @@ def record(component, event, **fields):
 def emit(component, event, **fields):
     line = json.dumps(record(component, event, **fields), ensure_ascii=False, sort_keys=True, allow_nan=False)
     with _LOCK:
-        print(line, file=sys.stdout, flush=True)
+        if _write_line(sys.stdout, line):
+            return True
+        return _write_line(sys.stderr, line)
+
+
+def _write_line(stream, line):
+    if stream is None:
+        return False
+    try:
+        stream.write(line + '\n')
+        stream.flush()
+    except (OSError, ValueError):
+        return False
+    return True
 
 
 class SafeRuntimeFormatter(logging.Formatter):

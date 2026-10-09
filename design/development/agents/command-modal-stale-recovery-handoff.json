@@ -1,0 +1,32 @@
+{
+  "task": "AC-VERSION stale conflict recovery in common command modal flows",
+  "branch": "goal/command-modal-stale-recovery-v1",
+  "base_commit": "e7db272bcb794ad0fcb2b7edfb428650238f1191",
+  "base_includes": "0e75966 WorkInboxActionsPanel idempotent retry integration",
+  "changes": [
+    "tests_browser/command-modal-stale-version.spec.ts",
+    "design/development/agents/command-modal-stale-recovery-handoff.json"
+  ],
+  "source_changes": "none; no API, schema, UI, Mac CI, or shared dependency changes",
+  "verification": {
+    "command": "DOUL_TEST_BROWSER_ORIGIN=http://127.0.0.1:15184 /workspace/DOUL_Supervision/node_modules/.bin/playwright test -c playwright.config.stale-ops.ts --output=/tmp/doul-command-modal-stale-pw-output-20261009-final --reporter=json",
+    "result": "passed: 3 expected, 0 unexpected, 0 skipped, 0 flaky",
+    "json_report": "/tmp/doul-command-modal-stale-report-20261009.json",
+    "evidence_method": "Real browser UI and real disposable ASGI demo API with isolated SQLite DB. A second APIRequestContext obtains a distinct bearer token for the same project and role assignment, commits the command while the stale UI modal remains open, then UI submits its stale expectedVersion and receives HTTP 409 VERSION_CONFLICT/currentVersion. User cancels and invokes refresh; DOM and direct workspace read show the second-session version/status, and audit contains exactly one event ID from the committed writer command for that record."
+  },
+  "scenarios": [
+    { "machine": "inspection", "role": "SUP", "writer_command": "start", "asserted_state": "in_progress" },
+    { "machine": "safety_stop_order", "role": "CON", "writer_command": "acknowledge_stop", "asserted_state": "acknowledged" },
+    { "machine": "payment_claim", "role": "CON", "writer_command": "withdraw_payment_claim", "asserted_state": "withdrawn" }
+  ],
+  "retry_idempotency_review": {
+    "reviewed_integrated_commit": "0e75966 Reuse idempotency key for uncertain inbox retries",
+    "assessment": "The key fingerprint covers project, role assignment, machine, object, expected version, command, canonical payload, and evidence IDs. Edits to those fields rotate the key; cancel and successful completion clear it. Existing real browser/API proof commits once, aborts only the browser response, retries the identical key/body, and verifies replayed response, record/audit identity, and a single matching domain event."
+  },
+  "known_limits": [
+    "Recovery is manual: the operator must close the conflict modal and use Refresh before starting a new command. The common modal retains the conflict and does not silently resubmit against a newer version.",
+    "The UI and writer are distinct authenticated sessions in one browser test process; writer uses direct HTTP API context, not a second rendered browser window.",
+    "No additional source defect was identified in CommandModal or AppShell command error handling; this adds real stale UI proof for quality, safety, and payment.",
+    "Temporary Vite/Playwright configs and all test outputs live outside tracked changes or under /tmp; disposable API DB is removed by test teardown."
+  ]
+}

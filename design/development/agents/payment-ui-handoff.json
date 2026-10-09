@@ -1,0 +1,101 @@
+{
+  "task": "DOUL Supervision F-05 Measurement / Payment workspace UI",
+  "branch": "goal/payment-ui-v1",
+  "base": "943d1dd",
+  "commits": [
+    "613983b27b268f737f8e43ac8e7020c6389fa981"
+  ],
+  "files": [
+    "apps/web/src/pages/MeasurementPaymentPage.tsx",
+    "apps/web/src/pages/measurement-payment.css",
+    "apps/web/src/data/payment-workspace.ts",
+    "tests_browser/payment-workspace.spec.ts"
+  ],
+  "implementation": {
+    "api_boundary": "Page uses the SupervisionClient facade for draft creation, WorkItem records for server state, each WorkItem.actions list for availableCommands, and server creationCapabilities for create affordances.",
+    "record_shapes": {
+      "contract_boq": "record.boq",
+      "quantity_measurement": "record.data",
+      "payment_claim": "record.data",
+      "payment_records": "record.data.paymentRecords[]"
+    },
+    "financial_display": "Keeps decimal strings intact and displays claimed, verified, blocked, recommended, approved, paid, and disputed values independently. No UI valuation or eligibility calculation.",
+    "history": "Renders each actual payment/correction/cancellation record with amount, currency, date, payment reference, record ID, evidence IDs, and superseded record/reason when supplied.",
+    "localization": "PaymentLabelKey/paymentLabelKeys are exported from apps/web/src/data/payment-workspace.ts. The page accepts labels?: Partial<Record<PaymentLabelKey, string>>. Root should map the i18n payment.<key> dictionary into labels; global commands/states maps provide localized command/status labels."
+  },
+  "required_root_wiring": [
+    "Add #/payment route and navigation entry using MeasurementPaymentPage.",
+    "Pass the existing client, workspace, selected/current item, online state, onSelect, onOpenCommand, and refresh props.",
+    "Pass workspace.context.creationCapabilities as createCapabilities (machine keyed descriptors with canCreate/status/authority/reasons); absent capability remains unavailable.",
+    "Pass localized payment labels keyed by PaymentLabelKey; do not add a client-side create permission fallback.",
+    "Add contract_boq, quantity_measurement, and payment_claim collection mappings in SupervisionClient workflowCollections so generic facade create/execute calls reach the correct API collections."
+  ],
+  "validation": {
+    "passed": [
+      "npm run typecheck --workspace apps/web",
+      "npm run web:build",
+      "npm run check:ui-boundary",
+      "npx playwright test --config=work/payment.playwright.config.ts --grep 'Payment endpoints reject' (1 passed; isolated API 8793 and web 5183)"
+    ],
+    "pending": [
+      "Run full payment-workspace browser spec after #/payment route and localization props are integrated.",
+      "Run a UI-browser full BOQ → verified measurement → recommendation → Owner decision → partial payment/correction chain after supported trusted payment-rule and released-inspection HTTP fixtures are available. API workflow acceptance is maintained by payment_api; its initial fixture seeds the payment calculation Requirement and released Inspection directly, so that test does not currently prove browser-driven close-loop completion."
+    ]
+  },
+  "next_steps": [
+    "Root integrates shared route/facade/client wiring and i18n dictionaries.",
+    "Run the first browser test to verify UI create capability and real API-backed claim draft creation.",
+    "Run both browser tests on the payment UI branch after root wiring.",
+    "Do not describe the payment UI browser acceptance as a completed pilot or completed full AC-PAY closed loop until the supported HTTP fixture chain is run through the UI."
+  ],
+  "completion_handover": {
+    "task": "AC-HO-01 Commissioning / Handover / Warranty workspace UI",
+    "branch": "goal/payment-ui-v1",
+    "commits": [
+      "9b6367fe7b828e93c5b54d2c68de6ecbe83910fc (read-only scoped Requirement / Asset reference catalog DTO and API endpoint cherry-pick)",
+      "b7e9e8789b09f7b795f099c99abc223de9b4676e"
+    ],
+    "files": [
+      "apps/web/src/pages/CompletionHandoverPage.tsx",
+      "apps/web/src/pages/completion-handover.css",
+      "apps/web/src/data/completion-workspace.ts",
+      "tests_browser/completion-handover-page.spec.ts"
+    ],
+    "follow_up_commit": "38cc731",
+    "implementation": {
+      "api_boundary": "Page uses the SupervisionClient facade for create, Workspace WorkItems and their server-provided actions, and server creationCapabilities. It does not calculate readiness, infer rights, or synthesize commands.",
+      "separate_records": "Commissioning packages, handover packages, and warranty claims remain separate items and tabs. Commissioning result history retains failed and later passed tests; handover shows exact scope, accepted documents and reservations; warranty shows defect, remedy, reinspection and closeout history.",
+      "profile_references": "Creation accepts only exact active scoped Requirement refs from workspace.context.referenceCatalog whose applicability has the required commissioningProfile, handoverProfile, or warrantyPeriod object. The generic default requirementRef is never presented as a profile. Create remains unavailable if the required exact profile is not readable in scope.",
+      "create_payloads": "Create forms send the schema-required separate data shapes, exact typed refs, and empty optional reference arrays; server commands and guards determine the next valid actions.",
+      "localization": "CompletionLabelKey/completionLabelKeys are exported from apps/web/src/data/completion-workspace.ts. Page accepts labels?: Partial<Record<CompletionLabelKey,string>>. Root maps completion.<key> dictionary labels and global command/state maps.",
+      "accepted_handover_evidence": "Submitted document refs and server-accepted document refs are shown in separate sections; submitted scope and server-accepted scope are separate fields.",
+      "warranty_create_evidence": "Warranty report create accepts only user-selected Evidence refs from server-filtered workspace.context.referenceCatalog.evidence and maps their objectIds to top-level evidenceIds. No synthetic or default context evidence is submitted."
+    },
+    "required_root_wiring": [
+      "Add #/completion route and navigation entry using CompletionHandoverPage.",
+      "Pass client, workspace, selected/current item, online state, onSelect, onOpenCommand, refresh, and localized labels props.",
+      "Keep creationCapabilities server-derived; absent capability or required scoped profile keeps create unavailable.",
+      "Keep commissioning_package, handover_package, and warranty_claim workflow collection mappings in the generic client facade."
+    ],
+    "validation": {
+      "passed": [
+        "npm run typecheck --workspace apps/web",
+        "npm run check:ui-boundary",
+        "npm run web:build before route integration",
+        "npx tsc -p apps/web/tsconfig.app.json --noEmit --pretty false --noUnusedLocals false after evidence selector update",
+        "Root reports npm run typecheck --workspace apps/web passed on integrated commit 468d68d"
+      ],
+      "pending": [
+        "Focused completion-handover-page and payment-workspace Playwright specs were not run. The root node_modules inventory does not match the current lock; a private npm ci in a detached test worktree ran out of disk space (stopped and cleaned).",
+        "The completion browser spec injects three presentation WorkItems into a real API workspace response; treat it as a mocked UI presentation test, not API acceptance or closed-loop workflow evidence.",
+        "Run the focused completion and payment browser specs against a lock-verified install on ports 8793/5183. The payment spec uses the real HTTP API; full AC-HO HTTP/browser closure remains a separate backend acceptance requirement."
+      ]
+    },
+    "next_steps": [
+      "Root runs tests_browser/completion-handover-page.spec.ts and tests_browser/payment-workspace.spec.ts with a lock-verified dependency install and isolated API/web ports.",
+      "Record actual browser results here; keep the completion fixture presentation-only and do not label it closed-loop acceptance.",
+      "Do not claim the full AC-HO workflow closed until the API worker acceptance chain and any required browser workflow both pass against merged backend hardening."
+    ],
+    "integrated_root_commit": "468d68d (root reported route, facade, dictionaries, and evidence catalog integrated)"
+  }
+}

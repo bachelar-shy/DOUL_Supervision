@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "auditBranch": "goal/acceptance-audit-v1",
+  "baseCommit": "943d1dd",
+  "inventory": "design/development/mvp-acceptance-inventory-v1.json",
+  "priorityForParallelDevelopment": [
+    {
+      "rank": 1,
+      "workstream": "commissioning_handover_warranty_connected_ui",
+      "reason": "F-07 now has commissioning/handover/warranty machines, real HTTP workflows and a PostgreSQL acceptance suite. Its single browser test explicitly injects mock records and proves presentation only; connected UI transitions against actual API records remain absent.",
+      "deliverable": "Connect CompletionHandoverPage creation, command forms and lifecycle transitions to real HTTP endpoints; add browser acceptance for commissioning fail/retest, readiness, Owner partial/final handover and warranty remedy/reinspection/close.",
+      "acceptanceBoundary": "The HTTP suites bootstrap trusted profiles and upstream accepted records; the mock completion UI spec does not prove server workflow. Do not claim upstream project configuration, UI integration or pilot acceptance."
+    },
+    {
+      "rank": 2,
+      "workstream": "safety_equipment_and_holdpoint_configuration",
+      "reason": "AC-S-01 browser evidence remains a partial connected loop: the fixture has no equipmentRefs and uses demo readiness; a configured Hold Point inspection release is rejected with ACCEPTANCE_SIGNED. This is a boundary for this tested Hold Point path, not a universal release requirement for every Stop.",
+      "deliverable": "Identify/authorize trusted project Equipment provisioning and current equipment inspection/certificate inputs; configure the project-adopted form and required exact-version signer authority for this Hold Point scenario; extend the real browser/API test only with those genuine references.",
+      "acceptanceBoundary": "Do not invent Asset CRUD authority or label passed-but-unreleased inspection as released. Keep AC-S-01 partial and pilot_not_run until a selected project, actual equipment and authorized records are validated."
+    },
+    {
+      "rank": 3,
+      "workstream": "approved_required_report_locales",
+      "reason": "ko/vi/en UI and document localization now exist, including FM-20 preview rendering and catalogs across form fields. Language catalog status still marks vi/en draft pending local review; project required-language and controlling-language policy is not selected, and display language does not set document output language.",
+      "deliverable": "Complete local translation review/approval, validate project-specific language requirements, and add output-language-specific acceptance for all required issued forms with exact source/template/version/hash provenance and Vietnamese legal original where applicable.",
+      "acceptanceBoundary": "Existing locale UI/document tests and mock UI locale assertions are not project-approved multilingual report acceptance. Do not call draft vi/en catalogs approved."
+    },
+    {
+      "rank": 4,
+      "workstream": "quality_and_owner_report_connected_browser",
+      "reason": "A full synthetic-fixture Quality and separate Owner Report lifecycle now passes through real HTTP, including current-cycle evidence and MockTrustedVerifier signing. The proof has no connected browser end-to-end flow or real verifier/site evidence.",
+      "deliverable": "Add connected browser acceptance for fail→confirmed observation→Issue/Action→reinspection retry→signed release→current-cycle closure, then separate Owner Report receipt/follow-up close. Add a foreign-scope closure candidate only when a properly authorized second-scope record can be made through a published API.",
+      "acceptanceBoundary": "MockTrustedVerifier is test-only; upload rejects out-of-scope evidence creation with SCOPE_MISMATCH, so closure-level cross-scope rejection is not yet evidenced. Keep pilot_not_run."
+    },
+    {
+      "rank": 5,
+      "workstream": "payment_full_browser_lifecycle",
+      "reason": "F-05 now has real HTTP and PostgreSQL acceptance for measurement through append-only payment correction, plus connected UI API-backed draft creation and a separate API authority/version case. No UI-driven browser scenario executes the full amount recommendation→Owner decision→Payment Record lifecycle.",
+      "deliverable": "Extend the Payment workspace browser flow from real claim/measurement data through Supervisor recommendation, exact Owner approval/adjustment and separate payment recording; preserve idempotent retry and stale/role denials.",
+      "acceptanceBoundary": "Do not interpret backend payment record tests as actual banking/ERP transfers or pilot payment evidence; keep promotion scoped to backend_api_implemented for evidenced backend scope."
+    }
+  ],
+  "pilotBlockers": [
+    "No actual project Configuration Pack has been selected and validated against the new payment, completion/handover, quality and safety workflows.",
+    "No real pilot actor accounts/RoleAssignments, qualification validity, scope matrix, or P1–P4 owner report routing supplied.",
+    "No adopted legal form/original identifiers, exact project signature authority/provider setup, completed vi/en local translation review, or project-approved report-language/controlling-language policy supplied.",
+    "No actual project BOQ/quantity/payment records, Owner decisions, commissioned assets, approved completion profiles, accepted as-built/O&M records, or field handover/warranty evidence supplied.",
+    "For AC-S-01: authorized non-secret equipment register/asset IDs and tags, approved provisioning process, current inspection/certification state and validity, and qualified operator assignment are not supplied; do not invent Asset CRUD authority.",
+    "For AC-S-01: actual work scope/permit references, method statement and risk/emergency-control revisions, permit validity window, accountable safety parties, and approved hazard/correction/reverification evidence references are not supplied.",
+    "No assigned backup/restore owner, outage contact, or media-provider/export/retention/cost decisions where applicable.",
+    "No site evidence or actual pilot acceptance snapshots; synthetic fixtures, seeded upstream records, mock UI fixtures and test-only signature adapters do not satisfy pilot_verified."
+  ],
+  "nonGoals": [
+    "Do not label mock/demo/synthetic fixture calls as actual site pilot proof or as real signature-provider verification.",
+    "Do not promote a whole function because only one backend lifecycle, UI presentation, or partial browser scenario passed.",
+    "Do not fabricate missing account, role, qualification, routing, project, language-policy, or provider values.",
+    "Do not treat the Hold Point signature gap in the tested scenario as a new requirement that every safety Stop needs a signed release."
+  ],
+  "baselineCommitCompared": "406d525"
+}

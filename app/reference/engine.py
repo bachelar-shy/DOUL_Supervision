@@ -329,6 +329,9 @@ class Engine:
         if self.machines[machine]['subtype']:
             record['subtype']=self.machines[machine]['subtype']
         authority = self.machine_bindings[machine]['create_authority']
+        if machine in {'commissioning_package','handover_package','warranty_claim'}:
+            from .handover import initialize_create
+            initialize_create(self,machine,record)
         validate(record,self.schemas[kind],self.schemas)
         if kind=='WorkItem':require(not set(record['data']) & set(record), 'IMMUTABLE_FIELD', 'WorkItem data cannot shadow identity or state')
         role = self.authorize(record,authority,party_id,role_id)
@@ -338,6 +341,9 @@ class Engine:
         if machine=='analysis_run':
             self._analysis_inspection_context(record)
         self._common(record,role)
+        if machine in {'commissioning_package','handover_package','warranty_claim'}:
+            from .handover import validate_creation
+            validate_creation(self,machine,record,party_id,role)
         if machine=='inspection':
             require(record['nextWorkAllowed'] is False and not set(record)&{'resultStatus','acceptanceDocumentId','approvalId'}, 'IMMUTABLE_FIELD', 'Inspection starts unreleased without result')
             require(bool(record.get('requirementRefs')) and bool(record.get('drawingRef')), 'INSPECTION_PACKAGE_COMPLETE', 'Inspection needs a requirement baseline and drawing')
@@ -505,6 +511,11 @@ class Engine:
                     require(payload[field]==record['schedule'].get(field), 'IMMUTABLE_FIELD', 'Imported source content requires a new source package: '+field)
         proposed=deepcopy(record)
         target=proposed.setdefault('data',{}) if kind=='WorkItem' else proposed['report'] if machine=='report' else proposed['schedule'] if machine in ['schedule_baseline','schedule_progress'] else proposed['boq'] if machine=='contract_boq' else proposed
+        if machine=='payment_claim' and command in ['record_payment','record_additional_payment','correct_payment_record','cancel_payment_record'] and 'externalSystemRef' not in payload:
+            # This is a per-record input. Do not let the previous payment's
+            # projected reference leak into the uniqueness guard for a later
+            # command that intentionally omits an ERP/system reference.
+            target.pop('externalSystemRef',None)
         for field,value in payload.items():
             if machine in ['schedule_baseline','schedule_progress']:
                 if field=='revision':
@@ -524,12 +535,15 @@ class Engine:
         self._common(proposed,role,allow_stale_baseline=machine=='inspection' and command in ['receive','return'])
         for guard in transition['guards']:
             if guard not in ['assignment_authorized','expected_version_matches','requirement_versions_current','evidence_provenance_valid','drawing_revision_current','upstream_hold_points_released']:
-                self._guard(guard,proposed,payload,party_id)
+                self._guard(guard,proposed,payload,party_id,role,command)
         if machine=='report' and command=='acknowledge':require(party_id in record['report']['recipients'], 'RECIPIENT_MISMATCH', 'Only an issued recipient may acknowledge')
         if transition['required_evidence']:
             require(bool(evidence_ids),'EVIDENCE_REQUIRED','Transition requires current command evidence')
         self._effects(machine,command,proposed,party_id,role_id,evidence_ids,payload)
         proposed.update(status=transition['to'],version=record['version']+1,updatedAt=self.at())
+        if machine in {'commissioning_package','handover_package','warranty_claim'}:
+            from .handover import apply_effect
+            apply_effect(self,machine,command,proposed,payload,evidence_ids,party_id,role)
         if machine=='schedule_baseline' and command=='activate_baseline':
             return self._activate_schedule_baseline(record,proposed,request,party_id,role_id,key)
         if machine=='schedule_progress' and command=='freeze_progress':
@@ -571,7 +585,10 @@ class Engine:
         require(bool(matches),'REINSPECTION_REQUIRED','Current correction cycle needs a new inspection')
         return matches[-1]
 
-    def _guard(self, name, record, payload, party_id):
+    def _guard(self, name, record, payload, party_id, role=None, command=None):
+        if name.startswith(('commissioning_','handover_','warranty_')):
+            from .handover import check_guard
+            return check_guard(self,name,record,payload,party_id,role,command)
         r=self._fields(record)
         predicates={
             'reason_present':lambda:bool(r.get('reason','').strip()),

@@ -1,0 +1,11 @@
+{
+  "service": "FastAPI + SQLite development persistence",
+  "request": "GET /projects/{project_id}/parallel/work-inbox?limit=100",
+  "datasetRows": 50000,
+  "transport": "loopback TCP HTTP",
+  "clientDeadlineSeconds": 60,
+  "result": "client timeout before an HTTP response",
+  "processObservation": "API process remained CPU-bound near one core during the attempt; the process was stopped after the client deadline.",
+  "status": "blocked-by-request-cost",
+  "scopeLimit": "This was an exploratory SQLite-backed max-page attempt. The completed PostgreSQL latency series uses page size 1; max-page PostgreSQL latency remains unmeasured. No API latency SLO or p95 budget was found in the inspected contracts."
+}

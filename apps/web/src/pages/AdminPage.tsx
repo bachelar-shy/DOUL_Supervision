@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { RecordDTO, Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
 import { roles } from "../labels";
@@ -14,6 +15,7 @@ export function AdminPage({
   client: SupervisionClient;
   workspace: Workspace;
 }) {
+  const { t } = useTranslation();
   const [rows, setRows] = useState<RecordDTO[]>([]);
   useEffect(() => {
     client
@@ -25,13 +27,13 @@ export function AdminPage({
     <PageBoundary name="admin">
       <RegisterTemplate
         header={
-          <SectionHeader title="프로젝트 역할배정" meta="현재 조회 전용" />
+          <SectionHeader
+            title={t("admin.title")}
+            meta={t("admin.meta")}
+          />
         }
         notice={
-          <div className="notice">
-            관리자 계정은 기술승인·법정서명 권한을 자동으로 갖지 않습니다.
-            시험기관·외부검토기관은 자료 출처만 보존하고 로그인 대상에서 제외합니다.
-          </div>
+          <div className="notice">{t("admin.notice")}</div>
         }
       >
         <RegisterTable
@@ -40,29 +42,30 @@ export function AdminPage({
           columns={[
             {
               id: "actorGroup",
-              header: "사용자군",
+              header: t("admin.column.actorGroup"),
               cell: (row) =>
                 roles[String(row.actorGroup)] || String(row.actorGroup),
             },
             {
               id: "roleCode",
-              header: "프로젝트 역할",
+              header: t("admin.column.role"),
               cell: (row) => String(row.roleCode),
             },
             {
               id: "scope",
-              header: "분야",
-              cell: () => "건축 / 지정 패키지",
+              header: t("admin.column.scope"),
+              cell: () => t("admin.scopeValue"),
             },
             {
               id: "validTo",
-              header: "배치 종료",
+              header: t("admin.column.validTo"),
               cell: (row) => String(row.validTo).slice(0, 10),
             },
             {
               id: "active",
-              header: "상태",
-              cell: (row) => (row.active ? "유효" : "중지"),
+              header: t("admin.column.status"),
+              cell: (row) =>
+                row.active ? t("admin.status.active") : t("admin.status.inactive"),
             },
           ]}
         />

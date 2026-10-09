@@ -1,0 +1,92 @@
+{
+  "proposalId": "PCR-2026-002-draft",
+  "status": "awaiting_product_functional_owner_decision",
+  "isEffectiveBaselineChange": false,
+  "requestedBy": "Codex implementation agent",
+  "decidedBy": null,
+  "decision": null,
+  "effectiveFrom": null,
+  "baselineFrom": "1.0",
+  "proposedBaselineTo": "1.1",
+  "proposedChangeClass": "C2",
+  "policy": "48_Product_Baseline_Change_Control_v1.md sections2-6",
+  "policyRequirement": "Product / Functional Owner가 변경등급과 계약의미를 확정한다. Backend/UI/Platform은 구현 중 발견한 문제와 대안을 제안할 수 있으나 업무 Contract를 직접 변경하지 않는다.",
+  "reason": "A linked mutable Issue/Action legitimately advances during correction but the completion package retains an exact earlier reference and exposes no authorized way to refresh it. Preserve exact version guards and history while restoring legal workflow reachability.",
+  "compatibility": "Optional command inputs; do not change actors, decision rights, states or successful no-Punch flows. No silent refresh, dropped blockers or signature bypass.",
+  "migrationRequired": false,
+  "impactedContracts": [
+    "34_Commissioning_Handover_Warranty_Functional_Contract.md",
+    "app/schema/state_machines_v1.json"
+  ],
+  "impactedRegisters": [
+    "F-07 commissioning/handover/warranty projections"
+  ],
+  "impactedForms": [],
+  "acceptanceScenarioIds": [
+    "AC-HO-01",
+    "AC-VERSION-01",
+    "AC-IDEMP-01",
+    "AC-AUTH-01"
+  ],
+  "implementedDraft": {
+    "commit": "62aefec",
+    "api": "POST /projects/{projectId}/commissioning-packages/{objectId}/mark-ready-for-handover",
+    "optionalPayload": {
+      "punchIssueRefs": "Current exact refs for exactly the previously linked Issue identity set"
+    },
+    "invariants": [
+      "Existing SUP authority and expectedVersion",
+      "Same Issue identity set; no removal, substitution or added unrelated blocker",
+      "Current project/type/Punch/version validation and existing readiness/closure gates",
+      "Preserve prior package snapshots, test histories and one domain AuditEvent; idempotent replay"
+    ],
+    "verification": [
+      "11 focused HTTP/contract tests PASS; stale/open/removal/substitution and CON rejected atomically",
+      "Full394 API run:389PASS5optionaldocument skips; actualPostgreSQL16",
+      "Full319 contract tests PASS plus separate7 F07 contract tests",
+      "Worker actual Punch correction/reinspection/finalrender/test-onlysign/release/Issueclose/currentrefrefresh/commissioningclose succeeds; full Handover/Warranty scenario still pending"
+    ],
+    "ui": "Server requiresInput exposes existing exact-ref modal; no UI authority/state calculation"
+  },
+  "additionalConfirmedGaps": [
+    {
+      "workflow": "Handover",
+      "trigger": "Linked openIssueRefs advances or closes after draft/submission",
+      "failure": "Every later gate requires captured refs current and open; no reconciliation command exists",
+      "proposedResolution": "An explicit audited SUP reconciliation retaining all Issue identities and preserving original Owner reservation/acceptance snapshots; classify current open vs resolved refs without dropping history. Exact allowed states, effects on pending Owner Decisions and reservation completion must be decided before implementation.",
+      "implementationStatus": "not implemented; Product decision required"
+    },
+    {
+      "workflow": "Warranty rework",
+      "trigger": "Normal linked Issue assignment/correction/reinspection advances its version before first Warranty acceptance; failed reinspection/new correction cycles also advance Issue and Actions.",
+      "failure": "Saved exact issueRef becomes stale; actual accept_remedy UI request with current passed reinspection ref/evidence returns409 REFERENCE_STALE. Rework also lacks an authorized replacement-cycle Action linkage/ref refresh.",
+      "proposedResolution": "Explicit same-defect Issue ref refresh and current-cycle Action linkage under existing authorized commands, preserving prior cycles and reinspection/remedy history. Define where replacement-cycle actions are captured before implementation.",
+      "implementationStatus": "not implemented; Product decision required",
+      "observedEvidence": {
+        "sourceCommits": [
+          "8254635",
+          "eff66db"
+        ],
+        "rootCommits": [
+          "eb4d691",
+          "361f8e3"
+        ],
+        "browser": "4 focused cases PASS work/goal-handover-current-ref-browser.log; fourth proves actual409 refusal, not successfulWarrantyacceptance",
+        "boundary": "Current passed reinspection supplied, Warranty finalFM09 release/acceptance/close unproven; no productionprovider or fieldpilot."
+      }
+    },
+    {
+      "workflow": "Commissioning Punch disposition",
+      "trigger": "Current Punch status is cancelled or superseded",
+      "existingBehavior": "Existing gate accepts any status outside _ISSUE_OPEN; the draft refresh does not change this condition.",
+      "decisionNeeded": "Confirm which explicit dispositions qualify as resolved; do not silently treat cancellation as technical closure.",
+      "implementationStatus": "No gate weakening or unapproved new disposition rule introduced."
+    }
+  ],
+  "adoptionConditions": [
+    "Product/Functional Owner records decision, classification, effective version and release adoption; this proposal is not a schema-valid approved change record",
+    "Complete actual UI/API new-cycle and Handover reservation reconciliation acceptance without fixture workflow bypass",
+    "All latest exact-head requiredCI checks PASS before integration; current account billing blocks execution",
+    "No overall field acceptance without actual project configuration/provider/users/files and pilot evidence"
+  ]
+}

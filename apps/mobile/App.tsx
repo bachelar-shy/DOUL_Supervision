@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   Modal,
@@ -23,56 +24,55 @@ import type {
 } from "@doul/client";
 import { captureOriginal, listCaptures, submitCapture } from "./src/capture";
 import type { SavedCapture } from "./src/capture";
+import type { TranslationKey } from "@doul/localization";
+import {
+  appLanguages,
+  changeMobileLanguage,
+  type AppLanguage,
+} from "./src/i18n";
 
 configureKeyFactory(Crypto.randomUUID);
 const api = new ApiClient("http://127.0.0.1:8791");
-const roleNames: Record<HumanRole, string> = {
-  SUP: "감리",
-  CON: "시공사",
-  OWN: "발주처",
-  DES: "설계자",
-  ADM: "관리자",
+const commandKeys: Record<string, TranslationKey> = {
+  request: "command.request",
+  receive: "command.receive",
+  schedule: "command.schedule",
+  start: "command.start",
+  submit_results: "command.submit_results",
+  pass: "command.pass",
+  fail: "command.fail",
+  release_next_work: "command.release_next_work",
+  begin_review: "command.begin_review",
+  confirm: "command.confirm",
+  reject: "command.reject",
+  submit: "command.submit",
+  verify: "command.verify",
+  close: "command.close",
+  acknowledge: "command.acknowledge",
+  decide: "command.decide",
+  start_correction: "command.start_correction",
+  request_reinspection: "command.request_reinspection",
+  start_reinspection: "command.start_reinspection",
+  reject_reinspection: "command.reject_reinspection",
+  issue: "command.issue",
+  answer: "command.answer",
 };
-const commandNames: Record<string, string> = {
-  request: "검측 요청",
-  receive: "접수",
-  schedule: "일정 배정",
-  start: "시작",
-  submit_results: "결과 제출",
-  pass: "적합 판정",
-  fail: "부적합 판정",
-  release_next_work: "후속공정 허용",
-  begin_review: "관찰 검토",
-  confirm: "관찰 확인",
-  reject: "관찰 제외",
-  submit: "시정자료 제출",
-  verify: "조치 검증",
-  close: "종결 검토",
-  acknowledge: "수령 확인",
-  decide: "결정 제출",
-  start_correction: "시정 시작",
-  request_reinspection: "재검측 요청",
-  start_reinspection: "재검측 시작",
-  reject_reinspection: "재시정 요청",
-  issue: "공식 발행",
-  answer: "설계 답변",
-};
-const stateNames: Record<string, string> = {
-  scheduled: "검측 예정",
-  requested: "접수 대기",
-  passed: "적합 · 승인 전",
-  completed: "검측 완료",
-  in_progress: "진행 중",
-  candidate: "관찰 후보",
-  under_review: "확인 중",
-  confirmed: "관찰 확인",
-  assigned: "배정됨",
-  issued: "발행 · 수령대기",
-  reported: "결정 요청",
-  awaiting_decision: "결정 대기",
-  closed: "종결",
-  ready_for_recheck: "재검측 대기",
-  reinspection: "재검측 중",
+const stateKeys: Record<string, TranslationKey> = {
+  scheduled: "state.scheduled",
+  requested: "state.requested",
+  passed: "state.passed",
+  completed: "state.completed",
+  in_progress: "state.in_progress",
+  candidate: "state.candidate",
+  under_review: "state.under_review",
+  confirmed: "state.confirmed",
+  assigned: "state.assigned",
+  issued: "state.issued",
+  reported: "state.reported",
+  awaiting_decision: "state.awaiting_decision",
+  closed: "state.closed",
+  ready_for_recheck: "state.ready_for_recheck",
+  reinspection: "state.reinspection",
 };
 const label = (item: WorkItem) =>
   item.record.title ||
@@ -81,6 +81,17 @@ const label = (item: WorkItem) =>
   String(item.record.metadata?.name || item.record.id.slice(0, 8));
 
 export default function App() {
+  const { t, i18n } = useTranslation();
+  const roleLabel = (value: HumanRole) => t(`roles.${value}`);
+  const commandLabel = (value: string) => {
+    const key = commandKeys[value];
+    return key ? t(key) : value;
+  };
+  const stateLabel = (value?: string | null) => {
+    if (!value) return "";
+    const key = stateKeys[value];
+    return key ? t(key) : value;
+  };
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [role, setRole] = useState<HumanRole>("SUP");
   const [tab, setTab] = useState("today");
@@ -104,10 +115,10 @@ export default function App() {
       setWorkspace(w);
       setOnline(true);
       setPending(await listCaptures(w.project.id, api.session!.actor.partyId));
-      setMessage("서버 조회 완료");
+      setMessage(t("mobile.status.fetchComplete"));
     } catch (e) {
       setOnline(false);
-      setMessage(e instanceof Error ? e.message : "연결 오류");
+      setMessage(e instanceof Error ? e.message : t("app.error.connection"));
     } finally {
       setBusy(false);
     }
@@ -123,7 +134,7 @@ export default function App() {
       await refresh();
     } catch (e) {
       setOnline(false);
-      setMessage("개발 API 연결 실패: " + String(e));
+      setMessage(t("mobile.status.apiFailure", { error: String(e) }));
     } finally {
       setBusy(false);
     }
@@ -155,12 +166,12 @@ export default function App() {
         api.session.actor.partyId,
         library,
       );
-      if (r) setMessage("원본 기기 저장 완료 · 아직 제출되지 않음");
+      if (r) setMessage(t("mobile.status.captureSaved"));
       setPending(
         await listCaptures(workspace.project.id, api.session.actor.partyId),
       );
     } catch (e) {
-      Alert.alert("촬영·저장 확인", String(e));
+      Alert.alert(t("mobile.alert.capture"), String(e));
     } finally {
       setBusy(false);
     }
@@ -169,8 +180,12 @@ export default function App() {
     if (!workspace) return;
     setBusy(true);
     try {
-      await submitCapture(api, c, workspace.context.scope, (o, t) =>
-        setMessage("전송 " + Math.round((o / t) * 100) + "%"),
+      await submitCapture(api, c, workspace.context.scope, (offset, total) =>
+        setMessage(
+          t("mobile.status.transfer", {
+            percent: Math.round((offset / total) * 100),
+          }),
+        ),
       );
       await refresh();
     } catch (e) {
@@ -221,8 +236,8 @@ export default function App() {
     } catch (e) {
       Alert.alert(
         e instanceof ApiError && e.detail.code === "VERSION_CONFLICT"
-          ? "버전 충돌 · 덮어쓰지 않습니다."
-          : "서버에서 처리되지 않았습니다.",
+          ? t("mobile.error.versionConflict")
+          : t("mobile.error.serverRejected"),
         String(e),
       );
     } finally {
@@ -237,24 +252,54 @@ export default function App() {
           <Text style={s.brand}>
             DOUL / <Text style={s.brandSub}>SUPERVISION</Text>
           </Text>
-          <Text style={s.sub}>시범현장 · 예시 데이터</Text>
+          <Text style={s.sub}>
+            {t("app.sampleSite")} · {t("app.sampleData")}
+          </Text>
         </View>
         <Text style={[s.network, !online && s.warning]}>
-          {online ? "온라인" : "연결 확인 필요"}
+          {online ? t("app.connection.online") : t("mobile.connectionCheck")}
         </Text>
       </View>
       <View style={s.demo}>
-        <Text style={s.demoText}>
-          개발용 · 실제 승인/법정 서명/AI 분석 아님
-        </Text>
+        <Text style={s.demoText}>{t("mobile.devBanner")}</Text>
       </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={s.languages}
+        contentContainerStyle={s.rolesContent}
+      >
+        {appLanguages.map((language) => {
+          const active = (i18n.resolvedLanguage ?? i18n.language) === language.code;
+          return (
+            <Pressable
+              key={language.code}
+              accessibilityRole="button"
+              accessibilityLabel={language.nativeName}
+              onPress={() =>
+                void changeMobileLanguage(language.code as AppLanguage)
+              }
+              style={[s.language, active && s.languageActive]}
+            >
+              <Text
+                style={[
+                  s.languageText,
+                  active && s.languageTextActive,
+                ]}
+              >
+                {language.nativeName}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={s.roles}
         contentContainerStyle={s.rolesContent}
       >
-        {(Object.keys(roleNames) as HumanRole[]).map((r) => (
+        {(["SUP", "CON", "OWN", "DES", "ADM"] as HumanRole[]).map((r) => (
           <Pressable
             key={r}
             accessibilityRole="button"
@@ -262,7 +307,7 @@ export default function App() {
             style={[s.role, role === r && s.roleActive]}
           >
             <Text style={[s.roleText, role === r && s.roleTextActive]}>
-              {roleNames[r]}
+              {roleLabel(r)}
             </Text>
           </Pressable>
         ))}
@@ -270,7 +315,7 @@ export default function App() {
       <View style={s.status}>
         <Text style={s.statusText}>{message}</Text>
         <Pressable onPress={() => void refresh()} disabled={busy}>
-          <Text style={s.link}>새로고침</Text>
+          <Text style={s.link}>{t("mobile.refresh")}</Text>
         </Pressable>
       </View>
       <View style={[s.content, tablet && s.tablet]}>
@@ -278,27 +323,29 @@ export default function App() {
           style={[s.list, tablet && { maxWidth: 420 }]}
           contentContainerStyle={s.padding}
         >
-          <Text style={s.eyebrow}>{roleNames[role]} 작업공간</Text>
+          <Text style={s.eyebrow}>
+            {t("mobile.roleWorkspace", { role: roleLabel(role) })}
+          </Text>
           <Text style={s.title}>
             {tab === "today"
-              ? "오늘"
+              ? t("navigation.today")
               : tab === "capture"
-                ? "현장 촬영"
+                ? t("mobile.captureTitle")
                 : tab === "inspections"
-                  ? "검측·검수"
+                  ? t("mobile.inspectionTitle")
                   : tab === "issues"
-                    ? "이슈·조치"
-                    : "보고·설정"}
+                    ? t("mobile.issueActionTitle")
+                    : t("mobile.moreTitle")}
           </Text>
           {tab === "today" && (
             <View style={s.metrics}>
               {[
                 [
-                  "검측",
+                  t("mobile.metric.inspections"),
                   items.filter((x) => x.machine === "inspection").length,
                 ],
                 [
-                  "미종결 이슈",
+                  t("mobile.metric.openIssues"),
                   items.filter(
                     (x) =>
                       x.machine === "issue" && x.record.status !== "closed",
@@ -309,7 +356,9 @@ export default function App() {
                   <Text style={s.sub}>{k}</Text>
                   <Text style={s.number}>
                     {v}
-                    <Text style={s.sub}> 건</Text>
+                    <Text style={s.sub}>
+                      {" "}{t("mobile.unit.count", { count: "" }).trim()}
+                    </Text>
                   </Text>
                 </View>
               ))}
@@ -318,35 +367,34 @@ export default function App() {
           {tab === "capture" ? (
             <>
               <View style={s.card}>
-                <Text style={s.cardTitle}>사진을 원본으로 기록합니다.</Text>
-                <Text style={s.help}>
-                  위치: A동 2층 / C-5 (수동 지정). AR·QR·Depth는 아직 연결하지
-                  않았습니다.
+                <Text style={s.cardTitle}>
+                  {t("mobile.capture.recordOriginal")}
                 </Text>
+                <Text style={s.help}>{t("mobile.capture.help")}</Text>
                 <Button
-                  title="카메라 촬영"
+                  title={t("mobile.capture.camera")}
                   onPress={() => void capture()}
                   disabled={busy || !workspace}
                 />
                 <Button
-                  title="사진·영상 가져오기"
+                  title={t("mobile.capture.import")}
                   onPress={() => void capture(true)}
                   disabled={busy || !workspace}
                   secondary
                 />
               </View>
-              <Text style={s.section}>기기 원본 저장소</Text>
+              <Text style={s.section}>{t("mobile.capture.deviceStore")}</Text>
               {pending.map((c) => (
                 <View style={s.card} key={c.id}>
                   <Text style={s.cardTitle}>{c.name}</Text>
                   <Text style={s.help}>
                     {c.status === "uploaded"
-                      ? "서버 등록 완료 · 기기 원본 유지"
-                      : "기기 저장 · 제출 대기"}
+                      ? t("mobile.capture.uploaded")
+                      : t("mobile.capture.pending")}
                     {"\n"}SHA256 {c.hash.slice(0, 16)}…
                   </Text>
                   <Button
-                    title="서버 전송"
+                    title={t("mobile.capture.upload")}
                     disabled={busy || !online || c.status === "uploaded"}
                     onPress={() => void upload(c)}
                   />
@@ -366,37 +414,34 @@ export default function App() {
                       {item.record.id.slice(0, 8)} · v{item.record.version}
                     </Text>
                     <Text style={s.badge}>
-                      {stateNames[item.record.status || ""] ||
-                        item.record.status}
+                      {stateLabel(item.record.status)}
                     </Text>
                   </View>
                   <Text style={s.cardTitle}>{label(item)}</Text>
-                  <Text style={s.help}>A동 2층 / C-5 →</Text>
+                  <Text style={s.help}>{t("mobile.sampleLocation")}</Text>
                 </Pressable>
               ))}
               {!visible.length && (
-                <Text style={s.help}>조회할 항목이 없습니다.</Text>
+                <Text style={s.help}>{t("mobile.empty")}</Text>
               )}
             </>
           )}
           {tab === "more" && (
             <View style={s.card}>
-              <Text style={s.cardTitle}>개발 연결 설정</Text>
-              <Text style={s.help}>
-                iOS 시뮬레이터 또는 adb reverse 연결용입니다. 이 API는 사내 운영
-                인증을 제공하지 않습니다.
-              </Text>
+              <Text style={s.cardTitle}>{t("mobile.settings.title")}</Text>
+              <Text style={s.help}>{t("mobile.settings.help")}</Text>
               <TextInput
                 style={s.input}
                 value={endpoint}
                 onChangeText={setEndpoint}
                 autoCapitalize="none"
-                accessibilityLabel="개발 API 주소"
+                accessibilityLabel={t("mobile.settings.apiAria")}
               />
-              <Button title="다시 연결" onPress={() => void login(role)} />
-              <Text style={s.help}>
-                문서 편집·권한관리의 전체 화면은 반응형 웹에서 사용합니다.
-              </Text>
+              <Button
+                title={t("mobile.settings.reconnect")}
+                onPress={() => void login(role)}
+              />
+              <Text style={s.help}>{t("mobile.settings.webOnly")}</Text>
             </View>
           )}
         </ScrollView>
@@ -404,50 +449,72 @@ export default function App() {
           <View style={tablet ? s.detailTablet : s.detailPhone}>
             <ScrollView contentContainerStyle={s.padding}>
               <Pressable onPress={() => setSelection(null)}>
-                <Text style={s.link}>← 목록으로</Text>
+                <Text style={s.link}>{t("mobile.back")}</Text>
               </Pressable>
               <Text style={s.title}>{label(selected)}</Text>
               <Text style={s.badge}>
-                {stateNames[selected.record.status || ""] ||
-                  selected.record.status}{" "}
+                {stateLabel(selected.record.status)}{" "}
                 · v{selected.record.version}
               </Text>
               <View style={s.notice}>
                 <Text style={s.help}>
                   {selected.machine === "inspection"
-                    ? `판정: ${selected.record.resultStatus || "미판정"}\n필수확인: ${selected.record.holdPoint ? "Hold 적용" : "일반"}\n후속공정: ${selected.record.nextWorkAllowed ? "허용" : "미허용 · 서명/승인 확인"}`
-                    : "현재 역할에 허용된 명령만 표시합니다. 시공사는 이슈를 종결할 수 없습니다."}
+                    ? [
+                        t("mobile.inspection.result", {
+                          result:
+                            selected.record.resultStatus ||
+                            t("mobile.inspection.unjudged"),
+                        }),
+                        t("mobile.inspection.holdCheck", {
+                          value: selected.record.holdPoint
+                            ? t("mobile.inspection.hold")
+                            : t("mobile.inspection.normal"),
+                        }),
+                        t("mobile.inspection.nextWork", {
+                          value: selected.record.nextWorkAllowed
+                            ? t("mobile.inspection.allowed")
+                            : t("mobile.inspection.notAllowed"),
+                        }),
+                      ].join("\n")
+                    : t("mobile.permissionHelp")}
                 </Text>
               </View>
-              <Text style={s.section}>현재 가능한 업무</Text>
+              <Text style={s.section}>{t("mobile.availableActions")}</Text>
               {selected.actions.map((a) => (
                 <View key={a.command}>
                   <Button
-                    title={commandNames[a.command] || a.command}
+                    title={commandLabel(a.command)}
                     disabled={busy || !online || (!a.ready && !a.requiresInput)}
                     onPress={() => openCommand(selected, a)}
                   />
                   {a.blockedReason && !a.requiresInput && (
-                    <Text style={s.help}>선행조건: {a.blockedReason.code}</Text>
+                    <Text style={s.help}>
+                      {t("mobile.prerequisite", {
+                        code: a.blockedReason.code,
+                      })}
+                    </Text>
                   )}
                 </View>
               ))}
               <Text style={s.help}>
-                증빙 {selected.record.evidenceIds?.length || 0}건 · 원본 버전을
-                유지합니다.
+                {t("mobile.evidenceCount", {
+                  count: selected.record.evidenceIds?.length || 0,
+                })}
               </Text>
             </ScrollView>
           </View>
         )}
       </View>
       <View style={s.nav}>
-        {[
-          ["today", "오늘"],
-          ["inspections", "검측"],
-          ["capture", "촬영"],
-          ["issues", "이슈"],
-          ["more", "더보기"],
-        ].map(([id, t]) => (
+        {(
+          [
+            ["today", "navigation.today"],
+            ["inspections", "mobile.inspections"],
+            ["capture", "mobile.capture"],
+            ["issues", "mobile.issues"],
+            ["more", "mobile.nav.more"],
+          ] as Array<[string, TranslationKey]>
+        ).map(([id, labelKey]) => (
           <Pressable
             key={id}
             style={s.navButton}
@@ -456,7 +523,9 @@ export default function App() {
               setSelection(null);
             }}
           >
-            <Text style={[s.navLabel, tab === id && s.navActive]}>{t}</Text>
+            <Text style={[s.navLabel, tab === id && s.navActive]}>
+              {t(labelKey)}
+            </Text>
           </Pressable>
         ))}
       </View>
@@ -468,13 +537,12 @@ export default function App() {
         <SafeAreaView style={s.safe}>
           <ScrollView contentContainerStyle={s.padding}>
             <Text style={s.title}>
-              {modal
-                ? commandNames[modal.action.command] || modal.action.command
-                : ""}
+              {modal ? commandLabel(modal.action.command) : ""}
             </Text>
             <Text style={s.help}>
-              현재는 개발용 구조화 입력입니다. 원본 v
-              {modal?.item.record.version} 기준이며, 서버에서 최종 검증합니다.
+              {t("mobile.modal.help", {
+                version: modal?.item.record.version ?? "",
+              })}
             </Text>
             <TextInput
               style={[s.input, s.payload]}
@@ -483,14 +551,18 @@ export default function App() {
               multiline
               autoCapitalize="none"
               autoCorrect={false}
-              accessibilityLabel="업무 명령 입력"
+              accessibilityLabel={t("mobile.modal.payloadAria")}
             />
             <Button
-              title="확인 후 실행"
+              title={t("mobile.modal.execute")}
               disabled={busy}
               onPress={() => void execute()}
             />
-            <Button title="취소" secondary onPress={() => setModal(null)} />
+            <Button
+              title={t("mobile.cancel")}
+              secondary
+              onPress={() => setModal(null)}
+            />
           </ScrollView>
         </SafeAreaView>
       </Modal>
@@ -539,6 +611,24 @@ const s = StyleSheet.create({
   warning: { color: "#ab7842" },
   demo: { backgroundColor: "#eaf0f6", padding: 8 },
   demoText: { fontSize: 9, textAlign: "center", color: "#7b8da1" },
+  languages: {
+    flexGrow: 0,
+    maxHeight: 46,
+    backgroundColor: "#f8fafc",
+    borderBottomWidth: 1,
+    borderColor: "#e3e8ee",
+  },
+  language: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#d9e0e7",
+    backgroundColor: "white",
+  },
+  languageActive: { borderColor: "#17365D", backgroundColor: "#edf3f9" },
+  languageText: { fontSize: 10, color: "#7e8c9d" },
+  languageTextActive: { color: "#17365D", fontWeight: "600" },
   roles: { flexGrow: 0, maxHeight: 52, backgroundColor: "white" },
   rolesContent: { paddingHorizontal: 15, paddingVertical: 10, gap: 8 },
   role: {
