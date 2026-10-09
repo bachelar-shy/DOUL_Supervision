@@ -7,7 +7,7 @@
   "checks": {
     "contractSuite": {
       "passed": 319,
-      "log": "work/goal-contracts-mandatory-locales.log"
+      "log": "work/goal-action-authoring-contracts-final.log"
     },
     "apiSuite": {
       "run": 394,
@@ -22,7 +22,7 @@
       "log": "work/goal-document-runtime.log",
       "boundary": "Five local locked-runtime tests PASS. Prior 97cee102 head actual platform-document CI PASS; latest-head CI is blocked before start by account billing."
     },
-    "staticUI": "Web/mobile typecheck and web build PASS after mandatory locale spread ordering fix f92f047; work/goal-mandatory-locales-{typecheck,build}-final.log. UI boundary/lint PASS; existing warnings retained. Prior duplicate-spread typecheck failure fixed without suppression.",
+    "staticUI": "Final Action UI typecheck/boundary/lint/build PASS; work/goal-action-authoring-*-final.log. Existing warnings retained. Mandatorylocale guard348/language and prior623 translations preserved.",
     "lockedDependencies": "Fresh exact-lock npm ci, physical repository workspace tree and dependency inventory PASS (work/goal-physical-dependencies.log); previous dependency trees preserved. Production Python lock unchanged.",
     "fullBrowser": {
       "result": "PASS",
@@ -35,23 +35,22 @@
     "dockerWeb": "Localization COPY corrected for web and operational proxy images; prior 97cee102 actual container/operational CI PASS. Latest-head CI blocked before start; no current-head acceptance claim.",
     "githubCI": {
       "pr": 129,
-      "lastPushedHead": "cce88c9f39bb43a4f38319084e95fa8c03906946",
+      "lastPushedHead": "b4a2a46bcbd836abc4a82948de25bc3553bdb102",
       "status": "BLOCKED_ACCOUNT_BILLING_BEFORE_JOB_START",
       "run": 37860451176,
       "evidence": "User-confirmed billing annotation run37860451176; all eight b1cc92a runs completed failure with steps:null/logs_url:null, independently inspected.",
       "resume": "Account owner resolves Billing & plans; push completed verified integration checkpoint and require all latest exact-head checks before merge. Do not treat earlier-head successes as current acceptance.",
-      "lastObservedFailureHead": "b1cc92ab060c5d09b499164d29aa290f26a03f80",
+      "lastObservedFailureHead": "b4a2a46bcbd836abc4a82948de25bc3553bdb102",
       "lastObservedRuns": [
-        37868170273,
-        37868170220,
-        37868170275,
-        37868170271,
-        37868170270,
-        37868170238,
-        37868170257,
-        37868170240
+        37888421784,
+        37888421763,
+        37888421797,
+        37888421747,
+        37888421773,
+        37888421750,
+        37888421807
       ],
-      "lastObservedJobs": "8 completedfailure jobs, allsteps/logsnull beforestart; userconfirmedbillingannotation onoriginalrun37860451176."
+      "lastObservedJobs": "7 completedfailure jobs steps/logs null; platform-container-baseline queued at observation. No exact-head CI acceptance."
     },
     "referenceCatalog": "6 actual HTTP authorization tests PASS including current Evidence/InformationItem/Inspection/Decision/Issue/Action references, foreign project/location exclusion and changed assignment visibility.",
     "paymentBrowser": "Actual OwnerDecision UI create/report/acknowledge/decide and Payment closed loop PASS; work/goal-payment-safety-owner-integrated.log and normal89 regression. No fixture-created Owner Decisions in latest test; upstream prerequisites remain synthetic.",
@@ -114,6 +113,28 @@
         "scope": "Separate actual-API localization/authoring/Quality run after catalog wiring; not a combined 101-case suite or exact-head GitHub CI."
       },
       "nativeReview": "pending"
+    },
+    "actionAuthoring": {
+      "result": "PASS",
+      "passed": 2,
+      "log": "work/goal-action-authoring-browser-final.log",
+      "static": "work/goal-action-authoring-{typecheck,boundary,lint,build}-final.log",
+      "contracts": "319 PASS work/goal-action-authoring-contracts-final.log",
+      "scope": "Actual authorized Action draft create, sourceIssue/currentcycle/persistedexactfields/singleaudit, ko/vi/en unsaved preservation, explicit reset and OWN route/capability refusal. Assign/start remain separate server commands."
+    },
+    "handoverPartialUI": {
+      "result": "PASS",
+      "passed": 3,
+      "log": "work/goal-handover-partial-browser.log",
+      "sourceCommit": "1b2e457",
+      "rootCommit": "c6f5526",
+      "scope": "Commissioning failed/pass history, actual Punch correction/reinspection/final FM09 Vietnamese render/test-only trusted signature/release/close, actual Owner decision and partialhandover, Warranty reaches action_required and refuses start with verifiedAction. Does not prove Warranty remedy/reinspection/close or actualpilot; commissioningrefrefresh remains unapprovedC2draft."
+    },
+    "actionDownstream": {
+      "result": "PASS",
+      "passed": 3,
+      "log": "work/goal-action-downstream-browser-final.log",
+      "scope": "Separate actual Quality fullcloseout/Equipment/Stop/Permitresume regression after Actionworkbench change; not part of normal89 run. Prior concurrent-shared-server attempt interrupted, excluded."
     }
   },
   "operations": {
@@ -132,7 +153,7 @@
     "Vietnamese/English report catalogs remain draft_pending_local_review; controlling statutory Vietnamese original and approved project language policy are preserved requirements.",
     "All functions and shared foundations remain subject to actual field acceptance. No pilot_verified promotion.",
     "Known npm audit advisories remain release blockers (security-audit.json).",
-    "Equipment/Stop and Owner Payment UI have local synthetic PASS. Additional F07 commissioning/partial handover/warranty run remains pending; no full F07 or field acceptance claim."
+    "Additional F07 partial UI3PASS and Actionauthoring2PASS; extendedWarranty remedy/currentref continuation pending. Handover/Warranty mutable-ref reconciliation requires Product decision. No whole AC-HO-01 or pilot claim."
   ],
   "resume": "Inspect Goal/root and worker handoffs, Git/worktree status and active tasks. Continue from last verified checkpoint; never delete uncommitted changes. Quota recovery alone does not guarantee platform scheduling.",
   "actualFileUsability": {

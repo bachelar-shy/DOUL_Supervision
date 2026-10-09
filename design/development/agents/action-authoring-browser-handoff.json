@@ -44,5 +44,25 @@
     "Run the spec and apps/web typecheck on a lock-verified dependency tree with system Chromium.",
     "Record browser output after root's Workbench route/facade/localization integration is committed.",
     "The scenario proves scoped draft authoring on the demo API; it does not claim a production pilot or prove later Action assignment, correction, verification, or closure."
-  ]
+  ],
+  "rootIntegration": {
+    "commits": [
+      "9e18f8a",
+      "7aa25d7",
+      "98571ce",
+      "656e2f1",
+      "5c1e657"
+    ],
+    "browser": "2 PASS8.2s work/goal-action-authoring-browser-final.log",
+    "static": "Typecheck/boundary/lint/build PASS work/goal-action-authoring-*-final.log; existingwarningsretained",
+    "contracts": "319 PASS4.213s work/goal-action-authoring-contracts-final.log; locked production env inventory PASS",
+    "downstream": "Separate actual Quality/Equipment/Stop3 PASS1.0m work/goal-action-downstream-browser-final.log",
+    "corrections": [
+      "Localized explicit aria-label fixes exact Issue/assignee selection.",
+      "Create endpoint is /api/projects/{projectId}/actions.",
+      "OWN Actions route is inaccessible per existing roleRoutes; assertion checks absent panel/navigation, server canCreate false and no POST. No permission/route expansion."
+    ],
+    "interruptedRun": "Initial downstream attempt terminated because concurrently shared Playwright server owner exited; not completion evidence. Reran sequentially fresh server PASS.",
+    "boundary": "Demo current Issue/participants; only new Action draft created. No workflow state seeding or authority override."
+  }
 }
