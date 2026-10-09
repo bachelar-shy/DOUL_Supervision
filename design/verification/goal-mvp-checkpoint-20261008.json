@@ -10,11 +10,11 @@
       "log": "work/goal-contracts-final.log"
     },
     "apiSuite": {
-      "run": 389,
-      "passed": 384,
+      "run": 392,
+      "passed": 387,
       "skipped": 5,
-      "result": "PASS prior integration; latest catalog suite running",
-      "log": "work/goal-current-api-full.log",
+      "result": "PASS",
+      "log": "work/goal-current-api-final-catalog.log",
       "skipBoundary": "Optional document runtime separately verified 5 tests. Actual PostgreSQL 16 tests executed."
     },
     "documentRuntime": {
@@ -37,7 +37,8 @@
     },
     "referenceCatalog": "6 actual HTTP authorization tests PASS including current Evidence/InformationItem/Inspection/Decision/Issue/Action references, foreign project/location exclusion and changed assignment visibility.",
     "paymentBrowser": "Actual HTTP/UI Payment closed loop PASS in 84-case integration; exact-version upstream Owner Decisions explicitly fixture-provisioned, so Owner Decision authoring not proven by this scenario.",
-    "qualityBrowser": "Actual HTTP/UI full Quality workflow and closed Issue presentation PASS (work/goal-quality-closed-readiness.log, 33.2s). Real signatures use an explicitly named test-only trusted verifier; no legal-provider/pilot acceptance."
+    "qualityBrowser": "Actual HTTP/UI full Quality workflow and closed Issue presentation PASS (work/goal-quality-closed-readiness.log, 33.2s). Real signatures use an explicitly named test-only trusted verifier; no legal-provider/pilot acceptance.",
+    "safetyEquipmentBrowser": "Real HTTP/UI Equipment inspection fail, unavailable Asset, correction/reinspection pass and Permit activation PASS (work/goal-safety-equipment-integrated.log, 27.0s). Failed Equipment activation returns atomic 409, then activation succeeds after actual passing reinspection. Fixture provisions trusted upstream Equipment/current certificates/approved plans and Requirement only; workflow Inspection and Permit created through UI."
   },
   "operations": {
     "s3": "Actual RustFS versioned private store retry/version/quarantine verification: 11 tests PASS; synthetic fixtures only.",

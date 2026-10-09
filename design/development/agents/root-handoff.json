@@ -10,17 +10,18 @@
     "Removed request read-cache duplication and per-row full preview copies; retained exact authorization and immutable-source tests",
     "Wired current-scoped Safety draft authoring, explicit final document render/signing and localized mandatory parallel panels",
     "Completed real API/UI Quality closeout with explicit synthetic/test-only trusted-signature boundary; terminal Issue presentation regression passed",
-    "Added exact current read-authorized Issue/Action catalogs and fixed canonical narrowed DomainRef array UI selection"
+    "Added exact current read-authorized Issue/Action catalogs and fixed canonical narrowed DomainRef array UI selection",
+    "Real UI/API Equipment failed/unavailable -> passing reinspection -> Permit activation verified; failed-equipment atomic rejection preserved"
   ],
   "inProgress": [
     "Current-head full browser regression including connected Quality closeout (85 tests planned)",
-    "Luna/high isolated full Equipment and Commissioning/Handover/Warranty UI acceptance and authoring localization",
+    "Luna/high isolated full Commissioning/Handover/Warranty UI acceptance and authoring localization",
     "Preserve draft PR129 until account billing allows latest exact-head required checks"
   ],
   "validation": {
     "evidence": "design/verification/goal-mvp-checkpoint-20261008.json",
     "contracts": "319 PASS",
-    "api": "Latest completed API suite: 389 run, 384 passed, 5 optional document-runtime skips; latest catalog changes full suite running (work/goal-current-api-final-catalog.log).",
+    "api": "392 run, 387 passed, 5 optional document-runtime skips (work/goal-current-api-final-catalog.log).",
     "documentRuntime": "5 PASS",
     "integrationCI": "BLOCKED_ACCOUNT_BILLING_BEFORE_JOB_START; user confirmed annotation on run37860451176",
     "browser": "Previous integration 84/84 PASS; new connected Quality whole workflow PASS and closed-readiness regression PASS (work/goal-quality-closed-readiness.log); latest combined 85-case suite running."

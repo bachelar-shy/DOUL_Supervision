@@ -2,7 +2,7 @@ import { expect, test, type APIRequestContext, type Locator, type Page } from "@
 import { randomUUID, randomBytes } from "node:crypto";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createServer } from "node:net";
-import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { resolve, join, delimiter } from "node:path";
 import { commands, fields } from "../apps/web/src/labels";
 
@@ -55,7 +55,7 @@ test.beforeAll(async () => {
   fixtureDatabase = join(process.cwd(), "work", `safety-equipment-browser-${randomUUID()}.sqlite3`);
   mkdirSync(join(process.cwd(), "work"), { recursive: true });
   const venvPython = resolve(process.cwd(), ".venv/bin/python");
-  const python = process.env.SAFETY_EQUIPMENT_TEST_PYTHON || process.env.DOUL_TEST_PYTHON || (existsSync(venvPython) ? venvPython : "python3");
+  const python = process.env.SAFETY_EQUIPMENT_TEST_PYTHON || process.env.DOUL_TEST_PYTHON || venvPython;
   const script = resolve(process.cwd(), "tests_browser/support/safety_equipment_api_fixture.py");
   fixtureProcess = spawn(python, [script, "--database", fixtureDatabase, "--port", String(port)], {
     cwd: process.cwd(),
@@ -85,7 +85,10 @@ test.afterAll(async () => {
   if (fixtureProcess && fixtureProcess.exitCode === null) {
     const child = fixtureProcess;
     child.kill("SIGTERM");
-    await new Promise<void>((resolveExit) => child.once("exit", () => resolveExit()));
+    await new Promise<void>((resolveExit) => {
+      const timeout = setTimeout(() => { child.kill("SIGKILL"); resolveExit(); }, 3_000);
+      child.once("exit", () => { clearTimeout(timeout); resolveExit(); });
+    });
   }
   fixtureProcess = undefined;
   if (fixtureDatabase) {
