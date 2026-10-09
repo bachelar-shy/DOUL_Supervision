@@ -227,7 +227,7 @@ export interface FormSchema {
 }
 export interface Workspace {
   project: { id: string; name: string };
-  role: { id: string; actorGroup: HumanRole; roleCode: string };
+  role: { id: string; actorGroup: HumanRole; roleCode: string; authorityCodes?: string[] };
   items: WorkItem[];
   audit: { id: string; command: string; at: string; afterState: string }[];
   context: {
@@ -540,12 +540,13 @@ export class ApiClient {
     data: object,
     final = false,
     language = "ko",
+    key = newKey(),
   ) {
     return this.request<RecordDTO>(
       this.path(`/forms/${formId}/${final ? "render" : "preview"}`),
       {
         method: "POST",
-        headers: { "Idempotency-Key": newKey() },
+        headers: { "Idempotency-Key": key },
         body: JSON.stringify({
           roleAssignmentId: this.session!.actor.roleAssignmentId,
           sourceDomainRefs,

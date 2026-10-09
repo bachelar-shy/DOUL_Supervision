@@ -113,6 +113,7 @@ export interface SupervisionClient {
     data: object,
     final?: boolean,
     language?: string,
+    key?: string,
   ): Promise<RecordDTO>;
   documentHtml(documentId: string): Promise<string>;
   evidenceContent(evidenceId: string): Promise<Blob>;
@@ -222,8 +223,9 @@ class HttpSupervisionClient implements SupervisionClient {
     data: object,
     final = false,
     language = "ko",
+    key?: string,
   ) {
-    return this.client.render(formId, sourceDomainRefs, data, final, language);
+    return this.client.render(formId, sourceDomainRefs, data, final, language, key);
   }
 
   documentHtml(documentId: string) {
