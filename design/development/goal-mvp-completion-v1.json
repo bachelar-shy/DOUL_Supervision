@@ -85,5 +85,8 @@
     "Record Product decision and approved effective contract before implementing/adopting reconciliation. Restore sanctioned workflow reachability with exact identity/version/history/authorization checks.",
     "Rerun bounded Warranty/Handover positive and refusal scenarios; no state seeding or signature/authority bypass.",
     "Continue real-file pilot/usability and operational/provider/native acceptance after required actual inputs are supplied. Never label blocked or pilot-unrun Goal complete."
+  ],
+  "supplementalVerificationEvidence": [
+    "design/verification/goal-m4-native-20261009.json"
   ]
 }

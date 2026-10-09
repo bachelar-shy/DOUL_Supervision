@@ -34,5 +34,12 @@
     "browser": "4 PASS1.7m work/goal-handover-current-ref-browser.log",
     "typing": "Connected browser standalone TS PASS work/goal-connected-browser-typecheck-final.log; helper route union and explicit JSON input type narrowed after browser run, valid tested input semantics unchanged.",
     "boundary": "Actual accept_remedy409 REFERENCE_STALE is expected refusal, not accepted Warranty. Currentpassed reinspection is not finalFM09 released; laterrelease/acceptance/close remainunproven."
+  },
+  "macosNativeValidation": {
+    "evidence": "design/verification/goal-m4-native-20261009.json",
+    "rootCommit": "740d3a4edae0c6423e53dce79c985e045a4e68d5",
+    "normalBrowser": "95PASS including four F07 cases; Warranty exact observed timestamp and reservation dueAt preserved",
+    "timezones": "UTC/Seoul initial3PASS1ECONNRESET; unchanged UTC retest1PASS. No first-matrix4/4 or transport-stability claim.",
+    "acceptance": "Warranty accept_remedy still409 REFERENCE_STALE; no acceptance/close/provider/pilot promotion."
   }
 }

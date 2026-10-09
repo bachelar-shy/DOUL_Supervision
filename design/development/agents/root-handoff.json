@@ -20,7 +20,8 @@
     "Mandatory workflow dictionaries integrated: 26 machines, 348 command/state keys per ko/vi/en, 623 prior values unchanged; independent runtime guard, 12 actual localized browser cases, final typecheck/build PASS. Native review pending.",
     "Action draft authoring exposed in Actions Workbench via server capability/facade: actual2PASS, currentexactIssue/servercycle/persistence/audit, locale preservation/reset/OWN route denial; downstreamQuality/Equipment/Stop3PASS, finalstatic/319contractsPASS.",
     "F07 additional3 actualUI cases PASS: commissioning/Punch corrected+released/Owner decision/partialhandover/Warranty assigned-Action refusal; precise partial scope, not whole AC-HO-01.",
-    "Additional F07 four-case root integration PASS1.7m: actual Action UI creation/assignment/correction, Warranty remedy submission, actual Issue/reinspection progression; accept_remedy actual409 REFERENCE_STALE. No Warranty acceptance/closure/finalrelease claim. Standalone connected browser TS check PASS after typedhelper corrections."
+    "Additional F07 four-case root integration PASS1.7m: actual Action UI creation/assignment/correction, Warranty remedy submission, actual Issue/reinspection progression; accept_remedy actual409 REFERENCE_STALE. No Warranty acceptance/closure/finalrelease claim. Standalone connected browser TS check PASS after typedhelper corrections.",
+    "Mac M4 native verification: 319 contracts PASS; API350PASS/44skips with separate5documentPASS, normal browser95PASS, mock7PASS, static/mobile JS export PASS. Browser datetime fixture correction integrated740d3a4; Mac44aed59 has identical tracked tree. UTC/Seoul initial3PASS/1ECONNRESET; unchanged UTC retest1PASS, failure preserved."
   ],
   "inProgress": [],
   "validation": {
@@ -32,7 +33,8 @@
     "browser": "Complete89PASS9.2min work/goal-integrated-browser-62aefec.log; additionalF07fullloop remains partial/pending, distinct fromnormalfullregression. AdditionalF07partial3PASS work/goal-handover-partial-browser.log; Action2PASS plus distinctdownstream3PASS.",
     "localization": "348 keys/language coverage PASS; 623 prior values preserved; 12 actual browser PASS (separate run); final typecheck/build PASS f92f047.",
     "handover": "4 focused PASS1.7m work/goal-handover-current-ref-browser.log, including real409 stale-ref refusal; partial business acceptance only.",
-    "browserTypes": "PASS work/goal-connected-browser-typecheck-final.log"
+    "browserTypes": "PASS work/goal-connected-browser-typecheck-final.log",
+    "macosNative": "design/verification/goal-m4-native-20261009.json"
   },
   "remaining": [
     "Account owner resolves GitHub Billing & plans; latest exact-head eight CI checks must pass before PR129 merge",
@@ -43,7 +45,8 @@
     "UUID candidate not integrated: npm workspace dependency inventory invalid despite native tooling compatibility; evidence in agents/uuid-remediation-handoff.json",
     "Actual architecture/structure/mechanical/electrical PDFs, BOQ, schedule and site photos not supplied; real-file usability criteria recorded in goal-mvp-completion-v1.json",
     "Product/Functional Owner C2 decision required before adopting drafted Punchrefrefresh or implementing Handover/Warranty reference reconciliation; proposal recorded, no effectivebaseline declared.",
-    "Warranty first acceptance is blocked by current Issue ref conflict, not only rework; exact realUI/HTTP refusal preserved in handover-closed-loop handoff and Product proposal."
+    "Warranty first acceptance is blocked by current Issue ref conflict, not only rework; exact realUI/HTTP refusal preserved in handover-closed-loop handoff and Product proposal.",
+    "Mac native tests supplement Ubuntu CI; no Linux Docker/VM/PostgreSQL/runner setup exists on Mac. 39 PostgreSQL tests were not run there. Preserve initial UTC fixture ECONNRESET as unresolved transport stability evidence."
   ],
   "restart": [
     "Inspect git status and worktree list, active agents, Goal/checkpoint and all latest worker handoffs",
@@ -54,7 +57,8 @@
     "Never create a nested node_modules symlink through a worker symlink: shared root tree must remain physical and exact-lock inventory must pass.",
     "Environment refresh preserved source/Git but terminated old shellsessions/browserdrivers; distinguish incomplete logs from terminalPASS. Checkactualprocesses/HTTPhealth200 before reuse, stoponlyowned unhealthy orphanservers.",
     "Root-owned completed traces, deprecated .venv/documentvenv and completed prioritySQLite/docker artifacts preserved under unique/tmp paths with originalpathsymlinks; root priorityPython remains physical. If/tmp replaced, recreate optionalenvs fromexact locks. Use owned/tmp Playwrightoutputs/npmcache to avoid sharedfilesystempressure.",
-    "Run browser suites sequentially when sharing root scratch web5189/API8789: a webServer owner may terminate reused servers on exit. Use unique ports for independent concurrent runs."
+    "Run browser suites sequentially when sharing root scratch web5189/API8789: a webServer owner may terminate reused servers on exit. Use unique ports for independent concurrent runs.",
+    "Mac owned goal/mvp-m4-validation-v1 worktree /Users/automation/work/DOUL_Supervision-goal-m4-20261009; commit44aed59. Read work/m4-validation/handoff.json/logs; do not reuse shared servers. Task-owned Node24.13.1 and .venv Python3.12.13; use owned ports/DB and allowed loopback origins. Skip shared Playwright browser GC on subsequent installs."
   ],
   "testFixtures": {
     "postgresContainer": "doul-goal-postgres",
