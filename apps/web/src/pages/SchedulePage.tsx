@@ -49,6 +49,8 @@ const tabs = [
   },
 ];
 
+class ScheduleInputError extends Error {}
+
 function tr(key: string, values: Record<string, string | number> = {}) {
   return i18n.t(key, values);
 }
@@ -214,7 +216,7 @@ function ImportedSourceDetail({
       })
       .catch((e) => {
         if (!alive) return;
-        setError(e instanceof ApiError ? reasonLabel(e.detail.code) : String(e));
+        setError(e instanceof ApiError ? reasonLabel(e.detail.code) : e instanceof ScheduleInputError ? e.message : reasonLabel());
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -352,10 +354,10 @@ function CreateSchedule({
     setError("");
     setBusy(true);
     try {
-      if (!online) throw new Error(tr("schedule.error.offline"));
-      if (!title.trim()) throw new Error(tr("schedule.error.titleRequired"));
+      if (!online) throw new ScheduleInputError(tr("schedule.error.offline"));
+      if (!title.trim()) throw new ScheduleInputError(tr("schedule.error.titleRequired"));
       if (requiresEvidence && !selectedEvidenceId) {
-        throw new Error(tr("schedule.error.evidenceRequired"));
+        throw new ScheduleInputError(tr("schedule.error.evidenceRequired"));
       }
       const data: Record<string, unknown> = {};
       for (const [key, spec] of Object.entries(schema.fields)) {
@@ -364,7 +366,7 @@ function CreateSchedule({
         if (spec.type === "number" || spec.type === "integer") {
           const n = Number(text);
           if (!Number.isFinite(n) || (spec.type === "integer" && !Number.isInteger(n))) {
-            throw new Error(
+            throw new ScheduleInputError(
               tr("schedule.error.numberRequired", {
                 field: fields[key] || key,
               }),
@@ -381,7 +383,7 @@ function CreateSchedule({
       }
       for (const key of schema.required) {
         if (key !== "scheduleKind" && data[key] === undefined) {
-          throw new Error(
+          throw new ScheduleInputError(
             tr("schedule.error.fieldRequired", {
               field: fields[key] || key,
             }),
@@ -411,7 +413,7 @@ function CreateSchedule({
       const result = await client.create(machine, payload, identity.current.id, identity.current.key);
       await onCreated(result.record.id);
     } catch (e) {
-      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : String(e));
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : e instanceof ScheduleInputError ? e.message : reasonLabel());
     } finally {
       setBusy(false);
     }
@@ -496,40 +498,40 @@ function parseNormalizedSource(bytes: Uint8Array): NormalizedScheduleSource {
   try {
     parsed = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
   } catch {
-    throw new Error(tr("schedule.parser.invalidJson"));
+    throw new ScheduleInputError(tr("schedule.parser.invalidJson"));
   }
   const document = object(parsed);
   const keys = Object.keys(document).sort();
   const expected = [...scheduleSourceImport.documentProperties].sort();
   if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index])) {
-    throw new Error(tr("schedule.parser.documentShape"));
+    throw new ScheduleInputError(tr("schedule.parser.documentShape"));
   }
   const schedule = object(document.schedule);
   if (!Object.keys(schedule).length) {
-    throw new Error(tr("schedule.parser.scheduleRequired"));
+    throw new ScheduleInputError(tr("schedule.parser.scheduleRequired"));
   }
   for (const key of scheduleSourceImport.scheduleExcludes) {
     if (key in schedule) {
-      throw new Error(tr("schedule.parser.excluded", { key }));
+      throw new ScheduleInputError(tr("schedule.parser.excluded", { key }));
     }
   }
   for (const key of ["scheduleNo", "scheduleKind", "revision", "sourceFormat", "sourceFileVersion"]) {
     if (typeof schedule[key] !== "string" || !String(schedule[key]).trim()) {
-      throw new Error(tr("schedule.parser.scheduleValueRequired", { key }));
+      throw new ScheduleInputError(tr("schedule.parser.scheduleValueRequired", { key }));
     }
   }
   if (!(schedule.scheduleKind as string in scheduleSourceImport.kinds)) {
-    throw new Error(tr("schedule.parser.kindInvalid"));
+    throw new ScheduleInputError(tr("schedule.parser.kindInvalid"));
   }
   if (schedule.sourceFormat !== scheduleSourceImport.inputMode) {
-    throw new Error(
+    throw new ScheduleInputError(
       tr("schedule.parser.formatInvalid", {
         format: scheduleSourceImport.inputMode,
       }),
     );
   }
   if (!Array.isArray(document.activities) || document.activities.length === 0) {
-    throw new Error(tr("schedule.parser.activitiesRequired"));
+    throw new ScheduleInputError(tr("schedule.parser.activitiesRequired"));
   }
   const activities = document.activities.map((raw, index) => {
     const activity = object(raw);
@@ -539,7 +541,7 @@ function parseNormalizedSource(bytes: Uint8Array): NormalizedScheduleSource {
       ),
     );
     if (invalid.length) {
-      throw new Error(
+      throw new ScheduleInputError(
         tr("schedule.parser.activityMetadata", {
           index,
           fields: invalid.join(", "),
@@ -549,7 +551,7 @@ function parseNormalizedSource(bytes: Uint8Array): NormalizedScheduleSource {
     const data = object(activity.data);
     for (const key of ["activityId", "wbsPath", "activityName"]) {
       if (typeof data[key] !== "string" || !String(data[key]).trim()) {
-        throw new Error(
+        throw new ScheduleInputError(
           tr("schedule.parser.activityDataRequired", {
             index,
             key,
@@ -560,7 +562,7 @@ function parseNormalizedSource(bytes: Uint8Array): NormalizedScheduleSource {
     for (const key of ["predecessorActivityIds", "successorActivityIds"] as const) {
       const value = activity[key];
       if (value !== undefined && (!Array.isArray(value) || value.some((id) => typeof id !== "string"))) {
-        throw new Error(
+        throw new ScheduleInputError(
           tr("schedule.parser.activityArrayRequired", {
             index,
             key,
@@ -579,11 +581,11 @@ function parseNormalizedSource(bytes: Uint8Array): NormalizedScheduleSource {
     };
   });
   if (typeof document.criticalActivityId !== "string" || !document.criticalActivityId) {
-    throw new Error(tr("schedule.parser.criticalRequired"));
+    throw new ScheduleInputError(tr("schedule.parser.criticalRequired"));
   }
   const critical = activities.find((activity) => activity.data.activityId === document.criticalActivityId);
   if (!critical || critical.data.critical !== true) {
-    throw new Error(tr("schedule.parser.criticalMismatch"));
+    throw new ScheduleInputError(tr("schedule.parser.criticalMismatch"));
   }
   return {
     schedule,
@@ -646,7 +648,7 @@ function ImportScheduleSource({
       setPreview(parseNormalizedSource(bytes));
       setStage(tr("schedule.import.stage.ready"));
     } catch (e) {
-      setFileError(e instanceof Error ? e.message : String(e));
+      setFileError(e instanceof ScheduleInputError ? e.message : reasonLabel());
       setStage(tr("schedule.import.stage.check"));
     }
   }
@@ -655,16 +657,16 @@ function ImportScheduleSource({
     setError("");
     setBusy(true);
     try {
-      if (!online) throw new Error(tr("schedule.error.offline"));
+      if (!online) throw new ScheduleInputError(tr("schedule.error.offline"));
       if (client.kind === "mock") {
-        throw new Error(tr("schedule.import.error.mock"));
+        throw new ScheduleInputError(tr("schedule.import.error.mock"));
       }
-      if (!title.trim()) throw new Error(tr("schedule.error.titleRequired"));
+      if (!title.trim()) throw new ScheduleInputError(tr("schedule.error.titleRequired"));
       if (!file || !preview) {
-        throw new Error(tr("schedule.import.error.fileRequired"));
+        throw new ScheduleInputError(tr("schedule.import.error.fileRequired"));
       }
       if (!client.session) {
-        throw new Error(tr("schedule.import.error.loginRequired"));
+        throw new ScheduleInputError(tr("schedule.import.error.loginRequired"));
       }
 
       const bytes = new Uint8Array(await file.arrayBuffer());
@@ -696,7 +698,7 @@ function ImportScheduleSource({
           (offset, total) => setProgress(total ? Math.round((offset / total) * 100) : 0),
         );
         if (!uploaded.fileId || !uploaded.fileHash) {
-          throw new Error(tr("schedule.import.error.uploadRef"));
+          throw new ScheduleInputError(tr("schedule.import.error.uploadRef"));
         }
         evidence = {
           id: uploaded.id,
@@ -750,7 +752,7 @@ function ImportScheduleSource({
       setStage(tr("schedule.import.stage.complete"));
       await onImported(result.record.id);
     } catch (e) {
-      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : e instanceof Error ? e.message : String(e));
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : e instanceof ScheduleInputError ? e.message : reasonLabel());
       setStage(tr("schedule.import.stage.review"));
     } finally {
       setBusy(false);

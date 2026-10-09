@@ -16,7 +16,7 @@ import {
   registerNavigationGroups,
   roleRegisterEntries,
 } from "../app/register-navigation";
-import type { SupervisionClient } from "../data/supervision-client";
+import { ApiError, type SupervisionClient } from "../data/supervision-client";
 import type { RegisterProjectionRow, Workspace } from "../data/ui-contract";
 import {
   formatRegisterValue,
@@ -29,7 +29,7 @@ import {
   registerProjectionCatalog,
   type RegisterProjectionDefinition,
 } from "../data/register-projection-catalog.generated";
-import { states } from "../labels";
+import { reasonLabel, states } from "../labels";
 import { EmptyState, SectionHeader, StatusBadge } from "../ui";
 import {
   DetailDrawer,
@@ -256,7 +256,7 @@ export function RegisterPage({
       if (sequence !== requestSequence.current) return;
       setRows([]);
       setError(
-        e instanceof Error ? e.message : t("register.error.load"),
+        e instanceof ApiError ? reasonLabel(e.detail.code) : t("register.error.load"),
       );
     } finally {
       if (sequence === requestSequence.current) setLoading(false);
@@ -278,7 +278,7 @@ export function RegisterPage({
         if (sequence !== requestSequence.current) return;
         setRows([]);
         setError(
-          e instanceof Error ? e.message : t("register.error.load"),
+          e instanceof ApiError ? reasonLabel(e.detail.code) : t("register.error.load"),
         );
       })
       .finally(() => {

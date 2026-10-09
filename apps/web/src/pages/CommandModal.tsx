@@ -18,6 +18,8 @@ import { Icon } from "./shared";
 import { HandoverReservationFields, type ReservationInput } from "./HandoverReservationFields";
 import { BOQLineItemFields } from "./BOQLineItemFields";
 
+class CommandInputError extends Error {}
+
 const booleanFields = new Set([
   "changeRequired",
   "dueCalculationConfirmed",
@@ -255,7 +257,7 @@ export function CommandModal({
             !Number.isFinite(number) ||
             (inputType === "integer" && !Number.isInteger(number))
           )
-            throw new Error(
+            throw new CommandInputError(
               t("commandModal.numberRequired", {
                 field: fields[f] || f,
               }),
@@ -276,14 +278,14 @@ export function CommandModal({
         .filter(Boolean);
       const uniqueEvidenceIds = [...new Set(evidenceIds)];
       if (dialog.action.requiresEvidence && !uniqueEvidenceIds.length) {
-        throw new Error(t("commandModal.evidenceRequired"));
+        throw new CommandInputError(t("commandModal.evidenceRequired"));
       }
       await onSubmit(payload, uniqueEvidenceIds);
     } catch (e) {
       setErr(
         e instanceof ApiError
-          ? reasonLabel(e.detail.code) + " " + e.message
-          : String(e),
+          ? reasonLabel(e.detail.code)
+          : e instanceof CommandInputError ? e.message : reasonLabel(),
       );
     } finally {
       setBusy(false);

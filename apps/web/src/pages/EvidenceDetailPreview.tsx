@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 
-import type { SupervisionClient } from "../data/supervision-client";
+import { ApiError, type SupervisionClient } from "../data/supervision-client";
+import { reasonLabel } from "../labels";
 import type { RecordDTO, Workspace } from "../data/ui-contract";
 import { EvidenceDetailSheet } from "../ui/catalog";
 import { evidenceMediaLabel, evidenceSourceLabel } from "./evidence-utils";
@@ -211,8 +212,8 @@ export function EvidenceDetailPreview({
           setPreview({
             loading: false,
             error:
-              reason instanceof Error
-                ? reason.message
+              reason instanceof ApiError
+                ? reasonLabel(reason.detail.code)
                 : tr("evidence.preview.loadFailed"),
           });
         }

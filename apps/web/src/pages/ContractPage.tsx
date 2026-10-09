@@ -35,6 +35,8 @@ const contractMachines = [
 
 type ContractMachine = (typeof contractMachines)[number];
 
+class ContractInputError extends Error {}
+
 function creationCapability(workspace: Workspace, machine: string) {
   return workspace.context.creationCapabilities?.[machine];
 }
@@ -401,22 +403,22 @@ function CreateContractRecord({
     setBusy(true);
     setErr("");
     try {
-      if (!online) throw new Error(tr("contract.error.offline"));
+      if (!online) throw new ContractInputError(tr("contract.error.offline"));
       if (client.kind === "mock")
-        throw new Error(tr("contract.error.mockCreate"));
-      if (!title.trim()) throw new Error(tr("contract.error.titleRequired"));
-      if (!number.trim()) throw new Error(tr("contract.error.numberRequired", { tab: tabName }));
+        throw new ContractInputError(tr("contract.error.mockCreate"));
+      if (!title.trim()) throw new ContractInputError(tr("contract.error.titleRequired"));
+      if (!number.trim()) throw new ContractInputError(tr("contract.error.numberRequired", { tab: tabName }));
 
       let data: Record<string, unknown>;
       if (machine === "contract_notice") {
         const event = eventItems.find((item) => item.record.id === eventId);
         const senderPartyId = client.session?.actor.partyId;
-        if (!event) throw new Error(tr("contract.error.eventRequired"));
-        if (!senderPartyId) throw new Error(tr("contract.error.senderRequired"));
-        if (!recipientPartyId) throw new Error(tr("contract.error.recipientRequired"));
-        if (!subject.trim()) throw new Error(tr("contract.error.subjectRequired"));
+        if (!event) throw new ContractInputError(tr("contract.error.eventRequired"));
+        if (!senderPartyId) throw new ContractInputError(tr("contract.error.senderRequired"));
+        if (!recipientPartyId) throw new ContractInputError(tr("contract.error.recipientRequired"));
+        if (!subject.trim()) throw new ContractInputError(tr("contract.error.subjectRequired"));
         if (Number.isNaN(Date.parse(eventAt)) || Number.isNaN(Date.parse(awareAt)))
-          throw new Error(tr("contract.error.dateRequired"));
+          throw new ContractInputError(tr("contract.error.dateRequired"));
 
         data = {
           noticeNo: number.trim(),
@@ -444,10 +446,10 @@ function CreateContractRecord({
     } catch (e) {
       setErr(
         e instanceof ApiError
-          ? `${reasonLabel(e.detail.code)} ${e.message}`
-          : e instanceof Error
+          ? reasonLabel(e.detail.code)
+          : e instanceof ContractInputError
             ? e.message
-            : String(e),
+            : reasonLabel(),
       );
     } finally {
       setBusy(false);
