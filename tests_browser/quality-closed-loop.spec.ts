@@ -4,13 +4,15 @@ import { randomUUID } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 let apiPort = Number(process.env.DOUL_QUALITY_FIXTURE_PORT ?? 0);
 let apiOrigin = "";
 let apiProcess: ChildProcess | undefined;
 let fixtureDir: string | undefined;
-test.use({ launchOptions: { executablePath: process.env.CHROMIUM_PATH ?? "/usr/bin/chromium" } });
+if (process.env.CHROMIUM_PATH) {
+  test.use({ launchOptions: { executablePath: process.env.CHROMIUM_PATH } });
+}
 
 async function availablePort(): Promise<number> {
   const server = createServer();
@@ -29,7 +31,7 @@ test.beforeAll(async () => {
   if (!apiPort) apiPort = await availablePort();
   apiOrigin = `http://127.0.0.1:${apiPort}`;
   fixtureDir = mkdtempSync(join(tmpdir(), "doul-quality-ui-"));
-  const python = process.env.DOUL_QUALITY_PYTHON ?? process.env.PYTHON ?? "python3";
+  const python = process.env.DOUL_QUALITY_PYTHON ?? process.env.DOUL_TEST_PYTHON ?? resolve(process.cwd(), ".venv/bin/python");
   apiProcess = spawn(python, [
     "-m", "tests_browser.support.quality_api_fixture",
     "--host", "127.0.0.1", "--port", String(apiPort),
@@ -178,6 +180,7 @@ async function runCommand(
 }
 
 test("connected Quality UI completes linked reinspection, issue, and Owner report workflows", async ({ page, request }) => {
+  test.setTimeout(120_000);
   await routeBrowserApiToFixture(page);
   const con = await login(request, "CON");
   const sup = await login(request, "SUP");
@@ -539,6 +542,10 @@ test("connected Quality UI completes linked reinspection, issue, and Owner repor
   await page.getByRole("tab", { name: "작업함", exact: true }).click();
   await casePanel.getByLabel("원 검측 선택", { exact: true }).selectOption(draft.id);
   issueCard = casePanel.locator(".inspection-case-issue").filter({ hasText: issueTitle });
+  const closedReadiness = issueCard.locator(".inspection-case-readiness");
+  await expect(closedReadiness.getByText("Issue 종결 준비", { exact: true })).toHaveCount(0);
+  await expect(closedReadiness.getByText("종결 차단 사유", { exact: true })).toHaveCount(0);
+  await expect(closedReadiness.getByText("종결보고 초안 준비", { exact: true })).toBeVisible();
   const reportForm = issueCard.getByRole("form", { name: "연결된 발주자 보고 초안 작성" });
   const reportTitle = `Browser closeout report ${suffix}`;
   await reportForm.getByLabel("보고서 제목").fill(reportTitle);
