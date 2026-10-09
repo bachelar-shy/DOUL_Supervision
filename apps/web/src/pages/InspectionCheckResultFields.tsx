@@ -162,17 +162,35 @@ export function InspectionCheckResultFields({ workspace, item, value, onChange }
   const requirements = requirementChoices(workspace, item);
   const evidence = evidenceChoices(workspace);
   const savedRows = value.map((row) => isObject(row) ? row as CheckResultRow : null);
-  const requiredRows = requirements.flatMap((requirement) => requirement.requiredFields.map((itemId) => ({ itemId, requirementRef: requirement.ref })));
-  const missingRequiredRows = requiredRows.filter((required) => !savedRows.some((row) => row
-    && row.itemId === required.itemId && exactRef(row.requirementRef, required.requirementRef)));
-  const rows: Array<{ row: CheckResultRow; storedIndex: number | null; required: boolean }> = [
-    ...savedRows.map((row, storedIndex) => ({
-      row: row || {},
-      storedIndex,
-      required: !!row && requiredRows.some((required) => row.itemId === required.itemId && exactRef(row.requirementRef, required.requirementRef)),
-    })),
-    ...missingRequiredRows.map((required) => ({ row: { itemId: required.itemId, requirementRef: { ...required.requirementRef } } as CheckResultRow, storedIndex: null, required: true })),
-  ];
+  const requiredByItemId = new Map<string, { itemId: string; requirementRefs: DomainRef[] }>();
+  for (const requirement of requirements) {
+    for (const itemId of requirement.requiredFields) {
+      const existing = requiredByItemId.get(itemId);
+      if (existing) {
+        if (!existing.requirementRefs.some((ref) => exactRef(ref, requirement.ref))) existing.requirementRefs.push(requirement.ref);
+      } else {
+        requiredByItemId.set(itemId, { itemId, requirementRefs: [requirement.ref] });
+      }
+    }
+  }
+  const requiredRows = [...requiredByItemId.values()];
+  const matchedSavedIndices = new Set<number>();
+  const declaredRows = requiredRows.map((required) => {
+    const storedIndex = savedRows.findIndex((row, index) => !matchedSavedIndices.has(index) && row?.itemId === required.itemId);
+    if (storedIndex >= 0) {
+      matchedSavedIndices.add(storedIndex);
+      return { row: savedRows[storedIndex] as CheckResultRow, storedIndex, required: true };
+    }
+    return {
+      row: { itemId: required.itemId, requirementRef: { ...required.requirementRefs[0] } } as CheckResultRow,
+      storedIndex: null,
+      required: true,
+    };
+  });
+  const extraRows = savedRows.flatMap((row, storedIndex) => matchedSavedIndices.has(storedIndex)
+    ? []
+    : [{ row: row || {}, storedIndex, required: false }]);
+  const rows: Array<{ row: CheckResultRow; storedIndex: number | null; required: boolean }> = [...declaredRows, ...extraRows];
 
   function updateRow(index: number, patch: Partial<CheckResultRow>) {
     const target = rows[index];
@@ -231,13 +249,14 @@ export function InspectionCheckResultFields({ workspace, item, value, onChange }
           ? row.requirementRef as unknown as DomainRef : null;
         const knownRef = requirementRef && requirements.some((candidate) => exactRef(candidate.ref, requirementRef));
         const currentRequirementKey = requirementRef ? refKey(requirementRef) : "";
-        return <fieldset className="grid gap-3 rounded border p-3" key={`${storedIndex ?? "required"}:${row.itemId || index}:${currentRequirementKey}`}>
+        const rowKey = required ? `required:${row.itemId || index}` : `stored:${storedIndex}`;
+        return <fieldset className="grid gap-3 rounded border p-3" key={rowKey}>
           <legend className="px-1">{tx("itemId")} · {index + 1}</legend>
           <div className="grid gap-3 sm:grid-cols-2">
             {required ? <label className="grid gap-1">{tx("itemId")}<input readOnly value={row.itemId || ""} placeholder={tx("emptyItem")} /></label>
               : <label className="grid gap-1">{tx("itemId")}<input value={row.itemId || ""} placeholder={tx("emptyItem")} onChange={(event) => updateRow(index, { itemId: event.target.value })} /></label>}
             <label className="grid gap-1">{tx("requirement")}
-              <select value={currentRequirementKey} disabled={required} onChange={(event) => {
+              <select value={currentRequirementKey} onChange={(event) => {
                 const selected = requirements.find((candidate) => refKey(candidate.ref) === event.target.value);
                 if (selected) updateRow(index, { requirementRef: { ...selected.ref } });
                 else if (!event.target.value) clearOptionalField(index, "requirementRef");
@@ -272,7 +291,7 @@ export function InspectionCheckResultFields({ workspace, item, value, onChange }
             <small>{tx("evidenceHint")}</small>
           </label>
           <label className="grid gap-1">{tx("note")}<textarea rows={2} value={typeof row.note === "string" ? row.note : ""} onChange={(event) => updateRow(index, { note: event.target.value })} /></label>
-          {storedIndex !== null && !required && <button type="button" className="justify-self-start text-sm underline" onClick={() => removeRow(index)}>{tx("removeRow")}</button>}
+          {storedIndex !== null && <button type="button" className="justify-self-start text-sm underline" onClick={() => removeRow(index)}>{tx("removeRow")}</button>}
         </fieldset>;
       })}
     </div>
