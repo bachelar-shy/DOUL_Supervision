@@ -305,7 +305,9 @@ function CaseIssue({ client, inspectionId, online, onChanged, group, workspace, 
   return <article className="inspection-case-issue">
     <div className="inspection-case-issue-title"><h3>{tx("issuePrefix")} · {titleOf(group.issue)}</h3><span>{tx("version")}{group.issue.record.version} · {status}</span></div>
     <p className="inspection-case-muted">{tx("serverReadiness")} · {tx("correctionCycle")} {group.currentCorrectionCycle}</p>
-    <div className="inspection-case-readiness">{Object.entries(readiness).filter(([key]) => key in readinessLabelKey).map(([key, value]) => <div key={key}><span>{tx(readinessLabelKey[key])}</span><strong>{readinessValue(key, value, tx)}</strong></div>)}</div>
+    <div className="inspection-case-readiness">{Object.entries(readiness).filter(([key]) => key in readinessLabelKey
+      && !(group.issue.record.status === "closed" && (key === "closeReady" || key === "closeBlockedReasons")))
+      .map(([key, value]) => <div key={key}><span>{tx(readinessLabelKey[key])}</span><strong>{readinessValue(key, value, tx)}</strong></div>)}</div>
     <LinkedRecord item={group.issue} workspace={workspace} onOpenCommand={onOpenCommand} tx={tx} />
     {related.map(([label, items]) => <section className="inspection-case-related" key={label}><h4>{label} <span>({items.length})</span></h4>
       {items.length ? items.map(item => <LinkedRecord key={`${item.machine}:${item.record.id}:${item.record.version}`} item={item} workspace={workspace} onOpenCommand={onOpenCommand} tx={tx} />) : <p className="inspection-case-muted">{tx("noRelatedRecords")}</p>}
