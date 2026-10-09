@@ -257,6 +257,7 @@ function CreateDraft({
     machine === "commissioning_package" ? "commissioningProfile" : machine === "handover_package" ? "handoverProfile" : "warrantyPeriod");
   const requiredProfileKey = machine === "commissioning_package" ? "commissioningProfileRef" : machine === "handover_package" ? "handoverProfileRef" : "warrantyPeriodRef";
   const informationOptions = relevantOptions(["InformationItem", "DocumentSnapshot"]);
+  const drawingOptions = informationOptions.filter((option) => option.ref.objectType === "InformationItem" && option.subtype === "Drawing");
   const workItemOptions = relevantOptions(["WorkItem"]);
   const evidenceOptions = referenceOptions.filter((option) => option.ref.objectType === "Evidence");
   const inspectionOptions = relevantOptions(["Inspection"]);
@@ -381,7 +382,7 @@ function CreateDraft({
         </select></label>
         {drawSelect("punchIssueRefs", "punchIssues", issueOptions, true)}
         {drawSelect("correctionActionRefs", "correctionActionRefs", actionOptions, true)}
-        {drawSelect("drawingRef", "drawingRef", informationOptions)}
+        {drawSelect("drawingRef", "drawingRef", drawingOptions)}
       </>}
       {machine === "handover_package" && <>
         <label className="completion-field">{t("scopeId")} *<input value={scopeId} onChange={(event) => setScopeId(event.target.value)} disabled={busy} /></label>
@@ -391,6 +392,7 @@ function CreateDraft({
         </select></label>
         {drawSelect("handoverProfileRef", "profileRef", profileOptions)}
         {commonRequirementSelectors}
+        {drawSelect("drawingRef", "drawingRef", drawingOptions)}
         {drawSelect("commissioningPackageRefs", "commissioningRefs", commissioningOptions, true)}
         {docFields.map(([field, key]) => drawSelect(field, key, informationOptions, true))}
         {drawSelect("assetRefs", "assetRefs", referenceOptions.filter((option) => option.ref.objectType === "Asset"), true)}
