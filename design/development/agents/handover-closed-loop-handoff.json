@@ -1,6 +1,7 @@
 {
   "branch": "goal/handover-closed-loop-v1",
   "checkpointCommit": "1b2e4576238cb4cd17d5918b0dbbe01e185bfc2d",
+  "terminalCommit": "8254635a34026d5e641074950bcb138d50ce08d0",
   "scope": "Real HTTP-backed CompletionHandoverPage browser evidence for F-07 commissioning, partial handover, and a warranty stale-reference boundary after actual UI Action/reinspection transitions.",
   "completed": [
     "Created commissioning package through Completion UI; exercised fail, Punch correction, signed reinspection, release, stale current Punch ref refresh, and close through authorized UI commands.",
