@@ -2,8 +2,11 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { getDocument, GlobalWorkerOptions, type PDFDocumentLoadingTask, type PDFDocumentProxy, type RenderTask } from "pdfjs-dist";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import "./pdf-viewer.css";
-import type { SupervisionClient } from "../../data/supervision-client";
+import { ApiError, type SupervisionClient } from "../../data/supervision-client";
 import type { Workspace } from "../../data/ui-contract";
+import { useTranslation } from "react-i18next";
+import { normalizeLanguage } from "@doul/localization";
+import { reasonLabel } from "../../labels";
 import { cssPointToPdfPoint, pdfPointToCssPoint, type CssPoint, type PdfViewport } from "../../data/pdf-coordinate";
 import {
   fetchDrawingPdfBindings,
@@ -23,6 +26,54 @@ interface Props { client: SupervisionClient; workspace: Workspace; onChanged?: (
 type Status = { kind: "idle" | "loading" | "ready" | "error"; message?: string };
 interface CommittedViewport { page: number; viewport: PdfViewport; sequence: number }
 interface PinView { locationName: string; point: CssPoint; anchor: PdfDrawingAnchor }
+type Locale = "ko" | "vi" | "en";
+
+const copy: Record<Locale, Record<string, string>> = {
+  ko: {
+    panel: "PDF 도면 뷰어", title: "도면 PDF", description: "원본 증빙을 읽기 전용으로 확인합니다.", upload: "PDF 업로드",
+    sourceLabel: "원본 선택", sourceSelect: "PDF 원본 선택", evidence: "증빙 · {{name}}", historical: "등록된 역사 원본 · {{id}} · v{{version}}", uploaded: "업로드한 PDF · {{id}}",
+    search: "문서 검색", searchPlaceholder: "텍스트 검색 (2자 이상)", searching: "검색 중…", pagesFound: "{{count}}개 페이지",
+    selectOrUpload: "등록된 PDF를 선택하거나 새 PDF를 업로드하세요.", checkingDirectory: "도면 연결과 위치 정보를 불러오는 중…", noBinding: "이 PDF 증빙에 등록된 정확한 도면 연결이 없습니다. 연결을 등록한 뒤 핀을 사용할 수 있습니다.",
+    bindingVersion: "도면 버전 선택", chooseBinding: "도면 버전을 선택하세요…", boundDrawing: "연결 도면", registeredEvidence: "등록 증빙", evidenceVersion: "증빙",
+    markup: "주석", loading: "불러오는 중…", count: "{{count}}개", rectangleMemo: "사각형 메모", showMarkup: "주석 표시", showPins: "위치 핀 표시", stopDrawing: "주석 그리기 종료", addMemo: "사각형 메모 추가",
+    drawingInstructions: "페이지에서 드래그해 영역을 지정하세요. 메모를 입력한 뒤 저장합니다.", memo: "메모", memoLabel: "주석 메모", memoPlaceholder: "이 영역에 대한 메모", editReason: "수정 사유", editReasonLabel: "주석 수정 사유", deleteReasonLabel: "주석 삭제 사유", saving: "저장 중…", saveEdit: "수정 저장", saveMarkup: "주석 저장", savedMarkups: "저장된 도면 주석",
+    selectedMarkup: "선택한 주석", version: "버전", deleted: "삭제됨", editMarkup: "주석 수정", deleteMarkup: "주석 삭제", deleteWarning: "이 주석을 삭제하면 새 이슈 연결에 사용할 수 없게 됩니다. 기존 이슈 연결과 이력은 보존됩니다.", deleteReason: "삭제 사유", deleting: "삭제 중…", confirmDelete: "삭제 확인", cancel: "취소", reason: "사유", hideHistory: "이력 숨기기", showHistory: "이력 보기", history: "주석 이력", eventReason: "사유: {{reason}}",
+    location: "위치 선택", pinLocationLabel: "핀을 연결할 위치", locationSelect: "위치를 선택하세요…", pinInstructions: "페이지를 클릭해 미저장 핀을 놓은 뒤 저장하세요.", pinAdminOnly: "위치 핀은 데모 ADM에서만 저장할 수 있습니다.", savePin: "위치 핀 저장",
+    previousPage: "이전 페이지", page: "페이지", pageNumber: "페이지 번호", nextPage: "다음 페이지", zoomOut: "축소", zoomIn: "확대", rotate: "회전", searchResult: "검색 결과 {{page}}", canvasPage: "PDF 페이지 {{page}} / {{count}}", markupArea: "도면 주석 영역", markupItem: "주석: {{text}}", pinLayer: "도면 위치 핀", pinLabel: "{{name}} 위치 핀", rendering: "페이지를 표시하는 중…", readOnly: "읽기 전용 미리보기 · 업로드한 원본은 변경하지 않습니다.",
+    checkingBinding: "도면 PDF 연결을 확인하는 중…", chooseRevision: "연결된 도면 버전을 선택하세요.", loadingPdf: "PDF를 불러오는 중…", password: "암호로 보호된 PDF는 현재 열 수 없습니다.", invalidPdf: "파일이 손상되었거나 올바른 PDF가 아닙니다.", openPdfFailed: "PDF를 열지 못했습니다.", canvasUnavailable: "캔버스를 사용할 수 없습니다.", renderFailed: "페이지를 그리지 못했습니다.", searchFailed: "문서 텍스트를 검색할 수 없습니다.", uploadLoading: "업로드 중…", uploadFailed: "PDF 업로드를 완료하지 못했습니다.", markupLoadFailed: "주석을 불러오지 못했습니다.", markupDetailFailed: "주석 상세를 불러오지 못했습니다.", locationLoadFailed: "위치 연결을 불러오지 못했습니다.", bindingLoadFailed: "도면 PDF 연결을 불러오지 못했습니다.", markupSaveFailed: "주석을 저장하지 못했습니다.", markupConflict: "주석 버전이 변경되어 최신 상태를 불러왔습니다. 변경 내용을 확인한 뒤 다시 수정하세요.", markupDeleteFailed: "주석을 삭제하지 못했습니다.", pinConflict: "위치가 다른 곳에서 변경되어 핀을 저장하지 못했습니다. 최신 정보로 다시 불러왔습니다.", pinSaveFailed: "핀을 저장하지 못했습니다.", unsaved: "미저장",
+  },
+  vi: {
+    panel: "Trình xem PDF bản vẽ", title: "PDF bản vẽ", description: "Xem chứng cứ gốc ở chế độ chỉ đọc.", upload: "Tải PDF lên",
+    sourceLabel: "Chọn bản gốc", sourceSelect: "Chọn PDF gốc", evidence: "Chứng cứ · {{name}}", historical: "Bản gốc lịch sử đã đăng ký · {{id}} · v{{version}}", uploaded: "PDF đã tải lên · {{id}}",
+    search: "Tìm trong tài liệu", searchPlaceholder: "Tìm văn bản (ít nhất 2 ký tự)", searching: "Đang tìm…", pagesFound: "{{count}} trang",
+    selectOrUpload: "Chọn PDF đã đăng ký hoặc tải lên PDF mới.", checkingDirectory: "Đang tải liên kết bản vẽ và thông tin vị trí…", noBinding: "Chứng cứ PDF này chưa có liên kết chính xác với bản vẽ. Hãy đăng ký liên kết trước khi dùng ghim.",
+    bindingVersion: "Chọn phiên bản bản vẽ", chooseBinding: "Chọn phiên bản bản vẽ…", boundDrawing: "Bản vẽ liên kết", registeredEvidence: "Chứng cứ đã đăng ký", evidenceVersion: "Chứng cứ",
+    markup: "Chú thích", loading: "Đang tải…", count: "{{count}} mục", rectangleMemo: "Ghi chú hình chữ nhật", showMarkup: "Hiện chú thích", showPins: "Hiện ghim vị trí", stopDrawing: "Dừng vẽ chú thích", addMemo: "Thêm ghi chú hình chữ nhật",
+    drawingInstructions: "Kéo trên trang để chọn vùng. Nhập ghi chú rồi lưu.", memo: "Ghi chú", memoLabel: "Ghi chú chú thích", memoPlaceholder: "Ghi chú cho vùng này", editReason: "Lý do chỉnh sửa", editReasonLabel: "Lý do sửa chú thích", deleteReasonLabel: "Lý do xóa chú thích", saving: "Đang lưu…", saveEdit: "Lưu chỉnh sửa", saveMarkup: "Lưu chú thích", savedMarkups: "Chú thích bản vẽ đã lưu",
+    selectedMarkup: "Chú thích đã chọn", version: "phiên bản", deleted: "đã xóa", editMarkup: "Sửa chú thích", deleteMarkup: "Xóa chú thích", deleteWarning: "Xóa chú thích này sẽ ngăn dùng chú thích cho liên kết sự cố mới. Các liên kết sự cố hiện có và lịch sử vẫn được giữ.", deleteReason: "Lý do xóa", deleting: "Đang xóa…", confirmDelete: "Xác nhận xóa", cancel: "Hủy", reason: "Lý do", hideHistory: "Ẩn lịch sử", showHistory: "Xem lịch sử", history: "Lịch sử chú thích", eventReason: "Lý do: {{reason}}",
+    location: "Chọn vị trí", pinLocationLabel: "Vị trí liên kết ghim", locationSelect: "Chọn vị trí…", pinInstructions: "Nhấp vào trang để đặt ghim chưa lưu, sau đó lưu.", pinAdminOnly: "Chỉ tài khoản ADM bản demo mới có thể lưu ghim vị trí.", savePin: "Lưu ghim vị trí",
+    previousPage: "Trang trước", page: "Trang", pageNumber: "Số trang", nextPage: "Trang sau", zoomOut: "Thu nhỏ", zoomIn: "Phóng to", rotate: "Xoay", searchResult: "Kết quả tìm kiếm {{page}}", canvasPage: "Trang PDF {{page}} / {{count}}", markupArea: "Vùng chú thích bản vẽ", markupItem: "Chú thích: {{text}}", pinLayer: "Ghim vị trí bản vẽ", pinLabel: "Ghim vị trí {{name}}", rendering: "Đang hiển thị trang…", readOnly: "Bản xem trước chỉ đọc · Bản gốc đã tải lên không bị thay đổi.",
+    checkingBinding: "Đang kiểm tra liên kết PDF bản vẽ…", chooseRevision: "Chọn phiên bản bản vẽ đã liên kết.", loadingPdf: "Đang tải PDF…", password: "Hiện không thể mở PDF được bảo vệ bằng mật khẩu.", invalidPdf: "Tệp bị hỏng hoặc không phải PDF hợp lệ.", openPdfFailed: "Không thể mở PDF.", canvasUnavailable: "Không thể sử dụng canvas.", renderFailed: "Không thể hiển thị trang.", searchFailed: "Không thể tìm văn bản trong tài liệu.", uploadLoading: "Đang tải lên…", uploadFailed: "Không thể hoàn tất tải PDF lên.", markupLoadFailed: "Không thể tải chú thích.", markupDetailFailed: "Không thể tải chi tiết chú thích.", locationLoadFailed: "Không thể tải liên kết vị trí.", bindingLoadFailed: "Không thể tải liên kết PDF bản vẽ.", markupSaveFailed: "Không thể lưu chú thích.", markupConflict: "Phiên bản chú thích đã thay đổi; đã tải trạng thái mới nhất. Hãy kiểm tra thay đổi rồi chỉnh sửa lại.", markupDeleteFailed: "Không thể xóa chú thích.", pinConflict: "Vị trí đã được thay đổi ở nơi khác nên không thể lưu ghim. Đã tải lại thông tin mới nhất.", pinSaveFailed: "Không thể lưu ghim.", unsaved: "Chưa lưu",
+  },
+  en: {
+    panel: "PDF drawing viewer", title: "Drawing PDF", description: "View original evidence in read-only mode.", upload: "Upload PDF",
+    sourceLabel: "Select source", sourceSelect: "Select PDF source", evidence: "Evidence · {{name}}", historical: "Registered historical source · {{id}} · v{{version}}", uploaded: "Uploaded PDF · {{id}}",
+    search: "Search document", searchPlaceholder: "Search text (2 or more characters)", searching: "Searching…", pagesFound: "{{count}} pages",
+    selectOrUpload: "Select a registered PDF or upload a new PDF.", checkingDirectory: "Loading drawing bindings and location information…", noBinding: "This PDF evidence has no exact drawing binding. Register a binding before using pins.",
+    bindingVersion: "Select drawing version", chooseBinding: "Select a drawing version…", boundDrawing: "Bound drawing", registeredEvidence: "Registered evidence", evidenceVersion: "Evidence",
+    markup: "Markups", loading: "Loading…", count: "{{count}}", rectangleMemo: "Rectangle note", showMarkup: "Show markups", showPins: "Show location pins", stopDrawing: "Stop drawing markup", addMemo: "Add rectangle note",
+    drawingInstructions: "Drag on the page to select an area. Enter a note, then save.", memo: "Note", memoLabel: "Markup note", memoPlaceholder: "Note for this area", editReason: "Edit reason", editReasonLabel: "Markup edit reason", deleteReasonLabel: "Markup deletion reason", saving: "Saving…", saveEdit: "Save edit", saveMarkup: "Save markup", savedMarkups: "Saved drawing markups",
+    selectedMarkup: "Selected markup", version: "version", deleted: "deleted", editMarkup: "Edit markup", deleteMarkup: "Delete markup", deleteWarning: "Deleting this markup prevents it from being used for new issue links. Existing issue links and history are retained.", deleteReason: "Deletion reason", deleting: "Deleting…", confirmDelete: "Confirm delete", cancel: "Cancel", reason: "Reason", hideHistory: "Hide history", showHistory: "View history", history: "Markup history", eventReason: "Reason: {{reason}}",
+    location: "Select location", pinLocationLabel: "Location to pin", locationSelect: "Select a location…", pinInstructions: "Click the page to place an unsaved pin, then save it.", pinAdminOnly: "Only the demo ADM account can save location pins.", savePin: "Save location pin",
+    previousPage: "Previous page", page: "Page", pageNumber: "Page number", nextPage: "Next page", zoomOut: "Zoom out", zoomIn: "Zoom in", rotate: "Rotate", searchResult: "Search result {{page}}", canvasPage: "PDF page {{page}} / {{count}}", markupArea: "Drawing markup area", markupItem: "Markup: {{text}}", pinLayer: "Drawing location pins", pinLabel: "{{name}} location pin", rendering: "Displaying page…", readOnly: "Read-only preview · The uploaded original is unchanged.",
+    checkingBinding: "Checking drawing PDF binding…", chooseRevision: "Select the bound drawing version.", loadingPdf: "Loading PDF…", password: "Password-protected PDFs cannot be opened right now.", invalidPdf: "The file is damaged or is not a valid PDF.", openPdfFailed: "Could not open the PDF.", canvasUnavailable: "Canvas is unavailable.", renderFailed: "Could not render the page.", searchFailed: "Could not search the document text.", uploadLoading: "Uploading…", uploadFailed: "Could not complete the PDF upload.", markupLoadFailed: "Could not load markups.", markupDetailFailed: "Could not load markup details.", locationLoadFailed: "Could not load location bindings.", bindingLoadFailed: "Could not load drawing PDF bindings.", markupSaveFailed: "Could not save the markup.", markupConflict: "The markup version changed, and the latest state was loaded. Review the changes before editing again.", markupDeleteFailed: "Could not delete the markup.", pinConflict: "The location changed elsewhere, so the pin could not be saved. The latest information was reloaded.", pinSaveFailed: "Could not save the pin.", unsaved: "Unsaved",
+  },
+};
+
+function apiErrorMessage(cause: unknown, fallback: string): string {
+  if (cause instanceof ApiError) return reasonLabel(cause.detail.code);
+  return fallback;
+}
 
 function validAnchor(value: unknown): value is PdfDrawingAnchor {
   if (!value || typeof value !== "object") return false;
@@ -35,6 +86,13 @@ function validAnchor(value: unknown): value is PdfDrawingAnchor {
 }
 
 export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }: Props) {
+  const { i18n } = useTranslation();
+  const language: Locale = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language);
+  const tx = (key: string, values?: Record<string, string | number>) => {
+    let result = copy[language][key] ?? copy.en[key] ?? key;
+    for (const [name, value] of Object.entries(values ?? {})) result = result.replaceAll(`{{${name}}}`, String(value));
+    return result;
+  };
   const sources = useMemo(() => listPdfEvidenceSources(workspace), [workspace]);
   const [selectedId, setSelectedId] = useState("");
   const [selectedBindingId, setSelectedBindingId] = useState("");
@@ -165,7 +223,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       if (active && sequence === markupSequence.current) setMarkups(items.filter((item) => item.projectId === workspace.project.id && item.bindingId === bindingId
         && sameDomainRef(item.drawingRef, activeBinding?.drawingRef) && sameDomainRef(item.evidenceRef, activeBinding?.evidenceRef)));
     }).catch((reason) => {
-      if (active && sequence === markupSequence.current) setMarkupError(reason instanceof Error ? reason.message : "주석을 불러오지 못했습니다.");
+      if (active && sequence === markupSequence.current) setMarkupError(apiErrorMessage(reason, tx("markupLoadFailed")));
     }).finally(() => {
       if (active && sequence === markupSequence.current) setMarkupLoading(false);
     });
@@ -187,7 +245,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
           setMarkupHistory(history);
         }
       } catch (reason) {
-        if (active && sequence === markupDetailSequence.current) setMarkupError(reason instanceof Error ? reason.message : "주석 상세를 불러오지 못했습니다.");
+        if (active && sequence === markupDetailSequence.current) setMarkupError(apiErrorMessage(reason, tx("markupDetailFailed")));
       }
     })();
     return () => { active = false; };
@@ -214,7 +272,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       return latest;
     } catch (reason) {
       if (expectedSequence === pinContextSequence.current) {
-        setLocationsError(reason instanceof Error ? reason.message : "위치 연결을 불러오지 못했습니다.");
+        setLocationsError(apiErrorMessage(reason, tx("locationLoadFailed")));
       }
       throw reason;
     }
@@ -234,9 +292,9 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     Promise.allSettled([fetchDrawingPdfBindings(client), fetchPdfPinLocations(client)]).then(([bindingResult, locationResult]) => {
       if (!active) return;
       if (bindingResult.status === "fulfilled") setBindings(bindingResult.value);
-      else setBindingError(bindingResult.reason instanceof Error ? bindingResult.reason.message : "도면 PDF 연결을 불러오지 못했습니다.");
+      else setBindingError(apiErrorMessage(bindingResult.reason, tx("bindingLoadFailed")));
       if (locationResult.status === "fulfilled") setLocations(locationResult.value);
-      else setLocationsError(locationResult.reason instanceof Error ? locationResult.reason.message : "위치 연결을 불러오지 못했습니다.");
+      else setLocationsError(apiErrorMessage(locationResult.reason, tx("locationLoadFailed")));
       setDirectoryLoading(false);
     });
     return () => { active = false; };
@@ -265,11 +323,11 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     // without waiting for a workspace refresh of the binding/location lists.
     // This also keeps corrupt-file errors visible while that refresh is pending.
     if (selectedId && directoryLoading && !previewFiles.current.has(selectedId)) {
-      setStatus({ kind: "loading", message: "도면 PDF 연결을 확인하는 중…" });
+      setStatus({ kind: "loading", message: tx("checkingBinding") });
       return () => { active = false; };
     }
     if (selectedId && matchingBindings.length > 1 && !activeBinding) {
-      setStatus({ kind: "idle", message: "연결된 도면 버전을 선택하세요." });
+      setStatus({ kind: "idle", message: tx("chooseRevision") });
       setPageCount(0);
       setCommittedViewport(null);
       void (async () => {
@@ -296,7 +354,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       })();
       return () => { active = false; };
     }
-    setStatus({ kind: "loading", message: "PDF를 불러오는 중…" });
+    setStatus({ kind: "loading", message: tx("loadingPdf") });
     setPage(1);
     setPageCount(0);
     setMatches([]);
@@ -333,7 +391,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       } catch (reason) {
         if (active && sequence === loadSequence.current) {
           const error = reason as Error;
-          const message = error?.name === "PasswordException" ? "암호로 보호된 PDF는 현재 열 수 없습니다." : error?.name === "InvalidPDFException" || error?.name === "FormatError" ? "파일이 손상되었거나 올바른 PDF가 아닙니다." : error?.message || "PDF를 열지 못했습니다.";
+          const message = error?.name === "PasswordException" ? tx("password") : error?.name === "InvalidPDFException" || error?.name === "FormatError" ? tx("invalidPdf") : apiErrorMessage(reason, tx("openPdfFailed"));
           setStatus({ kind: "error", message });
         }
       }
@@ -394,7 +452,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
         visibleCanvas.style.width = viewport.width + "px";
         visibleCanvas.style.height = "auto";
         const context = visibleCanvas.getContext("2d");
-        if (!context) throw new Error("캔버스를 사용할 수 없습니다.");
+        if (!context) throw new Error(tx("canvasUnavailable"));
         context.drawImage(scratchCanvas, 0, 0);
         const rect = visibleCanvas.getBoundingClientRect();
         setCanvasSize({ width: rect.width, height: rect.height });
@@ -404,7 +462,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
         if (renderRef.current === task) renderRef.current = null;
       } catch (reason) {
         if (active && sequence === renderSequence.current && !(reason instanceof Error && reason.name === "RenderingCancelledException")) {
-          setStatus({ kind: "error", message: "페이지를 그리지 못했습니다." });
+          setStatus({ kind: "error", message: tx("renderFailed") });
           setRendering(false);
         }
       } finally {
@@ -446,7 +504,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
         }
         if (active && sequence === searchSequence.current) setMatches(found);
       } catch {
-        if (active && sequence === searchSequence.current) setSearchError("문서 텍스트를 검색할 수 없습니다.");
+        if (active && sequence === searchSequence.current) setSearchError(tx("searchFailed"));
       } finally { if (active && sequence === searchSequence.current) setSearching(false); }
     })();
     return () => { active = false; };
@@ -461,7 +519,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     }));
     if (pendingPin && sameDomainRef(pendingPin.anchor.drawingRef, activeBinding.drawingRef) && pendingPin.anchor.page === page) {
       const point = pdfPointToCssPoint(committedViewport.viewport, canvasSize, pendingPin.anchor);
-      if (point) anchored.push({ locationName: pendingPin.location.name + " · 미저장", point, anchor: pendingPin.anchor });
+      if (point) anchored.push({ locationName: pendingPin.location.name + " · " + tx("unsaved"), point, anchor: pendingPin.anchor });
     }
     return anchored;
   }, [activeBinding, committedViewport, page, canvasSize, locations, pendingPin]);
@@ -489,7 +547,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
   async function chooseFile(file?: File) {
     if (!file) return;
     setUploading(true);
-    setStatus({ kind: "loading", message: "업로드 중…" });
+    setStatus({ kind: "loading", message: tx("uploadLoading") });
     try {
       const record = await uploadPdfEvidence(client, workspace, file);
       previewFiles.current.clear();
@@ -497,7 +555,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       setSelectedId(record.id);
       onChanged?.();
     } catch (reason) {
-      setStatus({ kind: "error", message: reason instanceof Error ? reason.message : "PDF 업로드를 완료하지 못했습니다." });
+      setStatus({ kind: "error", message: apiErrorMessage(reason, tx("uploadFailed")) });
     } finally { setUploading(false); }
   }
 
@@ -591,7 +649,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       // PDF loading and clears the selected markup before its history can render.
     } catch (reason) {
       if (requestSequence === markupContextSequence.current) {
-        setMarkupError(reason instanceof Error ? reason.message : "주석을 저장하지 못했습니다.");
+        setMarkupError(apiErrorMessage(reason, tx("markupSaveFailed")));
         if (editingMarkup && selectedMarkup) {
           try {
             const latest = await fetchPdfDrawingMarkup(client, selectedMarkup.id);
@@ -600,7 +658,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
               setMarkups((current) => [...current.filter((item) => item.id !== latest.id), latest]);
               setPendingMarkup(null);
               setEditingMarkup(false);
-              setMarkupError("주석 버전이 변경되어 최신 상태를 불러왔습니다. 변경 내용을 확인한 뒤 다시 수정하세요.");
+              setMarkupError(tx("markupConflict"));
             }
           } catch { /* retain original mutation error if refresh also fails */ }
         }
@@ -643,7 +701,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       markupMutationAttempt.current = null;
     } catch (reason) {
       if (requestSequence === markupContextSequence.current) {
-        setMarkupError(reason instanceof Error ? reason.message : "주석을 삭제하지 못했습니다.");
+        setMarkupError(apiErrorMessage(reason, tx("markupDeleteFailed")));
         try { const latest = await fetchPdfDrawingMarkup(client, selectedMarkup.id); if (requestSequence === markupContextSequence.current) setSelectedMarkup(latest); } catch { /* show original conflict */ }
       }
     } finally { if (requestSequence === markupContextSequence.current) setMarkupActionLoading(false); }
@@ -669,125 +727,125 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       setPendingPin(null);
       if (statusCode === 409) {
         try { await reloadLocations(requestSequence); } catch { /* error already shown */ }
-        if (requestSequence === pinContextSequence.current) setLocationsError("위치가 다른 곳에서 변경되어 핀을 저장하지 못했습니다. 최신 정보로 다시 불러왔습니다.");
+        if (requestSequence === pinContextSequence.current) setLocationsError(tx("pinConflict"));
       } else {
-        setLocationsError(reason instanceof Error ? reason.message : "핀을 저장하지 못했습니다.");
+        setLocationsError(apiErrorMessage(reason, tx("pinSaveFailed")));
       }
     } finally {
       if (requestSequence === pinContextSequence.current) setSavingPin(false);
     }
   }
 
-  return <section aria-label="PDF 도면 뷰어" className="pdf-viewer-panel">
+  return <section aria-label={tx("panel")} className="pdf-viewer-panel">
     <header className="pdf-viewer-header">
-      <div><h2>도면 PDF</h2><p>원본 증빙을 읽기 전용으로 확인합니다.</p></div>
-      <label className="pdf-upload-button">PDF 업로드<input data-testid="pdf-upload" type="file" accept="application/pdf,.pdf" disabled={uploading} onChange={(event) => { void chooseFile(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} /></label>
+      <div><h2>{tx("title")}</h2><p>{tx("description")}</p></div>
+      <label className="pdf-upload-button">{tx("upload")}<input data-testid="pdf-upload" type="file" accept="application/pdf,.pdf" disabled={uploading} onChange={(event) => { void chooseFile(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} /></label>
     </header>
     <div className="pdf-toolbar">
-      <label className="pdf-source-label">원본 선택<select aria-label="PDF 원본 선택" disabled={savingPin} value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
-        <option value="">PDF 원본 선택…</option>{sources.map((source) => <option key={source.id} value={source.id}>증빙 · {source.name}</option>)}
-        {boundOnlyEvidence.map((binding) => <option key={binding.evidenceRef.objectId} value={binding.evidenceRef.objectId}>등록된 역사 원본 · {binding.evidenceRef.objectId} · v{binding.evidenceRef.version}</option>)}
-        {selectedId && !sources.some((source) => source.id === selectedId) && !boundOnlyEvidence.some((binding) => binding.evidenceRef.objectId === selectedId) && <option value={selectedId}>업로드한 PDF · {selectedId}</option>}
+      <label className="pdf-source-label">{tx("sourceLabel")}<select aria-label={tx("sourceSelect")} disabled={savingPin} value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
+        <option value="">{tx("sourceSelect")}…</option>{sources.map((source) => <option key={source.id} value={source.id}>{tx("evidence", { name: source.name })}</option>)}
+        {boundOnlyEvidence.map((binding) => <option key={binding.evidenceRef.objectId} value={binding.evidenceRef.objectId}>{tx("historical", { id: binding.evidenceRef.objectId, version: binding.evidenceRef.version })}</option>)}
+        {selectedId && !sources.some((source) => source.id === selectedId) && !boundOnlyEvidence.some((binding) => binding.evidenceRef.objectId === selectedId) && <option value={selectedId}>{tx("uploaded", { id: selectedId })}</option>}
       </select></label>
-      <label className="pdf-search-label">문서 검색<input type="search" aria-label="문서 검색" placeholder="텍스트 검색 (2자 이상)" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
-      <span className="pdf-match-count" aria-live="polite">{searchError || (searching ? "검색 중…" : query.length >= 2 ? matches.length + "개 페이지" : "")}</span>
+      <label className="pdf-search-label">{tx("search")}<input type="search" aria-label={tx("search")} placeholder={tx("searchPlaceholder")} value={query} onChange={(event) => setQuery(event.target.value)} /></label>
+      <span className="pdf-match-count" aria-live="polite">{searchError || (searching ? tx("searching") : query.length >= 2 ? tx("pagesFound", { count: matches.length }) : "")}</span>
     </div>
     {status.kind === "error" && <p className="pdf-state pdf-error" role="alert">{status.message}</p>}
     {status.kind === "loading" && <p className="pdf-state" role="status">{status.message}</p>}
-    {status.kind === "idle" && !selectedId && <p className="pdf-state">등록된 PDF를 선택하거나 새 PDF를 업로드하세요.</p>}
+    {status.kind === "idle" && !selectedId && <p className="pdf-state">{tx("selectOrUpload")}</p>}
     {status.kind === "idle" && selectedId && status.message && <p className="pdf-state">{status.message}</p>}
 
     {selectedId && <>
-      {directoryLoading && <p role="status" className="pdf-state">도면 연결과 위치 정보를 불러오는 중…</p>}
+      {directoryLoading && <p role="status" className="pdf-state">{tx("checkingDirectory")}</p>}
       {bindingError && <p role="alert" className="pdf-error">{bindingError}</p>}
       {locationsError && <p role="alert" className="pdf-error">{locationsError}</p>}
-      {!directoryLoading && matchingBindings.length === 0 && <p className="pdf-state">이 PDF 증빙에 등록된 정확한 도면 연결이 없습니다. 연결을 등록한 뒤 핀을 사용할 수 있습니다.</p>}
-      {matchingBindings.length > 1 && <label className="pdf-source-label">도면 버전 선택<select aria-label="도면 버전 선택" disabled={savingPin} value={activeBinding?.id ?? ""} onChange={(event) => setSelectedBindingId(event.target.value)}>
-        <option value="">도면 버전을 선택하세요…</option>
-        {matchingBindings.map((binding) => <option key={binding.id} value={binding.id}>{binding.drawingRef.objectId} · v{binding.drawingRef.version} · 증빙 v{binding.evidenceRef.version}</option>)}
+      {!directoryLoading && matchingBindings.length === 0 && <p className="pdf-state">{tx("noBinding")}</p>}
+      {matchingBindings.length > 1 && <label className="pdf-source-label">{tx("bindingVersion")}<select aria-label={tx("bindingVersion")} disabled={savingPin} value={activeBinding?.id ?? ""} onChange={(event) => setSelectedBindingId(event.target.value)}>
+        <option value="">{tx("chooseBinding")}</option>
+        {matchingBindings.map((binding) => <option key={binding.id} value={binding.id}>{binding.drawingRef.objectId} · v{binding.drawingRef.version} · {tx("evidenceVersion")} v{binding.evidenceRef.version}</option>)}
       </select></label>}
-      {matchingBindings.length === 1 && <p className="pdf-binding-label">연결 도면 {matchingBindings[0].drawingRef.objectId} · v{matchingBindings[0].drawingRef.version} · 등록 증빙 v{matchingBindings[0].evidenceRef.version} · {matchingBindings[0].fileHash.slice(0, 12)}</p>}
+      {matchingBindings.length === 1 && <p className="pdf-binding-label">{tx("boundDrawing")} {matchingBindings[0].drawingRef.objectId} · v{matchingBindings[0].drawingRef.version} · {tx("registeredEvidence")} v{matchingBindings[0].evidenceRef.version} · {matchingBindings[0].fileHash.slice(0, 12)}</p>}
       {activeBinding && <div className="pdf-markup-controls">
-        <div className="pdf-markup-heading"><strong>주석</strong><span>{markupLoading ? "불러오는 중…" : markups.length + "개"} · 사각형 메모</span></div>
+        <div className="pdf-markup-heading"><strong>{tx("markup")}</strong><span>{markupLoading ? tx("loading") : tx("count", { count: markups.length })} · {tx("rectangleMemo")}</span></div>
         <div className="pdf-layer-toggles">
-          <label><input type="checkbox" checked={showMarkupLayer} onChange={(event) => setShowMarkupLayer(event.target.checked)} />주석 표시</label>
-          <label><input type="checkbox" checked={showPinLayer} onChange={(event) => setShowPinLayer(event.target.checked)} />위치 핀 표시</label>
+          <label><input type="checkbox" checked={showMarkupLayer} onChange={(event) => setShowMarkupLayer(event.target.checked)} />{tx("showMarkup")}</label>
+          <label><input type="checkbox" checked={showPinLayer} onChange={(event) => setShowPinLayer(event.target.checked)} />{tx("showPins")}</label>
         </div>
         {isDemoAdmin && <button type="button" aria-pressed={markupMode} disabled={savingMarkup || markupActionLoading || rendering} onClick={() => { setMarkupMode((value) => !value); setEditingMarkup(false); setPendingMarkup(null); setMarkupText(""); setMarkupReason(""); markupAttemptRef.current = null; }}>
-          {markupMode ? "주석 그리기 종료" : "사각형 메모 추가"}
+          {markupMode ? tx("stopDrawing") : tx("addMemo")}
         </button>}
-        {markupMode && <span>페이지에서 드래그해 영역을 지정하세요. 메모를 입력한 뒤 저장합니다.</span>}
-        {pendingMarkup && isDemoAdmin && <label className="pdf-markup-memo">메모<textarea aria-label="주석 메모" maxLength={2000} rows={2} value={markupText} onChange={(event) => setMarkupText(event.target.value)} placeholder="이 영역에 대한 메모" /></label>}
-        {pendingMarkup && editingMarkup && <label className="pdf-markup-memo">수정 사유<textarea aria-label="주석 수정 사유" maxLength={500} rows={2} value={markupReason} onChange={(event) => setMarkupReason(event.target.value)} /></label>}
-        {pendingMarkup && <button type="button" disabled={savingMarkup || rendering || !markupText.trim() || (editingMarkup && !markupReason.trim())} onClick={() => void savePendingMarkup()}>{savingMarkup ? "저장 중…" : editingMarkup ? "수정 저장" : "주석 저장"}</button>}
+        {markupMode && <span>{tx("drawingInstructions")}</span>}
+        {pendingMarkup && isDemoAdmin && <label className="pdf-markup-memo">{tx("memo")}<textarea aria-label={tx("memoLabel")} maxLength={2000} rows={2} value={markupText} onChange={(event) => setMarkupText(event.target.value)} placeholder={tx("memoPlaceholder")} /></label>}
+        {pendingMarkup && editingMarkup && <label className="pdf-markup-memo">{tx("editReason")}<textarea aria-label={tx("editReasonLabel")} maxLength={500} rows={2} value={markupReason} onChange={(event) => setMarkupReason(event.target.value)} /></label>}
+        {pendingMarkup && <button type="button" disabled={savingMarkup || rendering || !markupText.trim() || (editingMarkup && !markupReason.trim())} onClick={() => void savePendingMarkup()}>{savingMarkup ? tx("saving") : editingMarkup ? tx("saveEdit") : tx("saveMarkup")}</button>}
         {markupError && <span role="alert" className="pdf-error-text">{markupError}</span>}
-        {markups.length > 0 && <ul className="pdf-markup-list" aria-label="저장된 도면 주석">{markups.filter((item) => item.page === page).map((item) =>
+        {markups.length > 0 && <ul className="pdf-markup-list" aria-label={tx("savedMarkups")}>{markups.filter((item) => item.page === page).map((item) =>
           <li key={item.id}><button type="button" className={selectedMarkupId === item.id ? "is-selected" : ""} onClick={() => { setEditingMarkup(false); setDeletingMarkup(false); setMarkupReason(""); selectMarkup(selectedMarkupId === item.id ? null : item.id); }}>
             p.{item.page} · {item.text} · v{item.version}
           </button></li>)}
         </ul>}
         {selectedMarkup && <div className="pdf-markup-detail">
-          <p>선택한 주석 · 버전 {selectedMarkup.version}{selectedMarkup.deletedAt ? " · 삭제됨" : ""}</p>
-          {selectedMarkup.availableCommands?.some((item) => item.command === "edit") && !editingMarkup && !deletingMarkup && <button type="button" onClick={beginEditingMarkup}>주석 수정</button>}
-          {selectedMarkup.availableCommands?.some((item) => item.command === "delete") && !deletingMarkup && !editingMarkup && <button type="button" onClick={() => { setDeletingMarkup(true); setMarkupReason(""); }}>주석 삭제</button>}
-          {deletingMarkup && <><p>이 주석을 삭제하면 새 이슈 연결에 사용할 수 없게 됩니다. 기존 이슈 연결과 이력은 보존됩니다.</p><label className="pdf-markup-memo">삭제 사유<textarea aria-label="주석 삭제 사유" maxLength={500} rows={2} value={markupReason} onChange={(event) => setMarkupReason(event.target.value)} /></label><button type="button" disabled={markupActionLoading || !markupReason.trim()} onClick={() => void deleteSelectedMarkup()}>{markupActionLoading ? "삭제 중…" : "삭제 확인"}</button><button type="button" onClick={() => { setDeletingMarkup(false); setMarkupReason(""); }}>취소</button></>}
-          {selectedMarkup.deleteReason && <p>삭제 사유: {selectedMarkup.deleteReason}</p>}
-          <button type="button" aria-expanded={showMarkupHistory} onClick={() => setShowMarkupHistory((value) => !value)}>{showMarkupHistory ? "이력 숨기기" : `이력 보기${selectedMarkup.historySummary ? ` (${selectedMarkup.historySummary.count})` : ""}`}</button>
-          {showMarkupHistory && <ol className="pdf-markup-history" aria-label="주석 이력">{markupHistory.map((snapshot) => <li key={snapshot.version}><strong>v{snapshot.version}</strong> · {snapshot.text}{snapshot.eventAt ? ` · ${new Date(snapshot.eventAt).toLocaleString()}` : ""}{snapshot.eventBy ? ` · ${snapshot.eventBy}` : ""}{snapshot.reason || snapshot.updateReason || snapshot.deleteReason ? ` · 사유: ${snapshot.reason || snapshot.updateReason || snapshot.deleteReason}` : ""}</li>)}</ol>}
+          <p>{tx("selectedMarkup")} · {tx("version")} {selectedMarkup.version}{selectedMarkup.deletedAt ? " · " + tx("deleted") : ""}</p>
+          {selectedMarkup.availableCommands?.some((item) => item.command === "edit") && !editingMarkup && !deletingMarkup && <button type="button" onClick={beginEditingMarkup}>{tx("editMarkup")}</button>}
+          {selectedMarkup.availableCommands?.some((item) => item.command === "delete") && !deletingMarkup && !editingMarkup && <button type="button" onClick={() => { setDeletingMarkup(true); setMarkupReason(""); }}>{tx("deleteMarkup")}</button>}
+          {deletingMarkup && <><p>{tx("deleteWarning")}</p><label className="pdf-markup-memo">{tx("deleteReason")}<textarea aria-label={tx("deleteReasonLabel")} maxLength={500} rows={2} value={markupReason} onChange={(event) => setMarkupReason(event.target.value)} /></label><button type="button" disabled={markupActionLoading || !markupReason.trim()} onClick={() => void deleteSelectedMarkup()}>{markupActionLoading ? tx("deleting") : tx("confirmDelete")}</button><button type="button" onClick={() => { setDeletingMarkup(false); setMarkupReason(""); }}>{tx("cancel")}</button></>}
+          {selectedMarkup.deleteReason && <p>{tx("deleteReason")}: {selectedMarkup.deleteReason}</p>}
+          <button type="button" aria-expanded={showMarkupHistory} onClick={() => setShowMarkupHistory((value) => !value)}>{showMarkupHistory ? tx("hideHistory") : `${tx("showHistory")}${selectedMarkup.historySummary ? ` (${selectedMarkup.historySummary.count})` : ""}`}</button>
+          {showMarkupHistory && <ol className="pdf-markup-history" aria-label={tx("history")}>{markupHistory.map((snapshot) => <li key={snapshot.version}><strong>v{snapshot.version}</strong> · {snapshot.text}{snapshot.eventAt ? ` · ${new Date(snapshot.eventAt).toLocaleString(language)}` : ""}{snapshot.eventBy ? ` · ${snapshot.eventBy}` : ""}{snapshot.reason || snapshot.updateReason || snapshot.deleteReason ? ` · ${tx("eventReason", { reason: snapshot.reason || snapshot.updateReason || snapshot.deleteReason || "" })}` : ""}</li>)}</ol>}
         </div>}
       </div>}
       {activeBinding && <div className="pdf-pin-controls">
-        <label>위치 선택<select aria-label="핀을 연결할 위치" disabled={savingPin} value={selectedLocationRef} onChange={(event) => setSelectedLocationRef(event.target.value)}>
-          <option value="">위치를 선택하세요…</option>
+        <label>{tx("location")}<select aria-label={tx("pinLocationLabel")} disabled={savingPin} value={selectedLocationRef} onChange={(event) => setSelectedLocationRef(event.target.value)}>
+          <option value="">{tx("locationSelect")}</option>
           {locations.map((location) => <option key={location.reference.objectId} value={location.reference.objectId}>{location.name}</option>)}
         </select></label>
-        <span>{isDemoAdmin ? "페이지를 클릭해 미저장 핀을 놓은 뒤 저장하세요." : "위치 핀은 데모 ADM에서만 저장할 수 있습니다."}</span>
-        {pendingPin && <button type="button" onClick={() => void savePendingPin()} disabled={savingPin || rendering}>{savingPin ? "저장 중…" : "위치 핀 저장"}</button>}
+        <span>{isDemoAdmin ? tx("pinInstructions") : tx("pinAdminOnly")}</span>
+        {pendingPin && <button type="button" onClick={() => void savePendingPin()} disabled={savingPin || rendering}>{savingPin ? tx("saving") : tx("savePin")}</button>}
       </div>}
     </>}
 
     {status.kind === "ready" && <>
       <div className="pdf-page-controls">
-        <button type="button" aria-label="이전 페이지" disabled={page <= 1 || savingPin} onClick={() => setPage((value) => Math.max(1, value - 1))}>‹</button>
-        <label>페이지 <input aria-label="페이지 번호" type="number" min={1} max={pageCount} value={page} onChange={(event) => { const next = Number(event.target.value); if (next >= 1 && next <= pageCount) setPage(next); }} /> / {pageCount}</label>
-        <button type="button" aria-label="다음 페이지" disabled={page >= pageCount || savingPin} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>›</button>
-        <button type="button" aria-label="축소" disabled={savingPin} onClick={() => setZoom((value) => Math.max(.5, +(value - .1).toFixed(1)))}>−</button><span>{Math.round(zoom * 100)}%</span>
-        <button type="button" aria-label="확대" disabled={savingPin} onClick={() => setZoom((value) => Math.min(2.5, +(value + .1).toFixed(1)))}>＋</button>
-        <button type="button" aria-label="회전" disabled={savingPin} onClick={() => setRotation((value) => (value + 90) % 360)}>회전</button>
-        {matches.map((match) => <button type="button" key={match} onClick={() => setPage(match)}>검색 결과 {match}</button>)}
+        <button type="button" aria-label={tx("previousPage")} disabled={page <= 1 || savingPin} onClick={() => setPage((value) => Math.max(1, value - 1))}>‹</button>
+        <label>{tx("page")} <input aria-label={tx("pageNumber")} type="number" min={1} max={pageCount} value={page} onChange={(event) => { const next = Number(event.target.value); if (next >= 1 && next <= pageCount) setPage(next); }} /> / {pageCount}</label>
+        <button type="button" aria-label={tx("nextPage")} disabled={page >= pageCount || savingPin} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>›</button>
+        <button type="button" aria-label={tx("zoomOut")} disabled={savingPin} onClick={() => setZoom((value) => Math.max(.5, +(value - .1).toFixed(1)))}>−</button><span>{Math.round(zoom * 100)}%</span>
+        <button type="button" aria-label={tx("zoomIn")} disabled={savingPin} onClick={() => setZoom((value) => Math.min(2.5, +(value + .1).toFixed(1)))}>＋</button>
+        <button type="button" aria-label={tx("rotate")} disabled={savingPin} onClick={() => setRotation((value) => (value + 90) % 360)}>{tx("rotate")}</button>
+        {matches.map((match) => <button type="button" key={match} onClick={() => setPage(match)}>{tx("searchResult", { page: match })}</button>)}
       </div>
       <div className="pdf-canvas-viewport">
         <div className="pdf-canvas-stack" onClick={stagePin} aria-disabled={!isDemoAdmin || !activeBinding || !selectedLocation || rendering}>
-          <canvas ref={canvasRef} aria-label={"PDF 페이지 " + page + " / " + pageCount} />
-          <svg className={"pdf-markup-layer" + (markupMode ? " is-drawing" : "")} aria-label="도면 주석 영역" style={{ visibility: showMarkupLayer ? "visible" : "hidden" }}
+          <canvas ref={canvasRef} aria-label={tx("canvasPage", { page, count: pageCount })} />
+          <svg className={"pdf-markup-layer" + (markupMode ? " is-drawing" : "")} aria-label={tx("markupArea")} style={{ visibility: showMarkupLayer ? "visible" : "hidden" }}
             viewBox={`0 0 ${Math.max(1, canvasSize.width)} ${Math.max(1, canvasSize.height)}`} preserveAspectRatio="none"
             onPointerDown={beginMarkupDraw} onPointerMove={moveMarkupDraw} onPointerUp={finishMarkupDraw}
             onPointerCancel={() => { drawingStart.current = null; setPendingMarkup(null); }}>
             {overlayMarkups.map(({ item, points }) => <polygon key={item.id} points={points.map((point) => `${point.left},${point.top}`).join(" ")}
               className={selectedMarkupId === item.id ? "pdf-markup-shape is-selected" : "pdf-markup-shape"}
-              role="button" tabIndex={0} aria-label={`주석: ${item.text}`} onClick={(event) => { event.stopPropagation(); selectMarkup(selectedMarkupId === item.id ? null : item.id); }}
+              role="button" tabIndex={0} aria-label={tx("markupItem", { text: item.text })} onClick={(event) => { event.stopPropagation(); selectMarkup(selectedMarkupId === item.id ? null : item.id); }}
               onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectMarkup(selectedMarkupId === item.id ? null : item.id); } }} />)}
             {pendingMarkupPoints && <polygon points={pendingMarkupPoints.map((point) => `${point.left},${point.top}`).join(" ")} className="pdf-markup-shape is-pending" />}
           </svg>
-          <div className="pdf-pin-layer" aria-label="도면 위치 핀" style={{ visibility: showPinLayer ? "visible" : "hidden" }}>
+          <div className="pdf-pin-layer" aria-label={tx("pinLayer")} style={{ visibility: showPinLayer ? "visible" : "hidden" }}>
             {overlayPins.map((pin, index) => <button
               type="button"
               key={pin.locationName + "-" + index}
-              className={"pdf-location-pin" + (pin.locationName.includes("미저장") ? " is-pending" : "")}
-              data-testid={pin.locationName.includes("미저장") ? "pdf-pin-preview" : "pdf-location-pin"}
+              className={"pdf-location-pin" + (pin.locationName.endsWith(" · " + tx("unsaved")) ? " is-pending" : "")}
+              data-testid={pin.locationName.endsWith(" · " + tx("unsaved")) ? "pdf-pin-preview" : "pdf-location-pin"}
               data-pdf-x={pin.anchor.x}
               data-pdf-y={pin.anchor.y}
               data-pdf-page={pin.anchor.page}
               style={{ left: pin.point.left, top: pin.point.top }}
               title={pin.locationName}
-              aria-label={pin.locationName + " 위치 핀"}
+              aria-label={tx("pinLabel", { name: pin.locationName })}
               onClick={(event) => event.stopPropagation()}
             >{index + 1}</button>)}
           </div>
         </div>
       </div>
-      {rendering && <p role="status" className="pdf-rendering-state">페이지를 표시하는 중…</p>}
-      <footer className="pdf-readonly-note">읽기 전용 미리보기 · 업로드한 원본은 변경하지 않습니다.</footer>
+      {rendering && <p role="status" className="pdf-rendering-state">{tx("rendering")}</p>}
+      <footer className="pdf-readonly-note">{tx("readOnly")}</footer>
     </>}
   </section>;
 }
