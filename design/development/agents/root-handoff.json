@@ -13,12 +13,12 @@
     "Added exact current read-authorized Issue/Action catalogs and fixed canonical narrowed DomainRef array UI selection",
     "Real UI/API Equipment failed/unavailable -> passing reinspection -> Permit activation verified; failed-equipment atomic rejection preserved",
     "Explicit localized Inspection result editor with no sample pass/measurement/evidence, stable focus/exactrefs/declareditem IDs; actual Quality typed UI closedloop PASS",
-    "Telemetry sink IO failures preserve HTTP authority/version outcomes and domainAuditEvents; full API regression PASS"
+    "Telemetry sink IO failures preserve HTTP authority/version outcomes and domainAuditEvents; full API regression PASS",
+    "Overlapping Inspection baselines: one required row, alternate exact ref, no implicit server mutation, draft deletion/focus/locale/precision actual UI/API PASS (283091f; work/goal-inspection-overlap-root.log)"
   ],
   "inProgress": [
     "Isolated full Commissioning/Handover/Warranty, combined Stop/remedy/lift/permitresume, and Payment Owner Decision UI evidence",
-    "Overlapping Inspection baseline and exactprecision focusedacceptance; finalcompleteintegrationbrowserregression",
-    "UUID override compatibility analysis; no lock/dependency change integrated until canonical inventoryandnative toolingvalidate"
+    "Full 88-case browser regression at application/test head283091f running; work/goal-integrated-browser-283091f.log; no terminal result yet"
   ],
   "validation": {
     "evidence": "design/verification/goal-mvp-checkpoint-20261008.json",
@@ -33,7 +33,9 @@
     "Reconcile only proven issue completion and preserve incomplete full scenario/pilot status",
     "Complete remaining full connected browser acceptance without weakening legal/state/equipment prerequisites",
     "Configure actual project, production legal signature provider and adopted forms/language policy; obtain real authorized pilot actors/evidence",
-    "Resolve dependency audit release blockers and obtain actual field/performance/restore acceptance"
+    "Resolve dependency audit release blockers and obtain actual field/performance/restore acceptance",
+    "UUID candidate not integrated: npm workspace dependency inventory invalid despite native tooling compatibility; evidence in agents/uuid-remediation-handoff.json",
+    "Actual architecture/structure/mechanical/electrical PDFs, BOQ, schedule and site photos not supplied; real-file usability criteria recorded in goal-mvp-completion-v1.json"
   ],
   "restart": [
     "Inspect git status and worktree list, active agents, Goal/checkpoint and all latest worker handoffs",

@@ -1,7 +1,7 @@
 {
   "asOf": "2026-10-09",
   "integrationBranch": "goal/mvp-completion-v1",
-  "integrationHeadAtCheckpoint": "7c9a021",
+  "integrationHeadAtCheckpoint": "3e54705",
   "agentModel": "gpt-6-luna",
   "reasoning": "high",
   "completed": {
@@ -29,17 +29,28 @@
       "workerCommit": "e2520af",
       "integratedCommit": "6e0ffb8",
       "verification": "Canonical narrowed Issue/Action DomainRef arrays classified multiple, custom BOQItemRef preserved. Generator checks and root web/mobile typecheck PASS."
+    },
+    "inspectionResults": {
+      "integratedCommit": "283091f",
+      "workerCommit": "b9f2164",
+      "verification": "Root actual UI/API focused PASS1; overlapping synthetic trusted baseline, no signature provider; no field pilot claim."
+    },
+    "authoringLocales": {
+      "verification": "Root actualAPI1PASS plus isolatedmock7PASS; final official renderer missingprovider501 localized, no fake signature approval."
+    },
+    "uuidAssessment": {
+      "integratedCommit": "3e54705",
+      "result": "Evidence-only; candidate rejected due invalid npm workspace graph, production dependencies unchanged."
     }
   },
   "inProgress": {
     "handover": "/root/capabilities: isolated F07 complete UI lifecycle, active Punch Issue correction/reinspection/closure prerequisites must remain honest. No HTTP mutation may be described as UI evidence.",
     "safetyCombined": "/root/payment_api: extend own Equipment scenario to Stop creation/remedy/verification/lift/independent permit resume; report any missing UI prerequisites. Preserve current passing baseline.",
-    "authoringLocales": "/root/payment_ui: new authoring-localization browser spec for three languages and preserved official/draft state; root owns UI/shared files.",
-    "uuidCompatibility": "/root/operations: isolated proposed xcode UUID 11.1.1 override; no shared dependencies changed, validate actual Expo/iOS tooling before integration. Existing braces/node-forge release blockers remain."
+    "paymentOwnerUI": "Actual Owner Governance creation/report/acknowledge/decision sequence worker PASS once; final owned spec/fixture commit pending"
   },
   "runningRootChecks": [
-    "work/goal-integrated-browser-85.log: 85-case current integration regression running; Equipment additional independent test already PASS",
-    "work/goal-current-api-final-catalog.log: completed 392 run, 387 pass, 5 optional document-runtime skips"
+    "work/goal-integrated-browser-283091f.log: complete 88-case regression running, terminal result pending",
+    "work/goal-current-api-with-telemetry.log: completed394 run,389pass,5optional skips; separatedocument5PASS"
   ],
   "externalBlocker": {
     "githubBilling": "User supplied annotation run37860451176: recent account payments failed or spending limit needs increase. Account owner resolves Billing & plans. No automatic spend changes. All latest exact-head required checks must PASS before merge.",
