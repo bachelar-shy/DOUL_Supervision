@@ -38,3 +38,30 @@ test("renamed non-workbook ZIP is refused by the server", async ({page}) => {
   expect(response.status()).toBe(415);
   expect((await response.json()).code).toBe("MIME_INVALID");
 });
+
+for (const locale of ["ko", "vi", "en"]) {
+  test(`primary field intake preserves workbook original in ${locale}`, async ({page}) => {
+    await page.addInitScript(language => localStorage.setItem("doul.locale", language), locale);
+    await page.goto("/#/capture");
+    const input = page.locator('input[type="file"][accept*="application/pdf"]');
+    await expect(input).toHaveAttribute("accept", /\.xlsx/);
+    const files = paths.length ? paths.map(path => ({name:basename(path),buffer:readFileSync(path),mimeType:path.endsWith(".pdf") ? "application/pdf" : mime})) : [{name:"field-schedule.xlsx",buffer:fixture,mimeType:mime}];
+    for (const file of files) {
+      await input.setInputFiles(file);
+      const pending = page.locator(".pending-row").filter({has:page.getByText(file.name,{exact:true})});
+      await expect(pending).toBeVisible();
+      const completed = page.waitForResponse(response => response.url().endsWith("/complete") && response.request().method() === "POST");
+      await pending.getByRole("button").click();
+      const response = await completed;
+      expect(response.status(), await response.text()).toBe(201);
+      const record = await response.json();
+      const hash = createHash("sha256").update(file.buffer).digest("hex");
+      expect(record.fileHash).toBe(hash);
+      await expect(pending).toHaveCount(0);
+      const requestHeaders = response.request().headers();
+      const downloaded = await page.request.get(`/api/projects/${record.projectId}/evidence/${record.id}/content`, {headers:{Authorization:requestHeaders.authorization,"X-RoleAssignment-Id":response.request().postDataJSON().roleAssignmentId}});
+      expect(downloaded.status()).toBe(200);
+      expect(createHash("sha256").update(await downloaded.body()).digest("hex")).toBe(hash);
+    }
+  });
+}

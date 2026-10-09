@@ -7,11 +7,12 @@
     "Bounded XLSX package recognition at existing authoritative upload MIME boundary",
     "Browser XLSX candidate selection and ko/vi/en upload labels",
     "Server rejects arbitrary ZIP/macro/path traversal/duplicate package/oversized manifest",
-    "API and browser regressions"
+    "API and browser regressions",
+    "Primary field intake file picker accepts XLSX and ko/vi/en describes document originals"
   ],
   "verification": {
     "originalSuppliedFiles": 3,
-    "localBrowserTests": 4,
+    "localBrowserTests": 7,
     "localApiTests": {
       "run": 405,
       "skipped": 45,
@@ -21,7 +22,9 @@
     "uiTypecheck": "passed",
     "uiBoundary": "passed",
     "uiLint": "passed inherited warnings",
-    "webBuild": "passed"
+    "webBuild": "passed",
+    "actualOriginalBrowserExecutions": 18,
+    "browserScope": "two actual upload screens x three locales x three supplied originals, plus fake ZIP refusal"
   },
   "limitations": [
     "local demo roles and SQLite; real field user acceptance not performed",

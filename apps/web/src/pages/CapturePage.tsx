@@ -177,7 +177,7 @@ export function CapturePage({
               <input
                 aria-label={t("capture.intake.fileAria")}
                 type="file"
-                accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,audio/mpeg,audio/wav,application/pdf"
+                accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,audio/mpeg,audio/wav,application/pdf,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) void intake(f);
