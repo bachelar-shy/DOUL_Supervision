@@ -55,7 +55,12 @@ colima --profile doul-ci ssh -- df -h / /var/lib/docker
 ```
 
 After a Mac restart, start this specific VM again; the container's restart policy
-restarts its listener. Login startup is configured separately when installed.
+restarts its listener. The installed LaunchAgent `local.doul.ci-runner` runs
+`/Users/automation/work/DOUL-ci-runtime/ensure-runner.sh` at login and every
+60 seconds. It starts only this VM/container if unavailable and does not restart
+a running listener. `macmini-ensure-runner.sh` is the versioned source for it.
+This login agent requires the automation user to log in; it is not a pre-login
+system daemon and does not guarantee execution while the Mac is powered off.
 Do not use `brew services start colima`, which targets the default profile.
 Use this dedicated Docker context for all maintenance. Never prune other
 contexts or erase the user's development worktrees. Preserve failures and logs;

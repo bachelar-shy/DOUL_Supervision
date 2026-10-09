@@ -7,6 +7,7 @@ permissions:
   contents: read
 jobs:
   local-adapter-and-ui:
+    # Dedicated Linux VM on the Mac mini; one runner serializes jobs.
     runs-on: [self-hosted, Linux, ARM64, doul-macmini]
     timeout-minutes: 30
     steps:

@@ -58,9 +58,9 @@
   },
   "blockedDependencies": [
     {
-      "kind": "github_ci_billing",
-      "requiredInput": "Account owner resolves failed payments or Actions spending limit in Billing & plans; latest exact-head eight required checks must then PASS before PR129 merge.",
-      "evidence": "User annotation run37860451176; independently observed unstarted jobs with no steps/logs."
+      "kind": "github_ci_verification",
+      "requiredInput": "Verify all actual exact-head workflow results on the user-directed Mac mini self-hosted runner before integration. The prior hosted account-billing dispatch blocker is bypassed by actual successful self-hosted jobs.",
+      "evidence": "CI migration 5612c5e; self-hosted runner21 doul-macmini-m4-linux executed storage, PostgreSQL backup/restore, consistent recovery, observability and worker successfully. CI-only PR130 applies the routing to main separately from MVP PR129."
     },
     {
       "kind": "product_contract_decision",
@@ -81,7 +81,7 @@
   ],
   "restartAfterUnblocking": [
     "Inspect Git/worktree status and final root/worker handoffs; preserve readonly shared overlays and uncommitted worker changes.",
-    "Use final PR129 head and locked physical dependencies; rerun exact-head required CI once billing is resolved, not repeated unstarted retries.",
+    "Use current PR129 head and locked physical dependencies; inspect Mac mini self-hosted workflow results and CI-only PR130. Preserve failures and repair actual failed steps rather than repeating hosted billing failures.",
     "Record Product decision and approved effective contract before implementing/adopting reconciliation. Restore sanctioned workflow reachability with exact identity/version/history/authorization checks.",
     "Rerun bounded Warranty/Handover positive and refusal scenarios; no state seeding or signature/authority bypass.",
     "Continue real-file pilot/usability and operational/provider/native acceptance after required actual inputs are supplied. Never label blocked or pilot-unrun Goal complete."

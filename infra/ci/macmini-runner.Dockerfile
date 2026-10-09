@@ -15,6 +15,7 @@ RUN mkdir /runner-template && cd /runner-template && \
     tar xzf runner.tar.gz && rm runner.tar.gz
 ENV RUNNER_ALLOW_RUNASROOT=1 \
     RUNNER_TOOL_CACHE=/opt/doul-ci/toolcache \
+    TMPDIR=/opt/doul-ci/tmp \
     PLAYWRIGHT_SKIP_BROWSER_GC=1 \
     PLAYWRIGHT_BROWSERS_PATH=/opt/doul-ci/playwright
 COPY macmini-runner-entrypoint.sh /usr/local/bin/doul-runner
