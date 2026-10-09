@@ -8,16 +8,36 @@ type Fixture = {
   projectId: string; scope: Record<string, string>; requirementRef: Ref; drawingRef: Ref;
   evidenceId: string; retestEvidenceId: string; commissioningProfileRef: Ref;
   inspectionRef: Ref; procedureRef: Ref; issueRef: Ref; actionRef: Ref;
+  reservationIssueRef: Ref; reservationActionRef: Ref;
   handoverProfileRef: Ref; assets: Ref[]; actors: Record<string, string>;
   warrantyPeriodRef: Ref; documents: Record<string, Ref>;
   responsibleOrganizationId: string;
-  tomorrow: string;
+  tomorrow: string; warrantyStartAt: string;
   disclosure: string;
 };
 
-const python = process.env.DOUL_TEST_PYTHON || "/workspace/DOUL_Supervision/work/priority-venv/bin/python";
+const python = process.env.DOUL_TEST_PYTHON || "python3";
 
-test.use({ launchOptions: { executablePath: "/usr/bin/chromium" } });
+if (process.env.HO_TEST_CHROMIUM) test.use({ launchOptions: { executablePath: process.env.HO_TEST_CHROMIUM } });
+
+async function stopApi(child: ChildProcess): Promise<void> {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  const exited = new Promise<void>((resolve) => child.once("exit", () => resolve()));
+  child.kill("SIGTERM");
+  const graceful = await Promise.race([
+    exited.then(() => true),
+    new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 3000)),
+  ]);
+  if (graceful) return;
+  child.kill("SIGKILL");
+  await Promise.race([exited, new Promise<void>((resolve) => setTimeout(resolve, 3000))]);
+}
+
+function testOrigin(): string {
+  const baseURL = test.info().project.use.baseURL;
+  if (typeof baseURL !== "string") throw new Error("Playwright baseURL is required for the HTTP fixture");
+  return new URL(baseURL).origin;
+}
 
 async function freePort(): Promise<number> {
   const server = createServer();
@@ -29,17 +49,20 @@ async function freePort(): Promise<number> {
   return port;
 }
 
-async function startApi(): Promise<{ child: ChildProcess; base: string; fixture: Fixture }> {
+async function startApi(origin: string): Promise<{ child: ChildProcess; base: string; fixture: Fixture }> {
   const port = await freePort();
   const child = spawn(python, ["tests_browser/support/handover_api_fixture.py", "--port", String(port)], {
     cwd: process.cwd(), stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, DOUL_API_ALLOWED_ORIGINS: origin },
   });
   let stderr = "";
   child.stderr?.on("data", (chunk) => { stderr += String(chunk); });
   const lines = createInterface({ input: child.stdout! });
   const ready = new Promise<Fixture>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error(`Fixture startup timed out: ${stderr}`)), 15000);
-    child.once("exit", (code) => reject(new Error(`Fixture exited ${code}: ${stderr}`)));
+    const fail = (error: Error) => { clearTimeout(timeout); reject(error); };
+    const timeout = setTimeout(() => fail(new Error(`Fixture startup timed out: ${stderr}`)), 15000);
+    child.once("error", (error) => fail(error));
+    child.once("exit", (code) => fail(new Error(`Fixture exited ${code}: ${stderr}`)));
     lines.on("line", (line) => {
       try {
         const value = JSON.parse(line) as Partial<Fixture>;
@@ -50,7 +73,13 @@ async function startApi(): Promise<{ child: ChildProcess; base: string; fixture:
       } catch { /* API request logs precede the fixture metadata. */ }
     });
   });
-  const fixture = await ready;
+  let fixture: Fixture;
+  try {
+    fixture = await ready;
+  } catch (error) {
+    await stopApi(child);
+    throw error;
+  }
   const base = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 50; attempt++) {
     try {
@@ -59,7 +88,7 @@ async function startApi(): Promise<{ child: ChildProcess; base: string; fixture:
     } catch { /* Wait for uvicorn to bind. */ }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  child.kill("SIGTERM");
+  await stopApi(child);
   throw new Error(`Fixture server did not become healthy: ${stderr}`);
 }
 
@@ -78,15 +107,15 @@ const commandFieldLabels: Record<string, RegExp> = {
   outcome: /outcome|^시험 결과$/i,
   acceptanceCriteriaMet: /acceptanceCriteria|인수 기준 충족 여부|합격 기준/i,
   failureReason: /failureReason|부적합 사유|실패 사유/i,
-  punchIssueRefs: /punchIssue|펀치|이슈/i,
   correctionActionRefs: /correctionAction|시정.?조치/i,
   retestBasisRefs: /retestBasis|재시험 근거/i,
-  ownerDecisionRef: /ownerDecision|발주처 결정/i,
-  acceptedScope: /acceptedScope|수락 범위/i,
-  effectiveAt: /effectiveAt|시행 시각/i,
-  warrantyTrigger: /warrantyTrigger|보증 개시/i,
+  punchIssueRefs: /punchIssue|punch issue|펀치|이슈/i,
+  ownerDecisionRef: /owner decision reference|발주처 결정/i,
+  acceptedScope: /acceptedScope|인수 범위/i,
+  effectiveAt: /effectiveAt|적용 시각/i,
+  warrantyTrigger: /warrantyTrigger|보증 개시 여부/i,
   actionRefs: /actionRefs|조치 참조/i,
-  responseDueAt: /responseDueAt|회신 기한/i,
+  responseDueAt: /responseDueAt|조치 응답 기한/i,
   remedySummary: /remedySummary|조치 내용/i,
   decisionReason: /decisionReason|결정 사유/i,
   selectedOption: /selectedOption|선택 옵션/i,
@@ -221,13 +250,45 @@ async function runWorkbenchCommand(page: Page, route: "issues" | "inspections", 
   return body.record;
 }
 
+async function runOwnerDecisionCommand(page: Page, command: RegExp, commandName: string, fields: Record<string, string> = {}) {
+  const owner = page.locator("[data-owner-governance='true']");
+  const button = owner.getByRole("button", { name: command });
+  await expect(button, `Owner UI must expose ${commandName}`).toBeEnabled();
+  await button.click();
+  const dialog = page.getByRole("dialog");
+  for (const [field, value] of Object.entries(fields)) {
+    const labels: Record<string, RegExp> = {
+      decision: /^(decision|결정)$/i,
+      decisionReason: /decision reason|결정 사유/i,
+      selectedOption: /selected option|선택 대안/i,
+      decisionAt: /decision at|결정 시각/i,
+    };
+    const label = labels[field] || new RegExp(field, "i");
+    const control = dialog.getByLabel(label).or(dialog.getByRole("textbox", { name: label })).or(dialog.getByRole("combobox", { name: label }));
+    await expect(control, `${commandName} field ${field} should be exposed`).toHaveCount(1);
+    if (await control.evaluateAll((nodes) => nodes.some((node) => node instanceof HTMLSelectElement))) await control.selectOption(value);
+    else await control.fill(value);
+  }
+  const suffix = `/${commandName.replaceAll("_", "-")}`;
+  const responsePromise = page.waitForResponse((response) => response.request().method() === "POST" && new URL(response.url()).pathname.includes("/owner-decisions/") && new URL(response.url()).pathname.endsWith(suffix));
+  const refreshed = page.waitForResponse((response) => response.request().method() === "GET" && response.url().includes("/workspace"));
+  await dialog.getByRole("button", { name: /execute|confirm|확인 후 실행/i }).click();
+  const response = await responsePromise;
+  const body = await response.json();
+  expect(response.status(), JSON.stringify(body)).toBe(200);
+  await expect(dialog).toHaveCount(0);
+  await refreshed;
+  return body.record;
+}
+
 test("real Completion UI creates a planned commissioning package and respects the missing current procedure gate", async ({ page }) => {
   test.setTimeout(90000);
-  const { child, base, fixture } = await startApi();
+  const origin = testOrigin();
+  const { child, base, fixture } = await startApi(origin);
   try {
     let latestWorkspace: any;
     await page.route("**/api/**", async (route) => {
-      const response = await route.fetch({ url: route.request().url().replace(/http:\/\/127\.0\.0\.1:\d+\/api/, base), headers: { ...route.request().headers(), origin: "http://127.0.0.1:5181" } });
+      const response = await route.fetch({ url: route.request().url().replace(/http:\/\/127\.0\.0\.1:\d+\/api/, base), headers: { ...route.request().headers(), origin } });
       if (route.request().url().includes("/workspace")) {
         latestWorkspace = await response.json();
         await route.fulfill({ response, json: latestWorkspace });
@@ -269,17 +330,18 @@ test("real Completion UI creates a planned commissioning package and respects th
     const blocked = workspace.locator(".completion-commands").getByRole("button", { name: /start prerequisite review/i });
     await expect(blocked).toBeDisabled();
   } finally {
-    child.kill("SIGTERM");
+    await stopApi(child);
   }
 });
 
 test("real Completion UI preserves Owner reservation proposal inputs on a handover draft", async ({ page }) => {
   test.setTimeout(90000);
-  const { child, base, fixture } = await startApi();
+  const origin = testOrigin();
+  const { child, base, fixture } = await startApi(origin);
   try {
     let latestWorkspace: any;
     await page.route("**/api/**", async (route) => {
-      const response = await route.fetch({ url: route.request().url().replace(/http:\/\/127\.0\.0\.1:\d+\/api/, base), headers: { ...route.request().headers(), origin: "http://127.0.0.1:5181" } });
+      const response = await route.fetch({ url: route.request().url().replace(/http:\/\/127\.0\.0\.1:\d+\/api/, base), headers: { ...route.request().headers(), origin } });
       if (route.request().url().includes("/workspace")) {
         latestWorkspace = await response.json();
         await route.fulfill({ response, json: latestWorkspace });
@@ -339,19 +401,20 @@ test("real Completion UI preserves Owner reservation proposal inputs on a handov
     expect(submit.ready).toBe(false);
     await expect(workspace.locator(".completion-commands").getByRole("button", { name: /submit handover package/i })).toBeDisabled();
   } finally {
-    child.kill("SIGTERM");
+    await stopApi(child);
   }
 });
 
-test("real Completion UI carries commissioning through Owner partial handover and separates warranty remedy from reinspection", async ({ page }) => {
-  test.setTimeout(360000);
-  const { child, base, fixture } = await startApi();
+test("real Completion UI carries commissioning through Owner partial handover and records the warranty Action gate", async ({ page }) => {
+  test.setTimeout(120000);
+  const origin = testOrigin();
+  const { child, base, fixture } = await startApi(origin);
   try {
     let latestWorkspace: any;
     await page.route("**/api/**", async (route) => {
       const response = await route.fetch({
         url: route.request().url().replace(/http:\/\/127\.0\.0\.1:\d+\/api/, base),
-        headers: { ...route.request().headers(), origin: "http://127.0.0.1:5181" },
+        headers: { ...route.request().headers(), origin },
       });
       if (route.request().url().includes("/workspace")) {
         latestWorkspace = await response.json();
@@ -368,7 +431,7 @@ test("real Completion UI carries commissioning through Owner partial handover an
     const chooseRef = async (container: Locator, label: RegExp, ref: Ref) => {
       const select = container.getByLabel(label);
       const option = select.locator("option").filter({ hasText: ref.objectId.slice(0, 8) });
-      await expect(option, `authorized ${ref.objectType} ${ref.objectId} reference must be selectable`).toHaveCount(1, { timeout: 7000 });
+      await expect(option, `authorized ${ref.objectType} ${ref.objectId} reference must be selectable; options: ${(await select.locator("option").allTextContents()).join(" | ")}`).toHaveCount(1, { timeout: 7000 });
       await select.selectOption(await option.getAttribute("value") || "");
     };
 
@@ -556,12 +619,12 @@ test("real Completion UI carries commissioning through Owner partial handover an
     const completedPunch = latestWorkspace.items.find((item: any) => item.record.id === fixture.issueRef.objectId);
     const commissioningReady = latestWorkspace.items.find((item: any) => item.record.id === commissioningId);
     const readyAction = commissioningReady.actions.find((action: any) => action.command === "mark_ready_for_handover");
-    expect(readyAction?.ready, JSON.stringify({
-      blockedReason: readyAction?.blockedReason,
-      capturedIssueRef: commissioningReady.record.data.punchIssueRefs?.[0],
-      currentPunch: completedPunch?.record && { id: completedPunch.record.id, version: completedPunch.record.version, status: completedPunch.record.status },
-    })).toBe(true);
-    await runCompletionCommand(page, /mark ready for handover/i, {}, [fixture.retestEvidenceId]);
+    const currentPunchRef = latestWorkspace.context.referenceCatalog.issues.find((entry: any) => entry.ref.objectId === fixture.issueRef.objectId)?.ref as Ref | undefined;
+    expect(readyAction?.fields).toContain("punchIssueRefs");
+    expect(readyAction?.blockedReason?.code).toBe("REFERENCE_STALE");
+    expect(currentPunchRef).toMatchObject({ objectId: fixture.issueRef.objectId, version: completedPunch.record.version });
+    expect(commissioningReady.record.data.punchIssueRefs[0].version).toBeLessThan(currentPunchRef!.version);
+    await runCompletionCommand(page, /mark ready for handover/i, { punchIssueRefs: [currentPunchRef!] }, [fixture.retestEvidenceId]);
     await runCompletionCommand(page, /close commissioning/i);
     const commissioning = latestWorkspace.items.find((item: any) => item.record.id === commissioningId);
     expect(commissioning.record.status).toBe("closed");
@@ -576,12 +639,20 @@ test("real Completion UI carries commissioning through Owner partial handover an
     await create.getByLabel(/^system$/i).fill("SYS-BROWSER");
     await create.getByLabel(/scope id/i).fill("SYS-BROWSER-SEGMENT-A");
     await chooseRef(create, /profile/i, fixture.handoverProfileRef);
+    await chooseRef(create, /drawing/i, fixture.drawingRef);
     await create.getByLabel(/location/i).selectOption(fixture.scope.locationId);
-    await chooseRef(create, /commissioning package/i, { objectType: "WorkItem", objectId: commissioningId, version: commissioning.record.version });
-    await chooseRef(create, /asset/i, fixture.assets[0]);
-    await chooseRef(create, /open issue/i, fixture.issueRef);
+    await chooseRef(create, /commissioning references/i, { objectType: "WorkItem", objectId: commissioningId, version: commissioning.record.version });
+    const handoverAssets = create.getByLabel(/asset references/i);
+    const handoverAssetValues: string[] = [];
+    for (const ref of fixture.assets) {
+      const option = handoverAssets.locator("option").filter({ hasText: ref.objectId.slice(0, 8) });
+      await expect(option, `authorized handover Asset ${ref.objectId}`).toHaveCount(1);
+      handoverAssetValues.push(await option.getAttribute("value") || "");
+    }
+    await handoverAssets.selectOption(handoverAssetValues);
+    await chooseRef(create, /open issue/i, fixture.reservationIssueRef);
     for (const [label, key] of [
-      [/as.built/i, "asBuilt"], [/o.?m manual/i, "omManual"], [/training/i, "training"],
+      [/as.built/i, "asBuilt"], [/operations and maintenance manual/i, "omManual"], [/training/i, "training"],
       [/spare parts/i, "spareParts"], [/certificate/i, "certificates"], [/statutory/i, "statutoryAcceptance"],
     ] as Array<[RegExp, string]>) await chooseRef(create, label, fixture.documents[key]);
     const reservation = create.locator('[data-ui-component="handover-reservation-inputs"]');
@@ -589,7 +660,7 @@ test("real Completion UI carries commissioning through Owner partial handover an
     const due = new Date(fixture.tomorrow); due.setSeconds(0, 0);
     const dueAt = due.toISOString();
     await reservation.getByLabel(/due at/i).fill(dueAt.slice(0, 16));
-    await reservation.getByLabel(/closure requirement/i).fill("Verify and close the remaining punch issue");
+    await reservation.getByLabel(/closure requirement/i).fill("Verify and close the reserved punch issue");
     const createHandover = page.waitForResponse((response) => response.request().method() === "POST" && /\/handover-packages$/.test(response.url()));
     await create.getByRole("button", { name: /save draft/i }).click();
     const handoverResponse = await createHandover;
@@ -598,15 +669,17 @@ test("real Completion UI carries commissioning through Owner partial handover an
     const handoverId = handoverBody.record.id as string;
     await expect(workspace.getByRole("button", { name: /Browser closed loop partial handover/ })).toBeVisible();
     await workspace.getByRole("button", { name: /Browser closed loop partial handover/ }).click();
+    const createdHandover = latestWorkspace.items.find((item: any) => item.record.id === handoverId);
+    const submitAction = createdHandover.actions.find((action: any) => action.command === "submit_handover_package");
+    expect(submitAction?.ready, JSON.stringify({ blockedReason: submitAction?.blockedReason, data: createdHandover.record.data })).toBe(true);
     await runCompletionCommand(page, /submit handover package/i);
     await useRole(page, "SUP");
     await workspace.getByRole("tab", { name: /handover/i }).click();
     await workspace.getByRole("button", { name: /Browser closed loop partial handover/ }).click();
     await runCompletionCommand(page, /start readiness review/i);
-    await runCompletionCommand(page, /submit owner review/i, {}, [fixture.evidenceId]);
+    await runCompletionCommand(page, /submit.*owner review/i, {}, [fixture.evidenceId]);
 
-    await useRole(page, "OWN");
-    await page.getByRole("navigation").getByRole("button", { name: /owner/i }).click();
+    await page.goto("/#/owner");
     const authoring = page.locator('[data-ui-component="owner-decision-authoring"]');
     await authoring.getByLabel(/decision request title/i).fill("Conditional acceptance for browser handover");
     const targetSelect = authoring.getByLabel(/target record/i);
@@ -621,47 +694,53 @@ test("real Completion UI carries commissioning through Owner partial handover an
     await authoring.getByLabel(/option description/i).fill("Accept the available scope with the punch issue reserved");
     await authoring.getByLabel(/requester recommendation/i).fill("Accept the verified system scope and track the remaining issue");
     await authoring.getByLabel(/scope impact/i).fill("One punch issue remains reserved");
-    const saveDecision = page.waitForResponse((response) => response.request().method() === "POST" && /\/decisions$/.test(response.url()));
+    const saveDecision = page.waitForResponse((response) => response.request().method() === "POST" && new URL(response.url()).pathname.endsWith("/owner-decisions"));
     await authoring.getByRole("button", { name: /save decision request draft/i }).click();
     const decisionResponse = await saveDecision;
     const decisionBody = await decisionResponse.json();
     expect(decisionResponse.status(), JSON.stringify(decisionBody)).toBe(201);
     const decisionTitle = "Conditional acceptance for browser handover";
-    await expect(page.locator("[data-owner-governance='true']").getByRole("button", { name: new RegExp(decisionTitle) })).toBeVisible();
-    // Owner's decision record is selected on the Owner route; use its explicit command panel.
     const ownerArea = page.locator("[data-owner-governance='true']");
-    const decideButton = ownerArea.getByRole("button", { name: /decide/i });
-    await expect(decideButton).toBeEnabled();
-    await decideButton.click();
-    const decisionDialog = page.getByRole("dialog");
-    await decisionDialog.getByLabel(/decision reason/i).fill("Accepted with the stated reservation");
-    await decisionDialog.getByLabel(/selected option/i).fill("RESERVE");
-    const submittedDecision = page.waitForResponse((response) => response.request().method() === "POST" && /\/decisions\/.*\/decide$/.test(response.url()));
-    await decisionDialog.getByRole("button", { name: /execute|확인 후 실행/i }).click();
-    const decidedResponse = await submittedDecision;
-    const decidedBody = await decidedResponse.json();
-    expect(decidedResponse.status(), JSON.stringify(decidedBody)).toBe(200);
+    const supervisorDecisionRow = ownerArea.getByRole("button", { name: new RegExp(decisionTitle) });
+    await expect(supervisorDecisionRow).toBeVisible();
+    await supervisorDecisionRow.click();
+    const reportedDecision = await runOwnerDecisionCommand(page, /^(Issue decision request|결정 요청 발행)$/i, "report");
+    expect(reportedDecision.status).toBe("reported");
 
-    await page.getByRole("navigation").getByRole("button", { name: /commissioning.*handover.*warranty/i }).click();
+    await useRole(page, "OWN");
+    await page.goto("/#/owner");
+    const ownerDecisionRow = page.locator("[data-owner-governance='true']").getByRole("button", { name: new RegExp(decisionTitle) });
+    await expect(ownerDecisionRow).toBeVisible();
+    await ownerDecisionRow.click();
+    const acknowledgedDecision = await runOwnerDecisionCommand(page, /^Acknowledge receipt$/i, "acknowledge");
+    expect(acknowledgedDecision.status).toBe("awaiting_decision");
+    await page.locator("[data-owner-governance='true']").getByRole("button", { name: new RegExp(decisionTitle) }).click();
+    const decidedBody = await runOwnerDecisionCommand(page, /^(Decide|Submit decision)$/i, "decide", {
+      decision: "approved", decisionReason: "Accepted with the stated reservation", selectedOption: "RESERVE", decisionAt: new Date().toISOString(),
+    });
+    expect(decidedBody.status).toBe("decided");
+    expect(decidedBody.decision).toBe("approved");
+
+    await page.goto("/#/completion");
     await expect(workspace).toBeVisible();
     await workspace.getByRole("tab", { name: /handover/i }).click();
     await workspace.getByRole("button", { name: /Browser closed loop partial handover/ }).click();
     await runCompletionCommand(page, /accept with reservations/i, {
-      ownerDecisionRef: { objectType: "Decision", objectId: decisionBody.record.id, version: decidedBody.record.version },
+      ownerDecisionRef: { objectType: "Decision", objectId: decisionBody.record.id, version: decidedBody.version },
     }, [fixture.evidenceId]);
     const handoverAfterAcceptance = latestWorkspace.items.find((item: any) => item.record.id === handoverId);
     expect(handoverAfterAcceptance.record.data.reservations).toHaveLength(1);
-    expect(handoverAfterAcceptance.record.data.reservations[0].closureRequirement).toBe("Verify and close the remaining punch issue");
+    expect(handoverAfterAcceptance.record.data.reservations[0].closureRequirement).toBe("Verify and close the reserved punch issue");
     const acceptedScope = {
       scopeId: "SYS-BROWSER-SEGMENT-A", system: "SYS-BROWSER", locationIds: [fixture.scope.locationId], assetRefs: [fixture.assets[0]],
     };
     await runCompletionCommand(page, /record partial handover/i, {
-      acceptedScope, effectiveAt: new Date().toISOString(), warrantyTrigger: true,
+      acceptedScope, effectiveAt: fixture.warrantyStartAt, warrantyTrigger: true,
     }, [fixture.evidenceId]);
     const partial = latestWorkspace.items.find((item: any) => item.record.id === handoverId);
     expect(partial.record.status).toBe("partial_handover");
     expect(partial.record.data.acceptedScope).toEqual(acceptedScope);
-    expect(partial.record.data.warrantyStartAt).toBeTruthy();
+    expect(partial.record.data.warrantyStartAt).toBe(fixture.warrantyStartAt);
 
     await useRole(page, "SUP");
     await workspace.getByRole("tab", { name: /handover/i }).click();
@@ -676,8 +755,8 @@ test("real Completion UI carries commissioning through Owner partial handover an
     await create.getByLabel(/^system$/i).fill("SYS-BROWSER");
     await chooseRef(create, /warranty period/i, fixture.warrantyPeriodRef);
     await chooseRef(create, /handover/i, { objectType: "WorkItem", objectId: handoverId, version: partial.record.version });
-    await chooseRef(create, /issue/i, fixture.issueRef);
-    await create.getByLabel(/observed at/i).fill(new Date().toISOString().slice(0, 16));
+    await chooseRef(create, /issue/i, fixture.reservationIssueRef);
+    await create.getByLabel(/observed at/i).fill(fixture.warrantyStartAt.slice(0, 16));
     await create.getByLabel(/defect description/i).fill("Seal leakage observed at the accepted flange");
     await create.getByLabel(/cause description/i).fill("Seal failed during operation");
     await create.getByLabel(/operational impact/i).fill("System isolated pending repair");
@@ -698,29 +777,35 @@ test("real Completion UI carries commissioning through Owner partial handover an
     await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
     await runCompletionCommand(page, /report warranty defect/i, {}, [fixture.evidenceId]);
     await useRole(page, "CON");
+    await workspace.getByRole("tab", { name: /warranty/i }).click();
     await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
     await runCompletionCommand(page, /acknowledge claim/i);
     await useRole(page, "SUP");
+    await workspace.getByRole("tab", { name: /warranty/i }).click();
     await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
     await runCompletionCommand(page, /assess warranty/i);
-    await runCompletionCommand(page, /require remedy/i, { actionRefs: [fixture.actionRef], responseDueAt: fixture.tomorrow });
+    await runCompletionCommand(page, /require remedy/i, {
+      actionRefs: [fixture.reservationActionRef], responseDueAt: fixture.tomorrow,
+    });
     await useRole(page, "CON");
+    await workspace.getByRole("tab", { name: /warranty/i }).click();
     await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
-    await runCompletionCommand(page, /start remedy/i);
-    await runCompletionCommand(page, /submit remedy/i, { remedySummary: "Replaced seal and pressure-tested" }, [fixture.evidenceId]);
-    const remedySubmitted = latestWorkspace.items.find((item: any) => item.record.id === claimId);
-    expect(remedySubmitted.record.status).toMatch(/remedy|inspection/i);
-    await useRole(page, "SUP");
-    await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
-    const actions = latestWorkspace.items.find((item: any) => item.record.id === claimId).actions;
-    const acceptRemedy = actions.find((action: any) => action.command === "accept_remedy");
-    const closeClaim = actions.find((action: any) => action.command === "close_warranty_claim");
-    expect(acceptRemedy, "reinspection must remain a separate server-authorized transition after remedy submission").toBeTruthy();
-    expect(acceptRemedy.ready).toBe(false);
-    expect(closeClaim?.ready).toBe(false);
-    await expect(workspace.locator(".completion-commands").getByRole("button", { name: /accept remedy/i })).toBeDisabled();
-    await expect(workspace.locator(".completion-commands").getByRole("button", { name: /close warranty claim/i })).toBeDisabled();
+    const statusBeforeMissingAction = latestWorkspace.items.find((item: any) => item.record.id === claimId).record.status;
+    const linkedVerifiedAction = latestWorkspace.items.find((item: any) => item.record.id === fixture.reservationActionRef.objectId);
+    expect(linkedVerifiedAction?.record.status).toBe("verified");
+    const startRemedy = latestWorkspace.items.find((item: any) => item.record.id === claimId).actions
+      .find((action: any) => action.command === "start_remedy");
+    expect(startRemedy?.ready).toBe(false);
+    expect(startRemedy?.blockedReason?.code).toBe("WARRANTY_ACTION_REQUIRED");
+    await expect(workspace.locator(".completion-commands").getByRole("button", { name: /start remedy/i })).toBeDisabled();
+    const claimAfterGuard = latestWorkspace.items.find((item: any) => item.record.id === claimId);
+    expect(claimAfterGuard.record.status).toBe(statusBeforeMissingAction);
+    expect(fixture.reservationActionRef.objectId).toBeTruthy();
+    // The accepted upstream Action is verified, while start_remedy needs a
+    // same-Issue, same-scope Action that is assigned or in progress. This
+    // checkpoint ends at that server-reported gate; later warranty remedy,
+    // reinspection, and close transitions are outside this case's proof.
   } finally {
-    child.kill("SIGTERM");
+    await stopApi(child);
   }
 });

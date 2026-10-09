@@ -42,6 +42,19 @@ def main() -> None:
     args = parser.parse_args()
     setup = HandoverHttpTests(methodName="runTest")
     setup.setUp()
+    # The UI uses minute-precision datetime-local controls. Align the trusted
+    # warranty profile boundary to the current minute so the seeded start and
+    # a UI-entered observation are the same contract instant (and never future).
+    warranty_start_at = setup.now[:16] + ":00Z"
+    handover_profile = setup.engine.get("Requirement", setup.handover_profile_id)
+    handover_profile["version"] += 1
+    handover_profile["applicability"]["handoverProfile"]["warrantyPeriodStartAt"] = warranty_start_at
+    warranty_period = setup.engine.get("Requirement", setup.warranty_period_id)
+    warranty_period["version"] += 1
+    warranty_period["applicability"]["warrantyPeriod"]["startsAt"] = warranty_start_at
+    with setup.store.transaction(True):
+        setup.engine._save("Requirement", handover_profile)
+        setup.engine._save("Requirement", warranty_period)
     retest_evidence = setup.upload_test_evidence("browser-retest")
     # The completion lifecycle requires a Punch subtype, so seed the exact
     # accepted upstream kind from the HTTP contract fixture rather than reuse
@@ -63,6 +76,21 @@ def main() -> None:
         setup.engine._record_machines[("Issue", issue["id"])] = "issue"
         setup.engine._record_machines[("Action", action["id"])] = "action"
         setup.engine._record_machines[("Inspection", inspection["id"])] = "inspection"
+    reservation_issue_ref, reservation_action_ref = setup._new_punch_and_action()
+    reservation_issue = setup.engine.get("Issue", reservation_issue_ref["objectId"])
+    reservation_action = setup.engine.get("Action", reservation_action_ref["objectId"])
+    reservation_issue.update(version=reservation_issue["version"] + 1, title="F-07 browser reservation Punch",
+                             actionIds=[reservation_action["id"]],
+                             responsiblePartyId=setup.store.meta["actors"]["CON"]["partyId"],
+                             responsibleOrganizationId=setup.scope["responsibleOrganizationId"], dueAt=setup.tomorrow)
+    reservation_action.update(version=reservation_action["version"] + 1, title="F-07 browser reservation action",
+                               responsiblePartyId=setup.store.meta["actors"]["CON"]["partyId"],
+                               responsibleOrganizationId=setup.scope["responsibleOrganizationId"])
+    with setup.store.transaction(True):
+        setup.engine._save("Issue", reservation_issue)
+        setup.engine._save("Action", reservation_action)
+        setup.engine._record_machines[("Issue", reservation_issue["id"])] = "issue"
+        setup.engine._record_machines[("Action", reservation_action["id"])] = "action"
     issue_ref = setup.ref("Issue", issue["id"])
     action_ref = setup.ref("Action", action["id"])
     # Use the explicit accepted, project-scoped prerequisite seeded by the
@@ -100,13 +128,16 @@ def main() -> None:
         "procedureRef": setup.ref("InformationItem", setup.procedure_id),
         "issueRef": setup.ref("Issue", issue["id"]),
         "actionRef": setup.ref("Action", action["id"]),
+        "reservationIssueRef": setup.ref("Issue", reservation_issue["id"]),
+        "reservationActionRef": setup.ref("Action", reservation_action["id"]),
         "documents": {name: setup.ref("InformationItem", object_id) for name, object_id in setup.document_ids.items()},
         "assets": [setup.ref("Asset", object_id) for object_id in setup.asset_ids],
         "now": setup.now,
         "tomorrow": setup.tomorrow,
+        "warrantyStartAt": warranty_start_at,
         "actors": {group: actor["partyId"] for group, actor in store.meta["actors"].items()},
         "responsibleOrganizationId": setup.scope["responsibleOrganizationId"],
-        "disclosure": "HandoverHttpTests seeds explicit F-07 Requirement profiles, approved InformationItems, and accepted upstream Requirement, drawing, Evidence, project-scoped Inspection, and Asset records. The fixture creates a scoped open Punch Issue and verified Action using the test contract helper, links their exact current refs and source Evidence, selects the server-catalogued passed Inspection, and uploads a distinct retest Evidence through the HTTP upload endpoints. These are disclosed upstream prerequisites only. Browser-created F-07 records and all F-07 transitions use the real UI and HTTP routes.",
+        "disclosure": "HandoverHttpTests seeds explicit F-07 Requirement profiles, approved InformationItems, and accepted upstream Requirement, drawing, Evidence, project-scoped Inspection, and Asset records. The fixture creates two scoped open Punch Issues and verified Actions using the test contract helper: one for commissioning fail/retest and one reserved for partial handover/warranty. It links exact current refs and source Evidence, selects the server-catalogued passed Inspection, and uploads a distinct retest Evidence through the HTTP upload endpoints. These are disclosed upstream prerequisites only. Browser-created commissioning and handover records, the Owner decision sequence, and the warranty claim use real UI and HTTP routes. The scenario stops at the current assigned/in-progress warranty Action gate; it does not claim remedy, reinspection, or warranty close.",
     }
     print(json.dumps(meta), flush=True)
     try:

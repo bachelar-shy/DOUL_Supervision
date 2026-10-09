@@ -1,0 +1,28 @@
+{
+  "branch": "goal/handover-closed-loop-v1",
+  "checkpointCommit": "pending-owned-checkpoint",
+  "scope": "Real HTTP-backed CompletionHandoverPage browser evidence for F-07 commissioning, partial handover, and the bounded warranty Action gate.",
+  "completed": [
+    "Created commissioning package through Completion UI; exercised fail, Punch correction, signed reinspection, release, stale current Punch ref refresh, and close through authorized UI commands.",
+    "Created handover draft with two Assets and a reservation through Completion UI; submitted readiness and owner review; SUP issued the Owner decision request and OWN acknowledged and submitted a decision through Owner UI.",
+    "Accepted the exact reservation and recorded partial handover with a strict subset scope through Completion UI.",
+    "Created, reported, acknowledged, and assessed a Warranty claim through Completion UI; verified start_remedy remains disabled with server guard WARRANTY_ACTION_REQUIRED because its same-scope linked Action is still verified; claim state remains action_required.",
+    "Fixture uses the existing HTTP contract setup for explicitly disclosed upstream Requirement, InformationItem, Evidence, Inspection, Asset, Punch Issue, and verified Action prerequisites. Signature calls use a deterministic test-only MockTrustedVerifier and are not provider proof.",
+    "Fixture origin is derived from Playwright baseURL; API and Chromium launch paths accept environment overrides; API child cleanup is bounded."
+  ],
+  "tests": {
+    "command": "DOUL_TEST_PYTHON=/workspace/DOUL_Supervision/work/priority-venv/bin/python HO_TEST_CHROMIUM=/usr/bin/chromium playwright test --config .local/playwright-handover.config.ts --output=/tmp/doul-handover-cap-results33 --reporter=list",
+    "result": "3 passed (33.5s): planned commissioning/missing procedure gate; Owner reservation draft; real commissioning-to-partial-handover and warranty Action gate.",
+    "scope": "The third case is intentionally partial. It does not prove warranty remedy, reinspection, or warranty close."
+  },
+  "todo": [
+    "Overlay root ActionAuthoringPanel UI integration commit 7aa25d7 as shared files only; do not commit shared UI overlays from this worktree.",
+    "If accessible Action authoring is available, extend with a complementary warranty continuation using normal authorized UI or actual authorized HTTP create/assign/start commands; keep any non-UI Action setup explicit and separate from the UI evidence claim.",
+    "Stop at and report the exact current-reference guard if Issue progression makes handover/warranty Issue refs stale; do not implement C2 reference reconciliation without Product decision.",
+    "Re-run focused browser spec and commit only owned test, fixture, and handoff files."
+  ],
+  "claims": [
+    "Development/test evidence only; not a pilot or production readiness claim.",
+    "External legal signature provider proof is not exercised; the test-only mock adapter does not prove provider verification."
+  ]
+}
