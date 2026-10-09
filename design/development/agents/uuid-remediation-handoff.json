@@ -1,12 +1,12 @@
 {
   "task": "Isolated UUID advisory remediation validation",
-  "branch": "goal/security-xcode-native-uuid-v1",
+  "branch": "goal/security-followup-v2",
   "baseCommit": "119c01f6f10aec072199bc26cea13a3c880ead4f",
   "candidate": {
     "override": "xcode -> uuid 11.1.1",
     "expo": "57.0.26 (unchanged)",
     "npm": "12.2.0",
-    "status": "candidate validated in isolated worktree; root package/lock integration remains separate"
+    "status": "local integrated candidate passed; awaiting exact-commit Mac CI"
   },
   "provenance": {
     "uuidVersion": "11.1.1",
@@ -39,6 +39,10 @@
     {
       "command": "npm 12.2.0 audit --json",
       "result": "uuid absent; 21 high and 0 moderate advisories in this isolated run. braces and node-forge remain affected. Counts vary with registry/advisory snapshot and should be rerun at integration."
+    },
+    {
+      "command": "root npm12 audit, web/mobile typecheck, web build, UI boundary and web lint",
+      "result": "passed all build checks; root audit reports 33 high/0 moderate with two root advisories; UUID absent; raw totals vary across npm/audit runs"
     }
   ],
   "files": {
@@ -53,5 +57,25 @@
     "The Expo 57.0.26 dependency graph remains unchanged.",
     "Do not vendor the proposed xcode fork; npm 12.2.0 makes the existing uuid override valid under npm ls and the dependency guard.",
     "braces <=3.0.3 and node-forge <=1.4.0 remain advisory affected and need independent compatible remediation or upstream releases."
-  ]
+  ],
+  "toolchainAdoption": [
+    "packageManager npm@12.2.0 and engines declaration",
+    "Mac mvp workflow Node24.19.0/npm12.2.0",
+    "both web Docker builders Node24.19.0/npm12.2.0",
+    "README bootstrap instruction; dependency guard unchanged"
+  ],
+  "residualEvidence": {
+    "braces": {
+      "publishedVersion": "3.0.3",
+      "patchedRegistryVersion": null,
+      "candidate": "https://github.com/micromatch/braces/pull/72",
+      "candidateStatus": "closed unmerged; nontrivial fork not adopted"
+    },
+    "node-forge": {
+      "publishedVersion": "1.4.0",
+      "patchedRegistryVersion": null,
+      "candidate": "https://github.com/digitalbazaar/forge/pull/1152",
+      "candidateStatus": "open unmerged; no1.4.1 release"
+    }
+  }
 }

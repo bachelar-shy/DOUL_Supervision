@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1
 
-FROM node:24-bookworm-slim AS build
+FROM node:24.19.0-bookworm-slim AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends python3 \
     && rm -rf /var/lib/apt/lists/*
+RUN npm install --global npm@12.2.0
 WORKDIR /workspace
 
 COPY package.json package-lock.json ./
