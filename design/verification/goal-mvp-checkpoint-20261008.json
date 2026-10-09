@@ -29,21 +29,21 @@
     "dockerWeb": "Localization COPY corrected for web and operational proxy images; prior 97cee102 actual container/operational CI PASS. Latest-head CI blocked before start; no current-head acceptance claim.",
     "githubCI": {
       "pr": 129,
-      "lastPushedHead": "4588ce6bfb39c9898d13079f159b619f8289dd91",
+      "lastPushedHead": "7a74beb6b14de20ef53807b9ae3fc21be1eb1582",
       "status": "BLOCKED_ACCOUNT_BILLING_BEFORE_JOB_START",
       "run": 37860451176,
-      "evidence": "User supplied GitHub annotation: job was not started because recent account payments have failed or spending limit needs to be increased. All eight workflows have no execution steps.",
+      "evidence": "User-confirmed billing annotation run37860451176; all eight b1cc92a runs completed failure with steps:null/logs_url:null, independently inspected.",
       "resume": "Account owner resolves Billing & plans; push completed verified integration checkpoint and require all latest exact-head checks before merge. Do not treat earlier-head successes as current acceptance.",
-      "lastObservedFailureHead": "2d59a99e994181a886c96e298fdaf68c055bfa6a",
+      "lastObservedFailureHead": "b1cc92ab060c5d09b499164d29aa290f26a03f80",
       "lastObservedRuns": [
-        37864753348,
-        37864753361,
-        37864753333,
-        37864753321,
-        37864753287,
-        37864753371,
-        37864753414,
-        37864753517
+        37868170273,
+        37868170220,
+        37868170275,
+        37868170271,
+        37868170270,
+        37868170238,
+        37868170257,
+        37868170240
       ],
       "lastObservedJobs": "8 completedfailure jobs, allsteps/logsnull beforestart; userconfirmedbillingannotation onoriginalrun37860451176."
     },
@@ -53,7 +53,19 @@
     "safetyEquipmentBrowser": "Real HTTP/UI Equipment inspection fail, unavailable Asset, correction/reinspection pass and Permit activation PASS (work/goal-safety-equipment-integrated.log, 27.0s). Failed Equipment activation returns atomic 409, then activation succeeds after actual passing reinspection. Fixture provisions trusted upstream Equipment/current certificates/approved plans and Requirement only; workflow Inspection and Permit created through UI.",
     "authoringLocalization": "ActualHTTP three-language draft/officialSource preservation and absent-verifier501 localizedrefusal PASS1 (work/goal-authoring-localization-integrated.log); separate Mock-only localization suite PASS7 (work/goal-authoring-mock-localization-integrated.log).",
     "inspectionResultWidget": "WorkerfocusedactualHTTP/browser PASS1 on exactrefs/stringprecision/per-characterfocus/blankresults and atomicemptysubmission rejection; rootintegration and overlappingbaselinecase pending. No automatic judgment or release.",
-    "telemetryFailure": "ActualTestClient source+existingobservability15PASS; current full394 API includesnew2 sinkfailure tests. Stdout IO failure falls back to identical allowlisted stderr JSON, neither alters 200/403/409 nor persisted domainAuditEvent. Both unavailable returnsfalse; recordvalidation stillraises."
+    "telemetryFailure": "ActualTestClient source+existingobservability15PASS; current full394 API includesnew2 sinkfailure tests. Stdout IO failure falls back to identical allowlisted stderr JSON, neither alters 200/403/409 nor persisted domainAuditEvent. Both unavailable returnsfalse; recordvalidation stillraises.",
+    "inspectionResultAuthoring": {
+      "result": "PASS",
+      "passed": 1,
+      "integratedCommit": "283091f",
+      "log": "work/goal-inspection-overlap-root.log",
+      "boundary": "Synthetic trusted overlapping active baselines; actual result UI/HTTP commands; no signature mock. Alternate exact ref, one required row, delete/restored blank draft, locale/focus/decimal precision and no implicit official mutation verified."
+    },
+    "uuidRemediationCandidate": {
+      "result": "NOT_INTEGRATED",
+      "evidence": "design/development/agents/uuid-remediation-handoff.json",
+      "reason": "Candidate uuid11.1.1 succeeds in xcode/Expo tooling but npm workspace graph guard fails; canonical dependency locks unchanged."
+    }
   },
   "operations": {
     "s3": "Actual RustFS versioned private store retry/version/quarantine verification: 11 tests PASS; synthetic fixtures only.",
@@ -73,5 +85,10 @@
     "All functions and shared foundations remain subject to actual field acceptance. No pilot_verified promotion.",
     "Known npm audit advisories remain release blockers (security-audit.json)."
   ],
-  "resume": "Inspect Goal/root and worker handoffs, Git/worktree status and active tasks. Continue from last verified checkpoint; never delete uncommitted changes. Quota recovery alone does not guarantee platform scheduling."
+  "resume": "Inspect Goal/root and worker handoffs, Git/worktree status and active tasks. Continue from last verified checkpoint; never delete uncommitted changes. Quota recovery alone does not guarantee platform scheduling.",
+  "actualFileUsability": {
+    "status": "NOT_RUN_INPUTS_MISSING",
+    "plan": "53_Field_Pilot_Acceptance_Plan_v1.md#8",
+    "inputs": "Actual discipline PDFs, BOQ, schedule, site photos, qualified users and adopted project configuration."
+  }
 }
