@@ -109,7 +109,8 @@ test("SUP creates a scoped Action draft through Workbench, preserves it across l
   }
   expect(mutations.slice(beforeLocaleChanges), "changing the display language must not call create or workflow endpoints").toEqual([]);
 
-  const createResponsePromise = page.waitForResponse((response) => response.request().method() === "POST" && response.url().endsWith("/api/actions"));
+  const actionPath = `/api/projects/${supervisor.projectId}/actions`;
+  const createResponsePromise = page.waitForResponse((response) => response.request().method() === "POST" && new URL(response.url()).pathname === actionPath);
   await panel.getByRole("button", { name: labels.ko.create, exact: true }).click();
   const createResponse = await createResponsePromise;
   expect(createResponse.status(), await createResponse.text()).toBe(201);
@@ -122,7 +123,7 @@ test("SUP creates a scoped Action draft through Workbench, preserves it across l
   expect(created.record.version).toBe(1);
   expect(created.record).not.toHaveProperty("startedAt");
   expect(created.auditEvent).toMatchObject({ command: "create:action", afterState: "draft", objectRef: { objectId: created.record.id, version: 1 } });
-  expect(mutations).toEqual(["POST /api/actions"]);
+  expect(mutations).toEqual([`POST ${actionPath}`]);
   await expect(panel.getByText(labels.ko.created, { exact: true })).toBeVisible();
 
   const persistedWorkspace = await workspace(request, supervisor);
@@ -144,21 +145,18 @@ test("SUP creates a scoped Action draft through Workbench, preserves it across l
   expect(mutations).toHaveLength(writesBeforeReset);
 });
 
-test("Owner sees server-denied Action creation and cannot submit through Workbench", async ({ page, request }) => {
+test("Owner is denied Action creation and cannot reach its Workbench", async ({ page, request }) => {
   const owner = await login(request, "OWN");
   const initialWorkspace = await workspace(request, owner);
   expect(initialWorkspace.context.creationCapabilities?.action).toMatchObject({ status: "unauthorized", canCreate: false });
-  await page.goto("/#/actions");
-  await chooseRole(page, "OWN");
-  const panel = page.locator('[data-ui-component="action-authoring-panel"]');
-  await expect(panel).toBeVisible();
-  const create = panel.getByRole("button", { name: labels.ko.create, exact: true });
-  await expect(create).toBeDisabled();
-  await expect(panel.getByRole("status")).not.toBeEmpty();
   const writes: string[] = [];
   page.on("request", (browserRequest) => {
     if (browserRequest.method() === "POST" && new URL(browserRequest.url()).pathname.endsWith("/actions")) writes.push(browserRequest.url());
   });
-  await expect(create).toBeDisabled();
+  await page.goto("/#/actions");
+  await chooseRole(page, "OWN");
+  await expect(rolePicker(page)).toHaveValue("OWN");
+  await expect(page.locator('[data-ui-component="action-authoring-panel"]')).toHaveCount(0);
+  await expect(page.getByRole("navigation").getByRole("button", { name: "시정조치", exact: true })).toHaveCount(0);
   expect(writes).toEqual([]);
 });

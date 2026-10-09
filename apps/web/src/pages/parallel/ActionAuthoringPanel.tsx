@@ -107,14 +107,14 @@ export function ActionAuthoringPanel({ client, workspace, online, onCreated, ini
         <input className="min-h-11 rounded-sm border border-input bg-background px-3" value={title} maxLength={300} required disabled={!canCreate || busy || created} onChange={(event) => { setTitle(event.target.value); setCreated(false); setError(""); }} />
       </label>
       <label className="grid gap-1 text-sm font-medium">{t("relatedIssue")}
-        <select className="min-h-11 rounded-sm border border-input bg-background px-3" value={issueId} required disabled={!canCreate || busy || created || !issues.length} onChange={(event) => { setIssueId(event.target.value); setCreated(false); setError(""); }}>
+        <select aria-label={t("relatedIssue")} className="min-h-11 rounded-sm border border-input bg-background px-3" value={issueId} required disabled={!canCreate || busy || created || !issues.length} onChange={(event) => { setIssueId(event.target.value); setCreated(false); setError(""); }}>
           <option value="">{t("selectIssue")}</option>
           {issues.map(({ ref, record }) => <option key={ref.objectId} value={ref.objectId}>{record.title || ref.objectId} · {ref.objectId} · v{ref.version}</option>)}
         </select>
       </label>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-1 text-sm font-medium">{t("assignee")}
-          <select className="min-h-11 rounded-sm border border-input bg-background px-3" value={assigneeId} required disabled={!canCreate || busy || created} onChange={(event) => { setAssigneeId(event.target.value); setCreated(false); setError(""); }}>
+          <select aria-label={t("assignee")} className="min-h-11 rounded-sm border border-input bg-background px-3" value={assigneeId} required disabled={!canCreate || busy || created} onChange={(event) => { setAssigneeId(event.target.value); setCreated(false); setError(""); }}>
             <option value="">{t("unassigned")}</option>
             {contractors.map((person) => <option key={person.partyId} value={person.partyId}>{person.name} · {person.partyId}</option>)}
           </select>
