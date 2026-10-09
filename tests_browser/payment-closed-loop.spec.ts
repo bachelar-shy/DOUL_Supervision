@@ -7,6 +7,7 @@ import { resolve, join, delimiter } from "node:path";
 import { commands, fields } from "../apps/web/src/labels";
 
 const paymentRoute = "/#/payment";
+const ownerRoute = "/#/owner";
 const expectedVersions = new Map<string, number>();
 let fixtureToken = "";
 let apiOrigin = "";
@@ -31,7 +32,7 @@ async function availablePort(): Promise<number> {
   return port;
 }
 
-test.beforeAll(async () => {
+test.beforeAll(async ({}, testInfo) => {
   const port = await availablePort();
   fixtureToken = randomBytes(32).toString("hex");
   apiOrigin = `http://127.0.0.1:${port}`;
@@ -39,11 +40,14 @@ test.beforeAll(async () => {
   mkdirSync(join(process.cwd(), "work"), { recursive: true });
   const python = process.env.PAYMENT_TEST_PYTHON || process.env.DOUL_TEST_PYTHON || resolve(process.cwd(), ".venv/bin/python");
   const script = resolve(process.cwd(), "tests_browser/support/payment_api_fixture.py");
+  const configuredBaseURL = process.env.PAYMENT_TEST_WEB_ORIGIN || String(testInfo.project.use.baseURL || "http://127.0.0.1:5181");
+  const allowedBrowserOrigin = new URL(configuredBaseURL).origin;
   fixtureProcess = spawn(python, [script, "--database", fixtureDatabase, "--port", String(port)], {
     cwd: process.cwd(),
     env: {
       ...process.env,
       PAYMENT_TEST_FIXTURE_TOKEN: fixtureToken,
+      DOUL_API_ALLOWED_ORIGINS: allowedBrowserOrigin,
       PYTHONPATH: [process.cwd(), process.env.PYTHONPATH].filter(Boolean).join(delimiter),
     },
     stdio: ["ignore", "ignore", "pipe"],
@@ -114,15 +118,6 @@ async function fixture(request: APIRequestContext): Promise<Fixture> {
   return response.json();
 }
 
-async function ownerDecision(request: APIRequestContext, machine: "contract_boq" | "payment_claim", objectId: string) {
-  const response = await request.post(`${apiOrigin}/test-fixtures/payment-owner-decision`, {
-    headers: { "X-Test-Fixture-Token": fixtureToken },
-    data: { machine, objectId, title: `UI acceptance ${machine} decision`, reason: "Trusted exact-version fixture decision" },
-  });
-  expect(response.status()).toBe(200);
-  return await response.json() as { ref: Ref; targetVersion: number };
-}
-
 function auth(session: Session) {
   return {
     Authorization: `Bearer ${session.accessToken}`,
@@ -130,7 +125,7 @@ function auth(session: Session) {
   };
 }
 
-async function chooseRole(page: Page, group: string) {
+async function chooseRole(page: Page, group: string, route = paymentRoute) {
   const picker = page.getByRole("combobox", { name: "개발 역할 선택" });
   if (await picker.count()) {
     if ((await picker.inputValue()) !== group) {
@@ -139,8 +134,8 @@ async function chooseRole(page: Page, group: string) {
       await refreshed;
     }
   }
-  await page.goto(paymentRoute);
-  await expect(page.locator('[data-ui-component="measurement-payment-workspace"]')).toBeVisible();
+  await page.goto(route);
+  await expect(page.locator(route === ownerRoute ? '[data-owner-governance="true"]' : '[data-ui-component="measurement-payment-workspace"]')).toBeVisible();
 }
 
 async function selectTab(page: Page, name: "계약 BOQ" | "물량 측정" | "기성 신청") {
@@ -205,6 +200,7 @@ async function runCommand(
   payload: Record<string, unknown> = {},
   evidenceIds: string[] = [],
   configureDialog?: (dialog: Locator) => Promise<void>,
+  verifyPaymentDetailVersion = true,
 ) {
   await page.getByRole("button", { name: commandLabel(command), exact: true }).click();
   const dialog = page.getByRole("dialog", { name: commandLabel(command), exact: true });
@@ -234,7 +230,7 @@ async function runCommand(
   const record = body.record;
   expect(record.id).toBe(recordId);
   expectedVersions.set(record.id, record.version);
-  await expect(page.locator(".detail-head")).toContainText(`v${record.version}`);
+  if (verifyPaymentDetailVersion) await expect(page.locator(".detail-head")).toContainText(`v${record.version}`);
   return record;
 }
 
@@ -245,15 +241,62 @@ async function selectRecord(page: Page, title: string) {
   await expect(page.locator(".detail-head h2")).toHaveText(title);
 }
 
+async function selectOwnerDecision(page: Page, title: string) {
+  const row = page.locator(".record-row").filter({ hasText: title });
+  await expect(row).toBeVisible();
+  await row.click();
+  await expect(page.locator(".detail-title")).toHaveText(title);
+}
+
+async function createAndDecideThroughOwnerUi(page: Page, targetRef: Ref, title: string, suffix: string) {
+  await page.goto(ownerRoute);
+  const panel = page.locator('[data-ui-component="owner-decision-authoring"]');
+  await expect(panel).toBeVisible();
+  await panel.getByLabel("결정 요청 제목", { exact: true }).fill(title);
+  await panel.locator("#decision-target").selectOption(`${targetRef.objectType}:${targetRef.objectId}:${targetRef.version}`);
+  const reportSelect = panel.locator("#decision-report");
+  const reportId = await reportSelect.locator("option").nth(1).getAttribute("value");
+  expect(reportId, "Owner Decision UI must expose a readable issued Report").toBeTruthy();
+  await reportSelect.selectOption(reportId!);
+  const dueAt = new Date(Date.now() + 86_400_000).toISOString().slice(0, 16);
+  await panel.locator("#decision-due").fill(dueAt);
+  await panel.getByLabel("선택지 설명", { exact: true }).fill("Approve the exact current payment workflow version");
+  await panel.getByLabel("요청자 권고", { exact: true }).fill("Approve based on the current server recommendation.");
+  await panel.getByLabel("비용 영향", { exact: true }).fill("Review exact version and payment amount");
+  const createdPromise = page.waitForResponse((response) => response.request().method() === "POST" && new URL(response.url()).pathname.endsWith("/owner-decisions"));
+  await panel.getByRole("button", { name: "결정 요청 초안 저장", exact: true }).click();
+  const createdResponse = await createdPromise;
+  expect(createdResponse.status(), await createdResponse.text()).toBe(201);
+  let decision = (await createdResponse.json()).record;
+  expectedVersions.set(decision.id, decision.version);
+  expect(decision.targetRef).toEqual(targetRef);
+  expect(decision.reportId).toBe(reportId);
+
+  decision = await runCommand(page, "report", {}, [], undefined, false);
+  expect(decision.status).toBe("reported");
+  await chooseRole(page, "OWN", ownerRoute);
+  await selectOwnerDecision(page, title);
+  decision = await runCommand(page, "acknowledge", {}, [], undefined, false);
+  expect(decision.status).toBe("awaiting_decision");
+  decision = await runCommand(page, "decide", {
+    decision: "approved",
+    decisionReason: `Approved through Owner Governance UI for ${suffix}`,
+    selectedOption: "A",
+    decisionAt: new Date().toISOString(),
+  }, [], undefined, false);
+  expect(decision.status).toBe("decided");
+  expect(decision.decision).toBe("approved");
+  expect(decision.targetRef).toEqual(targetRef);
+  return { record: decision, ref: { objectType: "Decision", objectId: decision.id, version: decision.version } as Ref };
+}
+
 async function getWorkspace(request: APIRequestContext, session: Session) {
   const response = await request.get(`${apiOrigin}/projects/${session.projectId}/workspace`, { headers: auth(session) });
   expect(response.status()).toBe(200);
   return response.json();
 }
 
-// Owner Decisions are trusted exact-version fixtures here; this case covers
-// payment workflow use of those decisions, not Owner Decision authoring.
-test("real UI/API payment chain preserves server quantities, exact Owner decisions and append-only partial-payment corrections", async ({ page, request }) => {
+test("real UI/API payment chain authors exact-version Owner decisions and preserves append-only partial-payment corrections", async ({ page, request }) => {
   expectedVersions.clear();
   const seeded = await fixture(request);
   const suffix = randomUUID().slice(0, 8);
@@ -296,8 +339,8 @@ test("real UI/API payment chain preserves server quantities, exact Owner decisio
   expect(boq.id).toBe(boqDraft.id);
   boq = await runCommand(page, "start_boq_review");
   boq = await runCommand(page, "request_boq_decision");
-  const boqDecision = await ownerDecision(request, "contract_boq", boq.id);
-  expect(boqDecision.targetVersion).toBe(boq.version);
+  const boqDecision = await createAndDecideThroughOwnerUi(page, { objectType: "InformationItem", objectId: boq.id, version: boq.version }, `BOQ decision ${suffix}`, suffix);
+  expect(boqDecision.record.targetRef.version).toBe(boq.version);
   await chooseRole(page, "OWN");
   await selectTab(page, "계약 BOQ");
   await selectRecord(page, boqTitle);
@@ -367,8 +410,8 @@ test("real UI/API payment chain preserves server quantities, exact Owner decisio
   expect(claim.data.recommendationSnapshot.calculationTrace.formulaId).toBe("verified-eligible-net-v1");
   expect(claim.data.recommendationSnapshot.claimBasisRef.version).toBe(claim.version - 1);
   claim = await runCommand(page, "submit_owner_review");
-  const claimDecision = await ownerDecision(request, "payment_claim", claim.id);
-  expect(claimDecision.targetVersion).toBe(claim.version);
+  const claimDecision = await createAndDecideThroughOwnerUi(page, { objectType: "WorkItem", objectId: claim.id, version: claim.version }, `Claim decision ${suffix}`, suffix);
+  expect(claimDecision.record.targetRef.version).toBe(claim.version);
 
   await chooseRole(page, "OWN");
   await selectTab(page, "기성 신청");

@@ -1,10 +1,11 @@
 """Real in-process DOUL HTTP API for the connected payment browser acceptance.
 
 The only direct engine writes are named, trusted upstream test fixtures:
-an active calculation-rule Requirement, an accepted/released Inspection, and
-exact-version Owner Decision records created on demand. Every BOQ,
-measurement, claim, review, recommendation and payment record/command is sent
-through the same HTTP API used by the browser.
+an active calculation-rule Requirement and an accepted/released Inspection.
+Issued Report records come from the demo project. Contract BOQ, measurement,
+payment claim and Owner Decision records plus all workflow commands are sent
+through the same HTTP API used by the browser; Owner Decisions are authored and
+decided through the Owner Governance UI.
 """
 from __future__ import annotations
 
@@ -127,46 +128,6 @@ def make_app(database: str):
     def payment_metadata(request: Request):
         fixture_authorized(request)
         return app.state.payment_browser_fixture
-
-    @app.post("/test-fixtures/payment-owner-decision")
-    def payment_owner_decision(body: dict, request: Request):
-        fixture_authorized(request)
-        machine = body.get("machine")
-        object_id = body.get("objectId")
-        target_map = {
-            "contract_boq": ("InformationItem", "ContractBOQ"),
-            "payment_claim": ("WorkItem", "PaymentClaim"),
-        }
-        if machine not in target_map or not isinstance(object_id, str):
-            raise HTTPException(status_code=400, detail="unsupported decision target")
-        object_type, subtype = target_map[machine]
-        target = engine.get(object_type, object_id)
-        if target.get("projectId") != project_id or target.get("subtype") != subtype:
-            raise HTTPException(status_code=404, detail="target not found")
-        decision_id = uid()
-        with store.transaction(True):
-            engine.bootstrap(
-                "Decision",
-                {
-                    "id": decision_id,
-                    "projectId": project_id,
-                    "status": "decided",
-                    "title": body.get("title") or "Browser fixture exact-version Owner decision",
-                    "targetRef": {"objectType": object_type, "objectId": object_id,
-                                  "version": target["version"]},
-                    "options": [{"id": "A"}],
-                    "impact": {"cost": "contractual"},
-                    "recommendation": "approved",
-                    "actionIds": [],
-                    "decision": "approved",
-                    "decisionReason": body.get("reason") or "Fixture for exact-version UI acceptance",
-                    "decisionAt": "2026-10-04T12:00:00Z",
-                    **scope,
-                },
-            )
-        return {"ref": {"objectType": "Decision", "objectId": decision_id,
-                        "version": engine.get("Decision", decision_id)["version"]},
-                "targetVersion": target["version"]}
 
     return app
 
