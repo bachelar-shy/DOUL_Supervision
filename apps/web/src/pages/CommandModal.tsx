@@ -17,6 +17,7 @@ import { recordRef } from "./record-utils";
 import { Icon } from "./shared";
 import { HandoverReservationFields, type ReservationInput } from "./HandoverReservationFields";
 import { BOQLineItemFields } from "./BOQLineItemFields";
+import { InspectionCheckResultFields } from "./InspectionCheckResultFields";
 
 class CommandInputError extends Error {}
 
@@ -303,7 +304,9 @@ export function CommandModal({
           })}
         </p>
         <div className="modal-fields">
-          {dialog.action.fields.map((f) => f === "lineItems" && dialog.item.machine === "contract_boq" ? (
+          {dialog.action.fields.map((f) => f === "checkResults" && dialog.item.machine === "inspection" ? (
+            <InspectionCheckResultFields key={f} workspace={workspace} item={dialog.item} value={JSON.parse(values[f] || "[]") as Json[]} onChange={(next) => setValues({ ...values, [f]: JSON.stringify(next) })} />
+          ) : f === "lineItems" && dialog.item.machine === "contract_boq" ? (
             <BOQLineItemFields key={f} workspace={workspace} value={JSON.parse(values[f] || "[]") as Json[]} onChange={(next) => setValues({ ...values, [f]: JSON.stringify(next) })} />
           ) : f === "ownerReservationInputs" ? (
             <div key={f}>

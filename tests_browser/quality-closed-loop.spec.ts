@@ -155,6 +155,26 @@ async function runCommand(
   await action.click();
   const dialog = page.getByRole("dialog");
   for (const [labelText, value] of Object.entries(fieldValues)) {
+    if (labelText === "검측 항목·측정 결과") {
+      const editor = dialog.locator('[data-ui-component="inspection-check-result-fields"]');
+      await expect(editor).toBeVisible();
+      for (const check of JSON.parse(value)) {
+        let row = editor.locator("fieldset").filter({ has: page.locator(`input[value=${JSON.stringify(check.itemId)}]`) });
+        if (await row.count() === 0) {
+          await editor.getByRole("button", { name: "추가 검측 결과", exact: true }).click();
+          row = editor.locator("fieldset").last();
+          await row.getByLabel("검측 항목 ID", { exact: true }).fill(check.itemId);
+          row = editor.locator("fieldset").filter({ has: page.locator(`input[value=${JSON.stringify(check.itemId)}]`) });
+        }
+        await row.getByRole("combobox").first().selectOption(`${check.requirementRef.objectType}:${check.requirementRef.objectId}:${check.requirementRef.version}`);
+        await row.getByLabel("측정값", { exact: true }).fill(check.measuredValue == null ? "" : String(check.measuredValue));
+        await row.getByLabel("단위", { exact: true }).fill(check.unit ?? "");
+        await row.getByRole("combobox").nth(1).selectOption(check.result);
+        await row.getByRole("listbox").selectOption(check.evidenceIds);
+        await row.getByLabel("비고 (선택)", { exact: true }).fill(check.note ?? "");
+      }
+      continue;
+    }
     const field = dialog.locator("label").filter({ hasText: labelText }).locator("textarea, input, select").first();
     await expect(field, `command field ${labelText} should be supplied by the server`).toBeVisible();
     if (await field.evaluate((node) => node.tagName.toLowerCase()) === "select") {
