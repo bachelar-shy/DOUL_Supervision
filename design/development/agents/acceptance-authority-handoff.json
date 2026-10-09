@@ -1,0 +1,29 @@
+{
+  "branch": "goal/acceptance-authority-v1",
+  "base": "99a296b",
+  "commits": ["dcd05182857801432128b91422bc520ce099840a"],
+  "scope": "AC-AUTH real two-project HTTP privacy and AC-ADM role boundary acceptance",
+  "tests": {
+    "command": "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_acceptance_authority_http -v",
+    "result": "PASS: 2 tests",
+    "environment_verification": "scripts/dependency_environment.py --python /workspace/DOUL_Supervision/work/priority-venv/bin/python --report /tmp/acceptance-env.json passed against this branch's services/api/requirements.lock"
+  },
+  "fixture_boundary": {
+    "project_a": "Existing explicitly synthetic local-demo project seeded by create_app(demo=True). Its RFI and draft report are created/read through real HTTP routes; a real document snapshot is rendered through HTTP.",
+    "project_b": "Synthetic test-only Project, Location, Party, Qualification, and active contractor RoleAssignment are seeded through trusted engine.bootstrap; a Project B-bound development token is minted through /dev/sessions. Project B RFI is created and read through HTTP.",
+    "not_claimed": "No production identity provider, provisioning API, deployed multi-tenant environment, real site data, or pilot authority has been validated."
+  },
+  "acceptance": {
+    "AC-AUTH": "B actor successfully reads its own HTTP-created RFI. Against actual A records, B receives 404 for A project record GET and command, for A record ID through B's route, for a linked A InformationItem reference in B document preview, and for downloading A's actual rendered document snapshot. Engine records/history/audit plus document snapshots/bytes/signatures are unchanged across denied attempts.",
+    "AC-ADM": "A real technical Approval is created and reviewed through HTTP, then ADM approve is denied 403; ADM close of an actual in-progress Issue is denied 403; both denials preserve record/history/audit/document state. ADM project administrator can create a scoped Location via its allowed HTTP operation (201)."
+  },
+  "restart": {
+    "worktree": "/workspace/work/doul-goal/acceptance-authority-v1",
+    "commands": [
+      "git switch goal/acceptance-authority-v1",
+      "/workspace/DOUL_Supervision/work/priority-venv/bin/python scripts/dependency_environment.py --python /workspace/DOUL_Supervision/work/priority-venv/bin/python --report /tmp/acceptance-env.json",
+      "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_acceptance_authority_http -v"
+    ]
+  },
+  "incomplete": []
+}
