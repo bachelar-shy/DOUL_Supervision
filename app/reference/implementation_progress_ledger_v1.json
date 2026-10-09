@@ -16,9 +16,11 @@
       "evidenceRefs": [
         "46_Product_Functional_Baseline_v1_Validation.md",
         "tests_mvp/test_quality_closed_loop_http.py",
-        "design/verification/goal-mvp-checkpoint-20261008.json"
+        "design/verification/goal-mvp-checkpoint-20261008.json",
+        "tests_browser/quality-closed-loop.spec.ts",
+        "tests_browser/support/quality_api_fixture.py"
       ],
-      "note": "Partial development evidence now includes synthetic-fixture real HTTP FAIL→Issue→Action→failed reinspection→new correction cycle→signed/released pass→SUP close, with separate Owner Report closure. MockTrustedVerifier represents only the external signature boundary. Full connected-browser acceptance, production legal verifier and actual field evidence remain unproven; no whole-function promotion."
+      "note": "Real HTTP and connected browser development evidence covers inspection fail, Issue/Action correction, linked reinspection pass, final FM09 render and two explicit test-verifier signatures, Inspection release, Issue close and separate Owner Report receipt/follow-up closure. Terminal Issue UI no longer presents unavailable close as a pending task. Actual production legal verifier, adopted project configuration and field pilot remain unproven; latest exact-head GitHub CI blocked by account billing. No whole-function promotion until all required acceptance boundaries pass."
     },
     {
       "functionId": "F-02",
@@ -44,9 +46,12 @@
         "services/api/store.py",
         "services/api/persistence.py",
         "app/reference/engine.py",
-        "design/verification/priority-issues-validation.json"
+        "design/verification/priority-issues-validation.json",
+        "tests_browser/safety-equipment-closed-loop.spec.ts",
+        "tests_browser/zz-safety-closed-loop.spec.ts",
+        "design/verification/goal-mvp-checkpoint-20261008.json"
       ],
-      "note": "Actual FastAPI/SQLite backend acceptance covers permit/equipment persistence, restart, idempotency, latest equipment/certification/current-evidence gates and atomic Stop handling. Permit approval remains separate from workAuthorized and Stop lift from permit Resume. Seven Safety HTTP tests passed again on the Goal integration branch. Full UI/field acceptance and adopted signed acceptance evidence remain separate; no pilot promotion."
+      "note": "Real API persistence acceptance remains verified. New connected UI creates Equipment Inspection and Permit workflow records; failed current equipment inspection atomically blocks Permit activation and actual passing reinspection permits it, using trusted synthetic upstream Equipment/current certificates/approved plans. Separate legacy Stop loop proves explicit lift and independent Permit resume but provisions some workflow prerequisites through HTTP and uses passed/unreleased Inspection. Entire combined UI/field scenario not yet accepted; latest exact-head CI blocked by billing. No pilot promotion."
     },
     {
       "functionId": "F-04",
