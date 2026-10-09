@@ -1,5 +1,5 @@
 import { scheduleInputs } from "../data/schedule-fields.generated";
-import { completionReferenceOptions } from "../data/completion-workspace";
+import { completionDecisionReferenceOptions, completionReferenceOptions } from "../data/completion-workspace";
 import { commandInputs } from "../data/command-fields.generated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -100,6 +100,10 @@ function referenceOptions(
   currentRequirementLabel: string,
   referenceKind?: "single" | "multiple",
 ): Array<{ label: string; ref: DomainRef }> {
+  if (["decisionRef", "ownerDecisionRef", "decisionRefs"].includes(field)) return completionDecisionReferenceOptions(workspace, current);
+  if (["testResultRef", "evidenceRefs", "impactAnalysisRefs", "sourceFileRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Evidence");
+  if (["reinspectionRef", "inspectionRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Inspection");
+  if (["equipmentRef", "equipmentRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Asset" && option.subtype === "Equipment");
   if (!selectableReferenceFields.has(field)) return referenceKind ? completionReferenceOptions(workspace) : [];
   if (field === "clauseRefs") {
     return [{ label: currentRequirementLabel, ref: workspace.context.requirementRef }];

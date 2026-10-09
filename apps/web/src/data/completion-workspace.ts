@@ -142,6 +142,17 @@ export function completionReferenceOptions(workspace: Workspace): CompletionRefe
   return Array.from(refs.values());
 }
 
+/** Exact visible decisions for the currently selected target version. */
+export function completionDecisionReferenceOptions(workspace: Workspace, target: WorkItem): CompletionReferenceOption[] {
+  const records = new Map<string, Record<string, unknown>>();
+  for (const entry of workspace.context.referenceCatalog?.decisions ?? []) records.set(entry.ref.objectId, entry.record);
+  for (const item of workspace.items) if (item.machine === "decision") records.set(item.record.id, item.record);
+  return completionReferenceOptions(workspace).filter(option => {
+    const ref = records.get(option.ref.objectId)?.targetRef;
+    return option.ref.objectType === "Decision" && isDomainRef(ref) && ref.objectId === target.record.id && ref.version === target.record.version;
+  });
+}
+
 export function completionProfileOptions(
   workspace: Workspace,
   options: CompletionReferenceOption[],
