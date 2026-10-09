@@ -76,7 +76,7 @@ test.beforeAll(async () => {
   fixtureDir = mkdtempSync(join(tmpdir(), "doul-inspection-result-"));
   const python = process.env.DOUL_QUALITY_PYTHON ?? process.env.DOUL_TEST_PYTHON ?? resolve(".venv/bin/python");
   apiProcess = spawn(python, [
-    "-m", "tests_browser.support.quality_api_fixture",
+    "-m", "tests_browser.support.inspection_result_api_fixture",
     "--host", "127.0.0.1", "--port", String(apiPort),
     "--database", join(fixtureDir, "inspection.sqlite3"),
   ], { cwd: process.cwd(), stdio: "ignore" });
@@ -106,7 +106,7 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
   await proxyApiToFixture(page);
   const supervisor = await login(request, "SUP");
   const workspace = await api<{
-    context: { evidenceId: string };
+    context: { evidenceId: string; requirementRef: { objectType: string; objectId: string; version: number } };
     items: Array<{ machine: string; record: Record<string, unknown> }>;
   }>(request, supervisor, "/workspace");
   const inspectionItem = workspace.items.find((item) => item.machine === "inspection"
@@ -118,8 +118,11 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
     requirementRefs: Array<{ objectType: string; objectId: string; version: number }>;
     checkResults?: unknown[]; resultStatus?: string; nextWorkAllowed: boolean;
   };
-  expect(inspection.requirementRefs).toHaveLength(1);
-  const requirementRef = inspection.requirementRefs[0];
+  expect(inspection.requirementRefs).toHaveLength(2);
+  const requirementRef = workspace.context.requirementRef;
+  const alternateRequirementRef = inspection.requirementRefs.find((ref) => ref.objectId !== requirementRef.objectId)!;
+  expect(inspection.requirementRefs).toContainEqual(requirementRef);
+  expect(inspection.requirementRefs).toContainEqual(alternateRequirementRef);
   const evidenceId = workspace.context.evidenceId;
   const initial = await api<typeof inspection>(request, supervisor, `/inspections/${inspection.id}`);
   expect(initial.status).toBe("scheduled");
@@ -159,9 +162,12 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
   const rowEvidenceField = resultRow.locator("select[multiple]");
   await expect(itemIdField).toHaveValue("dimension");
   await expect(itemIdField).toHaveAttribute("readonly", "");
-  await expect(requirementField).toHaveValue(`${requirementRef.objectType}:${requirementRef.objectId}:${requirementRef.version}`);
-  const exactRequirementText = `Requirement · ${requirementRef.objectId} · v${requirementRef.version}`;
-  await expect(resultRow.getByText(exactRequirementText, { exact: true })).toBeVisible();
+  const requirementKey = (ref: typeof requirementRef) => `${ref.objectType}:${ref.objectId}:${ref.version}`;
+  const originalRequirementText = `Requirement · ${requirementRef.objectId} · v${requirementRef.version}`;
+  const alternateRequirementText = `Requirement · ${alternateRequirementRef.objectId} · v${alternateRequirementRef.version}`;
+  await expect(requirementField.locator("option")).toHaveCount(3);
+  await expect(requirementField).toHaveValue(requirementKey(requirementRef));
+  await expect(resultRow.getByText(originalRequirementText, { exact: true })).toBeVisible();
   await expect(measuredField).toHaveValue("");
   await expect(unitField).toHaveValue("");
   await expect(resultField).toHaveValue("");
@@ -182,45 +188,81 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
   expect(afterRejectedEmpty.checkResults ?? []).toEqual([]);
   expect(afterRejectedEmpty.resultStatus).toBeUndefined();
 
+  // Two active baselines declare the same item ID. The UI emits one required
+  // row, lets the inspector choose either exact baseline, and keeps that local
+  // row separate from the server until the submit command succeeds.
+  await requirementField.selectOption(requirementKey(alternateRequirementRef));
+  await expect(resultRow.getByText(alternateRequirementText, { exact: true })).toBeVisible();
+  await measuredField.fill("99");
+  await unitField.fill("cm");
+  await resultField.selectOption("fail");
+  await rowEvidenceField.selectOption(evidenceId);
+  const beforeDraftSubmit = await api<typeof inspection>(request, supervisor, `/inspections/${inspection.id}`);
+  expect(beforeDraftSubmit.version).toBe(started.version);
+  expect(beforeDraftSubmit.status).toBe("in_progress");
+  expect(beforeDraftSubmit.checkResults ?? []).toEqual([]);
+  await resultRow.getByRole("button", { name: "결과 행 삭제", exact: true }).click();
+  await expect(widget.locator("fieldset")).toHaveCount(1);
+  const restoredRow = widget.locator("fieldset");
+  const restoredRequirementField = restoredRow.locator("select").nth(0);
+  await expect(restoredRow.locator("input").nth(0)).toHaveValue("dimension");
+  await expect(restoredRequirementField).toHaveValue(requirementKey(requirementRef));
+  await expect(restoredRow.locator("input").nth(1)).toHaveValue("");
+  await expect(restoredRow.locator("input").nth(2)).toHaveValue("");
+  await expect(restoredRow.locator("select").nth(1)).toHaveValue("");
+  expect(await restoredRow.locator("select[multiple]").evaluate((select) => (select as HTMLSelectElement).selectedOptions.length)).toBe(0);
+  await expect(restoredRow.getByText(originalRequirementText, { exact: true })).toBeVisible();
+  const afterDraftRemoval = await api<typeof inspection>(request, supervisor, `/inspections/${inspection.id}`);
+  expect(afterDraftRemoval.version).toBe(started.version);
+  expect(afterDraftRemoval.status).toBe("in_progress");
+  expect(afterDraftRemoval.checkResults ?? []).toEqual([]);
+
+  await restoredRequirementField.selectOption(requirementKey(alternateRequirementRef));
+  await expect(restoredRow.getByText(alternateRequirementText, { exact: true })).toBeVisible();
+
   const precision = "120.000000000000000001";
-  await measuredField.focus();
+  const restoredMeasuredField = restoredRow.locator("input").nth(1);
+  const restoredUnitField = restoredRow.locator("input").nth(2);
+  const restoredResultField = restoredRow.locator("select").nth(1);
+  const restoredEvidenceField = restoredRow.locator("select[multiple]");
+  await restoredMeasuredField.focus();
   let typed = "";
   for (const character of precision.slice(0, 8)) {
     await page.keyboard.type(character);
     typed += character;
-    await expect(measuredField).toBeFocused();
-    await expect(measuredField).toHaveValue(typed);
+    await expect(restoredMeasuredField).toBeFocused();
+    await expect(restoredMeasuredField).toHaveValue(typed);
   }
   const languagePicker = page.locator(".top-actions select").first();
   await languagePicker.selectOption("vi");
-  await expect(measuredField).toHaveValue(typed);
-  await expect(resultRow.getByText(exactRequirementText, { exact: true })).toBeVisible();
-  await measuredField.focus();
+  await expect(restoredMeasuredField).toHaveValue(typed);
+  await expect(restoredRow.getByText(alternateRequirementText, { exact: true })).toBeVisible();
+  await restoredMeasuredField.focus();
   for (const character of precision.slice(8, 15)) {
     await page.keyboard.type(character);
     typed += character;
-    await expect(measuredField).toBeFocused();
-    await expect(measuredField).toHaveValue(typed);
+    await expect(restoredMeasuredField).toBeFocused();
+    await expect(restoredMeasuredField).toHaveValue(typed);
   }
   await languagePicker.selectOption("en");
-  await expect(measuredField).toHaveValue(typed);
-  await expect(resultRow.getByText(exactRequirementText, { exact: true })).toBeVisible();
-  await measuredField.focus();
+  await expect(restoredMeasuredField).toHaveValue(typed);
+  await expect(restoredRow.getByText(alternateRequirementText, { exact: true })).toBeVisible();
+  await restoredMeasuredField.focus();
   for (const character of precision.slice(15)) {
     await page.keyboard.type(character);
     typed += character;
-    await expect(measuredField).toBeFocused();
-    await expect(measuredField).toHaveValue(typed);
+    await expect(restoredMeasuredField).toBeFocused();
+    await expect(restoredMeasuredField).toHaveValue(typed);
   }
   expect(typed).toBe(precision);
   await languagePicker.selectOption("ko");
-  await expect(measuredField).toHaveValue(precision);
-  await expect(resultRow.getByText(exactRequirementText, { exact: true })).toBeVisible();
+  await expect(restoredMeasuredField).toHaveValue(precision);
+  await expect(restoredRow.getByText(alternateRequirementText, { exact: true })).toBeVisible();
 
-  await unitField.fill("mm");
-  await resultField.selectOption("pass");
-  await rowEvidenceField.selectOption(evidenceId);
-  expect(await rowEvidenceField.evaluate((select) => Array.from((select as HTMLSelectElement).selectedOptions, (option) => option.value))).toEqual([evidenceId]);
+  await restoredUnitField.fill("mm");
+  await restoredResultField.selectOption("pass");
+  await restoredEvidenceField.selectOption(evidenceId);
+  expect(await restoredEvidenceField.evaluate((select) => Array.from((select as HTMLSelectElement).selectedOptions, (option) => option.value))).toEqual([evidenceId]);
   const submitResponsePromise = page.waitForResponse((response) => response.url().includes(`/inspections/${inspection.id}/submit-results`)
     && response.request().method() === "POST");
   await modal.getByRole("button", { name: "확인 후 실행", exact: true }).click();
@@ -234,7 +276,7 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
   expect(submitted.nextWorkAllowed).toBe(false);
   expect(submitted.checkResults).toEqual([{
     itemId: "dimension",
-    requirementRef,
+    requirementRef: alternateRequirementRef,
     measuredValue: precision,
     unit: "mm",
     result: "pass",
