@@ -20,7 +20,8 @@ permissions:
 
 jobs:
   clean-restore:
-    runs-on: ubuntu-latest
+    # Dedicated Linux VM on the Mac mini; one runner serializes jobs.
+    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262

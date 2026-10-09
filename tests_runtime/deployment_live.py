@@ -117,6 +117,10 @@ def main():
             context=ssl.create_default_context(cafile=ca_file)
             opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),urllib.request.HTTPSHandler(context=context))
             def request(path,token=None,method='GET',data=None,headers=None):
+                # This functional rehearsal must respect the production proxy's
+                # 10 requests/second limit, including readiness and negative cases.
+                # Pace every request; never retry or mask a rejected command.
+                time.sleep(0.11)
                 request_headers=dict(headers or {})
                 if token:
                     request_headers['Authorization']='Bearer '+token
