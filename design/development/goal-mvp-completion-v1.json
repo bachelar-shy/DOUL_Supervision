@@ -1,11 +1,15 @@
 {
   "goal": "DOUL Supervision Korean, Vietnamese and English field MVP",
-  "status": "blocked",
-  "integrationBase": "943d1dd0a3056c34bff9015292b59b4cfe49c197",
+  "status": "development_in_progress_with_external_acceptance_dependencies",
+  "integrationBase": "f6002aa8ab34cb717677971b0accf5bcebe7da98",
   "mergedPrerequisites": [
     {
       "pr": 128,
       "validation": "Eight CI checks passed at e429b46 before merge"
+    },
+    {
+      "pr": 130,
+      "validation": "All 11 exact-head CI workflows passed on doul-macmini-m4-linux before merge; main f6002aa all 11 passed afterwards."
     }
   ],
   "coordination": {
@@ -58,11 +62,6 @@
   },
   "blockedDependencies": [
     {
-      "kind": "github_ci_verification",
-      "requiredInput": "Verify all actual exact-head workflow results on the user-directed Mac mini self-hosted runner before integration. The prior hosted account-billing dispatch blocker is bypassed by actual successful self-hosted jobs.",
-      "evidence": "CI migration 5612c5e; self-hosted runner21 doul-macmini-m4-linux executed storage, PostgreSQL backup/restore, consistent recovery, observability and worker successfully. CI-only PR130 applies the routing to main separately from MVP PR129."
-    },
-    {
       "kind": "product_contract_decision",
       "requiredInput": "Product/Functional Owner decision/classification/effective version for drafted same-Punch-identity explicit current-ref refresh; separately define Handover/Warranty audited reference reconciliation.",
       "policy": "48_Product_Baseline_Change_Control_v1.md sections2-6",
@@ -81,12 +80,38 @@
   ],
   "restartAfterUnblocking": [
     "Inspect Git/worktree status and final root/worker handoffs; preserve readonly shared overlays and uncommitted worker changes.",
-    "Use current PR129 head and locked physical dependencies; inspect Mac mini self-hosted workflow results and CI-only PR130. Preserve failures and repair actual failed steps rather than repeating hosted billing failures.",
+    "Inspect exact-head integration candidate checks on the existing Mac mini runner; do not repeat completed CI provisioning or previous suites without new changes/failures. Original PR129 retains the pending C2 prototype; no C2 adoption is approved.",
     "Record Product decision and approved effective contract before implementing/adopting reconciliation. Restore sanctioned workflow reachability with exact identity/version/history/authorization checks.",
     "Rerun bounded Warranty/Handover positive and refusal scenarios; no state seeding or signature/authority bypass.",
     "Continue real-file pilot/usability and operational/provider/native acceptance after required actual inputs are supplied. Never label blocked or pilot-unrun Goal complete."
   ],
   "supplementalVerificationEvidence": [
     "design/verification/goal-m4-native-20261009.json"
+  ],
+  "integrationVerification": {
+    "candidateBranch": "goal/non-c2-mvp-v1",
+    "status": "local_verification_in_progress; exact_head_candidate_ci_required_before_merge",
+    "previousExactHeadEvidence": "design/verification/goal-macmini-ci-pr129-main-20261009.json",
+    "c2Policy": "Pending same-Punch current-reference refresh and dependent success paths are excluded; existing exact-reference refusal remains enforced."
+  },
+  "remainingIndependentDevelopment": [
+    {
+      "id": "AC-STORE-01",
+      "owner": "audit",
+      "scope": "Real authenticated evidence-registration durable blob failure rollback and safe idempotent retry",
+      "verification": "HTTP transactional record/cache/audit and durable retrieval assertions"
+    },
+    {
+      "id": "AC-OFFLINE-01",
+      "owner": "offline",
+      "scope": "Versioned local intent, current-server comparison, explicit human conflict resolution without offline official mutation",
+      "verification": "Connected browser two-session offline/online competing changes"
+    },
+    {
+      "id": "AC-VERSION-01",
+      "owner": "operations",
+      "scope": "Real priority workflow UI stale conflict and manual recovery",
+      "verification": "Connected real API/browser stale version scenario"
+    }
   ]
 }
