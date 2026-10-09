@@ -7,4 +7,3 @@ export const offlineCommandLabels = {
 export function offlineIntentTitle(code: string) {
   return offlineCommandLabels[code.startsWith("ko") ? "ko" : code.startsWith("vi") ? "vi" : "en"].title;
 }
-
