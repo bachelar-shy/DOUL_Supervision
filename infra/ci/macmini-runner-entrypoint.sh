@@ -9,4 +9,5 @@ if [ ! -f .runner ]; then
   # Registration is supplied over stdin by the administrator, never baked in.
   exec sleep infinity
 fi
-exec ./run.sh
+# End the listener session after each job. Docker restarts it for the next job.
+exec ./run.sh --once
