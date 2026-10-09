@@ -33,6 +33,7 @@ import {
   completionStateVi,
 } from "./completion-domain-translations";
 import { creationEn, creationKo, creationVi } from "./creation-translations";
+import { mandatoryWorkflowEn, mandatoryWorkflowKo, mandatoryWorkflowVi } from "./mandatory-workflow-translations";
 
 export {
   commands as koreanCommands,
@@ -698,6 +699,7 @@ const ko = {
   ...completionKo,
   ...creationKo,
   ...uiErrorKo,
+  ...mandatoryWorkflowKo,
   "navigation.parallelTest": "병렬 기능 테스트",
 } as const;
 
@@ -963,6 +965,7 @@ const vi: DraftTranslationDictionary = {
   ...registerVi,
   ...paymentCommandVi,
   ...uiErrorVi,
+  ...mandatoryWorkflowVi,
   ...paymentStateVi,
   "navigation.parallelTest": "Kiểm thử tính năng song song",
 };
@@ -1226,6 +1229,7 @@ const en: DraftTranslationDictionary = {
   ...registerEn,
   ...paymentCommandEn,
   ...uiErrorEn,
+  ...mandatoryWorkflowEn,
   ...paymentStateEn,
   "navigation.parallelTest": "Parallel feature tests",
 };
