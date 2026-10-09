@@ -2,7 +2,12 @@
   "goal": "DOUL Supervision Korean, Vietnamese and English field MVP",
   "status": "in_progress",
   "integrationBase": "943d1dd0a3056c34bff9015292b59b4cfe49c197",
-  "mergedPrerequisites": [{"pr": 128, "validation": "Eight CI checks passed at e429b46 before merge"}],
+  "mergedPrerequisites": [
+    {
+      "pr": 128,
+      "validation": "Eight CI checks passed at e429b46 before merge"
+    }
+  ],
   "coordination": {
     "model": "gpt-6-luna",
     "reasoning": "high",
@@ -32,5 +37,23 @@
     "actualPilotPerformed": false,
     "quotaRecoveryAloneGuaranteesExecution": false,
     "resume": "When the platform resumes execution, inspect handoffs, Git/worktrees, running tasks and worker changes; continue from the last verified checkpoint without deleting uncommitted work."
+  },
+  "realFileUsabilityEvaluation": {
+    "status": "awaiting_actual_site_inputs",
+    "requiredInputs": [
+      "Current architecture, structure, mechanical and electrical PDFs with drawing number/revision/discipline/location mapping",
+      "Current BOQ with units, quantities, currency and approved baseline",
+      "Current schedule with activity IDs, calendars, dependencies and approved baseline",
+      "Actual site photos with capture date/location and authorized project access",
+      "Qualified pilot users and adopted Configuration Pack, forms and language policy"
+    ],
+    "procedure": [
+      "Inventory each supplied original, preserve checksum and exact revision; report unreadable or missing mappings",
+      "Register original files through the real authorized upload UI and verify durable download/version/project access",
+      "Derive plausible register-specific cases from inspected actual contents; record source page, row, activity or photo reference and distinguish proposed case from an actual event",
+      "Execute quality, safety, schedule/contract, quantity/payment and handover cases with qualified roles; preserve exact versions, evidence and rejection paths",
+      "Evaluate Korean/Vietnamese/English task completion, errors, time, confusing terms and user feedback; record severity and retest fixes"
+    ],
+    "acceptance": "No actual-file upload or usability pass is claimed until supplied files and qualified users have been exercised; synthetic browser fixtures remain separate."
   }
 }
