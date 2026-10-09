@@ -1,0 +1,48 @@
+{
+  "task": "Action draft authoring browser acceptance",
+  "branch": "goal/action-authoring-browser-v1",
+  "base_commit": "9e18f8afc5f902a895ba147a5b9720b4b35ecb5b",
+  "upstream_ui_commit": "3284b896102893ef418cebac3680b32564b93438",
+  "root_integration_commit": "98571ce7d47c6475776e3443ab9960179096da8b",
+  "owned_files": [
+    "tests_browser/action-authoring.spec.ts",
+    "design/development/agents/action-authoring-browser-handoff.json"
+  ],
+  "test_coverage": {
+    "server_backed_action_create": "Through Actions Workbench UI, SUP creates a real Action using a readable current Issue from the server reference catalog, a project contractor participant, the current server scope, a title, and a due date.",
+    "assertions": [
+      "Server creation capability is available to SUP and denied to OWN.",
+      "Create response and subsequent workspace read preserve status draft, exact relatedIssueId, server-derived correctionCycle, selected responsiblePartyId, and version 1.",
+      "The create response and workspace audit contain one create:action event in draft state.",
+      "No assign/start/other workflow command is issued during creation or while switching ko/vi/en.",
+      "Unsaved form values survive locale changes without API mutation.",
+      "Explicit Create another Action reset clears the draft form without another write and permits entry of the next draft.",
+      "OWN's server-denied create affordance is disabled and sends no create request."
+    ],
+    "fixture_boundary": "Uses the canonical Playwright demo API configuration and its normal scoped demo records only. The test creates only the Action draft under test; it does not bootstrap Issues, Actions, completed workflows, or modify test fixtures. The API server and demo database are created by the normal Playwright webServer config for that worktree."
+  },
+  "validation": {
+    "passed": [
+      "Standalone TypeScript compile of tests_browser/action-authoring.spec.ts",
+      "npm run check:ui-boundary",
+      "git diff --check"
+    ],
+    "blocked_local_runs": [
+      {
+        "command": "./node_modules/.bin/playwright test --config=playwright.config.ts tests_browser/action-authoring.spec.ts",
+        "result": "Could not reach browser assertions: Vite could not resolve radix-ui from the isolated worktree's dependency layout, and the bundled Playwright headless Chromium executable was not installed. No dependencies were installed and no nested node_modules directory was created."
+      },
+      {
+        "command": "npm run typecheck --workspace apps/web",
+        "result": "Blocked by missing radix-ui type declarations in the same isolated dependency layout, followed by downstream implicit-any diagnostics in shared UI components. Root should rerun using its lock-verified install."
+      }
+    ],
+    "root_run_command": "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium ./node_modules/.bin/playwright test --config=playwright.config.ts tests_browser/action-authoring.spec.ts"
+  },
+  "integration_note": "Root integrated the Action panel into WorkbenchPage/AppShell and exported actionAuthoringTranslations in commit 98571ce. Equivalent root files were copied into this isolated worktree as uncommitted validation overlays. Those shared files are not in the owned commit; cherry-pick only the owned test and handoff files onto the integrated root branch.",
+  "follow_up": [
+    "Run the spec and apps/web typecheck on a lock-verified dependency tree with system Chromium.",
+    "Record browser output after root's Workbench route/facade/localization integration is committed.",
+    "The scenario proves scoped draft authoring on the demo API; it does not claim a production pilot or prove later Action assignment, correction, verification, or closure."
+  ]
+}
