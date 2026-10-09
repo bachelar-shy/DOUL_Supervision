@@ -38,7 +38,8 @@ test("work inbox retries an uncertain command with the same idempotency key and 
   const inbox = page.getByTestId("work-inbox-actions");
   await expect(inbox).toBeVisible();
   await expect(inbox.getByRole("status")).toHaveCount(0, { timeout: 15000 });
-  const candidate = inbox.locator(".work-inbox-candidate").filter({ hasText: "시작전이" });
+  const inspectionCard = inbox.locator(".work-inbox-card").filter({ has: page.locator(".badge", { hasText: /^검측$/ }) }).filter({ has: page.locator(".work-inbox-candidate", { hasText: "시작전이" }) }).first();
+  const candidate = inspectionCard.locator(".work-inbox-candidate").filter({ hasText: "시작전이" });
   await expect(candidate).toBeEnabled();
   await candidate.click();
   const modal = page.getByRole("dialog");

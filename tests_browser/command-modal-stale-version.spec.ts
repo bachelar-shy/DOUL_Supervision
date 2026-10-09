@@ -44,7 +44,7 @@ test.beforeAll(async () => {
   const port = await availablePort();
   apiOrigin = `http://127.0.0.1:${port}`;
   fixtureDir = mkdtempSync(join(tmpdir(), "doul-command-modal-stale-"));
-  const python = process.env.DOUL_TEST_PYTHON || "/workspace/DOUL_Supervision/work/priority-venv/bin/python";
+  const python = process.env.DOUL_TEST_PYTHON || "python3";
   apiProcess = spawn(python, [
     "-m", "services.api", "--demo", "--database", join(fixtureDir, "demo.sqlite3"), "--port", String(port),
   ], {
