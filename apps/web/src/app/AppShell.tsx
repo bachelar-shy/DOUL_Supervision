@@ -458,6 +458,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   onOpenCommand={(item, action) => setDialog({ item, action })}
                   client={client}
                   onInspectionCreated={async record => { await refresh(); setSelected(record.id); }}
+                  onActionCreated={async record => { await refresh(); setSelected(record.id); }}
                   onCreateIssue={createIssue}
                 />
               )}

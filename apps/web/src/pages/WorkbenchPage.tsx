@@ -1,5 +1,6 @@
 import type { SupervisionClient } from "../data/supervision-client";
 import { InspectionAuthoringPanel } from "./InspectionAuthoringPanel";
+import { ActionAuthoringPanel } from "./parallel/ActionAuthoringPanel";
 import { useTranslation } from "react-i18next";
 import type {
   CommandDescriptor,
@@ -29,6 +30,7 @@ export interface WorkbenchPageProps {
   onOpenCommand: (item: WorkItem, action: CommandDescriptor) => void;
   client: SupervisionClient;
   onInspectionCreated: (record: RecordDTO) => Promise<void>;
+  onActionCreated: (record: RecordDTO) => Promise<void>;
   onCreateIssue: (item: WorkItem) => Promise<void>;
 }
 
@@ -43,6 +45,7 @@ export function WorkbenchPage({
   onOpenCommand,
   client,
   onInspectionCreated,
+  onActionCreated,
   onCreateIssue,
 }: WorkbenchPageProps) {
   const { t } = useTranslation();
@@ -67,6 +70,9 @@ export function WorkbenchPage({
           </div>
           {route === "inspections" && role === "CON" && (
             <InspectionAuthoringPanel client={client} workspace={workspace} online={online} onCreated={onInspectionCreated} />
+          )}
+          {route === "actions" && (
+            <ActionAuthoringPanel client={client} workspace={workspace} online={online} onCreated={onActionCreated} />
           )}
           <RecordList
             items={visibleItems}

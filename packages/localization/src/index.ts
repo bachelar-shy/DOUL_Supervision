@@ -34,6 +34,7 @@ import {
 } from "./completion-domain-translations";
 import { creationEn, creationKo, creationVi } from "./creation-translations";
 import { mandatoryWorkflowEn, mandatoryWorkflowKo, mandatoryWorkflowVi } from "./mandatory-workflow-translations";
+export { actionAuthoringTranslations } from "./action-authoring-translations";
 
 export {
   commands as koreanCommands,
