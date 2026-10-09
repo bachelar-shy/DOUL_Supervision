@@ -25,16 +25,30 @@ def main() -> None:
     setup = HandoverHttpTests(methodName="runTest")
     setup.setUp()
     retest_evidence = setup.upload_test_evidence("browser-retest")
-    upstream_workspace = setup.client.get(f"/projects/{setup.project}/workspace", headers=setup.headers).json()
-    upstream_action = next(item["record"] for item in upstream_workspace["items"] if item["machine"] == "action")
-    issue = setup.engine.get("Issue", upstream_action["relatedIssueId"])
-    action = deepcopy(setup.engine.get("Action", upstream_action["id"]))
-    action.update(version=action["version"] + 1, status="verified", updatedAt=setup.engine.at())
+    # The completion lifecycle requires a Punch subtype, so seed the exact
+    # accepted upstream kind from the HTTP contract fixture rather than reuse
+    # its unrelated NCR issue.
+    issue_ref, action_ref = setup._new_punch_and_action()
+    issue = setup.engine.get("Issue", issue_ref["objectId"])
+    action = setup.engine.get("Action", action_ref["objectId"])
+    inspection = setup.engine.get("Inspection", setup.inspection_id)
+    issue.update(version=issue["version"] + 1, title="F-07 browser commissioning punch", actionIds=[action["id"]],
+                 inspectionIds=[setup.inspection_id],
+                 responsiblePartyId=setup.store.meta["actors"]["CON"]["partyId"],
+                 responsibleOrganizationId=setup.scope["responsibleOrganizationId"], dueAt=setup.tomorrow)
+    action.update(version=action["version"] + 1, title="F-07 browser correction", evidenceIds=[setup.evidence_id],
+                  responsiblePartyId=setup.store.meta["actors"]["CON"]["partyId"],
+                  responsibleOrganizationId=setup.scope["responsibleOrganizationId"])
     with setup.store.transaction(True):
+        setup.engine._save("Issue", issue)
         setup.engine._save("Action", action)
-    upstream_inspection = next(item["record"] for item in upstream_workspace["items"]
-                               if item["machine"] == "inspection" and item["record"].get("status") == "passed")
-    inspection = setup.engine.get("Inspection", upstream_inspection["id"])
+        setup.engine._record_machines[("Issue", issue["id"])] = "issue"
+        setup.engine._record_machines[("Action", action["id"])] = "action"
+        setup.engine._record_machines[("Inspection", inspection["id"])] = "inspection"
+    issue_ref = setup.ref("Issue", issue["id"])
+    action_ref = setup.ref("Action", action["id"])
+    # Use the explicit accepted, project-scoped prerequisite seeded by the
+    # contractual fixture and register its machine for the connected case UI.
     setup.client.close()
     app = setup.app
     store = setup.store
@@ -57,7 +71,8 @@ def main() -> None:
         "now": setup.now,
         "tomorrow": setup.tomorrow,
         "actors": {group: actor["partyId"] for group, actor in store.meta["actors"].items()},
-        "disclosure": "HandoverHttpTests seeds the explicit F-07 Requirement profiles, approved InformationItems, and accepted demo upstream Requirement, drawing, Evidence, Inspection, Asset, Issue, and Action records. The fixture promotes the linked upstream Action to verified in a store transaction and uploads a distinct retest Evidence through the HTTP upload endpoints. Browser-created F-07 records and all F-07 transitions use the real UI and HTTP routes.",
+        "responsibleOrganizationId": setup.scope["responsibleOrganizationId"],
+        "disclosure": "HandoverHttpTests seeds explicit F-07 Requirement profiles, approved InformationItems, and accepted upstream Requirement, drawing, Evidence, project-scoped Inspection, and Asset records. The fixture creates a scoped open Punch Issue and verified Action using the test contract helper, links their exact current refs and source Evidence, selects the server-catalogued passed Inspection, and uploads a distinct retest Evidence through the HTTP upload endpoints. These are disclosed upstream prerequisites only. Browser-created F-07 records and all F-07 transitions use the real UI and HTTP routes.",
     }
     print(json.dumps(meta), flush=True)
     try:
