@@ -23,8 +23,8 @@ type LabelKey =
 const text: Record<"en" | "ko" | "vi", Record<LabelKey, string>> = {
   en: {
     title: "Register evidence",
-    description: "Register an image or PDF original, then select its evidence ID in the work command that uses it.",
-    uploadNew: "Register a new image or PDF",
+    description: "Register an image, PDF or XLSX original, then select its evidence ID in the work command that uses it.",
+    uploadNew: "Register a new image, PDF or XLSX",
     quarantineTitle: "Register quarantined original",
     quarantineSelect: "Select quarantined file",
     filename: "File name",
@@ -40,16 +40,16 @@ const text: Record<"en" | "ko" | "vi", Record<LabelKey, string>> = {
     uploading: "Uploading",
     registered: "Official evidence registered",
     registeredSha: "SHA-256",
-    fileTooLarge: "Choose an image or PDF file that is no larger than 20 MiB.",
-    unsupportedFile: "This file is not a supported image or PDF format.",
+    fileTooLarge: "Choose an image, PDF or XLSX file that is no larger than 20 MiB.",
+    unsupportedFile: "This file is not a supported image, PDF or XLSX format.",
     mimeMismatch: "The file type shown by the browser does not match its contents.",
     errorGeneric: "The evidence request could not be completed. Check the file and connection, then try again.",
     fileBytes: "bytes",
   },
   ko: {
     title: "증빙 등록",
-    description: "이미지 또는 PDF 원본을 등록한 뒤, 사용할 작업 명령에서 증빙 ID를 직접 선택하세요.",
-    uploadNew: "새 이미지 또는 PDF 등록",
+    description: "이미지·PDF·XLSX 원본을 등록한 뒤, 사용할 작업 명령에서 증빙 ID를 직접 선택하세요.",
+    uploadNew: "새 이미지·PDF·XLSX 등록",
     quarantineTitle: "격리된 원본 등록",
     quarantineSelect: "격리된 파일 선택",
     filename: "파일 이름",
@@ -65,16 +65,16 @@ const text: Record<"en" | "ko" | "vi", Record<LabelKey, string>> = {
     uploading: "업로드",
     registered: "공식 증빙 등록 완료",
     registeredSha: "SHA-256",
-    fileTooLarge: "20 MiB 이하의 이미지 또는 PDF 파일을 선택하세요.",
-    unsupportedFile: "지원하는 이미지 또는 PDF 형식이 아닙니다.",
+    fileTooLarge: "20 MiB 이하의 이미지·PDF·XLSX 파일을 선택하세요.",
+    unsupportedFile: "지원하는 이미지·PDF·XLSX 형식이 아닙니다.",
     mimeMismatch: "파일 형식 표시와 실제 내용이 일치하지 않습니다.",
     errorGeneric: "증빙 요청을 완료할 수 없습니다. 파일과 연결을 확인한 뒤 다시 시도하세요.",
     fileBytes: "바이트",
   },
   vi: {
     title: "Đăng ký minh chứng",
-    description: "Đăng ký tệp ảnh hoặc PDF gốc, sau đó chọn mã minh chứng trong lệnh công việc cần dùng.",
-    uploadNew: "Đăng ký ảnh hoặc PDF mới",
+    description: "Đăng ký tệp ảnh, PDF hoặc XLSX gốc, sau đó chọn mã minh chứng trong lệnh công việc cần dùng.",
+    uploadNew: "Đăng ký ảnh, PDF hoặc XLSX mới",
     quarantineTitle: "Đăng ký tệp gốc bị cách ly",
     quarantineSelect: "Chọn tệp bị cách ly",
     filename: "Tên tệp",
@@ -90,8 +90,8 @@ const text: Record<"en" | "ko" | "vi", Record<LabelKey, string>> = {
     uploading: "Đang tải lên",
     registered: "Đã đăng ký minh chứng chính thức",
     registeredSha: "SHA-256",
-    fileTooLarge: "Chọn tệp ảnh hoặc PDF có dung lượng không quá 20 MiB.",
-    unsupportedFile: "Định dạng tệp này không được hỗ trợ. Chỉ hỗ trợ ảnh hoặc PDF.",
+    fileTooLarge: "Chọn tệp ảnh, PDF hoặc XLSX có dung lượng không quá 20 MiB.",
+    unsupportedFile: "Định dạng tệp này không được hỗ trợ. Chỉ hỗ trợ ảnh, PDF hoặc XLSX.",
     mimeMismatch: "Loại tệp trình duyệt hiển thị không khớp với nội dung tệp.",
     errorGeneric: "Không thể hoàn tất yêu cầu minh chứng. Hãy kiểm tra tệp và kết nối rồi thử lại.",
     fileBytes: "byte",
@@ -173,7 +173,7 @@ export function EvidenceRegistrationPanel({
     try {
       if (file.size === 0 || file.size > EVIDENCE_UPLOAD_LIMIT_BYTES) throw new EvidencePanelError("fileTooLarge");
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const mime = sniffEvidenceMime(bytes);
+      const mime = sniffEvidenceMime(bytes, file.name);
       if (!mime) throw new EvidencePanelError("unsupportedFile");
       if (file.type && file.type !== mime) throw new EvidencePanelError("mimeMismatch");
       const record = await uploadOfficialEvidence(client, bytes, {
@@ -242,7 +242,7 @@ export function EvidenceRegistrationPanel({
 
       <label className="mt-4 block text-sm font-medium" htmlFor="official-evidence-file">{labels.uploadNew}</label>
       <input id="official-evidence-file" className="mt-2 block w-full text-sm" type="file"
-        accept="image/png,image/jpeg,image/gif,image/webp,application/pdf"
+        accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         disabled={busy} onChange={(event) => void uploadOfficial(event.target.files?.[0])} />
 
       <div className="mt-5 border-t pt-4">

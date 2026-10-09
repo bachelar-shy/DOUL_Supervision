@@ -111,6 +111,9 @@ def valid_id(value):
 
 
 def sniff(data):
+    if data.startswith(b'PK\x03\x04'):
+        from .spreadsheet_mime import spreadsheet_mime
+        return spreadsheet_mime(data)
     if data.startswith(b'\x89PNG\r\n\x1a\n'):return 'image/png'
     if data.startswith(b'\xff\xd8\xff'):return 'image/jpeg'
     if data[:6] in [b'GIF87a',b'GIF89a']:return 'image/gif'
@@ -124,7 +127,7 @@ def sniff(data):
         parsed=json.loads(data)
         if isinstance(parsed,(dict,list)):return 'application/json'
     except (ValueError,UnicodeError):pass
-    raise ContractError('MIME_INVALID','Supported development formats: JSON/ PNG/JPEG/GIF/WebP/MP4/WebM/WAV/MP3/PDF')
+    raise ContractError('MIME_INVALID','Supported development formats: JSON/PNG/JPEG/GIF/WebP/MP4/WebM/WAV/MP3/PDF/XLSX')
 
 
 def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=None, document_runtime=None, authentication=None, signature_verifier=None):
