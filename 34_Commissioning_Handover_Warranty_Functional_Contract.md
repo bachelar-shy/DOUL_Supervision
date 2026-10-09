@@ -209,7 +209,11 @@ FM-25 미완료·하자 추적표: Punch/Warranty projection
 | passed | mark_ready_for_handover | SUP | ready_for_handover | package completion gate |
 | ready_for_handover | close_commissioning | SUP | closed | snapshot/audit complete |
 
-`mark_ready_for_handover`는 시정 과정에서 버전이 변경된 Punch의 현재 `punchIssueRefs`를 명시적으로 제출할 수 있다. 기존 패키지에 연결된 Issue ID 집합을 정확히 유지하며 제거·대체·추가할 수 없다. 서버는 각 참조의 프로젝트·유형·현재 버전과 종결 상태를 다시 검증한다. 이전 패키지 버전의 원본 참조와 시험 결과 이력을 보존하고, 갱신된 참조는 승인된 전이의 새 스냅샷 및 감사기록에 남긴다. 최신 참조를 제출하지 않은 경우 기존 stale-reference 거절을 유지한다.
+### 17.1 현재 Punch 참조 갱신 제안 — Product 결정 대기
+
+아래 C2 payload 보강은 PR #129의 개발·시험 제안이며, Product Baseline의 효력 변경이나 승인된 릴리스를 선언하지 않는다. `48_Product_Baseline_Change_Control_v1.md`의 Product 결정과 적용버전 확정이 필요하다. 제안·영향·검증 근거는 `design/development/product-change-reference-lifecycle-proposal.json`에 기록한다.
+
+제안은 `mark_ready_for_handover`에서 시정 과정에 버전이 변경된 Punch의 현재 `punchIssueRefs`를 명시적으로 제출하도록 허용한다. 기존 패키지에 연결된 Issue ID 집합을 정확히 유지하며 제거·대체·추가할 수 없다. 서버는 각 참조의 프로젝트·유형·현재 버전과 종결 상태를 다시 검증한다. 이전 패키지 버전의 원본 참조와 시험 결과 이력을 보존하고, 갱신된 참조는 승인된 전이의 새 스냅샷 및 감사기록에 남긴다. 최신 참조를 제출하지 않은 경우 기존 stale-reference 거절을 유지한다.
 
 ## 18. Handover Command Contract
 
