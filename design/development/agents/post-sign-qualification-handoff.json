@@ -9,16 +9,18 @@
       "Render the existing demo Inspection source and successfully sign the exact final snapshot through POST /documents/{id}/sign.",
       "Capture the stored Signature, its Qualification ref/version, DocumentSnapshot history, and document:sign audit event.",
       "In a test fixture transaction, revoke that signer's current Qualification and increment its version, preserving the old signed Qualification ref as history.",
+      "After revocation, GET /projects/{projectId}/documents/{documentId} returns the same DocumentSnapshot version/renderHash/status and the historical signatureIds entry; the same published GET response remains unchanged after the denied command.",
       "Submit the official Inspection release_next_work command over HTTP using the same active signer assignment; the engine rechecks current qualification and returns 403 QUALIFICATION_INVALID.",
       "Assert that the prior Signature and DocumentSnapshot records/history/audit remain byte-for-byte equivalent in stored structures, and that the denied command changes no Inspection state/history, command audit, or idempotency record."
     ],
-    "scope": "Verifies current qualification revocation affects new official action while preserving a previously valid signature's historical record. The Qualification revocation is a test fixture mutation, not a production qualification-management workflow."
+    "scope": "Verifies current qualification revocation affects new official action while preserving a previously valid signature's historical record. The Qualification revocation is a test fixture mutation, not a production qualification-management workflow.",
+    "publishedReadLimit": "The supported published read is GET /projects/{projectId}/documents/{documentId}, which exposes DocumentSnapshot fields including version, renderHash, status, and signatureIds but does not embed Signature bodies. There is no GET Signature history route in the current API. Exact Signature record/history persistence remains asserted via the internal store for integrity only; it is not represented as HTTP retrieval evidence."
   },
   "tests": {
     "focusedCommand": "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_signature_verification_http.SignatureVerificationHTTPTests.test_revoking_signer_qualification_preserves_prior_signature_but_blocks_new_official_command -v",
     "focusedResult": "PASS",
     "suiteCommand": "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_signature_verification_http -v",
-    "suiteResult": "11 tests PASS (1.364s)"
+    "suiteResult": "11 tests PASS (1.487s)"
   },
   "ownedFiles": [
     "tests_mvp/test_signature_verification_http.py",

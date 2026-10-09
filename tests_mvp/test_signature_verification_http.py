@@ -264,6 +264,13 @@ class SignatureVerificationHTTPTests(unittest.TestCase):
         current_qualification = self.app.state.store.engine.get("Qualification", qualification_id)
         self.assertTrue(current_qualification["revoked"])
         self.assertGreater(current_qualification["version"], prior_signature["qualificationRefs"][0]["version"])
+        published_document_response = self.get(f"/projects/{self.project}/documents/{self.document['id']}")
+        self.assertEqual(published_document_response.status_code, 200, published_document_response.text)
+        published_document = published_document_response.json()
+        self.assertEqual(published_document["version"], document_before["version"])
+        self.assertEqual(published_document["renderHash"], document_before["renderHash"])
+        self.assertEqual(published_document["signatureIds"], [signature_id])
+        self.assertEqual(published_document["status"], document_before["status"])
 
         inspection_before = self.app.state.store.engine.get("Inspection", self.inspection["id"])
         audit_before_command = deepcopy(self.app.state.store.engine.audit_events)
@@ -288,6 +295,9 @@ class SignatureVerificationHTTPTests(unittest.TestCase):
         self.assertEqual(self.app.state.store.engine.audit_events, audit_before_command)
         self.assertEqual(self.app.state.store.engine._idempotency, idempotency_before_command)
         self.assertEqual(self.signature_state(), (document_before, signatures_before, sign_audit_before))
+        final_document_response = self.get(f"/projects/{self.project}/documents/{self.document['id']}")
+        self.assertEqual(final_document_response.status_code, 200, final_document_response.text)
+        self.assertEqual(final_document_response.json(), published_document)
         signature_history_after = {
             key: value
             for key, value in self.app.state.store.engine._history.items()
