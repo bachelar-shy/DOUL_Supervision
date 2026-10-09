@@ -97,7 +97,6 @@ export function ActionAuthoringPanel({ client, workspace, online, onCreated, ini
         <div><dt className="font-medium">{t("location")}</dt><dd>{scope.locationId || "—"}</dd></div>
         <div><dt className="font-medium">{t("discipline")}</dt><dd>{scope.discipline || "—"}</dd></div>
         <div><dt className="font-medium">{t("organization")}</dt><dd>{scope.responsibleOrganizationId || "—"}</dd></div>
-        {capability?.authority && <div><dt className="font-medium">{t("authority")}</dt><dd>{capability.authority}</dd></div>}
       </dl>
     </section>
     <p className="rounded-sm border border-border bg-muted/40 p-3 text-sm" role="note">{t("draftOnly")}</p>
