@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests_browser",
-  testIgnore: "localization-mock.spec.ts",
+  testIgnore: ["localization-mock.spec.ts", "authoring-localization-mock.spec.ts"],
   fullyParallel: false,
   workers: 1,
   timeout: 30000,

@@ -130,29 +130,3 @@ test("connected authoring and document UI preserve drafts and source records acr
   const stillOriginal = finalWorkspace.items.find((item: any) => item.record.id === originalSource.id)?.record;
   expect(stillOriginal).toEqual(originalSource);
 });
-
-test("UI mock keeps Safety creation unavailable and exposes no signing action without an official final snapshot", async ({ page }) => {
-  await page.goto("http://127.0.0.1:5194/#/safety");
-  const safetyPanel = page.locator('[data-ui-component="safety-authoring-panel"]');
-  await expect(safetyPanel).toBeVisible();
-  for (const [language, createLabel] of [
-    ["ko", "안전 초안 저장"], ["vi", "Lưu bản nháp an toàn"], ["en", "Save Safety draft"],
-  ] as const) {
-    await chooseLocale(page, language);
-    await expect(safetyPanel.getByRole("button", { name: createLabel, exact: true })).toBeDisabled();
-  }
-
-  await page.goto("http://127.0.0.1:5194/#/documents");
-  await chooseLocale(page, "ko");
-  const signingKo = page.getByRole("region", { name: locales.ko.signingRegion });
-  await expect(signingKo.getByText("서명할 최종 문서가 없습니다. 먼저 최종 문서를 생성하세요.", { exact: true })).toBeVisible();
-  await expect(signingKo.getByRole("button", { name: locales.ko.submit })).toHaveCount(0);
-  await chooseLocale(page, "vi");
-  const signingVi = page.getByRole("region", { name: locales.vi.signingRegion });
-  await expect(signingVi.getByText("Không có tài liệu cuối cùng để ký. Hãy tạo tài liệu cuối cùng trước.", { exact: true })).toBeVisible();
-  await expect(signingVi.getByRole("button", { name: locales.vi.submit })).toHaveCount(0);
-  await chooseLocale(page, "en");
-  const signingEn = page.getByRole("region", { name: locales.en.signingRegion });
-  await expect(signingEn.getByText("There are no final documents to sign. Create a final document first.", { exact: true })).toBeVisible();
-  await expect(signingEn.getByRole("button", { name: locales.en.submit })).toHaveCount(0);
-});
