@@ -23,7 +23,8 @@
       "create-capabilities": "goal/create-capabilities-v1",
       "operations": "goal/operational-validation-v1",
       "acceptance-audit": "goal/acceptance-audit-v1"
-    }
+    },
+    "interruption": "Offline Luna agent exhausted workspace credits; root preserved scaffold and completed verified responsive-web slice."
   },
   "requiredEvidence": [
     "quality closed loop and separate owner report closure",
@@ -90,28 +91,10 @@
   ],
   "integrationVerification": {
     "candidateBranch": "goal/non-c2-mvp-v1",
-    "status": "local_verification_in_progress; exact_head_candidate_ci_required_before_merge",
+    "status": "focused_candidate_verification_passed; final_exact_head_mac_ci_pending",
     "previousExactHeadEvidence": "design/verification/goal-macmini-ci-pr129-main-20261009.json",
-    "c2Policy": "Pending same-Punch current-reference refresh and dependent success paths are excluded; existing exact-reference refusal remains enforced."
+    "c2Policy": "Pending same-Punch current-reference refresh and dependent success paths are excluded; existing exact-reference refusal remains enforced.",
+    "pullRequest": 131
   },
-  "remainingIndependentDevelopment": [
-    {
-      "id": "AC-STORE-01",
-      "owner": "audit",
-      "scope": "Real authenticated evidence-registration durable blob failure rollback and safe idempotent retry",
-      "verification": "HTTP transactional record/cache/audit and durable retrieval assertions"
-    },
-    {
-      "id": "AC-OFFLINE-01",
-      "owner": "offline",
-      "scope": "Versioned local intent, current-server comparison, explicit human conflict resolution without offline official mutation",
-      "verification": "Connected browser two-session offline/online competing changes"
-    },
-    {
-      "id": "AC-VERSION-01",
-      "owner": "operations",
-      "scope": "Real priority workflow UI stale conflict and manual recovery",
-      "verification": "Connected real API/browser stale version scenario"
-    }
-  ]
+  "remainingIndependentDevelopment": []
 }

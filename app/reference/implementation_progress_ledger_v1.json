@@ -20,7 +20,7 @@
         "tests_browser/quality-closed-loop.spec.ts",
         "tests_browser/support/quality_api_fixture.py"
       ],
-      "note": "Real HTTP and connected browser development evidence covers inspection fail, Issue/Action correction, linked reinspection pass, final FM09 render and two explicit test-verifier signatures, Inspection release, Issue close and separate Owner Report receipt/follow-up closure. Terminal Issue UI no longer presents unavailable close as a pending task. Actual production legal verifier, adopted project configuration and field pilot remain unproven; latest exact-head GitHub CI blocked by account billing. No whole-function promotion until all required acceptance boundaries pass."
+      "note": "Real HTTP and connected browser development evidence covers inspection fail, Issue/Action correction, linked reinspection pass, final FM09 render and two explicit test-verifier signatures, Inspection release, Issue close and separate Owner Report receipt/follow-up closure. Terminal Issue UI no longer presents unavailable close as a pending task. Actual production legal verifier, adopted project configuration and field pilot remain unproven; Hosted CI dispatch blocker resolved by PR130; final PR131 exact-head Mac mini regression is pending. No whole-function promotion until all required acceptance boundaries pass."
     },
     {
       "functionId": "F-02",

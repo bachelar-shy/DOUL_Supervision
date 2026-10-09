@@ -13,33 +13,22 @@
     "AC-AUTH/AC-ADM actual two-project HTTP boundaries and explicit administrator decision denials",
     "AC-QUAL post-sign qualification revocation rejects new official action and published Document GET preserves prior snapshot/signatureIds; no published Signature GET exists",
     "AC-IDEMP uncertain work-inbox response retry now preserves identical key/body and one actual API domain audit",
-    "C2-free source candidate removes only unapproved new refresh behavior and dependent new success tests; retains baseline stale-reference 409 refusal and no-Punch positive path"
+    "C2-free source candidate removes only unapproved new refresh behavior and dependent new success tests; retains baseline stale-reference 409 refusal and no-Punch positive path",
+    "AC-STORE failure-after-write rollback, stable-key recovery, required-evidence refusal/acceptance and reopen integrity HTTP test passed",
+    "Common CommandModal real stale 409 and manual cancel/refresh for quality, safety and payment: three cases passed",
+    "Responsive mobile-web offline intent persists, automatic reconnect surfaces competing version and prohibits silent overwrite; unchanged intent submits only through explicit user action: two cases passed"
   ],
   "validation": {
     "previousCI": "design/verification/goal-macmini-ci-pr129-main-20261009.json",
     "candidateLocalAPI": "400 tests run, 355 passed, 45 skipped without PostgreSQL DSN/document runtime; exact candidate CI pending",
     "candidateContracts": "319 reference and 7 F07 contracts passed; generated OpenAPI/types/command metadata current; contract validation passed",
-    "runtimeProofLimits": "Synthetic/test-only trusted signer and demo identities; no production signature trust, field users/materials or real-file pilot performed"
+    "runtimeProofLimits": "Synthetic/test-only trusted signer and demo identities; no production signature trust, field users/materials or real-file pilot performed",
+    "candidateFocusedBrowser": "6 passed: common stale conflicts3, offline/mobile viewport2, uncertain work-inbox replay1; /tmp/doul-candidate-final-browser-results.json",
+    "firstCandidateCI": "1880670: seven applicable workflows passed; MVP failed because retry-test selector matched three buttons (93 other browser tests passed). Test now targets a current Inspection card; failure preserved at Actions run37931617923 and Mac runtime pr131-initial-mvp-failure.log.",
+    "offlineStatic": "Web TypeScript/UI boundary/lint and responsive build passed; inherited lint/bundle warnings remain. Native offline command acceptance not claimed."
   },
   "inProgress": [
-    {
-      "id": "AC-STORE-01",
-      "owner": "audit",
-      "scope": "Real authenticated evidence-registration durable blob failure rollback and safe idempotent retry",
-      "verification": "HTTP transactional record/cache/audit and durable retrieval assertions"
-    },
-    {
-      "id": "AC-OFFLINE-01",
-      "owner": "offline",
-      "scope": "Versioned local intent, current-server comparison, explicit human conflict resolution without offline official mutation",
-      "verification": "Connected browser two-session offline/online competing changes"
-    },
-    {
-      "id": "AC-VERSION-01",
-      "owner": "operations",
-      "scope": "Real priority workflow UI stale conflict and manual recovery",
-      "verification": "Connected real API/browser stale version scenario"
-    }
+    "Publish final integration head to PR131; inspect all exact-head Mac mini checks; diagnose failures before sequential integration."
   ],
   "remainingExternal": [
     {
@@ -70,7 +59,8 @@
     "Root-owned completed traces, deprecated .venv/documentvenv and completed prioritySQLite/docker artifacts preserved under unique/tmp paths with originalpathsymlinks; root priorityPython remains physical. If/tmp replaced, recreate optionalenvs fromexact locks. Use owned/tmp Playwrightoutputs/npmcache to avoid sharedfilesystempressure.",
     "Run browser suites sequentially when sharing root scratch web5189/API8789: a webServer owner may terminate reused servers on exit. Use unique ports for independent concurrent runs.",
     "Mac owned goal/mvp-m4-validation-v1 worktree /Users/automation/work/DOUL_Supervision-goal-m4-20261009; commit44aed59. Read work/m4-validation/handoff.json/logs; do not reuse shared servers. Task-owned Node24.13.1 and .venv Python3.12.13; use owned ports/DB and allowed loopback origins. Skip shared Playwright browser GC on subsequent installs.",
-    "Mac CI: /Users/automation/work/DOUL-ci-runtime; Colima profile doul-ci, Docker context colima-doul-ci, runner doul-macmini-m4-linux. See infra/ci/macmini-runner.md. Preserve dirty primary Mac checkout; do not prune any other context."
+    "Mac CI: /Users/automation/work/DOUL-ci-runtime; Colima profile doul-ci, Docker context colima-doul-ci, runner doul-macmini-m4-linux. See infra/ci/macmini-runner.md. Preserve dirty primary Mac checkout; do not prune any other context.",
+    "Current integration worktree is physically /tmp/doul-root-non-c2-mvp-v1-20261009 with /workspace/work/doul-goal/non-c2-mvp-v1 alias; preserve alias/git metadata. Workspace disk is nearly full, use unique /tmp outputs; task npm cache preserved under /tmp with original-path alias."
   ],
   "testFixtures": {
     "postgresContainer": "doul-goal-postgres",

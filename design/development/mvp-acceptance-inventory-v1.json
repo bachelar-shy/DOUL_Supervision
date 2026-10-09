@@ -15,7 +15,8 @@
     "pilotStatus": "not_started",
     "pilotEvidenceFound": false,
     "pilotEvidenceLimit": "Existing dated verification artifacts explicitly say synthetic development/staging and actualPilotDeployed=false. The example configuration pack is not a selected project pack. No actual project role assignments, field work IDs, snapshots, or owner acceptance evidence were found.",
-    "comparedRootCommit": "2d59a99"
+    "comparedRootCommit": "9d0f2be C2-free candidate before final checkpoint",
+    "candidateVerification": "Focused integrated browser6PASS, AC-STORE HTTP1PASS, web/mobile typecheck and responsive build; final exact-head Mac CI pending."
   },
   "scenarios": [
     {
@@ -47,11 +48,11 @@
     {
       "id": "AC-S-01",
       "domain": "safety",
-      "assessment": "partial_real_api_browser_integration; full_scenario_not_accepted",
+      "assessment": "connected_equipment_permit_stop_and_distinct_resume_ui_proven_synthetic; field_prerequisites_not_accepted",
       "contract": "confirmed",
-      "backendApi": "real_http_persistence; full_equipment_and_released_inspection_path_unproven",
-      "ui": "real_api_browser_partial_closed_loop",
-      "integration": "partial_real_api_browser_synthetic_fixture",
+      "backendApi": "real_http_persistence_and_current_equipment_gates",
+      "ui": "connected_real_api_equipment_permit_stop_resume",
+      "integration": "synthetic_trusted_upstream_action_and_inspection_boundary",
       "pilot": "not_run",
       "evidence": [
         "app/schema/safety_execution_contract_v1.json",
@@ -61,17 +62,16 @@
         "https://github.com/bachelar-shy/DOUL_Supervision/issues/112",
         "tests_browser/zz-safety-closed-loop.spec.ts",
         "tests_browser/safety-equipment-closed-loop.spec.ts",
-        "tests_browser/support/safety_equipment_api_fixture.py"
+        "tests_browser/support/safety_equipment_api_fixture.py",
+        "design/development/agents/safety-connected-browser-handoff.json"
       ],
-      "provenScope": "Real browser/API flow completes permit review/authorization/activation; creates and idempotently replays a Stop through HTTP; exercises browser acknowledgement, verified Action remedy linkage, resume request, supervisor verification and explicit lift; proves lift does not reactivate the Permit, then requires separate SUP permit-resume approval. It proves CON self-lift and contractor resume approval are denied, stale Stop version is rejected, and the permit retains the exact immutable Stop v1 reference after later Stop versions. The required Hold Point inspection release is attempted and rejected with ACCEPTANCE_SIGNED. All evidence uses synthetic development demo actors and records.",
+      "provenScope": "Real browser/API flow completes permit review/authorization/activation; creates and idempotently replays a Stop through HTTP; exercises browser acknowledgement, verified Action remedy linkage, resume request, supervisor verification and explicit lift; proves lift does not reactivate the Permit, then requires separate SUP permit-resume approval. It proves CON self-lift and contractor resume approval are denied, stale Stop version is rejected, and the permit retains the exact immutable Stop v1 reference after later Stop versions. The required Hold Point inspection release is attempted and rejected with ACCEPTANCE_SIGNED. All evidence uses synthetic development demo actors and records. The newer equipment/Stop spec creates EquipmentInspection, Permit and Stop through real UI, proves failed-current-equipment atomic activation refusal, performs passing reinspection, links/verifies a current Action, verifies/lifts Stop, and separately requests/approves Permit resume. Trusted synthetic equipment/certificates/plans and pre-existing Action/passed Inspection are disclosed.",
       "gaps": [
-        "The actual hold-point inspection reaches passed but release_next_work is rejected with ACCEPTANCE_SIGNED because the required approved legal acceptance snapshot/signatures are not configured. Resume verification therefore uses a passed, unreleased synthetic Inspection; do not treat this as signed/released inspection proof.",
-        "The stop is created through HTTP because the inspected safety UI exposes no creation command. Remedy Action and inspections are also created/transitioned through published HTTP endpoints; the browser exercises Permit/Stop transitions and displays the connected state.",
-        "Existing issue #112 asked to align the F-03 ledger only to backend_api_implemented and exclude ui_connected based on the then-existing mocks. This new real browser flow strengthens UI evidence, but does not justify full AC-S-01 or pilot promotion; root must update the authoritative ledger only after assessing its specific status vocabulary and remaining acceptance boundaries.",
-        "The flow uses dev CON/SUP sessions and synthetic evidence; it is not a field pilot and includes no selected project pack, actual work permit, equipment registry, project role assignments, or Owner/site acceptance.",
-        "New actual UI Equipment/Permit scenario independently proves failed-current-equipment atomic rejection and passing reinspection activation using synthetic trusted upstream Equipment/certificates/plans. Full combined Stop/remedy/signed-release/resume UI scenario and actual equipment provisioning/site adoption remain unverified."
+        "Actual adopted equipment registry, certificates/calibration, work scope/permit/plans and field actors/evidence are not supplied.",
+        "The newer Stop path consumes a pre-existing synthetic passed Inspection and Action; it does not prove their full creation/reinspection/production legal signature path. The separate quality flow proves release using a test-only verifier.",
+        "The historical zz-safety case still demonstrates ACCEPTANCE_SIGNED refusal when signed release prerequisites are absent; this is preserved negative evidence, not the newer successful path."
       ],
-      "nextWork": "Add/identify an authorized project-level Equipment registry/trusted provisioning and real current safety-equipment inspection acceptance path; configure the adopted legal acceptance form and signer authority so an exact-version Hold Point inspection can be released; then extend the connected flow to use those records without demo readiness claims. Retain pilot_not_run until selected-project actors, assets, permit, evidence and site acceptance are supplied."
+      "nextWork": "Run adopted project Equipment/Permit/Stop/Inspection prerequisites with actual authorized field inputs; preserve distinct Permit authorization, work authorization, Stop lift and Permit resume. No pilot promotion."
     },
     {
       "id": "AC-SCH-01",
@@ -251,23 +251,25 @@
     {
       "id": "AC-VERSION-01",
       "domain": "cross-cutting",
-      "assessment": "several_backend_concurrency_proofs; cross-scenario_ui_conflict_incomplete",
+      "assessment": "quality_safety_payment_and_schedule_real_ui_stale_conflict_manual_recovery_proven; handover_and_pilot_incomplete",
       "contract": "confirmed",
       "backendApi": "partial_real_http",
-      "ui": "partial",
-      "integration": "not_proven_across_required_scenario_set",
+      "ui": "connected_real_api_two_authenticated_sessions",
+      "integration": "three_new_synthetic_browser_cases_passed",
       "pilot": "not_run",
       "evidence": [
         "tests_mvp/test_safety_http.py",
         "tests_mvp/test_schedule_http.py",
         "tests_browser/schedule.spec.ts",
-        "tests_mvp/test_wave2_location_anchors.py"
+        "tests_mvp/test_wave2_location_anchors.py",
+        "tests_browser/command-modal-stale-version.spec.ts",
+        "design/development/agents/command-modal-stale-recovery-handoff.json"
       ],
-      "provenScope": "Stale version writes are rejected by selected real APIs; schedule browser proves real API rejection and refresh of saved version.",
+      "provenScope": "Stale version writes are rejected by selected real APIs; schedule browser proves real API rejection and refresh of saved version. New common-modal tests use distinct real HTTP writer sessions to change Inspection, Stop and Payment Claim while their UI modal is stale; each stale UI POST receives 409 VERSION_CONFLICT, keeps an explicit error, and cancel/manual refresh shows the committed version with one writer audit. Integrated focused regression: three cases passed.",
       "gaps": [
-        "A consistent UI conflict and recovery path is not evidenced across the priority pilot workflows (quality, safety, payment, handover)."
+        "Handover/Warranty current-reference lifecycle remains pending Product decision; real pilot actor/device concurrency not run."
       ],
-      "nextWork": "Reuse a real two-session stale write acceptance helper for each pilot workflow and assert explicit conflict, refresh, and user-directed retry."
+      "nextWork": "Validate adopted field concurrency and sanctioned handover lifecycle after Product decision; preserve explicit conflict and user-directed refresh."
     },
     {
       "id": "AC-IDEMP-01",
@@ -297,23 +299,25 @@
     {
       "id": "AC-STORE-01",
       "domain": "evidence",
-      "assessment": "storage_failure_tests_exist; full_domain_finalize_atomicity_not_proven_for_all_required_flows",
+      "assessment": "real_http_evidence_registration_failure_rollback_and_same_key_recovery_proven_on_sqlite; production_object_store_and_pilot_not_proven",
       "contract": "confirmed",
-      "backendApi": "partial_real_http_storage",
+      "backendApi": "authenticated_http_transaction_rollback_recovery_and_linked_required_evidence_workflow",
       "ui": "not_proven",
-      "integration": "partial",
+      "integration": "synthetic_sqlite_development_acceptance",
       "pilot": "not_run",
       "evidence": [
         "tests_mvp/test_parallel_evidence_upload.py",
         "tests/test_s2_streaming_storage.py",
         "tests_mvp/test_wave1_integration.py",
-        "tests_mvp/test_persistence_boundary.py"
+        "tests_mvp/test_persistence_boundary.py",
+        "tests_mvp/test_ac_store_failure_atomicity_http.py",
+        "design/development/agents/ac-store-failure-atomicity-handoff.json"
       ],
-      "provenScope": "Object storage upload/verification failures and selected API persistence boundaries have focused tests.",
+      "provenScope": "Authenticated quarantine promotion injects a canonical blob write failure after writing; HTTP 422 leaves exact persisted state/blob count, Evidence, idempotency cache and audit unchanged. Same-key/body retry commits one exact-hash/byte Evidence, replay returns the same record, required-evidence Observation refusal/acceptance and linked Inspection-to-Issue workflow run through HTTP, and reopen preserves Evidence/blob/records.",
       "gaps": [
-        "No end-to-end acceptance was found proving a domain command that requires evidence cannot report success when durable blob storage fails, followed by safe retry/recovery."
+        "SQLite/local quarantine/synthetic normalized demo worker fixture; production object-store failure semantics and real provider/field acceptance are separate."
       ],
-      "nextWork": "Inject object-store failure during an evidence-required official command and assert no finalized domain result, no orphaned false success, and recoverable retry."
+      "nextWork": "Repeat adopted object-store and domain scenarios with actual deployment/field inputs; retain synthetic SQLite evidence boundary."
     },
     {
       "id": "AC-WORKER-01",
@@ -370,21 +374,26 @@
     {
       "id": "AC-OFFLINE-01",
       "domain": "mobile",
-      "assessment": "local_offline_upload_exists; conflict_resolution_acceptance_absent",
+      "assessment": "responsive_mobile_web_versioned_intent_reconnect_conflict_and_explicit_submit_proven; native_and_pilot_not_proven",
       "contract": "confirmed",
-      "backendApi": "not_applicable_for_local_conflict",
-      "ui": "partial_offline_evidence_only",
-      "integration": "not_proven",
+      "backendApi": "existing_current_authorized_commands_unchanged",
+      "ui": "real_connected_mobile_viewport_browser",
+      "integration": "two_synthetic_real_api_cases_passed",
       "pilot": "not_run",
       "evidence": [
         "tests_browser/workspace.spec.ts",
-        "app/schema/implementation_acceptance_catalog_v1.json#AC-OFFLINE-01"
+        "app/schema/implementation_acceptance_catalog_v1.json#AC-OFFLINE-01",
+        "apps/web/src/pages/OfflineCommandIntentPanel.tsx",
+        "apps/web/src/data/offline-command-intent.ts",
+        "tests_browser/offline-reconnect.spec.ts",
+        "design/development/agents/offline-reconnect-handoff.json"
       ],
-      "provenScope": "Browser coverage asserts offline evidence remains local until explicit upload.",
+      "provenScope": "One project/party/RoleAssignment-scoped device intent stores captured expectedVersion/payload/evidence without auth secrets. It survives reload. Reconnect automatically reads current authorized server workspace, shows captured/current versions and blocks stale or unavailable commands. A real independent writer changes the Inspection; conflict/cancel leaves the server and its single audit intact. A separate unchanged-intent case proves capture/reconnect sends no command and only explicit user submission invokes the real authorized API once.",
       "gaps": [
-        "No offline command queue/reconnect conflict flow was found that rejects last-write-wins and surfaces the conflicting server/current versions for human resolution."
+        "Responsive mobile web only; native React Native offline-command queue/reconnect acceptance is not claimed.",
+        "Actual field actor/device tests and adopted project configuration are not supplied."
       ],
-      "nextWork": "Implement explicit conflict UI for reconnecting offline changes and test competing online/offline edits with a human-selected resolution."
+      "nextWork": "Adopt the pilot device/platform scope and repeat real field conflict/task usability; extend native acceptance if required by the selected pack."
     }
   ],
   "crossCuttingGaps": [
