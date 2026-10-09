@@ -10,12 +10,12 @@
       "log": "work/goal-contracts-final.log"
     },
     "apiSuite": {
-      "run": 392,
-      "passed": 387,
+      "run": 394,
+      "passed": 389,
       "skipped": 5,
       "result": "PASS",
-      "log": "work/goal-current-api-final-catalog.log",
-      "skipBoundary": "Optional document runtime separately verified 5 tests. Actual PostgreSQL 16 tests executed."
+      "log": "work/goal-current-api-with-telemetry.log",
+      "skipBoundary": "Optional document runtime separately verified 5 tests; actual PostgreSQL 16 tests executed."
     },
     "documentRuntime": {
       "passed": 5,
@@ -24,21 +24,36 @@
     },
     "staticUI": "Web/mobile typecheck, UI boundary, web lint (warnings) and exact-lock build PASS on latest integrated changes. No weakening of checks.",
     "lockedDependencies": "Fresh exact-lock npm ci, physical repository workspace tree and dependency inventory PASS (work/goal-physical-dependencies.log); previous dependency trees preserved. Production Python lock unchanged.",
-    "fullBrowser": "84/84 prior integration PASS (work/goal-current-browser-full.log); latest 85-case integration running (work/goal-integrated-browser-85.log).",
+    "fullBrowser": "84/85 PASS with one Quality read synchronization failure (work/goal-integrated-browser-85.log). Fixed by waiting for exact current case projection plus version/readiness assertions; Quality PASS43.1s thereafter. 87-case rerun interrupted by environment refresh at36 with no terminal result (work/goal-integrated-browser-87.log); do NOT claim complete suite success. Final integration rerun pending new focused scenarios.",
     "mockLocalization": "6 PASS in separate mock-only suite; actual API localization 10 PASS separately. No field acceptance claim.",
     "dockerWeb": "Localization COPY corrected for web and operational proxy images; prior 97cee102 actual container/operational CI PASS. Latest-head CI blocked before start; no current-head acceptance claim.",
     "githubCI": {
       "pr": 129,
-      "lastPushedHead": "7a036e225f71084bb8d057066c3e7ca644f6cab6",
+      "lastPushedHead": "4588ce6bfb39c9898d13079f159b619f8289dd91",
       "status": "BLOCKED_ACCOUNT_BILLING_BEFORE_JOB_START",
       "run": 37860451176,
       "evidence": "User supplied GitHub annotation: job was not started because recent account payments have failed or spending limit needs to be increased. All eight workflows have no execution steps.",
-      "resume": "Account owner resolves Billing & plans; push completed verified integration checkpoint and require all latest exact-head checks before merge. Do not treat earlier-head successes as current acceptance."
+      "resume": "Account owner resolves Billing & plans; push completed verified integration checkpoint and require all latest exact-head checks before merge. Do not treat earlier-head successes as current acceptance.",
+      "lastObservedFailureHead": "2d59a99e994181a886c96e298fdaf68c055bfa6a",
+      "lastObservedRuns": [
+        37864753348,
+        37864753361,
+        37864753333,
+        37864753321,
+        37864753287,
+        37864753371,
+        37864753414,
+        37864753517
+      ],
+      "lastObservedJobs": "8 completedfailure jobs, allsteps/logsnull beforestart; userconfirmedbillingannotation onoriginalrun37860451176."
     },
     "referenceCatalog": "6 actual HTTP authorization tests PASS including current Evidence/InformationItem/Inspection/Decision/Issue/Action references, foreign project/location exclusion and changed assignment visibility.",
     "paymentBrowser": "Actual HTTP/UI Payment closed loop PASS in 84-case integration; exact-version upstream Owner Decisions explicitly fixture-provisioned, so Owner Decision authoring not proven by this scenario.",
-    "qualityBrowser": "Actual HTTP/UI full Quality workflow and closed Issue presentation PASS (work/goal-quality-closed-readiness.log, 33.2s). Real signatures use an explicitly named test-only trusted verifier; no legal-provider/pilot acceptance.",
-    "safetyEquipmentBrowser": "Real HTTP/UI Equipment inspection fail, unavailable Asset, correction/reinspection pass and Permit activation PASS (work/goal-safety-equipment-integrated.log, 27.0s). Failed Equipment activation returns atomic 409, then activation succeeds after actual passing reinspection. Fixture provisions trusted upstream Equipment/current certificates/approved plans and Requirement only; workflow Inspection and Permit created through UI."
+    "qualityBrowser": "Typed result widget full real HTTP/UI Quality closeout PASS28.1s (work/goal-quality-typed-results-rerun.log). Explicit test-only trusted signature provider remains distinct from real legal-provider acceptance.",
+    "safetyEquipmentBrowser": "Real HTTP/UI Equipment inspection fail, unavailable Asset, correction/reinspection pass and Permit activation PASS (work/goal-safety-equipment-integrated.log, 27.0s). Failed Equipment activation returns atomic 409, then activation succeeds after actual passing reinspection. Fixture provisions trusted upstream Equipment/current certificates/approved plans and Requirement only; workflow Inspection and Permit created through UI.",
+    "authoringLocalization": "ActualHTTP three-language draft/officialSource preservation and absent-verifier501 localizedrefusal PASS1 (work/goal-authoring-localization-integrated.log); separate Mock-only localization suite PASS7 (work/goal-authoring-mock-localization-integrated.log).",
+    "inspectionResultWidget": "WorkerfocusedactualHTTP/browser PASS1 on exactrefs/stringprecision/per-characterfocus/blankresults and atomicemptysubmission rejection; rootintegration and overlappingbaselinecase pending. No automatic judgment or release.",
+    "telemetryFailure": "ActualTestClient source+existingobservability15PASS; current full394 API includesnew2 sinkfailure tests. Stdout IO failure falls back to identical allowlisted stderr JSON, neither alters 200/403/409 nor persisted domainAuditEvent. Both unavailable returnsfalse; recordvalidation stillraises."
   },
   "operations": {
     "s3": "Actual RustFS versioned private store retry/version/quarantine verification: 11 tests PASS; synthetic fixtures only.",
