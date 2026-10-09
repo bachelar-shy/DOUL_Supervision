@@ -23,7 +23,7 @@ type Fixture = {
   emergencyPlanRef: Ref;
 };
 
-const safetyTabs = { permit: "작업허가", equipment: "장비 안전검사" } as const;
+const safetyTabs = { permit: "작업허가", stop: "작업중지", equipment: "장비 안전검사" } as const;
 const expectedVersions = new Map<string, number>();
 let fixtureToken = "";
 let apiOrigin = "";
@@ -162,10 +162,10 @@ async function selectRecord(page: Page, title: string) {
   const row = page.locator(".record-list").getByRole("button").filter({ hasText: title }).first();
   await expect(row).toBeVisible();
   await row.click();
-  await expect(page.locator(".detail-head h2")).toHaveText(title);
+  await expect(page.locator(".detail-head h2, h2.detail-title")).toHaveText(title);
 }
 
-async function createSafetyDraft(page: Page, machine: "equipment" | "permit", fixture: Fixture, title: string) {
+async function createSafetyDraft(page: Page, machine: "equipment" | "permit" | "stop", fixture: Fixture, title: string, permitTitle?: string) {
   await selectTab(page, safetyTabs[machine]);
   const panel = page.locator('[data-ui-component="safety-authoring-panel"]');
   await expect(panel).toBeVisible();
@@ -173,18 +173,32 @@ async function createSafetyDraft(page: Page, machine: "equipment" | "permit", fi
   const requirementGroup = panel.getByRole("group", { name: "적용 요건" });
   await requirementGroup.getByLabel("Safety equipment inspection and permit control", { exact: false }).check();
   const evidenceGroup = panel.getByRole("group", { name: "증빙" });
-  if (machine === "permit") await evidenceGroup.getByRole("checkbox").first().check();
+  if (machine === "permit" || machine === "stop") await evidenceGroup.getByRole("checkbox").first().check();
   if (machine === "equipment") {
     const equipmentSelect = panel.locator("select").first();
     await equipmentSelect.selectOption(`${fixture.assetRef.objectType}:${fixture.assetRef.objectId}:${fixture.assetRef.version}`);
     await panel.getByLabel("검사 유형", { exact: true }).fill("Pre-use safety inspection");
-  } else {
+  } else if (machine === "permit") {
     await panel.getByLabel("허가 번호", { exact: true }).fill(`PERMIT-${title.slice(-8)}`);
     await panel.getByLabel("작업 유형", { exact: true }).fill("Equipment operation");
     await panel.getByLabel("위험 수준", { exact: true }).fill("high");
   }
+  if (machine === "stop") {
+    await panel.getByLabel("작업중지 번호", { exact: true }).fill(`STOP-${title.slice(-8)}`);
+    await panel.getByLabel("중지 범위 유형", { exact: true }).fill("permit");
+    await panel.getByLabel("작업중지 사유", { exact: true }).fill("Pre-start inspection found incomplete edge protection.");
+    await panel.getByLabel("위험 설명", { exact: true }).fill("Unprotected edge in the active work area.");
+    const now = new Date();
+    const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+    await panel.getByLabel("발견 시각", { exact: true }).fill(localNow);
+    await panel.getByLabel("시행 시각", { exact: true }).fill(localNow);
+    const affectedPermits = panel.getByRole("group", { name: "영향 작업허가" });
+    const permitLabel = affectedPermits.locator("label").filter({ hasText: permitTitle || "" });
+    await permitLabel.locator('input[type="checkbox"]').check();
+  }
+  const collection = machine === "equipment" ? "safety-equipment-inspections" : machine === "permit" ? "safety-permits" : "safety-stop-orders";
   const createdResponse = page.waitForResponse((response) => response.request().method() === "POST"
-    && response.url().endsWith(machine === "equipment" ? "/safety-equipment-inspections" : "/safety-permits"));
+    && response.url().endsWith(`/${collection}`));
   await panel.getByRole("button", { name: "안전 초안 저장", exact: true }).click();
   const response = await createdResponse;
   const body = await jsonResponse<{ record: RecordData }>(response, 201);
@@ -444,4 +458,186 @@ test("real Safety UI/API keeps failed equipment unavailable until a verified rei
   expect(pagePosts.some((url) => url.endsWith("/safety-equipment-inspections"))).toBe(true);
   expect(pagePosts.some((url) => url.endsWith("/safety-permits"))).toBe(true);
   expect(pagePosts.every((url) => /\/(?:safety-equipment-inspections|safety-permits)(?:\/|$)/.test(new URL(url).pathname))).toBe(true);
+});
+
+test("real Safety UI/API separates Stop correction, verification, lift, and Permit resume approval", async ({ page, request }) => {
+  test.setTimeout(180_000);
+  expectedVersions.clear();
+  const fixture = await readFixture(request);
+  const con = await login(request, "CON");
+  const sup = await login(request, "SUP");
+  expect(con.projectId).toBe(sup.projectId);
+  const suffix = randomUUID().slice(0, 8);
+  const permitTitle = `AC-S Permit Resume ${suffix}`;
+  const stopTitle = `AC-S Stop Resume ${suffix}`;
+  const pagePosts: string[] = [];
+  page.on("request", (req) => {
+    if (req.method() === "POST" && /\/api\/projects\/[^/]+\/(?:safety-stop-orders|safety-permits|actions)(?:\/|$)/.test(new URL(req.url()).pathname)) pagePosts.push(req.url());
+  });
+
+  // Read one live demo Action and one passed Inspection as current prerequisites.
+  // The fixture does not create workflow records; the Action is remedied and
+  // verified below, while the passed Inspection is referenced as verification.
+  const initialWorkspace = await readWorkspace(request, con);
+  const remedyItem = initialWorkspace.items.find((item) => item.machine === "action" && item.record.status === "in_progress");
+  const passedInspection = initialWorkspace.items.find((item) => item.machine === "inspection"
+    && item.record.resultStatus === "pass" && ["passed", "completed"].includes(item.record.status));
+  expect(remedyItem, "the demo project should provide a current in-progress Action for real UI remedy/verification").toBeTruthy();
+  expect(passedInspection, "the demo project should provide a current passed Inspection for Stop resume verification").toBeTruthy();
+  const remedyTitle = remedyItem!.record.title || `Action ${remedyItem!.record.id}`;
+  expectedVersions.set(remedyItem!.record.id, remedyItem!.record.version);
+
+  // Create and activate a Permit through the Safety authoring and command UI.
+  await chooseRole(page, "CON");
+  const permitDraft = await createSafetyDraft(page, "permit", fixture, permitTitle);
+  expect(permitDraft.status).toBe("draft");
+  await selectRecord(page, permitTitle);
+  const readiness = {
+    methodStatementCurrent: true,
+    riskAssessmentCurrent: true,
+    personnelQualified: true,
+    equipmentReady: true,
+    controlMeasuresReady: true,
+    emergencyReady: true,
+    environmentalConditionsReady: true,
+    noBlockingSafetyIssue: true,
+  };
+  const validFrom = new Date(Date.now() - 60_000).toISOString();
+  const validTo = new Date(Date.now() + 86_400_000).toISOString();
+  let permit = await runCommand(page, fixture.projectId, permitDraft, "safety-permits", "submit_permit", {
+    permitNo: `PERMIT-${suffix}`,
+    workType: "Equipment operation",
+    riskLevel: "high",
+    responsiblePartyId: con.actor.partyId,
+    safetyResponsiblePartyId: sup.actor.partyId,
+    methodStatementRef: fixture.methodStatementRef,
+    riskAssessmentRef: fixture.riskAssessmentRef,
+    emergencyPlanRef: fixture.emergencyPlanRef,
+    personnelQualificationRefs: [],
+    equipmentRefs: [],
+    validFrom,
+    validTo,
+    readiness,
+    blockedReasons: [],
+  }, [fixture.evidenceId]);
+  await chooseRole(page, "SUP");
+  await selectTab(page, safetyTabs.permit);
+  await selectRecord(page, permitTitle);
+  permit = await runCommand(page, fixture.projectId, permit, "safety-permits", "receive_permit");
+  permit = await runCommand(page, fixture.projectId, permit, "safety-permits", "accept_for_safety_review");
+  permit = await runCommand(page, fixture.projectId, permit, "safety-permits", "request_prestart_verification", {
+    safetyReviewComplete: true,
+    readiness,
+    reviewNotes: "Review the affected work permit after Stop lift as a separate decision.",
+  });
+  permit = await runCommand(page, fixture.projectId, permit, "safety-permits", "request_authorization", {
+    prestartVerified: true,
+    prestartVerificationRefs: [{ objectType: "Inspection", objectId: passedInspection!.record.id, version: passedInspection!.record.version }],
+    readiness,
+  }, [fixture.evidenceId]);
+  permit = await runCommand(page, fixture.projectId, permit, "safety-permits", "authorize", { validFrom, validTo });
+  permit = await runCommand(page, fixture.projectId, permit, "safety-permits", "activate", { readiness, blockedReasons: [] });
+  expect(permit.status).toBe("active");
+  expect(permit.data?.workAuthorized).toBe(true);
+
+  // SUP authors a real Stop Order through the Safety draft form. Its server
+  // creation suspends this exact active Permit and clears workAuthorized.
+  const stop = await createSafetyDraft(page, "stop", fixture, stopTitle, permitTitle);
+  expect(stop.subtype).toBe("SafetyStopOrder");
+  expect(stop.status).toBe("issued");
+  const suspendedWorkspace = await readWorkspace(request, sup);
+  permit = suspendedWorkspace.items.find((item) => item.record.id === permit.id)!.record;
+  expectedVersions.set(permit.id, permit.version);
+  expect(permit.status).toBe("suspended");
+  expect(permit.data?.workAuthorized).toBe(false);
+  expect(permit.data?.stopOrderRefs).toContainEqual({ objectType: "WorkItem", objectId: stop.id, version: stop.version });
+
+  // The assigned contractor acknowledges the Stop and links the current
+  // corrective Action. The correction and supervisor verification are real
+  // Action commands in the existing action workbench.
+  await chooseRole(page, "CON");
+  await selectTab(page, safetyTabs.stop);
+  await selectRecord(page, stopTitle);
+  let currentStop = await runCommand(page, fixture.projectId, stop, "safety-stop-orders", "acknowledge_stop");
+
+  await page.goto("/#/actions");
+  await selectRecord(page, remedyTitle);
+  let remedied = await runCommand(page, fixture.projectId, remedyItem!.record, "actions", "submit", {
+    correction: "Restored the missing edge protection and isolated the affected work area.",
+    rootCause: "A temporary access change omitted the edge protection check.",
+    preventiveAction: "Add an independent edge protection confirmation to pre-start checks.",
+  }, [fixture.evidenceId]);
+  await chooseRole(page, "SUP");
+  await page.goto("/#/actions");
+  await selectRecord(page, remedyTitle);
+  remedied = await runCommand(page, fixture.projectId, remedied, "actions", "verify", {}, [fixture.evidenceId]);
+  expect(remedied.status).toBe("verified");
+
+  await chooseRole(page, "CON");
+  await selectTab(page, safetyTabs.stop);
+  await selectRecord(page, stopTitle);
+  currentStop = await runCommand(page, fixture.projectId, currentStop, "safety-stop-orders", "start_correction", {
+    correctiveActionRefs: [{ objectType: "Action", objectId: remedied.id, version: remedied.version }],
+  });
+  await chooseRole(page, "CON");
+  await selectTab(page, safetyTabs.stop);
+  await selectRecord(page, stopTitle);
+  const resumeActions = await request.get(`${apiOrigin}/projects/${fixture.projectId}/safety-stop-orders/${currentStop.id}/available-actions`, { headers: auth(con) });
+  expect(resumeActions.status(), await resumeActions.text()).toBe(200);
+  const resumeActionState = await resumeActions.json() as Array<{ command: string; ready: boolean; blockedReason?: { code?: string } }>;
+  expect(resumeActionState.find((action) => action.command === "request_resume"), JSON.stringify(resumeActionState)).toMatchObject({
+    ready: false,
+    requiresInput: true,
+    blockedReason: { code: "EVIDENCE_REQUIRED" },
+  });
+  currentStop = await runCommand(page, fixture.projectId, currentStop, "safety-stop-orders", "request_resume", {}, [fixture.evidenceId]);
+  await chooseRole(page, "SUP");
+  await selectTab(page, safetyTabs.stop);
+  await selectRecord(page, stopTitle);
+  currentStop = await runCommand(page, fixture.projectId, currentStop, "safety-stop-orders", "start_resume_verification", {
+    resumeVerificationRefs: [{ objectType: "Inspection", objectId: passedInspection!.record.id, version: passedInspection!.record.version }],
+  });
+  currentStop = await runCommand(page, fixture.projectId, currentStop, "safety-stop-orders", "lift_stop", {}, [fixture.evidenceId]);
+  expect(currentStop.status).toBe("lifted");
+  expect(currentStop.data?.liftedAt).toBeTruthy();
+  expect(Object.values(currentStop.data?.resumeGate || {}).every((value) => value === true)).toBe(true);
+
+  // Lift clears the linked Stop condition, but never resumes the Permit.
+  const afterLift = await readWorkspace(request, sup);
+  permit = afterLift.items.find((item) => item.record.id === permit.id)!.record;
+  expect(permit.status).toBe("suspended");
+  expect(permit.data?.workAuthorized).toBe(false);
+
+  await chooseRole(page, "CON");
+  await selectTab(page, safetyTabs.permit);
+  await selectRecord(page, permitTitle);
+  permit = await runCommand(page, fixture.projectId, permit, "safety-permits", "request_resume", {
+    readiness,
+    blockedReasons: [],
+  }, [fixture.evidenceId]);
+  expect(permit.status).toBe("resume_review");
+  expect(permit.data?.workAuthorized).toBe(false);
+  await chooseRole(page, "SUP");
+  await selectTab(page, safetyTabs.permit);
+  await selectRecord(page, permitTitle);
+  permit = await runCommand(page, fixture.projectId, permit, "safety-permits", "approve_resume", {
+    readiness,
+    blockedReasons: [],
+  }, [fixture.evidenceId]);
+  expect(permit.status).toBe("active");
+  expect(permit.data?.workAuthorized).toBe(true);
+
+  const finalWorkspace = await readWorkspace(request, sup);
+  const finalStop = finalWorkspace.items.find((item) => item.record.id === currentStop.id)!.record;
+  const finalPermit = finalWorkspace.items.find((item) => item.record.id === permit.id)!.record;
+  const finalAction = finalWorkspace.items.find((item) => item.record.id === remedied.id)!.record;
+  expect(finalStop.status).toBe("lifted");
+  expect(finalPermit.status).toBe("active");
+  expect(finalPermit.data?.workAuthorized).toBe(true);
+  expect(finalAction.status).toBe("verified");
+  expect(pagePosts.some((url) => url.endsWith("/safety-stop-orders"))).toBe(true);
+  expect(pagePosts.some((url) => url.includes(`/safety-stop-orders/${stop.id}/lift-stop`))).toBe(true);
+  expect(pagePosts.some((url) => url.includes(`/safety-permits/${permit.id}/approve-resume`))).toBe(true);
+  expect(pagePosts.some((url) => url.includes(`/actions/${remedied.id}/submit`))).toBe(true);
+  expect(pagePosts.some((url) => url.includes(`/actions/${remedied.id}/verify`))).toBe(true);
 });

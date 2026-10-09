@@ -1,11 +1,11 @@
-"""Ephemeral real API fixture for the Safety equipment browser acceptance.
+"""Ephemeral real API fixture for the Safety workflow browser acceptance.
 
 Direct store writes are limited to trusted prerequisites: the Equipment asset,
 approved safety and calibration certificates, applicable safety Requirement
 configuration and approved safety-plan source documents. Current actor
 qualifications are read from the demo project, never manufactured here. Every
-safety equipment inspection and safety permit workflow mutation is submitted
-through the browser UI.
+safety equipment inspection, Safety Permit, Safety Stop, corrective Action,
+and permit-resume workflow mutation is submitted through the browser UI.
 """
 from __future__ import annotations
 
