@@ -7,15 +7,33 @@ records through the HTTP endpoints.
 from __future__ import annotations
 
 import argparse
-from copy import deepcopy
 import json
 import sys
 from pathlib import Path
 
 import uvicorn
+from fastapi.responses import JSONResponse
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tests_mvp.test_handover_http import HandoverHttpTests
+
+
+class MockTrustedVerifier:
+    """TEST ONLY: deterministic signature boundary double; not provider proof."""
+
+    def __init__(self):
+        self.calls = []
+
+    def verify(self, request):
+        self.calls.append(request)
+        return {
+            "verified": True,
+            "partyId": request.party_id,
+            "documentHash": request.document_hash,
+            "method": request.method,
+            "signerRole": request.signer_role,
+            "mockAdapter": True,
+        }
 
 
 def main() -> None:
@@ -51,6 +69,22 @@ def main() -> None:
     # contractual fixture and register its machine for the connected case UI.
     setup.client.close()
     app = setup.app
+    verifier = MockTrustedVerifier()
+    app.state.signature_verifier = verifier
+
+    async def verifier_calls():
+        return JSONResponse({
+            "testOnly": True,
+            "verifier": "MockTrustedVerifier",
+            "calls": [{
+                "partyId": call.party_id,
+                "documentHash": call.document_hash,
+                "method": call.method,
+                "signerRole": call.signer_role,
+            } for call in verifier.calls],
+        })
+
+    app.add_api_route("/_test/signature-verifications", verifier_calls, methods=["GET"])
     store = setup.store
     meta = {
         "projectId": setup.project,

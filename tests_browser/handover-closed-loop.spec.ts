@@ -344,7 +344,7 @@ test("real Completion UI preserves Owner reservation proposal inputs on a handov
 });
 
 test("real Completion UI carries commissioning through Owner partial handover and separates warranty remedy from reinspection", async ({ page }) => {
-  test.setTimeout(180000);
+  test.setTimeout(360000);
   const { child, base, fixture } = await startApi();
   try {
     let latestWorkspace: any;
@@ -482,6 +482,70 @@ test("real Completion UI carries commissioning through Owner partial handover an
     await runWorkbenchCommand(page, "inspections", punchReinspection, /submit results|결과 제출/i, { "검측 항목·측정 결과": passingChecks }, [fixture.evidenceId, fixture.retestEvidenceId]);
     await runWorkbenchCommand(page, "inspections", punchReinspection, /mark compliant|pass|적합 판정/i, {}, [fixture.evidenceId, fixture.retestEvidenceId]);
     expect(latestWorkspace.items.find((item: any) => item.record.id === reinspectionId)?.record.status).toBe("passed");
+
+    // A passed hold point remains unreleased until its exact final FM-09
+    // snapshot is signed by both required roles. The API fixture uses an
+    // explicit test-only verifier; it is not evidence of provider validation.
+    const passedReinspection = latestWorkspace.items.find((item: any) => item.record.id === reinspectionId).record;
+    await page.goto("/#/documents");
+    await page.getByLabel(/document form/i).selectOption("FM-09");
+    await page.getByLabel(/document source/i).selectOption(reinspectionId);
+    await page.getByLabel(/document output language/i).selectOption("vi");
+    await page.getByLabel(/render type/i).selectOption("final");
+    const formValues: Record<string, string> = {
+      "inspection.no": reinspectionId,
+      "inspection.work_name": passedReinspection.workName,
+      "work.discipline": latestWorkspace.context.scope.discipline,
+      "work.location": latestWorkspace.context.scope.locationId,
+      "inspection.datetime": new Date().toISOString().slice(0, 16),
+      "inspection.place": latestWorkspace.context.scope.locationId,
+      "basis.drawings": fixture.drawingRef.objectId,
+      "basis.criteria": fixture.requirementRef.objectId,
+      "basis.tests": "dimension",
+      "result.status": "pass",
+      "result.next_work_allowed": "false",
+    };
+    for (const [name, value] of Object.entries(formValues)) {
+      const field = page.locator(`[name="${name}"]`);
+      if (await field.evaluate((node) => node.tagName.toLowerCase()) === "select") await field.selectOption(value);
+      else await field.fill(value);
+    }
+    const finalRenderResponsePromise = page.waitForResponse((response) => response.url().includes("/forms/FM-09/render") && response.request().method() === "POST");
+    await page.getByRole("button", { name: /generate final html snapshot/i }).click();
+    const finalRenderResponse = await finalRenderResponsePromise;
+    const finalRenderBody = await finalRenderResponse.json();
+    expect(finalRenderResponse.status(), JSON.stringify(finalRenderBody)).toBe(200);
+    expect(finalRenderBody.status).toBe("final");
+    expect(finalRenderBody.sourceDomainRefs[0]).toMatchObject({ objectId: reinspectionId, version: passedReinspection.version });
+    const finalDocumentId = finalRenderBody.id as string;
+    const signDocument = async (role: "owner_side_supervisor" | "contractor_technical_lead") => {
+      const signing = page.getByRole("region", { name: /legal signature/i });
+      await signing.getByLabel(/current signer role/i).selectOption(role);
+      await signing.getByLabel(/signing method/i).selectOption("approved_e_signature");
+      const signed = page.waitForResponse((response) => response.url().includes(`/documents/${finalDocumentId}/sign`) && response.request().method() === "POST");
+      await signing.getByRole("button", { name: /request signature verification/i }).click();
+      const response = await signed;
+      expect(response.status(), await response.text()).toBe(200);
+    };
+    await signDocument("owner_side_supervisor");
+    await useRole(page, "CON");
+    await page.goto("/#/documents");
+    await page.getByLabel("Select document", { exact: true }).selectOption(finalDocumentId);
+    await signDocument("contractor_technical_lead");
+    const verifierReport = await (await fetch(`${base}/_test/signature-verifications`)).json();
+    expect(verifierReport).toMatchObject({
+      testOnly: true,
+      verifier: "MockTrustedVerifier",
+      calls: [
+        { signerRole: "owner_side_supervisor", documentHash: finalRenderBody.renderHash, method: "approved_e_signature" },
+        { signerRole: "contractor_technical_lead", documentHash: finalRenderBody.renderHash, method: "approved_e_signature" },
+      ],
+    });
+
+    await useRole(page, "SUP");
+    await page.goto("/#/inspections");
+    await runWorkbenchCommand(page, "inspections", punchReinspection, /release next work|후속공정 허용/i, {}, [fixture.evidenceId]);
+    expect(latestWorkspace.items.find((item: any) => item.record.id === reinspectionId)?.record.nextWorkAllowed).toBe(true);
     await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
     await runWorkbenchCommand(page, "issues", punchTitle, /review closure|close/i, {
       closureEvidenceIds: [fixture.evidenceId, fixture.retestEvidenceId],
@@ -489,6 +553,14 @@ test("real Completion UI carries commissioning through Owner partial handover an
 
     await page.getByRole("navigation").getByRole("button", { name: /commissioning.*handover.*warranty/i }).click();
     await workspace.getByRole("button", { name: /Browser closed loop commissioning/ }).click();
+    const completedPunch = latestWorkspace.items.find((item: any) => item.record.id === fixture.issueRef.objectId);
+    const commissioningReady = latestWorkspace.items.find((item: any) => item.record.id === commissioningId);
+    const readyAction = commissioningReady.actions.find((action: any) => action.command === "mark_ready_for_handover");
+    expect(readyAction?.ready, JSON.stringify({
+      blockedReason: readyAction?.blockedReason,
+      capturedIssueRef: commissioningReady.record.data.punchIssueRefs?.[0],
+      currentPunch: completedPunch?.record && { id: completedPunch.record.id, version: completedPunch.record.version, status: completedPunch.record.status },
+    })).toBe(true);
     await runCompletionCommand(page, /mark ready for handover/i, {}, [fixture.retestEvidenceId]);
     await runCompletionCommand(page, /close commissioning/i);
     const commissioning = latestWorkspace.items.find((item: any) => item.record.id === commissioningId);
