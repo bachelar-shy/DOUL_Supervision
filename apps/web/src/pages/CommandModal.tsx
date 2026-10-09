@@ -208,11 +208,13 @@ export function CommandModal({
   workspace,
   onClose,
   onSubmit,
+  submitLabel,
 }: {
   dialog: { item: WorkItem; action: CommandDescriptor };
   workspace: Workspace;
   onClose: () => void;
   onSubmit: (p: Fields, evidenceIds: string[]) => Promise<void>;
+  submitLabel?: string;
 }) {
   const { t } = useTranslation();
   const [values, setValues] = useState<Record<string, string>>(() =>
@@ -476,7 +478,7 @@ export function CommandModal({
           >
             {busy
               ? t("commandModal.validating")
-              : t("commandModal.execute")}
+              : submitLabel ?? t("commandModal.execute")}
           </button>
         </div>
       </section>

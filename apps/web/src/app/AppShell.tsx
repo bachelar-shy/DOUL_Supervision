@@ -29,6 +29,8 @@ import {
   WorkbenchPage,
 } from "../pages";
 import { Icon } from "../pages/shared";
+import { OfflineCommandIntentPanel } from "../pages/OfflineCommandIntentPanel";
+import { offlineIntentTitle } from "../data/offline-command-labels";
 import { machineForRoute, mobileRoutes, roleRoutes, routes } from "./routes";
 import { paymentLabelKeys } from "../data/payment-workspace";
 import { completionLabelKeys } from "../data/completion-workspace";
@@ -349,6 +351,10 @@ export function AppShell({ client }: { client: SupervisionClient }) {
               </>
             }
           />
+          {workspace && client.kind !== "mock" && <details className="mb-3">
+            <summary>{offlineIntentTitle(i18n.resolvedLanguage || "ko")}</summary>
+            <OfflineCommandIntentPanel key={`${workspace.project.id}:${client.session?.actor.roleAssignmentId ?? workspace.role.id}:${client.session?.actor.partyId}`} client={client} workspace={workspace} online={online} onChanged={refresh} />
+          </details>}
           {error && (
             <div role="alert" className="error-box">
               <strong>{t("app.error.unprocessed")}</strong> {error}

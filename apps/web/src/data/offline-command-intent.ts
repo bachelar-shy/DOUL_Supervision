@@ -32,7 +32,7 @@ export function saveOfflineCommandIntent(key: string, item: WorkItem, command: s
   const intent: OfflineCommandIntent = {
     projectId, actorId, roleId, machine: item.machine, itemId: item.record.id, command,
     expectedVersion: item.record.version,
-    record: { id: item.record.id, version: item.record.version, title: item.record.title, status: item.record.status },
+    record: { id: item.record.id, version: item.record.version, title: item.record.title || String(item.record.workName ?? item.record.data?.workName ?? item.record.data?.title ?? item.record.id), status: item.record.status },
     payload: structuredClone(payload), evidenceIds: [...evidenceIds], requestKey: crypto.randomUUID(), savedAt: new Date().toISOString(),
   };
   localStorage.setItem(key, JSON.stringify(intent));
@@ -47,7 +47,7 @@ export function rebaseOfflineCommandIntent(key: string, intent: OfflineCommandIn
   const next: OfflineCommandIntent = {
     ...intent, projectId, actorId, roleId, machine: item.machine, itemId: item.record.id,
     expectedVersion: item.record.version,
-    record: { id: item.record.id, version: item.record.version, title: item.record.title, status: item.record.status },
+    record: { id: item.record.id, version: item.record.version, title: item.record.title || String(item.record.workName ?? item.record.data?.workName ?? item.record.data?.title ?? item.record.id), status: item.record.status },
     requestKey: crypto.randomUUID(), savedAt: new Date().toISOString(),
   };
   localStorage.setItem(key, JSON.stringify(next));
