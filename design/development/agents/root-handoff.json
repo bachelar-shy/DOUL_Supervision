@@ -16,11 +16,11 @@
     "Telemetry sink IO failures preserve HTTP authority/version outcomes and domainAuditEvents; full API regression PASS",
     "Overlapping Inspection baselines: one required row, alternate exact ref, no implicit server mutation, draft deletion/focus/locale/precision actual UI/API PASS (283091f; work/goal-inspection-overlap-root.log)",
     "Actual OwnerDecision UI Payment chain plus Equipment/Stop distinct Permit resume:root3-case PASS (work/goal-payment-safety-owner-integrated.log)",
-    "Fixed commissioning readiness reachability with explicit exact currentPunchRefs sameIssueIDset, immutable prior snapshots/audit;11focused tests plusfull394API and319contractsPASS"
+    "Drafted C2 commissioning readiness reachability proposal with explicit exact currentPunchRefs sameIssueIDset, immutable prior snapshots/audit;11focused tests plusfull394API and319contractsPASS",
+    "Mandatory workflow dictionaries integrated: 26 machines, 348 command/state keys per ko/vi/en, 623 prior values unchanged; independent runtime guard, 12 actual localized browser cases, final typecheck/build PASS. Native review pending."
   ],
   "inProgress": [
-    "Isolated full Commissioning/Handover/Warranty, combined Stop/remedy/lift/permitresume, and Payment Owner Decision UI evidence",
-    "F07 additionalbrowser: afterproposedPunchrefrefresh andHandoverDrawingfix, realOwnerDecision/partialhandover/warranty segment remains to checkpoint."
+    "F07 additional actual UI scenario: commissioning close/Owner decision/partial handover observed; warranty terminal outcome and owned checkpoint pending. No whole-F07 acceptance declaration."
   ],
   "validation": {
     "evidence": "design/verification/goal-mvp-checkpoint-20261008.json",
@@ -28,7 +28,8 @@
     "api": "394run389PASS5optional skips, actualPG16 executed; work/goal-api-punch-refresh-final.log",
     "documentRuntime": "5 PASS",
     "integrationCI": "BLOCKED_ACCOUNT_BILLING_BEFORE_JOB_START; user confirmed annotation on run37860451176",
-    "browser": "Complete89PASS9.2min work/goal-integrated-browser-62aefec.log; additionalF07fullloop remains partial/pending, distinct fromnormalfullregression."
+    "browser": "Complete89PASS9.2min work/goal-integrated-browser-62aefec.log; additionalF07fullloop remains partial/pending, distinct fromnormalfullregression.",
+    "localization": "348 keys/language coverage PASS; 623 prior values preserved; 12 actual browser PASS (separate run); final typecheck/build PASS f92f047."
   },
   "remaining": [
     "Account owner resolves GitHub Billing & plans; latest exact-head eight CI checks must pass before PR129 merge",

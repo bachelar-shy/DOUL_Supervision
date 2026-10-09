@@ -18,5 +18,21 @@
     "Qualified native reviewers should verify the Vietnamese and English draft translations before approval; no native review was available for this checkpoint.",
     "Run localization package and app typechecks after root wires the dictionaries."
   ],
-  "restart": "Isolated worktree /workspace/work/doul-goal/mandatory-command-locales-v1 on goal/mandatory-command-locales-v1, based on root HEAD 8c73a13. Source checkpoint is 3a32b1f7588f2a5ce0c3310c72f191aba8df4647. The dictionaries are not wired into index.ts. Do not push or merge remote."
+  "restart": "Isolated worktree /workspace/work/doul-goal/mandatory-command-locales-v1 on goal/mandatory-command-locales-v1, based on root HEAD 8c73a13. Source checkpoint is 3a32b1f7588f2a5ce0c3310c72f191aba8df4647. The dictionaries are not wired into index.ts. Do not push or merge remote.",
+  "rootIntegration": {
+    "commits": [
+      "6e62e0d",
+      "de2dd14",
+      "6782291",
+      "f92f047"
+    ],
+    "status": "wired_and_locally_verified",
+    "guard": "scripts/check_mandatory_workflow_locales.mjs",
+    "coverage": "26 machines, 223 commands, 125 states, 348 keys per language; 623 existing translations unchanged",
+    "typecheck": "PASS work/goal-mandatory-locales-typecheck-final.log",
+    "build": "PASS work/goal-mandatory-locales-build-final.log",
+    "browser": "Separate actual localized 12 PASS work/goal-mandatory-locales-browser.log",
+    "nativeReview": "pending",
+    "note": "Original agent todo/restart above describes the isolated source checkpoint; root integration supersedes its unwired status."
+  }
 }

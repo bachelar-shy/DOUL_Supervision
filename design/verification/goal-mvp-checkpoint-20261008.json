@@ -7,7 +7,7 @@
   "checks": {
     "contractSuite": {
       "passed": 319,
-      "log": "work/goal-contract-suite-punch-refresh.log"
+      "log": "work/goal-contracts-mandatory-locales.log"
     },
     "apiSuite": {
       "run": 394,
@@ -22,7 +22,7 @@
       "log": "work/goal-document-runtime.log",
       "boundary": "Five local locked-runtime tests PASS. Prior 97cee102 head actual platform-document CI PASS; latest-head CI is blocked before start by account billing."
     },
-    "staticUI": "Latest web/mobile typecheck, UI boundary, web lint(with warnings) and build PASS after document languagecatalog extraction and Handover Drawingselector; work/goal-handover-drawing-*.log.",
+    "staticUI": "Web/mobile typecheck and web build PASS after mandatory locale spread ordering fix f92f047; work/goal-mandatory-locales-{typecheck,build}-final.log. UI boundary/lint PASS; existing warnings retained. Prior duplicate-spread typecheck failure fixed without suppression.",
     "lockedDependencies": "Fresh exact-lock npm ci, physical repository workspace tree and dependency inventory PASS (work/goal-physical-dependencies.log); previous dependency trees preserved. Production Python lock unchanged.",
     "fullBrowser": {
       "result": "PASS",
@@ -31,11 +31,11 @@
       "log": "work/goal-integrated-browser-62aefec.log",
       "scope": "Complete normal browser regression after Payment deadline fix and combined Safety/OwnerDecision integration; excludes separate mock-only suites. Local synthetic/demo prerequisites; no actual pilot or current-head GitHub CI claim. Dedicated F07 fullloop worker remains additional partial evidence pending."
     },
-    "mockLocalization": "6 PASS in separate mock-only suite; actual API localization 10 PASS separately. No field acceptance claim.",
+    "mockLocalization": "Separate mock-only authoring/localization 7 PASS; mock evidence is not official workflow or field acceptance.",
     "dockerWeb": "Localization COPY corrected for web and operational proxy images; prior 97cee102 actual container/operational CI PASS. Latest-head CI blocked before start; no current-head acceptance claim.",
     "githubCI": {
       "pr": 129,
-      "lastPushedHead": "7a74beb6b14de20ef53807b9ae3fc21be1eb1582",
+      "lastPushedHead": "cce88c9f39bb43a4f38319084e95fa8c03906946",
       "status": "BLOCKED_ACCOUNT_BILLING_BEFORE_JOB_START",
       "run": 37860451176,
       "evidence": "User-confirmed billing annotation run37860451176; all eight b1cc92a runs completed failure with steps:null/logs_url:null, independently inspected.",
@@ -54,11 +54,11 @@
       "lastObservedJobs": "8 completedfailure jobs, allsteps/logsnull beforestart; userconfirmedbillingannotation onoriginalrun37860451176."
     },
     "referenceCatalog": "6 actual HTTP authorization tests PASS including current Evidence/InformationItem/Inspection/Decision/Issue/Action references, foreign project/location exclusion and changed assignment visibility.",
-    "paymentBrowser": "Actual HTTP/UI Payment closed loop PASS in 84-case integration; exact-version upstream Owner Decisions explicitly fixture-provisioned, so Owner Decision authoring not proven by this scenario.",
+    "paymentBrowser": "Actual OwnerDecision UI create/report/acknowledge/decide and Payment closed loop PASS; work/goal-payment-safety-owner-integrated.log and normal89 regression. No fixture-created Owner Decisions in latest test; upstream prerequisites remain synthetic.",
     "qualityBrowser": "Typed result widget full real HTTP/UI Quality closeout PASS28.1s (work/goal-quality-typed-results-rerun.log). Explicit test-only trusted signature provider remains distinct from real legal-provider acceptance.",
     "safetyEquipmentBrowser": "Real HTTP/UI Equipment inspection fail, unavailable Asset, correction/reinspection pass and Permit activation PASS (work/goal-safety-equipment-integrated.log, 27.0s). Failed Equipment activation returns atomic 409, then activation succeeds after actual passing reinspection. Fixture provisions trusted upstream Equipment/current certificates/approved plans and Requirement only; workflow Inspection and Permit created through UI.",
     "authoringLocalization": "ActualHTTP three-language draft/officialSource preservation and absent-verifier501 localizedrefusal PASS1 (work/goal-authoring-localization-integrated.log); separate Mock-only localization suite PASS7 (work/goal-authoring-mock-localization-integrated.log).",
-    "inspectionResultWidget": "WorkerfocusedactualHTTP/browser PASS1 on exactrefs/stringprecision/per-characterfocus/blankresults and atomicemptysubmission rejection; rootintegration and overlappingbaselinecase pending. No automatic judgment or release.",
+    "inspectionResultWidget": "Root integrated actual UI/HTTP overlap/blank-draft/focus/exactrefs/precision PASS; see inspectionResultAuthoring. No automatic judgment or release.",
     "telemetryFailure": "ActualTestClient source+existingobservability15PASS; current full394 API includesnew2 sinkfailure tests. Stdout IO failure falls back to identical allowlisted stderr JSON, neither alters 200/403/409 nor persisted domainAuditEvent. Both unavailable returnsfalse; recordvalidation stillraises.",
     "inspectionResultAuthoring": {
       "result": "PASS",
@@ -94,6 +94,26 @@
       "log": "work/goal-punch-reference-refresh.log",
       "scope": "Explicit latestrefs sameIssueIDset only; stale/open/drop/substitute/CON rejected atomically, preflightinputaffordance true, history+idempotency preserved. ConnectedUIworker continuation pending.",
       "adoption": "Draft C2 Product proposal; no approved baseline/release adoption. See design/development/product-change-reference-lifecycle-proposal.json."
+    },
+    "mandatoryWorkflowLocalization": {
+      "result": "PASS",
+      "machines": 26,
+      "commands": 223,
+      "states": 125,
+      "keysPerLanguage": 348,
+      "languages": [
+        "ko",
+        "vi",
+        "en"
+      ],
+      "existingValuesPreserved": 623,
+      "guard": "scripts/check_mandatory_workflow_locales.mjs",
+      "browser": {
+        "passed": 12,
+        "log": "work/goal-mandatory-locales-browser.log",
+        "scope": "Separate actual-API localization/authoring/Quality run after catalog wiring; not a combined 101-case suite or exact-head GitHub CI."
+      },
+      "nativeReview": "pending"
     }
   },
   "operations": {
@@ -110,9 +130,9 @@
     "Actual project Configuration Pack, real accounts/scopes/qualification, Equipment and upstream data provisioning have not been supplied or adopted.",
     "Trusted legal signature adapter has an injectable contract and strict evidence/hash/current-authority verification; production provider deployment is not configured. MockTrustedVerifier is explicitly test-only.",
     "Vietnamese/English report catalogs remain draft_pending_local_review; controlling statutory Vietnamese original and approved project language policy are preserved requirements.",
-    "Safety Equipment and Commissioning/Handover/Warranty full UI acceptance and new authoring locale checks remain in progress. Proven synthetic Quality/Payment tests do not establish field acceptance.",
     "All functions and shared foundations remain subject to actual field acceptance. No pilot_verified promotion.",
-    "Known npm audit advisories remain release blockers (security-audit.json)."
+    "Known npm audit advisories remain release blockers (security-audit.json).",
+    "Equipment/Stop and Owner Payment UI have local synthetic PASS. Additional F07 commissioning/partial handover/warranty run remains pending; no full F07 or field acceptance claim."
   ],
   "resume": "Inspect Goal/root and worker handoffs, Git/worktree status and active tasks. Continue from last verified checkpoint; never delete uncommitted changes. Quota recovery alone does not guarantee platform scheduling.",
   "actualFileUsability": {
