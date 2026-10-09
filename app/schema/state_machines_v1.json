@@ -10275,7 +10275,9 @@
             "commissioning_handover_ready"
           ],
           "required_evidence": true,
-          "payload_fields": [],
+          "payload_fields": [
+            "punchIssueRefs"
+          ],
           "required_payload_fields": [],
           "failure_reasons": [
             "NOT_AUTHORIZED",
@@ -10284,7 +10286,10 @@
             "EVIDENCE_INVALID",
             "DRAWING_STALE",
             "HOLD_NOT_RELEASED",
-            "COMMISSIONING_HANDOVER_READY"
+            "COMMISSIONING_HANDOVER_READY",
+            "REFERENCE_STALE",
+            "COMMISSIONING_PUNCH_BLOCKED",
+            "HISTORY_REMOVAL_DENIED"
           ],
           "audit_event": true
         },

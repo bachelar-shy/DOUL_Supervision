@@ -49,6 +49,7 @@ _COMMAND_FIELDS = {
     "reject_test": {"failureReason"},
     "require_punch_resolution": {"punchIssueRefs", "correctionActionRefs"},
     "request_retest": {"retestBasisRefs"},
+    "mark_ready_for_handover": {"punchIssueRefs"},
     "return_handover": {"returnReason", "missingItems"},
     "accept_with_reservations": {"ownerDecisionRef", "ownerReservationInputs"},
     "accept_handover": {"ownerDecisionRef"},
@@ -331,6 +332,16 @@ def _commissioning(engine, guard, record, role):
         latest = _latest_test(data)
         require(latest is not None and latest["outcome"] == "pass" and latest["acceptanceCriteriaMet"] is True, "COMMISSIONING_NOT_READY", "Required test results must pass")
         _commissioning(engine, "commissioning_prerequisites_ready", record, role)
+        # Punch correction advances the linked Issue version. Readiness may
+        # explicitly refresh those exact refs, but cannot remove or substitute
+        # the Issues that the package required to be resolved. The engine keeps
+        # the previous package snapshot and audits this authorized command.
+        previous_refs = engine.get("WorkItem", record["id"]).get("data", {}).get("punchIssueRefs", [])
+        identity = lambda ref: (ref["objectType"], ref["objectId"])
+        require(
+            {identity(ref) for ref in data.get("punchIssueRefs", [])} == {identity(ref) for ref in previous_refs},
+            "HISTORY_REMOVAL_DENIED", "Readiness must retain exactly the linked Punch Issues",
+        )
         issues = _refs(engine, data.get("punchIssueRefs", []), project, "Issue", subtypes="Punch", current=True, code="COMMISSIONING_PUNCH_BLOCKED")
         require(all(x.get("status") not in _ISSUE_OPEN for x in issues), "COMMISSIONING_PUNCH_BLOCKED", "Blocking Punch Issues must be closed before commissioning readiness")
     elif guard == "commissioning_close_ready":

@@ -450,6 +450,61 @@ class HandoverHttpTests(unittest.TestCase):
         package = self.expect("commissioning-packages", package, "accept_test", actor="SUP", evidence=[retest["id"]])
         self.assertEqual(package["status"], "passed")
 
+        # Independently evolving upstream Punch versions are authoritative
+        # fixture inputs here; the browser test exercises their actual workflow.
+        punch = deepcopy(self.engine.get("Issue", issue_ref["objectId"]))
+        punch.update(version=punch["version"] + 1, status="in_progress")
+        with self.store.transaction(True):
+            self.engine._save("Issue", punch)
+        current_open_ref = self.ref("Issue", punch["id"])
+        replacement_ref, _ = self._new_punch_and_action()
+        audit_before = len(self.engine._audit)
+        for refs, expected_code in (
+            ([], "HISTORY_REMOVAL_DENIED"),
+            ([replacement_ref], "HISTORY_REMOVAL_DENIED"),
+            ([issue_ref], "REFERENCE_STALE"),
+            ([current_open_ref], "COMMISSIONING_PUNCH_BLOCKED"),
+        ):
+            rejected = self.command("commissioning-packages", package, "mark_ready_for_handover",
+                                    {"punchIssueRefs": refs}, actor="SUP", evidence=[retest["id"]])
+            self.assertEqual(rejected.status_code, 409, rejected.text)
+            self.assertEqual(rejected.json()["code"], expected_code)
+            self.assertEqual(self.engine.get("WorkItem", package["id"])["version"], package["version"])
+            self.assertEqual(len(self.engine._audit), audit_before)
+
+        punch.update(version=punch["version"] + 1, status="closed")
+        with self.store.transaction(True):
+            self.engine._save("Issue", punch)
+        closed_ref = self.ref("Issue", punch["id"])
+        self.login("SUP")
+        actions = self.client.get(
+            f"/projects/{self.project}/commissioning-packages/{package['id']}/available-actions",
+            headers=self.headers,
+        )
+        self.assertEqual(actions.status_code, 200, actions.text)
+        refresh = next(action for action in actions.json() if action["command"] == "mark_ready_for_handover")
+        self.assertFalse(refresh["ready"])
+        self.assertTrue(refresh["requiresInput"])
+        self.assertEqual(refresh["fields"], ["punchIssueRefs"])
+        self.assertEqual(refresh["blockedReason"]["code"], "REFERENCE_STALE")
+        rejected = self.command("commissioning-packages", package, "mark_ready_for_handover",
+                                {"punchIssueRefs": [closed_ref]}, actor="CON", evidence=[retest["id"]])
+        self.assertEqual(rejected.status_code, 403, rejected.text)
+        key = uid()
+        response = self.command("commissioning-packages", package, "mark_ready_for_handover",
+                                {"punchIssueRefs": [closed_ref]}, actor="SUP", evidence=[retest["id"]], key=key)
+        self.assertEqual(response.status_code, 200, response.text)
+        ready = response.json()["record"]
+        self.assertEqual(ready["status"], "ready_for_handover")
+        self.assertEqual(ready["data"]["punchIssueRefs"], [closed_ref])
+        self.assertEqual(self.engine.get("WorkItem", package["id"], package["version"])["data"]["punchIssueRefs"], [issue_ref])
+        self.assertEqual(ready["data"]["testResultHistory"], history)
+        repeated = self.command("commissioning-packages", package, "mark_ready_for_handover",
+                                {"punchIssueRefs": [closed_ref]}, actor="SUP", evidence=[retest["id"]], key=key)
+        self.assertEqual(repeated.status_code, 200, repeated.text)
+        self.assertEqual(repeated.json()["record"], ready)
+        self.assertEqual(len(self.engine._audit), audit_before + 1)
+
     def _owner_decision(self, target, title):
         decision_id = uid()
         with self.store.transaction(True):

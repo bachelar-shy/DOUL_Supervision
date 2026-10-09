@@ -260,7 +260,12 @@ export const commandInputs: Record<string, Record<string, Record<string, { type:
         "type": "array"
       }
     },
-    "mark_ready_for_handover": {},
+    "mark_ready_for_handover": {
+      "punchIssueRefs": {
+        "type": "array",
+        "reference": "multiple"
+      }
+    },
     "reject_test": {
       "failureReason": {
         "type": "string"

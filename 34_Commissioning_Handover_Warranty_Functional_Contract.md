@@ -209,6 +209,8 @@ FM-25 미완료·하자 추적표: Punch/Warranty projection
 | passed | mark_ready_for_handover | SUP | ready_for_handover | package completion gate |
 | ready_for_handover | close_commissioning | SUP | closed | snapshot/audit complete |
 
+`mark_ready_for_handover`는 시정 과정에서 버전이 변경된 Punch의 현재 `punchIssueRefs`를 명시적으로 제출할 수 있다. 기존 패키지에 연결된 Issue ID 집합을 정확히 유지하며 제거·대체·추가할 수 없다. 서버는 각 참조의 프로젝트·유형·현재 버전과 종결 상태를 다시 검증한다. 이전 패키지 버전의 원본 참조와 시험 결과 이력을 보존하고, 갱신된 참조는 승인된 전이의 새 스냅샷 및 감사기록에 남긴다. 최신 참조를 제출하지 않은 경우 기존 stale-reference 거절을 유지한다.
+
 ## 18. Handover Command Contract
 
 | From | Command | Actor | To | Gate |
