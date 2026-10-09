@@ -5,6 +5,11 @@ They select `[self-hosted, Linux, ARM64, doul-macmini]`. One runner executes
 jobs serially on the connected M4 Mac mini, using a dedicated Colima Linux VM
 (profile `doul-ci`, 4 CPUs, 6 GiB RAM, 16 GiB Docker data disk).
 
+The listener runs with `--once`: each job closes its GitHub session, then the
+container restart policy starts the listener for the next job. Registration is
+persistent. This avoids the observed listener getting stuck after cancelling
+its Busy long-poll when a job finishes; completed jobs are not rerun.
+
 The runner container uses Ubuntu 24.04 and the official ARM64 Actions runner
 2.338.0, with the release archive's SHA-256 checked during its image build.
 Docker service containers and Compose run in the VM. The runner uses host
