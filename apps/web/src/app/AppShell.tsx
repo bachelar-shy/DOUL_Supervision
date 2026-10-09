@@ -8,8 +8,8 @@ import type {
   WorkItem,
   Workspace,
 } from "../data/ui-contract";
-import type { SupervisionClient } from "../data/supervision-client";
-import { roles } from "../labels";
+import { ApiError, type SupervisionClient } from "../data/supervision-client";
+import { reasonLabel, roles } from "../labels";
 import { ActionButton, EmptyState, PageHeader } from "../ui";
 import { MobileNavigation, NavigationList } from "../ui/catalog";
 import {
@@ -82,7 +82,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
       setWorkspace(next);
       setError("");
     } catch (e) {
-      if (current()) setError(e instanceof Error ? e.message : t("app.error.connection"));
+      if (current()) setError(e instanceof ApiError ? reasonLabel(e.detail.code) : t("app.error.connection"));
     } finally {
       if (current()) setLoading(false);
     }
@@ -96,7 +96,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         if (w && n === sequence.current) { setWorkspace(w); setError(""); }
       })
       .catch((e) => {
-        if (n === sequence.current) setError(String(e));
+        if (n === sequence.current) setError(e instanceof ApiError ? reasonLabel(e.detail.code) : t("app.error.connection"));
       })
       .finally(() => {
         if (n === sequence.current) setLoading(false);
@@ -184,7 +184,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
       await refresh();
       nav("issues");
     } catch (e) {
-      setError(String(e));
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : t("app.error.connection"));
     }
   }
   return (

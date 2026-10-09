@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import type { Workspace } from "../../data/ui-contract";
-import type { SupervisionClient } from "../../data/supervision-client";
+import { ApiError, type SupervisionClient } from "../../data/supervision-client";
+import { reasonLabel } from "../../labels";
 import {
   createCaseOwnerReport,
   requestCaseReinspection,
@@ -227,13 +228,13 @@ export function InspectionCaseAuthoringPanel({
       setReinspectionCreated(true);
       setSaved(t.reinspectionSaved);
     } catch (causeValue) {
-      setError(causeValue instanceof Error ? causeValue.message : String(causeValue));
+      setError(reasonLabel(causeValue instanceof ApiError ? causeValue.detail.code : undefined));
       setBusy("");
       return;
     }
     setBusy("");
     try { await onChanged(); }
-    catch (causeValue) { setError(causeValue instanceof Error ? causeValue.message : String(causeValue)); }
+    catch (causeValue) { setError(reasonLabel(causeValue instanceof ApiError ? causeValue.detail.code : undefined)); }
   }
 
   async function submitReport(event: FormEvent<HTMLFormElement>) {
@@ -263,13 +264,13 @@ export function InspectionCaseAuthoringPanel({
       setReportCreated(true);
       setSaved(t.saved);
     } catch (causeValue) {
-      setError(causeValue instanceof Error ? causeValue.message : String(causeValue));
+      setError(reasonLabel(causeValue instanceof ApiError ? causeValue.detail.code : undefined));
       setBusy("");
       return;
     }
     setBusy("");
     try { await onChanged(); }
-    catch (causeValue) { setError(causeValue instanceof Error ? causeValue.message : String(causeValue)); }
+    catch (causeValue) { setError(reasonLabel(causeValue instanceof ApiError ? causeValue.detail.code : undefined)); }
   }
 
   const textInput = "w-full rounded-md border bg-background px-3 py-2 text-sm";
