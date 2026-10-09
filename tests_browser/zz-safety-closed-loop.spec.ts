@@ -142,11 +142,13 @@ async function uiCommand(
   for (const [field, value] of Object.entries(payload)) {
     const name = fields[field] || field;
     const input = dialog.getByRole("combobox", { name, exact: true })
-      .or(dialog.getByRole("textbox", { name, exact: true }));
+      .or(dialog.getByRole("textbox", { name, exact: true }))
+      .or(dialog.getByRole("listbox", { name, exact: true }));
     await expect(input).toBeVisible();
     const tag = await input.evaluate(element => element.tagName);
     if (tag === "SELECT") {
-      await input.selectOption(typeof value === "object" ? JSON.stringify(value) : String(value));
+      const multiple = await input.evaluate(element => (element as HTMLSelectElement).multiple);
+      await input.selectOption(multiple && Array.isArray(value) ? value.map(ref => JSON.stringify(ref)) : typeof value === "object" ? JSON.stringify(value) : String(value));
     } else {
       await input.fill(typeof value === "object" ? JSON.stringify(value) : String(value));
     }
