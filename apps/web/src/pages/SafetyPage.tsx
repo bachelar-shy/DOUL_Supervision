@@ -1,4 +1,6 @@
 import { useState } from "react";
+import type { SupervisionClient } from "../data/supervision-client";
+import { SafetyAuthoringPanel } from "./SafetyAuthoringPanel";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -301,6 +303,8 @@ function Boundary({ item }: { item: WorkItem }) {
 }
 
 export interface SafetyPageProps {
+  client: SupervisionClient;
+  onCreated: (record: RecordDTO) => Promise<void>;
   workspace: Workspace;
   selected: string | null;
   current: WorkItem | null;
@@ -310,6 +314,8 @@ export interface SafetyPageProps {
 }
 
 export function SafetyPage({
+  client,
+  onCreated,
   workspace,
   selected,
   current,
@@ -361,6 +367,8 @@ export function SafetyPage({
             {tabDescription}
           </div>
         </Tabs>
+
+        <SafetyAuthoringPanel key={`${workspace.project.id}:${workspace.role.id}:${activeMachine}`} client={client} workspace={workspace} machine={activeMachine} online={online} onCreated={onCreated} />
 
         <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
           <Panel className="list-pane">

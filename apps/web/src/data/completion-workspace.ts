@@ -130,7 +130,7 @@ export function completionReferenceOptions(workspace: Workspace): CompletionRefe
   const referenceCatalog = workspace.context.referenceCatalog as typeof workspace.context.referenceCatalog & {
     evidence?: Array<{ ref: DomainRef; record: Record<string, unknown> }>;
   };
-  for (const entry of [...(referenceCatalog?.requirements || []), ...(referenceCatalog?.assets || []), ...(referenceCatalog?.evidence || []), ...(referenceCatalog?.informationItems || []), ...(referenceCatalog?.inspections || []), ...(referenceCatalog?.decisions || [])]) {
+  for (const entry of [...(referenceCatalog?.requirements || []), ...(referenceCatalog?.assets || []), ...(referenceCatalog?.evidence || []), ...(referenceCatalog?.informationItems || []), ...(referenceCatalog?.inspections || []), ...(referenceCatalog?.decisions || []), ...(referenceCatalog?.issues || []), ...(referenceCatalog?.actions || [])]) {
     add(entry.ref, typeof entry.record.title === "string" ? entry.record.title : undefined, entry.record);
   }
   workspace.items.forEach((item) => {

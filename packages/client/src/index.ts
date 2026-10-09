@@ -244,6 +244,8 @@ export interface Workspace {
       informationItems?: Array<{ ref: DomainRef; record: RecordDTO }>;
       inspections?: Array<{ ref: DomainRef; record: RecordDTO }>;
       decisions?: Array<{ ref: DomainRef; record: RecordDTO }>;
+      issues?: Array<{ ref: DomainRef; record: RecordDTO }>;
+      actions?: Array<{ ref: DomainRef; record: RecordDTO }>;
     };
   };
   participants: { partyId: string; name: string; actorGroup: HumanRole }[];

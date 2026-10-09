@@ -111,6 +111,36 @@ class ReferenceCatalogHTTPTests(unittest.TestCase):
             self.assertEqual(value['ref']['objectType'], 'Decision')
             self.assertEqual(value['ref']['version'], value['record']['version'])
 
+    def test_issue_and_action_catalogs_preserve_scope_and_current_versions(self):
+        store = self.app.state.store
+        for kind, catalog_key in (("Issue", "issues"), ("Action", "actions")):
+            with self.subTest(kind=kind):
+                with store.transaction(True):
+                    source = next(record for (record_kind, _), record in store.engine._records.items()
+                                  if record_kind == kind)
+                    upstream = deepcopy(source)
+                    upstream.update(id=uid(), version=1)
+                    foreign = deepcopy(upstream)
+                    foreign.update(id=uid(), projectId=uid())
+                    outside = deepcopy(upstream)
+                    outside.update(id=uid(), locationId=uid())
+                    for record in (upstream, foreign, outside):
+                        store.engine.bootstrap(kind, record)
+                values = self.catalog()[catalog_key]
+                ids = [value['ref']['objectId'] for value in values]
+                self.assertIn(upstream['id'], ids)
+                self.assertNotIn(foreign['id'], ids)
+                self.assertNotIn(outside['id'], ids)
+                for value in values:
+                    self.assertEqual(value['ref']['objectType'], kind)
+                    self.assertEqual(value['ref']['version'], value['record']['version'])
+        with store.transaction(True):
+            role = store.engine.get('RoleAssignment', self.session['actor']['roleAssignmentId'])
+            role.update(locationIds=[uid()], version=role['version'] + 1)
+            store.engine._save('RoleAssignment', role)
+        self.assertEqual(self.catalog()['issues'], [])
+        self.assertEqual(self.catalog()['actions'], [])
+
     def test_expired_requirements_are_excluded_and_assignment_changes_take_effect(self):
         store = self.app.state.store
         before = self.catalog()

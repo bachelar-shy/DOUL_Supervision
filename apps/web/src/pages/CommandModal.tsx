@@ -105,6 +105,8 @@ function referenceOptions(
   if (["decisionRef", "ownerDecisionRef", "decisionRefs"].includes(field)) return completionDecisionReferenceOptions(workspace, current);
   if (["testResultRef", "evidenceRefs", "impactAnalysisRefs", "sourceFileRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Evidence");
   if (["reinspectionRef", "inspectionRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Inspection");
+  if (["issueRef", "punchIssueRefs", "openIssueRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Issue");
+  if (["actionRef", "remedyActionRefs", "correctiveActionRefs", "correctionActionRefs", "retestBasisRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Action");
   if (["equipmentRef", "equipmentRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Asset" && option.subtype === "Equipment");
   if (!selectableReferenceFields.has(field)) return referenceKind ? completionReferenceOptions(workspace) : [];
   if (field === "clauseRefs") {
