@@ -1232,3 +1232,5 @@ export const resources = {
   vi: { translation: vi },
   en: { translation: en },
 } as const;
+
+export { documentRenderCopy, documentOutputLanguageLabels } from "./document-render-translations";
