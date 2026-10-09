@@ -1,0 +1,52 @@
+{
+  "task": "Connected Safety equipment, Stop, and Permit browser/API acceptance",
+  "branch": "goal/safety-equipment-closed-loop-v1",
+  "base": "943d1dd",
+  "commits": [
+    "2efe4a4c8d6f7f30a2c412668dc25de7325c5748 (Safety authoring and reference catalog wiring)",
+    "e72a7b5e5d9423b94c4fb8d94dd73982fa82d48d (Equipment inspection and Permit activation browser acceptance)",
+    "a2f4395310b084557cd1261320319b438fbd08f1 (Stop remedy, verification, lift, and Permit resume browser acceptance)",
+    "37c2eaceebe8aad54e7060be1d04423669303bbb (fixture process cleanup and locked Python selection)"
+  ],
+  "files": [
+    "tests_browser/safety-equipment-closed-loop.spec.ts",
+    "tests_browser/support/safety_equipment_api_fixture.py"
+  ],
+  "coverage": {
+    "equipmentPermit": "Real Safety UI creates an EquipmentInspection and Permit. The SUP inspection fails and keeps equipment unavailable; Permit activation receives an atomic 409 with no status/version mutation. CON requests reinspection; SUP records current certificate/calibration refs, passes the inspection, and then activates the Permit against the exact Asset ref.",
+    "stopPermitResume": "Real Safety UI creates/activates a Permit and creates a Stop affecting its exact WorkItem ref. CON acknowledges the Stop and links the current Action ref. CON submits corrective evidence and cause through the Action UI; SUP verifies it. CON requests Stop resume with evidence; SUP verifies against a current passed Inspection and explicitly lifts the Stop. The Permit remains suspended/workAuthorized=false after lift. CON separately requests Permit resume and SUP approves; only then it becomes active/workAuthorized=true.",
+    "authorizationAndIdempotency": "UI-issued workflow commands are checked for expectedVersion and an Idempotency-Key. Workflow mutations for EquipmentInspection, Permit, Stop, and Action use the browser UI against the self-hosted HTTP API. Workspace, fixture, and available-action reads use authenticated HTTP GETs."
+  },
+  "fixtureBoundary": {
+    "directTrustedSetup": "The fixture adds only trusted prerequisite configuration/source data for the Safety flow: scoped Requirement, Equipment Asset, approved current safety/calibration certificates, approved method statement, risk assessment, and emergency plan. It reads an existing current supervisor qualification and uses demo evidence.",
+    "preexistingDemoWorkflowInputs": "The Stop scenario reads the demo project's existing in-progress Action and passed Inspection. The Action is submitted and verified through the UI; the Inspection is referenced without mutation. This does not prove Action or Inspection creation, inspection execution, or release through the browser.",
+    "actors": "CON and SUP are synthetic local-demo actors from the isolated fixture; no real project users, approvals, or field evidence are exercised."
+  },
+  "validation": {
+    "browser": {
+      "result": "PASS",
+      "passed": 2,
+      "duration": "36.0s",
+      "command": "DOUL_TEST_PYTHON=/workspace/DOUL_Supervision/work/priority-venv/bin/python SAFETY_EQUIPMENT_TEST_CHROMIUM=/usr/bin/chromium ./node_modules/.bin/playwright test --config work/playwright.safety.config.ts tests_browser/safety-equipment-closed-loop.spec.ts --reporter=line",
+      "configBoundary": "The work/playwright.safety.config.ts scratch config omits default webServer startup because this checkout has no .venv. Start the web UI on 127.0.0.1:5181 first. Each test starts and cleans its own isolated API fixture."
+    },
+    "other": [
+      "python3 -m py_compile tests_browser/support/safety_equipment_api_fixture.py",
+      "git diff --check"
+    ]
+  },
+  "remaining": [
+    "No pilot_verified claim: repeat acceptance with an adopted project Configuration Pack, current project scopes and actual permitted actors/qualifications, real Equipment/certificate/calibration records, approved method/risk/emergency sources, and adopted procedures.",
+    "Replace the demo Action and passed Inspection prerequisites with project-owned workflow records and field evidence. The current Stop browser test does not create a new Action or Inspection, run a new reinspection, or issue/release a final document.",
+    "Validate field execution with actual authorized CON/SUP participants and project evidence, including current equipment state and corrective-action/reinspection evidence. Record approvals and acceptance through the project's authorized process.",
+    "This Safety flow does not invoke a final-document signature or release guard: the Stop contract checks a current verified/closed Action, corrective evidence, and a passed Inspection. Production legal-signature provider and statutory form/language policy remain separate deployment requirements where applicable.",
+    "No pilot promotion, production readiness, or field acceptance is established by these synthetic browser/API results."
+  ],
+  "restart": [
+    "Inspect git status and confirm branch goal/safety-equipment-closed-loop-v1; retain the four commits listed above.",
+    "Start Vite from apps/web with ../../node_modules/.bin/vite --host 127.0.0.1 --port 5181.",
+    "Run the exact browser command recorded in validation.browser.command using the locked priority Python environment and local Chromium.",
+    "The browser spec starts a per-run API process, provisions only the listed prerequisites, and cleans the process/database after the run. Do not seed Safety workflow records to shortcut the UI flow.",
+    "Read this handoff and inspect the real browser/API evidence before expanding claims; preserve the demo Action/Inspection boundary and keep Stop lift separate from Permit resume approval."
+  ]
+}

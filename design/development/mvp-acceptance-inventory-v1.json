@@ -1,0 +1,407 @@
+{
+  "version": "1.0",
+  "asOf": "2026-10-09",
+  "baseline": {
+    "branch": "goal/acceptance-audit-v1",
+    "baseCommit": "943d1dd",
+    "sourceOfTruth": [
+      "49_Implementation_Acceptance_Scenarios_v1.md",
+      "53_Field_Pilot_Acceptance_Plan_v1.md",
+      "54_Implementation_Progress_Stage_Ledger_v1.md",
+      "app/schema/implementation_acceptance_catalog_v1.json",
+      "app/reference/implementation_progress_ledger_v1.json"
+    ],
+    "assessmentRule": "Contract/schema tests are contract evidence; API tests count only when they exercise the real HTTP and persistence boundary; UI connection requires a browser flow making real application API calls; integration evidence must cover the whole acceptance scenario. Synthetic fixtures and test-only signature verifiers establish development behavior, not pilot verification or external trust-provider acceptance.",
+    "pilotStatus": "not_started",
+    "pilotEvidenceFound": false,
+    "pilotEvidenceLimit": "Existing dated verification artifacts explicitly say synthetic development/staging and actualPilotDeployed=false. The example configuration pack is not a selected project pack. No actual project role assignments, field work IDs, snapshots, or owner acceptance evidence were found.",
+    "comparedRootCommit": "2d59a99"
+  },
+  "scenarios": [
+    {
+      "id": "AC-Q-01",
+      "domain": "quality",
+      "assessment": "real_http_and_connected_browser_closeout_proven_synthetic; actual_provider_and_pilot_not_proven",
+      "contract": "confirmed",
+      "backendApi": "full_real_http_sqlite_quality_closeout_scenario; no_postgres_quality_suite_identified",
+      "ui": "connected_real_http_browser_closeout_passed_test_verifier_boundary",
+      "integration": "real_http_ui_closeout_passed_with_explicit_test_only_trusted_verifier; latest_exact_head_ci_billing_blocked",
+      "pilot": "not_run",
+      "evidence": [
+        "tests_mvp/test_quality_closed_loop_http.py",
+        "tests_mvp/test_inspection_case_http.py",
+        "tests_browser/inspection-case-flow.spec.ts",
+        "tests/test_case_end_to_end.py",
+        "tests_browser/workspace.spec.ts",
+        "tests_browser/quality-closed-loop.spec.ts",
+        "tests_browser/support/quality_api_fixture.py"
+      ],
+      "provenScope": "The new real-HTTP test creates and fails an Inspection, confirms an Observation, creates Issue and Actions, uploads remedies, records a failed reinspection, restarts correction, passes a current-cycle reinspection, signs a Vietnamese FM-09 through explicitly test-only MockTrustedVerifier, releases that Inspection, and closes the Issue with current-cycle evidence. It rejects pre-pass close, initial-only/stale/mixed-cycle/action-only evidence, stale versions, and report creation before Issue close. It then exercises the separate Owner Report draft, issue, receipt, dispatch, verification and close, keeping report readiness open until that distinct lifecycle finishes. All Quality records and commands in this path use published HTTP endpoints. Separate connected browser acceptance now creates/fails the Inspection, confirms Observation, uploads drawing/PDF evidence, creates Issue/Action, verifies correction, creates/links/passes reinspection, renders final FM09 and requests both test-verifier signatures through the UI, releases Inspection, closes Issue and completes distinct Owner Report receipt/follow-up closure. The failed-reinspection/new-correction-cycle branch is established by HTTP acceptance, not asserted as a browser branch. Post-close UI hides unavailable close readiness while preserving Owner Report readiness.",
+      "gaps": [
+        "The test uses seeded demo project context and original evidence, synthetic uploaded files, and MockTrustedVerifier. It does not validate a real signature provider, selected project policy, site performance, or pilot acceptance.",
+        "A foreign-scope Evidence selection at Issue close is not tested: the API rejects creation of that evidence at upload with SCOPE_MISMATCH under the demo role scope. Do not claim closure-level cross-scope rejection from this test.",
+        "The test exercises SQLite only; no dedicated PostgreSQL closed-loop Quality acceptance suite is identified."
+      ],
+      "nextWork": "Latest exact-head CI after Billing & plans recovery, production trusted signature provider/adopted forms and actual project pilot; preserve fixture/legal boundaries."
+    },
+    {
+      "id": "AC-S-01",
+      "domain": "safety",
+      "assessment": "partial_real_api_browser_integration; full_scenario_not_accepted",
+      "contract": "confirmed",
+      "backendApi": "real_http_persistence; full_equipment_and_released_inspection_path_unproven",
+      "ui": "real_api_browser_partial_closed_loop",
+      "integration": "partial_real_api_browser_synthetic_fixture",
+      "pilot": "not_run",
+      "evidence": [
+        "app/schema/safety_execution_contract_v1.json",
+        "tests_mvp/test_safety_http.py",
+        "tests_browser/safety-command-verification.spec.ts",
+        "design/verification/priority-issues-validation.json",
+        "https://github.com/bachelar-shy/DOUL_Supervision/issues/112",
+        "tests_browser/zz-safety-closed-loop.spec.ts",
+        "tests_browser/safety-equipment-closed-loop.spec.ts",
+        "tests_browser/support/safety_equipment_api_fixture.py"
+      ],
+      "provenScope": "Real browser/API flow completes permit review/authorization/activation; creates and idempotently replays a Stop through HTTP; exercises browser acknowledgement, verified Action remedy linkage, resume request, supervisor verification and explicit lift; proves lift does not reactivate the Permit, then requires separate SUP permit-resume approval. It proves CON self-lift and contractor resume approval are denied, stale Stop version is rejected, and the permit retains the exact immutable Stop v1 reference after later Stop versions. The required Hold Point inspection release is attempted and rejected with ACCEPTANCE_SIGNED. All evidence uses synthetic development demo actors and records.",
+      "gaps": [
+        "The actual hold-point inspection reaches passed but release_next_work is rejected with ACCEPTANCE_SIGNED because the required approved legal acceptance snapshot/signatures are not configured. Resume verification therefore uses a passed, unreleased synthetic Inspection; do not treat this as signed/released inspection proof.",
+        "The stop is created through HTTP because the inspected safety UI exposes no creation command. Remedy Action and inspections are also created/transitioned through published HTTP endpoints; the browser exercises Permit/Stop transitions and displays the connected state.",
+        "Existing issue #112 asked to align the F-03 ledger only to backend_api_implemented and exclude ui_connected based on the then-existing mocks. This new real browser flow strengthens UI evidence, but does not justify full AC-S-01 or pilot promotion; root must update the authoritative ledger only after assessing its specific status vocabulary and remaining acceptance boundaries.",
+        "The flow uses dev CON/SUP sessions and synthetic evidence; it is not a field pilot and includes no selected project pack, actual work permit, equipment registry, project role assignments, or Owner/site acceptance.",
+        "New actual UI Equipment/Permit scenario independently proves failed-current-equipment atomic rejection and passing reinspection activation using synthetic trusted upstream Equipment/certificates/plans. Full combined Stop/remedy/signed-release/resume UI scenario and actual equipment provisioning/site adoption remain unverified."
+      ],
+      "nextWork": "Add/identify an authorized project-level Equipment registry/trusted provisioning and real current safety-equipment inspection acceptance path; configure the adopted legal acceptance form and signer authority so an exact-version Hold Point inspection can be released; then extend the connected flow to use those records without demo readiness claims. Retain pilot_not_run until selected-project actors, assets, permit, evidence and site acceptance are supplied."
+    },
+    {
+      "id": "AC-SCH-01",
+      "domain": "schedule",
+      "assessment": "integration_passed_synthetic; pilot_not_verified",
+      "contract": "confirmed",
+      "backendApi": "accepted",
+      "ui": "real_api_connected",
+      "integration": "passed_synthetic_development_staging",
+      "pilot": "not_run",
+      "evidence": [
+        "tests_browser/zz-schedule-contract-closed-loop.spec.ts",
+        "tests_mvp/test_schedule_source_import_http.py",
+        "tests_mvp/test_schedule_source_import_postgres.py",
+        "tests_mvp/test_schedule_http.py",
+        "tests_browser/schedule.spec.ts",
+        "design/verification/priority-issues-validation.json",
+        "app/reference/implementation_progress_ledger_v1.json#F-04",
+        "app/reference/implementation_progress_ledger_v1.json#F-08"
+      ],
+      "provenScope": "Recorded real source upload/import, approvals, progress, delay/recovery, Notice/EOT, Owner decisions, exact approved revision, idempotency/version rejection and effective baseline revision. Validation artifact records all browser/API/contract/PostgreSQL checks passing.",
+      "gaps": [
+        "Validation is explicitly synthetic development/staging; no actual pilot project/actor acceptance."
+      ],
+      "nextWork": "Use as the current implementation-stage example; retain pilot_verified as unavailable until field scenario and evidence are supplied."
+    },
+    {
+      "id": "AC-PAY-01",
+      "domain": "payment",
+      "assessment": "backend_http_postgres_flow_and_connected_ui_smoke_proven_synthetic; full_browser_scenario_and_pilot_not_proven",
+      "contract": "confirmed",
+      "backendApi": "real_http_sqlite_acceptance_and_postgres_acceptance_suite",
+      "ui": "real_api_connected_draft_creation_and_capability_denial; not_full_ui_lifecycle",
+      "integration": "backend_payment_lifecycle_http_persistence_tests; partial_ui_smoke",
+      "pilot": "not_run",
+      "evidence": [
+        "32_Progress_Measurement_Payment_Functional_Contract.md",
+        "app/schema/measurement_payment_execution_contract_v1.json",
+        "tests_mvp/test_measurement_payment_http.py",
+        "tests_mvp/test_measurement_payment_postgres.py",
+        "tests_browser/payment-workspace.spec.ts",
+        "apps/web/src/pages/MeasurementPaymentPage.tsx",
+        "app/reference/implementation_progress_ledger_v1.json#F-05"
+      ],
+      "provenScope": "Real HTTP acceptance covers BOQ activation, quantity measurement verification, claim calculation/recommendation, exact Owner adjustment/approval decision references, and separate append-only payment records with correction/cancellation/additional payment, replay idempotency, authority and stale-version rejection. PostgreSQL acceptance subclasses the same HTTP flow in an isolated PostgreSQL 16 schema when configured. The connected browser spec creates an API-backed Payment Claim draft and verifies role capability changes; a second browser spec tests API endpoints/replay directly, not a complete UI-driven payment execution. Trusted upstream contract/profile/accepted references are fixtures.",
+      "gaps": [
+        "The browser flow proves draft creation and capability presentation only; no browser-led path spans quantity verification through Owner decision and separately recorded payment.",
+        "Acceptance fixtures use demo project configuration and synthetic data; no actual project BOQ, measurements, authorized actors, banking/ERP records, or pilot acceptance is included.",
+        "The PostgreSQL suite is environment-gated by DOUL_TEST_POSTGRES_DSN; its presence or a passing unit run does not prove a deployed project or external payment."
+      ],
+      "nextWork": "Keep F-05 promotion bounded to backend_api_implemented for the proven backend scope. Add browser-driven progression through Owner decision and Payment Record when user-facing coverage is required; keep pilot_not_run until selected-project and actual payment evidence are supplied."
+    },
+    {
+      "id": "AC-HO-01",
+      "domain": "handover",
+      "assessment": "backend_http_postgres_workflows_implemented_with_fixture_acceptance; ui_is_mock_presentation_only; pilot_not_run",
+      "contract": "confirmed",
+      "backendApi": "real_http_persistence_with_postgres_acceptance_suite",
+      "ui": "mock_fixture_presentation_only; no_connected_workflow_browser_acceptance",
+      "integration": "partial_connected_browser; revalidation_required_reference_lifecycle",
+      "pilot": "not_run",
+      "evidence": [
+        "34_Commissioning_Handover_Warranty_Functional_Contract.md",
+        "app/schema/implementation_acceptance_catalog_v1.json#AC-HO-01",
+        "tests_mvp/test_handover_http.py",
+        "tests_mvp/test_handover_postgres.py",
+        "tests_browser/completion-handover-page.spec.ts",
+        "apps/web/src/pages/CompletionHandoverPage.tsx"
+      ],
+      "provenScope": "Commissioning, Handover and Warranty state machines/resources have real HTTP create/command coverage and an environment-gated PostgreSQL subclass. HTTP tests cover expired witness/equipment-certificate denials, preservation of original failed commissioning test and uploaded-evidence retest, Owner partial handover with a scoped reservation, and warranty remedy/reinspection/closure. F-07 WorkItem creation and transitions use HTTP. Trusted Requirement profiles and upstream accepted InformationItem, Asset, Inspection, Issue and Action references are seeded as test fixtures. The single completion-page browser test explicitly injects mock records and verifies presentation/history/three display locales; it does not exercise API workflow commands.",
+      "gaps": [
+        "Real connected Commissioning/Punch path exposes captured ref staleness; draft optional-ref payload fix implemented/tested but not an approved Product Baseline change.",
+        "Handover current/open Issue refs and Warranty rework current Issue/Action refs have no reconciliation path after normal upstream transitions; read-only review recorded in product-change-reference-lifecycle-proposal.json.",
+        "Additional F07 browser is partial; whole AC-HO-01, actual project configuration, production signature provider and site acceptance not proven."
+      ],
+      "nextWork": "Product/Functional Owner decision for C2 reference lifecycle proposal; complete approved Handover/Warranty reconciliation and linked-cycle browser proof; keep stage revalidation_required without pilot promotion."
+    },
+    {
+      "id": "AC-MEDIA-01",
+      "domain": "media",
+      "assessment": "substantial_backend_api_tests; full_connected_e2e_not_proven",
+      "contract": "confirmed",
+      "backendApi": "real_http_and_worker_tests_exist",
+      "ui": "not_proven_for_review_to_issue_full_flow",
+      "integration": "partial",
+      "pilot": "not_run",
+      "evidence": [
+        "tests_mvp/test_media_pipeline_http.py",
+        "tests_mvp/test_media_to_issue_http.py",
+        "tests_mvp/test_worker_jobs.py",
+        "tests/test_media_documents.py",
+        "20_Media_Analysis_Detailed_Definition.md"
+      ],
+      "provenScope": "HTTP coverage includes human review gates, no-findings not becoming official pass, video coverage/PTS, original transcript and worker retry/audit behavior; separate HTTP tests cover eligible observation-to-issue provenance.",
+      "gaps": [
+        "No connected browser E2E was found spanning resumable upload, completed analysis coverage, candidate confirmation/rejection, and eligible-only official Issue creation.",
+        "External provider availability, multilingual accuracy and field false-positive performance remain separate operational/data-set validation; mocks or test providers cannot establish model performance."
+      ],
+      "nextWork": "Add real API-backed UI candidate-review E2E plus worker restart/failure and actual approved-provider representative dataset acceptance if media is enabled."
+    },
+    {
+      "id": "AC-AUTH-01",
+      "domain": "authority",
+      "assessment": "boundary_tests_exist; scenario_full_acceptance_not_proven",
+      "contract": "confirmed",
+      "backendApi": "partial_boundary_evidence",
+      "ui": "not_proven",
+      "integration": "not_proven",
+      "pilot": "not_run",
+      "evidence": [
+        "tests/test_s2_streaming_storage.py",
+        "tests_mvp/test_wave2_location_anchors.py",
+        "tests_mvp/test_deployment.py",
+        "tests/test_product_configuration.py"
+      ],
+      "provenScope": "Some storage and object-reference boundaries reject cross-project access; configuration guards reject invalid authority bindings.",
+      "gaps": [
+        "No acceptance flow was found that logs into two actual projects and proves both cross-project object reads and commands are denied across representative domain APIs."
+      ],
+      "nextWork": "Add authenticated two-project HTTP tests covering object GET, command execution, evidence/download and linked-reference paths; keep data non-disclosing on denial."
+    },
+    {
+      "id": "AC-QUAL-01",
+      "domain": "authority",
+      "assessment": "qualification_contract_tests_exist; exact_http_and_ui_acceptance_not_proven",
+      "contract": "confirmed",
+      "backendApi": "partial_reference_or_domain_tests",
+      "ui": "not_proven",
+      "integration": "not_proven",
+      "pilot": "not_run",
+      "evidence": [
+        "tests/test_safety_execution_contract.py",
+        "app/schema/authority_matrix_v1.json",
+        "app/schema/safety_execution_contract_v1.json"
+      ],
+      "provenScope": "Safety execution contract tests cover qualification/readiness and current certificates in domain scenarios.",
+      "gaps": [
+        "No identified real HTTP test expires a qualification after a signed decision and proves a new official decision is rejected while the old signature remains retrievable and unchanged."
+      ],
+      "nextWork": "Add HTTP/persistence regression for qualification expiry after historical approval, then browser conflict/denial presentation if the workflow is in pilot scope."
+    },
+    {
+      "id": "AC-ADM-01",
+      "domain": "authority",
+      "assessment": "authority_policies_exist; exact_technical_denial_scenario_not_proven",
+      "contract": "confirmed",
+      "backendApi": "partial",
+      "ui": "not_proven",
+      "integration": "not_proven",
+      "pilot": "not_run",
+      "evidence": [
+        "app/schema/authority_matrix_v1.json",
+        "tests/test_safety_execution_contract.py",
+        "tests_mvp/test_wave2_location_anchors.py",
+        "tests_mvp/test_wave4_drawing_field_control.py"
+      ],
+      "provenScope": "Authority matrix defines actor decision rights and selected ADM administration APIs have HTTP tests.",
+      "gaps": [
+        "No targeted acceptance test proves ADM cannot technically approve or close an Issue through the command API and connected UI while allowed administrative actions still work."
+      ],
+      "nextWork": "Add negative real HTTP commands for technical approval and Issue close as ADM, assert no state/audit decision mutation, and browser displays server denial."
+    },
+    {
+      "id": "AC-VERSION-01",
+      "domain": "cross-cutting",
+      "assessment": "several_backend_concurrency_proofs; cross-scenario_ui_conflict_incomplete",
+      "contract": "confirmed",
+      "backendApi": "partial_real_http",
+      "ui": "partial",
+      "integration": "not_proven_across_required_scenario_set",
+      "pilot": "not_run",
+      "evidence": [
+        "tests_mvp/test_safety_http.py",
+        "tests_mvp/test_schedule_http.py",
+        "tests_browser/schedule.spec.ts",
+        "tests_mvp/test_wave2_location_anchors.py"
+      ],
+      "provenScope": "Stale version writes are rejected by selected real APIs; schedule browser proves real API rejection and refresh of saved version.",
+      "gaps": [
+        "A consistent UI conflict and recovery path is not evidenced across the priority pilot workflows (quality, safety, payment, handover)."
+      ],
+      "nextWork": "Reuse a real two-session stale write acceptance helper for each pilot workflow and assert explicit conflict, refresh, and user-directed retry."
+    },
+    {
+      "id": "AC-IDEMP-01",
+      "domain": "cross-cutting",
+      "assessment": "several_backend_retry_proofs; no_complete_ui_cross_domain_acceptance",
+      "contract": "confirmed",
+      "backendApi": "partial_real_http_and_worker",
+      "ui": "partial",
+      "integration": "not_proven_across_required_scenario_set",
+      "pilot": "not_run",
+      "evidence": [
+        "tests_mvp/test_safety_http.py",
+        "tests_mvp/test_media_pipeline_http.py",
+        "tests_mvp/test_media_to_issue_http.py",
+        "tests_mvp/test_schedule_source_import_http.py",
+        "tests/test_s2_versioned_retries.py"
+      ],
+      "provenScope": "Selected create/command/upload/worker retry boundaries use idempotency and test stable outcome or single logical candidate.",
+      "gaps": [
+        "No single acceptance surface demonstrates that browser submit timeout/retry preserves one official record across each required pilot workflow."
+      ],
+      "nextWork": "Add timeout/replay tests for high-impact commands and verify record count plus stable returned ID/version; include UI retry behavior."
+    },
+    {
+      "id": "AC-STORE-01",
+      "domain": "evidence",
+      "assessment": "storage_failure_tests_exist; full_domain_finalize_atomicity_not_proven_for_all_required_flows",
+      "contract": "confirmed",
+      "backendApi": "partial_real_http_storage",
+      "ui": "not_proven",
+      "integration": "partial",
+      "pilot": "not_run",
+      "evidence": [
+        "tests_mvp/test_parallel_evidence_upload.py",
+        "tests/test_s2_streaming_storage.py",
+        "tests_mvp/test_wave1_integration.py",
+        "tests_mvp/test_persistence_boundary.py"
+      ],
+      "provenScope": "Object storage upload/verification failures and selected API persistence boundaries have focused tests.",
+      "gaps": [
+        "No end-to-end acceptance was found proving a domain command that requires evidence cannot report success when durable blob storage fails, followed by safe retry/recovery."
+      ],
+      "nextWork": "Inject object-store failure during an evidence-required official command and assert no finalized domain result, no orphaned false success, and recoverable retry."
+    },
+    {
+      "id": "AC-WORKER-01",
+      "domain": "media",
+      "assessment": "worker_retry_and_fencing_tests_exist; deployed_restart_e2e_not_proven",
+      "contract": "confirmed",
+      "backendApi": "partial_worker_api",
+      "ui": "not_proven",
+      "integration": "partial_local_test",
+      "pilot": "not_run",
+      "evidence": [
+        "tests/test_worker_jobs.py",
+        "tests_mvp/test_worker_jobs.py",
+        "tests_mvp/test_media_pipeline_http.py",
+        "design/verification/priority-issues-validation.json"
+      ],
+      "provenScope": "Outbox replay, bounded retry, lease fencing, invalid output rollback and explicit unconfigured-provider failure are tested.",
+      "gaps": [
+        "No real deployed process-kill/restart acceptance proves one logical result after recovery; no pilot worker/provider evidence. Heartbeat alone remains insufficient."
+      ],
+      "nextWork": "Add disposable API/worker integration that kills worker after claim/provider response, restarts, and asserts one committed result or explicit failure with audit trail."
+    },
+    {
+      "id": "AC-REPORT-01",
+      "domain": "owner-governance",
+      "assessment": "full_backend_http_owner_report_lifecycle_proven_synthetic; connected_browser_scenario_not_proven",
+      "contract": "confirmed",
+      "backendApi": "real_http_separate_report_lifecycle",
+      "ui": "partial_real_api_views_and_commands; no_single_full_scenario_browser_flow",
+      "integration": "backend_http_issue_close_and_owner_report_receipt_close_scenario_passed_synthetic",
+      "pilot": "not_run",
+      "evidence": [
+        "tests_mvp/test_quality_closed_loop_http.py",
+        "tests/test_workflows.py",
+        "tests/test_case_end_to_end.py",
+        "tests_mvp/test_application_service_http.py",
+        "tests_mvp/test_inspection_case_http.py",
+        "apps/web/src/pages/OwnerGovernancePage.tsx",
+        "apps/web/src/pages/parallel/InspectionCaseFlowPanel.tsx"
+      ],
+      "provenScope": "The new Quality HTTP scenario proves Issue close is independent from Owner Report completion: report creation is rejected before Issue closure, then report draft/issue and Owner acknowledgement/receipt, dispatch, verification and report close proceed through real HTTP commands. Readiness remains open until the Owner report is closed.",
+      "gaps": [
+        "No connected browser/API acceptance drives the full Issue close through Owner Report receipt and independent close path.",
+        "The workflow uses synthetic demo records and is development evidence, not Owner acceptance in a real pilot."
+      ],
+      "nextWork": "Add a browser flow over the connected API for the backend-proven distinct Issue and Owner Report lifecycles; preserve separate close authority and retain pilot_not_run."
+    },
+    {
+      "id": "AC-OFFLINE-01",
+      "domain": "mobile",
+      "assessment": "local_offline_upload_exists; conflict_resolution_acceptance_absent",
+      "contract": "confirmed",
+      "backendApi": "not_applicable_for_local_conflict",
+      "ui": "partial_offline_evidence_only",
+      "integration": "not_proven",
+      "pilot": "not_run",
+      "evidence": [
+        "tests_browser/workspace.spec.ts",
+        "app/schema/implementation_acceptance_catalog_v1.json#AC-OFFLINE-01"
+      ],
+      "provenScope": "Browser coverage asserts offline evidence remains local until explicit upload.",
+      "gaps": [
+        "No offline command queue/reconnect conflict flow was found that rejects last-write-wins and surfaces the conflicting server/current versions for human resolution."
+      ],
+      "nextWork": "Implement explicit conflict UI for reconnecting offline changes and test competing online/offline edits with a human-selected resolution."
+    }
+  ],
+  "crossCuttingGaps": [
+    {
+      "id": "required_report_locales",
+      "assessment": "three_locale_ui_and_document_localization_infrastructure_exists; required_report_local_acceptance_incomplete",
+      "evidence": [
+        "packages/localization/src/index.ts",
+        "packages/localization/src/form-field-labels.ts",
+        "apps/web/src/i18n/config.ts",
+        "app/reference/document_localization.py",
+        "tests/test_document_localization.py",
+        "tests_mvp/test_documents_http.py",
+        "tests_browser/localization.spec.ts",
+        "tests_browser/completion-handover-page.spec.ts",
+        "07_Forms_Document_Control.md",
+        "04A_Vietnam_Mandatory_Documents_Forms.md"
+      ],
+      "finding": "The application now has ko/vi/en display selection, translated shared/domain UI labels for selected modules, localized numeric/date formatting, locale-specific form-field catalogs, and document localization catalogs. HTTP tests render and retrieve FM-20 previews in ko/vi/en with frozen language/catalog/source data; catalog completeness is checked across declared form fields. Completion UI tests switch display language across ko/vi/en, but use injected mock records. Vietnamese remains the legal completion-document baseline. The interface language does not change document output language; output language is explicitly selected per document. Translation metadata marks Korean approved master and Vietnamese/English draft pending local review. Therefore previous statement that no locale infrastructure or language output existed is stale, but approved project-required multilingual report coverage is not established.",
+      "gap": "Complete local review/approval of vi/en catalogs, bind selected project required/control languages and controlling-language policy, and validate each required issued report/form by explicit output language, exact source provenance, legal original/template/hash and approved language version. Preserve Vietnamese legal original where required; display-language switching alone is not proof of multilingual legal reports."
+    }
+  ],
+  "pilotPrerequisites": {
+    "mustBeSuppliedForSelectedProject": [
+      "Chosen project and validated Project Configuration Pack, including pack/config version and selected required acceptance scenarios.",
+      "Real SUP, CON and OWN accounts with active project RoleAssignments; DES and ADM accounts/assignments for role-boundary acceptance.",
+      "Core qualification/certificate records, holders, scopes and validity/expiry dates for the actual pilot period.",
+      "Approved project, package, location and discipline scope assignments for each role.",
+      "Owner P1–P4 report routing, recipient references, acknowledgment/follow-up owners and due-time rules.",
+      "Adopted DOUL forms and legal original-form identifiers, plus agreed report languages / controlling language.",
+      "Named backup/restore accountable owner, restore contact, outage escalation line and an agreed recovery exercise window.",
+      "For enabled media: approved provider/runtime, data export/transfer decision, retention/deletion period, cost owner/limit, and representative approved field media set.",
+      "For AC-S-01: authorized non-secret equipment register/asset IDs and tags, the approved project process for provisioning them, current inspection/certification state and validity, and qualified operator assignment; do not invent Asset CRUD authority.",
+      "For AC-S-01: adopted legal acceptance form and exact version/signature requirements for inspection release, plus active SUP/technical approver RoleAssignments and any required qualification scope.",
+      "For AC-S-01: actual work scope/permit references, method statement and risk/emergency-control revisions, permit validity window, accountable safety parties, and approved hazard/correction/reverification evidence references."
+    ],
+    "evidenceToCapture": [
+      "Project/config version, build/commit, actor-role setup references with no secrets, and generated business object IDs/versions.",
+      "Executed commands and outcomes, rejection reasons, linked evidence IDs, screen/log/document snapshot references, defects/workarounds and owner acceptance decision."
+    ],
+    "securityRule": "Use account and secret references only in this inventory; never include passwords, tokens, private keys, or real personal identifiers."
+  }
+}

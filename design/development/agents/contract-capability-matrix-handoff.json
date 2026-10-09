@@ -1,0 +1,29 @@
+{
+  "id": "contract-capability-matrix-http-acceptance",
+  "status": "development_test_evidence",
+  "branch": "goal/contract-capability-matrix-v1",
+  "base": "c2bf6607b02e7af588c0092761b6cf0fc8b167a7",
+  "scope": [
+    "tests_mvp/test_creation_capabilities_http.py",
+    "design/development/agents/contract-capability-matrix-handoff.json"
+  ],
+  "evidence": {
+    "test_command": "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_creation_capabilities_http -v",
+    "result": "PASS: 5 tests",
+    "assertions": [
+      "Real FastAPI TestClient workspace reads return server-derived create capabilities for CON, OWN, SUP, and ADM assignments.",
+      "Effective demo grants: Contract Notice CON/SUP; Claim CON only; EOT CON only. OWN/ADM are unauthorized for these creation bindings in the demo project.",
+      "The authority policy lists owner_representative for contract.notice.identify, but its contractor organization scope condition makes the demo OWN assignment unauthorized; the test records the effective engine result rather than assuming the role-code list alone grants access.",
+      "An OWN actor's structurally valid direct EOT create request returns HTTP 403 NOT_AUTHORIZED.",
+      "Revoking the current SUP qualification is reflected on the next workspace HTTP read for qualification-gated Issue creation, while qualification-independent Contract Notice creation remains available.",
+      "Existing fail-closed unconfigured-scope, unavailable-queue, and payment authorization assertions remain intact."
+    ]
+  },
+  "limits": [
+    "This uses the synthetic demo project and trusted fixture mutation for qualification revocation; it is development acceptance evidence, not a live-project or pilot result.",
+    "No UI/browser behavior is asserted by this HTTP test.",
+    "No authority matrix, business schema, gate, frontend, CI, dependency, or macOS configuration was changed.",
+    "No production session mutation endpoint is exercised; actor changes are represented by separate current-role demo sessions and their real workspace reads."
+  ],
+  "commit": "same commit containing this handoff"
+}

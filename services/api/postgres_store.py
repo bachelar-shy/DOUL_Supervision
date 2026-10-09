@@ -203,15 +203,16 @@ class PostgresSnapshotAdapter:
         self.requests = state["requests"]
         self.conflicts = state["conflicts"]
 
-    def _load(self, lock=False):
+    def _load(self, lock=False, return_payload=False):
         suffix = " FOR UPDATE" if lock else ""
         row = self._fetchone(
             f"SELECT payload FROM {STATE_TABLE} WHERE id = 1{suffix}"
         )
         if row is None or row[0] is None:
-            return False
-        self.restore(json.loads(row[0]))
-        return True
+            return None if return_payload else False
+        payload = row[0]
+        self.restore(json.loads(payload))
+        return payload if return_payload else True
 
     def _save(self):
         payload = json.dumps(
@@ -227,19 +228,18 @@ class PostgresSnapshotAdapter:
     @contextmanager
     def transaction(self, write=False):
         with self.lock:
-            before = None
+            payload = None
             try:
                 with self._transaction_connection():
-                    loaded = self._load(lock=write)
-                    if not loaded:
+                    payload = self._load(lock=write, return_payload=True)
+                    if payload is None:
                         raise RuntimeError("PostgreSQL snapshot state is not initialized")
-                    before = deepcopy(self.export_state())
                     yield self
                     if write:
                         self._save()
             except BaseException:
-                if before is not None:
-                    self.restore(before)
+                if payload is not None:
+                    self.restore(json.loads(payload))
                 raise
 
     def put_blob(self, file_id, content):

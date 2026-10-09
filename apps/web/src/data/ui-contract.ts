@@ -2,6 +2,7 @@ import type { DomainRef, RecordDTO } from "@doul/client";
 
 export type {
   CommandDescriptor,
+  CreationCapability,
   Fields,
   FormSchema,
   HumanRole,
@@ -23,6 +24,7 @@ export interface RegisterProjectionRow {
 export interface UiRoute {
   id: string;
   label: string;
+  labelKey?: string;
   icon: string;
 }
 

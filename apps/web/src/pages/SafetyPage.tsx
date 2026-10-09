@@ -1,4 +1,6 @@
 import { useState } from "react";
+import type { SupervisionClient } from "../data/supervision-client";
+import { SafetyAuthoringPanel } from "./SafetyAuthoringPanel";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -19,6 +21,8 @@ import {
 import { WorkbenchTemplate } from "../ui/templates";
 import { PageBoundary } from "./PageBoundary";
 import { recordTitle } from "./record-utils";
+import { formatDateTime } from "../i18n/format";
+import i18n from "../i18n/config";
 import { RecordList } from "./shared";
 
 const safetyMachines = [
@@ -31,41 +35,32 @@ type SafetyMachine = (typeof safetyMachines)[number];
 
 const safetyTabs: ReadonlyArray<{
   id: SafetyMachine;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
 }> = [
   {
     id: "safety_permit",
-    label: "작업허가",
-    description: "허가 상태와 실제 작업 허용 상태를 분리해 확인합니다.",
+    labelKey: "safety.tab.permit.label",
+    descriptionKey: "safety.tab.permit.description",
   },
   {
     id: "safety_stop_order",
-    label: "작업중지",
-    description: "중지 발행부터 재개 검증·해제까지 별도 절차로 추적합니다.",
+    labelKey: "safety.tab.stop.label",
+    descriptionKey: "safety.tab.stop.description",
   },
   {
     id: "safety_equipment_inspection",
-    label: "장비 안전검사",
-    description: "검사 판정과 현재 장비 사용 가능 상태를 구분합니다.",
+    labelKey: "safety.tab.equipment.label",
+    descriptionKey: "safety.tab.equipment.description",
   },
 ];
 
-const resumeGateLabels: Record<string, string> = {
-  causeIdentified: "원인 확인",
-  correctiveActionComplete: "시정조치 완료",
-  correctiveEvidencePresent: "시정 증빙 확보",
-  issueActionsVerified: "연결 조치 검증",
-  reinspectionPassed: "재검증 적합",
-  permitValid: "작업허가 유효",
-  methodStatementCurrent: "작업계획서 최신",
-  riskAssessmentCurrent: "위험성평가 최신",
-  equipmentReady: "장비 준비",
-  personnelQualified: "작업자 자격",
-  controlMeasuresReady: "안전조치 준비",
-  environmentalConditionsReady: "환경조건 적합",
-  reportingObligationsSatisfied: "보고 의무 충족",
-};
+function tr(
+  key: string,
+  values: Record<string, string | number | boolean> = {},
+) {
+  return i18n.t(key, values);
+}
 
 function isSafetyMachine(value: string): value is SafetyMachine {
   return safetyMachines.includes(value as SafetyMachine);
@@ -82,14 +77,9 @@ function arrayValue(value: unknown): unknown[] {
 }
 
 function formattedDate(value: unknown) {
-  if (typeof value !== "string" || !value) return "기록 없음";
+  if (typeof value !== "string" || !value) return tr("safety.value.recordNone");
   const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? value
-    : date.toLocaleString("ko-KR", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      });
+  return Number.isNaN(date.getTime()) ? value : formatDateTime(date);
 }
 
 function booleanLabel(value: unknown, positive: string, negative: string) {
@@ -99,21 +89,28 @@ function booleanLabel(value: unknown, positive: string, negative: string) {
 function detailRows(record: RecordDTO) {
   const data = objectValue(record.data);
   const rows: Array<[string, string]> = [
-    ["상태", states[record.status || ""] || record.status || "원본 보존"],
-    ["원본 버전", `v${record.version}`],
+    [
+      tr("safety.detail.status"),
+      states[record.status || ""] ||
+        record.status ||
+        tr("safety.value.originalPreserved"),
+    ],
+    [tr("safety.detail.sourceVersion"), `v${record.version}`],
   ];
 
   if (typeof data.permitNo === "string") rows.push(["Permit No.", data.permitNo]);
-  if (typeof data.workType === "string") rows.push(["작업 유형", data.workType]);
-  if (typeof data.riskLevel === "string") rows.push(["위험도", data.riskLevel]);
+  if (typeof data.workType === "string")
+    rows.push([tr("safety.detail.workType"), data.workType]);
+  if (typeof data.riskLevel === "string")
+    rows.push([tr("safety.detail.riskLevel"), data.riskLevel]);
   if (typeof data.stopOrderNo === "string")
     rows.push(["Stop No.", data.stopOrderNo]);
   if (typeof data.stopReason === "string")
-    rows.push(["중지 사유", data.stopReason]);
+    rows.push([tr("safety.detail.stopReason"), data.stopReason]);
   if (typeof data.inspectionKind === "string")
-    rows.push(["검사 유형", data.inspectionKind]);
+    rows.push([tr("safety.detail.inspectionKind"), data.inspectionKind]);
   if (typeof data.resultSummary === "string")
-    rows.push(["검사 결과", data.resultSummary]);
+    rows.push([tr("safety.detail.resultSummary"), data.resultSummary]);
   return rows;
 }
 
@@ -122,29 +119,36 @@ function PermitBoundary({ record }: { record: RecordDTO }) {
   const stopRefs = arrayValue(data.stopOrderRefs);
   return (
     <StatusBoundaryGroup
-      title="허가 · 작업 허용 상태 경계"
-      description="Permit 승인과 실제 작업 허용은 같은 상태가 아닙니다. 서버가 계산한 workAuthorized를 별도로 확인합니다."
+      title={tr("safety.permit.boundary.title")}
+      description={tr("safety.permit.boundary.description")}
       items={[
         {
           id: "permit-state",
-          label: "Permit 상태",
-          value: states[record.status || ""] || record.status || "미정",
-          detail: "현재 SafetyPermit 공식 상태",
+          label: tr("safety.permit.state.label"),
+          value:
+            states[record.status || ""] ||
+            record.status ||
+            tr("safety.value.undetermined"),
+          detail: tr("safety.permit.state.detail"),
         },
         {
           id: "work-authorized",
-          label: "Work Authorized",
-          value: booleanLabel(data.workAuthorized, "작업 허용", "작업 미허용"),
-          detail: "작업 허용 Gate의 서버 계산 결과",
+          label: tr("safety.permit.authorization.label"),
+          value: booleanLabel(
+            data.workAuthorized,
+            tr("safety.permit.authorization.allowed"),
+            tr("safety.permit.authorization.notAllowed"),
+          ),
+          detail: tr("safety.permit.authorization.detail"),
           tone: data.workAuthorized === true ? "positive" : "warning",
         },
         {
           id: "stop-link",
-          label: "연결 Stop",
-          value: `${stopRefs.length}건`,
+          label: tr("safety.permit.stopLink.label"),
+          value: tr("common.count", { count: stopRefs.length }),
           detail: stopRefs.length
-            ? "연결된 Stop 상태를 확인해야 합니다."
-            : "연결된 Stop 참조 없음",
+            ? tr("safety.permit.stopLink.required")
+            : tr("safety.permit.stopLink.none"),
           tone: stopRefs.length ? "critical" : "neutral",
         },
       ]}
@@ -157,14 +161,17 @@ function StopBoundary({ record }: { record: RecordDTO }) {
   return (
     <>
       <StatusBoundaryGroup
-        title="중지 · 재개 상태 경계"
-        description="시정 완료나 Issue 종결만으로 Stop이 해제되지 않습니다. Stop Lift와 Permit 재개도 서로 다른 승인 단계입니다."
+        title={tr("safety.stop.boundary.title")}
+        description={tr("safety.stop.boundary.description")}
         items={[
           {
             id: "stop-state",
-            label: "Stop 상태",
-            value: states[record.status || ""] || record.status || "미정",
-            detail: "현재 SafetyStopOrder 공식 상태",
+            label: tr("safety.stop.state.label"),
+            value:
+              states[record.status || ""] ||
+              record.status ||
+              tr("safety.value.undetermined"),
+            detail: tr("safety.stop.state.detail"),
             tone: ["lifted", "closed", "cancelled", "superseded"].includes(
               record.status || "",
             )
@@ -173,15 +180,19 @@ function StopBoundary({ record }: { record: RecordDTO }) {
           },
           {
             id: "resume-request",
-            label: "재개 요청",
-            value: data.resumeRequestAt ? "요청됨" : "미요청",
+            label: tr("safety.stop.resumeRequest.label"),
+            value: data.resumeRequestAt
+              ? tr("safety.stop.resumeRequest.requested")
+              : tr("safety.stop.resumeRequest.notRequested"),
             detail: formattedDate(data.resumeRequestAt),
             tone: data.resumeRequestAt ? "warning" : "neutral",
           },
           {
             id: "stop-lift",
-            label: "Stop Lift",
-            value: data.liftedAt ? "해제됨" : "중지 유지",
+            label: tr("safety.stop.lift.label"),
+            value: data.liftedAt
+              ? tr("safety.stop.lift.lifted")
+              : tr("safety.stop.lift.maintained"),
             detail: formattedDate(data.liftedAt),
             tone: data.liftedAt ? "positive" : "critical",
           },
@@ -198,10 +209,11 @@ function ResumeGate({ data }: { data: Record<string, unknown> }) {
   if (!entries.length) {
     return (
       <Panel className="mt-3">
-        <SectionHeader title="재개 Gate" meta="서버 계산" />
-        <p className="muted">
-          현재 단계에서 서버가 생성한 재개 Gate snapshot이 없습니다.
-        </p>
+        <SectionHeader
+          title={tr("safety.resumeGate.title")}
+          meta={tr("safety.resumeGate.meta")}
+        />
+        <p className="muted">{tr("safety.resumeGate.empty")}</p>
       </Panel>
     );
   }
@@ -211,10 +223,11 @@ function ResumeGate({ data }: { data: Record<string, unknown> }) {
       data-ui-component="safety-resume-gate"
     >
       <div className="mb-3">
-        <h3 className="text-[11px] font-semibold text-slate-700">재개 Gate</h3>
+        <h3 className="text-[11px] font-semibold text-slate-700">
+          {tr("safety.resumeGate.title")}
+        </h3>
         <p className="mt-1 text-[9px] leading-4 text-slate-500">
-          아래 값은 UI 계산값이 아니라 서버가 현재 원본을 다시 검증해 저장한
-          resumeGate입니다.
+          {tr("safety.resumeGate.description")}
         </p>
       </div>
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
@@ -229,10 +242,12 @@ function ResumeGate({ data }: { data: Record<string, unknown> }) {
             }
           >
             <span className="block text-[9px] text-slate-500">
-              {resumeGateLabels[key] || key}
+              {tr(`safety.resumeGate.${key}`, { defaultValue: key })}
             </span>
             <strong className="mt-1 block text-[11px] text-slate-700">
-              {value === true ? "충족" : "미충족"}
+              {value === true
+                ? tr("safety.resumeGate.satisfied")
+                : tr("safety.resumeGate.unsatisfied")}
             </strong>
           </div>
         ))}
@@ -245,31 +260,34 @@ function EquipmentBoundary({ record }: { record: RecordDTO }) {
   const data = objectValue(record.data);
   return (
     <StatusBoundaryGroup
-      title="검사 · 장비 사용 상태 경계"
-      description="검사 결과가 적합이어도 인증서·교정 유효기간을 포함한 현재 조건이 충족되어야 equipmentAvailable=true가 됩니다."
+      title={tr("safety.equipment.boundary.title")}
+      description={tr("safety.equipment.boundary.description")}
       items={[
         {
           id: "inspection-state",
-          label: "검사 상태",
-          value: states[record.status || ""] || record.status || "미정",
-          detail: "현재 SafetyEquipmentInspection 공식 상태",
+          label: tr("safety.equipment.state.label"),
+          value:
+            states[record.status || ""] ||
+            record.status ||
+            tr("safety.value.undetermined"),
+          detail: tr("safety.equipment.state.detail"),
         },
         {
           id: "equipment-available",
-          label: "Equipment Available",
+          label: tr("safety.equipment.availability.label"),
           value: booleanLabel(
             data.equipmentAvailable,
-            "사용 가능",
-            "사용 불가",
+            tr("safety.equipment.availability.available"),
+            tr("safety.equipment.availability.unavailable"),
           ),
-          detail: "현재 인증·교정 조건을 반영한 서버 계산값",
+          detail: tr("safety.equipment.availability.detail"),
           tone: data.equipmentAvailable === true ? "positive" : "warning",
         },
         {
           id: "valid-to",
-          label: "유효기한",
+          label: tr("safety.equipment.validTo.label"),
           value: formattedDate(data.validTo),
-          detail: "현재 검사/인증 자료의 유효기간 확인",
+          detail: tr("safety.equipment.validTo.detail"),
         },
       ]}
     />
@@ -285,6 +303,8 @@ function Boundary({ item }: { item: WorkItem }) {
 }
 
 export interface SafetyPageProps {
+  client: SupervisionClient;
+  onCreated: (record: RecordDTO) => Promise<void>;
   workspace: Workspace;
   selected: string | null;
   current: WorkItem | null;
@@ -294,6 +314,8 @@ export interface SafetyPageProps {
 }
 
 export function SafetyPage({
+  client,
+  onCreated,
   workspace,
   selected,
   current,
@@ -313,6 +335,8 @@ export function SafetyPage({
   const selectedItem =
     current && current.machine === activeMachine ? current : null;
   const tab = safetyTabs.find((item) => item.id === activeMachine)!;
+  const tabName = tr(tab.labelKey);
+  const tabDescription = tr(tab.descriptionKey);
 
   return (
     <PageBoundary name="safety">
@@ -335,18 +359,23 @@ export function SafetyPage({
                 value={item.id}
                 className="min-h-11 flex-none px-1.5 text-xs"
               >
-                {item.label}
+                {tr(item.labelKey)}
               </TabsTrigger>
             ))}
           </TabsList>
           <div className="px-4 py-2.5 text-[10px] text-slate-500">
-            {tab.description}
+            {tabDescription}
           </div>
         </Tabs>
 
+        <SafetyAuthoringPanel key={`${workspace.project.id}:${workspace.role.id}:${activeMachine}`} client={client} workspace={workspace} machine={activeMachine} online={online} onCreated={onCreated} />
+
         <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
           <Panel className="list-pane">
-            <SectionHeader title={tab.label} meta={`${items.length}건`} />
+            <SectionHeader
+              title={tabName}
+              meta={tr("common.count", { count: items.length })}
+            />
             <RecordList
               items={items}
               selected={selected}
@@ -357,11 +386,8 @@ export function SafetyPage({
           <DetailPane>
             {!selectedItem ? (
               <div className="empty compact">
-                <h2>{tab.label} 상세</h2>
-                <p>
-                  목록에서 원본을 선택하면 상태 경계, 서버 Gate와 허용 명령을
-                  확인할 수 있습니다.
-                </p>
+                <h2>{tr("safety.page.detailTitle", { tab: tabName })}</h2>
+                <p>{tr("safety.page.emptyDescription")}</p>
               </div>
             ) : (
               <>
@@ -370,21 +396,22 @@ export function SafetyPage({
                   className="mobile-back"
                   onClick={() => onSelect(null)}
                 >
-                  ← 목록
+                  {tr("safety.page.back")}
                 </button>
                 <div className="detail-head">
                   <div>
-                    <span className="eyebrow">{tab.label}</span>
+                    <span className="eyebrow">{tabName}</span>
                     <h2>{recordTitle(selectedItem.record)}</h2>
                     <p>
-                      원본 v{selectedItem.record.version} · UI에서 상태를 직접
-                      변경하지 않습니다.
+                      {tr("safety.page.sourceVersion", {
+                        version: selectedItem.record.version,
+                      })}
                     </p>
                   </div>
                   <StatusBadge status={selectedItem.record.status}>
                     {states[selectedItem.record.status || ""] ||
                       selectedItem.record.status ||
-                      "원본 보존"}
+                      tr("safety.value.originalPreserved")}
                   </StatusBadge>
                 </div>
 
@@ -403,7 +430,7 @@ export function SafetyPage({
                   objectValue(selectedItem.record.data).blockedReasons,
                 ).length ? (
                   <div className="notice warning mt-3">
-                    <strong>현재 차단 사유</strong>
+                    <strong>{tr("safety.page.blockedReasons")}</strong>
                     <ul className="mt-1 list-disc pl-4">
                       {arrayValue(
                         objectValue(selectedItem.record.data).blockedReasons,
@@ -416,8 +443,8 @@ export function SafetyPage({
 
                 <div className="detail-section">
                   <SectionHeader
-                    title="가능한 업무 명령"
-                    meta="서버 Action Descriptor"
+                    title={tr("safety.page.actionsTitle")}
+                    meta={tr("safety.page.actionsMeta")}
                   />
                   {selectedItem.actions.length ? (
                     <ActionGate
@@ -440,7 +467,7 @@ export function SafetyPage({
                     />
                   ) : (
                     <div className="empty compact">
-                      현재 역할과 상태에서 서버가 허용한 명령이 없습니다.
+                      {tr("safety.page.noActions")}
                     </div>
                   )}
                 </div>

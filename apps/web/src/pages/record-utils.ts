@@ -1,4 +1,4 @@
-import type { DomainRef, RecordDTO, WorkItem } from "../data/ui-contract";
+import type { RecordDTO } from "../data/ui-contract";
 import { machineLabels } from "../app/routes";
 
 export function recordTitle(r: RecordDTO) {
@@ -11,28 +11,4 @@ export function recordTitle(r: RecordDTO) {
     )
   );
 }
-export function recordRef(item: WorkItem): DomainRef {
-  const kind: Record<string, string> = {
-    inspection: "Inspection",
-    issue: "Issue",
-    observation: "Observation",
-    action: "Action",
-    delay_event: "WorkItem",
-    recovery_plan: "WorkItem",
-    safety_permit: "WorkItem",
-    safety_stop_order: "WorkItem",
-    safety_equipment_inspection: "WorkItem",
-    contract_notice: "WorkItem",
-    claim: "WorkItem",
-    eot_request: "WorkItem",
-    rfi: "WorkItem",
-    report: "InformationItem",
-    decision: "Decision",
-    document: "DocumentSnapshot",
-  };
-  return {
-    objectType: kind[item.machine] || "InformationItem",
-    objectId: item.record.id,
-    version: item.record.version,
-  };
-}
+export { recordReference as recordRef } from "../data/record-reference";

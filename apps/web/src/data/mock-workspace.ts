@@ -1,4 +1,14 @@
-import type { HumanRole, WorkItem, Workspace } from "./ui-contract";
+import type { FormSchema, HumanRole, WorkItem, Workspace } from "./ui-contract";
+
+// Presentation-only form fields for multilingual preview. These are not
+// official A4 schemas and the mock adapter cannot issue documents.
+const previewForm = (paths: readonly string[]): FormSchema => ({
+  scalar_fields: Object.fromEntries(
+    paths.map((path) => [path, { type: "string", required: false }]),
+  ),
+  tables: [],
+  signature_roles: [],
+});
 
 const scope = {
   discipline: "ARCH",
@@ -292,11 +302,16 @@ export function createMockWorkspace(role: HumanRole): Workspace {
       { partyId: "P-DES", name: "설계 담당자", actorGroup: "DES" },
     ],
     formSchemas: {
-      "FM-09": { scalar_fields: {}, tables: [], signature_roles: [] },
-      "FM-12": { scalar_fields: {}, tables: [], signature_roles: [] },
-      "FM-19": { scalar_fields: {}, tables: [], signature_roles: [] },
-      "FM-20": { scalar_fields: {}, tables: [], signature_roles: [] },
-      "FM-21": { scalar_fields: {}, tables: [], signature_roles: [] },
+      "FM-09": previewForm(["inspection.no", "inspection.work_name", "work.discipline", "result.status"]),
+      "FM-12": previewForm(["project.name", "ncr.no", "ncr.description", "ncr.immediate_action"]),
+      "FM-19": previewForm(["project.name", "weekly.period", "weekly.progress", "weekly.open_decisions"]),
+      "FM-20": previewForm([
+        "project.name", "urgent.no", "urgent.occurred_at", "urgent.priority",
+        "urgent.recipient", "urgent.fact", "urgent.cause", "urgent.impact",
+        "urgent.immediate_action", "urgent.next_action", "urgent.decision_required",
+        "urgent.decision_due",
+      ]),
+      "FM-21": previewForm(["project.name", "decision.no", "decision.issue", "decision.due", "decision.recommendation"]),
     },
     audit: [
       {

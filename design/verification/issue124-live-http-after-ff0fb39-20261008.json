@@ -1,0 +1,140 @@
+{
+  "issue": 124,
+  "sourceCommit": "ff0fb39937a022d3f9c882a919f109e0a7de2095",
+  "sourceCheckout": "clean detached worktree /tmp/doul-root-ff0fb39; exact commit ff0fb39937a022d3f9c882a919f109e0a7de2095",
+  "status": "measured-with-significant-latency-limit",
+  "fixture": "Real TCP HTTP requests to FastAPI with PostgresSnapshotAdapter and 50,000 persisted synthetic Issue rows (45,000 in demo project, 5,000 in another project); page sizes 1 and 100; project-filtered total and cursor pages checked.",
+  "pageSizeOneRun": {
+    "scope": "Live TCP HTTP requests to FastAPI, PostgreSQL 16 snapshot adapter, persisted synthetic records",
+    "datasetRows": 50000,
+    "visibleProjectRows": 45000,
+    "filteredOtherProjectRows": 5000,
+    "baselineDemoRowsEligible": 5,
+    "pageSize": 1,
+    "rounds": 3,
+    "latencyMs": {
+      "samples": [
+        3368.844,
+        3642.823,
+        3556.668
+      ],
+      "median": 3556.668,
+      "p95NearestRank": 3642.823,
+      "secondPage": 3937.922
+    },
+    "process": {
+      "pid": 82506,
+      "cpuTicksDelta": 1017,
+      "clockTicksPerSecond": 100,
+      "cpuMsDelta": 10170.0,
+      "rssBeforeBytes": 399298560,
+      "rssAfterBytes": 391303168,
+      "rssPeakBytes": 553418752
+    },
+    "database": {
+      "container": "doul-goal-ops-inbox-postgres",
+      "adapter": "PostgresSnapshotAdapter",
+      "cpuUsageUsecBefore": 1774228,
+      "cpuUsageUsecAfter": 2219214,
+      "cpuUsageUsecDelta": 444986
+    },
+    "paginationAndProjectFiltering": "passed; total and two non-overlapping 1-row pages verified over HTTP",
+    "contractLatencyBudget": null,
+    "status": "measured-with-significant-latency-limit",
+    "limitations": [
+      "Synthetic duplicate issue records only; one local API process and PostgreSQL snapshot development persistence",
+      "API process CPU and PostgreSQL cgroup CPU are separate; PostgreSQL stores one JSON snapshot, not normalized work rows",
+      "Exact total scans matching project membership for each request, so this path remains linear in snapshot size",
+      "No API latency SLO or p95 budget was found in the inspected storage/performance contracts",
+      "Authorization uses the real demo role and scope checks; no browser rendering or concurrent clients"
+    ],
+    "sourceCommit": "ff0fb39937a022d3f9c882a919f109e0a7de2095",
+    "sourceCheckout": "clean detached worktree at exact source commit"
+  },
+  "pageSize100Run": {
+    "scope": "Live TCP HTTP requests to FastAPI, PostgreSQL 16 snapshot adapter, persisted synthetic records",
+    "datasetRows": 50000,
+    "visibleProjectRows": 45000,
+    "filteredOtherProjectRows": 5000,
+    "baselineDemoRowsEligible": 5,
+    "pageSize": 100,
+    "rounds": 2,
+    "latencyMs": {
+      "samples": [
+        7934.841,
+        4695.261
+      ],
+      "median": 6315.051,
+      "p95NearestRank": 7934.841,
+      "secondPage": 3871.909
+    },
+    "process": {
+      "pid": 83080,
+      "cpuTicksDelta": 1131,
+      "clockTicksPerSecond": 100,
+      "cpuMsDelta": 11310.0,
+      "rssBeforeBytes": 399302656,
+      "rssAfterBytes": 406450176,
+      "rssPeakBytes": 544403456
+    },
+    "database": {
+      "container": "doul-goal-ops-inbox-postgres",
+      "adapter": "PostgresSnapshotAdapter",
+      "cpuUsageUsecBefore": 1813121,
+      "cpuUsageUsecAfter": 2443166,
+      "cpuUsageUsecDelta": 630045
+    },
+    "paginationAndProjectFiltering": "passed; total and two non-overlapping 100-row pages verified over HTTP",
+    "contractLatencyBudget": null,
+    "status": "measured-with-significant-latency-limit",
+    "limitations": [
+      "Synthetic duplicate issue records only; one local API process and PostgreSQL snapshot development persistence",
+      "API process CPU and PostgreSQL cgroup CPU are separate; PostgreSQL stores one JSON snapshot, not normalized work rows",
+      "Exact total scans matching project membership for each request, so this path remains linear in snapshot size",
+      "No API latency SLO or p95 budget was found in the inspected storage/performance contracts",
+      "Authorization uses the real demo role and scope checks; no browser rendering or concurrent clients"
+    ],
+    "sourceCommit": "ff0fb39937a022d3f9c882a919f109e0a7de2095",
+    "sourceCheckout": "clean detached worktree at exact source commit"
+  },
+  "comparisonToRoot01da664PageSizeOne": {
+    "previousSourceCommit": "01da66421f13baae7d8e51e4c2f715e3466ab26c",
+    "medianLatencyMs": {
+      "before": 6613.292,
+      "after": 3556.668,
+      "improvementPercent": 46.2
+    },
+    "nearestRankP95Ms": {
+      "before": 6628.291,
+      "after": 3642.823,
+      "improvementPercent": 45.0
+    },
+    "secondPageLatencyMs": {
+      "before": 6669.589,
+      "after": 3937.922,
+      "improvementPercent": 41.0
+    },
+    "apiCpuMs": {
+      "before": 19520.0,
+      "after": 10170.0,
+      "improvementPercent": 47.9
+    },
+    "postgresCgroupCpuUsec": {
+      "before": 520888,
+      "after": 444986,
+      "improvementPercent": 14.6
+    }
+  },
+  "priorPageSize100": {
+    "sourceCommit": "01da66421f13baae7d8e51e4c2f715e3466ab26c",
+    "result": "first response exceeded 60-second client timeout; no completed page proof. See issue124-live-http-max-page-root-01da664-20261008.json.",
+    "currentResult": "two HTTP responses completed in 7.935s and 4.695s; two-page total, project filtering and disjoint-page checks passed."
+  },
+  "limitations": [
+    "Synthetic records, one local API and development PostgreSQL snapshot adapter; not a normalized production schema or concurrent-client workload.",
+    "Exact total scans matching project membership and remains linear in snapshot size.",
+    "Three page-1 samples and two page-100 samples are short development-host observations; p95 uses nearest-rank and is only a max sample here.",
+    "No API latency SLO or p95 budget was found in the inspected contracts; this is not performance acceptance or an M4 signoff.",
+    "No browser rendering, site RPO/RTO, or production-scale claim."
+  ]
+}

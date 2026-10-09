@@ -1,0 +1,75 @@
+{
+  "branch": "goal/mvp-completion-v1",
+  "baseCommit": "943d1dd0a3056c34bff9015292b59b4cfe49c197",
+  "checkpointCommit": "Resolve this file's latest commit with git log -1 --format=%H -- design/development/agents/root-handoff.json",
+  "completed": [
+    "Merged PR128 after all eight checks passed",
+    "Integrated six Luna/high workstreams: payment, authoritative create capability/reference catalogs, ko/vi/en UI/report rendering, commissioning/handover/warranty APIs and UI, operations and acceptance audit",
+    "Reviewed current authority/qualification/version/evidence/amount boundaries and added strict trusted signature adapter contract",
+    "Verified real PostgreSQL/S3 synthetic adapter and encrypted backup/restore behavior",
+    "Removed request read-cache duplication and per-row full preview copies; retained exact authorization and immutable-source tests",
+    "Wired current-scoped Safety draft authoring, explicit final document render/signing and localized mandatory parallel panels",
+    "Completed real API/UI Quality closeout with explicit synthetic/test-only trusted-signature boundary; terminal Issue presentation regression passed",
+    "Added exact current read-authorized Issue/Action catalogs and fixed canonical narrowed DomainRef array UI selection",
+    "Real UI/API Equipment failed/unavailable -> passing reinspection -> Permit activation verified; failed-equipment atomic rejection preserved",
+    "Explicit localized Inspection result editor with no sample pass/measurement/evidence, stable focus/exactrefs/declareditem IDs; actual Quality typed UI closedloop PASS",
+    "Telemetry sink IO failures preserve HTTP authority/version outcomes and domainAuditEvents; full API regression PASS",
+    "Overlapping Inspection baselines: one required row, alternate exact ref, no implicit server mutation, draft deletion/focus/locale/precision actual UI/API PASS (283091f; work/goal-inspection-overlap-root.log)",
+    "Actual OwnerDecision UI Payment chain plus Equipment/Stop distinct Permit resume:root3-case PASS (work/goal-payment-safety-owner-integrated.log)",
+    "Drafted C2 commissioning readiness reachability proposal with explicit exact currentPunchRefs sameIssueIDset, immutable prior snapshots/audit;11focused tests plusfull394API and319contractsPASS",
+    "Mandatory workflow dictionaries integrated: 26 machines, 348 command/state keys per ko/vi/en, 623 prior values unchanged; independent runtime guard, 12 actual localized browser cases, final typecheck/build PASS. Native review pending.",
+    "Action draft authoring exposed in Actions Workbench via server capability/facade: actual2PASS, currentexactIssue/servercycle/persistence/audit, locale preservation/reset/OWN route denial; downstreamQuality/Equipment/Stop3PASS, finalstatic/319contractsPASS.",
+    "F07 additional3 actualUI cases PASS: commissioning/Punch corrected+released/Owner decision/partialhandover/Warranty assigned-Action refusal; precise partial scope, not whole AC-HO-01.",
+    "Additional F07 four-case root integration PASS1.7m: actual Action UI creation/assignment/correction, Warranty remedy submission, actual Issue/reinspection progression; accept_remedy actual409 REFERENCE_STALE. No Warranty acceptance/closure/finalrelease claim. Standalone connected browser TS check PASS after typedhelper corrections.",
+    "Mac M4 native verification: 319 contracts PASS; API350PASS/44skips with separate5documentPASS, normal browser95PASS, mock7PASS, static/mobile JS export PASS. Browser datetime fixture correction integrated740d3a4; Mac44aed59 has identical tracked tree. UTC/Seoul initial3PASS/1ECONNRESET; unchanged UTC retest1PASS, failure preserved."
+  ],
+  "inProgress": [
+    "User-directed Mac mini self-hosted CI migration: dedicated Colima Linux ARM64 VM and runner provisioned; verify all eleven actual workflow results before merge."
+  ],
+  "validation": {
+    "evidence": "design/verification/goal-mvp-checkpoint-20261008.json",
+    "contracts": "319PASS currentfullcontracts; separateF07contracts7PASS",
+    "api": "394run389PASS5optional skips, actualPG16 executed; work/goal-api-punch-refresh-final.log",
+    "documentRuntime": "5 PASS",
+    "integrationCI": "MACMINI_SELF_HOSTED_CONFIGURED_AWAITING_DISPATCH_VERIFICATION; historical hosted runs failed before start due to account billing.",
+    "browser": "Complete89PASS9.2min work/goal-integrated-browser-62aefec.log; additionalF07fullloop remains partial/pending, distinct fromnormalfullregression. AdditionalF07partial3PASS work/goal-handover-partial-browser.log; Action2PASS plus distinctdownstream3PASS.",
+    "localization": "348 keys/language coverage PASS; 623 prior values preserved; 12 actual browser PASS (separate run); final typecheck/build PASS f92f047.",
+    "handover": "4 focused PASS1.7m work/goal-handover-current-ref-browser.log, including real409 stale-ref refusal; partial business acceptance only.",
+    "browserTypes": "PASS work/goal-connected-browser-typecheck-final.log",
+    "macosNative": "design/verification/goal-m4-native-20261009.json"
+  },
+  "remaining": [
+    "All eleven workflows now target the dedicated Mac mini Linux ARM64 runner; verify exact-head checks and diagnose actual failures before PR129 merge.",
+    "Reconcile only proven issue completion and preserve incomplete full scenario/pilot status",
+    "Resume remaining Warranty/Handover full acceptance after Product reference-lifecycle decision; preserve legal/state/equipment prerequisites",
+    "Configure actual project, production legal signature provider and adopted forms/language policy; obtain real authorized pilot actors/evidence",
+    "Resolve dependency audit release blockers and obtain actual field/performance/restore acceptance",
+    "UUID candidate not integrated: npm workspace dependency inventory invalid despite native tooling compatibility; evidence in agents/uuid-remediation-handoff.json",
+    "Actual architecture/structure/mechanical/electrical PDFs, BOQ, schedule and site photos not supplied; real-file usability criteria recorded in goal-mvp-completion-v1.json",
+    "Product/Functional Owner C2 decision required before adopting drafted Punchrefrefresh or implementing Handover/Warranty reference reconciliation; proposal recorded, no effectivebaseline declared.",
+    "Warranty first acceptance is blocked by current Issue ref conflict, not only rework; exact realUI/HTTP refusal preserved in handover-closed-loop handoff and Product proposal.",
+    "Historical Mac native suite skipped39 PostgreSQL cases; new user instruction provisions Linux Docker CI on Mac mini. Preserve native initialUTC ECONNRESET evidence and verify actual new service-container tests separately."
+  ],
+  "restart": [
+    "Inspect git status and worktree list, active agents, Goal/checkpoint and all latest worker handoffs",
+    "Production Python: work/priority-venv; document-only union lock environment: work/document-verification-venv",
+    "Confirm owned PostgreSQL fixture availability on 15432 and no concurrent destructive fixture operations",
+    "Read final test logs/evidence and continue unfinished work without deleting other changes",
+    "Node dependencies now physical repository node_modules from fresh exact-lock npm ci; prior /tmp dependency trees preserved. Root isolated scratch browser uses web5189/API8789; pass explicit loopback DOUL_API_ALLOWED_ORIGINS for self-hosted fixture tests.",
+    "Never create a nested node_modules symlink through a worker symlink: shared root tree must remain physical and exact-lock inventory must pass.",
+    "Environment refresh preserved source/Git but terminated old shellsessions/browserdrivers; distinguish incomplete logs from terminalPASS. Checkactualprocesses/HTTPhealth200 before reuse, stoponlyowned unhealthy orphanservers.",
+    "Root-owned completed traces, deprecated .venv/documentvenv and completed prioritySQLite/docker artifacts preserved under unique/tmp paths with originalpathsymlinks; root priorityPython remains physical. If/tmp replaced, recreate optionalenvs fromexact locks. Use owned/tmp Playwrightoutputs/npmcache to avoid sharedfilesystempressure.",
+    "Run browser suites sequentially when sharing root scratch web5189/API8789: a webServer owner may terminate reused servers on exit. Use unique ports for independent concurrent runs.",
+    "Mac owned goal/mvp-m4-validation-v1 worktree /Users/automation/work/DOUL_Supervision-goal-m4-20261009; commit44aed59. Read work/m4-validation/handoff.json/logs; do not reuse shared servers. Task-owned Node24.13.1 and .venv Python3.12.13; use owned ports/DB and allowed loopback origins. Skip shared Playwright browser GC on subsequent installs.",
+    "Mac CI: /Users/automation/work/DOUL-ci-runtime; Colima profile doul-ci, Docker context colima-doul-ci, runner doul-macmini-m4-linux. See infra/ci/macmini-runner.md. Preserve dirty primary Mac checkout; do not prune any other context."
+  ],
+  "testFixtures": {
+    "postgresContainer": "doul-goal-postgres",
+    "hostPort": 15432,
+    "database": "doul_goal_test",
+    "ownedTemporary": true
+  },
+  "userEnvironment": "Chrome browser, ChatGPT Codex; previous Windows desktop-app assumption was corrected",
+  "coordinationDeviation": "Telemetry agent committed assignedtwofiles directly on integrationbranch; rootreviewed narrowdiff and full394API verified beforepush. No otherchanges overwritten. Future agent work explicitlyrequires isolatednamedbranch/worktree.",
+  "goalStatus": "blocked_external_dependencies"
+}

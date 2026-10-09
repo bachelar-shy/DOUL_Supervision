@@ -1,0 +1,92 @@
+{
+  "goal": "DOUL Supervision Korean, Vietnamese and English field MVP",
+  "status": "blocked",
+  "integrationBase": "943d1dd0a3056c34bff9015292b59b4cfe49c197",
+  "mergedPrerequisites": [
+    {
+      "pr": 128,
+      "validation": "Eight CI checks passed at e429b46 before merge"
+    }
+  ],
+  "coordination": {
+    "model": "gpt-6-luna",
+    "reasoning": "high",
+    "sharedFilesOwner": "root",
+    "workers": {
+      "payment-api": "goal/payment-api-v1",
+      "payment-ui": "goal/payment-ui-v1",
+      "i18n": "goal/i18n-integration-v1",
+      "create-capabilities": "goal/create-capabilities-v1",
+      "operations": "goal/operational-validation-v1",
+      "acceptance-audit": "goal/acceptance-audit-v1"
+    }
+  },
+  "requiredEvidence": [
+    "quality closed loop and separate owner report closure",
+    "safety permit, equipment, stop, remedy, verification, explicit lift and resume",
+    "baseline, progress, delay, recovery, Notice/EOT, owner decision and approved baseline revision",
+    "verified quantity, recommendation, owner approval, individual payment and append-only correction history",
+    "project-scoped exact-version files, drawings, location, inbox, notifications and durable idempotency",
+    "Korean, Vietnamese and English mandatory UI, errors, formats and reports",
+    "automated regression, actual storage, large-data performance, memory and backup restore",
+    "actual field pilot acceptance with consistent ledger and evidence"
+  ],
+  "additionalMandatoryScenario": "AC-HO-01 commissioning, handover and warranty appears in the existing mandatory pilot catalog; audit implementation gaps before claiming overall acceptance",
+  "completionRules": {
+    "developmentVerificationIsPilot": false,
+    "actualPilotPerformed": false,
+    "quotaRecoveryAloneGuaranteesExecution": false,
+    "resume": "When the platform resumes execution, inspect handoffs, Git/worktrees, running tasks and worker changes; continue from the last verified checkpoint without deleting uncommitted work."
+  },
+  "realFileUsabilityEvaluation": {
+    "status": "awaiting_actual_site_inputs",
+    "requiredInputs": [
+      "Current architecture, structure, mechanical and electrical PDFs with drawing number/revision/discipline/location mapping",
+      "Current BOQ with units, quantities, currency and approved baseline",
+      "Current schedule with activity IDs, calendars, dependencies and approved baseline",
+      "Actual site photos with capture date/location and authorized project access",
+      "Qualified pilot users and adopted Configuration Pack, forms and language policy"
+    ],
+    "procedure": [
+      "Inventory each supplied original, preserve checksum and exact revision; report unreadable or missing mappings",
+      "Register original files through the real authorized upload UI and verify durable download/version/project access",
+      "Derive plausible register-specific cases from inspected actual contents; record source page, row, activity or photo reference and distinguish proposed case from an actual event",
+      "Execute quality, safety, schedule/contract, quantity/payment and handover cases with qualified roles; preserve exact versions, evidence and rejection paths",
+      "Evaluate Korean/Vietnamese/English task completion, errors, time, confusing terms and user feedback; record severity and retest fixes"
+    ],
+    "acceptance": "No actual-file upload or usability pass is claimed until supplied files and qualified users have been exercised; synthetic browser fixtures remain separate."
+  },
+  "blockedDependencies": [
+    {
+      "kind": "github_ci_verification",
+      "requiredInput": "Verify all actual exact-head workflow results on the user-directed Mac mini self-hosted runner before integration. The prior hosted account-billing dispatch blocker is bypassed by actual successful self-hosted jobs.",
+      "evidence": "CI migration 5612c5e; self-hosted runner21 doul-macmini-m4-linux executed storage, PostgreSQL backup/restore, consistent recovery, observability and worker successfully. CI-only PR130 applies the routing to main separately from MVP PR129."
+    },
+    {
+      "kind": "product_contract_decision",
+      "requiredInput": "Product/Functional Owner decision/classification/effective version for drafted same-Punch-identity explicit current-ref refresh; separately define Handover/Warranty audited reference reconciliation.",
+      "policy": "48_Product_Baseline_Change_Control_v1.md sections2-6",
+      "reviewableDraft": "design/development/product-change-reference-lifecycle-proposal.json"
+    },
+    {
+      "kind": "actual_field_and_operations_acceptance",
+      "requiredInput": "Actual discipline PDFs, BOQ, schedule/photos, qualified users/project configuration, production legal signature provider, adopted forms/language policy and real pilot access.",
+      "plan": "53_Field_Pilot_Acceptance_Plan_v1.md#8"
+    },
+    {
+      "kind": "release_security_and_native_review",
+      "requiredInput": "Remaining braces/node-forge/uuid release blockers and native vi/en review/performance/recovery acceptance remain unresolved; failed UUID graph candidate was not integrated.",
+      "evidence": "design/development/agents/uuid-remediation-handoff.json"
+    }
+  ],
+  "restartAfterUnblocking": [
+    "Inspect Git/worktree status and final root/worker handoffs; preserve readonly shared overlays and uncommitted worker changes.",
+    "Use current PR129 head and locked physical dependencies; inspect Mac mini self-hosted workflow results and CI-only PR130. Preserve failures and repair actual failed steps rather than repeating hosted billing failures.",
+    "Record Product decision and approved effective contract before implementing/adopting reconciliation. Restore sanctioned workflow reachability with exact identity/version/history/authorization checks.",
+    "Rerun bounded Warranty/Handover positive and refusal scenarios; no state seeding or signature/authority bypass.",
+    "Continue real-file pilot/usability and operational/provider/native acceptance after required actual inputs are supplied. Never label blocked or pilot-unrun Goal complete."
+  ],
+  "supplementalVerificationEvidence": [
+    "design/verification/goal-m4-native-20261009.json"
+  ]
+}

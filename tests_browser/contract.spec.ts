@@ -74,6 +74,38 @@ async function createNotice(page: Page) {
   return { title, record };
 }
 
+test("Contract create affordance follows the server capability", async ({
+  page,
+}) => {
+  await page.route("**/workspace", async (route) => {
+    const response = await route.fetch();
+    const workspace = await response.json();
+    workspace.context.creationCapabilities = {
+      ...(workspace.context.creationCapabilities || {}),
+      contract_notice: {
+        machine: "contract_notice",
+        authority: "contract.notice.identify",
+        status: "unauthorized",
+        canCreate: false,
+        reasons: ["NOT_AUTHORIZED"],
+      },
+    };
+    await route.fulfill({ response, json: workspace });
+  });
+
+  await page.goto("/#/contract");
+  const create = page.getByRole("button", {
+    name: "계약통지 기록 추가",
+    exact: true,
+  });
+  await expect(create).toBeDisabled();
+  await expect(page.getByTestId("creation-capability-reason")).toContainText(
+    "현재 역할은 초안을 작성할 권한이 없습니다.",
+  );
+  await create.click({ force: true });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
 test("Contract Notice creates, calculates due date, and submits through real API", async ({
   page,
   request,
@@ -138,8 +170,9 @@ test("Contract Notice creates, calculates due date, and submits through real API
   await expect(page.locator(".detail-head .badge")).toContainText("제출");
 });
 
-test("Claim and EOT drafts use their real collections and server rejects owner claim drafting", async ({
+test("Claim and EOT drafts follow server capabilities and the API rejects owner claim drafting", async ({
   page,
+  request,
 }) => {
   await page.goto("/#/contract");
   await selectRole(page, "CON");
@@ -197,21 +230,63 @@ test("Claim and EOT drafts use their real collections and server rejects owner c
 
   await selectRole(page, "OWN");
   await page.getByRole("tab", { name: "클레임", exact: true }).click();
-  await page
-    .getByRole("button", { name: "클레임 기록 추가", exact: true })
-    .click();
-  dialog = page.getByRole("dialog", { name: "클레임 기록 추가" });
-  await dialog.getByLabel("제목 *", { exact: true }).fill("발주처 권한경계");
-  await dialog.getByLabel("클레임 번호 *", { exact: true }).fill("CL-OWN-403");
-  const forbiddenResponse = page.waitForResponse(
-    (response) =>
-      response.url().endsWith("/claims") &&
-      response.request().method() === "POST",
+  const ownerCreate = page.getByRole("button", {
+    name: "클레임 기록 추가",
+    exact: true,
+  });
+  await expect(ownerCreate).toBeDisabled();
+  await expect(page.getByTestId("creation-capability-reason")).toContainText(
+    "현재 역할은 초안을 작성할 권한이 없습니다.",
   );
-  await dialog.getByRole("button", { name: "기록 추가", exact: true }).click();
-  expect((await forbiddenResponse).status()).toBe(403);
-  await expect(dialog.getByRole("alert")).toBeVisible();
-  await expect(dialog).toContainText("권한");
+  let uiClaimPosts = 0;
+  const countUiClaimPosts = (url: URL, method: string) => {
+    if (url.pathname.endsWith("/claims") && method === "POST") uiClaimPosts += 1;
+  };
+  page.on("request", (browserRequest) =>
+    countUiClaimPosts(new URL(browserRequest.url()), browserRequest.method()),
+  );
+  await ownerCreate.click({ force: true });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  expect(uiClaimPosts).toBe(0);
+
+  // Exercise the server gate directly as well; hiding the form is only a
+  // presentation affordance and does not replace the create authority check.
+  const ownSessionResponse = await request.post("/api/dev/sessions", {
+    data: { actorGroup: "OWN" },
+  });
+  expect(ownSessionResponse.status()).toBe(200);
+  const ownSession = await ownSessionResponse.json();
+  const ownWorkspaceResponse = await request.get(
+    `/api/projects/${ownSession.projectId}/workspace`,
+    {
+      headers: {
+        Authorization: `Bearer ${ownSession.accessToken}`,
+        "X-RoleAssignment-Id": ownSession.actor.roleAssignmentId,
+      },
+    },
+  );
+  expect(ownWorkspaceResponse.status()).toBe(200);
+  const ownWorkspace = await ownWorkspaceResponse.json();
+  const forbiddenResponse = await request.post(
+    `/api/projects/${ownSession.projectId}/claims`,
+    {
+      headers: {
+        Authorization: `Bearer ${ownSession.accessToken}`,
+        "Idempotency-Key": `CL-OWN-${randomUUID()}`,
+      },
+      data: {
+        roleAssignmentId: ownSession.actor.roleAssignmentId,
+        clientObjectId: randomUUID(),
+        payload: {
+          ...ownWorkspace.context.scope,
+          title: "발주처 권한경계",
+          data: { claimNo: "CL-OWN-403" },
+        },
+      },
+    },
+  );
+  expect(forbiddenResponse.status()).toBe(403);
+  expect((await forbiddenResponse.json()).code).toBe("NOT_AUTHORIZED");
 });
 
 for (const width of [390, 768, 1440]) {

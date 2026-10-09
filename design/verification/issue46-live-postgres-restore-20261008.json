@@ -1,0 +1,18 @@
+{
+  "backupMode": "0o600",
+  "backupOutput": "postgres-backup-ok database=ops_source",
+  "container": "doul-goal-ops-postgres",
+  "dumpSha256": "cf83c58b8d039c566174ea7c017f08798e51b94e09e625d637da838576844b74",
+  "durationSeconds": 9.241,
+  "image": "postgres:16-bookworm",
+  "payloadSha256": "796e040e7bcfaad38e6de8dca58d5e1184ba2047c3470a4952ebde86cd3a6969",
+  "port": 15434,
+  "restoreOutput": "postgres-clean-restore-ok target=ops_restored",
+  "restoredDatabase": "ops_restored",
+  "restoredRows": 1,
+  "service": "PostgreSQL",
+  "sidecarMode": "0o600",
+  "sourceDatabase": "ops_source",
+  "sourceRows": 1,
+  "status": "passed"
+}

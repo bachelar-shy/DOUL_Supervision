@@ -45,6 +45,8 @@ from .modules.work_inbox import build_work_inbox, InboxCursorError
 from .modules.notification_inbox import project_notification_inbox, NotificationProjectionError
 from .modules.business_traceability import build_safety_stop_traceability
 from .modules.location.query import query_location_tree
+from .creation_capabilities import build_creation_capabilities
+from .reference_catalog import build_reference_catalog
 
 ROOT=Path(__file__).resolve().parents[2]
 SPEC=json.loads((ROOT/'app/api/openapi.yaml').read_text())
@@ -125,7 +127,7 @@ def sniff(data):
     raise ContractError('MIME_INVALID','Supported development formats: JSON/ PNG/JPEG/GIF/WebP/MP4/WebM/WAV/MP3/PDF')
 
 
-def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=None, document_runtime=None, authentication=None):
+def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=None, document_runtime=None, authentication=None, signature_verifier=None):
     from services.runtime_config import environment
     stage=environment()
     if demo and stage!='development':raise RuntimeError('Demonstration mode is forbidden outside development')
@@ -144,6 +146,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     store=persistence if persistence is not None else create_local_persistence(db_path,demo=True)
     app=FastAPI(title='DOUL Supervision API',version='0.1.0',docs_url='/api-docs' if demo else None,openapi_url='/openapi.json' if demo else None,redoc_url=None)
     app.state.document_runtime=document_runtime
+    app.state.signature_verifier=signature_verifier
     if document_runtime is None and os.getenv('DOUL_DOCUMENT_RUNTIME') == 'local':
         from services.document_runtime.render import LocalDocumentRuntime
         app.state.document_runtime=LocalDocumentRuntime(os.environ['DOUL_DOCUMENT_CACHE'])
@@ -263,13 +266,13 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
 
     from services.api.modules.command_preview import clone_for_preview
 
-    def preflight(machine,record,session,role,payload=None):
+    def preflight(machine,record,session,role,payload=None,*,borrow_runtime=False):
         results=[]
         for transition in store.engine.machines[machine]['transitions']:
             if transition['from']!=record['status']:continue
             try:store.engine.authorize(record,transition['authority'],session['partyId'],role['id'])
             except ContractError:continue
-            preview=clone_for_preview(store.engine)
+            preview=clone_for_preview(store.engine,borrow_runtime=True) if borrow_runtime else clone_for_preview(store.engine)
             failure=None
             try:preview.execute(machine,record['id'],transition['command'],record['version'],payload or {},[],session['partyId'],role['id'],uid())
             except ContractError as exc:failure=error_body(exc)
@@ -398,7 +401,25 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         session=identity(request)
         with store.transaction():
             role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
-            try:return build_work_inbox(store.engine,project_id,session,role,readable=readable,preflight=preflight,has_candidates=has_command_candidates,limit=limit,cursor=cursor)
+            from services.api.modules.read_authorization import ReadAuthorizationView
+            read_auth=ReadAuthorizationView(store.engine)
+
+            def inbox_readable(record,actor,assignment):
+                require(record['projectId']==assignment['projectId'],'PROJECT_MISMATCH','Project unavailable')
+                read_auth.authorize_read(record,actor['partyId'],assignment['id'])
+
+            def inbox_has_candidates(machine,record,actor,assignment):
+                for transition in store.engine.machines[machine]['transitions']:
+                    if transition['from']!=record['status']:continue
+                    try:read_auth.authorize(record,transition['authority'],actor['partyId'],assignment['id'])
+                    except ContractError:continue
+                    return True
+                return False
+
+            def inbox_preflight(machine,record,actor,assignment):
+                return preflight(machine,record,actor,assignment,borrow_runtime=True)
+
+            try:return build_work_inbox(store.engine,project_id,session,role,readable=inbox_readable,preflight=inbox_preflight,has_candidates=inbox_has_candidates,limit=limit,cursor=cursor)
             except InboxCursorError as exc:raise ContractError('INVALID_REQUEST',str(exc))
             except ValueError as exc:raise ContractError('INVALID_REQUEST',str(exc))
 
@@ -459,7 +480,13 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                 items.append(dict(machine=machine or supporting or ('evidence' if kind=='Evidence' else 'document'),record=deepcopy(r),actions=preflight(machine,r,session,role) if machine else []))
             visible_ids={x['record']['id'] for x in items}
             audits=[x for x in store.engine.audit_events if x['projectId']==project_id and x['objectRef']['objectId'] in visible_ids][-50:]
-            return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context=({k:v for k,v in store.meta.items() if k in ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId']} if store.meta.get('projectId')==project_id else {'projectId':project_id}),participants=[dict(partyId=r['partyId'],name=store.engine.get('Party',r['partyId'])['name'],actorGroup=r['actorGroup']) for (kind,_),r in store.engine._records.items() if kind=='RoleAssignment' and r['projectId']==project_id and r['active'] and r['actorGroup'] in ['SUP','CON','OWN','DES','ADM']],formSchemas=store.documents.schemas,demo=demo)
+            context=({k:deepcopy(v) for k,v in store.meta.items() if k in ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId']} if store.meta.get('projectId')==project_id else {'projectId':project_id})
+            context['creationCapabilities']=build_creation_capabilities(
+                store.engine,project_id,session['partyId'],role,context.get('scope'),
+                queue_enabled=app.state.queue_enabled,
+            )
+            context['referenceCatalog']=build_reference_catalog(store.engine,project_id,session['partyId'],role['id'])
+            return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context=context,participants=[dict(partyId=r['partyId'],name=store.engine.get('Party',r['partyId'])['name'],actorGroup=r['actorGroup']) for (kind,_),r in store.engine._records.items() if kind=='RoleAssignment' and r['projectId']==project_id and r['active'] and r['actorGroup'] in ['SUP','CON','OWN','DES','ADM']],formSchemas=store.documents.schemas,demo=demo)
 
     @app.get('/projects/{project_id}/roles')
     def roles(project_id:str,request:Request):
@@ -1076,10 +1103,23 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
 
     @app.post('/projects/{project_id}/documents/{document_id}/sign')
     async def sign(project_id:str,document_id:str,request:Request):
-        session=identity(request);body=await body_json(request);key_for(request);validate(body,SCHEMAS['SignRequest'],SCHEMAS)
-        with store.transaction():
+        session=identity(request);body=await body_json(request);key=key_for(request);validate(body,SCHEMAS['SignRequest'],SCHEMAS)
+        with store.transaction(True):
             role=role_for(session,project_id,body['roleAssignmentId']);d=store.documents.get(document_id);readable(d,session,role)
-            raise ContractError('ADAPTER_NOT_CONFIGURED','A trusted legal-signature verifier is required. Client assertions are never accepted as verified signatures.')
+            require(app.state.signature_verifier is not None,'ADAPTER_NOT_CONFIGURED','A trusted legal-signature verifier is required. Client assertions are never accepted as verified signatures.')
+            from .signature_verification import authorize_signing_request, load_verified_original_file, verify_and_sign
+            signing=dict(project_id=project_id,document_id=document_id,party_id=session['partyId'],
+                         role_assignment=role,signer_role=body['roleCode'],method=body['method'],document_hash=body['documentHash'])
+            authorize_signing_request(store.documents,**signing)
+            cached,request_key,fingerprint=application_replay('document-sign:'+document_id,key,project_id,session,body)
+            if cached is not None:return cached
+            result=verify_and_sign(app.state.signature_verifier,store.documents,**signing,
+                idempotency_key=key,original_file_id=body.get('originalFileId'),
+                original_file_loader=lambda file_id:load_verified_original_file(store.engine,
+                    project_id=project_id,party_id=session['partyId'],role_assignment=role,
+                    original_file_id=file_id,blob_loader=store.blob))
+            store.requests[request_key]={'hash':fingerprint,'result':deepcopy(result)}
+            return result
 
     @app.get('/projects/{project_id}/{collection}/{object_id}/available-actions')
     def available(project_id:str,collection:str,object_id:str,request:Request):

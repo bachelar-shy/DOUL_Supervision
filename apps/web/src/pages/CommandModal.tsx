@@ -1,5 +1,8 @@
 import { scheduleInputs } from "../data/schedule-fields.generated";
+import { completionDecisionReferenceOptions, completionReferenceOptions } from "../data/completion-workspace";
+import { commandInputs } from "../data/command-fields.generated";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   CommandDescriptor,
   DomainRef,
@@ -12,6 +15,11 @@ import { ApiError } from "../data/supervision-client";
 import { commands, fields, reasonLabel, roles } from "../labels";
 import { recordRef } from "./record-utils";
 import { Icon } from "./shared";
+import { HandoverReservationFields, type ReservationInput } from "./HandoverReservationFields";
+import { BOQLineItemFields } from "./BOQLineItemFields";
+import { InspectionCheckResultFields } from "./InspectionCheckResultFields";
+
+class CommandInputError extends Error {}
 
 const booleanFields = new Set([
   "changeRequired",
@@ -20,6 +28,8 @@ const booleanFields = new Set([
   "prestartVerified",
   "completionConfirmed",
   "preUseCheckComplete",
+  "acceptanceCriteriaMet",
+  "warrantyTrigger",
 ]);
 
 const jsonFields = new Set([
@@ -31,6 +41,17 @@ const jsonFields = new Set([
   "restrictionConditions",
   "disputedItems",
   "substantiationRequirements",
+  "ownerReservationInputs",
+  "acceptedScope",
+  "precommissioningChecklist",
+  "missingItems",
+  "options",
+  "recommendation",
+  "impact",
+  "lineItems",
+  "deductionComponents",
+  "variationComponents",
+  "provisionalSumRules",
 ]);
 
 const numericFields = new Set([
@@ -54,6 +75,9 @@ const multipleReferenceFields = new Set([
 const selectableReferenceFields = new Set([
   ...multipleReferenceFields,
   "decisionRef",
+  "ownerDecisionRef",
+  "reinspectionRef",
+  "testResultRef",
   "baselineScheduleRef",
   "baselineRevisionRef",
 ]);
@@ -76,10 +100,18 @@ function referenceOptions(
   field: string,
   workspace: Workspace,
   current: WorkItem,
+  currentRequirementLabel: string,
+  referenceKind?: "single" | "multiple",
 ): Array<{ label: string; ref: DomainRef }> {
-  if (!selectableReferenceFields.has(field)) return [];
+  if (["decisionRef", "ownerDecisionRef", "decisionRefs"].includes(field)) return completionDecisionReferenceOptions(workspace, current);
+  if (["testResultRef", "evidenceRefs", "impactAnalysisRefs", "sourceFileRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Evidence");
+  if (["reinspectionRef", "inspectionRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Inspection");
+  if (["issueRef", "punchIssueRefs", "openIssueRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Issue");
+  if (["actionRef", "remedyActionRefs", "correctiveActionRefs", "correctionActionRefs", "retestBasisRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Action");
+  if (["equipmentRef", "equipmentRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Asset" && option.subtype === "Equipment");
+  if (!selectableReferenceFields.has(field)) return referenceKind ? completionReferenceOptions(workspace) : [];
   if (field === "clauseRefs") {
-    return [{ label: "현재 계약 Requirement", ref: workspace.context.requirementRef }];
+    return [{ label: currentRequirementLabel, ref: workspace.context.requirementRef }];
   }
 
   let candidates = workspace.items;
@@ -105,7 +137,11 @@ function referenceOptions(
             (current.record.data?.baselineScheduleRef as DomainRef | undefined)
               ?.objectId),
     );
-  else if (field === "decisionRef")
+  else if (field === "reinspectionRef")
+    candidates = candidates.filter((item) => item.machine === "inspection");
+  else if (field === "testResultRef")
+    candidates = candidates.filter((item) => item.machine === "evidence");
+  else if (field === "decisionRef" || field === "ownerDecisionRef")
     candidates = candidates.filter((item) => {
       if (item.machine !== "decision") return false;
       const target = item.record.targetRef as DomainRef | undefined;
@@ -139,6 +175,7 @@ function selectedReferenceValues(value: string): string[] {
 }
 
 function fieldDefault(field: string, w: Workspace, item: WorkItem): string {
+  if (field === "ownerReservationInputs") return JSON.stringify(item.record.data?.ownerReservationInputs ?? item.record.data?.reservationProposals ?? [], null, 2);
   const existing =
     item.record.data?.[field] ??
     (item.record.schedule as Record<string, Json> | undefined)?.[field] ??
@@ -153,21 +190,7 @@ function fieldDefault(field: string, w: Workspace, item: WorkItem): string {
     return new Date(
       Date.now() + (field === "dueAt" ? 86400000 : 0),
     ).toISOString();
-  if (field === "checkResults")
-    return JSON.stringify(
-      [
-        {
-          itemId: "dimension",
-          requirementRef: w.context.requirementRef,
-          result: "pass",
-          evidenceIds: item.record.evidenceIds || [],
-          measuredValue: 120,
-          unit: "mm",
-        },
-      ],
-      null,
-      2,
-    );
+  if (field === "checkResults") return "[]";
   if (field === "responseInformationRefs" || field === "references")
     return JSON.stringify([w.context.drawingRef], null, 2);
   if (booleanFields.has(field)) return "false";
@@ -191,6 +214,7 @@ export function CommandModal({
   onClose: () => void;
   onSubmit: (p: Fields, evidenceIds: string[]) => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       dialog.action.fields.map((f) => [
@@ -211,24 +235,28 @@ export function CommandModal({
       for (const f of dialog.action.fields) {
         const v = values[f];
         if (!v?.trim()) continue;
-        const inputType = scheduleInputs[dialog.item.machine]?.commandFields[f]?.type;
+        const inputType = commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.type ?? scheduleInputs[dialog.item.machine]?.commandFields[f]?.type;
         if (
           inputType === "integer" ||
           inputType === "number" ||
-          numericFields.has(f)
+          (!inputType && numericFields.has(f))
         ) {
           const number = Number(v);
           if (
             !Number.isFinite(number) ||
             (inputType === "integer" && !Number.isInteger(number))
           )
-            throw new Error(`${fields[f] || f}: 숫자를 입력하십시오.`);
+            throw new CommandInputError(
+              t("commandModal.numberRequired", {
+                field: fields[f] || f,
+              }),
+            );
           payload[f] = number;
           continue;
         }
-        payload[f] = inputType === "boolean" || booleanFields.has(f)
+        payload[f] = inputType === "boolean" || (!inputType && booleanFields.has(f))
           ? v === "true"
-          : inputType === "object" || inputType === "array" || jsonFields.has(f) ||
+          : inputType === "object" || inputType === "array" || (!inputType && jsonFields.has(f)) ||
               (!inputType && /Ids$|Refs$|Ref$|^references$/.test(f))
             ? (JSON.parse(v) as Json)
             : v;
@@ -239,14 +267,14 @@ export function CommandModal({
         .filter(Boolean);
       const uniqueEvidenceIds = [...new Set(evidenceIds)];
       if (dialog.action.requiresEvidence && !uniqueEvidenceIds.length) {
-        throw new Error("이 명령에는 현재 단계의 증빙 ID가 필요합니다.");
+        throw new CommandInputError(t("commandModal.evidenceRequired"));
       }
       await onSubmit(payload, uniqueEvidenceIds);
     } catch (e) {
       setErr(
         e instanceof ApiError
-          ? reasonLabel(e.detail.code) + " " + e.message
-          : String(e),
+          ? reasonLabel(e.detail.code)
+          : e instanceof CommandInputError ? e.message : reasonLabel(),
       );
     } finally {
       setBusy(false);
@@ -264,18 +292,28 @@ export function CommandModal({
           <h2>{title}</h2>
           <button
             className="icon-button"
-            aria-label="대화상자 닫기"
+            aria-label={t("commandModal.closeAria")}
             onClick={onClose}
           >
             <Icon name="close" />
           </button>
         </div>
         <p className="muted">
-          원본 v{dialog.item.record.version} 기준 · 제출할 때 권한과 선행조건을
-          다시 검증합니다.
+          {t("commandModal.basis", {
+            version: dialog.item.record.version,
+          })}
         </p>
         <div className="modal-fields">
-          {dialog.action.fields.map((f) => (
+          {dialog.action.fields.map((f) => f === "checkResults" && dialog.item.machine === "inspection" ? (
+            <InspectionCheckResultFields key={f} workspace={workspace} item={dialog.item} value={JSON.parse(values[f] || "[]") as Json[]} onChange={(next) => setValues({ ...values, [f]: JSON.stringify(next) })} />
+          ) : f === "lineItems" && dialog.item.machine === "contract_boq" ? (
+            <BOQLineItemFields key={f} workspace={workspace} value={JSON.parse(values[f] || "[]") as Json[]} onChange={(next) => setValues({ ...values, [f]: JSON.stringify(next) })} />
+          ) : f === "ownerReservationInputs" ? (
+            <div key={f}>
+              <span>{t("completion.reservations")}</span>
+              <HandoverReservationFields issues={((dialog.item.record.data?.openIssueRefs ?? []) as DomainRef[]).map((ref) => ({ ref, label: workspace.items.find((item) => item.record.id === ref.objectId)?.record.title ?? ref.objectId }))} participants={workspace.participants} value={JSON.parse(values[f] || "[]") as ReservationInput[]} onChange={(next) => setValues({ ...values, [f]: JSON.stringify(next) })} />
+            </div>
+          ) : (
             <label key={f}>
               {fields[f] || f}
               {f === "decision" ? (
@@ -285,9 +323,15 @@ export function CommandModal({
                     setValues({ ...values, [f]: e.target.value })
                   }
                 >
-                  <option value="approved">승인</option>
-                  <option value="rejected">거절</option>
-                  <option value="returned">보완 요청</option>
+                  <option value="approved">
+                    {t("commandModal.decision.approved")}
+                  </option>
+                  <option value="rejected">
+                    {t("commandModal.decision.rejected")}
+                  </option>
+                  <option value="returned">
+                    {t("commandModal.decision.returned")}
+                  </option>
                 </select>
               ) : f === "changeRequired" ? (
                 <select
@@ -296,19 +340,25 @@ export function CommandModal({
                     setValues({ ...values, [f]: e.target.value })
                   }
                 >
-                  <option value="false">필요 없음</option>
-                  <option value="true">설계변경 필요</option>
+                  <option value="false">
+                    {t("commandModal.changeRequired.false")}
+                  </option>
+                  <option value="true">
+                    {t("commandModal.changeRequired.true")}
+                  </option>
                 </select>
-              ) : (booleanFields.has(f) || scheduleInputs[dialog.item.machine]?.commandFields[f]?.type === "boolean") ? (
+              ) : (commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.type === "boolean" || booleanFields.has(f) || scheduleInputs[dialog.item.machine]?.commandFields[f]?.type === "boolean") ? (
                 <select
                   value={values[f]}
                   onChange={(e) =>
                     setValues({ ...values, [f]: e.target.value })
                   }
                 >
-                  {scheduleInputs[dialog.item.machine] && <option value="">선택</option>}
-                  <option value="false">아니오</option>
-                  <option value="true">예</option>
+                  {scheduleInputs[dialog.item.machine] && (
+                    <option value="">{t("commandModal.select")}</option>
+                  )}
+                  <option value="false">{t("common.no")}</option>
+                  <option value="true">{t("common.yes")}</option>
                 </select>
               ) : f === "responsiblePartyId" ? (
                 <select
@@ -317,23 +367,30 @@ export function CommandModal({
                     setValues({ ...values, [f]: e.target.value })
                   }
                 >
-                  <option value="">담당자 선택</option>
+                  <option value="">{t("commandModal.partySelect")}</option>
                   {workspace.participants.map((p) => (
                     <option value={p.partyId} key={p.partyId}>
                       {roles[p.actorGroup]} · {p.name}
                     </option>
                   ))}
                 </select>
-              ) : referenceOptions(f, workspace, dialog.item).length ? (
+              ) : referenceOptions(
+                  f,
+                  workspace,
+                  dialog.item,
+                  t("commandModal.currentRequirement"),
+                  commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference,
+                ).length ? (
                 <select
-                  multiple={multipleReferenceFields.has(f)}
+                  aria-label={fields[f] || f}
+                  multiple={(commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f))}
                   value={
-                    multipleReferenceFields.has(f)
+                    (commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f))
                       ? selectedReferenceValues(values[f])
                       : values[f]
                   }
                   onChange={(e) => {
-                    if (multipleReferenceFields.has(f)) {
+                    if ((commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f))) {
                       const refs = Array.from(e.currentTarget.selectedOptions).map(
                         (option) => JSON.parse(option.value) as DomainRef,
                       );
@@ -346,10 +403,16 @@ export function CommandModal({
                     }
                   }}
                 >
-                  {!multipleReferenceFields.has(f) && (
-                    <option value="">참조 선택</option>
+                  {!(commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f)) && (
+                    <option value="">{t("commandModal.referenceSelect")}</option>
                   )}
-                  {referenceOptions(f, workspace, dialog.item).map(
+                  {referenceOptions(
+                    f,
+                    workspace,
+                    dialog.item,
+                    t("commandModal.currentRequirement"),
+                  commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference,
+                  ).map(
                     ({ label, ref }) => {
                       const value = JSON.stringify(ref);
                       return (
@@ -368,7 +431,9 @@ export function CommandModal({
                     setValues({ ...values, [f]: e.target.value })
                   }
                   placeholder={
-                    f.endsWith("At") ? "RFC3339 · 시간대 포함" : fields[f] || f
+                    f.endsWith("At")
+                      ? t("commandModal.timeHint")
+                      : fields[f] || f
                   }
                 />
               )}
@@ -378,25 +443,22 @@ export function CommandModal({
         {dialog.action.requiresEvidence ? (
           <div className="modal-fields">
             <label>
-              명령 증빙 ID
+              {t("commandModal.evidenceIds")}
               <textarea
                 rows={2}
                 value={evidenceText}
                 onChange={(e) => setEvidenceText(e.target.value)}
-                placeholder="예: EVD-001, EVD-002"
-                aria-label="명령 증빙 ID"
+                placeholder={t("commandModal.evidencePlaceholder")}
+                aria-label={t("commandModal.evidenceIds")}
               />
               <span className="muted">
-                이 명령 단계의 근거를 명시하십시오. 기존 기록의 증빙은 자동 재사용하지 않습니다.
+                {t("commandModal.evidenceHelp")}
               </span>
             </label>
           </div>
         ) : null}
         {!dialog.action.fields.length && (
-          <div className="notice">
-            이 동작은 서버에 기록됩니다. 근거와 현재 상태를 확인한 뒤
-            실행하십시오.
-          </div>
+          <div className="notice">{t("commandModal.warning")}</div>
         )}
         {err && (
           <div role="alert" className="error-box">
@@ -405,14 +467,16 @@ export function CommandModal({
         )}
         <div className="modal-actions">
           <button className="secondary" onClick={onClose} disabled={busy}>
-            취소
+            {t("commandModal.cancel")}
           </button>
           <button
             className="primary"
             onClick={() => void submit()}
             disabled={busy}
           >
-            {busy ? "검증 중…" : "확인 후 실행"}
+            {busy
+              ? t("commandModal.validating")
+              : t("commandModal.execute")}
           </button>
         </div>
       </section>

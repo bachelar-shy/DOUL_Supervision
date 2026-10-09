@@ -1,0 +1,53 @@
+name: doul-goal-ops-recovery
+
+services:
+  postgres:
+    image: postgres:16-bookworm
+    container_name: doul-goal-ops-recovery-postgres
+    environment:
+      POSTGRES_DB: doul_supervision
+      POSTGRES_USER: doul_dev
+      POSTGRES_PASSWORD: local-postgres-only
+    ports:
+      - "127.0.0.1:15434:5432"
+    tmpfs:
+      - "/var/lib/postgresql/data:rw,noexec,nosuid,size=768m"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  api:
+    image: alpine:3.24.1
+    container_name: doul-goal-ops-recovery-api
+    command: ["sleep", "86400"]
+    restart: "no"
+
+  worker-runtime:
+    image: alpine:3.24.1
+    container_name: doul-goal-ops-recovery-worker
+    command: ["sleep", "86400"]
+    restart: "no"
+
+  object-storage:
+    image: rustfs/rustfs:1.0.1
+    container_name: doul-goal-ops-recovery-rustfs
+    environment:
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "false"
+      RUSTFS_ACCESS_KEY: doul-ops
+      RUSTFS_SECRET_KEY: ops-disposable-only
+      RUSTFS_OBS_LOGGER_LEVEL: error
+    ports:
+      - "127.0.0.1:19000:9000"
+    tmpfs:
+      - "/data:rw,noexec,nosuid,size=2g,uid=10001,gid=10001,mode=750"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 10s

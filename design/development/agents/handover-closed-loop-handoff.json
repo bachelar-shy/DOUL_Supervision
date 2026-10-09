@@ -1,0 +1,45 @@
+{
+  "branch": "goal/handover-closed-loop-v1",
+  "checkpointCommit": "1b2e4576238cb4cd17d5918b0dbbe01e185bfc2d",
+  "terminalCommit": "8254635a34026d5e641074950bcb138d50ce08d0",
+  "scope": "Real HTTP-backed CompletionHandoverPage browser evidence for F-07 commissioning, partial handover, and a warranty stale-reference boundary after actual UI Action/reinspection transitions.",
+  "completed": [
+    "Created commissioning package through Completion UI; exercised fail, Punch correction, signed reinspection, release, stale current Punch ref refresh, and close through authorized UI commands.",
+    "Created handover draft with two Assets and a reservation through Completion UI; submitted readiness and owner review; SUP issued the Owner decision request and OWN acknowledged and submitted a decision through Owner UI.",
+    "Accepted the exact reservation and recorded partial handover with a strict subset scope through Completion UI.",
+    "The complementary case creates a current linked Action through the ActionAuthoringPanel UI, assigns it through the authorized SUP UI, captures its exact assigned ref, starts the Warranty remedy, then starts/submits/verifies the Action through UI and submits the remedy with evidence.",
+    "The complementary case links the reserved Punch to the disclosed source Inspection in fixture setup, requests and executes a linked reinspection through UI, and observes REFERENCE_STALE when Warranty accept_remedy is attempted with the current server-catalogued reinspection ref and evidence because the Warranty's stored Issue ref predates Issue progression. The case stops there; it does not accept or close the Warranty claim.",
+    "Fixture uses the existing HTTP contract setup for explicitly disclosed upstream Requirement, InformationItem, Evidence, Inspection, Asset, Punch Issue, and verified Action prerequisites. Both seeded Punch Issues link to the disclosed passed source Inspection so the authorized case UI can present the reservation Punch for reinspection. Signature calls use a deterministic test-only MockTrustedVerifier and are not provider proof.",
+    "Fixture origin is derived from Playwright baseURL; API and Chromium launch paths accept environment overrides; API child cleanup is bounded."
+  ],
+  "tests": {
+    "command": "PATH=/workspace/DOUL_Supervision/node_modules/.bin:$PATH DOUL_TEST_PYTHON=/workspace/DOUL_Supervision/work/priority-venv/bin/python HO_TEST_CHROMIUM=/usr/bin/chromium playwright test --config .local/playwright-handover.config.ts --output=/tmp/doul-handover-cap-results47 --reporter=list",
+    "result": "4 passed (1.2m): planned commissioning/missing procedure gate; Owner reservation draft; commissioning through partial handover and Action gate; complementary UI Action/remedy/reinspection continuation ending at the stale Issue ref rejection.",
+    "scope": "Evidence reaches commissioning close, partial handover, remedy submission, and a real reinspection; Warranty accept_remedy is rejected with REFERENCE_STALE. Warranty acceptance/close and final FM09 release are not proven."
+  },
+  "todo": [
+    "Run all four owned browser cases together; commit only owned test, fixture, and handoff files. Shared root UI overlays are already present in this worktree for local execution and must not be committed from here.",
+    "Do not implement C2 reference reconciliation without Product decision. If policy is approved later, separately test preservation of the original Warranty Issue snapshot and audit history."
+  ],
+  "claims": [
+    "Development/test evidence only; not a pilot or production readiness claim.",
+    "External legal signature provider proof is not exercised; the test-only mock adapter does not prove provider verification."
+  ],
+  "rootIntegration": {
+    "commits": [
+      "eb4d691",
+      "361f8e3",
+      "d3ca0ed"
+    ],
+    "browser": "4 PASS1.7m work/goal-handover-current-ref-browser.log",
+    "typing": "Connected browser standalone TS PASS work/goal-connected-browser-typecheck-final.log; helper route union and explicit JSON input type narrowed after browser run, valid tested input semantics unchanged.",
+    "boundary": "Actual accept_remedy409 REFERENCE_STALE is expected refusal, not accepted Warranty. Currentpassed reinspection is not finalFM09 released; laterrelease/acceptance/close remainunproven."
+  },
+  "macosNativeValidation": {
+    "evidence": "design/verification/goal-m4-native-20261009.json",
+    "rootCommit": "740d3a4edae0c6423e53dce79c985e045a4e68d5",
+    "normalBrowser": "95PASS including four F07 cases; Warranty exact observed timestamp and reservation dueAt preserved",
+    "timezones": "UTC/Seoul initial3PASS1ECONNRESET; unchanged UTC retest1PASS. No first-matrix4/4 or transport-stability claim.",
+    "acceptance": "Warranty accept_remedy still409 REFERENCE_STALE; no acceptance/close/provider/pilot promotion."
+  }
+}

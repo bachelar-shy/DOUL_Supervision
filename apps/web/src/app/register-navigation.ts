@@ -3,13 +3,17 @@ import type { HumanRole } from "../data/ui-contract";
 export interface RegisterNavigationGroupSpec {
   id: string;
   label: string;
+  labelKey: string;
   description: string;
+  descriptionKey: string;
   registerIds: readonly string[];
 }
 
 export interface RoleRegisterEntrySpec {
   label: string;
+  labelKey: string;
   description: string;
+  descriptionKey: string;
   defaultRegisterId: string;
   recommendedRegisterIds: readonly string[];
 }
@@ -19,38 +23,50 @@ export interface RoleRegisterEntrySpec {
 export const registerNavigationGroups: readonly RegisterNavigationGroupSpec[] = [
   {
     id: "governance",
-    label: "기준·계약·조직",
-    description: "법령, 계약범위, 인력·자격, 보험, 감사와 경험기록",
+    label: "Governance",
+    labelKey: "registerNav.group.governance.label",
+    description: "Standards, contract and organization",
+    descriptionKey: "registerNav.group.governance.description",
     registerIds: ["01", "02", "03", "27", "28", "29"],
   },
   {
     id: "design-submittal",
-    label: "설계·제출·승인",
-    description: "도면, 송수신, 시공사 제출, 상세도, 자재승인, 질의와 설계변경",
+    label: "Design and submittals",
+    labelKey: "registerNav.group.designSubmittal.label",
+    description: "Design, submittals and approvals",
+    descriptionKey: "registerNav.group.designSubmittal.description",
     registerIds: ["04", "05", "06", "07", "08", "13", "14"],
   },
   {
     id: "quality",
-    label: "품질·검측·시정",
-    description: "자재반입, 시험·계측, 검측, 부적합과 현장지시",
+    label: "Quality",
+    labelKey: "registerNav.group.quality.label",
+    description: "Materials, testing, inspection and corrective work",
+    descriptionKey: "registerNav.group.quality.description",
     registerIds: ["09", "10", "11", "12", "15"],
   },
   {
     id: "schedule-cost",
-    label: "공정·비용·계약관리",
-    description: "공정·지연, 물량·기성, 계약통지·클레임·공기연장",
+    label: "Schedule and commercial",
+    labelKey: "registerNav.group.scheduleCost.label",
+    description: "Schedule, payment and contract administration",
+    descriptionKey: "registerNav.group.scheduleCost.description",
     registerIds: ["16", "17", "26"],
   },
   {
     id: "hse",
-    label: "안전·환경·법정검사",
-    description: "고위험작업, 장비·기계, 소방, 환경, 위험·기회",
+    label: "Safety and statutory",
+    labelKey: "registerNav.group.hse.label",
+    description: "Safety, environment and statutory inspection",
+    descriptionKey: "registerNav.group.hse.description",
     registerIds: ["18", "19", "20", "21", "25"],
   },
   {
     id: "report-closeout",
-    label: "보고·기록·준공",
-    description: "발주처 보고·결정, 일일기록·사진증빙, 준공·인수·하자",
+    label: "Reporting and closeout",
+    labelKey: "registerNav.group.reportCloseout.label",
+    description: "Owner reporting, records, handover and defects",
+    descriptionKey: "registerNav.group.reportCloseout.description",
     registerIds: ["22", "23", "24"],
   },
 ];
@@ -59,32 +75,42 @@ export const registerNavigationGroups: readonly RegisterNavigationGroupSpec[] = 
 // continues to filter projection rows by the authenticated role and readability.
 export const roleRegisterEntries: Record<HumanRole, RoleRegisterEntrySpec> = {
   SUP: {
-    label: "감리",
-    description: "검측·부적합·현장조치·안전·보고 중심으로 우선 배치합니다.",
+    label: "Supervision",
+    labelKey: "roles.SUP",
+    description: "Inspection, issues, field actions, safety and reporting.",
+    descriptionKey: "registerNav.role.SUP.description",
     defaultRegisterId: "11",
     recommendedRegisterIds: ["11", "12", "15", "18", "22", "23"],
   },
   CON: {
-    label: "시공사",
-    description: "제출·검측요청·시정조치·공정·현장기록 중심으로 우선 배치합니다.",
+    label: "Contractor",
+    labelKey: "roles.CON",
+    description: "Submittals, inspection requests, corrective actions and field records.",
+    descriptionKey: "registerNav.role.CON.description",
     defaultRegisterId: "11",
     recommendedRegisterIds: ["11", "06", "12", "16", "23", "13"],
   },
   OWN: {
-    label: "발주처",
-    description: "보고·결정·공정·기성·변경·계약 리스크 중심으로 우선 배치합니다.",
+    label: "Owner",
+    labelKey: "roles.OWN",
+    description: "Reports, decisions, schedule, payment and contract risks.",
+    descriptionKey: "registerNav.role.OWN.description",
     defaultRegisterId: "22",
     recommendedRegisterIds: ["22", "16", "17", "14", "26", "24"],
   },
   DES: {
-    label: "설계자",
-    description: "도면·기술질의·설계변경·승인자료 중심으로 우선 배치합니다.",
+    label: "Designer",
+    labelKey: "roles.DES",
+    description: "Drawings, RFI, design change and approval information.",
+    descriptionKey: "registerNav.role.DES.description",
     defaultRegisterId: "13",
     recommendedRegisterIds: ["13", "04", "14", "07", "08", "24"],
   },
   ADM: {
-    label: "관리자",
-    description: "인력·기준·계약·문서·감사·경험기록 중심으로 우선 배치합니다.",
+    label: "Administrator",
+    labelKey: "roles.ADM",
+    description: "Staffing, standards, contracts, documents, audits and lessons.",
+    descriptionKey: "registerNav.role.ADM.description",
     defaultRegisterId: "03",
     recommendedRegisterIds: ["03", "01", "02", "05", "28", "29"],
   },

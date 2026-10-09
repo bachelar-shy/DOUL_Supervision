@@ -14,9 +14,13 @@
       "currentStage": "contract_confirmed",
       "stageStatus": "accepted",
       "evidenceRefs": [
-        "46_Product_Functional_Baseline_v1_Validation.md"
+        "46_Product_Functional_Baseline_v1_Validation.md",
+        "tests_mvp/test_quality_closed_loop_http.py",
+        "design/verification/goal-mvp-checkpoint-20261008.json",
+        "tests_browser/quality-closed-loop.spec.ts",
+        "tests_browser/support/quality_api_fixture.py"
       ],
-      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+      "note": "Real HTTP and connected browser development evidence covers inspection fail, Issue/Action correction, linked reinspection pass, final FM09 render and two explicit test-verifier signatures, Inspection release, Issue close and separate Owner Report receipt/follow-up closure. Terminal Issue UI no longer presents unavailable close as a pending task. Actual production legal verifier, adopted project configuration and field pilot remain unproven; latest exact-head GitHub CI blocked by account billing. No whole-function promotion until all required acceptance boundaries pass."
     },
     {
       "functionId": "F-02",
@@ -29,15 +33,25 @@
     },
     {
       "functionId": "F-03",
-      "currentStage": "contract_confirmed",
+      "currentStage": "backend_api_implemented",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "46_Product_Functional_Baseline_v1_Validation.md",
         "30_Safety_Permit_Stop_Resume_Functional_Contract.md",
         "app/schema/state_machines_v1.json",
-        "app/schema/authority_matrix_v1.json"
+        "app/schema/authority_matrix_v1.json",
+        "app/schema/safety_execution_contract_v1.json",
+        "tests_mvp/test_safety_http.py",
+        "services/api/main.py",
+        "services/api/store.py",
+        "services/api/persistence.py",
+        "app/reference/engine.py",
+        "design/verification/priority-issues-validation.json",
+        "tests_browser/safety-equipment-closed-loop.spec.ts",
+        "tests_browser/zz-safety-closed-loop.spec.ts",
+        "design/verification/goal-mvp-checkpoint-20261008.json"
       ],
-      "note": "Product execution contract is machine-backed; remain contract_confirmed until Backend API implementation acceptance evidence exists."
+      "note": "Real API persistence acceptance remains verified. New connected UI creates Equipment Inspection and Permit workflow records; failed current equipment inspection atomically blocks Permit activation and actual passing reinspection permits it, using trusted synthetic upstream Equipment/current certificates/approved plans. Separate legacy Stop loop proves explicit lift and independent Permit resume but provisions some workflow prerequisites through HTTP and uses passed/unreleased Inspection. Entire combined UI/field scenario not yet accepted; latest exact-head CI blocked by billing. No pilot promotion."
     },
     {
       "functionId": "F-04",
@@ -66,15 +80,20 @@
     },
     {
       "functionId": "F-05",
-      "currentStage": "contract_confirmed",
+      "currentStage": "backend_api_implemented",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "32_Progress_Measurement_Payment_Functional_Contract.md",
         "46_Product_Functional_Baseline_v1_Validation.md",
         "app/schema/measurement_payment_execution_contract_v1.json",
-        "tests/test_measurement_payment_execution_contract.py"
+        "tests/test_measurement_payment_execution_contract.py",
+        "tests_mvp/test_measurement_payment_http.py",
+        "tests_mvp/test_measurement_payment_postgres.py",
+        "tests_browser/payment-workspace.spec.ts",
+        "design/development/agents/payment-api-handoff.json",
+        "design/verification/goal-mvp-checkpoint-20261008.json"
       ],
-      "note": "B-P4 Product execution contract structured and validated for ContractBOQ exact-version history, QuantityMeasurement verification/payment-eligibility separation, PaymentClaim claimed/verified/recommended/ownerApproved/paid amount boundaries, decimal strings, duplicate-claim guards, unapproved Variation exclusion, cumulative reconciliation and partial-payment tracking. Backend HTTP/database acceptance is still required before promotion."
+      "note": "ContractBOQ, QuantityMeasurement and PaymentClaim persistent HTTP workflow acceptance passed locally and on PostgreSQL 16, including exact decimal/rule checks, Owner adjustment, individual partial payments and append-only correction/cancellation history. Trusted upstream Requirements, accepted Inspection and Decisions are fixture seeded. Connected Payment UI browser evidence is partial and does not prove all AC-PAY-01 commands through the UI; no integration or pilot promotion."
     },
     {
       "functionId": "F-06",
@@ -87,12 +106,23 @@
     },
     {
       "functionId": "F-07",
-      "currentStage": "contract_confirmed",
-      "stageStatus": "accepted",
+      "currentStage": "backend_api_implemented",
+      "stageStatus": "revalidation_required",
       "evidenceRefs": [
-        "46_Product_Functional_Baseline_v1_Validation.md"
+        "46_Product_Functional_Baseline_v1_Validation.md",
+        "app/reference/handover.py",
+        "tests_contracts/test_handover_contract.py",
+        "tests_mvp/test_handover_http.py",
+        "tests_mvp/test_handover_postgres.py",
+        "design/development/agents/payment-api-handoff.json",
+        "design/verification/goal-mvp-checkpoint-20261008.json",
+        "design/development/product-change-reference-lifecycle-proposal.json",
+        "tests_browser/handover-closed-loop.spec.ts",
+        "tests_browser/action-authoring.spec.ts",
+        "design/development/agents/handover-closed-loop-handoff.json",
+        "design/verification/goal-m4-native-20261009.json"
       ],
-      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+      "note": "Persistent F-07 HTTP/PostgreSQL tests and four additional browser cases verify explicitly disclosed synthetic prerequisites. The Action draft UI passes two cases. Commissioning close, an actual Owner decision, partial handover, Warranty remedy submission, and linked reinspection have local evidence. An actual accept_remedy request with the current passed Inspection reference and evidence returns HTTP 409 REFERENCE_STALE after legitimate Issue progression. Warranty acceptance, closure, and its final FM-09 release remain unproven. The C2 commissioning Punch reference refresh is a draft, and Handover/Warranty reference reconciliation requires a Product decision under policy 48. Retain backend_api_implemented with revalidation_required under policy 54; no whole AC-HO-01 or pilot promotion. Supplementary Mac M4 normal suite passes 95 cases with explicit browser-local datetime fixtures, including the four F-07 cases; UTC/Seoul transport failure and retest are separately recorded. This does not change the accepted business scope or stage."
     },
     {
       "functionId": "F-08",

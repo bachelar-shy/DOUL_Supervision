@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0",
+  "status": "foundation_implemented_translation_content_pending",
+  "identifierPolicy": {
+    "machineIdentifiersAreLanguageNeutral": true,
+    "translationKeysAreStable": true,
+    "termIdsAreStable": true,
+    "localizedLabelsNeverBecomeDomainIdentifiers": true
+  },
+  "localePolicy": {
+    "localeStandard": "BCP-47",
+    "uiLocaleIsUserPreference": true,
+    "defaultUiLocaleUntilTranslationsApproved": "ko",
+    "browserLanguageDoesNotAutoOverrideDraftLocale": true,
+    "draftLocalesMayBePartial": true,
+    "missingDraftKeysFallbackToKoreanMaster": true,
+    "projectPrimaryLocaleIsIndependent": true,
+    "projectSecondaryLocalesSupported": true,
+    "documentOutputLocaleIsIndependentFromUiLocale": true,
+    "rtlDirectionSupportedByLocaleMetadata": true,
+    "fallbackOrder": [
+      "requested locale",
+      "requested base language",
+      "ko"
+    ]
+  },
+  "platformPolicy": {
+    "sharedTranslationResourcesPackage": "@doul/localization",
+    "webRuntime": "i18next + react-i18next",
+    "webPreferenceStorage": "localStorage",
+    "mobileRuntime": "i18next + react-i18next",
+    "mobilePreferenceStorage": "expo-sqlite/kv-store",
+    "mobileHermesPluralRulesPolyfill": "intl-pluralrules",
+    "webAndMobileShareTranslationKeys": true,
+    "domainLabelMasterLocation": "packages/localization/src/domain-labels.ts",
+    "webDomainLabelAdapter": "apps/web/src/labels.ts",
+    "domainLabelsResolveThroughActiveLocale": true,
+    "mobileHardcodedKoreanUiStringsAllowed": false
+  },
+  "formattingPolicy": {
+    "dateTime": "Intl.DateTimeFormat",
+    "number": "Intl.NumberFormat",
+    "currency": "Intl.NumberFormat currency style",
+    "noHardcodedLocaleInFeatureComponents": true
+  },
+  "terminologyPolicy": {
+    "sourceMeaningOwnedByTermId": true,
+    "koreanIsCurrentMasterReviewLanguage": true,
+    "translationsAreIndependentFromKoreanWording": true,
+    "fieldTerminologyRequiresHumanReview": true,
+    "statutoryTerminologyRequiresLocalProfessionalReview": true
+  },
+  "documentPolicy": {
+    "uiLocaleDoesNotForceDocumentLocale": true,
+    "bilingualOutputMayCombineAnyApprovedLocales": true,
+    "statutoryLanguageRulesOverrideUserPreference": true,
+    "existingVietnameseStatutoryFinalRulePreserved": true
+  },
+  "initialLocales": [
+    {
+      "language": "ko",
+      "tag": "ko-KR",
+      "status": "approved_master"
+    },
+    {
+      "language": "vi",
+      "tag": "vi-VN",
+      "status": "draft_requires_field_review"
+    },
+    {
+      "language": "en",
+      "tag": "en-US",
+      "status": "draft_requires_field_review"
+    }
+  ],
+  "futureLocaleRule": {
+    "newLocaleRequiresDomainLogicChange": false,
+    "newLocaleRequiresTranslationResources": true,
+    "newLocaleRequiresTerminologyReview": true,
+    "newLocaleRequiresLayoutAndFormattingAcceptance": true
+  }
+}
