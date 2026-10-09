@@ -23,9 +23,11 @@
     "candidateLocalAPI": "400 tests run, 355 passed, 45 skipped without PostgreSQL DSN/document runtime; exact candidate CI pending",
     "candidateContracts": "319 reference and 7 F07 contracts passed; generated OpenAPI/types/command metadata current; contract validation passed",
     "runtimeProofLimits": "Synthetic/test-only trusted signer and demo identities; no production signature trust, field users/materials or real-file pilot performed",
-    "candidateFocusedBrowser": "6 passed: common stale conflicts3, offline/mobile viewport2, uncertain work-inbox replay1; /tmp/doul-candidate-final-browser-results.json",
+    "candidateFocusedBrowser": "8 passed after shared-fixture isolation and read-only row repair: stale conflicts3, offline/mobile viewport2, inbox lost-response replay1, existing PDF binding1 and existing 44px mobile controls1; /tmp/doul-candidate-ui-fix-fresh-browser.log",
     "firstCandidateCI": "1880670: seven applicable workflows passed; MVP failed because retry-test selector matched three buttons (93 other browser tests passed). Test now targets a current Inspection card; failure preserved at Actions run37931617923 and Mac runtime pr131-initial-mvp-failure.log.",
-    "offlineStatic": "Web TypeScript/UI boundary/lint and responsive build passed; inherited lint/bundle warnings remain. Native offline command acceptance not claimed."
+    "offlineStatic": "Web TypeScript/UI boundary/lint and responsive build passed; inherited lint/bundle warnings remain. Native offline command acceptance not claimed.",
+    "secondCandidateCI": "f9439d7: 97 normal browser cases passed, 2 failures diagnosed. Read-only injected Evidence lacked actions and crashed the new eager panel; fixed to treat it as non-commandable. New inbox retry test mutated shared seed used by later mobile regression; now uses a disposable real API/DB. All existing tests/assertions retained. Original run37952417315 preserved on Mac runtime pr131-f9439d7-mvp-failure.log.",
+    "transientNetworkFailure": "Formatting-only f5af2f1 operational build hit Docker Hub docker/dockerfile:1 TLS handshake timeout; run37953641799 raw failure retained. No product gate or test assertion relaxed."
   },
   "inProgress": [
     "Publish final integration head to PR131; inspect all exact-head Mac mini checks; diagnose failures before sequential integration."
@@ -60,7 +62,8 @@
     "Run browser suites sequentially when sharing root scratch web5189/API8789: a webServer owner may terminate reused servers on exit. Use unique ports for independent concurrent runs.",
     "Mac owned goal/mvp-m4-validation-v1 worktree /Users/automation/work/DOUL_Supervision-goal-m4-20261009; commit44aed59. Read work/m4-validation/handoff.json/logs; do not reuse shared servers. Task-owned Node24.13.1 and .venv Python3.12.13; use owned ports/DB and allowed loopback origins. Skip shared Playwright browser GC on subsequent installs.",
     "Mac CI: /Users/automation/work/DOUL-ci-runtime; Colima profile doul-ci, Docker context colima-doul-ci, runner doul-macmini-m4-linux. See infra/ci/macmini-runner.md. Preserve dirty primary Mac checkout; do not prune any other context.",
-    "Current integration worktree is physically /tmp/doul-root-non-c2-mvp-v1-20261009 with /workspace/work/doul-goal/non-c2-mvp-v1 alias; preserve alias/git metadata. Workspace disk is nearly full, use unique /tmp outputs; task npm cache preserved under /tmp with original-path alias."
+    "Current integration worktree is physically /tmp/doul-root-non-c2-mvp-v1-20261009 with /workspace/work/doul-goal/non-c2-mvp-v1 alias; preserve alias/git metadata. Workspace disk is nearly full, use unique /tmp outputs; task npm cache preserved under /tmp with original-path alias.",
+    "Final browser CI explicitly sets DOUL_TEST_PYTHON to the locked checkout .venv/bin/python for every owned fixture; local focused suites use the lock-verified priority Python. Superseded queued PR131 checks were cancelled after new heads were published; active jobs/results were preserved."
   ],
   "testFixtures": {
     "postgresContainer": "doul-goal-postgres",

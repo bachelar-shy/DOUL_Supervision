@@ -29,12 +29,12 @@ export function OfflineCommandIntentPanel({ client, workspace, online, onChanged
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const currentWorkspace = fresh ?? workspace;
-  const choices = useMemo(() => currentWorkspace.items.flatMap(item => item.actions
+  const choices = useMemo(() => currentWorkspace.items.flatMap(item => (item.actions ?? [])
     .filter(action => action.ready || action.requiresInput)
     .map(action => ({ key: `${item.machine}:${item.record.id}:${action.command}`, item, action }))), [currentWorkspace.items]);
   const selected = choices.find(choice => choice.key === selectedKey) ?? null;
   const currentItem = intent ? currentWorkspace.items.find(item => item.machine === intent.machine && item.record.id === intent.itemId) ?? null : null;
-  const currentAction = currentItem?.actions.find(action => action.command === intent?.command) ?? null;
+  const currentAction = currentItem?.actions?.find(action => action.command === intent?.command) ?? null;
   const identityMatches = Boolean(intent && intent.projectId === projectId && intent.actorId === actorId && intent.roleId === roleId);
   const commandAvailable = Boolean(currentItem && currentAction && currentAction.expectedVersion === currentItem.record.version && (currentAction.ready || currentAction.requiresInput));
   const conflict = Boolean(intent && checked && (!identityMatches || !currentItem || currentItem.record.version !== intent.expectedVersion || !commandAvailable));

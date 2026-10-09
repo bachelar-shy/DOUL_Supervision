@@ -45,6 +45,8 @@ jobs:
           npm run lint --workspace apps/web
           npm run web:build
       - name: Browser integration tests
+        env:
+          DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
         run: |
           npx playwright install --with-deps chromium
           npx playwright test

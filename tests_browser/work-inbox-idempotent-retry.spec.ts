@@ -1,4 +1,91 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { spawn, type ChildProcess } from "node:child_process";
+import { createServer } from "node:net";
+import { mkdtempSync, rmSync } from "node:fs";
+import { delimiter, join } from "node:path";
+import { tmpdir } from "node:os";
+
+type Session = {
+  projectId: string;
+  accessToken: string;
+  actor: { partyId: string; roleAssignmentId: string; actorGroup: string };
+};
+type WorkRecord = {
+  id: string;
+  version: number;
+  status: string;
+  title?: string;
+  workName?: string;
+  data?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+type AuditEvent = { id: string; objectRef: { objectId: string }; eventType?: string };
+
+let apiOrigin = "";
+let apiProcess: ChildProcess | undefined;
+let fixtureDir = "";
+
+async function availablePort() {
+  const server = createServer();
+  await new Promise<void>((resolveListen, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolveListen);
+  });
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("Could not allocate a test API port");
+  const port = address.port;
+  await new Promise<void>((resolveClose, reject) => server.close(error => error ? reject(error) : resolveClose()));
+  return port;
+}
+
+test.beforeEach(async () => {
+  const port = await availablePort();
+  apiOrigin = `http://127.0.0.1:${port}`;
+  fixtureDir = mkdtempSync(join(tmpdir(), "doul-inbox-retry-"));
+  const python = process.env.DOUL_TEST_PYTHON || "python3";
+  apiProcess = spawn(python, [
+    "-m", "services.api", "--demo", "--database", join(fixtureDir, "demo.sqlite3"), "--port", String(port),
+  ], {
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      DOUL_API_ALLOWED_ORIGINS: process.env.DOUL_TEST_BROWSER_ORIGIN || "http://127.0.0.1:5181",
+      PYTHONPATH: [process.cwd(), process.env.PYTHONPATH].filter(Boolean).join(delimiter),
+    },
+    stdio: "ignore",
+  });
+  const deadline = Date.now() + 20_000;
+  while (Date.now() < deadline) {
+    if (apiProcess.exitCode !== null) throw new Error(`Disposable API exited (${apiProcess.exitCode})`);
+    try {
+      if ((await fetch(`${apiOrigin}/health`)).ok) return;
+    } catch { /* Wait for the owned API process to bind its ephemeral port. */ }
+    await new Promise(resolveDelay => setTimeout(resolveDelay, 150));
+  }
+  throw new Error("Disposable API did not become healthy");
+}, 30_000);
+
+test.afterEach(async () => {
+  if (apiProcess && apiProcess.exitCode === null) {
+    const child = apiProcess;
+    child.kill("SIGTERM");
+    await new Promise<void>(done => {
+      const timeout = setTimeout(() => { child.kill("SIGKILL"); done(); }, 3_000);
+      child.once("exit", () => { clearTimeout(timeout); done(); });
+    });
+  }
+  if (fixtureDir) rmSync(fixtureDir, { recursive: true, force: true });
+});
+
+test.beforeEach(async ({ page }) => {
+  // Browser requests use the actual ASGI API and its isolated SQLite fixture.
+  await page.route("**/api/**", async route => {
+    const requestUrl = new URL(route.request().url());
+    const path = requestUrl.pathname.replace(/^\/api/, "");
+    const response = await route.fetch({ url: `${apiOrigin}${path}${requestUrl.search}` });
+    await route.fulfill({ response });
+  });
+});
 
 test("work inbox retries an uncertain command with the same idempotency key and server result", async ({ page, request }) => {
   const target = /\/api\/projects\/([^/]+)\/inspections\/([^/]+)\/start$/;
@@ -20,7 +107,8 @@ test("work inbox retries an uncertain command with the same idempotency key and 
 
     // Let the real API receive and commit the first command, then discard only
     // its response to the browser to reproduce an uncertain transport outcome.
-    const response = await route.fetch();
+    const path = new URL(req.url()).pathname.replace(/^\/api/, "");
+    const response = await route.fetch({ url: `${apiOrigin}${path}` });
     const body = await response.text();
     const parsed = JSON.parse(body) as { auditEvent: { id: string }; record: Record<string, unknown> };
     const captured = { status: response.status(), body, auditId: parsed.auditEvent.id, record: parsed.record };
@@ -66,7 +154,7 @@ test("work inbox retries an uncertain command with the same idempotency key and 
 
   const headers = authHeaders;
   if (!headers) throw new Error("Missing browser authorization headers");
-  const workspace = await request.get(new URL(`/api/projects/${projectId}/workspace`, page.url()).toString(), {
+  const workspace = await request.get(`${apiOrigin}/projects/${projectId}/workspace`, {
     headers: {
       authorization: headers.authorization,
       "x-roleassignment-id": headers["x-roleassignment-id"],
