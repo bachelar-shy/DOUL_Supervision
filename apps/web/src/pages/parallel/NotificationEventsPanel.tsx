@@ -3,10 +3,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { SupervisionClient } from "../../data/supervision-client";
 import type { DrawingImpactNotice, Workspace } from "../../data/ui-contract";
 import { resolveNotificationSourceTarget } from "../../data/notification-target-client";
+import { ApiError } from "../../data/supervision-client";
 import { ActionButton, Panel, SectionHeader } from "../../ui";
 import "./notification-events.css";
 import { DrawingImpactPanel } from "./DrawingImpactPanel";
-import { formatDateTime } from "../../i18n/format";
+import { formatDateTime, formatNumber } from "../../i18n/format";
+import { reasonLabel } from "../../labels";
 
 type Notification = {
   id: string;
@@ -29,11 +31,52 @@ function asInbox(value: unknown): Inbox {
     unreadCount: typeof candidate.unreadCount === "number" ? candidate.unreadCount : 0,
   };
 }
-function formatDate(value: string) {
-  return formatDateTime(value);
+type LabelKey =
+  | "title" | "unread" | "all" | "refresh" | "intro" | "loading" | "loadError" | "empty"
+  | "fallbackTitle" | "read" | "unreadState" | "impactOpen" | "viewSource" | "pastVersion"
+  | "viewCurrent" | "sourceUnavailable" | "occurredAt" | "status" | "savedInApp" | "readAt"
+  | "markRead" | "markingRead" | "genericError";
+const copy: Record<"ko" | "vi" | "en", Record<LabelKey, string>> = {
+  ko: {
+    title: "알림", unread: "안 읽음", all: "전체", refresh: "새로고침",
+    intro: "현재 프로젝트의 내 업무 변경 내역입니다. 이 화면에서 읽음으로 표시해도 업무 승인이나 전달 확인은 변경되지 않습니다.",
+    loading: "알림을 불러오는 중…", loadError: "알림을 불러오거나 갱신하지 못했습니다.", empty: "표시할 알림이 없습니다.",
+    fallbackTitle: "내 업무 변경", read: "읽음", unreadState: "안 읽음", impactOpen: "영향 업무 보기",
+    viewSource: "원본 보기", pastVersion: "과거 버전, 변경 명령 불가", viewCurrent: "현재 v{{version}} 별도 보기",
+    sourceUnavailable: "원본 기록을 현재 작업공간에서 열 수 없습니다.", occurredAt: "발생 시각", status: "상태",
+    savedInApp: "앱에 저장됨", readAt: "읽은 시각", markRead: "읽음으로 표시", markingRead: "처리 중…",
+    genericError: "알림 요청을 완료할 수 없습니다. 연결을 확인한 뒤 다시 시도하세요.",
+  },
+  vi: {
+    title: "Thông báo", unread: "Chưa đọc", all: "Tất cả", refresh: "Làm mới",
+    intro: "Các thay đổi công việc của bạn trong dự án hiện tại. Đánh dấu đã đọc ở đây không thay đổi phê duyệt công việc hoặc xác nhận đã gửi.",
+    loading: "Đang tải thông báo…", loadError: "Không thể tải hoặc làm mới thông báo.", empty: "Không có thông báo để hiển thị.",
+    fallbackTitle: "Thay đổi công việc của tôi", read: "Đã đọc", unreadState: "Chưa đọc", impactOpen: "Xem công việc bị ảnh hưởng",
+    viewSource: "Mở bản ghi nguồn", pastVersion: "Phiên bản cũ; không thể ra lệnh thay đổi", viewCurrent: "Xem riêng phiên bản hiện tại v{{version}}",
+    sourceUnavailable: "Không thể mở bản ghi nguồn trong không gian làm việc hiện tại.", occurredAt: "Thời điểm phát sinh", status: "Trạng thái",
+    savedInApp: "Đã lưu trong ứng dụng", readAt: "Thời điểm đã đọc", markRead: "Đánh dấu đã đọc", markingRead: "Đang xử lý…",
+    genericError: "Không thể hoàn tất yêu cầu thông báo. Hãy kiểm tra kết nối rồi thử lại.",
+  },
+  en: {
+    title: "Notifications", unread: "Unread", all: "All", refresh: "Refresh",
+    intro: "Changes to your work in the current project. Marking an item read here does not approve work or confirm delivery.",
+    loading: "Loading notifications…", loadError: "Could not load or refresh notifications.", empty: "There are no notifications to show.",
+    fallbackTitle: "My work changed", read: "Read", unreadState: "Unread", impactOpen: "View affected work",
+    viewSource: "Open source", pastVersion: "Past version; change commands are unavailable", viewCurrent: "View current v{{version}} separately",
+    sourceUnavailable: "The source record is not available in the current workspace.", occurredAt: "Occurred", status: "Status",
+    savedInApp: "Saved in app", readAt: "Read at", markRead: "Mark as read", markingRead: "Working…",
+    genericError: "The notification request could not be completed. Check the connection and try again.",
+  },
+};
+function activeCopy(): Record<LabelKey, string> {
+  const language = typeof document === "undefined" ? "en" : document.documentElement.lang.slice(0, 2);
+  return copy[language === "ko" || language === "vi" ? language : "en"];
 }
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
+function apiErrorCode(error: unknown): string | null {
+  return error instanceof ApiError ? error.detail.code : null;
+}
+function interpolate(value: string, fields: Record<string, string | number>) {
+  return value.replace(/\{\{(\w+)\}\}/g, (_, key: string) => String(fields[key] ?? ""));
 }
 
 export function NotificationEventsPanel({
@@ -50,14 +93,16 @@ export function NotificationEventsPanel({
   onNavigate?: (route: string) => void;
 }) {
   const scopeKey = `${client.session?.projectId ?? workspace.project.id}:${client.session?.actor.roleAssignmentId ?? ""}`;
+  const t = activeCopy();
   const [inboxSnapshot, setInboxSnapshot] = useState<{ scopeKey: string; data: Inbox } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<{ scopeKey: string; id: string } | null>(null);
-  const [errorSnapshot, setErrorSnapshot] = useState<{ scopeKey: string; message: string } | null>(null);
+  const [errorSnapshot, setErrorSnapshot] = useState<{ scopeKey: string; code: string | null } | null>(null);
   const [refreshIndex, setRefreshIndex] = useState(0);
   const [impactSelection, setImpactSelection] = useState<{ scope: string; notice: DrawingImpactNotice } | null>(null);
   const inbox = inboxSnapshot?.scopeKey === scopeKey ? inboxSnapshot.data : { items: [], total: 0, unreadCount: 0 };
-  const error = errorSnapshot?.scopeKey === scopeKey ? errorSnapshot.message : "";
+  const errorCode = errorSnapshot?.scopeKey === scopeKey ? errorSnapshot.code : null;
+  const error = errorSnapshot?.scopeKey === scopeKey ? errorCode ? reasonLabel(errorCode) : t.genericError : "";
   const busyId = busy?.scopeKey === scopeKey ? busy.id : "";
   const scopeEpoch = useRef(0);
   const requestSequence = useRef(0);
@@ -86,7 +131,7 @@ export function NotificationEventsPanel({
     } catch (requestError) {
       if (mounted.current && scopeEpoch.current === expectedScope && requestSequence.current === sequence) {
         setInboxSnapshot({ scopeKey, data: { items: [], total: 0, unreadCount: 0 } });
-        setErrorSnapshot({ scopeKey, message: errorMessage(requestError) });
+        setErrorSnapshot({ scopeKey, code: apiErrorCode(requestError) });
       }
     } finally {
       if (mounted.current && scopeEpoch.current === expectedScope && requestSequence.current === sequence) {
@@ -122,7 +167,7 @@ export function NotificationEventsPanel({
         if (scopeEpoch.current === epoch) onChanged?.();
       }
     } catch (requestError) {
-      if (mounted.current && scopeEpoch.current === epoch) setErrorSnapshot({ scopeKey, message: errorMessage(requestError) });
+      if (mounted.current && scopeEpoch.current === epoch) setErrorSnapshot({ scopeKey, code: apiErrorCode(requestError) });
     } finally {
       if (mounted.current && scopeEpoch.current === epoch) {
         busyRead.current = false;
@@ -140,17 +185,17 @@ export function NotificationEventsPanel({
   return (
     <Panel className="notification-events-panel" aria-labelledby="notification-events-title">
       <SectionHeader
-        title={<span id="notification-events-title">알림</span>}
-        meta={`안 읽음 ${inbox.unreadCount}건 · 전체 ${inbox.total}건`}
+        title={<span id="notification-events-title">{t.title}</span>}
+        meta={`${t.unread} ${formatNumber(inbox.unreadCount)} · ${t.all} ${formatNumber(inbox.total)}`}
       />
       <div className="notification-events-toolbar">
-        <p>현재 프로젝트의 내 업무 변경 내역입니다. 이 화면에서 읽음으로 표시해도 업무 승인이나 전달 확인은 변경되지 않습니다.</p>
-        <ActionButton onClick={() => setRefreshIndex((value) => value + 1)} disabled={loading}>새로고침</ActionButton>
+        <p>{t.intro}</p>
+        <ActionButton onClick={() => setRefreshIndex((value) => value + 1)} disabled={loading}>{t.refresh}</ActionButton>
       </div>
-      {loading && <div className="notification-events-state" role="status">알림을 불러오는 중…</div>}
-      {!loading && error && <div className="notification-events-error" role="alert"><strong>알림을 불러오거나 갱신하지 못했습니다.</strong><p>{error}</p></div>}
+      {loading && <div className="notification-events-state" role="status">{t.loading}</div>}
+      {!loading && error && <div className="notification-events-error" role="alert"><strong>{t.loadError}</strong><p>{error}</p></div>}
       {!loading && !error && inbox.items.length === 0 && (
-        <div className="notification-events-empty">표시할 알림이 없습니다.</div>
+        <div className="notification-events-empty">{t.empty}</div>
       )}
       {!loading && !error && inbox.items.length > 0 && (
         <ul className="notification-events-list">
@@ -160,39 +205,39 @@ export function NotificationEventsPanel({
             <li key={notification.id} data-notification-id={notification.id} className={isRead ? "is-read" : "is-unread"}>
               <div className="notification-events-copy">
                 <div className="notification-events-heading">
-                  <strong>{drawingImpact?.title ?? "내 업무 변경"}</strong>
-                  <span className="notification-events-read-state">{isRead ? "읽음" : "안 읽음"}</span>
+                  <strong>{drawingImpact?.title ?? t.fallbackTitle}</strong>
+                  <span className="notification-events-read-state">{isRead ? t.read : t.unreadState}</span>
                 </div>
-                {drawingImpact && <><p data-drawing-impact={drawingImpact.incidentId}>{drawingImpact.message}</p><ActionButton onClick={() => setImpactSelection({ scope: scopeKey, notice: drawingImpact })}>영향 업무 보기</ActionButton></>}
+                {drawingImpact && <><p data-drawing-impact={drawingImpact.incidentId}>{drawingImpact.message}</p><ActionButton onClick={() => setImpactSelection({ scope: scopeKey, notice: drawingImpact })}>{t.impactOpen}</ActionButton></>}
                 <p className="notification-events-source">
-                  {notification.sourceRef.objectType} · {notification.sourceRef.objectId} · v{notification.sourceRef.version}
+                  {notification.sourceRef.objectType} · {notification.sourceRef.objectId} · v{formatNumber(notification.sourceRef.version)}
                 </p>
                 {target.kind === "exact" && (
                   <div className="notification-events-target" data-source-target="exact" data-source-route={target.route}>
                     {(target.item.record.title || target.item.record.workName || (typeof target.item.record.data?.title === "string" && target.item.record.data.title)) && (
                       <strong>{target.item.record.title || target.item.record.workName || target.item.record.data?.title as string}</strong>
                     )}
-                    {onNavigate && <ActionButton onClick={() => openTarget(target.item.record.id, target.route)}>원본 보기</ActionButton>}
+                    {onNavigate && <ActionButton onClick={() => openTarget(target.item.record.id, target.route)}>{t.viewSource}</ActionButton>}
                   </div>
                 )}
                 {target.kind === "past" && (
                   <div className="notification-events-target" data-source-target="past" data-source-route={target.route}>
-                    <span>과거 버전, 변경 명령 불가</span>
-                    {onNavigate && <ActionButton onClick={() => openTarget(target.currentItem.record.id, target.route)}>현재 v{target.currentItem.record.version} 별도 보기</ActionButton>}
+                    <span>{t.pastVersion}</span>
+                    {onNavigate && <ActionButton onClick={() => openTarget(target.currentItem.record.id, target.route)}>{interpolate(t.viewCurrent, { version: formatNumber(target.currentItem.record.version) })}</ActionButton>}
                   </div>
                 )}
                 {target.kind === "unavailable" && (
-                  <p className="notification-events-target-unavailable">원본 기록을 현재 작업공간에서 열 수 없습니다.</p>
+                  <p className="notification-events-target-unavailable">{t.sourceUnavailable}</p>
                 )}
                 <dl>
-                  <div><dt>발생 시각</dt><dd>{formatDate(notification.dueAt)}</dd></div>
-                  <div><dt>상태</dt><dd>앱에 저장됨 · {notification.status}</dd></div>
-                  {isRead && readAt && <div><dt>읽은 시각</dt><dd>{formatDate(readAt)}</dd></div>}
+                  <div><dt>{t.occurredAt}</dt><dd>{formatDateTime(notification.dueAt)}</dd></div>
+                  <div><dt>{t.status}</dt><dd>{t.savedInApp} · {notification.status}</dd></div>
+                  {isRead && readAt && <div><dt>{t.readAt}</dt><dd>{formatDateTime(readAt)}</dd></div>}
                 </dl>
               </div>
               {!isRead && (
                 <ActionButton onClick={() => void markRead(notification.id)} disabled={busyId !== ""}>
-                  {busyId === notification.id ? "처리 중…" : "읽음으로 표시"}
+                  {busyId === notification.id ? t.markingRead : t.markRead}
                 </ActionButton>
               )}
             </li>
