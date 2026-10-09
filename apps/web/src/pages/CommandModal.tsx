@@ -189,21 +189,7 @@ function fieldDefault(field: string, w: Workspace, item: WorkItem): string {
     return new Date(
       Date.now() + (field === "dueAt" ? 86400000 : 0),
     ).toISOString();
-  if (field === "checkResults")
-    return JSON.stringify(
-      [
-        {
-          itemId: "dimension",
-          requirementRef: w.context.requirementRef,
-          result: "pass",
-          evidenceIds: item.record.evidenceIds || [],
-          measuredValue: 120,
-          unit: "mm",
-        },
-      ],
-      null,
-      2,
-    );
+  if (field === "checkResults") return "[]";
   if (field === "responseInformationRefs" || field === "references")
     return JSON.stringify([w.context.drawingRef], null, 2);
   if (booleanFields.has(field)) return "false";
