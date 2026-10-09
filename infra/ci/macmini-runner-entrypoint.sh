@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-mkdir -p /opt/doul-ci/runner /opt/doul-ci/toolcache
+mkdir -p /opt/doul-ci/runner /opt/doul-ci/toolcache /opt/doul-ci/tmp
 cd /opt/doul-ci/runner
 if [ ! -f ./config.sh ]; then
   cp -a /runner-template/. .

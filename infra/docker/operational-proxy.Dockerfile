@@ -7,7 +7,9 @@ COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/package.json
 COPY apps/mobile/package.json ./apps/mobile/package.json
 COPY packages/client/package.json ./packages/client/package.json
-RUN npm ci
+RUN for attempt in 1 2; do \
+      npm ci --include=optional && node -e "import('rolldown')" && exit 0; \
+    done; exit 1
 COPY apps/web ./apps/web
 COPY packages/client ./packages/client
 COPY scripts/dependency_environment.py ./scripts/dependency_environment.py
