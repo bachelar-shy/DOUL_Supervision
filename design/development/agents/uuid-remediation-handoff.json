@@ -1,0 +1,60 @@
+{
+  "task": "Isolated UUID advisory remediation validation",
+  "branch": "goal/uuid-remediation-v1",
+  "baseCommit": "7c9a0212412c61ca5194628cf25c2175fd9b83bc",
+  "sourceCommit": "7c9a0212412c61ca5194628cf25c2175fd9b83bc",
+  "productionDependencyChanges": false,
+  "candidate": {
+    "override": "xcode -> uuid 11.1.1",
+    "expo": "57.0.26 (unchanged)",
+    "status": "not integrated; npm dependency inventory remains invalid"
+  },
+  "checks": [
+    {
+      "command": "npm --cache /tmp/doul-uuid-npm-cache ci --no-audit --no-fund",
+      "result": "passed in the isolated /tmp worktree; installed 805 packages and resolved uuid 11.1.1 for xcode"
+    },
+    {
+      "command": "npm ls uuid --all",
+      "result": "failed: uuid@11.1.1 is reported invalid against xcode@3.0.1's declared ^7.0.3 range; npm does not mark this Expo workspace edge overridden"
+    },
+    {
+      "command": "python3 scripts/dependency_environment.py --node-only --report /tmp/doul-uuid-compat-smoke/dependency-environment.json",
+      "result": "failed closed with errors=[invalid: uuid@11.1.1 /tmp/doul-uuid-remediation-v1/node_modules/uuid]; report ok=false"
+    },
+    {
+      "command": "npm --cache /tmp/doul-uuid-npm-cache audit --json (summarized) after the candidate lock resolution",
+      "result": "uuid absent; 0 moderate and 21 high advisories remain. braces and node-forge remain affected and were not changed"
+    },
+    {
+      "command": "Isolated full lock resolution with the xcode -> uuid 11.1.1 override, followed by comparison against a minimal UUID-entry transplant",
+      "result": "fresh resolution selected node_modules/uuid 11.1.1 and removed uuid 7; full resolution churned 28 added, 44 removed, and 150 changed lock entries, so it was not kept. The minimal lock test installed 11.1.1 but npm ls still reported invalid"
+    },
+    {
+      "command": "Isolated Expo workspace checks with xcode, xcode@3.0.1, and global uuid override selectors",
+      "result": "clean installs resolved 11.1.1, but npm ls marked the Expo workspace edge invalid for each selector. A minimal non-workspace xcode fixture marked the same override as overridden; the issue reproduces specifically through workspace inventory"
+    },
+    {
+      "command": "Inline Node CJS smoke: require xcode, parse Expo-generated project.pbxproj, call generateUuid(), writeSync() to a temporary file, then parse the round trip",
+      "result": "passed with uuid 11.1.1 and xcode 3.0.1; generated ID B30AD5B8A2ED4D41A3431658 was 24 uppercase hex characters and noncolliding; PBX object count remained 32"
+    },
+    {
+      "command": "EXPO_NO_TELEMETRY=1 CI=1 ../../node_modules/.bin/expo prebuild --platform ios --no-install (from apps/mobile in the isolated worktree)",
+      "result": "passed with Expo 57.0.26 and candidate uuid 11.1.1; generated an actual iOS project. Expo's temporary apps/mobile/package.json script changes and generated ios directory were restored/removed"
+    }
+  ],
+  "blocker": "Do not integrate the override while npm ls and scripts/dependency_environment.py --node-only fail. The root package's override installs uuid 11.1.1, but npm 11.9 inventory does not treat the out-of-range workspace edge as overridden. No guard or xcode metadata was changed to hide this result.",
+  "auditResiduals": [
+    "braces remains affected by GHSA-vfj7-8cjw-p6xm",
+    "node-forge remains affected by GHSA-86w9-cpqp-85rv"
+  ],
+  "temporaryArtifacts": {
+    "pbxRoundTrip": "/tmp/doul-uuid-compat-smoke/DOULSupervision-roundtrip.pbxproj",
+    "dependencyEnvironmentReport": "/tmp/doul-uuid-compat-smoke/dependency-environment.json",
+    "npmCache": "/tmp/doul-uuid-npm-cache",
+    "isolatedWorktree": "/tmp/doul-uuid-remediation-v1",
+    "worktreeNodeModules": "removed after validation",
+    "generatedIosProject": "removed after validation"
+  },
+  "restart": "Recreate a clean named worktree from this branch and evaluate any candidate only with a unique npm cache under /tmp and a physical isolated install. Keep Expo 57 unchanged. Require clean npm ci, npm ls uuid --all, scripts/dependency_environment.py --node-only, xcode CJS PBX parse/write, actual Expo iOS prebuild, and npm audit evidence before integration. Do not run audit fix or alter shared node_modules/cache; keep braces and node-forge as explicit residual blockers."
+}
