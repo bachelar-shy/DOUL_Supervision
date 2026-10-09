@@ -64,6 +64,7 @@ class SignatureVerificationHTTPTests(unittest.TestCase):
             for item in workspace["items"]
             if item["machine"] == "inspection" and item["record"].get("resultStatus") == "pass"
         )
+        self.inspection = deepcopy(inspection)
         self.document = self.render_fm09(inspection)
 
     def tearDown(self):
@@ -226,6 +227,80 @@ class SignatureVerificationHTTPTests(unittest.TestCase):
         document, signatures, _ = self.signature_state()
         self.assertEqual(document["status"], "final")
         self.assertEqual(signatures, [])
+
+    def test_revoking_signer_qualification_preserves_prior_signature_but_blocks_new_official_command(self):
+        """A later qualification change cannot rewrite prior signed evidence or authorize new work."""
+        signed = self.sign()
+        self.assertEqual(signed.status_code, 200, signed.text)
+        signature_id = signed.json()["id"]
+        document_before, signatures_before, sign_audit_before = self.signature_state()
+        self.assertEqual(len(signatures_before), 1)
+        prior_signature = deepcopy(signatures_before[0])
+        role_id = self.session["actor"]["roleAssignmentId"]
+        role = self.app.state.store.engine.get("RoleAssignment", role_id)
+        qualification_id = role["qualificationIds"][0]
+        qualification_before = self.app.state.store.engine.get("Qualification", qualification_id)
+        self.assertEqual(
+            prior_signature["qualificationRefs"],
+            [{"objectType": "Qualification", "objectId": qualification_id, "version": qualification_before["version"]}],
+        )
+        signature_history_before = {
+            key: deepcopy(value)
+            for key, value in self.app.state.store.engine._history.items()
+            if key[0] == "Signature" and key[1] == signature_id
+        }
+        document_history_before = {
+            key: deepcopy(value)
+            for key, value in self.app.state.store.engine._history.items()
+            if key[0] == "DocumentSnapshot" and key[1] == self.document["id"]
+        }
+
+        # Test fixture simulates a post-signing revocation. The existing legal
+        # signature is historical evidence; this update must not mutate it.
+        with self.app.state.store.transaction(True):
+            revoked = self.app.state.store.engine.get("Qualification", qualification_id)
+            revoked.update(revoked=True, version=revoked["version"] + 1, updatedAt=self.app.state.store.engine.at())
+            self.app.state.store.engine._save("Qualification", revoked)
+        current_qualification = self.app.state.store.engine.get("Qualification", qualification_id)
+        self.assertTrue(current_qualification["revoked"])
+        self.assertGreater(current_qualification["version"], prior_signature["qualificationRefs"][0]["version"])
+
+        inspection_before = self.app.state.store.engine.get("Inspection", self.inspection["id"])
+        audit_before_command = deepcopy(self.app.state.store.engine.audit_events)
+        idempotency_before_command = deepcopy(self.app.state.store.engine._idempotency)
+        rejected = self.client.post(
+            f"/projects/{self.project}/inspections/{self.inspection['id']}/release_next_work",
+            headers={**self.headers, "Idempotency-Key": "release-after-revocation-" + uid()},
+            json={
+                "roleAssignmentId": role_id,
+                "expectedVersion": inspection_before["version"],
+                "payload": {},
+                "evidenceIds": [self.original_evidence_id],
+            },
+        )
+        self.assertEqual(rejected.status_code, 403, rejected.text)
+        self.assertEqual(rejected.json()["code"], "QUALIFICATION_INVALID")
+
+        # The refusal is current-only: it creates no command audit, history,
+        # idempotency record or state transition, while the prior signature,
+        # document hash, signed-at time and recorded qualification ref survive.
+        self.assertEqual(self.app.state.store.engine.get("Inspection", self.inspection["id"]), inspection_before)
+        self.assertEqual(self.app.state.store.engine.audit_events, audit_before_command)
+        self.assertEqual(self.app.state.store.engine._idempotency, idempotency_before_command)
+        self.assertEqual(self.signature_state(), (document_before, signatures_before, sign_audit_before))
+        signature_history_after = {
+            key: value
+            for key, value in self.app.state.store.engine._history.items()
+            if key[0] == "Signature" and key[1] == signature_id
+        }
+        document_history_after = {
+            key: value
+            for key, value in self.app.state.store.engine._history.items()
+            if key[0] == "DocumentSnapshot" and key[1] == self.document["id"]
+        }
+        self.assertEqual(signature_history_after, signature_history_before)
+        self.assertEqual(document_history_after, document_history_before)
+        self.assertEqual(len(self.verifier.calls), 1)
 
     def test_verifier_failure_creates_no_legal_signature(self):
         before = self.signature_state()

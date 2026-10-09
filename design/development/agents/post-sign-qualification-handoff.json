@@ -1,0 +1,28 @@
+{
+  "task": "AC-QUAL post-sign qualification revocation HTTP proof",
+  "branch": "goal/post-sign-qualification-v1",
+  "baseCommit": "99a296b69ceeb0389a5576ba0ca443a9edad7462",
+  "productionChanges": false,
+  "scenario": {
+    "fixture": "The existing tests_mvp signature HTTP fixture injects an explicitly test-only MockTrustedVerifier. It does not claim real legal-provider proof.",
+    "sequence": [
+      "Render the existing demo Inspection source and successfully sign the exact final snapshot through POST /documents/{id}/sign.",
+      "Capture the stored Signature, its Qualification ref/version, DocumentSnapshot history, and document:sign audit event.",
+      "In a test fixture transaction, revoke that signer's current Qualification and increment its version, preserving the old signed Qualification ref as history.",
+      "Submit the official Inspection release_next_work command over HTTP using the same active signer assignment; the engine rechecks current qualification and returns 403 QUALIFICATION_INVALID.",
+      "Assert that the prior Signature and DocumentSnapshot records/history/audit remain byte-for-byte equivalent in stored structures, and that the denied command changes no Inspection state/history, command audit, or idempotency record."
+    ],
+    "scope": "Verifies current qualification revocation affects new official action while preserving a previously valid signature's historical record. The Qualification revocation is a test fixture mutation, not a production qualification-management workflow."
+  },
+  "tests": {
+    "focusedCommand": "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_signature_verification_http.SignatureVerificationHTTPTests.test_revoking_signer_qualification_preserves_prior_signature_but_blocks_new_official_command -v",
+    "focusedResult": "PASS",
+    "suiteCommand": "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_signature_verification_http -v",
+    "suiteResult": "11 tests PASS (1.364s)"
+  },
+  "ownedFiles": [
+    "tests_mvp/test_signature_verification_http.py",
+    "design/development/agents/post-sign-qualification-handoff.json"
+  ],
+  "restart": "This is a test-only validation on the isolated worktree. No business gate, schema, API implementation, production verifier, dependency lock, Mac CI runner, or shared node_modules was changed. The mock verifier is test fixture evidence only; external legal-signature provider verification remains unproven."
+}
