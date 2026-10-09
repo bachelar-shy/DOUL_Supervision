@@ -24,5 +24,15 @@
   "claims": [
     "Development/test evidence only; not a pilot or production readiness claim.",
     "External legal signature provider proof is not exercised; the test-only mock adapter does not prove provider verification."
-  ]
+  ],
+  "rootIntegration": {
+    "commits": [
+      "eb4d691",
+      "361f8e3",
+      "d3ca0ed"
+    ],
+    "browser": "4 PASS1.7m work/goal-handover-current-ref-browser.log",
+    "typing": "Connected browser standalone TS PASS work/goal-connected-browser-typecheck-final.log; helper route union and explicit JSON input type narrowed after browser run, valid tested input semantics unchanged.",
+    "boundary": "Actual accept_remedy409 REFERENCE_STALE is expected refusal, not accepted Warranty. Currentpassed reinspection is not finalFM09 released; laterrelease/acceptance/close remainunproven."
+  }
 }

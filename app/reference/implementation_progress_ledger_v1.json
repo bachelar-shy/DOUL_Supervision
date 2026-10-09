@@ -116,9 +116,12 @@
         "tests_mvp/test_handover_postgres.py",
         "design/development/agents/payment-api-handoff.json",
         "design/verification/goal-mvp-checkpoint-20261008.json",
-        "design/development/product-change-reference-lifecycle-proposal.json"
+        "design/development/product-change-reference-lifecycle-proposal.json",
+        "tests_browser/handover-closed-loop.spec.ts",
+        "tests_browser/action-authoring.spec.ts",
+        "design/development/agents/handover-closed-loop-handoff.json"
       ],
-      "note": "Persistent F07 HTTP/PostgreSQL tests cover the disclosed synthetic upstream fixtures, but real connected commissioning/Punch progression exposed stale captured mutable-reference lifecycle conflicts. Draft C2 commissioning current-Punch-ref refresh preserves exact identity/history/authorization; Handover openIssue reconciliation and Warranty rework reference linkage remain Product decision dependencies per48. Additional actual browser flow is partial; no whole AC-HO-01 or pilot promotion. Stage retained with revalidation_required per54; successful isolated test fixtures do not resolve legal workflow reachability."
+      "note": "Persistent F-07 HTTP/PostgreSQL tests and four additional browser cases verify explicitly disclosed synthetic prerequisites. The Action draft UI passes two cases. Commissioning close, an actual Owner decision, partial handover, Warranty remedy submission, and linked reinspection have local evidence. An actual accept_remedy request with the current passed Inspection reference and evidence returns HTTP 409 REFERENCE_STALE after legitimate Issue progression. Warranty acceptance, closure, and its final FM-09 release remain unproven. The C2 commissioning Punch reference refresh is a draft, and Handover/Warranty reference reconciliation requires a Product decision under policy 48. Retain backend_api_implemented with revalidation_required under policy 54; no whole AC-HO-01 or pilot promotion."
     },
     {
       "functionId": "F-08",

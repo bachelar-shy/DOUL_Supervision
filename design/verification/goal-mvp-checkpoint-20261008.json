@@ -2,7 +2,7 @@
   "asOf": "2026-10-09",
   "branch": "goal/mvp-completion-v1",
   "baseCommit": "943d1dd0a3056c34bff9015292b59b4cfe49c197",
-  "completionStatus": "development_validation_in_progress; actual_pilot_not_run",
+  "completionStatus": "blocked_external_dependencies; development_evidence_preserved; actual_pilot_not_run",
   "scope": "Synthetic development/staging verification. Trusted fixture provisioning and test-only signature providers are explicitly separated from real deployment and field acceptance.",
   "checks": {
     "contractSuite": {
@@ -35,7 +35,6 @@
     "dockerWeb": "Localization COPY corrected for web and operational proxy images; prior 97cee102 actual container/operational CI PASS. Latest-head CI blocked before start; no current-head acceptance claim.",
     "githubCI": {
       "pr": 129,
-      "lastPushedHead": "b4a2a46bcbd836abc4a82948de25bc3553bdb102",
       "status": "BLOCKED_ACCOUNT_BILLING_BEFORE_JOB_START",
       "run": 37860451176,
       "evidence": "User-confirmed billing annotation run37860451176; all eight b1cc92a runs completed failure with steps:null/logs_url:null, independently inspected.",
@@ -50,7 +49,9 @@
         37888421750,
         37888421807
       ],
-      "lastObservedJobs": "7 completedfailure jobs steps/logs null; platform-container-baseline queued at observation. No exact-head CI acceptance."
+      "lastObservedJobs": "7 completedfailure jobs steps/logs null; platform-container-baseline queued at observation. No exact-head CI acceptance.",
+      "observedRemoteHeadAtRecordTime": "b4a2a46bcbd836abc4a82948de25bc3553bdb102",
+      "finalHead": "Resolve final PR129 integration checkpoint from git rev-parse origin/goal/mvp-completion-v1; prior observed CI head is not current-head acceptance."
     },
     "referenceCatalog": "6 actual HTTP authorization tests PASS including current Evidence/InformationItem/Inspection/Decision/Issue/Action references, foreign project/location exclusion and changed assignment visibility.",
     "paymentBrowser": "Actual OwnerDecision UI create/report/acknowledge/decide and Payment closed loop PASS; work/goal-payment-safety-owner-integrated.log and normal89 regression. No fixture-created Owner Decisions in latest test; upstream prerequisites remain synthetic.",
@@ -128,13 +129,30 @@
       "log": "work/goal-handover-partial-browser.log",
       "sourceCommit": "1b2e457",
       "rootCommit": "c6f5526",
-      "scope": "Commissioning failed/pass history, actual Punch correction/reinspection/final FM09 Vietnamese render/test-only trusted signature/release/close, actual Owner decision and partialhandover, Warranty reaches action_required and refuses start with verifiedAction. Does not prove Warranty remedy/reinspection/close or actualpilot; commissioningrefrefresh remains unapprovedC2draft."
+      "scope": "Commissioning failed/pass history, actual Punch correction/reinspection/final FM09 Vietnamese render/test-only trusted signature/release/close, actual Owner decision and partialhandover, Warranty reaches action_required and refuses start with verifiedAction. Does not prove Warranty remedy/reinspection/close or actualpilot; commissioningrefrefresh remains unapprovedC2draft.",
+      "supersededBy": "checks.handoverReferenceLifecycleUI"
     },
     "actionDownstream": {
       "result": "PASS",
       "passed": 3,
       "log": "work/goal-action-downstream-browser-final.log",
       "scope": "Separate actual Quality fullcloseout/Equipment/Stop/Permitresume regression after Actionworkbench change; not part of normal89 run. Prior concurrent-shared-server attempt interrupted, excluded."
+    },
+    "handoverReferenceLifecycleUI": {
+      "result": "PASS",
+      "passed": 4,
+      "log": "work/goal-handover-current-ref-browser.log",
+      "sourceCommits": [
+        "8254635",
+        "eff66db"
+      ],
+      "rootCommits": [
+        "eb4d691",
+        "361f8e3"
+      ],
+      "scope": "Actual commissioning/Ownerpartialhandover, realActioncreate/assign/start/submit/verify, Warrantyrequire/start/submit and linkedIssue/reinspection; actualaccept_remedy409 REFERENCE_STALE with currentpassedInspection andevidence. No Warrantyacceptance/close/finalFM09 release orwholeAC-HO-01/pilotclaim.",
+      "fixtures": "Explicit trustedsourceprofiles/documents/baseInspection/Punch/verifiedActions/Assets; reservedPunch link to samepassedsourceInspection disclosed upstreamrelation. Commissioning FM09 uses explicitTestOnlyMockTrustedVerifier.",
+      "typing": "Standalone connected browser TS PASS work/goal-connected-browser-typecheck-final.log; finalhelper type narrowing does not change tested valid inputs."
     }
   },
   "operations": {
@@ -153,7 +171,7 @@
     "Vietnamese/English report catalogs remain draft_pending_local_review; controlling statutory Vietnamese original and approved project language policy are preserved requirements.",
     "All functions and shared foundations remain subject to actual field acceptance. No pilot_verified promotion.",
     "Known npm audit advisories remain release blockers (security-audit.json).",
-    "Additional F07 partial UI3PASS and Actionauthoring2PASS; extendedWarranty remedy/currentref continuation pending. Handover/Warranty mutable-ref reconciliation requires Product decision. No whole AC-HO-01 or pilot claim."
+    "F07 4 local actualUI cases PASS include blocked Warranty accept_remedy409 REFERENCE_STALE after realIssue advancement. Warranty acceptance/close/finalFM09 release remain unproven; current-ref reconciliation requires Product decision. No whole AC-HO-01/pilotclaim."
   ],
   "resume": "Inspect Goal/root and worker handoffs, Git/worktree status and active tasks. Continue from last verified checkpoint; never delete uncommitted changes. Quota recovery alone does not guarantee platform scheduling.",
   "actualFileUsability": {

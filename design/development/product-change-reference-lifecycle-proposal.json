@@ -58,10 +58,22 @@
     },
     {
       "workflow": "Warranty rework",
-      "trigger": "Failed linked reinspection advances Issue correctionCycle and corrective Actions; require_rework returns to start_remedy",
-      "failure": "Saved issueRef/actionRefs stale; old verified Action cannot satisfy assigned/in_progress start gate and no command supplies a new cycle",
+      "trigger": "Normal linked Issue assignment/correction/reinspection advances its version before first Warranty acceptance; failed reinspection/new correction cycles also advance Issue and Actions.",
+      "failure": "Saved exact issueRef becomes stale; actual accept_remedy UI request with current passed reinspection ref/evidence returns409 REFERENCE_STALE. Rework also lacks an authorized replacement-cycle Action linkage/ref refresh.",
       "proposedResolution": "Explicit same-defect Issue ref refresh and current-cycle Action linkage under existing authorized commands, preserving prior cycles and reinspection/remedy history. Define where replacement-cycle actions are captured before implementation.",
-      "implementationStatus": "not implemented; Product decision required"
+      "implementationStatus": "not implemented; Product decision required",
+      "observedEvidence": {
+        "sourceCommits": [
+          "8254635",
+          "eff66db"
+        ],
+        "rootCommits": [
+          "eb4d691",
+          "361f8e3"
+        ],
+        "browser": "4 focused cases PASS work/goal-handover-current-ref-browser.log; fourth proves actual409 refusal, not successfulWarrantyacceptance",
+        "boundary": "Current passed reinspection supplied, Warranty finalFM09 release/acceptance/close unproven; no productionprovider or fieldpilot."
+      }
     },
     {
       "workflow": "Commissioning Punch disposition",
