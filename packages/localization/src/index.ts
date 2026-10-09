@@ -113,6 +113,7 @@ export function languageDirection(value?: string | null): "ltr" | "rtl" {
 }
 
 const ko = {
+  ...mandatoryWorkflowKo,
   "app.workspace": "프로젝트 작업공간",
   "app.sampleSite": "시범현장",
   "app.sampleData": "예시 데이터 · 개발용",
@@ -699,7 +700,6 @@ const ko = {
   ...completionKo,
   ...creationKo,
   ...uiErrorKo,
-  ...mandatoryWorkflowKo,
   "navigation.parallelTest": "병렬 기능 테스트",
 } as const;
 
@@ -707,6 +707,7 @@ export type TranslationKey = keyof typeof ko;
 type DraftTranslationDictionary = Partial<Record<TranslationKey, string>>;
 
 const vi: DraftTranslationDictionary = {
+  ...mandatoryWorkflowVi,
   "app.workspace": "Không gian dự án",
   "app.sampleSite": "Công trường thí điểm",
   "app.sampleData": "Dữ liệu mẫu · phát triển",
@@ -965,12 +966,12 @@ const vi: DraftTranslationDictionary = {
   ...registerVi,
   ...paymentCommandVi,
   ...uiErrorVi,
-  ...mandatoryWorkflowVi,
   ...paymentStateVi,
   "navigation.parallelTest": "Kiểm thử tính năng song song",
 };
 
 const en: DraftTranslationDictionary = {
+  ...mandatoryWorkflowEn,
   "app.workspace": "Project workspace",
   "app.sampleSite": "Pilot site",
   "app.sampleData": "Sample data · development",
@@ -1229,7 +1230,6 @@ const en: DraftTranslationDictionary = {
   ...registerEn,
   ...paymentCommandEn,
   ...uiErrorEn,
-  ...mandatoryWorkflowEn,
   ...paymentStateEn,
   "navigation.parallelTest": "Parallel feature tests",
 };
