@@ -507,9 +507,19 @@ test("connected Quality UI completes linked reinspection, issue, and Owner repor
   expect(staleClose.status()).toBe(409);
   expect((await staleClose.json()).code).toBe("VERSION_CONFLICT");
 
+  // Returning from document/release pages remounts the parallel modules. Wait
+  // for this exact case projection, rather than racing its pending HTTP read.
+  const currentCaseRead = page.waitForResponse((response) =>
+    response.request().method() === "GET" && response.status() === 200
+    && new URL(response.url()).pathname.endsWith(`/inspection-cases/${draft.id}`));
   await page.goto("/#/parallel-test");
   await page.getByRole("tab", { name: "작업함", exact: true }).click();
   await casePanel.getByLabel("원 검측 선택", { exact: true }).selectOption(draft.id);
+  const currentCaseProjection = await (await currentCaseRead).json();
+  const readyIssue = currentCaseProjection.issues.find((group: any) => group.issue.record.id === pair.issue.id);
+  expect(readyIssue.issue.record.version).toBe(issueCurrent.version);
+  expect(readyIssue.readiness.closeReady).toBe(true);
+  expect(readyIssue.readiness.closeBlockedReasons).toEqual([]);
   issueCard = casePanel.locator(".inspection-case-issue").filter({ hasText: issueTitle });
   const initialEvidenceRejection = await runCommand(page, "종결 검토", {
     closureEvidenceIds: JSON.stringify([evidenceId]),
