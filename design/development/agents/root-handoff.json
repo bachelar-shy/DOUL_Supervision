@@ -7,19 +7,23 @@
     "Integrated six Luna/high workstreams: payment, authoritative create capability/reference catalogs, ko/vi/en UI/report rendering, commissioning/handover/warranty APIs and UI, operations and acceptance audit",
     "Reviewed current authority/qualification/version/evidence/amount boundaries and added strict trusted signature adapter contract",
     "Verified real PostgreSQL/S3 synthetic adapter and encrypted backup/restore behavior",
-    "Removed request read-cache duplication and per-row full preview copies; retained exact authorization and immutable-source tests"
+    "Removed request read-cache duplication and per-row full preview copies; retained exact authorization and immutable-source tests",
+    "Wired current-scoped Safety draft authoring, explicit final document render/signing and localized mandatory parallel panels",
+    "Completed real API/UI Quality closeout with explicit synthetic/test-only trusted-signature boundary; terminal Issue presentation regression passed",
+    "Added exact current read-authorized Issue/Action catalogs and fixed canonical narrowed DomainRef array UI selection"
   ],
   "inProgress": [
-    "Complete current-head Payment/Quality/Commissioning-Handover-Warranty connected browser acceptance",
-    "Finish mandatory ko/vi/en parallel panels and run current-head full regression",
-    "Preserve draft PR129 until billing-blocked GitHub checks can execute and pass"
+    "Current-head full browser regression including connected Quality closeout (85 tests planned)",
+    "Luna/high isolated full Equipment and Commissioning/Handover/Warranty UI acceptance and authoring localization",
+    "Preserve draft PR129 until account billing allows latest exact-head required checks"
   ],
   "validation": {
     "evidence": "design/verification/goal-mvp-checkpoint-20261008.json",
     "contracts": "319 PASS",
-    "api": "388 PASS; 5 optional document tests separately PASS",
+    "api": "Latest completed API suite: 389 run, 384 passed, 5 optional document-runtime skips; latest catalog changes full suite running (work/goal-current-api-final-catalog.log).",
     "documentRuntime": "5 PASS",
-    "integrationCI": "BLOCKED_ACCOUNT_BILLING_BEFORE_JOB_START; user confirmed annotation on run37860451176"
+    "integrationCI": "BLOCKED_ACCOUNT_BILLING_BEFORE_JOB_START; user confirmed annotation on run37860451176",
+    "browser": "Previous integration 84/84 PASS; new connected Quality whole workflow PASS and closed-readiness regression PASS (work/goal-quality-closed-readiness.log); latest combined 85-case suite running."
   },
   "remaining": [
     "Account owner resolves GitHub Billing & plans; latest exact-head eight CI checks must pass before PR129 merge",
@@ -30,11 +34,11 @@
   ],
   "restart": [
     "Inspect git status and worktree list, active agents, Goal/checkpoint and all latest worker handoffs",
-    "Root clean dependencies are preserved in /tmp/doul-goal-root-deps/node_modules; workspace node_modules symlink with absolute @doul workspace links. Reinstall exact lock if ephemeral /tmp is replaced",
     "Production Python: work/priority-venv; document-only union lock environment: work/document-verification-venv",
     "Confirm owned PostgreSQL fixture availability on 15432 and no concurrent destructive fixture operations",
     "Read final test logs/evidence and continue unfinished work without deleting other changes",
-    "Node dependencies now physical repository node_modules from fresh exact-lock npm ci; prior /tmp dependency trees preserved. Root isolated scratch browser uses web5189/API8789; pass explicit loopback DOUL_API_ALLOWED_ORIGINS for self-hosted fixture tests."
+    "Node dependencies now physical repository node_modules from fresh exact-lock npm ci; prior /tmp dependency trees preserved. Root isolated scratch browser uses web5189/API8789; pass explicit loopback DOUL_API_ALLOWED_ORIGINS for self-hosted fixture tests.",
+    "Never create a nested node_modules symlink through a worker symlink: shared root tree must remain physical and exact-lock inventory must pass."
   ],
   "testFixtures": {
     "postgresContainer": "doul-goal-postgres",
