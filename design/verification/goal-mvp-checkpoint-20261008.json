@@ -22,9 +22,15 @@
       "log": "work/goal-document-runtime.log",
       "boundary": "Five local locked-runtime tests PASS. Prior 97cee102 head actual platform-document CI PASS; latest-head CI is blocked before start by account billing."
     },
-    "staticUI": "Web/mobile typecheck, UI boundary, web lint (warnings) and exact-lock build PASS on latest integrated changes. No weakening of checks.",
+    "staticUI": "Latest web/mobile typecheck, UI boundary, web lint(with warnings) and build PASS after document languagecatalog extraction and Handover Drawingselector; work/goal-handover-drawing-*.log.",
     "lockedDependencies": "Fresh exact-lock npm ci, physical repository workspace tree and dependency inventory PASS (work/goal-physical-dependencies.log); previous dependency trees preserved. Production Python lock unchanged.",
-    "fullBrowser": "88-case historical run:87PASS/Payment30s deadline failure; replacement Payment+Safety3-case rootPASS. New89-case full current application regression running:work/goal-integrated-browser-62aefec.log; no final result yet.",
+    "fullBrowser": {
+      "result": "PASS",
+      "run": 89,
+      "passed": 89,
+      "log": "work/goal-integrated-browser-62aefec.log",
+      "scope": "Complete normal browser regression after Payment deadline fix and combined Safety/OwnerDecision integration; excludes separate mock-only suites. Local synthetic/demo prerequisites; no actual pilot or current-head GitHub CI claim. Dedicated F07 fullloop worker remains additional partial evidence pending."
+    },
     "mockLocalization": "6 PASS in separate mock-only suite; actual API localization 10 PASS separately. No field acceptance claim.",
     "dockerWeb": "Localization COPY corrected for web and operational proxy images; prior 97cee102 actual container/operational CI PASS. Latest-head CI blocked before start; no current-head acceptance claim.",
     "githubCI": {
@@ -86,7 +92,8 @@
       "result": "PASS11",
       "commit": "62aefec",
       "log": "work/goal-punch-reference-refresh.log",
-      "scope": "Explicit latestrefs sameIssueIDset only; stale/open/drop/substitute/CON rejected atomically, preflightinputaffordance true, history+idempotency preserved. ConnectedUIworker continuation pending."
+      "scope": "Explicit latestrefs sameIssueIDset only; stale/open/drop/substitute/CON rejected atomically, preflightinputaffordance true, history+idempotency preserved. ConnectedUIworker continuation pending.",
+      "adoption": "Draft C2 Product proposal; no approved baseline/release adoption. See design/development/product-change-reference-lifecycle-proposal.json."
     }
   },
   "operations": {
@@ -112,5 +119,6 @@
     "status": "NOT_RUN_INPUTS_MISSING",
     "plan": "53_Field_Pilot_Acceptance_Plan_v1.md#8",
     "inputs": "Actual discipline PDFs, BOQ, schedule, site photos, qualified users and adopted project configuration."
-  }
+  },
+  "remainingProductDecision": "48_Product_Baseline_Change_Control_v1.md requires Product/Functional Owner decision before optional command payload/gate reconciliation adoption; Handover/Warranty mutable-ref gaps independently reviewed and proposal recorded."
 }

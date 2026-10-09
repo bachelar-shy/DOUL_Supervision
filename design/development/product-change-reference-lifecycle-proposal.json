@@ -62,6 +62,13 @@
       "failure": "Saved issueRef/actionRefs stale; old verified Action cannot satisfy assigned/in_progress start gate and no command supplies a new cycle",
       "proposedResolution": "Explicit same-defect Issue ref refresh and current-cycle Action linkage under existing authorized commands, preserving prior cycles and reinspection/remedy history. Define where replacement-cycle actions are captured before implementation.",
       "implementationStatus": "not implemented; Product decision required"
+    },
+    {
+      "workflow": "Commissioning Punch disposition",
+      "trigger": "Current Punch status is cancelled or superseded",
+      "existingBehavior": "Existing gate accepts any status outside _ISSUE_OPEN; the draft refresh does not change this condition.",
+      "decisionNeeded": "Confirm which explicit dispositions qualify as resolved; do not silently treat cancellation as technical closure.",
+      "implementationStatus": "No gate weakening or unapproved new disposition rule introduced."
     }
   ],
   "adoptionConditions": [

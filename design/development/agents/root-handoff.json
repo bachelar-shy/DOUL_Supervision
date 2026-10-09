@@ -20,7 +20,7 @@
   ],
   "inProgress": [
     "Isolated full Commissioning/Handover/Warranty, combined Stop/remedy/lift/permitresume, and Payment Owner Decision UI evidence",
-    "F07 signed/released Punch UI loop extends through new currentref refresh; full89rootbrowser regression running, terminal result pending"
+    "F07 additionalbrowser: afterproposedPunchrefrefresh andHandoverDrawingfix, realOwnerDecision/partialhandover/warranty segment remains to checkpoint."
   ],
   "validation": {
     "evidence": "design/verification/goal-mvp-checkpoint-20261008.json",
@@ -28,7 +28,7 @@
     "api": "394run389PASS5optional skips, actualPG16 executed; work/goal-api-punch-refresh-final.log",
     "documentRuntime": "5 PASS",
     "integrationCI": "BLOCKED_ACCOUNT_BILLING_BEFORE_JOB_START; user confirmed annotation on run37860451176",
-    "browser": "Latest full88:87PASS,1 oldPayment30s timeout. ReplacementactualOwnerDecision UI test and combinedSafety integrated; focused3-case rootrerun pending. Logwork/goal-integrated-browser-283091f.log."
+    "browser": "Complete89PASS9.2min work/goal-integrated-browser-62aefec.log; additionalF07fullloop remains partial/pending, distinct fromnormalfullregression."
   },
   "remaining": [
     "Account owner resolves GitHub Billing & plans; latest exact-head eight CI checks must pass before PR129 merge",
@@ -37,7 +37,8 @@
     "Configure actual project, production legal signature provider and adopted forms/language policy; obtain real authorized pilot actors/evidence",
     "Resolve dependency audit release blockers and obtain actual field/performance/restore acceptance",
     "UUID candidate not integrated: npm workspace dependency inventory invalid despite native tooling compatibility; evidence in agents/uuid-remediation-handoff.json",
-    "Actual architecture/structure/mechanical/electrical PDFs, BOQ, schedule and site photos not supplied; real-file usability criteria recorded in goal-mvp-completion-v1.json"
+    "Actual architecture/structure/mechanical/electrical PDFs, BOQ, schedule and site photos not supplied; real-file usability criteria recorded in goal-mvp-completion-v1.json",
+    "Product/Functional Owner C2 decision required before adopting drafted Punchrefrefresh or implementing Handover/Warranty reference reconciliation; proposal recorded, no effectivebaseline declared."
   ],
   "restart": [
     "Inspect git status and worktree list, active agents, Goal/checkpoint and all latest worker handoffs",

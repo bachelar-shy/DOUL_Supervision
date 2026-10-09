@@ -41,20 +41,30 @@
     "uuidAssessment": {
       "integratedCommit": "3e54705",
       "result": "Evidence-only; candidate rejected due invalid npm workspace graph, production dependencies unchanged."
+    },
+    "safetyCombined": {
+      "workerCommit": "a2f4395",
+      "integratedCommit": "224c559",
+      "verification": "Root combinedactualHTTP/UI2casesPASS; demoAction/Inspection prerequisites disclosed; explicitLift leavesPermit suspended until separateCONrequest+SUPapproval."
+    },
+    "paymentOwnerUI": {
+      "workerCommit": "0d84c6a",
+      "integratedCommit": "9c29b28",
+      "verification": "ActualOwnercreate/report/acknowledge/decideUI; rootPASS. DirectDecisionfixtureendpointremoved. Rule/releasedInspectionandissuedReport remainupstreamfixtures."
     }
   },
   "inProgress": {
-    "handover": "/root/capabilities: isolated F07 complete UI lifecycle, active Punch Issue correction/reinspection/closure prerequisites must remain honest. No HTTP mutation may be described as UI evidence.",
-    "safetyCombined": "/root/payment_api: extend own Equipment scenario to Stop creation/remedy/verification/lift/independent permit resume; report any missing UI prerequisites. Preserve current passing baseline.",
-    "paymentOwnerUI": "Actual Owner Governance creation/report/acknowledge/decision sequence worker PASS once; final owned spec/fixture commit pending"
+    "handover": "/root/capabilities: isolated F07 complete UI lifecycle, active Punch Issue correction/reinspection/closure prerequisites must remain honest. No HTTP mutation may be described as UI evidence."
   },
   "runningRootChecks": [
-    "work/goal-integrated-browser-283091f.log: complete 88-case regression running, terminal result pending",
-    "work/goal-current-api-with-telemetry.log: completed394 run,389pass,5optional skips; separatedocument5PASS"
+    "Complete89normalbrowserPASS:work/goal-integrated-browser-62aefec.log",
+    "Full394API389PASS5optional skips; full319contractsPASS andseparate7F07contractsPASS",
+    "AdditionalF07fullloopworker stillpending; nofullHO01/pilotclaim"
   ],
   "externalBlocker": {
     "githubBilling": "User supplied annotation run37860451176: recent account payments failed or spending limit needs increase. Account owner resolves Billing & plans. No automatic spend changes. All latest exact-head required checks must PASS before merge.",
-    "pilot": "Actual project configuration, production signature provider, adopted forms/language policy, qualified field users/equipment/data and site acceptance not supplied."
+    "pilot": "Actual project configuration, production signature provider, adopted forms/language policy, qualified field users/equipment/data and site acceptance not supplied.",
+    "productDecision": "Reference lifecycle C2 proposal awaits Product/Functional Owner decision per48; no approvedreleaseadoption."
   },
   "resume": [
     "Inspect Git status/worktrees and active agents before edits; never delete pending work.",

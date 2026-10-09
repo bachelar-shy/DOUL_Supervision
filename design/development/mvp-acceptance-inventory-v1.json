@@ -131,7 +131,7 @@
       "contract": "confirmed",
       "backendApi": "real_http_persistence_with_postgres_acceptance_suite",
       "ui": "mock_fixture_presentation_only; no_connected_workflow_browser_acceptance",
-      "integration": "backend_http_commissioning_handover_warranty_scenarios_with_trusted_fixtures; no_full_browser_integration",
+      "integration": "partial_connected_browser; revalidation_required_reference_lifecycle",
       "pilot": "not_run",
       "evidence": [
         "34_Commissioning_Handover_Warranty_Functional_Contract.md",
@@ -143,11 +143,11 @@
       ],
       "provenScope": "Commissioning, Handover and Warranty state machines/resources have real HTTP create/command coverage and an environment-gated PostgreSQL subclass. HTTP tests cover expired witness/equipment-certificate denials, preservation of original failed commissioning test and uploaded-evidence retest, Owner partial handover with a scoped reservation, and warranty remedy/reinspection/closure. F-07 WorkItem creation and transitions use HTTP. Trusted Requirement profiles and upstream accepted InformationItem, Asset, Inspection, Issue and Action references are seeded as test fixtures. The single completion-page browser test explicitly injects mock records and verifies presentation/history/three display locales; it does not exercise API workflow commands.",
       "gaps": [
-        "No connected browser flow executes Commissioning, Owner handover, or Warranty transitions against real API records; current completion UI evidence is mock presentation only.",
-        "The API tests bootstrap trusted profiles and upstream accepted records/configuration. They do not prove end-to-end generation/acceptance of those upstream project records or a selected-project configuration pack.",
-        "PostgreSQL acceptance is environment-gated by DOUL_TEST_POSTGRES_DSN, and no actual site commissioning/handover/warranty evidence or Owner pilot acceptance is present."
+        "Real connected Commissioning/Punch path exposes captured ref staleness; draft optional-ref payload fix implemented/tested but not an approved Product Baseline change.",
+        "Handover current/open Issue refs and Warranty rework current Issue/Action refs have no reconciliation path after normal upstream transitions; read-only review recorded in product-change-reference-lifecycle-proposal.json.",
+        "Additional F07 browser is partial; whole AC-HO-01, actual project configuration, production signature provider and site acceptance not proven."
       ],
-      "nextWork": "Keep the authoritative F-07 promotion limited to backend_api_implemented for the implemented/tested backend scope. Add connected browser API transitions and validate against an actual project configuration pack before considering UI-connected or pilot status."
+      "nextWork": "Product/Functional Owner decision for C2 reference lifecycle proposal; complete approved Handover/Warranty reconciliation and linked-cycle browser proof; keep stage revalidation_required without pilot promotion."
     },
     {
       "id": "AC-MEDIA-01",
