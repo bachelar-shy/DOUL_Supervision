@@ -71,7 +71,10 @@ test.afterAll(async () => {
   if (fixtureProcess && fixtureProcess.exitCode === null) {
     const child = fixtureProcess;
     child.kill("SIGTERM");
-    await new Promise<void>((resolveExit) => child.once("exit", () => resolveExit()));
+    await new Promise<void>((resolveExit) => {
+      const timeout = setTimeout(() => { child.kill("SIGKILL"); resolveExit(); }, 3_000);
+      child.once("exit", () => { clearTimeout(timeout); resolveExit(); });
+    });
   }
   fixtureProcess = undefined;
   if (fixtureDatabase) {
@@ -297,6 +300,9 @@ async function getWorkspace(request: APIRequestContext, session: Session) {
 }
 
 test("real UI/API payment chain authors exact-version Owner decisions and preserves append-only partial-payment corrections", async ({ page, request }) => {
+  // This case spans BOQ, measurement, claim, two Owner decisions and payment
+  // correction workflows through live HTTP; retain per-command deadlines.
+  test.setTimeout(180_000);
   expectedVersions.clear();
   const seeded = await fixture(request);
   const suffix = randomUUID().slice(0, 8);
