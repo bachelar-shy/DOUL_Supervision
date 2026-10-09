@@ -14,6 +14,7 @@ type Candidate = CommandDescriptor & { requiresInput?: boolean; blockedReason?: 
 type InboxRow = { machine: string; record: WorkItem["record"]; commandCandidates: Candidate[] };
 type InboxResponse = { records?: InboxRow[]; total?: number; nextCursor?: string | null; limit?: number };
 type Props = { client: SupervisionClient; workspace: Workspace; onChanged?: () => void; onNavigate?: (route: string) => void };
+type CommandAttempt = { fingerprint: string; key: string };
 type Locale = "en" | "ko" | "vi";
 const machineRoutes: Record<string, string> = {
   shop_drawing: "drawings", material_approval: "materials", issue: "issues", safety_stop_order: "safety",
@@ -80,6 +81,20 @@ function titleOf(row: InboxRow, fallback: string) {
   return row.record.title || String(row.record.data?.title ?? row.record.data?.name ?? fallback);
 }
 
+function stableValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stableValue);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.keys(value).sort().map(key => [key, stableValue((value as Record<string, unknown>)[key])]),
+    );
+  }
+  return value;
+}
+
+function stableJson(value: unknown) {
+  return JSON.stringify(stableValue(value));
+}
+
 function messageOf(candidate: Candidate) {
   if (!candidate.blockedReason) return "";
   const failure = candidate.blockedReason;
@@ -109,6 +124,7 @@ export function WorkInboxActionsPanel({ client, workspace, onChanged, onNavigate
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [dialog, setDialog] = useState<{ item: WorkItem; action: Candidate } | null>(null);
+  const commandAttempt = useRef<CommandAttempt | null>(null);
   const requestId = useRef(0);
   const alive = useRef(true);
   const roleKey = `${workspace.project.id}:${workspace.role.id}`;
@@ -126,12 +142,35 @@ export function WorkInboxActionsPanel({ client, workspace, onChanged, onNavigate
   }, [client, roleKey]);
   useEffect(() => { alive.current = true; setCursor(null); setCursorStack([]); const timer = window.setTimeout(() => { void load(null); }, 0); return () => { window.clearTimeout(timer); alive.current = false; requestId.current++; }; }, [load, roleKey]);
   const rows = useMemo(() => page.records ?? [], [page.records]);
+  function commandAttemptKey(item: WorkItem, command: string, payload: Fields, evidenceIds: string[]) {
+    const fingerprint = stableJson({
+      projectId: client.session?.projectId ?? workspace.project.id,
+      roleAssignmentId: client.session?.actor.roleAssignmentId ?? workspace.role.id,
+      machine: item.machine,
+      objectId: item.record.id,
+      expectedVersion: item.record.version,
+      command,
+      payload,
+      evidenceIds,
+    });
+    if (!commandAttempt.current || commandAttempt.current.fingerprint !== fingerprint) {
+      commandAttempt.current = { fingerprint, key: crypto.randomUUID() };
+    }
+    return commandAttempt.current.key;
+  }
+
+  function closeDialog() {
+    commandAttempt.current = null;
+    setDialog(null);
+  }
+
   async function execute(payload: Fields, evidenceIds: string[]) {
     if (!dialog || submitting) return;
     setSubmitting(true); setError("");
     const item: WorkItem = { machine: rows.find(row => row.record.id === dialog.item.record.id)?.machine ?? dialog.item.machine, record: dialog.item.record, actions: [dialog.action] };
     try {
-      await client.execute(item, dialog.action.command, payload, evidenceIds);
+      await client.execute(item, dialog.action.command, payload, evidenceIds, commandAttemptKey(item, dialog.action.command, payload, evidenceIds));
+      commandAttempt.current = null;
       setDialog(null); onChanged?.(); await load(cursor);
     } catch (cause) {
       const conflict = cause instanceof ApiError && (cause.status === 409 || /VERSION_CONFLICT|STALE|VERSION/i.test(cause.detail.code));
@@ -169,6 +208,6 @@ export function WorkInboxActionsPanel({ client, workspace, onChanged, onNavigate
       </article>)}</div>}
       <div className="work-inbox-pagination"><ActionButton onClick={() => { const previous = cursorStack.at(-1) ?? null; setCursorStack(stack => stack.slice(0, -1)); setCursor(previous); void load(previous); }} disabled={!cursorStack.length || loading}>{t.previous}</ActionButton><span>{interpolate(t.rowsDisplayed, { count: formatNumber(rows.length) })}</span><ActionButton onClick={() => { if (!page.nextCursor) return; setCursorStack(stack => [...stack, cursor]); setCursor(page.nextCursor!); void load(page.nextCursor!); }} disabled={!page.nextCursor || loading}>{t.next}</ActionButton></div>
     </Panel>
-    {dialog && <CommandModal key={`${dialog.item.machine}:${dialog.item.record.id}:${dialog.action.command}:${workspace.role.id}`} dialog={dialog} workspace={workspace} onClose={() => setDialog(null)} onSubmit={execute} />}
+    {dialog && <CommandModal key={`${dialog.item.machine}:${dialog.item.record.id}:${dialog.action.command}:${workspace.role.id}`} dialog={dialog} workspace={workspace} onClose={closeDialog} onSubmit={execute} />}
   </div>;
 }

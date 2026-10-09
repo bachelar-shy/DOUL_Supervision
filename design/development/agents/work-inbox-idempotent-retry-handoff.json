@@ -1,0 +1,42 @@
+{
+  "task": "AC-IDEMP WorkInboxActionsPanel transport-uncertain command retry",
+  "branch": "goal/work-inbox-idempotent-retry-v1",
+  "baseCommit": "99a296b69ceeb0389a5576ba0ca443a9edad7462",
+  "status": "implemented_verified_pending_root_review",
+  "ownedFiles": [
+    "apps/web/src/pages/WorkInboxActionsPanel.tsx",
+    "tests_browser/work-inbox-idempotent-retry.spec.ts",
+    "design/development/agents/work-inbox-idempotent-retry-handoff.json"
+  ],
+  "implementation": {
+    "keyScope": [
+      "project",
+      "roleAssignmentId",
+      "machine",
+      "recordId",
+      "expectedVersion",
+      "command",
+      "canonicalizedPayload",
+      "evidenceIds"
+    ],
+    "keyLifecycle": "Keep the key only for the current immutable attempt. Reuse it after an uncertain failure; generate a fresh UUID when any fingerprint input changes; clear it after success or dialog close/cancel.",
+    "apiCompatibility": "SupervisionClient.execute already accepts and forwards an optional idempotency key. No supervision-client.ts or ui-contract execute type change was needed.",
+    "preservedContracts": "Command execution remains behind SupervisionClient. The server still validates actor, role, expected record version, command permissions, payload and evidence."
+  },
+  "verification": {
+    "browserSpec": "tests_browser/work-inbox-idempotent-retry.spec.ts",
+    "result": "passed",
+    "run": "Playwright Chromium against the real demo API and Vite proxy on isolated ports 18893 and 15183; Python API database was an owned disposable SQLite file under /tmp.",
+    "scenario": "For the actual seeded inspection:start command, the test lets the first POST reach and commit at the API, aborts only the browser response, retries in the still-open modal, and verifies identical Idempotency-Key and request body, byte-identical replay response, unchanged response record/audit event ID, in_progress state, and exactly one matching workspace audit event.",
+    "report": "/tmp/doul-goal-ops-idempotent-retry-results.json",
+    "otherChecks": [
+      "tsc -b apps/web --pretty false: passed",
+      "python3 scripts/check_ui_boundary.py: passed (UI/function boundary OK)",
+      "git diff --check: passed"
+    ],
+    "browser": "/usr/bin/chromium",
+    "limitations": "This focused proof covers same-input response-loss replay and one real status transition/audit event. Fingerprint invalidation on changed role, version, command, payload or evidence is enforced by the component logic but was not separately exercised with a second mutating browser scenario."
+  },
+  "gaps": [],
+  "restart": "Review the branch commit, then run the focused Playwright spec with the repository browser/API harness. The temporary ops config is not committed; it used ports 15183/18893 and the result JSON is retained at the report path above."
+}
