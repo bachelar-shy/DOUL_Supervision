@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Workspace } from "../data/ui-contract";
-import type { SupervisionClient } from "../data/supervision-client";
+import { ApiError, type SupervisionClient } from "../data/supervision-client";
+import { reasonLabel } from "../labels";
 import { CaptureTemplate } from "../ui/templates";
 import { EvidenceViewer } from "../ui/catalog";
 import { PageBoundary } from "./PageBoundary";
@@ -96,7 +97,7 @@ export function CapturePage({
           );
       })
       .catch((e) => {
-        if (active) setError(String(e));
+        if (active) setError(e instanceof ApiError ? reasonLabel(e.detail.code) : reasonLabel());
       });
     return () => {
       active = false;
@@ -104,9 +105,8 @@ export function CapturePage({
   }, [client, workspace.project.id]);
 
   async function intake(file: File) {
+    if (file.size > 64 * 1024 * 1024) { setError(t("capture.error.maxSize")); return; }
     try {
-      if (file.size > 64 * 1024 * 1024)
-        throw new Error(t("capture.error.maxSize"));
       const bytes = await file.arrayBuffer();
       const hash = Array.from(
         new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
@@ -126,7 +126,7 @@ export function CapturePage({
       await load();
       notify(t("capture.toast.saved"));
     } catch (e) {
-      setError(String(e));
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : reasonLabel());
     }
   }
 
@@ -152,7 +152,7 @@ export function CapturePage({
       await refresh();
       notify(t("capture.toast.registered"));
     } catch (e) {
-      setError(String(e));
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : reasonLabel());
     } finally {
       setProgress("");
     }

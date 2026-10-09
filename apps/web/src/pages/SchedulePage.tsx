@@ -214,7 +214,7 @@ function ImportedSourceDetail({
       })
       .catch((e) => {
         if (!alive) return;
-        setError(e instanceof ApiError ? `${reasonLabel(e.detail.code)} ${e.message}` : String(e));
+        setError(e instanceof ApiError ? reasonLabel(e.detail.code) : String(e));
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -411,7 +411,7 @@ function CreateSchedule({
       const result = await client.create(machine, payload, identity.current.id, identity.current.key);
       await onCreated(result.record.id);
     } catch (e) {
-      setError(e instanceof ApiError ? `${reasonLabel(e.detail.code)} ${e.message}` : String(e));
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : String(e));
     } finally {
       setBusy(false);
     }
@@ -750,7 +750,7 @@ function ImportScheduleSource({
       setStage(tr("schedule.import.stage.complete"));
       await onImported(result.record.id);
     } catch (e) {
-      setError(e instanceof ApiError ? `${reasonLabel(e.detail.code)} ${e.message}` : e instanceof Error ? e.message : String(e));
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : e instanceof Error ? e.message : String(e));
       setStage(tr("schedule.import.stage.review"));
     } finally {
       setBusy(false);
