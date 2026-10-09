@@ -28,14 +28,22 @@ if (existingUuids.has(generatedUuid)) {
   throw new Error(`xcode generated a colliding PBX identifier: ${generatedUuid}`);
 }
 
+const addedGroup = project.addPbxGroup([], 'DOULDependencyCompatibility', 'DOULDependencyCompatibility');
+if (!/^[A-F0-9]{24}$/.test(addedGroup.uuid) || existingUuids.has(addedGroup.uuid)) {
+  throw new Error('xcode added a group with an invalid or colliding identifier');
+}
+
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'doul-xcode-pbx-roundtrip-'));
 try {
   const outputPath = path.join(tempDir, 'roundtrip.pbxproj');
   fs.writeFileSync(outputPath, project.writeSync());
   const roundtrip = xcode.project(outputPath);
   roundtrip.parseSync();
-  if (!roundtrip.allUuids().length) {
-    throw new Error('PBX round trip contains no project object identifiers');
+  const roundtripIds = new Set(roundtrip.allUuids());
+  if (roundtripIds.size !== existingUuids.size + 1 ||
+      !roundtripIds.has(addedGroup.uuid) ||
+      [...existingUuids].some(id => !roundtripIds.has(id))) {
+    throw new Error('PBX round trip lost or changed project object identifiers');
   }
   console.log(JSON.stringify({
     xcodeVersion: require('xcode/package.json').version,
