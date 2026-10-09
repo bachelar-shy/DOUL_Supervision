@@ -154,7 +154,13 @@ def is_domain_ref(
     components: dict[str, Any],
     active_refs: frozenset[str] = frozenset(),
 ) -> bool:
-    """Recognize canonical DomainRef aliases without matching nested ref-shaped objects."""
+    """Recognize canonical DomainRef schemas and their narrowed objectType variants.
+
+    Some command payload contracts spell a domain reference inline so that the
+    objectType is constrained to a single canonical type (for example, an Issue
+    array). Recognize that exact DomainRef shape while leaving custom structures
+    such as ContractBOQItemRef unclassified.
+    """
     reference = schema.get("$ref")
     if reference:
         prefix = "#/components/schemas/"
@@ -173,15 +179,37 @@ def is_domain_ref(
         return is_domain_ref(target, components, active_refs | {name})
 
     all_of = schema.get("allOf")
-    if not isinstance(all_of, list):
+    if isinstance(all_of, list):
+        # allOf may add descriptive/validation constraints to a DomainRef alias,
+        # but adding fields creates a different structured object.
+        if any(key in schema for key in ("properties", "required", "oneOf", "anyOf", "items")):
+            return False
+        if any(is_domain_ref(part, components, active_refs) for part in all_of):
+            return True
+
+    properties = schema.get("properties")
+    if schema.get("type") != "object" or not isinstance(properties, dict) or set(properties) != {"objectType", "objectId", "version"}:
         return False
-    # allOf may add descriptive/validation constraints to a DomainRef alias, but
-    # adding fields creates a different structured object and is not a DomainRef.
-    if any(key in schema for key in ("properties", "required", "oneOf", "anyOf", "items")):
+    if set(schema.get("required", [])) != {"objectType", "objectId", "version"}:
         return False
-    if any(is_domain_ref(part, components, active_refs) for part in all_of):
-        return True
-    return False
+    if schema.get("additionalProperties") is not False:
+        return False
+
+    domain_ref = components.get("DomainRef", {})
+    object_types = domain_ref.get("properties", {}).get("objectType", {}).get("enum", [])
+    object_type = properties["objectType"]
+    if not isinstance(object_type, dict) or object_type.get("const") not in object_types:
+        return False
+
+    object_id = resolve_schema(properties["objectId"], components)
+    version = resolve_schema(properties["version"], components)
+    return (
+        object_id.get("type") == "string"
+        and object_id.get("format") == "uuid"
+        and version.get("type") == "integer"
+        and isinstance(version.get("minimum"), (int, float))
+        and version["minimum"] >= 1
+    )
 
 
 def reference_kind(schema: dict[str, Any], components: dict[str, Any]) -> str | None:

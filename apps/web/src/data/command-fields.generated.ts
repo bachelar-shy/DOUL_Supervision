@@ -268,15 +268,18 @@ export const commandInputs: Record<string, Record<string, Record<string, { type:
     },
     "request_retest": {
       "retestBasisRefs": {
-        "type": "array"
+        "type": "array",
+        "reference": "multiple"
       }
     },
     "require_punch_resolution": {
       "correctionActionRefs": {
-        "type": "array"
+        "type": "array",
+        "reference": "multiple"
       },
       "punchIssueRefs": {
-        "type": "array"
+        "type": "array",
+        "reference": "multiple"
       }
     },
     "start_precommissioning": {},
@@ -297,7 +300,8 @@ export const commandInputs: Record<string, Record<string, Record<string, { type:
         ]
       },
       "testResultRef": {
-        "type": "object"
+        "type": "object",
+        "reference": "single"
       }
     }
   },
@@ -736,12 +740,14 @@ export const commandInputs: Record<string, Record<string, Record<string, { type:
   "handover_package": {
     "accept_handover": {
       "ownerDecisionRef": {
-        "type": "object"
+        "type": "object",
+        "reference": "single"
       }
     },
     "accept_with_reservations": {
       "ownerDecisionRef": {
-        "type": "object"
+        "type": "object",
+        "reference": "single"
       },
       "ownerReservationInputs": {
         "type": "array"
@@ -2157,7 +2163,8 @@ export const commandInputs: Record<string, Record<string, Record<string, { type:
   "warranty_claim": {
     "accept_remedy": {
       "reinspectionRef": {
-        "type": "object"
+        "type": "object",
+        "reference": "single"
       }
     },
     "acknowledge_claim": {},
@@ -2167,13 +2174,15 @@ export const commandInputs: Record<string, Record<string, Record<string, { type:
         "type": "object"
       },
       "ownerDecisionRef": {
-        "type": "object"
+        "type": "object",
+        "reference": "single"
       }
     },
     "report_warranty_defect": {},
     "require_remedy": {
       "actionRefs": {
-        "type": "array"
+        "type": "array",
+        "reference": "multiple"
       },
       "responseDueAt": {
         "type": "string"
@@ -2181,7 +2190,8 @@ export const commandInputs: Record<string, Record<string, Record<string, { type:
     },
     "require_rework": {
       "reinspectionRef": {
-        "type": "object"
+        "type": "object",
+        "reference": "single"
       },
       "reworkReason": {
         "type": "string"
