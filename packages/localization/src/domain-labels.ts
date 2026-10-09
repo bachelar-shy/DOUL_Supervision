@@ -508,10 +508,8 @@ export const fields: Record<string, string> = {
   ownerApprovedAmount: "발주처 승인 금액",
   paymentAmount: "지급 금액",
   adjustmentReason: "지급 조정 사유",
-  decisionRefs: "발주처 결정 참조",
   disputedAmount: "분쟁 금액",
   disputedQuantity: "분쟁 수량",
-  disputeReason: "분쟁 사유",
   resolutionRef: "분쟁 해소 근거 참조",
   calculationRuleRef: "계산 규칙 참조",
   deductionComponents: "공제 항목",
@@ -521,7 +519,6 @@ export const fields: Record<string, string> = {
   paymentReference: "지급 참조번호",
   externalSystemRef: "외부 시스템 참조",
   supersedesPaymentRecordId: "정정 대상 지급 기록 ID",
-  correctionReason: "지급 기록 정정 사유",
   ...completionFieldKo,
 };
 export const reasonLabel = (code?: string) =>
