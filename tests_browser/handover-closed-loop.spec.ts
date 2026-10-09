@@ -155,7 +155,7 @@ async function runCompletionCommand(
       .or(dialog.getByRole("textbox", { name: label }))
       .or(dialog.getByRole("combobox", { name: label }));
     await expect(control, `command field ${field} should be exposed with its current localized label`).toHaveCount(1, { timeout: 5000 });
-    if (value && typeof value === "object" && !Array.isArray(value) && "objectType" in value) {
+    if (value && typeof value === "object" && !Array.isArray(value) && "objectType" in value && typeof value.objectId === "string") {
       const option = control.locator("option").filter({ hasText: value.objectId.slice(0, 8) });
       await expect(option, `server-provided ${value.objectType} option ${value.objectId}`).toHaveCount(1);
       await control.selectOption(await option.getAttribute("value") || "");
@@ -208,7 +208,7 @@ async function runCompletionCommand(
   return body.record;
 }
 
-async function runWorkbenchCommand(page: Page, route: "issues" | "inspections", recordTitle: string, command: RegExp,
+async function runWorkbenchCommand(page: Page, route: "issues" | "inspections" | "actions", recordTitle: string, command: RegExp,
   fields: Record<string, string | string[]> = {}, evidenceIds: string[] = []) {
   const workbench = page.locator(`[data-workbench-route='${route}']`);
   const row = workbench.locator(".record-list button").filter({ hasText: recordTitle });
@@ -221,7 +221,8 @@ async function runWorkbenchCommand(page: Page, route: "issues" | "inspections", 
   const dialog = page.getByRole("dialog");
   for (const [field, value] of Object.entries(fields)) {
     if (field === "checkResults" || field === "검측 항목·측정 결과") {
-      const checks = typeof value === "string" ? JSON.parse(value) as Array<Record<string, any>> : value as Array<Record<string, any>>;
+      if (typeof value !== "string") throw new Error("Inspection check test inputs must be explicit JSON rows");
+      const checks = JSON.parse(value) as Array<Record<string, any>>;
       const editor = dialog.locator('[data-ui-component="inspection-check-result-fields"]');
       await expect(editor, "inspection result entry is a typed UI with current contract references").toBeVisible();
       for (const check of checks) {
