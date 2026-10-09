@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { localDateTime } from "./support/local-datetime";
 import { randomUUID } from "node:crypto";
 import { actionAuthoringTranslations } from "@doul/localization";
 
@@ -89,7 +90,7 @@ test("SUP creates a scoped Action draft through Workbench, preserves it across l
   await titleInput.fill(title);
   await issueSelect.selectOption(issue!.ref.objectId);
   await assigneeSelect.selectOption(contractor!.partyId);
-  const dueAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+  const dueAt = await localDateTime(page, Date.now() + 24 * 60 * 60 * 1000);
   await dueAtInput.fill(dueAt);
 
   const mutations: string[] = [];

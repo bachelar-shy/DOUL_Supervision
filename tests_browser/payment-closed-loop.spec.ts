@@ -1,4 +1,5 @@
-import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Locator, type Page, type TestInfo } from "@playwright/test";
+import { localDateTime } from "./support/local-datetime";
 import { randomUUID, randomBytes } from "node:crypto";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createServer } from "node:net";
@@ -32,7 +33,8 @@ async function availablePort(): Promise<number> {
   return port;
 }
 
-test.beforeAll(async ({}, testInfo) => {
+test.beforeAll(async ({}, testInfo: TestInfo) => {
+  test.setTimeout(45_000);
   const port = await availablePort();
   fixtureToken = randomBytes(32).toString("hex");
   apiOrigin = `http://127.0.0.1:${port}`;
@@ -65,7 +67,7 @@ test.beforeAll(async ({}, testInfo) => {
   }
   fixtureProcess.kill("SIGTERM");
   throw new Error(`Payment API fixture did not become healthy: ${String(lastError)}`);
-}, 45_000);
+});
 
 test.afterAll(async () => {
   if (fixtureProcess && fixtureProcess.exitCode === null) {
@@ -261,7 +263,7 @@ async function createAndDecideThroughOwnerUi(page: Page, targetRef: Ref, title: 
   const reportId = await reportSelect.locator("option").nth(1).getAttribute("value");
   expect(reportId, "Owner Decision UI must expose a readable issued Report").toBeTruthy();
   await reportSelect.selectOption(reportId!);
-  const dueAt = new Date(Date.now() + 86_400_000).toISOString().slice(0, 16);
+  const dueAt = await localDateTime(page, Date.now() + 86_400_000);
   await panel.locator("#decision-due").fill(dueAt);
   await panel.getByLabel("선택지 설명", { exact: true }).fill("Approve the exact current payment workflow version");
   await panel.getByLabel("요청자 권고", { exact: true }).fill("Approve based on the current server recommendation.");

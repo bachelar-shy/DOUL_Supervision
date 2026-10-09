@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
+import { localDateTime } from "./support/local-datetime";
 import { randomUUID } from "node:crypto";
 import type { DomainRef, Workspace } from "../apps/web/src/data/ui-contract";
 
@@ -45,7 +46,7 @@ async function command(request: APIRequestContext, session: Session, collection:
 async function failedInspection(request: APIRequestContext, con: Session, sup: Session, context: Workspace, evidenceRef: DomainRef, suffix: string) {
   const drawingRef = context.context.drawingRef as DomainRef;
   const requirementRef = context.context.requirementRef as DomainRef;
-  const scope = context.context.scope as Record<string, unknown>;
+  const scope = context.context.scope;
   const evidenceId = evidenceRef.objectId;
   const now = Date.now(); const at = (delta: number) => new Date(now + delta).toISOString();
   let record = (await api<{ record: { id: string; version: number } }>(request, con.projectId, "/inspections", con, {
@@ -140,7 +141,7 @@ test("registers an Issue and corrective Action from a selected saved markup afte
   await panel.getByLabel("Issue 제목").fill(issueTitle);
   await panel.getByLabel("시정조치 제목").fill(actionTitle);
   await panel.getByLabel("담당자").selectOption(con.actor.partyId);
-  await panel.getByLabel("기한").fill(new Date(Date.now() + 86_400_000).toISOString().slice(0, 16));
+  await panel.getByLabel("기한").fill(await localDateTime(page, Date.now() + 86_400_000));
   await panel.getByRole("button", { name: "이슈 등록 검토" }).click();
   const dialog = page.getByRole("dialog", { name: "Issue 및 시정조치 등록 확인" });
   await expect(dialog.getByText(new RegExp(sources.inspection.id))).toBeVisible();

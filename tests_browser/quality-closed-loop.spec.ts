@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
+import { localDateTime } from "./support/local-datetime";
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -338,7 +339,7 @@ test("connected Quality UI completes linked reinspection, issue, and Owner repor
   await issuePanel.getByLabel("Issue 제목").fill(issueTitle);
   await issuePanel.getByLabel("시정조치 제목").fill(actionTitle);
   await issuePanel.getByLabel("담당자").selectOption(con.actor.partyId);
-  await issuePanel.getByLabel("기한").fill(new Date(Date.now() + 86_400_000).toISOString().slice(0, 16));
+  await issuePanel.getByLabel("기한").fill(await localDateTime(page, Date.now() + 86_400_000));
   await issuePanel.getByRole("button", { name: "이슈 등록 검토" }).click();
   const issueDialog = page.getByRole("dialog", { name: "Issue 및 시정조치 등록 확인" });
   const issueCreatedPromise = page.waitForResponse((response) => response.url().includes(`/parallel/drawing-markups/${markup.id}/issues`)
@@ -394,7 +395,7 @@ test("connected Quality UI completes linked reinspection, issue, and Owner repor
   const reinspectionForm = issueCard.getByRole("form", { name: "연결된 재검측 요청" });
   const reinspectionWorkName = `Browser reinspection ${suffix}`;
   await reinspectionForm.getByLabel("작업명").fill(reinspectionWorkName);
-  await reinspectionForm.getByLabel("재검측 요청 일시").fill(new Date(Date.now() + 3_600_000).toISOString().slice(0, 16));
+  await reinspectionForm.getByLabel("재검측 요청 일시").fill(await localDateTime(page, Date.now() + 3_600_000));
   await reinspectionForm.getByLabel("시공자 자체검측 완료").check();
   for (const label of ["도면 확인", "자재 확인", "시험 확인", "선행 작업 확인", "변경사항 확인"]) {
     await reinspectionForm.getByLabel(label, { exact: true }).check();
@@ -446,7 +447,7 @@ test("connected Quality UI completes linked reinspection, issue, and Owner repor
     "inspection.work_name": passedReinspection.workName,
     "work.discipline": workspace.context.scope.discipline,
     "work.location": workspace.context.scope.locationId,
-    "inspection.datetime": new Date().toISOString().slice(0, 16),
+    "inspection.datetime": await localDateTime(page, Date.now()),
     "inspection.place": workspace.context.scope.locationId,
     "basis.drawings": workspace.context.drawingRef.objectId,
     "basis.criteria": workspace.context.requirementRef.objectId,
@@ -589,8 +590,8 @@ test("connected Quality UI completes linked reinspection, issue, and Owner repor
   await reportForm.getByLabel("영향").fill("The affected work remained on hold until retest and release.");
   await reportForm.getByLabel("즉시 조치 (선택)").fill("A second measurement check was added before proceeding.");
   await reportForm.getByLabel("권고사항").fill("Confirm Owner receipt and include this Issue in closeout reporting.");
-  await reportForm.getByLabel("회신 기한").fill(new Date(Date.now() + 86_400_000).toISOString().slice(0, 16));
-  await reportForm.getByLabel("수령 확인 기한").fill(new Date(Date.now() + 86_400_000).toISOString().slice(0, 16));
+  await reportForm.getByLabel("회신 기한").fill(await localDateTime(page, Date.now() + 86_400_000));
+  await reportForm.getByLabel("수령 확인 기한").fill(await localDateTime(page, Date.now() + 86_400_000));
   const reportCreatedPromise = page.waitForResponse((response) => response.url().includes(`/inspection-cases/${draft.id}/issues/${pair.issue.id}/owner-reports`)
     && response.request().method() === "POST");
   await reportForm.getByRole("button", { name: "초안 작성", exact: true }).click();

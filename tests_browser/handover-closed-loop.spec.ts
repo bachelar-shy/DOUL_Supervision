@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { localDateTime } from "./support/local-datetime";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createServer } from "node:net";
 import { createInterface } from "node:readline";
@@ -387,7 +388,7 @@ test("real Completion UI preserves Owner reservation proposal inputs on a handov
     const reservationDue = new Date(fixture.tomorrow);
     reservationDue.setSeconds(0, 0);
     const reservationDueAt = reservationDue.toISOString();
-    await reservation.getByLabel(/due at/i).fill(reservationDueAt.slice(0, 16));
+    await reservation.getByLabel(/due at/i).fill(await localDateTime(page, reservationDueAt));
     await reservation.getByLabel(/closure requirement/i).fill("Verify and close the remaining punch issue");
     const created = page.waitForResponse((response) => response.request().method() === "POST" && /\/handover-packages$/.test(response.url()));
     await create.getByRole("button", { name: /save draft/i }).click();
@@ -532,7 +533,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     const reinspectionForm = issueCard.getByRole("form", { name: /request linked reinspection|연결된 재검측 요청/i });
     const reinspectionName = "F-07 browser Punch reinspection";
     await reinspectionForm.getByLabel(/work name|작업명/i).fill(reinspectionName);
-    await reinspectionForm.getByLabel(/requested inspection time|재검측 요청 일시/i).fill(new Date(Date.now() + 3600000).toISOString().slice(0, 16));
+    await reinspectionForm.getByLabel(/requested inspection time|재검측 요청 일시/i).fill(await localDateTime(page, Date.now() + 3600000));
     await reinspectionForm.getByLabel(/contractor self inspection is complete|시공자 자체검측 완료/i).check();
     for (const label of [/drawing checked|도면 확인/i, /material checked|자재 확인/i, /test checked|시험 확인/i, /previous work checked|선행 작업 확인/i, /changes checked|변경사항 확인/i]) {
       await reinspectionForm.getByLabel(label).check();
@@ -573,7 +574,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
       "inspection.work_name": passedReinspection.workName,
       "work.discipline": latestWorkspace.context.scope.discipline,
       "work.location": latestWorkspace.context.scope.locationId,
-      "inspection.datetime": new Date().toISOString().slice(0, 16),
+      "inspection.datetime": await localDateTime(page, Date.now()),
       "inspection.place": latestWorkspace.context.scope.locationId,
       "basis.drawings": fixture.drawingRef.objectId,
       "basis.criteria": fixture.requirementRef.objectId,
@@ -672,7 +673,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await reservation.getByLabel(/reservation owner/i).selectOption(fixture.actors.OWN);
     const due = new Date(fixture.tomorrow); due.setSeconds(0, 0);
     const dueAt = due.toISOString();
-    await reservation.getByLabel(/due at/i).fill(dueAt.slice(0, 16));
+    await reservation.getByLabel(/due at/i).fill(await localDateTime(page, dueAt));
     await reservation.getByLabel(/closure requirement/i).fill("Verify and close the reserved punch issue");
     const createHandover = page.waitForResponse((response) => response.request().method() === "POST" && /\/handover-packages$/.test(response.url()));
     await create.getByRole("button", { name: /save draft/i }).click();
@@ -702,7 +703,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     const issuedReport = latestWorkspace.items.find((item: any) => item.machine === "report" && item.record.status === "issued");
     expect(issuedReport, "Owner decision must cite a currently issued report").toBeTruthy();
     await authoring.getByLabel(/issued report/i).selectOption(issuedReport.record.id);
-    await authoring.getByLabel(/decision due date/i).fill(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
+    await authoring.getByLabel(/decision due date/i).fill(await localDateTime(page, Date.now() + 86400000));
     await authoring.getByLabel(/option id/i).fill("RESERVE");
     await authoring.getByLabel(/option description/i).fill("Accept the available scope with the punch issue reserved");
     await authoring.getByLabel(/requester recommendation/i).fill("Accept the verified system scope and track the remaining issue");
@@ -769,7 +770,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await chooseRef(create, /warranty period/i, fixture.warrantyPeriodRef);
     await chooseRef(create, /handover/i, { objectType: "WorkItem", objectId: handoverId, version: partial.record.version });
     await chooseRef(create, /issue/i, fixture.reservationIssueRef);
-    await create.getByLabel(/observed at/i).fill(fixture.warrantyStartAt.slice(0, 16));
+    await create.getByLabel(/observed at/i).fill(await localDateTime(page, fixture.warrantyStartAt));
     await create.getByLabel(/defect description/i).fill("Seal leakage observed at the accepted flange");
     await create.getByLabel(/cause description/i).fill("Seal failed during operation");
     await create.getByLabel(/operational impact/i).fill("System isolated pending repair");
@@ -785,6 +786,8 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     const claimResponse = await createClaim;
     const claimBody = await claimResponse.json();
     expect(claimResponse.status(), JSON.stringify(claimBody)).toBe(201);
+    expect(new Date(claimBody.record.data.defectObservedAt).toISOString())
+      .toBe(new Date(fixture.warrantyStartAt).toISOString());
     const claimId = claimBody.record.id as string;
     await expect(workspace.getByRole("button", { name: /Browser warranty defect claim/ })).toBeVisible();
     await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
@@ -832,7 +835,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await expect(issueOption, "select the exact current warranty Issue reference").toHaveCount(1);
     await relatedIssue.selectOption(fixture.reservationIssueRef.objectId);
     await actionAuthoring.getByLabel(/assignee/i).selectOption(fixture.actors.CON);
-    await actionAuthoring.getByLabel(/due date/i).fill(fixture.tomorrow.slice(0, 16));
+    await actionAuthoring.getByLabel(/due date/i).fill(await localDateTime(page, fixture.tomorrow));
     const actionCreatedPromise = page.waitForResponse((response) => response.request().method() === "POST" && /\/actions$/.test(new URL(response.url()).pathname));
     await actionAuthoring.getByRole("button", { name: /save action draft/i }).click();
     const actionCreatedResponse = await actionCreatedPromise;
@@ -905,7 +908,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     const warrantyReinspectionForm = warrantyIssueCard.getByRole("form", { name: /request linked reinspection|연결된 재검측 요청/i });
     const warrantyReinspectionName = "F-07 browser warranty reinspection";
     await warrantyReinspectionForm.getByLabel(/work name|작업명/i).fill(warrantyReinspectionName);
-    await warrantyReinspectionForm.getByLabel(/requested inspection time|재검측 요청 일시/i).fill(new Date(Date.now() + 3600000).toISOString().slice(0, 16));
+    await warrantyReinspectionForm.getByLabel(/requested inspection time|재검측 요청 일시/i).fill(await localDateTime(page, Date.now() + 3600000));
     await warrantyReinspectionForm.getByLabel(/contractor self inspection is complete|시공자 자체검측 완료/i).check();
     for (const label of [/drawing checked|도면 확인/i, /material checked|자재 확인/i, /test checked|시험 확인/i, /previous work checked|선행 작업 확인/i, /changes checked|변경사항 확인/i]) {
       await warrantyReinspectionForm.getByLabel(label).check();
