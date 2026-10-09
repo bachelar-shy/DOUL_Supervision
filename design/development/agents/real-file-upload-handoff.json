@@ -1,0 +1,39 @@
+{
+  "branch": "goal/real-file-upload-v1",
+  "baseCommit": "bcab19f49c474de71752700e0ef90ffdfcbb38ec",
+  "scope": "Preserve supplied non-macro XLSX BOQ/schedule originals as evidence; no automatic quantity or graphical schedule import",
+  "trigger": "Actual supplied BOQ and schedule completed upload with HTTP415 MIME_INVALID on existing main",
+  "changes": [
+    "Bounded XLSX package recognition at existing authoritative upload MIME boundary",
+    "Browser XLSX candidate selection and ko/vi/en upload labels",
+    "Server rejects arbitrary ZIP/macro/path traversal/duplicate package/oversized manifest",
+    "API and browser regressions"
+  ],
+  "verification": {
+    "originalSuppliedFiles": 3,
+    "localBrowserTests": 4,
+    "localApiTests": {
+      "run": 405,
+      "skipped": 45,
+      "failed": 0
+    },
+    "originalByteChecks": "all3 complete201, download200 and exactSHA256, persisted reopen200 exactSHA256",
+    "uiTypecheck": "passed",
+    "uiBoundary": "passed",
+    "uiLint": "passed inherited warnings",
+    "webBuild": "passed"
+  },
+  "limitations": [
+    "local demo roles and SQLite; real field user acceptance not performed",
+    "PDF is DRAFT; approved revision/contract/baseline require actual owner decision",
+    "Graphical weekly schedule lacks explicit activity IDs/exact dates/dependencies; no fabricated mappings",
+    "Actual site photos missing",
+    "20 proposed register-specific source-backed cases and evaluation workbook prepared privately in /workspace/work/field-files-20261010; not actual field incidents",
+    "Security issues132/133/134 remain open"
+  ],
+  "remaining": [
+    "Exact-head Mac mini GitHub CI before integration",
+    "Sequential verified merge and main checks",
+    "Execute20 real field cases when actual users/photos/adopted project approval inputs supplied"
+  ]
+}
