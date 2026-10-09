@@ -7,14 +7,14 @@
   "checks": {
     "contractSuite": {
       "passed": 319,
-      "log": "work/goal-contracts-final.log"
+      "log": "work/goal-contract-suite-punch-refresh.log"
     },
     "apiSuite": {
       "run": 394,
       "passed": 389,
       "skipped": 5,
       "result": "PASS",
-      "log": "work/goal-current-api-with-telemetry.log",
+      "log": "work/goal-api-punch-refresh-final.log",
       "skipBoundary": "Optional document runtime separately verified 5 tests; actual PostgreSQL 16 tests executed."
     },
     "documentRuntime": {
@@ -24,7 +24,7 @@
     },
     "staticUI": "Web/mobile typecheck, UI boundary, web lint (warnings) and exact-lock build PASS on latest integrated changes. No weakening of checks.",
     "lockedDependencies": "Fresh exact-lock npm ci, physical repository workspace tree and dependency inventory PASS (work/goal-physical-dependencies.log); previous dependency trees preserved. Production Python lock unchanged.",
-    "fullBrowser": "84/85 PASS with one Quality read synchronization failure (work/goal-integrated-browser-85.log). Fixed by waiting for exact current case projection plus version/readiness assertions; Quality PASS43.1s thereafter. 87-case rerun interrupted by environment refresh at36 with no terminal result (work/goal-integrated-browser-87.log); do NOT claim complete suite success. Final integration rerun pending new focused scenarios.",
+    "fullBrowser": "88-case historical run:87PASS/Payment30s deadline failure; replacement Payment+Safety3-case rootPASS. New89-case full current application regression running:work/goal-integrated-browser-62aefec.log; no final result yet.",
     "mockLocalization": "6 PASS in separate mock-only suite; actual API localization 10 PASS separately. No field acceptance claim.",
     "dockerWeb": "Localization COPY corrected for web and operational proxy images; prior 97cee102 actual container/operational CI PASS. Latest-head CI blocked before start; no current-head acceptance claim.",
     "githubCI": {
@@ -65,6 +65,28 @@
       "result": "NOT_INTEGRATED",
       "evidence": "design/development/agents/uuid-remediation-handoff.json",
       "reason": "Candidate uuid11.1.1 succeeds in xcode/Expo tooling but npm workspace graph guard fails; canonical dependency locks unchanged."
+    },
+    "handoverContractSuite": {
+      "passed": 7,
+      "log": "work/goal-contracts-punch-refresh-final.log",
+      "boundary": "Separate suite, not combined326 run."
+    },
+    "paymentSafetyOwnerUI": {
+      "result": "PASS",
+      "passed": 3,
+      "log": "work/goal-payment-safety-owner-integrated.log",
+      "integratedCommits": [
+        "9c29b28",
+        "224c559",
+        "185905d"
+      ],
+      "boundary": "Actual OwnerDecision authoring/report/acknowledge/approval; exact payment histories. Safety separate lift and Permit resume; demo verified upstream Inspection and Action are disclosed."
+    },
+    "commissioningPunchRefRefresh": {
+      "result": "PASS11",
+      "commit": "62aefec",
+      "log": "work/goal-punch-reference-refresh.log",
+      "scope": "Explicit latestrefs sameIssueIDset only; stale/open/drop/substitute/CON rejected atomically, preflightinputaffordance true, history+idempotency preserved. ConnectedUIworker continuation pending."
     }
   },
   "operations": {
