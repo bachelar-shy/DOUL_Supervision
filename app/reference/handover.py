@@ -807,12 +807,12 @@ def _complete_current_action_cycle(engine, source, issue_records, references, lo
 
 
 def _latest_action_refs(engine, references, project_id):
-    """Resolve projected Action identities for the failed-inspection gate only.
+    """Resolve immutable Inspection Action identities for the failed gate only.
 
     This guard has no separate refresh command in its transition state, so it
-    checks the latest records for the already-projected identities without
-    mutating the claim projection. Later remedy work still requires its
-    explicit reference-refresh command.
+    checks the latest records for identities captured in the failed Inspection
+    snapshot without mutating either Warranty reference projection. Later
+    remedy work still requires its explicit reference-refresh command.
     """
     require(isinstance(references, list), "WARRANTY_REINSPECTION_ACTION_REQUIRED",
             "A projected corrective Action reference list is required")
