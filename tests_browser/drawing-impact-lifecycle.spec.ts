@@ -37,7 +37,7 @@ test("restored historical event stays visible after current work clears and recu
   const history = page.getByTestId("drawing-impact-history");
   await expect(history).toContainText("사용 조건 복구 관측");
   await expect(history).toContainText("복구 시각 미기록");
-  await expect(history).toContainText("사건 당시 기록 · historical-inspection · v1");
+  await expect(history).toContainText("사건 당시 기록 · historical-inspection · 기록 제1차");
   await expect(history).toContainText("연결 업무의 완료 또는 재승인을 뜻하지 않습니다");
   await expect(history.locator("[data-impact-history-incident]")).toHaveCount(1);
   await expect(history.locator('[data-impact-history-incident="first-event"]')).toBeVisible();
@@ -95,8 +95,8 @@ for (const fails of [false, true]) test(`prior role delayed history ${fails ? "f
     else await route.fulfill({ json: { items: [event("first-event", "restored", "2026-10-08T03:00:00Z")], total: 1 } });
   });
   await open(page); await ready;
-  await page.getByLabel("개발 역할 선택").selectOption("ADM");
-  await expect(page.getByLabel("개발 역할 선택")).toHaveValue("ADM");
+  await page.getByLabel("시험 사용자 역할 선택").selectOption("ADM");
+  await expect(page.getByLabel("시험 사용자 역할 선택")).toHaveValue("ADM");
   release();
   await expect(page.getByTestId("drawing-impact-panel")).toHaveCount(0);
   await expect(page.getByText("obsolete-history-error")).toHaveCount(0);

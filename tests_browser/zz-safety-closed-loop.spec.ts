@@ -103,7 +103,7 @@ async function apiCommand(
 
 async function chooseRole(page: Page, role: ActorGroup) {
   await page.goto("/#/safety");
-  const picker = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const picker = page.getByRole("combobox", { name: "시험 사용자 역할 선택" });
   if (await picker.inputValue() !== role) {
     const workspaceRefresh = page.waitForResponse(response => response.url().endsWith("/workspace") && response.ok());
     await picker.selectOption(role);
@@ -153,7 +153,7 @@ async function uiCommand(
       await input.fill(typeof value === "object" ? JSON.stringify(value) : String(value));
     }
   }
-  if (evidenceId) await dialog.getByLabel("명령 증빙 ID", { exact: true }).fill(evidenceId);
+  if (evidenceId) await dialog.getByLabel("처리 근거 증빙번호", { exact: true }).fill(evidenceId);
   const submitted = page.waitForResponse(response =>
     response.request().method() === "POST" &&
     response.url().endsWith(`/api/projects/${projectId}/${collection}/${current.id}/${command.replaceAll("_", "-")}`));

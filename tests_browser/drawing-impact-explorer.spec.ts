@@ -25,10 +25,10 @@ test("impact explorer keeps the exact historical ref and does not substitute a n
   await page.getByRole("button", { name: "영향 업무 보기", exact: true }).click();
   const panel = page.getByTestId("drawing-impact-panel");
   await expect(panel).toContainText("정확한 구본 연결 검측");
-  await expect(panel.getByTestId("impact-drawing-ref")).toContainText("historical-impact-drawing · v1");
+  await expect(panel.getByTestId("impact-drawing-ref")).toContainText("historical-impact-drawing · 기록 제1차");
   await expect(panel).not.toContainText("대체되면 안 되는 신본");
-  await expect(panel).toContainText("해당 버전의 PDF 원본을 현재 권한으로 열 수 없습니다.");
-  await expect(panel).toContainText("업무 원본을 현재 작업공간에서 열 수 없습니다.");
+  await expect(panel).toContainText("해당 작성 차수의 PDF 원본을 현재 권한으로 열 수 없습니다.");
+  await expect(panel).toContainText("업무 원본을 현재 업무 화면에서 열 수 없습니다.");
   await expect(panel.getByRole("button", { name: "업무 원본 보기" })).toHaveCount(0);
 });
 
@@ -48,8 +48,8 @@ for (const fails of [false, true]) test(`prior-role delayed impact ${fails ? "fa
   await page.getByRole("button", { name: "영향 업무 보기", exact: true }).click();
   await ready;
   await expect(page.getByTestId("drawing-impact-panel")).toContainText("영향 업무를 불러오는 중");
-  await page.getByLabel("개발 역할 선택").selectOption("ADM");
-  await expect(page.getByLabel("개발 역할 선택")).toHaveValue("ADM");
+  await page.getByLabel("시험 사용자 역할 선택").selectOption("ADM");
+  await expect(page.getByLabel("시험 사용자 역할 선택")).toHaveValue("ADM");
   release();
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   await expect(page.getByTestId("drawing-impact-panel")).toHaveCount(0);

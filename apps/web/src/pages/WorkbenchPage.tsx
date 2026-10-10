@@ -1,3 +1,5 @@
+import { recordVersionLabel } from "../labels";
+import { RecordDetails } from "./RecordDetails";
 import type { SupervisionClient } from "../data/supervision-client";
 import { InspectionAuthoringPanel } from "./InspectionAuthoringPanel";
 import { ActionAuthoringPanel } from "./parallel/ActionAuthoringPanel";
@@ -108,7 +110,7 @@ export function WorkbenchPage({
                 </div>
                 <div>
                   <small>{t("workbench.originalVersion")}</small>
-                  <b>v{current.record.version}</b>
+                  <b>{recordVersionLabel(current.record.version)}</b>
                 </div>
                 <div>
                   <small>{t("workbench.relatedEvidence")}</small>
@@ -264,7 +266,7 @@ export function WorkbenchPage({
 
               <details className="technical">
                 <summary>{t("workbench.technicalSummary")}</summary>
-                <pre>{JSON.stringify(current.record, null, 2)}</pre>
+                <RecordDetails value={current.record} />
               </details>
             </>
           ) : (

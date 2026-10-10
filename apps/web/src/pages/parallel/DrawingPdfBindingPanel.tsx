@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../../labels";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { normalizeLanguage } from "@doul/localization";
@@ -24,25 +25,25 @@ interface Props {
 const copy: Record<Locale, Record<string, string>> = {
   ko: {
     title: "도면 PDF 연결",
-    description: "예시 관리자 기능입니다. 선택한 도면 버전과 등록된 PDF 원본을 기술 인덱스에 연결하며 공식 승인 상태는 변경하지 않습니다.",
-    adminOnly: "시범 프로젝트 관리자 계정에서만 연결할 수 있습니다.",
-    drawingVersion: "도면 버전",
-    selectDrawing: "연결할 도면 버전 선택",
+    description: "예시 관리자 기능입니다. 선택한 도면 작성 차수와 등록된 PDF 원본을 도면 연결 목록에 연결하며 공식 승인 상태는 변경하지 않습니다.",
+    adminOnly: "시범 현장 관리자 계정에서만 연결할 수 있습니다.",
+    drawingVersion: "도면 작성 차수",
+    selectDrawing: "연결할 도면 작성 차수 선택",
     revision: "개정",
     pdfOriginal: "PDF 원본",
     selectPdf: "연결할 PDF 증빙 선택",
-    alreadyBound: "이 도면 버전은 이미 PDF와 연결됨",
-    bindSelected: "선택한 버전 연결",
+    alreadyBound: "이 도면 작성 차수는 이미 PDF와 연결됨",
+    bindSelected: "선택한 작성 차수 연결",
     linkedEvidence: "연결된 증빙:",
     registerPdfFirst: "먼저 PDF 도면 보기에서 공식 PDF 원본을 등록하세요.",
     bindingList: "저장된 도면 PDF 연결",
     checking: "도면과 PDF 원본을 확인하고 있습니다…",
-    saved: "PDF 도면 연결을 저장했습니다 · {{id}} · SHA-256 {{hash}}",
+    saved: "PDF 도면 연결을 저장했습니다 · {{id}} · 파일 무결성 확인값 {{hash}}",
     loadFailed: "도면 PDF 연결 정보를 불러오지 못했습니다.",
     saveFailed: "도면 PDF 연결을 저장하지 못했습니다.",
     drawing: "도면",
     pdf: "PDF",
-    version: "v",
+    version: "작성 차수 ",
   },
   vi: {
     title: "Liên kết PDF bản vẽ",
@@ -244,7 +245,7 @@ export function DrawingPdfBindingPanel({ client, workspace, onChanged }: Props) 
             disabled={busy || !scopeReady} onChange={(event) => setDrawingKey(event.target.value)}>
             <option value="">{tx("selectDrawing")}</option>
             {currentDrawings.map((drawing) => <option key={refKey(drawing.domainRef)} value={refKey(drawing.domainRef)}>
-              {drawing.title ?? drawing.domainRef.objectId} · {tx("revision")} {drawing.revision ?? "—"} · v{drawing.domainRef.version}
+              {drawing.title ?? drawing.domainRef.objectId} · {tx("revision")} {drawing.revision ?? "—"} · {recordVersionLabel(drawing.domainRef.version)}
             </option>)}
           </select>
         </label>
@@ -253,7 +254,7 @@ export function DrawingPdfBindingPanel({ client, workspace, onChanged }: Props) 
             disabled={busy || !scopeReady} onChange={(event) => setEvidenceKey(event.target.value)}>
             <option value="">{tx("selectPdf")}</option>
             {pdfEvidence.map((record) => <option key={record.id} value={refKey(exactRef("Evidence", record))}>
-              {String(record.metadata?.name ?? record.id)} · {record.id} · v{record.version}
+              {String(record.metadata?.name ?? record.id)} · {record.id} · {recordVersionLabel(record.version)}
             </option>)}
           </select>
         </label>
@@ -271,7 +272,7 @@ export function DrawingPdfBindingPanel({ client, workspace, onChanged }: Props) 
     {scopeReady && error && <p className="mt-3 text-sm text-destructive" role="alert">{renderError(error)}</p>}
     {scopeReady && <ul className="mt-4 space-y-2 text-sm" aria-label={tx("bindingList")}>
       {currentBindings.map((binding) => <li key={binding.id} className="break-all rounded border p-2">
-        {tx("drawing")} {binding.drawingRef.objectId} · v{binding.drawingRef.version} → {tx("pdf")} {binding.evidenceRef.objectId} · SHA-256 {binding.fileHash}
+        {tx("drawing")} {binding.drawingRef.objectId} · {recordVersionLabel(binding.drawingRef.version)} → {tx("pdf")} {binding.evidenceRef.objectId} · SHA-256 {binding.fileHash}
       </li>)}
     </ul>}
   </section>;

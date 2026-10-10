@@ -162,7 +162,7 @@ async function uploadPhoto(page: Page, bytes: Buffer, ackLostOnce = false) {
   await page.getByLabel("증빙 파일 선택").setInputFiles({ name: photoName, mimeType: photoMime, buffer: bytes });
   const row = page.locator(".pending-row").filter({ has: page.getByText(photoName, { exact: true }) });
   await expect(row).toBeVisible();
-  const send = row.getByRole("button", { name: "서버 전송", exact: true });
+  const send = row.getByRole("button", { name: "업무 시스템 전송", exact: true });
   const firstResponse = page.waitForResponse(response => response.url().includes("/uploads/") && response.url().endsWith("/complete") && response.request().method() === "POST");
   await send.click();
   const first = await firstResponse;

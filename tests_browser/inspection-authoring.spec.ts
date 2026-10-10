@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 test('inspection author selects exact drawing, location, requirement and evidence without automatic prechecks', async ({page}) => {
   await page.goto('/#/inspections');
   await expect(page.getByRole('button',{name:'새로고침',exact:true})).toBeEnabled({timeout:30000});
-  await page.getByLabel('개발 역할 선택').selectOption('CON');
+  await page.getByLabel('시험 사용자 역할 선택').selectOption('CON');
   await page.goto('/#/inspections');
   const form = page.getByRole('form', {name:'자체검측 작성'});
   await expect(form).toBeVisible({timeout:30000});

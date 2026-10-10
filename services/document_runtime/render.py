@@ -219,7 +219,7 @@ def make_docx(snapshot, html):
     page=OxmlElement('w:fldSimple'); page.set(qn('w:instr'),'PAGE'); footer._p.append(page)
     paragraph=document.add_paragraph()
     paragraph.paragraph_format.space_before=Pt(5)
-    note={'ko':'DOUL 내부 출력본. 원본 스냅샷에 대한 서명은 이 파생 파일의 전자서명을 의미하지 않습니다.',
+    note={'ko':'DOUL 내부 출력본. 보존된 원본 기록에 대한 서명은 이 파생 파일의 전자서명을 의미하지 않습니다.',
           'vi':'Bản xuất nội bộ DOUL. Chữ ký của bản chụp nguồn không phải chữ ký điện tử của tệp xuất này.',
           'en':'DOUL internal export. A source snapshot signature does not digitally sign this derivative file.'}[language]
     _fonts(paragraph.add_run(note),8)

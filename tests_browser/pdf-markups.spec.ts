@@ -44,12 +44,12 @@ test("creates a rectangle memo against an exact PDF binding and reads it back af
   const api = async (path: string) => page.request.get(`${baseURL}/api/projects/${adminWorkspace!.project.id}${path}`, { headers: headers() });
 
   await page.goto("/#/parallel-test");
-  const rolePicker = page.getByLabel("개발 역할 선택");
+  const rolePicker = page.getByLabel("시험 사용자 역할 선택");
   if (await rolePicker.inputValue() !== "ADM") await rolePicker.selectOption("ADM");
   await expect.poll(() => adminWorkspace?.role.actorGroup).toBe("ADM");
   await page.goto("/#/parallel-test");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
-  const viewer = page.getByLabel("PDF 도면 뷰어");
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
+  const viewer = page.getByLabel("PDF 도면 보기");
   await expect(viewer).toBeVisible();
 
   let bindingsResponse = await api("/parallel/drawing-pdf-bindings");
@@ -63,10 +63,10 @@ test("creates a rectangle memo against an exact PDF binding and reads it back af
     const evidence = await uploaded.json() as { id: string; version: number };
     const bindingPanel = page.getByRole("region", { name: "도면 PDF 연결" });
     const drawingRef = adminWorkspace!.context.drawingRef;
-    await bindingPanel.getByLabel("도면 버전").selectOption(`${drawingRef.objectType}:${drawingRef.objectId}:${drawingRef.version}`);
+    await bindingPanel.getByLabel("도면 작성 차수").selectOption(`${drawingRef.objectType}:${drawingRef.objectId}:${drawingRef.version}`);
     await bindingPanel.getByLabel("PDF 원본").selectOption(`Evidence:${evidence.id}:${evidence.version}`);
     const bindResponse = page.waitForResponse((response) => response.url().endsWith("/parallel/drawing-pdf-bindings") && response.request().method() === "POST");
-    await bindingPanel.getByRole("button", { name: "선택한 버전 연결" }).click();
+    await bindingPanel.getByRole("button", { name: "선택한 작성 차수 연결" }).click();
     expect((await bindResponse).status()).toBe(201);
     bindingsResponse = await api("/parallel/drawing-pdf-bindings");
     bindingsData = await bindingsResponse.json() as typeof bindingsData;
@@ -117,12 +117,12 @@ test("creates a rectangle memo against an exact PDF binding and reads it back af
   expect(reload.ok()).toBeTruthy();
   expect(await reload.json()).toMatchObject({ id: created.id, bindingId: binding.id, page: 1, text: memo });
 
-  const supervisorRolePicker = page.getByLabel("개발 역할 선택");
+  const supervisorRolePicker = page.getByLabel("시험 사용자 역할 선택");
   await supervisorRolePicker.selectOption("SUP");
   await expect(supervisorRolePicker).toHaveValue("SUP");
   await page.goto("/#/parallel-test");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
-  const supervisorViewer = page.getByLabel("PDF 도면 뷰어");
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
+  const supervisorViewer = page.getByLabel("PDF 도면 보기");
   await supervisorViewer.getByLabel("PDF 원본 선택").selectOption(evidenceId);
   await expect(supervisorViewer.getByLabel(`주석: ${memo}`)).toBeVisible();
   const selectedMemo = supervisorViewer.getByRole("list", { name: "저장된 도면 주석" }).getByRole("button", { name: new RegExp(memo) });

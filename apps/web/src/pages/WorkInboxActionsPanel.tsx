@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../labels";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { CommandDescriptor, Fields, WorkItem, Workspace } from "../data/ui-contract";
@@ -29,14 +30,14 @@ type LabelKey =
 const copy: Record<Locale, Record<LabelKey, string>> = {
   ko: {
     title: "작업함",
-    intro: "현재 역할에 대해 서버가 제공한 기록과 명령 후보입니다. 후보는 실행 권한이나 선행 조건 통과를 보장하지 않습니다.",
-    total: "전체 {{count}}건", serverQuery: "서버 조회", refresh: "새로고침", loading: "작업함을 불러오는 중…",
-    emptyTitle: "표시할 작업이 없습니다.", emptyDescription: "이 역할에 대해 서버가 반환한 작업함이 비어 있습니다.",
-    id: "ID", version: "버전", status: "상태", transition: "전이: {{state}}", inputThenCheck: "입력 후 서버 재검증",
+    intro: "현재 역할에 대해 업무 시스템이 제공한 기록과 업무 처리 후보입니다. 후보는 실행 권한이나 선행 조건 통과를 보장하지 않습니다.",
+    total: "전체 {{count}}건", serverQuery: "업무 시스템 조회", refresh: "새로고침", loading: "작업함을 불러오는 중…",
+    emptyTitle: "표시할 작업이 없습니다.", emptyDescription: "이 역할에 대해 업무 시스템이 반환한 작업함이 비어 있습니다.",
+    id: "기록번호", version: "작성 차수", status: "상태", transition: "전이: {{state}}", inputThenCheck: "입력 후 업무 시스템 재검증",
     cannotExecute: "현재 실행할 수 없음", openDetails: "상세 화면 열기", previous: "이전", next: "다음",
     rowsDisplayed: "{{count}}건 표시", genericError: "작업함 요청을 완료할 수 없습니다. 연결을 확인한 뒤 다시 시도하세요.",
     staleRefreshed: "기록이 변경되었습니다. 최신 작업함을 다시 불러왔습니다.", unknownState: "알 수 없는 상태",
-    unknownMachine: "기타 기록", unknownCommand: "사용 가능한 명령", unknownRole: "역할",
+    unknownMachine: "기타 기록", unknownCommand: "사용 가능한 업무 처리", unknownRole: "역할",
   },
   vi: {
     title: "Hộp công việc",
@@ -195,7 +196,7 @@ export function WorkInboxActionsPanel({ client, workspace, onChanged, onNavigate
       {!loading && !error && rows.length === 0 && <div className="empty-state"><strong>{t.emptyTitle}</strong><p>{t.emptyDescription}</p></div>}
       {!loading && rows.length > 0 && <div className="work-inbox-list">{rows.map(row => <article className="work-inbox-card" key={`${row.machine}:${row.record.id}`}>
         <div className="work-inbox-record"><h3>{titleOf(row, machineName(row.machine))}</h3><span className="badge">{machineName(row.machine)}</span></div>
-        <div className="work-inbox-meta"><span>{t.id} {row.record.id}</span><span>v{formatNumber(row.record.version)}</span><span>{t.status} {stateName(row.record.status || "")}</span></div>
+        <div className="work-inbox-meta"><span>{t.id} {row.record.id}</span><span>{recordVersionLabel(formatNumber(row.record.version))}</span><span>{t.status} {stateName(row.record.status || "")}</span></div>
         <div className="work-inbox-actions-list">{(row.commandCandidates ?? []).map((candidate, index) => {
           const canOpen = candidate.ready || candidate.requiresInput;
           const mapped: CommandDescriptor = { command: candidate.command, to: candidate.to, fields: candidate.fields ?? [], authority: candidate.authority, requiresInput: Boolean(candidate.requiresInput), ready: Boolean(candidate.ready), blockedReason: candidate.blockedReason as never, expectedVersion: candidate.expectedVersion ?? row.record.version, requiresEvidence: Boolean(candidate.requiresEvidence) };

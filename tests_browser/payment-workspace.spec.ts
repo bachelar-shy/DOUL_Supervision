@@ -23,7 +23,7 @@ function headers(session: Session, key?: string) {
 
 async function openPayment(page: Page) {
   await page.goto("/#/payment");
-  const rolePicker = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const rolePicker = page.getByRole("combobox", { name: "시험 사용자 역할 선택" });
   if ((await rolePicker.inputValue()) !== "CON") {
     const refresh = page.waitForResponse((response) => response.url().endsWith("/workspace") && response.ok());
     await rolePicker.selectOption("CON");
@@ -55,7 +55,7 @@ test("AC-PAY UI: contractor creates an API-backed claim draft and sees server ca
   await expect(page.locator(".payment-summary")).toContainText("청구액");
   await expect(page.locator(".payment-detail-section").filter({ hasText: "개별 지급 기록" })).toContainText("부분지급은 각각 별도 기록으로 보존됩니다.");
 
-  const picker = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const picker = page.getByRole("combobox", { name: "시험 사용자 역할 선택" });
   const refresh = page.waitForResponse((value) => value.url().endsWith("/workspace") && value.ok());
   await picker.selectOption("OWN");
   await refresh;

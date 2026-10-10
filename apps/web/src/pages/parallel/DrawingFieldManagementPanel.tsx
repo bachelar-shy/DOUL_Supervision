@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../../labels";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { DomainRef, RecordDTO, WorkItem, Workspace } from "../../data/ui-contract";
@@ -28,14 +29,14 @@ const copy: Record<Locale, Record<string, string>> = {
     noBinding: "아직 PDF와 연결된 도면 원본이 없습니다. 먼저 도면 원본을 등록하고 검토 요청을 보내십시오.",
     registerSource: "도면 원본 등록으로 이동", drawingNumber: "도면번호", revision: "개정", purpose: "용도",
     construction: "시공용", review: "검토용", information: "참고용", approval: "연결 승인", noApproval: "승인 없이 등록",
-    approved: "승인됨", technicalReview: "기술 검토 중", approvalSource: "승인 원본", serverRechecks: "현장 사용 가능 여부는 서버가 다시 확인합니다.",
+    approved: "승인됨", technicalReview: "기술 검토 중", approvalSource: "승인 원본", serverRechecks: "현장 사용 가능 여부는 업무 시스템이 다시 확인합니다.",
     recipients: "필수 수령자", changeRequestsOptional: "연결 변경 요청 (선택, 기본 없음)", noChanges: "현재 연결할 수 있는 변경 요청이 없습니다.",
-    supersedes: "대체하는 기존 개정본 (선택)", none: "없음", linkedChangeCount: "변경 요청 {{count}}건을 현재 원본 버전으로 연결합니다. 후속 수정은 새 현장 도면 기록으로 관리합니다.",
+    supersedes: "대체하는 기존 개정본 (선택)", none: "없음", linkedChangeCount: "변경 요청 {{count}}건을 현재 원본 작성 차수로 연결합니다. 후속 수정은 새 현장 도면 기록으로 관리합니다.",
     register: "현장 도면 기록 등록", noPermission: "현재 역할에서는 등록할 수 없습니다.",
-    statusTitle: "현장 도면 상태", statusSummary: "서버 상태와 실행 가능한 작업", loading: "현장 도면 기록을 조회하고 있습니다…",
+    statusTitle: "현장 도면 상태", statusSummary: "업무 시스템 상태와 실행 가능한 작업", loading: "현장 도면 기록을 조회하고 있습니다…",
     noRecords: "등록된 현장 도면 기록이 없습니다.", fieldUse: "현장 사용", inUse: "현장 사용 중", blocked: "차단됨", available: "가능",
     drawing: "도면", pdf: "PDF", bindingRecord: "PDF 연결", approvalLabel: "승인", changeRequestLabel: "변경 요청",
-    noPredecessor: "선행 개정 없음", current: "최신", oldVersion: "구버전", distributionComplete: "모든 필수 수령자가 수령 확인",
+    noPredecessor: "선행 개정 없음", current: "최신", oldVersion: "구작성 차수", distributionComplete: "모든 필수 수령자가 수령 확인",
     distributionIncomplete: "배포/수령 미완료", obsoleteCopiesWaiting: "구본 회수 대기 · {{count}}부", obsoleteCopiesLabel: "구본 회수",
     copiesOutstanding: "회수되지 않은 구본이 있습니다", noOutstandingCopies: "미회수 구본 없음", requiredRecipients: "필수 수령자",
     distributionReceipt: "배포 및 수령", notDistributed: "미배포", receiptConfirmed: "수령 확인", receiptPending: "수령 대기",
@@ -43,25 +44,25 @@ const copy: Record<Locale, Record<string, string>> = {
     reason: "사유", currentApproval: "현재 기술 승인", noBasis: "승인 근거 없음", currentChangeBasis: "현재 변경 요청 근거",
     noChangeBasis: "연결할 변경 요청 없음", impacts: "영향 업무 보기", history: "변경 이력 보기", historyLoading: "이력을 조회하고 있습니다…",
     noTime: "시간 미확인", operator: "처리자", unknown: "확인할 수 없음", changedStatus: "변경 후 상태", cause: "사유", noHistory: "이력이 없습니다.",
-    confirmSuffix: "확인", confirmCommand: "{{command}} 확인", recordVersion: "기록", sourceDrawing: "도면 원본", releaseCheck: "서버가 승인, 변경 요청, 도면 최신본 여부와 배포/수령 상태를 확인합니다. 이 확인은 승인을 새로 만들지 않습니다.",
+    confirmSuffix: "확인", confirmCommand: "{{command}} 확인", recordVersion: "기록", sourceDrawing: "도면 원본", releaseCheck: "업무 시스템이 승인, 변경 요청, 도면 최신본 여부와 배포/수령 상태를 확인합니다. 이 확인은 승인을 새로 만들지 않습니다.",
     distributeBoundary: "배포 기록을 남깁니다. 배포만으로 수령 처리되지 않습니다.", acknowledgeBoundary: "현재 사용자 본인의 수령 확인을 기록합니다.", approvalBasis: "승인 근거", changeBasis: "변경 근거",
-    confirmRequest: "확인하고 요청", cancel: "취소", statusUnknown: "상태 미확인", status: "상태", sourceVersion: "도면 v", pdfVersion: "PDF v",
-    errAdminOnly: "등록은 프로젝트 관리자 데모 세션에서 할 수 있습니다.", errRequired: "PDF 도면, 도면번호, 개정, 필수 수령자를 지정하십시오.",
-    errMissingDrawing: "연결된 원본 도면이 프로젝트의 현재 도면 목록에 없습니다.", errDuplicate: "같은 도면번호와 개정의 현장 관리 기록이 이미 있습니다.",
+    confirmRequest: "확인하고 요청", cancel: "취소", statusUnknown: "상태 미확인", status: "상태", sourceVersion: "도면 v", pdfVersion: "PDF 작성 차수 ",
+    errAdminOnly: "등록은 현장 관리자 데모 세션에서 할 수 있습니다.", errRequired: "PDF 도면, 도면번호, 개정, 필수 수령자를 지정하십시오.",
+    errMissingDrawing: "연결된 원본 도면이 현장의 현재 도면 목록에 없습니다.", errDuplicate: "같은 도면번호와 개정의 현장 관리 기록이 이미 있습니다.",
     errApprovalChanged: "선택한 승인 근거가 변경되었습니다. 현재 승인을 다시 선택하십시오.", errPrepare: "등록 요청을 준비하지 못했습니다. 다시 시도하십시오.",
     errSelectRecipients: "배포할 수령자를 선택하십시오.", errEnterReason: "처리 사유를 입력하십시오.", errSelectApproval: "이 도면의 현재 기술 승인을 워크스페이스에서 선택하십시오.",
-    errChangeVersion: "변경 요청 버전이 갱신되었습니다. 현재 변경 요청을 다시 선택하십시오.", errGeneric: "요청을 처리하지 못했습니다. 다시 시도하십시오.",
-    reason_APPROVAL_MISSING: "기술 승인을 연결하십시오", reason_APPROVAL_STALE: "승인 기록 버전이 바뀌었습니다",
+    errChangeVersion: "변경 요청 작성 차수가 갱신되었습니다. 현재 변경 요청을 다시 선택하십시오.", errGeneric: "요청을 처리하지 못했습니다. 다시 시도하십시오.",
+    reason_APPROVAL_MISSING: "기술 승인을 연결하십시오", reason_APPROVAL_STALE: "승인 기록 작성 차수가 바뀌었습니다",
     reason_APPROVAL_NOT_CURRENT_TECHNICAL: "현재 도면을 대상으로 한 승인된 기술 승인이 필요합니다", reason_APPROVAL_EXPIRED: "승인 유효기간이 지났습니다",
-    reason_APPROVAL_INVALID: "승인 상태를 확인할 수 없습니다", reason_SOURCE_STALE: "도면 또는 PDF 원본이 최신 버전이 아닙니다",
-    reason_CHANGE_REF_INVALID: "변경 요청 참조를 확인할 수 없습니다", reason_CHANGE_STALE: "변경 요청 기록 버전이 바뀌었습니다",
+    reason_APPROVAL_INVALID: "승인 상태를 확인할 수 없습니다", reason_SOURCE_STALE: "도면 또는 PDF 원본이 최신 작성 차수가 아닙니다",
+    reason_CHANGE_REF_INVALID: "변경 요청 참조를 확인할 수 없습니다", reason_CHANGE_STALE: "변경 요청 기록 작성 차수가 바뀌었습니다",
     reason_CHANGE_NOT_APPROVED: "연결된 변경 요청이 승인되지 않았습니다", reason_CHANGE_TARGET_MISMATCH: "변경 요청이 이 도면을 대상으로 하지 않습니다",
     reason_CHANGE_APPROVAL_INVALID: "변경 요청의 승인 상태를 확인할 수 없습니다", reason_CHANGE_INVALID: "변경 요청 근거를 확인할 수 없습니다",
     reason_DISTRIBUTION_INCOMPLETE: "필수 수령자 전원의 배포와 수령 확인이 필요합니다", reason_NOT_FOR_CONSTRUCTION: "시공용 도면으로 등록해야 현장 사용본을 발행할 수 있습니다",
     status_registered: "등록됨", status_released: "배포 승인", status_superseded: "구본", status_withdrawn: "철회됨",
     command_release: "현장 사용본 발행", command_distribute: "배포 기록", command_acknowledge: "수령 확인", command_return_copy: "구본 회수 확인", command_withdraw: "철회", command_update_basis: "승인 근거 갱신",
     event_registered: "현장 도면 기록 등록", event_superseded: "후속 개정본으로 대체", event_default: "도면 관리 변경",
-    created: "현장 도면 기록 {{id}} · v{{version}}을 등록했습니다.", actionDone: "{{command}} 요청을 처리했습니다. 현재 상태: {{status}} · v{{version}}.",
+    created: "현장 도면 기록 {{id}} · 제{{version}}차을 등록했습니다.", actionDone: "{{command}} 요청을 처리했습니다. 현재 상태: {{status}} · 제{{version}}차.",
   },
   vi: {
     title: "Quản lý bản vẽ tại công trường", summary: "Đăng ký · phê duyệt · phân phối · xác nhận nhận · thu hồi bản cũ",
@@ -162,7 +163,7 @@ const lookup = (locale: Locale, key: string, options?: Record<string, unknown>) 
   return value;
 };
 const refLabel = (ref: DomainRef | null, locale: Locale) => ref
-  ? `${({ Approval: lookup(locale, "approvalLabel"), WorkItem: lookup(locale, "changeRequestLabel"), Evidence: lookup(locale, "pdf"), Drawing: lookup(locale, "drawing") } as Record<string, string>)[ref.objectType] || ref.objectType} · ${ref.objectId} · v${ref.version}`
+  ? `${({ Approval: lookup(locale, "approvalLabel"), WorkItem: lookup(locale, "changeRequestLabel"), Evidence: lookup(locale, "pdf"), Drawing: lookup(locale, "drawing") } as Record<string, string>)[ref.objectType] || ref.objectType} · ${ref.objectId} · ${recordVersionLabel(ref.version)}`
   : lookup(locale, "none");
 const statusText = (status: string, locale: Locale) => lookup(locale, `status_${status}`) === `status_${status}` ? states[status] || status : lookup(locale, `status_${status}`);
 const statusValue = (status: unknown, locale: Locale) => typeof status === "string" ? statusText(status, locale) : lookup(locale, "statusUnknown");
@@ -421,7 +422,7 @@ export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOp
           <select aria-label={locale === "ko" ? "연결 승인" : tx("approval")} value={approvalKey} onChange={event => setApprovalKey(event.target.value)}>
             <option value="">{tx("noApproval")}</option>
             {bindingApprovals.map(item => <option key={item.record.id} value={item.record.id}>
-              {title(item.record)} · {String(item.record.status) === "approved" ? tx("approved") : tx("technicalReview")} · {item.record.id} · v{item.record.version}
+              {title(item.record)} · {String(item.record.status) === "approved" ? tx("approved") : tx("technicalReview")} · {item.record.id} · {recordVersionLabel(item.record.version)}
             </option>)}
           </select>
         </label>
@@ -479,7 +480,7 @@ export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOp
           };
           return <article className="drawing-field-record" key={row.id} data-testid={`drawing-field-record-${row.id}`}>
             <header><strong>{row.drawingNo} · {tx("revision")} {row.revision}</strong><span className={`drawing-field-status ${fieldReady ? "is-current" : ""}`}>{statusText(row.status, locale)}{fieldReady ? ` · ${tx("inUse")}` : ""}</span></header>
-            <p>{tx("purpose")} · {tx(row.issuedFor === "construction" ? "construction" : row.issuedFor === "review" ? "review" : "information")} · {tx("recordVersion")} {row.id} · v{row.version}</p>
+            <p>{tx("purpose")} · {tx(row.issuedFor === "construction" ? "construction" : row.issuedFor === "review" ? "review" : "information")} · {tx("recordVersion")} {row.id} · {recordVersionLabel(row.version)}</p>
             <p>{tx("drawing")} · {refLabel(row.drawingRef, locale)} · {tx("pdf")} · {refLabel(row.evidenceRef, locale)}</p>
             {binding && <p>{tx("bindingRecord")} · {binding.id} · {tx("pdfVersion")}{binding.fileHash}</p>}
             <p>{tx("approvalLabel")} · {refLabel(row.approvalRef, locale)} · {tx("changeRequestLabel")} {row.changeRefs.length} · {row.supersedesId ? `${tx("supersedes")}: ${row.supersedesId}` : tx("noPredecessor")}</p>
@@ -514,7 +515,7 @@ export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOp
                       }}>
                       <option value="">{tx("noBasis")}</option>
                       {rowApprovals.map(candidate => <option key={candidate.record.id} value={candidate.record.id}>
-                        {title(candidate.record)} · {String(candidate.record.status) === "approved" ? tx("approved") : tx("technicalReview")} · {candidate.record.id} · v{candidate.record.version}
+                        {title(candidate.record)} · {String(candidate.record.status) === "approved" ? tx("approved") : tx("technicalReview")} · {candidate.record.id} · {recordVersionLabel(candidate.record.version)}
                       </option>)}
                     </select>
                   </label>
@@ -549,7 +550,7 @@ export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOp
                   <strong>{lookup(locale, `event_${event}`) === `event_${event}` ? lookup(locale, `command_${event}`) === `command_${event}` ? tx("event_default") : lookup(locale, `command_${event}`) : lookup(locale, `event_${event}`)}</strong>
                   <time>{occurredAt}</time>
                   <span>{tx("operator")} · {actor?.name || String(entry.actorPartyId || tx("unknown"))}</span>
-                  {typeof after.status === "string" && <span>{tx("changedStatus")} · {statusText(after.status, locale)} · v{String(after.version || "")}</span>}
+                  {typeof after.status === "string" && <span>{tx("changedStatus")} · {statusText(after.status, locale)} · {recordVersionLabel(String(after.version || ""))}</span>}
                   {typeof entry.reason === "string" && entry.reason && <span>{tx("cause")} · {entry.reason}</span>}
                 </article>;
               }) : <p>{tx("noHistory")}</p>}
@@ -561,7 +562,7 @@ export function DrawingFieldManagementPanel({ client, workspace, onChanged, onOp
     {impactSelection?.scope === scopeKey && <DrawingImpactPanel key={JSON.stringify([scopeKey, impactSelection.ref])} client={client} workspace={workspace} drawingRef={impactSelection.ref} onSelect={onSelect} onNavigate={onNavigate} />}
     {pending && <div className="drawing-field-scrim"><section role="dialog" aria-modal="true" aria-labelledby="drawing-field-confirm-title" className="drawing-field-dialog">
       <h2 id="drawing-field-confirm-title">{tx("confirmCommand", { command: labelCommand({ command: pending.command, label: pending.command }, locale) })}</h2>
-      <p>{selectedRevision?.drawingNo} · {tx("revision")} {selectedRevision?.revision} · {selectedRevision?.id} · {tx("current")} v{pending.expectedVersion}</p>
+      <p>{selectedRevision?.drawingNo} · {tx("revision")} {selectedRevision?.revision} · {selectedRevision?.id} · {tx("current")} {recordVersionLabel(pending.expectedVersion)}</p>
       <p>{tx("sourceDrawing")} · {selectedRevision ? refLabel(selectedRevision.drawingRef, locale) : ""}</p>
       {pending.command === "release" && <p>{tx("releaseCheck")}</p>}
       {pending.command === "distribute" && <p>{tx("distributeBoundary")}</p>}

@@ -19,14 +19,14 @@ test("notification read receipt survives reload without changing delivery status
   expect(response.status()).toBe(200);
   expect((await response.json()).isRead).toBe(true);
   await expect(row).toHaveClass(/is-read/);
-  await expect(row).toContainText("앱에 저장됨 · queued");
+  await expect(row).toContainText("앱에 저장됨 · 알림 등록");
 
   await page.reload();
   await page.getByRole("tab", { name: "알림", exact: true }).click();
   const restored = page.locator(`[data-notification-id="${notificationId}"]`);
   await expect(restored).toBeVisible();
   await expect(restored).toHaveClass(/is-read/);
-  await expect(restored).toContainText("앱에 저장됨 · queued");
+  await expect(restored).toContainText("앱에 저장됨 · 알림 등록");
   await expect(restored.getByRole("button", { name: "읽음으로 표시", exact: true })).toHaveCount(0);
 });
 

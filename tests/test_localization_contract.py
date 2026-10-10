@@ -274,7 +274,8 @@ class LocalizationContractTests(unittest.TestCase):
         self.assertIsNone(re.search(r"[가-힣]", page))
         used_keys = set(re.findall(r'tr\("(evidence\.[^"]+)"', page))
         self.assertFalse(used_keys - ko.keys())
-        self.assertIn('JSON.stringify(metadata, null, 2)', page)
+        self.assertIn('<RecordDetails value={metadata} />', page)
+        self.assertNotIn('JSON.stringify(metadata, null, 2)', page)
 
     def test_draft_locales_remain_unapproved(self):
         src = (ROOT / "packages/localization/src/index.ts").read_text()

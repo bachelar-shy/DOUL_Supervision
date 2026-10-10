@@ -1,3 +1,5 @@
+import { recordTypeLabel } from "../../labels";
+import { recordVersionLabel } from "../../labels";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { SupervisionClient } from "../../data/supervision-client";
@@ -39,11 +41,11 @@ type LabelKey =
 const copy: Record<"ko" | "vi" | "en", Record<LabelKey, string>> = {
   ko: {
     title: "알림", unread: "안 읽음", all: "전체", refresh: "새로고침",
-    intro: "현재 프로젝트의 내 업무 변경 내역입니다. 이 화면에서 읽음으로 표시해도 업무 승인이나 전달 확인은 변경되지 않습니다.",
+    intro: "현재 현장의 내 업무 변경 내역입니다. 이 화면에서 읽음으로 표시해도 업무 승인이나 전달 확인은 변경되지 않습니다.",
     loading: "알림을 불러오는 중…", loadError: "알림을 불러오거나 갱신하지 못했습니다.", empty: "표시할 알림이 없습니다.",
     fallbackTitle: "내 업무 변경", read: "읽음", unreadState: "안 읽음", impactOpen: "영향 업무 보기",
-    viewSource: "원본 보기", pastVersion: "과거 버전, 변경 명령 불가", viewCurrent: "현재 v{{version}} 별도 보기",
-    sourceUnavailable: "원본 기록을 현재 작업공간에서 열 수 없습니다.", occurredAt: "발생 시각", status: "상태",
+    viewSource: "원본 보기", pastVersion: "과거 작성 차수, 변경 업무 처리 불가", viewCurrent: "현재 제{{version}}차 별도 보기",
+    sourceUnavailable: "원본 기록을 현재 업무 화면에서 열 수 없습니다.", occurredAt: "발생 시각", status: "상태",
     savedInApp: "앱에 저장됨", readAt: "읽은 시각", markRead: "읽음으로 표시", markingRead: "처리 중…",
     genericError: "알림 요청을 완료할 수 없습니다. 연결을 확인한 뒤 다시 시도하세요.",
   },
@@ -68,6 +70,17 @@ const copy: Record<"ko" | "vi" | "en", Record<LabelKey, string>> = {
     genericError: "The notification request could not be completed. Check the connection and try again.",
   },
 };
+const notificationStatusCopy: Record<"ko" | "vi" | "en", Record<string, string>> = {
+  ko: { queued: "알림 등록", sent: "발송 완료", delivered: "전달 완료", acknowledged: "수신 확인", failed: "전달 실패", unknown: "알림 상태 확인 필요" },
+  vi: { queued: "Thông báo đã đăng ký", sent: "Đã gửi", delivered: "Đã chuyển", acknowledged: "Đã xác nhận nhận", failed: "Chuyển thất bại", unknown: "Cần kiểm tra trạng thái thông báo" },
+  en: { queued: "Notification registered", sent: "Sent", delivered: "Delivered", acknowledged: "Receipt confirmed", failed: "Delivery failed", unknown: "Check notification status" },
+};
+function notificationStatusLabel(status: string) {
+  const language = typeof document === "undefined" ? "en" : document.documentElement.lang.slice(0, 2);
+  const labels = notificationStatusCopy[language === "ko" || language === "vi" ? language : "en"];
+  return labels[status] || labels.unknown;
+}
+
 function activeCopy(): Record<LabelKey, string> {
   const language = typeof document === "undefined" ? "en" : document.documentElement.lang.slice(0, 2);
   return copy[language === "ko" || language === "vi" ? language : "en"];
@@ -210,7 +223,7 @@ export function NotificationEventsPanel({
                 </div>
                 {drawingImpact && <><p data-drawing-impact={drawingImpact.incidentId}>{drawingImpact.message}</p><ActionButton onClick={() => setImpactSelection({ scope: scopeKey, notice: drawingImpact })}>{t.impactOpen}</ActionButton></>}
                 <p className="notification-events-source">
-                  {notification.sourceRef.objectType} · {notification.sourceRef.objectId} · v{formatNumber(notification.sourceRef.version)}
+                  {recordTypeLabel(notification.sourceRef.objectType)} · {notification.sourceRef.objectId} · {recordVersionLabel(formatNumber(notification.sourceRef.version))}
                 </p>
                 {target.kind === "exact" && (
                   <div className="notification-events-target" data-source-target="exact" data-source-route={target.route}>
@@ -231,7 +244,7 @@ export function NotificationEventsPanel({
                 )}
                 <dl>
                   <div><dt>{t.occurredAt}</dt><dd>{formatDateTime(notification.dueAt)}</dd></div>
-                  <div><dt>{t.status}</dt><dd>{t.savedInApp} · {notification.status}</dd></div>
+                  <div><dt>{t.status}</dt><dd>{t.savedInApp} · {notificationStatusLabel(notification.status)}</dd></div>
                   {isRead && readAt && <div><dt>{t.readAt}</dt><dd>{formatDateTime(readAt)}</dd></div>}
                 </dl>
               </div>

@@ -1,3 +1,5 @@
+import { recordTypeLabel } from "../labels";
+import { recordVersionLabel } from "../labels";
 import { useMemo, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CommandDescriptor, CreationCapability, DomainRef, WorkItem, Workspace } from "../data/ui-contract";
@@ -89,7 +91,7 @@ function controlledValue(value: unknown, t: (key: CompletionLabelKey) => string)
 function referenceTitle(value: unknown): string | undefined {
   const ref=object(value);
   return typeof ref.objectType === "string" && typeof ref.objectId === "string" && typeof ref.version === "number"
-    ? `${ref.objectType} · ${ref.objectId} · v${ref.version}` : undefined;
+    ? `${recordTypeLabel(ref.objectType)} · ${ref.objectId} · ${recordVersionLabel(ref.version)}` : undefined;
 }
 
 function ReferenceList({ label, value }: { label: string; value: unknown }) {
@@ -503,7 +505,7 @@ export function CompletionHandoverPage({
               const data = completionData(item);
               const secondary = item.machine === "commissioning_package" ? data.system : item.machine === "handover_package" ? object(data.handoverScope).scopeId : data.handoverRef;
               return <button type="button" className={`completion-record-row${selected === item.record.id ? " selected" : ""}`} key={item.record.id} onClick={() => onSelect(item.record.id)}>
-                <span><strong>{recordTitle(item.record)}</strong><small>{completionIdentity(item)} · {t("sourceVersion")} v{item.record.version}</small></span>
+                <span><strong>{recordTitle(item.record)}</strong><small>{completionIdentity(item)} · {t("sourceVersion")} {recordVersionLabel(item.record.version)}</small></span>
                 <span className="completion-record-context">{completionText(secondary)}</span>
                 <StatusBadge status={item.record.status}>{states[item.record.status || ""] || item.record.status || "—"}</StatusBadge>
               </button>;
@@ -513,7 +515,7 @@ export function CompletionHandoverPage({
         <DetailPane>
           {!selectedItem ? <div className="empty compact"><h2>{t(tab.key)}</h2><p>{t(tab.description)}</p></div> : <>
             <button type="button" className="mobile-back" onClick={() => onSelect(null)}>← {t("backToList")}</button>
-            <div className="detail-head"><div><span className="eyebrow">{t(tab.key)}</span><h2>{recordTitle(selectedItem.record)}</h2><p>{t("sourceVersion")} v{selectedItem.record.version}</p></div>
+            <div className="detail-head"><div><span className="eyebrow">{t(tab.key)}</span><h2>{recordTitle(selectedItem.record)}</h2><p>{t("sourceVersion")} {recordVersionLabel(selectedItem.record.version)}</p></div>
               <StatusBadge status={selectedItem.record.status}>{states[selectedItem.record.status || ""] || selectedItem.record.status || "—"}</StatusBadge>
             </div>
             {machine === "commissioning_package" && <CommissioningDetail item={selectedItem} t={t} />}

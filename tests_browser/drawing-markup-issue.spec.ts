@@ -89,21 +89,21 @@ test("registers an Issue and corrective Action from a selected saved markup afte
   let binding = bindingList.items.find(item => item.drawingRef.objectId === draw.objectId && item.drawingRef.version === draw.version);
   if (!binding) {
     await page.goto("/#/parallel-test");
-    await page.getByLabel("개발 역할 선택").selectOption("ADM");
+    await page.getByLabel("시험 사용자 역할 선택").selectOption("ADM");
     await page.goto("/#/parallel-test");
-    await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
-    const viewer = page.getByLabel("PDF 도면 뷰어");
+    await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
+    const viewer = page.getByLabel("PDF 도면 보기");
     const completed = page.waitForResponse(response => response.url().includes("/uploads/")
       && response.url().endsWith("/complete") && response.request().method() === "POST");
     await viewer.getByTestId("pdf-upload").setInputFiles({ name: `markup-issue-${suffix}.pdf`, mimeType: "application/pdf", buffer: onePagePdf() });
     const uploaded = await completed; expect(uploaded.ok()).toBeTruthy();
     const evidence = await uploaded.json() as { id: string; version: number };
     const bindingPanel = page.getByRole("region", { name: "도면 PDF 연결" });
-    await bindingPanel.getByLabel("도면 버전").selectOption(`${draw.objectType}:${draw.objectId}:${draw.version}`);
+    await bindingPanel.getByLabel("도면 작성 차수").selectOption(`${draw.objectType}:${draw.objectId}:${draw.version}`);
     await bindingPanel.getByLabel("PDF 원본").selectOption(`Evidence:${evidence.id}:${evidence.version}`);
     const createdBinding = page.waitForResponse(response => response.url().endsWith("/parallel/drawing-pdf-bindings")
       && response.request().method() === "POST");
-    await bindingPanel.getByRole("button", { name: "선택한 버전 연결" }).click();
+    await bindingPanel.getByRole("button", { name: "선택한 작성 차수 연결" }).click();
     expect((await createdBinding).status()).toBe(201);
     bindingList = await api<{ items: Array<{ id: string; drawingRef: DomainRef; evidenceRef: DomainRef }> }>(request, adm.projectId,
       "/parallel/drawing-pdf-bindings", adm);
@@ -124,36 +124,36 @@ test("registers an Issue and corrective Action from a selected saved markup afte
     }
   });
   await page.goto("/#/parallel-test");
-  await page.getByLabel("개발 역할 선택").selectOption("SUP");
+  await page.getByLabel("시험 사용자 역할 선택").selectOption("SUP");
   await page.goto("/#/parallel-test");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
-  const viewer = page.getByLabel("PDF 도면 뷰어");
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
+  const viewer = page.getByLabel("PDF 도면 보기");
   await viewer.getByLabel("PDF 원본 선택").selectOption(binding!.evidenceRef.objectId);
   const savedMarkup = viewer.getByLabel("저장된 도면 주석").getByRole("button", { name: new RegExp(markupText) });
   await expect(savedMarkup).toBeVisible();
   await savedMarkup.click();
   const panel = page.getByTestId("drawing-markup-issue");
   await expect(panel.getByText(markupText, { exact: true })).toBeVisible();
-  await expect(panel.getByText(new RegExp(`${draw.objectId} · v${draw.version}`))).toBeVisible();
+  await expect(panel.getByText(new RegExp(`${draw.objectId} · 기록 제${draw.version}차`))).toBeVisible();
   await panel.getByLabel("실패 원 검측").selectOption(sources.inspection.id);
   await panel.getByLabel("확인된 관찰").selectOption(sources.observation.id);
-  await panel.getByLabel("Issue 유형").selectOption("NCR");
-  await panel.getByLabel("Issue 제목").fill(issueTitle);
+  await panel.getByLabel("지적사항 유형").selectOption("NCR");
+  await panel.getByLabel("지적사항 제목").fill(issueTitle);
   await panel.getByLabel("시정조치 제목").fill(actionTitle);
   await panel.getByLabel("담당자").selectOption(con.actor.partyId);
   await panel.getByLabel("기한").fill(await localDateTime(page, Date.now() + 86_400_000));
-  await panel.getByRole("button", { name: "이슈 등록 검토" }).click();
-  const dialog = page.getByRole("dialog", { name: "Issue 및 시정조치 등록 확인" });
+  await panel.getByRole("button", { name: "지적사항 등록 검토" }).click();
+  const dialog = page.getByRole("dialog", { name: "지적사항·시정조치 등록 확인" });
   await expect(dialog.getByText(new RegExp(sources.inspection.id))).toBeVisible();
   await expect(dialog.getByText(new RegExp(sources.observation.id))).toBeVisible();
   expect(observedWrites).toEqual([]);
   await dialog.getByRole("button", { name: "취소" }).click();
   await expect(dialog).toHaveCount(0);
   expect(observedWrites).toEqual([]);
-  await panel.getByRole("button", { name: "이슈 등록 검토" }).click();
+  await panel.getByRole("button", { name: "지적사항 등록 검토" }).click();
   const confirmedDialog = page.getByRole("dialog");
   const post = page.waitForResponse(response => response.url().includes(`/parallel/drawing-markups/${markup.id}/issues`) && response.request().method() === "POST");
-  await confirmedDialog.getByRole("button", { name: "확인 후 Issue와 조치 등록" }).click();
+  await confirmedDialog.getByRole("button", { name: "확인 후 지적사항과 조치 등록" }).click();
   const response = await post;
   expect(response.status(), await response.text()).toBe(201);
   expect(observedWrites).toHaveLength(1);
@@ -163,7 +163,7 @@ test("registers an Issue and corrective Action from a selected saved markup afte
     observationRefs: [{ objectType: "Observation", objectId: sources.observation.id, version: sources.observation.version }],
     responsiblePartyId: con.actor.partyId, title: issueTitle, actionTitle });
   const result = await response.json() as { issue: { id: string; title?: string; status?: string }; correctiveAction: { id: string; title?: string; status?: string } };
-  await expect(panel.getByText(new RegExp(`Issue · .*${result.issue.id}`))).toBeVisible();
+  await expect(panel.getByText(new RegExp(`지적사항 · .*${result.issue.id}`))).toBeVisible();
   await expect(panel.getByText(new RegExp(`시정조치 · .*${result.correctiveAction.id}`))).toBeVisible();
   expect(errors).toEqual([]);
 });

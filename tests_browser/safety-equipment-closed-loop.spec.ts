@@ -148,7 +148,7 @@ function fieldLabel(field: string) {
 
 async function chooseRole(page: Page, actorGroup: ActorGroup) {
   await page.goto("/#/safety");
-  const picker = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const picker = page.getByRole("combobox", { name: "시험 사용자 역할 선택" });
   if (await picker.count() && await picker.inputValue() !== actorGroup) {
     const refreshed = page.waitForResponse((response) => response.url().endsWith("/workspace") && response.ok());
     await picker.selectOption(actorGroup);
@@ -243,7 +243,7 @@ async function openAndSubmitCommand(
   await page.getByRole("button", { name: label, exact: true }).click();
   const dialog = page.getByRole("dialog", { name: label });
   for (const [field, value] of Object.entries(payload)) await setCommandField(dialog, field, value);
-  if (evidenceIds.length) await dialog.getByLabel("명령 증빙 ID", { exact: true }).fill(evidenceIds.join(" "));
+  if (evidenceIds.length) await dialog.getByLabel("처리 근거 증빙번호", { exact: true }).fill(evidenceIds.join(" "));
   const responsePromise = page.waitForResponse((response) => response.request().method() === "POST"
     && response.url().endsWith(`/api/projects/${projectId}/${collection}/${current.id}/${command.replaceAll("_", "-")}`));
   await dialog.locator(".modal-actions button.primary").click();
@@ -471,13 +471,13 @@ test("real Safety UI/API gates Permit activation on current equipment and keeps 
   await page.goto("/#/actions");
   const actionPanel = page.locator('[data-ui-component="action-authoring-panel"]');
   await expect(actionPanel).toBeVisible();
-  await actionPanel.getByLabel("Action 제목", { exact: true }).fill(remedyTitle);
-  await actionPanel.getByLabel("관련 Issue", { exact: true }).selectOption(relatedIssue!.ref.objectId);
+  await actionPanel.getByLabel("시정조치 제목", { exact: true }).fill(remedyTitle);
+  await actionPanel.getByLabel("관련 지적사항", { exact: true }).selectOption(relatedIssue!.ref.objectId);
   await actionPanel.getByLabel("담당자", { exact: true }).selectOption(contractor!.partyId);
   await actionPanel.getByLabel("기한", { exact: true }).fill(new Date(Date.now() + 86_400_000).toISOString().slice(0, 16));
   const actionCreate = page.waitForResponse((response) => response.request().method() === "POST"
     && new URL(response.url()).pathname === `/api/projects/${con.projectId}/actions`);
-  await actionPanel.getByRole("button", { name: "Action 초안 저장", exact: true }).click();
+  await actionPanel.getByRole("button", { name: "시정조치 초안 저장", exact: true }).click();
   const actionResponse = await actionCreate;
   const actionBody = await jsonResponse<{ record: RecordData }>(actionResponse, 201);
   let remedied = actionBody.record;

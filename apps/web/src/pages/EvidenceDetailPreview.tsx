@@ -1,3 +1,4 @@
+import { RecordDetails } from "./RecordDetails";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { ApiError, type SupervisionClient } from "../data/supervision-client";
@@ -7,7 +8,7 @@ import { EvidenceDetailSheet } from "../ui/catalog";
 import { evidenceMediaLabel, evidenceSourceLabel } from "./evidence-utils";
 import { Icon } from "./shared";
 import { recordTitle } from "./record-utils";
-import { formatDateTime } from "../i18n/format";
+import { formatDateTime, formatNumber } from "../i18n/format";
 import i18n from "../i18n/config";
 
 function tr(
@@ -383,7 +384,7 @@ export function EvidenceDetailPreview({
         <div className="space-y-4">
           <div className="grid gap-2">
             <EvidenceField
-              label="SHA-256"
+              label={tr("evidence.technical.hash")}
               value={textValue(evidence.fileHash) || tr("evidence.value.noInfoCheck")}
               mono
             />
@@ -414,7 +415,7 @@ export function EvidenceDetailPreview({
                 label={tr("evidence.technical.frameCount")}
                 value={numericValue(evidence.frameCount) ?? tr("evidence.value.noInfoCheck")}
               />
-              <EvidenceField label={tr("evidence.technical.sourceVersion")} value={`v${evidence.version}`} />
+              <EvidenceField label={tr("evidence.technical.sourceVersion")} value={formatNumber(evidence.version)} />
               <EvidenceField
                 label={tr("evidence.technical.updatedAt")}
                 value={formatDate(evidence.updatedAt)}
@@ -423,7 +424,7 @@ export function EvidenceDetailPreview({
           </div>
           <details className="technical">
             <summary>{tr("evidence.technical.serverMetadata")}</summary>
-            <pre>{JSON.stringify(metadata, null, 2)}</pre>
+            <RecordDetails value={metadata} />
           </details>
         </div>
       }

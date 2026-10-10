@@ -130,16 +130,16 @@ test("offline intent survives reconnect and refuses a competing server version u
   await loaded;
   const summary = page.locator("main > details > summary");
   await summary.click();
-  const panel = page.getByRole("region", { name: "오프라인 명령 초안" });
+  const panel = page.getByRole("region", { name: "연결 끊김 시 업무 임시저장" });
   const option = panel.locator(`option[value="inspection:${record.id}:start"]`);
-  await expect(option, `fixture ${record.id} v${record.version}; choices: ${JSON.stringify(await panel.locator("option").allTextContents())}`).toHaveCount(1);
+  await expect(option, `fixture ${record.id} 기록 제${record.version}차; choices: ${JSON.stringify(await panel.locator("option").allTextContents())}`).toHaveCount(1);
   await panel.getByRole("combobox").selectOption(await option.getAttribute("value") || "");
   browserCommands = 0;
   await page.context().setOffline(true);
   await panel.getByRole("button", { name: "입력 작성" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "기기에 보관" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(panel).toContainText(`v${record.version}`);
+  await expect(panel).toContainText(`기록 제${record.version}차`);
   expect(browserCommands).toBe(0);
   const saved = await page.evaluate(() => {
     const key = Object.keys(localStorage).find(key => key.startsWith("doul:offline-command:"));
@@ -160,10 +160,10 @@ test("offline intent survives reconnect and refuses a competing server version u
   await page.reload();
   await reloaded;
   await summary.click();
-  await expect(panel).toContainText(`보관 버전: v${record.version}`);
-  await expect(panel.getByRole("alert").filter({ hasText: "버전 또는 허용 명령이 변경" })).toBeVisible();
-  await expect(panel).toContainText(`현재 서버 버전: v${changed.record.version}`);
-  await expect(panel.getByRole("button", { name: "현재 허용 명령을 서버에 제출" })).toHaveCount(0);
+  await expect(panel).toContainText(`보관 작성 차수: 기록 제${record.version}차`);
+  await expect(panel.getByRole("alert").filter({ hasText: "작성 차수 또는 가능한 업무이 변경" })).toBeVisible();
+  await expect(panel).toContainText(`현재 업무 시스템 작성 차수: 기록 제${changed.record.version}차`);
+  await expect(panel.getByRole("button", { name: "현재 가능한 업무를 업무 시스템에 제출" })).toHaveCount(0);
   expect(browserCommands).toBe(0);
   await panel.getByRole("button", { name: "기기 초안 취소" }).click();
   expect(await page.evaluate(key => localStorage.getItem(key), saved!.key)).toBeNull();
@@ -181,7 +181,7 @@ test("current offline intent is sent only by explicit submission after reconnect
   const loaded = page.waitForResponse(response => response.url().endsWith("/workspace") && response.ok());
   await page.goto("/#/today"); await loaded;
   await page.locator("main > details > summary").click();
-  const panel = page.getByRole("region", { name: "오프라인 명령 초안" });
+  const panel = page.getByRole("region", { name: "연결 끊김 시 업무 임시저장" });
   await panel.getByRole("combobox").selectOption(`inspection:${record.id}:start`);
   browserCommands = 0;
   await page.context().setOffline(true);
@@ -189,10 +189,10 @@ test("current offline intent is sent only by explicit submission after reconnect
   await page.getByRole("dialog").getByRole("button", { name: "기기에 보관" }).click();
   expect(browserCommands).toBe(0);
   await page.context().setOffline(false);
-  await expect(panel.getByRole("status")).toContainText("저장 당시 버전이 현재");
+  await expect(panel.getByRole("status")).toContainText("저장 당시 작성 차수가 현재");
   expect(browserCommands).toBe(0);
   const sent = page.waitForResponse(response => response.request().method() === "POST" && response.url().endsWith(`/inspections/${record.id}/start`));
-  await panel.getByRole("button", { name: "현재 허용 명령을 서버에 제출" }).click();
+  await panel.getByRole("button", { name: "현재 가능한 업무를 업무 시스템에 제출" }).click();
   const response = await sent;
   expect(response.status(), await response.text()).toBe(200);
   expect(response.request().postDataJSON().expectedVersion).toBe(record.version);

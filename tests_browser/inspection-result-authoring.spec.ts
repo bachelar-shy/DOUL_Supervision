@@ -131,7 +131,7 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
   expect(initial.nextWorkAllowed).toBe(false);
 
   await page.goto("/#/inspections");
-  await page.getByLabel("개발 역할 선택").selectOption("SUP");
+  await page.getByLabel("시험 사용자 역할 선택").selectOption("SUP");
   await page.goto("/#/inspections");
   const inspectionRow = page.getByRole("button", { name: new RegExp(inspection.workName) });
   await expect(inspectionRow).toBeVisible();
@@ -163,11 +163,15 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
   await expect(itemIdField).toHaveValue("dimension");
   await expect(itemIdField).toHaveAttribute("readonly", "");
   const requirementKey = (ref: typeof requirementRef) => `${ref.objectType}:${ref.objectId}:${ref.version}`;
-  const originalRequirementText = `Requirement · ${requirementRef.objectId} · v${requirementRef.version}`;
-  const alternateRequirementText = `Requirement · ${alternateRequirementRef.objectId} · v${alternateRequirementRef.version}`;
+  const referenceText = async (ref: typeof requirementRef) => {
+    const language = await page.locator("html").getAttribute("lang");
+    return language?.startsWith("vi") ? `Yêu cầu · ${ref.objectId} · Hồ sơ gốc v${ref.version}`
+      : language?.startsWith("en") ? `Requirement · ${ref.objectId} · Source v${ref.version}`
+      : `요구사항 · ${ref.objectId} · 기록 제${ref.version}차`;
+  };
   await expect(requirementField.locator("option")).toHaveCount(3);
   await expect(requirementField).toHaveValue(requirementKey(requirementRef));
-  await expect(resultRow.getByText(originalRequirementText, { exact: true })).toBeVisible();
+  await expect(resultRow.getByText(await referenceText(requirementRef), { exact: true })).toBeVisible();
   await expect(measuredField).toHaveValue("");
   await expect(unitField).toHaveValue("");
   await expect(resultField).toHaveValue("");
@@ -175,7 +179,7 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
 
   // Empty results reach the actual server and fail atomically. The evidence
   // envelope is present so the failure is specifically the empty result set.
-  await modal.getByLabel("명령 증빙 ID").fill(evidenceId);
+  await modal.getByLabel("처리 근거 증빙번호").fill(evidenceId);
   const emptySubmitPromise = page.waitForResponse((response) => response.url().includes(`/inspections/${inspection.id}/submit-results`)
     && response.request().method() === "POST");
   await modal.getByRole("button", { name: "확인 후 실행", exact: true }).click();
@@ -192,7 +196,7 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
   // row, lets the inspector choose either exact baseline, and keeps that local
   // row separate from the server until the submit command succeeds.
   await requirementField.selectOption(requirementKey(alternateRequirementRef));
-  await expect(resultRow.getByText(alternateRequirementText, { exact: true })).toBeVisible();
+  await expect(resultRow.getByText(await referenceText(alternateRequirementRef), { exact: true })).toBeVisible();
   await measuredField.fill("99");
   await unitField.fill("cm");
   await resultField.selectOption("fail");
@@ -211,14 +215,14 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
   await expect(restoredRow.locator("input").nth(2)).toHaveValue("");
   await expect(restoredRow.locator("select").nth(1)).toHaveValue("");
   expect(await restoredRow.locator("select[multiple]").evaluate((select) => (select as HTMLSelectElement).selectedOptions.length)).toBe(0);
-  await expect(restoredRow.getByText(originalRequirementText, { exact: true })).toBeVisible();
+  await expect(restoredRow.getByText(await referenceText(requirementRef), { exact: true })).toBeVisible();
   const afterDraftRemoval = await api<typeof inspection>(request, supervisor, `/inspections/${inspection.id}`);
   expect(afterDraftRemoval.version).toBe(started.version);
   expect(afterDraftRemoval.status).toBe("in_progress");
   expect(afterDraftRemoval.checkResults ?? []).toEqual([]);
 
   await restoredRequirementField.selectOption(requirementKey(alternateRequirementRef));
-  await expect(restoredRow.getByText(alternateRequirementText, { exact: true })).toBeVisible();
+  await expect(restoredRow.getByText(await referenceText(alternateRequirementRef), { exact: true })).toBeVisible();
 
   const precision = "120.000000000000000001";
   const restoredMeasuredField = restoredRow.locator("input").nth(1);
@@ -236,7 +240,7 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
   const languagePicker = page.locator(".top-actions select").first();
   await languagePicker.selectOption("vi");
   await expect(restoredMeasuredField).toHaveValue(typed);
-  await expect(restoredRow.getByText(alternateRequirementText, { exact: true })).toBeVisible();
+  await expect(restoredRow.getByText(await referenceText(alternateRequirementRef), { exact: true })).toBeVisible();
   await restoredMeasuredField.focus();
   for (const character of precision.slice(8, 15)) {
     await page.keyboard.type(character);
@@ -246,7 +250,7 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
   }
   await languagePicker.selectOption("en");
   await expect(restoredMeasuredField).toHaveValue(typed);
-  await expect(restoredRow.getByText(alternateRequirementText, { exact: true })).toBeVisible();
+  await expect(restoredRow.getByText(await referenceText(alternateRequirementRef), { exact: true })).toBeVisible();
   await restoredMeasuredField.focus();
   for (const character of precision.slice(15)) {
     await page.keyboard.type(character);
@@ -257,7 +261,7 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
   expect(typed).toBe(precision);
   await languagePicker.selectOption("ko");
   await expect(restoredMeasuredField).toHaveValue(precision);
-  await expect(restoredRow.getByText(alternateRequirementText, { exact: true })).toBeVisible();
+  await expect(restoredRow.getByText(await referenceText(alternateRequirementRef), { exact: true })).toBeVisible();
 
   await restoredUnitField.fill("mm");
   await restoredResultField.selectOption("pass");

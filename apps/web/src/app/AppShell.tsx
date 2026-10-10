@@ -227,7 +227,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         />
         <div className="side-bottom">
           <span className="dot" /> {t("app.contractRef")}
-          <small>EXPLAIN · VERIFY · RECORD</small>
+          <small>{t("app.footer.tagline")}</small>
         </div>
       </aside>
       <div className="main-shell">
