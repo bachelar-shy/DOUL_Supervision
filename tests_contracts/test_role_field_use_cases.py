@@ -49,7 +49,7 @@ class RoleFieldUseCaseCatalogTests(unittest.TestCase):
         ]
         for case in self.catalog["cases"]:
             identifier = case["id"]
-            self.assertRegex(identifier, r"^UC-(SUP|CON|OWN|ADM|DES)-\\d{2}$")
+            self.assertRegex(identifier, r"^UC-(SUP|CON|OWN|ADM|DES)-\d{2}$")
             self.assertNotIn(identifier, ids)
             ids.add(identifier)
             grouped[case["role"]] += 1
