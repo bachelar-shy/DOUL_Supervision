@@ -12,6 +12,7 @@ let apiProcess: ChildProcess | undefined;
 let fixtureDir: string | undefined;
 let dropNextIssueAcknowledgement = false;
 let failNextWorkspaceRefresh = false;
+let failNextRunReview = false;
 const issueRequests: Array<{ key: string | undefined; body: string | null }> = [];
 const reviewMutations: string[] = [];
 if (process.env.CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.CHROMIUM_PATH } });
@@ -93,6 +94,11 @@ async function routeApi(page: Page) {
       await route.fulfill({ status: 502, body: "Synthetic workspace refresh failure after committed Issue" });
       return;
     }
+    if (route.request().method() === "GET" && /\/media-analysis-runs\/[^/]+$/.test(target.pathname) && failNextRunReview) {
+      failNextRunReview = false;
+      await route.abort("failed");
+      return;
+    }
     const response = await route.fetch({ url: target.toString() });
     if (route.request().method() === "POST" && /\/media-analysis-runs\/[^/]+\/issues$/.test(target.pathname)) {
       issueRequests.push({ key: route.request().headers()["idempotency-key"], body: route.request().postData() });
@@ -144,7 +150,7 @@ test("Capture queues synthetic analysis, shows coverage, supports human confirm/
   await page.getByLabel("개발 역할 선택").selectOption("CON");
   await page.goto("/#/capture");
   await expect(panel).toBeVisible();
-  await expect(panel.getByText("서버가 이 프로젝트의 미디어 분석 대기열을 활성화하지 않았습니다.")).toBeVisible();
+  await expect(panel.getByText("현재 역할은 초안을 작성할 권한이 없습니다.").first()).toBeVisible();
   await expect(panel.getByLabel("원본 증빙", { exact: true })).toBeDisabled();
   await expect(panel.getByRole("button", { name: "분석 요청", exact: true })).toBeDisabled();
   expect(reviewMutations.filter((entry) => entry.endsWith("/media-analysis-runs"))).toHaveLength(runWritesBeforeRoleGate);
@@ -239,6 +245,49 @@ test("Capture queues synthetic analysis, shows coverage, supports human confirm/
   await inferredCard.getByRole("checkbox").check();
   await inferredCard.locator("textarea").first().fill("SUP reviewed inferred synthetic claim");
   await inferredCard.getByRole("button", { name: "관찰 확인" }).click();
+
+  const readySupReview = await api<{ issueReadiness: { ready: boolean; issueEligibleObservationIds: string[] } }>(request, sup, `/media-analysis-runs/${run.id}`);
+  expect(readySupReview.issueReadiness.ready).toBe(true);
+  expect(readySupReview.issueReadiness.issueEligibleObservationIds).toHaveLength(1);
+  await expect(panel.getByTestId("media-issue-authoring")).toBeVisible();
+  const issuePostsBeforeUnauthorizedRole = issueRequests.length;
+  const issueMutationsBeforeUnauthorizedRole = reviewMutations.filter((entry) => entry.endsWith(`/media-analysis-runs/${run.id}/issues`)).length;
+  await page.getByLabel("개발 역할 선택").selectOption("ADM");
+  await page.goto("/#/capture");
+  await expect(panel).toBeVisible();
+  await panel.getByLabel("분석 실행", { exact: true }).selectOption(run.id);
+  await panel.getByRole("button", { name: "실행 새로고침", exact: true }).click();
+  const admRunReview = await api<{ issueReadiness: { ready: boolean; issueEligibleObservationIds: string[] } }>(request, adm, `/media-analysis-runs/${run.id}`);
+  expect(admRunReview.issueReadiness.ready).toBe(true);
+  expect(admRunReview.issueReadiness.issueEligibleObservationIds).toHaveLength(1);
+  await expect(panel.getByText("현재 역할은 초안을 작성할 권한이 없습니다.").first()).toBeVisible();
+  await expect(panel.getByTestId("media-issue-authoring")).toHaveCount(0);
+  await expect(panel.getByText("Issue 준비 상태: Issue 생성 가능")).toBeVisible();
+  expect(issueRequests).toHaveLength(issuePostsBeforeUnauthorizedRole);
+  expect(reviewMutations.filter((entry) => entry.endsWith(`/media-analysis-runs/${run.id}/issues`))).toHaveLength(issueMutationsBeforeUnauthorizedRole);
+  await page.getByLabel("개발 역할 선택").selectOption("CON");
+  await page.goto("/#/capture");
+  await expect(panel).toBeVisible();
+  const conRunReview = await request.get(`${apiOrigin}/projects/${con.projectId}/media-analysis-runs/${run.id}`, { headers: headers(con) });
+  expect(conRunReview.status()).toBe(404);
+  expect((await conRunReview.json()).code).toBe("NOT_FOUND");
+  await expect(panel.getByTestId("media-issue-authoring")).toHaveCount(0);
+  expect(issueRequests).toHaveLength(issuePostsBeforeUnauthorizedRole);
+  expect(reviewMutations.filter((entry) => entry.endsWith(`/media-analysis-runs/${run.id}/issues`))).toHaveLength(issueMutationsBeforeUnauthorizedRole);
+  await page.getByLabel("개발 역할 선택").selectOption("SUP");
+  await page.goto("/#/capture");
+  await expect(panel).toBeVisible();
+  await panel.getByLabel("분석 실행", { exact: true }).selectOption(run.id);
+  await panel.getByRole("button", { name: "실행 새로고침" }).click();
+  await expect(panel.getByTestId("media-issue-authoring")).toBeVisible();
+  failNextRunReview = true;
+  await panel.getByRole("button", { name: "실행 새로고침", exact: true }).click();
+  await expect(panel.getByRole("alert")).toHaveText("요청을 완료할 수 없습니다.");
+  await page.getByRole("combobox").first().selectOption("vi");
+  failNextRunReview = true;
+  await panel.getByRole("button", { name: "Làm mới lượt chạy", exact: true }).click();
+  await expect(panel.getByRole("alert")).toHaveText("Không thể hoàn tất yêu cầu.");
+  await page.getByRole("combobox").first().selectOption("ko");
 
   const wav = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WAVEfmt "), Buffer.alloc(32)]);
   await page.getByLabel("증빙 파일 선택").setInputFiles({ name: `synthetic-audio-${randomUUID()}.wav`, mimeType: "audio/wav", buffer: wav });
