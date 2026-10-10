@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { CalendarDays } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {
@@ -31,7 +31,7 @@ import {
 import { Icon } from "../pages/shared";
 import { OfflineCommandIntentPanel } from "../pages/OfflineCommandIntentPanel";
 import { offlineIntentTitle } from "../data/offline-command-labels";
-import { machineForRoute, mobileRoutes, roleRoutes, routes } from "./routes";
+import { fieldCoreRouteFor, fieldCoreRoutes, machineForRoute, mobileRoutes, roleRoutes, routes, type CorrectionSection } from "./routes";
 import { paymentLabelKeys } from "../data/payment-workspace";
 import { completionLabelKeys } from "../data/completion-workspace";
 import {
@@ -40,6 +40,14 @@ import {
   type AppLanguage,
 } from "../i18n/config";
 import { formatLongDate } from "../i18n/format";
+
+// Production UI defaults to the agreed five field workflows; development keeps
+// full module coverage. Operators can explicitly override with VITE_DOUL_UI_SCOPE.
+export const fieldCoreMode =
+  import.meta.env.VITE_DOUL_UI_SCOPE === "field-core" ||
+  (import.meta.env.PROD && import.meta.env.VITE_DOUL_UI_SCOPE !== "full");
+
+const PdfViewerPanel = lazy(() => import("../pages/parallel/PdfViewerPanel").then((module) => ({ default: module.PdfViewerPanel })));
 
 function millisecondsUntilNextLocalDay(now: Date) {
   const next = new Date(now);
@@ -51,15 +59,19 @@ export function AppShell({ client }: { client: SupervisionClient }) {
   const { t, i18n } = useTranslation();
   const roleLabel = (value: HumanRole) =>
     t(`roles.${value}`, { defaultValue: roles[value] });
-  const routeLabel = (value: (typeof routes)[number] | undefined) =>
-    value
-      ? t(value.labelKey ?? "", { defaultValue: value.label })
-      : "";
+  const routeLabel = (value: (typeof routes)[number] | undefined) => {
+    if (!value) return "";
+    if (fieldCoreMode && value.id === "owner") return t("launch.reports");
+    if (fieldCoreMode && value.id === "capture") return t("launch.notes");
+    return t(value.labelKey ?? "", { defaultValue: value.label });
+  };
   const [role, setRole] = useState<HumanRole>("SUP");
   const [todayDate, setTodayDate] = useState(() => formatLongDate(new Date()));
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [route, setRoute] = useState(location.hash.slice(2) || "today");
   const [selected, setSelected] = useState<string | null>(null);
+  const [correctionSection, setCorrectionSection] = useState<CorrectionSection>("issues");
+  const [reportSection, setReportSection] = useState<"reports" | "forms">("reports");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
@@ -140,21 +152,42 @@ export function AppShell({ client }: { client: SupervisionClient }) {
       return () => clearTimeout(t);
     }
   }, [toast]);
+  const allowed = fieldCoreMode
+    ? fieldCoreRoutes[role]
+    : workspace?.demo
+      ? Array.from(new Set([...roleRoutes[role], "parallel-test"]))
+      : roleRoutes[role];
   const nav = (to: string) => {
-    history.pushState(null, "", "#/" + to);
-    setRoute(to);
+    const resolved = fieldCoreMode ? fieldCoreRouteFor(to) : { route: to };
+    const target = allowed.includes(resolved.route) ? resolved.route : "today";
+    if ("correction" in resolved && resolved.correction) setCorrectionSection(resolved.correction);
+    if ("reportForm" in resolved && resolved.reportForm) setReportSection("forms");
+    else if (target === "owner") setReportSection("reports");
+    history.pushState(null, "", "#/" + target);
+    setRoute(target);
     setSelected(null);
     setMenu(false);
   };
-  const allowed = workspace?.demo
-    ? Array.from(new Set([...roleRoutes[role], "parallel-test"]))
-    : roleRoutes[role];
   const safeRoute = allowed.includes(route) ? route : "today";
-  const mobileItems = mobileRoutes[role]
+  useEffect(() => {
+    if (!fieldCoreMode) return;
+    const mapped = fieldCoreRouteFor(route);
+    const target = allowed.includes(mapped.route) ? mapped.route : "today";
+    if (target === route) return;
+    if (mapped.correction) setCorrectionSection(mapped.correction);
+    if (mapped.reportForm) setReportSection("forms");
+    history.replaceState(null, "", "#/" + target);
+    setRoute(target);
+    setSelected(null);
+  }, [route, role]);
+  const mobileChoices = fieldCoreMode
+    ? routes.filter((item) => allowed.includes(item.id) && ["today", "capture", "inspections", "corrections"].includes(item.id))
+    : mobileRoutes[role];
+  const mobileItems = mobileChoices
     .filter((item) => allowed.includes(item.id))
     .map((item) => ({
       ...item,
-      label: t(item.labelKey ?? "", { defaultValue: item.label }),
+      label: routeLabel(item),
     }));
   const items = workspace?.items || [];
   const current = items.find((x) => x.record.id === selected) || null;
@@ -202,18 +235,19 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         <div className="project-chip">
           <span className="project-mark">D</span>
           <div>
-            <strong>{t("app.sampleSite")}</strong>
-            <small>{t("app.sampleData")}</small>
+            <strong>{workspace?.project.name ?? t("app.sampleSite")}</strong>
+            {workspace?.demo && <small>{t("app.sampleData")}</small>}
           </div>
         </div>
         <NavigationList
           activeId={safeRoute}
           onNavigate={nav}
-          items={routes
-            .filter((x) => allowed.includes(x.id))
+          items={(fieldCoreMode
+            ? fieldCoreRoutes[role].map((id) => routes.find((entry) => entry.id === id)).filter((entry): entry is (typeof routes)[number] => Boolean(entry))
+            : routes.filter((entry) => allowed.includes(entry.id)))
             .map(({ id, label, labelKey, icon }) => ({
               id,
-              label: t(labelKey ?? "", { defaultValue: label }),
+              label: routeLabel({ id, label, labelKey, icon }),
               icon: <Icon name={icon} />,
               badge:
                 id === "observations"
@@ -383,7 +417,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                 <TodayPage
                   role={role}
                   workspace={workspace}
-                  allowedRoutes={allowed}
+                  allowedRoutes={fieldCoreMode && allowed.includes("corrections") ? [...allowed, "observations", "issues", "actions"] : allowed}
                   onNavigate={nav}
                   onOpenItem={(item) => {
                     nav(Object.entries(machineForRoute).find(([, machines]) =>
@@ -440,7 +474,13 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   onOpenCommand={(item, action) => setDialog({ item, action })}
                 />
               )}
-              {safeRoute === "owner" && (
+              {safeRoute === "owner" && fieldCoreMode && (
+                <div role="tablist" aria-label={t("launch.reports")} className="flex flex-wrap gap-2 pb-3">
+                  <button type="button" role="tab" aria-selected={reportSection === "reports"} className={reportSection === "reports" ? "primary" : "secondary"} onClick={() => { setReportSection("reports"); setSelected(null); }}>{t("launch.ownerReports")}</button>
+                  <button type="button" role="tab" aria-selected={reportSection === "forms"} className={reportSection === "forms" ? "primary" : "secondary"} onClick={() => { setReportSection("forms"); setSelected(null); }}>{t("launch.reportForms")}</button>
+                </div>
+              )}
+              {safeRoute === "owner" && (!fieldCoreMode || reportSection === "reports") && (
                 <OwnerGovernancePage
                   client={client}
                   onCreated={async (record) => { await refresh(); setSelected(record.id); }}
@@ -451,6 +491,38 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   onSelect={setSelected}
                   onOpenCommand={(item, action) => setDialog({ item, action })}
                 />
+              )}
+              {safeRoute === "drawings" && (
+                <div data-ui-page="field-drawings">
+                  <Suspense fallback={<div className="loading-panel">{t("app.loading.workspace")}</div>}>
+                    <PdfViewerPanel client={client} workspace={workspace} readOnly />
+                  </Suspense>
+                </div>
+              )}
+              {safeRoute === "corrections" && (
+                <div data-ui-page="field-corrections">
+                  <div role="tablist" aria-label={t("launch.corrections")} className="flex flex-wrap gap-2 pb-3">
+                    {(["observations", "issues", "actions"] as CorrectionSection[]).map((section) => (
+                      <button key={section} type="button" role="tab" aria-selected={correctionSection === section}
+                        className={correctionSection === section ? "primary" : "secondary"}
+                        onClick={() => { setCorrectionSection(section); setSelected(null); }}>
+                        {t("launch." + section)}
+                      </button>
+                    ))}
+                  </div>
+                  <WorkbenchPage
+                    route={correctionSection} role={role} workspace={workspace}
+                    selected={selected} current={current} online={online} onSelect={setSelected}
+                    onOpenCommand={(item, action) => setDialog({ item, action })}
+                    client={client}
+                    onInspectionCreated={async (record) => { await refresh(); setSelected(record.id); }}
+                    onActionCreated={async (record) => { await refresh(); setSelected(record.id); }}
+                    onCreateIssue={createIssue}
+                  />
+                </div>
+              )}
+              {safeRoute === "owner" && fieldCoreMode && reportSection === "forms" && (
+                <DocumentPage client={client} workspace={workspace} online={online} refresh={refresh} />
               )}
               {!["owner", "safety", "schedule", "contract", "payment", "completion"].includes(safeRoute) && machineForRoute[safeRoute] && (
                 <WorkbenchPage
