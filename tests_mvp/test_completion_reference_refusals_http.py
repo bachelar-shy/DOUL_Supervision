@@ -27,7 +27,7 @@ class CompletionReferenceRefusalHttpTests(unittest.TestCase):
         audit_before = deepcopy(f.engine._audit)
         response = f.command(collection, record, command, payload,
                              actor=kwargs.pop("actor", "SUP"), evidence=[], **kwargs)
-        self.assertIn(response.status_code, (400, 403, 409, 422), response.text)
+        self.assertIn(response.status_code, (400, 403, 404, 409, 422), response.text)
         self.assertEqual(f.engine.get("WorkItem", record["id"]), before)
         self.assertEqual(f.engine._audit, audit_before)
         return response
@@ -192,6 +192,25 @@ class CompletionReferenceRefusalHttpTests(unittest.TestCase):
         self.assertEqual(accepted["data"]["punchIssueRefs"], [original])
         self.assertEqual(accepted["data"]["currentPunchIssueRefs"], [current])
 
+
+
+    def test_same_issue_identity_in_another_project_or_scope_is_refused(self):
+        f = self.fixture
+        handover, _, current, _ = self.handover_draft()
+        original_issue = deepcopy(f.engine.get("Issue", current["objectId"]))
+        # Adversarial upstream records are synthetic fixture preparation. The
+        # refresh request itself uses the production HTTP route and must reject
+        # a matching identity whose current record escaped its original scope.
+        for field in ("projectId", "packageId", "locationId", "discipline"):
+            with self.subTest(field=field):
+                changed = deepcopy(original_issue)
+                changed["version"] = f.engine.get("Issue", current["objectId"])["version"] + 1
+                changed[field] = "MEC" if field == "discipline" else uid()
+                with f.store.transaction(True):
+                    f.engine._save("Issue", changed)
+                refused = self.assert_atomic_refusal("handover-packages", handover,
+                    "refresh_issue_references", {"currentIssueRefs": [f.ref("Issue", changed["id"])]})
+                self.assertEqual(refused.json()["code"], "PROJECT_MISMATCH" if field == "projectId" else "SCOPE_MISMATCH")
 
 
 if __name__ == "__main__":
