@@ -40,6 +40,16 @@
       "cause": "Media native selects and auto-sized grid children expanded to long option intrinsic widths",
       "change": "Scoped min-width0/width100% controls, wrapped long references and mobile heading",
       "local": "9 responsive cases390/768/1440 passed44.6s; full real Media flow with390px ko/vi/en source/hash checks passed18.4s; boundary/types/lint/build passed"
+    },
+    "localizedLayout": {
+      "scope": "15 connected workflow screens ×ko/vi/en ×390/768/1440 (135 screen states), rendered surface awaited; viewport and control bounds, title/action overlap;390px Contract draft modal plus full Media review sources",
+      "findings": [
+        "Media select intrinsic widths fixed in43d89f7",
+        "Action authoring Issue references overflowed390px controls, corrected scoped sizing",
+        "Screenshot review found mobile More/menu aria falling back to Korean; added vi/en translations"
+      ],
+      "screenshots": "Local390px ko/vi/en Capture/Payment/Completion retained in isolated Playwright output; no supplied private originals used",
+      "limits": "Synthetic development users and seeded data; no actual field usability or native device claim"
     }
   },
   "next": [
@@ -54,5 +64,6 @@
     "Initial build used default npm11 and correctly refused invalid override graph; npm12 rerun passed without weakening guard.",
     "Concurrent local Playwright runs initially shared trace output and collided; output directories and JSON reports were separated and affected tests passed.",
     "Media run-selection fixture initially inspected an old UI workspace; it now verifies both records in real API and reloads before assertions."
-  ]
+  ],
+  "performanceArchitectureReview": "Full snapshot reload is required for cross-adapter freshness; exact role-visible total scans candidates. Page heap already bounded. Material production improvement requires normalized/indexed transactional records, not weakening authorization or totals."
 }

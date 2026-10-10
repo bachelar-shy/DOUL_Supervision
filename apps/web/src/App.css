@@ -1686,3 +1686,19 @@ strong {
     flex-wrap: wrap;
   }
 }
+
+/* Long translated labels and exact Issue refs stay inside the authoring panel. */
+[data-ui-component="action-authoring-panel"],
+[data-ui-component="action-authoring-panel"] .grid,
+[data-ui-component="action-authoring-panel"] .grid > * {
+  min-width: 0;
+}
+[data-ui-component="action-authoring-panel"] input,
+[data-ui-component="action-authoring-panel"] select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+[data-ui-component="action-authoring-panel"] {
+  overflow-wrap: anywhere;
+}
