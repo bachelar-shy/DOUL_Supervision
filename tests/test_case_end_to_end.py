@@ -79,6 +79,10 @@ class CaseEndToEnd(unittest.TestCase):
         )
         issue=requested['issue']
         reinspection=requested['reinspection']
+        self.assertEqual(
+            reinspection['correctiveActionRefs'],
+            [self.f.ref('Action', action['id'])],
+        )
 
         action=self.f.command('action',action,'verify')
         action=self.f.command('action',action,'close')
