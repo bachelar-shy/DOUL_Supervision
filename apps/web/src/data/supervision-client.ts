@@ -3,6 +3,10 @@ import type {
   DomainRef,
   Fields,
   HumanRole,
+  IssuePackageInput,
+  IssuePackageResult,
+  MediaAnalysisRequestInput,
+  MediaAnalysisReview,
   RecordDTO,
   Scope,
   Session,
@@ -102,6 +106,12 @@ export interface SupervisionClient {
     options: UploadOptions,
     progress?: (offset: number, total: number) => void,
   ): Promise<RecordDTO>;
+  requestMediaAnalysis(input: MediaAnalysisRequestInput): Promise<RecordDTO>;
+  mediaAnalysisReview(runId: string): Promise<MediaAnalysisReview>;
+  createMediaIssuePackage(
+    runId: string,
+    input: Omit<IssuePackageInput, "issueObjectId" | "actionObjectId">,
+  ): Promise<IssuePackageResult>;
   importScheduleSource(
     input: ScheduleSourceImportInput,
     key?: string,
@@ -193,6 +203,25 @@ class HttpSupervisionClient implements SupervisionClient {
     progress?: (offset: number, total: number) => void,
   ) {
     return this.client.upload(bytes, options, progress);
+  }
+
+  requestMediaAnalysis(input: MediaAnalysisRequestInput) {
+    return this.client.requestMediaAnalysis(input);
+  }
+
+  mediaAnalysisReview(runId: string) {
+    return this.client.mediaAnalysisReview(runId);
+  }
+
+  createMediaIssuePackage(
+    runId: string,
+    input: Omit<IssuePackageInput, "issueObjectId" | "actionObjectId">,
+  ) {
+    return this.client.createMediaIssuePackage(runId, {
+      ...input,
+      issueObjectId: newKey(),
+      actionObjectId: newKey(),
+    });
   }
 
   importScheduleSource(input: ScheduleSourceImportInput, key?: string) {
