@@ -1,7 +1,7 @@
 {
   "branch": "goal/operator-completion-v1",
   "baseCommit": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
-  "sourceCheckpoint": "7e2c70a",
+  "sourceCheckpoint": "0d77c71",
   "completed": [
     "Media real API UI with authoritative creation capability gate and immutable source/version refs",
     "Payment append-only partial/correction/cancellation/final closure acceptance",
@@ -49,7 +49,9 @@
         "Screenshot review found mobile More/menu aria falling back to Korean; added vi/en translations"
       ],
       "screenshots": "Local390px ko/vi/en Capture/Payment/Completion retained in isolated Playwright output; no supplied private originals used",
-      "limits": "Synthetic development users and seeded data; no actual field usability or native device claim"
+      "limits": "Synthetic development users and seeded data; no actual field usability or native device claim",
+      "localResult": "7 cases passed29.7s covering135 screen states, existing capture/document locales and390px Contract dialog; real full Payment chain passed1.1m with9 populated-history display combinations and unchanged persisted official record",
+      "populatedPayment": "Five historical payment rows across ko/vi/en ×390/768/1440 remain inside viewport; final API record equals pre-display-change snapshot exactly"
     }
   },
   "next": [

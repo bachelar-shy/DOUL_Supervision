@@ -119,13 +119,14 @@
   "latestCheckpoint": "924b5f0",
   "operatorCandidate": {
     "branch": "goal/operator-completion-v1",
-    "sourceCheckpoint": "7e2c70a",
+    "sourceCheckpoint": "0d77c71",
     "scope": [
       "real media upload/analysis/review/eligible Issue UI, canonical server Issue authority and tri-language errors",
       "same-defect current Warranty closure selector",
-      "full partial-payment/correction/cancellation/final-payment UI acceptance"
+      "full partial-payment/correction/cancellation/final-payment UI acceptance",
+      "135 localized screen states and9 populated payment-history display combinations; mobile Action bounds and vi/en navigation labels"
     ],
-    "verification": "Local types/lint/boundary/npm12 build and focused workflow tests passed. First exact-head Mac attempt:6/7 workflows passed;109 browser passed,3 mobile overflow cases failed. Responsive Media controls corrected; final-head CI required.",
+    "verification": "Local boundary/types/lint/npm12 build and focused workflows passed, including responsive Media source/hash review,135 screen states, mobile Contract draft and9 populated Payment display combinations with official record preserved. Final exact-head Mac CI pending; no actual pilot claim.",
     "actualPilotPerformed": false
   },
   "mergedMainVerification": {

@@ -531,4 +531,21 @@ test("real UI/API payment chain authors exact-version Owner decisions and preser
   await selectTab(page, "기성 신청");
   await selectRecord(page, claimTitle);
   await expect(page.getByRole("button", { name: commandLabel("record_payment"), exact: true })).toHaveCount(0);
+  // Populated history must survive translated labels on narrow and wide screens.
+  for (const width of [390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 940 });
+    for (const language of ["ko", "vi", "en"] as const) {
+      await page.locator(".topbar .role-picker select").first().selectOption(language);
+      await expect(page.locator("html")).toHaveAttribute("lang", { ko: "ko-KR", vi: "vi-VN", en: "en-US" }[language]);
+      await expect(page.locator(".payment-history li")).toHaveCount(5);
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), { message: `populated payment ${language}/${width}` }).toBeTruthy();
+      const historyBox = await page.locator(".payment-history").boundingBox();
+      expect(historyBox).not.toBeNull();
+      expect(historyBox!.x).toBeGreaterThanOrEqual(-1);
+      expect(historyBox!.x + historyBox!.width).toBeLessThanOrEqual(width + 1);
+      await expect(page.locator(".payment-history")).toContainText(`BANK-FINAL-${suffix}`);
+    }
+  }
+  const afterDisplayChanges = await getWorkspace(request, adm);
+  expect(afterDisplayChanges.items.find((item: any) => item.record.id === claim.id).record).toEqual(persisted.record);
 });
