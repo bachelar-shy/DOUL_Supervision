@@ -29,6 +29,7 @@ import {
   WorkbenchPage,
 } from "../pages";
 import { Icon } from "../pages/shared";
+import { DrawingReviewPage } from "../pages/DrawingReviewPage";
 import { OfflineCommandIntentPanel } from "../pages/OfflineCommandIntentPanel";
 import { offlineIntentTitle } from "../data/offline-command-labels";
 import { machineForRoute, mobileRoutes, roleRoutes, routes } from "./routes";
@@ -164,6 +165,14 @@ export function AppShell({ client }: { client: SupervisionClient }) {
       return () => clearTimeout(t);
     }
   }, [toast]);
+  useEffect(() => {
+    if (!menu) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenu(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [menu]);
   const nav = (to: string) => {
     history.pushState(null, "", "#/" + to);
     setRoute(to);
@@ -215,8 +224,8 @@ export function AppShell({ client }: { client: SupervisionClient }) {
   }
   return (
     <div className="app-shell">
-      <aside className={"sidebar " + (menu ? "open" : "")}>
-        <button type="button" className="sidebar-close" aria-label="사이드바 닫기"
+      <aside id="side-navigation" className={"sidebar " + (menu ? "open" : "")}>
+        <button type="button" className="sidebar-close" aria-label={t("app.menuClose")}
           onClick={() => setMenu(false)}>×</button>
         <div className="brand">
           <b>
@@ -280,11 +289,14 @@ export function AppShell({ client }: { client: SupervisionClient }) {
           <small>{t("app.footer.tagline")}</small>
         </div>
       </aside>
+      {menu && <button type="button" className="sidebar-backdrop" aria-label={t("app.menuClose")} onClick={() => setMenu(false)} />}
       <div className="main-shell">
         <header className="topbar">
           <button
             className="icon-button menu-toggle"
             aria-label={t("app.menuOpen")}
+            aria-controls="side-navigation"
+            aria-expanded={menu}
             onClick={() => setMenu(!menu)}
           >
             <Icon name="layers" />
@@ -541,6 +553,17 @@ export function AppShell({ client }: { client: SupervisionClient }) {
               {safeRoute === "admin" && (
                 <AdminPage client={client} workspace={workspace} />
               )}
+              {safeRoute === "drawings" && (
+                <DrawingReviewPage
+                  key={`${workspace.project.id}:${workspace.role.id}:drawings`}
+                  client={client}
+                  workspace={workspace}
+                  onChanged={refresh}
+                  onSelect={setSelected}
+                  onNavigate={nav}
+                  onOpenCommand={(item, action) => setDialog({ item, action })}
+                />
+              )}
               {safeRoute === "parallel-test" && (
                 <ParallelTestPage key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} online={online} onNavigate={nav} onChanged={refresh} onSelect={setSelected} onOpenCommand={(item, action) => setDialog({ item, action })} />
               )}
@@ -560,6 +583,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         }))}
         onNavigate={nav}
         onMore={() => setMenu(!menu)}
+        moreControls="side-navigation"
         moreOpen={menu}
         moreActive={!mobileItems.some((item) => item.id === safeRoute)}
         moreIcon={<Icon name="layers" />}
