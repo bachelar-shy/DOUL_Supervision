@@ -10,6 +10,8 @@ on:
       - "app/reference/menu_usability_v1.json"
       - "tests_contracts/test_menu_usability.py"
       - "tests_browser/menu-usability.spec.ts"
+      - "tests_browser_launch/menu-usability-field-core.spec.ts"
+      - "tests_browser/full-mode-navigation.spec.ts"
       - "81_Menu_Usability_Evaluation_v1.md"
       - ".github/workflows/menu-usability.yml"
   workflow_dispatch:
@@ -57,7 +59,9 @@ jobs:
           DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
         run: |
           npx playwright install --with-deps chromium
-          npx playwright test tests_browser/menu-usability.spec.ts
+          npx playwright test tests_browser/menu-usability.spec.ts tests_browser/full-mode-navigation.spec.ts
+      - name: Chromium release-mode menu usability
+        run: npx playwright test --config playwright.field-core.config.ts tests_browser_launch/menu-usability-field-core.spec.ts
       - name: Upload failure evidence
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
