@@ -123,12 +123,46 @@ def compare_node(root, packages):
             errors.append("Locked version differs: " + relative)
     return errors, manifests, installed
 
+def check_node_forge_backport(root, lock_data):
+    metadata_path = root / "security/backports/node-forge-1.4.0.json"
+    metadata = json.loads(metadata_path.read_text())
+    expected = metadata["package"]
+    matches = [(name, package) for name, package in lock_data["packages"].items()
+               if name.endswith("node_modules/node-forge")]
+    errors = []
+    report = {"metadata": str(metadata_path), "advisory": metadata["advisory"]["id"],
+              "expected_version": expected["version"], "expected_sha256": expected["patchedSha256"]}
+    if len(matches) != 1 or matches[0][0] != expected["lockPath"]:
+        errors.append("node-forge backport expects exactly one locked copy at " + expected["lockPath"])
+        report["errors"] = errors
+        return report
+    lock_path, locked = matches[0]
+    if locked.get("version") != expected["version"] or locked.get("integrity") != expected["integrity"]:
+        errors.append("node-forge lock identity differs from the reviewed backport source")
+    package_root = root / lock_path
+    manifest_path = package_root / "package.json"
+    target = package_root / expected["originalFile"]
+    if not manifest_path.is_file() or not target.is_file():
+        errors.append("node-forge package or RSA source is missing; install locked dependencies first")
+    else:
+        manifest = json.loads(manifest_path.read_text())
+        if manifest.get("name") != expected["name"] or manifest.get("version") != expected["version"]:
+            errors.append("installed node-forge identity differs from the reviewed backport source")
+        actual_hash = digest(target)
+        report["installed_sha256"] = actual_hash
+        if actual_hash != expected["patchedSha256"]:
+            errors.append("node-forge RSA backport is missing or differs from the reviewed target")
+    report["errors"] = errors
+    return report
+
 def check_node(root):
     lock = root / "package-lock.json"
     data = json.loads(lock.read_text())
     if data.get("lockfileVersion", 0) < 2:
         raise ValueError("package-lock v2/v3 required")
     errors, manifests, installed = compare_node(root, data["packages"])
+    backport = check_node_forge_backport(root, data)
+    errors.extend(backport["errors"])
     tree = subprocess.run(["npm", "ls", "--all", "--json"], cwd=root, text=True,
                           capture_output=True)
     try:
@@ -142,6 +176,7 @@ def check_node(root):
             "inventory_sha256": hashlib.sha256(json.dumps(sorted(installed)).encode()).hexdigest(),
             "node_version": subprocess.check_output(["node", "--version"], text=True).strip(),
             "npm_version": subprocess.check_output(["npm", "--version"], text=True).strip(),
+            "node_forge_backport": backport,
             "errors": errors}
 
 def main(argv=None):
