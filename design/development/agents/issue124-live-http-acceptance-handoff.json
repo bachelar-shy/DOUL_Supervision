@@ -36,7 +36,7 @@
       "python3 scripts/benchmark_work_inbox_http_acceptance.py --help"
     ]
   },
-  "runStatus": "Not run. Docker is available in the current Linux environment, but no PostgreSQL container/listener was already running; the root requested notice before measurement to avoid contention with active CI/UI work.",
+  "runStatus": "Attempted the authorized local run on 2026-10-10 against clean app base 6a24662. Docker refused creation of the randomized disposable PostgreSQL container with `no space left on device`; the API did not start, so there are no measurements. A read-only `docker ps -a --filter name=doul-inbox-bench-` check found no leftover fixture container. Blocker evidence: design/verification/issue124-live-http-50k-30round-6a24662.json.",
   "acceptanceLimits": [
     "No latency SLO or p95 budget was found in inspected contracts; results will be descriptive and cannot be called a performance acceptance pass.",
     "Synthetic duplicated Issue records, one API process, and local snapshot persistence do not establish field data, concurrent-client behavior, M4/ARM64 performance, or production readiness.",
