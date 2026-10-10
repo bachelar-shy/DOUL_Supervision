@@ -346,7 +346,8 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             return JSONResponse({'status': 'error', 'errorType': type(exc).__name__}, status_code=503)
 
     @app.get('/health')
-    def health():return dict(status='ok',mode='local-demo' if demo else stage,baseCommit=(os.getenv('DOUL_RELEASE_SHA', '') if re.fullmatch(r'[a-f0-9]{40}', os.getenv('DOUL_RELEASE_SHA', '')) else 'unversioned-development'),adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo' if demo else 'local-password-pinned-rs256' if password_accounts is not None else 'pinned-rs256-access-token','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
+
+    def health():return dict(status='ok',mode='local-demo' if demo else stage,demoProfile=store.meta.get('demoProfile') if demo else None,baseCommit=(os.getenv('DOUL_RELEASE_SHA', '') if re.fullmatch(r'[a-f0-9]{40}', os.getenv('DOUL_RELEASE_SHA', '')) else 'unversioned-development'),adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo' if demo else 'local-password-pinned-rs256' if password_accounts is not None else 'pinned-rs256-access-token','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
 
     if password_accounts is not None:
         @app.post('/auth/login')
@@ -373,6 +374,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             body=await body_json(request)
             require(set(body)=={'username','password','partyId','roleAssignmentId'}, 'INVALID_REQUEST', 'Unexpected account fields')
             return password_accounts.create(dict(actorGroup='ADM',projectId=project_id), body['username'],body['password'],body['partyId'],body['roleAssignmentId'])
+
 
     @app.get('/dev/actors')
     def actors():
@@ -517,13 +519,15 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                 items.append(dict(machine=machine or supporting or ('evidence' if kind=='Evidence' else 'document'),record=deepcopy(r),actions=preflight(machine,r,session,role) if machine else []))
             visible_ids={x['record']['id'] for x in items}
             audits=[x for x in store.engine.audit_events if x['projectId']==project_id and x['objectRef']['objectId'] in visible_ids][-50:]
-            context=({k:deepcopy(v) for k,v in store.meta.items() if k in ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId']} if store.meta.get('projectId')==project_id else {'projectId':project_id})
+
+            context=({k:deepcopy(v) for k,v in store.meta.items() if k in (['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId','demoProfile','wwtZoneIds','dataClassification'] if demo else ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId'])} if store.meta.get('projectId')==project_id else {'projectId':project_id})
             context['creationCapabilities']=build_creation_capabilities(
                 store.engine,project_id,session['partyId'],role,context.get('scope'),
                 queue_enabled=app.state.queue_enabled,
             )
             context['referenceCatalog']=build_reference_catalog(store.engine,project_id,session['partyId'],role['id'])
             return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context=context,participants=[dict(partyId=r['partyId'],name=store.engine.get('Party',r['partyId'])['name'],actorGroup=r['actorGroup']) for (kind,_),r in store.engine._records.items() if kind=='RoleAssignment' and r['projectId']==project_id and r['active'] and r['actorGroup'] in ['SUP','CON','OWN','DES','ADM']],formSchemas=store.documents.schemas,demo=demo)
+
 
     @app.get('/projects/{project_id}/roles')
     def roles(project_id:str,request:Request):
@@ -1024,6 +1028,9 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             scope=dict(discipline=body['discipline'],packageId=body['packageId'],locationId=body['locationId'],responsibleOrganizationId=role['organizationId'] if role['actorGroup']=='CON' else store.meta['scope']['responsibleOrganizationId'])
             store.engine.authorize(dict(projectId=project_id,**scope),'create_evidence',session['partyId'],role['id'])
             source=store.engine.get('Party',body['sourcePartyId']);require(source['projectId']==project_id,'PROJECT_MISMATCH','Source party unavailable')
+            if demo and store.meta.get('demoProfile') == 'wwt' and body['fileName'].startswith('WWT__'):
+                match=re.fullmatch(r'WWT__([A-Z0-9-]+)__([a-z_]+)__(ZONE-[A-F])__SYNTHETIC\.png',body['fileName'])
+                require(match is not None and body['locationId']==store.meta['wwtZoneIds'].get(match.group(3)), 'INVALID_REQUEST', 'WWT synthetic case location mismatch')
             request_key='upload:'+project_id+':'+session['partyId']+':'+key
             fingerprint=sha256(canonical(body)).hexdigest()
             if request_key in store.requests:
@@ -1080,7 +1087,14 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             require(actual_mime==p['mimeType'],'MIME_INVALID','Declared MIME does not match bytes')
             expected_media='photo' if actual_mime.startswith('image/') else 'video' if actual_mime.startswith('video/') else 'audio' if actual_mime.startswith('audio/') else 'document'
             require(u['mediaType']==expected_media,'MIME_INVALID','Media category does not match bytes')
-            payload=dict(sourceType='original',mediaType=u['mediaType'],fileId=upload_id,fileHash=p['expectedHash'],sourcePartyId=u['sourcePartyId'],metadata={'name':p['fileName'],'mimeType':actual_mime,'byteCount':len(content)},**u['scope'])
+            metadata={'name':p['fileName'],'mimeType':actual_mime,'byteCount':len(content)}
+            if demo and store.meta.get('demoProfile') == 'wwt':
+                match=re.fullmatch(r'WWT__([A-Z0-9-]+)__([a-z_]+)__(ZONE-[A-F])__SYNTHETIC\.png',p['fileName'])
+                if match:
+                    metadata.update(demoCaseId=match.group(1),demoStage=match.group(2),demoZone=match.group(3),
+                                    demoClassification='SYNTHETIC_NOT_SITE_EVIDENCE',
+                                    demoNotice='합성 시험자료 / 실제 현장 증빙 아님')
+            payload=dict(sourceType='original',mediaType=u['mediaType'],fileId=upload_id,fileHash=p['expectedHash'],sourcePartyId=u['sourcePartyId'],metadata=metadata,**u['scope'])
             if u['capturedAt']:payload['capturedAt']=u['capturedAt']
             result=store.engine.add_evidence(p['captureId'],project_id,payload,content,session['partyId'],role['id'],key)
             p['status']='completed';return JSONResponse(result['record'],status_code=201)
