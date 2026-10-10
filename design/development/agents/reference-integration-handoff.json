@@ -1,7 +1,7 @@
 {
   "status": "in_progress_not_release_verified",
   "branch": "goal/reference-integration-v1-1",
-  "baseCommit": "7a3485e3ab71207a84cee2ec9ca3cf92d5816909",
+  "baseCommit": "49cae4f8a3d2eecb10fdb909c4669ef74fb7da30",
   "productApproval": {
     "issue": 132,
     "decision": "approved",
@@ -17,19 +17,25 @@
     ]
   },
   "sourceCheckpoints": [
-    "2aa634b",
-    "cfbf5f0"
+    "553e030",
+    "ca3f531",
+    "4a5e555"
   ],
   "verification": {
-    "existingHandoverHTTP": "5 passed after initial API changes",
-    "newAcceptance": "pending",
-    "MacCI": "pending for this reference integration; prior security PR136 four passed"
+    "referenceSuite": "320 passed using locked priority-venv",
+    "existingHandoverHTTP": "focused API and application tests passed; full API agent run 407 tests, 361 passed, 46 skipped",
+    "newAcceptance": "five real HTTP refusal/persistence/idempotency tests passed; full five browser cases rerunning after final-snapshot signature test completion",
+    "types": "web and mobile typecheck passed",
+    "locales": "350 mandatory keys across ko/vi/en passed",
+    "MacCI": "C2 pending; PR136 and PR137 each four PR and four merged-main Mac Actions passed; PR138 pending"
   },
   "restart": [
+    "Remote goal/reference-integration-v1-1 preserves checkpoint. Active /tmp worktrees use /tmp/doul-preserved-mirror.git; original /workspace repository metadata is untouched. /workspace full; do not create sequencer there or prune old work.",
     "Read latest branch commits and API/UI agent handoffs; do not reset original worktrees",
     "Use root isolated npm12 install or clean locked install, never mutate shared node_modules",
     "Finish new HTTP and actual connected browser acceptance, codegen and required Mac CI before integration",
     "Actual field pilot remains unperformed; supplied files and development fixtures are not field acceptance"
   ],
-  "environmentInterruption": "Prior temporary uncommitted copies lost during environment replacement; new work commits small WIP checkpoints into durable repository metadata"
+  "environmentInterruption": "Source and checkpoints committed and pushed; temporary /tmp worktrees must be recovered from remote if execution environment changes.",
+  "integrationCheckpoint": "1de113c"
 }
