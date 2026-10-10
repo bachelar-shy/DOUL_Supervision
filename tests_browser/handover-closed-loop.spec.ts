@@ -114,6 +114,7 @@ const commandFieldLabels: Record<string, RegExp> = {
   retestBasisRefs: /retestBasis|재시험 근거/i,
   punchIssueRefs: /punchIssue|punch issue|펀치|이슈/i,
   ownerDecisionRef: /owner decision reference|발주처 결정/i,
+  closureRef: /closure reference|종결 근거 참조/i,
   reinspectionRef: /reinspection reference|재검측 참조/i,
   acceptedScope: /acceptedScope|인수 범위/i,
   effectiveAt: /effectiveAt|적용 시각/i,
@@ -438,7 +439,7 @@ test("real Completion UI preserves Owner reservation proposal inputs on a handov
   }
 });
 
-async function runCompletionHandoverScenario(page: Page, continueWarranty: boolean): Promise<void> {
+async function runCompletionHandoverScenario(page: Page, continueWarranty: boolean, finalizeHandover = false): Promise<void> {
   test.setTimeout(120000);
   const origin = testOrigin();
   const { child, base, fixture } = await startApi(origin);
@@ -773,6 +774,95 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     const handoverAfterAcceptance = latestWorkspace.items.find((item: any) => item.record.id === handoverId);
     expect(handoverAfterAcceptance.record.data.reservations).toHaveLength(1);
     expect(handoverAfterAcceptance.record.data.reservations[0].closureRequirement).toBe("Verify and close the reserved punch issue");
+    if (finalizeHandover) {
+      const originalOpenIssueRefs = handoverAfterAcceptance.record.data.openIssueRefs;
+      const originalOwnerAcceptanceRef = handoverAfterAcceptance.record.data.ownerAcceptanceRef;
+      const originalReservations = handoverAfterAcceptance.record.data.reservations;
+      const reservedIssue = latestWorkspace.items.find((item: any) => item.record.id === fixture.reservationIssueRef.objectId);
+      expect(reservedIssue.record.status).toBe("open");
+
+      await useRole(page, "SUP");
+      await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
+      await runWorkbenchCommand(page, "issues", "F-07 browser reservation Punch", /assign|담당자 배정/i, {
+        responsiblePartyId: fixture.actors.CON,
+        responsibleOrganizationId: fixture.responsibleOrganizationId,
+        dueAt: fixture.tomorrow,
+        actionIds: reservedIssue.record.actionIds,
+      });
+      await useRole(page, "CON");
+      await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
+      await runWorkbenchCommand(page, "issues", "F-07 browser reservation Punch", /start correction|시정 시작/i);
+      await page.goto("/#/parallel-test");
+      await page.getByRole("tab", { name: /work inbox|작업함/i }).click();
+      const casePanel = page.getByTestId("inspection-case-flow");
+      await casePanel.getByLabel(/source inspection|root inspection|원 검측 선택/i).selectOption(fixture.inspectionRef.objectId);
+      const issueCard = casePanel.locator(".inspection-case-issue").filter({ hasText: "F-07 browser reservation Punch" });
+      const reinspectionForm = issueCard.getByRole("form", { name: /request linked reinspection|연결된 재검측 요청/i });
+      const reinspectionName = "F-07 browser final handover reinspection";
+      await reinspectionForm.getByLabel(/work name|작업명/i).fill(reinspectionName);
+      await reinspectionForm.getByLabel(/requested inspection time|재검측 요청 일시/i).fill(await localDateTime(page, Date.now() + 3600000));
+      await reinspectionForm.getByLabel(/contractor self inspection is complete|시공자 자체검측 완료/i).check();
+      for (const label of [/drawing checked|도면 확인/i, /material checked|자재 확인/i, /test checked|시험 확인/i, /previous work checked|선행 작업 확인/i, /changes checked|변경사항 확인/i]) await reinspectionForm.getByLabel(label).check();
+      await reinspectionForm.getByLabel(new RegExp(fixture.evidenceId)).check();
+      const reinspectionPost = page.waitForResponse((response) => response.request().method() === "POST" && /inspection-cases\/.*\/issues\/.*\/reinspections/.test(response.url()));
+      await reinspectionForm.getByRole("button", { name: /submit reinspection request|재검측 요청 제출/i }).click();
+      const reinspectionResponse = await reinspectionPost;
+      const reinspectionBody = await reinspectionResponse.json();
+      expect(reinspectionResponse.status(), JSON.stringify(reinspectionBody)).toBe(201);
+      const reinspectionId = reinspectionBody.reinspection.id as string;
+
+      await useRole(page, "SUP");
+      await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
+      await runWorkbenchCommand(page, "issues", "F-07 browser reservation Punch", /start reinspection|재검측 시작/i);
+      await page.getByRole("navigation").getByRole("button", { name: /inspection.*acceptance/i }).click();
+      await runWorkbenchCommand(page, "inspections", reinspectionName, /receive|접수/i, { "접수 시각": new Date().toISOString() });
+      await runWorkbenchCommand(page, "inspections", reinspectionName, /schedule|일정 배정/i, { "검측 예정시각": new Date(Date.now() + 3600000).toISOString() });
+      await runWorkbenchCommand(page, "inspections", reinspectionName, /start|시작/i);
+      const passingChecks = JSON.stringify([{ itemId: "dimension", requirementRef: fixture.requirementRef, result: "pass", evidenceIds: [fixture.evidenceId, fixture.retestEvidenceId], measuredValue: 1, unit: "count" }]);
+      await runWorkbenchCommand(page, "inspections", reinspectionName, /submit results|결과 제출/i, { "검측 항목·측정 결과": passingChecks }, [fixture.evidenceId, fixture.retestEvidenceId]);
+      await runWorkbenchCommand(page, "inspections", reinspectionName, /mark compliant|pass|적합 판정/i, {}, [fixture.evidenceId, fixture.retestEvidenceId]);
+      expect(latestWorkspace.items.find((item: any) => item.record.id === reinspectionId)?.record.status).toBe("passed");
+      await runWorkbenchCommand(page, "inspections", reinspectionName, /release next work|후속공정 허용/i, {}, [fixture.evidenceId]);
+      await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
+      await runWorkbenchCommand(page, "issues", "F-07 browser reservation Punch", /review closure|close/i, {
+        closureEvidenceIds: [fixture.evidenceId, fixture.retestEvidenceId],
+      }, [fixture.evidenceId, fixture.retestEvidenceId]);
+
+      await useRole(page, "SUP");
+      await page.getByRole("navigation").getByRole("button", { name: /commissioning.*handover.*warranty/i }).click();
+      await workspace.getByRole("tab", { name: /handover/i }).click();
+      await workspace.getByRole("button", { name: /Browser closed loop partial handover/ }).click();
+      const currentIssueRef = latestWorkspace.context.referenceCatalog.issues.find((entry: any) => entry.ref.objectId === fixture.reservationIssueRef.objectId)?.ref as Ref | undefined;
+      expect(currentIssueRef).toBeDefined();
+      const refreshed = await runCompletionCommand(page, /refresh current issue references/i, { currentIssueRefs: [currentIssueRef!] });
+      expect(refreshed.status).toBe("accepted_with_reservations");
+      expect(refreshed.data.openIssueRefs).toEqual(originalOpenIssueRefs);
+      expect(refreshed.data.currentIssueRefs).toEqual([currentIssueRef]);
+      expect(refreshed.data.currentOpenIssueRefs).toEqual([]);
+      expect(refreshed.data.ownerAcceptanceRef).toEqual(originalOwnerAcceptanceRef);
+      expect(refreshed.data.reservations).toEqual(originalReservations);
+      expect(refreshed.data.issueReferenceRefreshHistory).toHaveLength(1);
+
+      await useRole(page, "OWN");
+      await workspace.getByRole("tab", { name: /handover/i }).click();
+      await workspace.getByRole("button", { name: /Browser closed loop partial handover/ }).click();
+      const finalized = await runCompletionCommand(page, /record final handover/i, {
+        effectiveAt: fixture.warrantyStartAt, warrantyTrigger: true,
+      }, [fixture.evidenceId]);
+      expect(finalized.status).toBe("final_handover");
+      expect(finalized.data.openIssueRefs).toEqual(originalOpenIssueRefs);
+      expect(finalized.data.ownerAcceptanceRef).toEqual(originalOwnerAcceptanceRef);
+      expect(finalized.data.reservations).toEqual(originalReservations);
+      expect(finalized.data.issueReferenceRefreshHistory).toHaveLength(1);
+      await useRole(page, "SUP");
+      await workspace.getByRole("tab", { name: /handover/i }).click();
+      await workspace.getByRole("button", { name: /Browser closed loop partial handover/ }).click();
+      const closed = await runCompletionCommand(page, /close handover package/i);
+      expect(closed.status).toBe("closed");
+      expect(closed.data.openIssueRefs).toEqual(originalOpenIssueRefs);
+      expect(closed.data.reservations).toEqual(originalReservations);
+      return;
+    }
     const acceptedScope = {
       scopeId: "SYS-BROWSER-SEGMENT-A", system: "SYS-BROWSER", locationIds: [fixture.scope.locationId], assetRefs: [fixture.assets[0]],
     };
@@ -1083,4 +1173,9 @@ test("real Completion UI refreshes stale commissioning references and completes 
 
 test("real warranty UI accepts a remedy with current references after reinspection and closes the claim", async ({ page }) => {
   await runCompletionHandoverScenario(page, true);
+});
+
+test("real Owner and SUP UI complete final handover after a reserved Issue closes", async ({ page }) => {
+  test.setTimeout(120_000);
+  await runCompletionHandoverScenario(page, true, true);
 });
