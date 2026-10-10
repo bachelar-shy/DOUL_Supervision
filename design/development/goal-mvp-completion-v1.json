@@ -1,6 +1,6 @@
 {
   "goal": "DOUL Supervision Korean, Vietnamese and English field MVP",
-  "status": "development_in_progress_with_external_acceptance_dependencies",
+  "status": "current_MVP_development_verified_external_acceptance_pending",
   "integrationBase": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
   "mergedPrerequisites": [
     {
@@ -22,7 +22,7 @@
       "pr": 140,
       "head": "97695744d65b788530e2568debdea63259acb524",
       "merge": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
-      "validation": "All7 exact-head Mac workflows passed;main checks in progress",
+      "validation": "All7 exact-head PR and all7 merged-main Mac workflows passed",
       "evidence": "design/verification/operator-completion-pr140-mac-20261010.json"
     }
   ],
@@ -95,7 +95,7 @@
   "restartAfterUnblocking": [
     "Inspect latest Git status, handoffs, PR and main exact-head checks; preserve uncommitted and original checkout data.",
     "PR139/C2 and PR140/operator workflows are merged. Do not redo their implementations or request recorded132 approval.",
-    "Finish or confirm main4abc0a5 seven Mac workflows from durable runtime proof.",
+    "PR140 main4abc0a5 all7 Mac workflows are verified. Continue from verified checkpoint; do not repeat implementation or CI provisioning.",
     "Continue actual field/native-language/provider and operating acceptance when133/134 inputs are available; do not declare full Goal complete."
   ],
   "supplementalVerificationEvidence": [
@@ -126,21 +126,22 @@
       "full partial-payment/correction/cancellation/final-payment UI acceptance",
       "135 localized screen states and9 populated payment-history display combinations; mobile Action bounds and vi/en navigation labels"
     ],
-    "verification": "All7 exact-head Mac workflows passed;115 browser,7 isolated mock locales,320 reference,412 API (46 environment-specific skips);main verification in progress.",
+    "verification": "All7 exact-head PR and all7 merged-main Mac workflows passed;115 browser and7 isolated mock locales,320 reference tests and412 API tests (46 environment-specific skips); no actual field pilot or provider certification claim.",
     "actualPilotPerformed": false,
-    "status": "merged_PR_CI_verified_main_checks_in_progress",
+    "status": "merged_PR_and_main_Mac_CI_verified",
     "head": "97695744d65b788530e2568debdea63259acb524",
     "merge": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
-    "evidence": "design/verification/operator-completion-pr140-mac-20261010.json"
+    "evidence": "design/verification/operator-completion-pr140-mac-20261010.json",
+    "mainEvidence": "design/verification/operator-completion-main-mac-20261010.json"
   },
   "mergedMainVerification": {
     "status": "passed",
-    "head": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
-    "workflowCount": 11,
-    "evidence": "design/verification/reference-v1-1-main-mac-20261010.json",
-    "mvpBrowserPassed": 109,
+    "head": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
+    "workflowCount": 7,
+    "evidence": "design/verification/operator-completion-main-mac-20261010.json",
+    "mvpBrowserPassed": 115,
     "mockLocalizationPassed": 7,
-    "firstAttempt": "One ECONNRESET fixture transport failure; unchanged source passed failed-job rerun. GET-only fixture transport resilience is a separate operator candidate change."
+    "attempts": 1
   },
   "performanceVerification": {
     "evidence": "design/verification/issue124-live-http-50k-30round-72c8934.json",
