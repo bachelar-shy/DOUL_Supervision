@@ -593,6 +593,12 @@ class HandoverHttpTests(unittest.TestCase):
         self.assertEqual(stale_final.json()["code"], "REFERENCE_STALE")
         self.assertEqual(self.engine.get("WorkItem", handover["id"])["version"], handover["version"])
 
+        malformed = self.command("handover-packages", handover, "refresh_issue_references", {
+            "currentIssueRefs": [{"objectType": "Issue", "objectId": [], "version": True}],
+        }, actor="SUP", evidence=[])
+        self.assertNotEqual(malformed.status_code, 500, malformed.text)
+        self.assertEqual(self.engine.get("WorkItem", handover["id"])["version"], handover["version"])
+
         denied = self.command("handover-packages", handover, "refresh_issue_references", {
             "currentIssueRefs": [latest_issue_ref],
         }, actor="CON", evidence=[])
