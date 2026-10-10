@@ -939,6 +939,10 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     expect(partial.record.status).toBe("partial_handover");
     expect(partial.record.data.acceptedScope).toEqual(acceptedScope);
     expect(partial.record.data.warrantyStartAt).toBe(fixture.warrantyStartAt);
+    const handoverVersionBeforeWarranty = partial.record.version;
+    const handoverOwnerAcceptanceBeforeWarranty = partial.record.data.ownerAcceptanceRef;
+    const handoverReservationsBeforeWarranty = partial.record.data.reservations;
+    const handoverOpenIssuesBeforeWarranty = partial.record.data.openIssueRefs;
     let warrantyIssueRef = fixture.reservationIssueRef;
     let warrantyIssueTitle = "F-07 browser reservation Punch";
     if (continueWarranty) {
@@ -1333,11 +1337,12 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
       .filter((id: string) => latestWorkspace.items.find((item: any) => item.record.id === id)?.record.correctionCycle === warrantyIssue.record.correctionCycle)
       .map((id: string) => latestWorkspace.context.referenceCatalog.actions.find((entry: any) => entry.ref.objectId === id)?.ref)
       .filter(Boolean) as Ref[];
+    const acceptedReplacementAction = latestWorkspace.items.find((item: any) => item.record.id === replacementActionId).record;
     expect(currentReinspectionRef).toBeDefined();
     expect(currentIssueRef).toMatchObject({ objectId: warrantyIssueRef.objectId, version: warrantyIssue.record.version });
     expect(currentActionRefs).toHaveLength(1);
-    expect(currentActionRefs[0]).toMatchObject({ objectType: "Action", objectId: replacementActionId, version: replacementActionRef.version });
-    expect(latestWorkspace.items.find((item: any) => item.record.id === replacementActionId)?.record.correctionCycle).toBe(1);
+    expect(currentActionRefs[0]).toMatchObject({ objectType: "Action", objectId: replacementActionId, version: acceptedReplacementAction.version });
+    expect(acceptedReplacementAction.correctionCycle).toBe(1);
     const originalWarrantyIssueRef = claimAfterReinspection.record.data.issueRef;
     const originalWarrantyActionRefs = claimAfterReinspection.record.data.actionRefs;
     const acceptedRemedy = await runCompletionCommand(page, /accept remedy/i, {
@@ -1351,11 +1356,26 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     expect(acceptedRemedy.data.currentIssueRef).toEqual(currentIssueRef);
     expect(acceptedRemedy.data.currentActionRefs).toHaveLength(currentActionRefs.length);
     expect(acceptedRemedy.data.currentActionRefs).toEqual(expect.arrayContaining(currentActionRefs));
-    expect(acceptedRemedy.data.remedyReferenceRefreshHistory).toHaveLength(1);
+    expect(acceptedRemedy.data.remedyReferenceRefreshHistory).toHaveLength(2);
+    expect(acceptedRemedy.data.remedyReferenceRefreshHistory[0]).toMatchObject({
+      currentIssueRef: currentRemedyIssueRef,
+      currentActionRefs: [replacementActionRef],
+    });
+    expect(acceptedRemedy.data.remedyReferenceRefreshHistory[1]).toMatchObject({
+      priorIssueRef: currentRemedyIssueRef,
+      priorActionRefs: [replacementActionRef],
+      currentIssueRef,
+      currentActionRefs,
+    });
     const closedClaim = await runCompletionCommand(page, /close warranty claim/i, {
       closureRef: currentIssueRef!,
     }, [fixture.evidenceId]);
     expect(closedClaim.status).toBe("closed");
+    const handoverAfterWarranty = latestWorkspace.items.find((item: any) => item.record.id === handoverId).record;
+    expect(handoverAfterWarranty.version).toBe(handoverVersionBeforeWarranty);
+    expect(handoverAfterWarranty.data.ownerAcceptanceRef).toEqual(handoverOwnerAcceptanceBeforeWarranty);
+    expect(handoverAfterWarranty.data.reservations).toEqual(handoverReservationsBeforeWarranty);
+    expect(handoverAfterWarranty.data.openIssueRefs).toEqual(handoverOpenIssuesBeforeWarranty);
   } finally {
     await stopApi(child);
   }
