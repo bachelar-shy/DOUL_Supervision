@@ -106,11 +106,12 @@ export interface SupervisionClient {
     options: UploadOptions,
     progress?: (offset: number, total: number) => void,
   ): Promise<RecordDTO>;
-  requestMediaAnalysis(input: MediaAnalysisRequestInput): Promise<RecordDTO>;
+  requestMediaAnalysis(input: MediaAnalysisRequestInput, key?: string): Promise<RecordDTO>;
   mediaAnalysisReview(runId: string): Promise<MediaAnalysisReview>;
   createMediaIssuePackage(
     runId: string,
-    input: Omit<IssuePackageInput, "issueObjectId" | "actionObjectId">,
+    input: IssuePackageInput,
+    key?: string,
   ): Promise<IssuePackageResult>;
   importScheduleSource(
     input: ScheduleSourceImportInput,
@@ -205,8 +206,8 @@ class HttpSupervisionClient implements SupervisionClient {
     return this.client.upload(bytes, options, progress);
   }
 
-  requestMediaAnalysis(input: MediaAnalysisRequestInput) {
-    return this.client.requestMediaAnalysis(input);
+  requestMediaAnalysis(input: MediaAnalysisRequestInput, key?: string) {
+    return this.client.requestMediaAnalysis(input, key);
   }
 
   mediaAnalysisReview(runId: string) {
@@ -215,13 +216,10 @@ class HttpSupervisionClient implements SupervisionClient {
 
   createMediaIssuePackage(
     runId: string,
-    input: Omit<IssuePackageInput, "issueObjectId" | "actionObjectId">,
+    input: IssuePackageInput,
+    key?: string,
   ) {
-    return this.client.createMediaIssuePackage(runId, {
-      ...input,
-      issueObjectId: newKey(),
-      actionObjectId: newKey(),
-    });
+    return this.client.createMediaIssuePackage(runId, input, key);
   }
 
   importScheduleSource(input: ScheduleSourceImportInput, key?: string) {

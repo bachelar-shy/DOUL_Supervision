@@ -272,7 +272,7 @@ export function CapturePage({
           </section>
         </div>
         <div className="col-span-full">
-          <MediaAnalysisPanel client={client} workspace={workspace} online={online} onChanged={refresh} />
+          <MediaAnalysisPanel key={`${workspace.project.id}:${client.session?.actor.roleAssignmentId ?? workspace.role.id}:${workspace.role.actorGroup}`} client={client} workspace={workspace} online={online} onChanged={refresh} />
         </div>
       </CaptureTemplate>
 
