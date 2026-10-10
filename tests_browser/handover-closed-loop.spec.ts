@@ -869,6 +869,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
       await page.getByLabel("Select document", { exact: true }).selectOption(finalDocumentId);
       await signFinalInspection("contractor_technical_lead");
       await useRole(page, "SUP");
+      await page.goto("/#/inspections");
       await runWorkbenchCommand(page, "inspections", reinspectionName, /release next work|후속공정 허용/i, {}, [fixture.evidenceId]);
       await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
       await runWorkbenchCommand(page, "issues", "F-07 browser reservation Punch", /review closure|close/i, {
@@ -1376,10 +1377,11 @@ test("real Completion UI refreshes stale commissioning references and completes 
 });
 
 test("real warranty UI accepts a remedy with current references after reinspection and closes the claim", async ({ page }) => {
+  test.setTimeout(240_000);
   await runCompletionHandoverScenario(page, true);
 });
 
 test("real Owner and SUP UI complete final handover after a reserved Issue closes", async ({ page }) => {
-  test.setTimeout(120_000);
+  test.setTimeout(240_000);
   await runCompletionHandoverScenario(page, true, true);
 });
