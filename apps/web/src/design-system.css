@@ -1,22 +1,22 @@
 /*
- * DOUL Supervision UI Design System v1.0
+ * DOUL Supervision UI Design System v2.0 - Quiet Graphite
  * Presentation layer only. Domain/state/authority/API contracts remain authoritative.
  */
 
 :root {
-  --doul-color-primary: #0b2e91;
-  --doul-color-primary-muted: #33518d;
+  --doul-color-primary: #2555d6;
+  --doul-color-primary-muted: #2148b6;
   --doul-color-primary-deep: #061b5c;
-  --doul-color-ink: #030213;
-  --doul-color-slate-900: #0f172a;
-  --doul-color-slate-700: #334155;
+  --doul-color-ink: #202a35;
+  --doul-color-slate-900: #202a35;
+  --doul-color-slate-700: #364554;
   --doul-color-slate-600: #475569;
-  --doul-color-slate-500: #64748b;
+  --doul-color-slate-500: #536171;
   --doul-color-slate-300: #cbd5e1;
-  --doul-color-line: #e2e8f0;
+  --doul-color-line: #e4e7eb;
   --doul-color-surface: #ffffff;
-  --doul-color-surface-alt: #f8fafc;
-  --doul-color-surface-tint: #f3f6fb;
+  --doul-color-surface-alt: #f7f8f8;
+  --doul-color-surface-tint: #eaf0ff;
   --doul-color-success: #127a4a;
   --doul-color-warning: #b45309;
   --doul-color-danger: #d4183d;
@@ -43,8 +43,8 @@
   --doul-page-x: 32px;
   --doul-page-x-mobile: 16px;
 
-  --doul-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    "Noto Sans KR", "Noto Sans", Arial, sans-serif;
+  --doul-font-sans: "Pretendard Variable", Pretendard, Inter, "Be Vietnam Pro",
+    "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --doul-font-data: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas,
     monospace;
 
@@ -425,4 +425,35 @@ textarea {
 /* Parallel UI/function development boundary. Keeps semantic page wrappers layout-neutral. */
 .ui-page-boundary {
   display: contents;
+}
+
+/* v2 visual refresh - scoped to shared work surfaces; no workflow semantics. */
+:root {
+  --doul-ui-sidebar: #f1f3f4;
+  --doul-ui-selected: #eaf0ff;
+  --doul-ui-row-hover: #f5f7fb;
+  --doul-ui-detail-width: 420px;
+  --doul-ui-density-row: 48px;
+  --doul-ui-motion: 150ms;
+}
+.app-shell { background: var(--doul-color-surface-alt); }
+.sidebar { background: var(--doul-ui-sidebar); border-right-color: var(--doul-color-line); }
+.sidebar nav button { border-radius: var(--doul-radius-md); transition: background-color var(--doul-ui-motion) ease; }
+.sidebar nav button.active { background: var(--doul-ui-selected); color: var(--doul-color-primary); }
+.sidebar nav button:hover { background: var(--doul-ui-row-hover); }
+.topbar, .panel, .kpi { background: var(--doul-color-surface); }
+.panel, .kpi { border-color: var(--doul-color-line); border-radius: var(--doul-radius-lg); box-shadow: none; }
+.breadcrumbs, .page-heading p, .eyebrow { color: var(--doul-color-slate-500); }
+.kpi b, .detail-title { color: var(--doul-color-ink); }
+.record-row { transition: background-color var(--doul-ui-motion) ease; }
+.record-row:hover { background: var(--doul-ui-row-hover); }
+:where(.register-content, .table-scroll) { min-width: 0; }
+:where(.table-scroll) { overflow-x: auto; }
+:where(.workbench, .document-workbench, .work-grid) > * { min-width: 0; }
+:where(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--doul-color-primary);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar nav button, .record-row { transition: none; }
 }
