@@ -149,6 +149,9 @@ test("run selector stays locked until a human confirmation refresh finishes", as
     languages: ["en"],
   }, 201);
   const [activeRun, otherRun] = await Promise.all([queue(), queue()]);
+  const workspace = await api<{ items: Array<{ machine: string; record: { id: string } }> }>(request, sup, "/workspace");
+  const workspaceRunIds = workspace.items.filter((item) => item.machine === "analysis_run").map((item) => item.record.id);
+  expect(workspaceRunIds).toEqual(expect.arrayContaining([activeRun.id, otherRun.id]));
   const start = await request.post(`${apiOrigin}/dev/media-worker/projects/${sup.projectId}/runs/${activeRun.id}/start`, { headers: headers(adm, true), data: {} });
   expect(start.status(), await start.text()).toBe(200);
   const completion = await request.post(`${apiOrigin}/dev/media-worker/projects/${sup.projectId}/runs/${activeRun.id}/complete`, {
@@ -166,6 +169,8 @@ test("run selector stays locked until a human confirmation refresh finishes", as
   });
   expect(completion.status(), await completion.text()).toBe(200);
 
+  await page.reload();
+  await expect(panel).toBeVisible();
   const runSelector = panel.getByLabel("분석 실행", { exact: true });
   await expect(runSelector.locator("option")).toHaveCount(3);
   await runSelector.selectOption(activeRun.id);
