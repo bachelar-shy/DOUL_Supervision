@@ -70,3 +70,39 @@ test("password screen labels use selected Vietnamese locale", async ({ page }) =
   await expect(page.getByRole("textbox", { name: "Tên đăng nhập" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Đăng nhập" })).toBeVisible();
 });
+
+
+test("password login binds the five field workflows to the authenticated supervisor role", async ({ page }) => {
+  let projectDirectoryRequests = 0;
+  await configurePasswordMode(page);
+  await page.route("**/api/dev/projects", route => {
+    projectDirectoryRequests++;
+    return route.fulfill({ status: 403, contentType: "application/json", body: "{}" });
+  });
+  await page.route("**/api/auth/login", route => route.fulfill({
+    status: 200, contentType: "application/json", body: JSON.stringify(session),
+  }));
+  await page.route("**/api/projects/*/workspace", route => route.fulfill({
+    status: 200, contentType: "application/json",
+    body: JSON.stringify({
+      project: { id: session.projectId, projectId: session.projectId, name: "Synthetic password-only project" },
+      role: { id: session.actor.roleAssignmentId, actorGroup: "SUP" },
+      items: [], audit: [], participants: [], formSchemas: [],
+      context: { scope: { discipline: "structure", packageId: "package", locationId: "location" } },
+      demo: false,
+    }),
+  }));
+  await page.goto("/#/today");
+  await page.getByRole("textbox", { name: "아이디" }).fill("testsupervisor");
+  await page.getByLabel("비밀번호").fill("example-password-not-real");
+  await page.getByRole("button", { name: "로그인" }).click();
+  const sidebar = page.locator("aside.sidebar");
+  for (const name of ["오늘", "현장기록", "도면조회", "검측·검수", "지적·시정조치", "감리보고"]) {
+    await expect(sidebar.getByText(name, { exact: true })).toBeVisible();
+  }
+  await expect(sidebar.getByText("공정·지연·회복", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("프로젝트 선택")).toHaveCount(0);
+  await expect(page.getByLabel("시험 사용자 역할 선택")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "로그아웃" })).toBeVisible();
+  expect(projectDirectoryRequests).toBe(0);
+});

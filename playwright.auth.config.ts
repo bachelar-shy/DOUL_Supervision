@@ -14,7 +14,7 @@ export default defineConfig({
   reporter: [["list"]],
   webServer: {
     command: "npm --workspace apps/web run dev -- --port 5195 --strictPort",
-    env: { VITE_DOUL_AUTH_MODE: "password" },
+    env: { VITE_DOUL_AUTH_MODE: "password", VITE_DOUL_UI_SCOPE: "field-core" },
     url: "http://127.0.0.1:5195",
     reuseExistingServer: false,
     timeout: 30000,
