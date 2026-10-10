@@ -7228,6 +7228,190 @@
               "additionalProperties": false
             },
             "uniqueItems": true
+          },
+          "currentPunchIssueRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Issue"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "currentCorrectionActionRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Action"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "punchReferenceRefreshHistory": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "priorPunchIssueRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "priorCorrectionActionRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Action"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "currentPunchIssueRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "currentCorrectionActionRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Action"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "recordedBy": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "recordedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "priorPunchIssueRefs",
+                "priorCorrectionActionRefs",
+                "currentPunchIssueRefs",
+                "currentCorrectionActionRefs",
+                "recordedBy",
+                "recordedAt"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [
@@ -7680,7 +7864,111 @@
               ],
               "additionalProperties": false
             },
-            "uniqueItems": true
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "currentOpenIssueRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Issue"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "issueReferenceRefreshHistory": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "priorCurrentIssueRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "currentIssueRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "recordedBy": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "recordedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "priorCurrentIssueRefs",
+                "currentIssueRefs",
+                "recordedBy",
+                "recordedAt"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [
@@ -7980,6 +8268,178 @@
             "type": "string",
             "format": "uuid",
             "readOnly": true
+          },
+          "currentIssueRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Issue"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false,
+            "readOnly": true
+          },
+          "currentActionRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Action"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "remedyReferenceRefreshHistory": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "priorIssueRef": {
+                  "type": "object",
+                  "properties": {
+                    "objectType": {
+                      "const": "Issue"
+                    },
+                    "objectId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "objectType",
+                    "objectId",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                },
+                "priorActionRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Action"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "currentIssueRef": {
+                  "type": "object",
+                  "properties": {
+                    "objectType": {
+                      "const": "Issue"
+                    },
+                    "objectId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "objectType",
+                    "objectId",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                },
+                "currentActionRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Action"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "recordedBy": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "recordedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "priorIssueRef",
+                "priorActionRefs",
+                "currentIssueRef",
+                "currentActionRefs",
+                "recordedBy",
+                "recordedAt"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [

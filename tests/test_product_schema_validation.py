@@ -130,6 +130,16 @@ class ProductConfigurationSchemaRegressionTests(unittest.TestCase):
         self.assertTrue(validate_project_config(self.config))
         self.assertTrue(validate_change_record(self.change))
 
+    def test_approved_pcr_2026_002_is_validated_against_existing_record_schema(self):
+        approved = json.loads((ROOT / 'app/reference/product_change_record_pcr_2026_002.json').read_text())
+        self.assertEqual(approved['changeId'], 'PCR-2026-002')
+        self.assertEqual(approved['decision'], 'approved')
+        self.assertEqual(approved['baselineFrom'], '1.0')
+        self.assertEqual(approved['baselineTo'], '1.1')
+        self.assertEqual(approved['changeClass'], 'C2')
+        self.assertEqual(approved['effectiveFrom'], '2026-10-10T00:00:00+07:00')
+        self.assertTrue(validate_change_record(approved))
+
 
 if __name__ == '__main__':
     unittest.main()
