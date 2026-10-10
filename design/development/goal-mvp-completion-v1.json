@@ -1,6 +1,6 @@
 {
   "goal": "DOUL Supervision Korean, Vietnamese and English field MVP",
-  "status": "current_MVP_development_verified_external_acceptance_pending",
+  "status": "blocked_on_actual_field_operating_inputs_and_security_release_review",
   "integrationBase": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
   "mergedPrerequisites": [
     {
@@ -152,5 +152,6 @@
     ],
     "sampledPeakRssBytes": 3420848128,
     "limitation": "Synthetic single client, development snapshot adapter; no agreed production workload/SLO or field acceptance."
-  }
+  },
+  "blockedStatusEvidence": "design/verification/goal-external-acceptance-blocked-20261010.json"
 }
