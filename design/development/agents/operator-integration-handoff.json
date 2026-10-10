@@ -23,11 +23,19 @@
       "handover": "passed1.2m after distinct output isolation",
       "transport": "passed2.5s; GET two attempts, POST one",
       "mediaMutationSelection": "passed8.5s; API contains both runs, explicit refreshed UI, delayed acknowledgement lock/unlock"
+    },
+    "performance": {
+      "evidence": "design/verification/issue124-live-http-50k-30round-72c8934.json",
+      "correctness": "exact total, project/scope isolation and cursor disjointness passed",
+      "p95Ms": [
+        2092.879,
+        2114.625
+      ],
+      "sampledPeakRssBytes": 3420848128,
+      "acceptance": "descriptive only; workload/budget and concurrent production validation remain required"
     }
   },
   "next": [
-    "Finish isolated Mac50k30round performance evidence while CI idle",
-    "Integrate current agent checkpoints and evidence, commit/push latest operator head",
     "Verify all exact-head Mac Actions; merge only verified candidate",
     "Verify merged-main Actions and retain release/pilot blockers separately"
   ],
