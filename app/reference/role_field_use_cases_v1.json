@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.1",
+  "schemaVersion": "1.2",
   "documentStatus": "proposed_for_product_and_field_review",
   "sourceBranch": "product/field-role-use-cases-v1-20261011",
   "date": "2026-10-11",
@@ -53,6 +53,14 @@
       "A07",
       "A09",
       "A10"
+    ],
+    "reviewSplitGroups": [
+      "SG-SUP-05",
+      "SG-SUP-09",
+      "SG-SUP-11",
+      "SG-CON-08",
+      "SG-OWN-02",
+      "SG-ADM-08"
     ]
   },
   "commonConstraints": [
@@ -206,11 +214,11 @@
       "id": "UC-SUP-05",
       "role": "SUP",
       "domain": "safety",
-      "title": "고위험작업 허가와 작업중지·재개",
-      "trigger": "고위험작업 신청 또는 위험 발견",
-      "operation": "작업 전 조건과 장비상태 확인 후 권한 내 허가 및 중지·시정검증·중지해제 수행",
-      "expected": "중지해제 및 별도 작업재개 요건 충족 전 작업불가",
-      "exception": "허가 승인만으로 작업가능 처리하거나 시공사가 자체 재개하면 차단",
+      "title": "고위험작업 신청·사전조건 및 작업허가 검토",
+      "trigger": "고위험작업 신청 접수",
+      "operation": "해당 작업구역의 시공계획·위험평가·작업자 자격 및 장비검사 기준을 확인하고 권한 범위에서 허가 검토",
+      "expected": "작업허가 접수·검토·승인과 실제 작업가능 상태를 분리하며 근거문서와 승인권한 이력이 보존",
+      "exception": "작업허가 승인만으로 별도 사전조건 누락이나 남은 작업중지를 무시한 작업재개 차단",
       "registerIds": [
         "18",
         "19"
@@ -218,21 +226,23 @@
       "acceptanceRefs": [
         "AC-S-01"
       ],
-      "evidence": "작업계획·장비검사증·안전사진·중지 및 해제 기록",
-      "uiActionLabelCandidate": "작업 전 확인·작업중지",
+      "evidence": "작업계획·자격·장비검사증·위험평가·허가검토",
+      "uiActionLabelCandidate": "작업허가 검토",
       "approvedTermIds": [
         "SAF-STOP-001"
       ],
       "implementationStatus": "unverified",
       "situationType": "request_review",
       "origin": {
-        "kind": "retained_v1"
+        "kind": "retained_v1_narrowed",
+        "originalTitle": "고위험작업 허가와 작업중지·재개",
+        "splitGroupId": "SG-SUP-05"
       },
       "testChecks": [
-        "시작조건 검증: 고위험작업 신청 또는 위험 발견",
-        "역할별 수행 검증: 작업 전 조건과 장비상태 확인 후 권한 내 허가 및 중지·시정검증·중지해제 수행",
-        "업무 완료 확인: 중지해제 및 별도 작업재개 요건 충족 전 작업불가",
-        "실패·권한 검증: 허가 승인만으로 작업가능 처리하거나 시공사가 자체 재개하면 차단"
+        "시작조건: 고위험작업 신청 접수",
+        "핵심 처리: 해당 작업구역의 시공계획·위험평가·작업자 자격 및 장비검사 기준을 확인하고 권한 범위에서 허가 검토",
+        "독립 완료기준: 작업허가 접수·검토·승인과 실제 작업가능 상태를 분리하며 근거문서와 승인권한 이력이 보존",
+        "금지 동작: 작업허가 승인만으로 별도 사전조건 누락이나 남은 작업중지를 무시한 작업재개 차단"
       ]
     },
     {
@@ -338,11 +348,11 @@
       "id": "UC-SUP-09",
       "role": "SUP",
       "domain": "owner",
-      "title": "발주처 정기·즉시보고 및 후속조치",
-      "trigger": "보고 주기 도래 또는 중대사항 발생",
-      "operation": "사실·위험·대안·기한·요청 결정을 기록하고 수령 이후 조치 추적",
-      "expected": "발주처 결정 후 후속조치 검증까지 별도 완료",
-      "exception": "보고 수령과 결정 또는 업무 종결을 동일 처리하면 차단",
+      "title": "정기·주간 감리보고서 작성 및 후속사항 정리",
+      "trigger": "주간 또는 정기보고 주기 도래",
+      "operation": "공정·검측·품질·안전 실적과 미결 조치사항을 원본 자료로 대조해 정기보고서를 작성·발행",
+      "expected": "FM-19 등 정기보고에 대상 기간·원본 버전·검토자·발행·수신 이력과 후속사항이 보존",
+      "exception": "보고서 발행을 미결사항 자동 종결로 처리하거나 수령을 발주처 결정으로 표시하는 경우 차단",
       "registerIds": [
         "22",
         "25"
@@ -350,19 +360,21 @@
       "acceptanceRefs": [
         "AC-REPORT-01"
       ],
-      "evidence": "보고서·근거도면·사진·의사결정 참조",
-      "uiActionLabelCandidate": "발주처 보고",
+      "evidence": "FM-19·기간별 감리기록·공정표·현장사진·미결 사항",
+      "uiActionLabelCandidate": "주간 감리보고 작성",
       "approvedTermIds": [],
       "implementationStatus": "unverified",
       "situationType": "daily_routine",
       "origin": {
-        "kind": "retained_v1"
+        "kind": "retained_v1_narrowed",
+        "originalTitle": "발주처 정기·즉시보고 및 후속조치",
+        "splitGroupId": "SG-SUP-09"
       },
       "testChecks": [
-        "시작조건 검증: 보고 주기 도래 또는 중대사항 발생",
-        "역할별 수행 검증: 사실·위험·대안·기한·요청 결정을 기록하고 수령 이후 조치 추적",
-        "업무 완료 확인: 발주처 결정 후 후속조치 검증까지 별도 완료",
-        "실패·권한 검증: 보고 수령과 결정 또는 업무 종결을 동일 처리하면 차단"
+        "시작조건: 주간 또는 정기보고 주기 도래",
+        "핵심 처리: 공정·검측·품질·안전 실적과 미결 조치사항을 원본 자료로 대조해 정기보고서를 작성·발행",
+        "독립 완료기준: FM-19 등 정기보고에 대상 기간·원본 버전·검토자·발행·수신 이력과 후속사항이 보존",
+        "금지 동작: 보고서 발행을 미결사항 자동 종결로 처리하거나 수령을 발주처 결정으로 표시하는 경우 차단"
       ]
     },
     {
@@ -401,11 +413,11 @@
       "id": "UC-SUP-11",
       "role": "SUP",
       "domain": "completion",
-      "title": "시운전·준공검사·인수 준비 확인",
-      "trigger": "시공사 준공자료와 시운전결과 제출",
-      "operation": "시험결과·미결하자·준공도서·인수요건을 검증하여 발주처에 보고",
-      "expected": "시운전 적합과 인수 승인과 하자 종결의 독립 기록",
-      "exception": "미결 지적사항을 숨기고 인수완료 처리하면 차단",
+      "title": "시운전 결과와 설비 가동준비 적합성 확인",
+      "trigger": "시공사 시운전 시험기록 제출",
+      "operation": "승인 시험계획·합격조건·원본 시험성적과 설비별 잔여 결함을 확인하고 기술 의견을 기록",
+      "expected": "시운전 적합·미결 결함·준공검사·인수결정을 각각 독립하여 기록",
+      "exception": "시험 1건 합격만으로 전체 준공검사·인수 승인 처리하거나 시험 증빙 없이 통과 처리 차단",
       "registerIds": [
         "24"
       ],
@@ -414,19 +426,21 @@
         "AC-REF-01",
         "AC-REF-02"
       ],
-      "evidence": "시운전 기록·Punch 목록·준공도면·인계서",
-      "uiActionLabelCandidate": "준공검사·인수 준비",
+      "evidence": "시운전 계획·시험성적서·장비 목록·잔여 지적사항",
+      "uiActionLabelCandidate": "시운전 결과 검토",
       "approvedTermIds": [],
       "implementationStatus": "unverified",
       "situationType": "completion_closeout",
       "origin": {
-        "kind": "retained_v1"
+        "kind": "retained_v1_narrowed",
+        "originalTitle": "시운전·준공검사·인수 준비 확인",
+        "splitGroupId": "SG-SUP-11"
       },
       "testChecks": [
-        "시작조건 검증: 시공사 준공자료와 시운전결과 제출",
-        "역할별 수행 검증: 시험결과·미결하자·준공도서·인수요건을 검증하여 발주처에 보고",
-        "업무 완료 확인: 시운전 적합과 인수 승인과 하자 종결의 독립 기록",
-        "실패·권한 검증: 미결 지적사항을 숨기고 인수완료 처리하면 차단"
+        "시작조건: 시공사 시운전 시험기록 제출",
+        "핵심 처리: 승인 시험계획·합격조건·원본 시험성적과 설비별 잔여 결함을 확인하고 기술 의견을 기록",
+        "독립 완료기준: 시운전 적합·미결 결함·준공검사·인수결정을 각각 독립하여 기록",
+        "금지 동작: 시험 1건 합격만으로 전체 준공검사·인수 승인 처리하거나 시험 증빙 없이 통과 처리 차단"
       ]
     },
     {
@@ -685,30 +699,32 @@
       "id": "UC-CON-08",
       "role": "CON",
       "domain": "schedule",
-      "title": "일일실적·지연 통보 및 회복계획 제출",
-      "trigger": "공정 실적집계 또는 지연 징후",
-      "operation": "실적 기준일·활동 ID·지연사유·회복안을 제출하고 감리 회신 추적",
-      "expected": "기준선과 예측·실적 및 회복계획 이력 유지",
-      "exception": "예측치를 기존 기준공정으로 덮어쓰면 차단",
+      "title": "정기 공정 실적 및 기준일별 진행현황 제출",
+      "trigger": "정기 공정실적 마감 시점",
+      "operation": "작업 공종·활동 ID·실적 기준일·진행률과 실적 원본사진을 기록하여 감리에 제출",
+      "expected": "실적 기준일·기준공정·실적 검토 이력이 분리되며 원본 실적은 후속 수정에도 보존",
+      "exception": "예측 실적을 원본 실적으로 표시하거나 최신 입력으로 과거 실적을 덮어쓰기 차단",
       "registerIds": [
         "16"
       ],
       "acceptanceRefs": [
         "AC-SCH-01"
       ],
-      "evidence": "실적표·공정표·지연 근거·회복계획",
+      "evidence": "실적공정표·활동 ID·기준일·현장작업 기록",
       "uiActionLabelCandidate": "공정 실적 제출",
       "approvedTermIds": [],
       "implementationStatus": "unverified",
       "situationType": "daily_routine",
       "origin": {
-        "kind": "retained_v1"
+        "kind": "retained_v1_narrowed",
+        "originalTitle": "일일실적·지연 통보 및 회복계획 제출",
+        "splitGroupId": "SG-CON-08"
       },
       "testChecks": [
-        "시작조건 검증: 공정 실적집계 또는 지연 징후",
-        "역할별 수행 검증: 실적 기준일·활동 ID·지연사유·회복안을 제출하고 감리 회신 추적",
-        "업무 완료 확인: 기준선과 예측·실적 및 회복계획 이력 유지",
-        "실패·권한 검증: 예측치를 기존 기준공정으로 덮어쓰면 차단"
+        "시작조건: 정기 공정실적 마감 시점",
+        "핵심 처리: 작업 공종·활동 ID·실적 기준일·진행률과 실적 원본사진을 기록하여 감리에 제출",
+        "독립 완료기준: 실적 기준일·기준공정·실적 검토 이력이 분리되며 원본 실적은 후속 수정에도 보존",
+        "금지 동작: 예측 실적을 원본 실적으로 표시하거나 최신 입력으로 과거 실적을 덮어쓰기 차단"
       ]
     },
     {
@@ -905,32 +921,34 @@
       "id": "UC-OWN-02",
       "role": "OWN",
       "domain": "owner",
-      "title": "보고 수령·결정·후속조치 분리",
-      "trigger": "정기·즉시보고 또는 결정요청 수신",
-      "operation": "수령을 기록하고 선택안·조건·담당·기한을 포함한 결정",
-      "expected": "수령일·결정문서·후속검증·보고종결이 각각 기록",
-      "exception": "수령만으로 기술승인 또는 보고종결 처리하면 차단",
+      "title": "발주처 보고서 수령 확인 및 검토대상 지정",
+      "trigger": "감리 정기·즉시보고 수신",
+      "operation": "수령한 보고서의 원본 버전과 시각을 확인하고 결정 필요 유무와 검토담당자를 지정",
+      "expected": "보고 수령은 감사이력으로 남고 의사결정 명령 또는 기술승인을 자동 실행하지 않음",
+      "exception": "수령확인으로 계약 승인·검측판정·보고종결을 자동 처리하면 차단",
       "registerIds": [
         "22"
       ],
       "acceptanceRefs": [
         "AC-REPORT-01"
       ],
-      "evidence": "보고서·대안검토·결정서·회신기록",
-      "uiActionLabelCandidate": "보고 수령 및 결정",
+      "evidence": "보고서 원본·수신 시각·수령확인·검토 담당자",
+      "uiActionLabelCandidate": "감리보고 수령 확인",
       "approvedTermIds": [
         "OWN-DEC-001"
       ],
       "implementationStatus": "unverified",
       "situationType": "request_review",
       "origin": {
-        "kind": "retained_v1"
+        "kind": "retained_v1_narrowed",
+        "originalTitle": "보고 수령·결정·후속조치 분리",
+        "splitGroupId": "SG-OWN-02"
       },
       "testChecks": [
-        "시작조건 검증: 정기·즉시보고 또는 결정요청 수신",
-        "역할별 수행 검증: 수령을 기록하고 선택안·조건·담당·기한을 포함한 결정",
-        "업무 완료 확인: 수령일·결정문서·후속검증·보고종결이 각각 기록",
-        "실패·권한 검증: 수령만으로 기술승인 또는 보고종결 처리하면 차단"
+        "시작조건: 감리 정기·즉시보고 수신",
+        "핵심 처리: 수령한 보고서의 원본 버전과 시각을 확인하고 결정 필요 유무와 검토담당자를 지정",
+        "독립 완료기준: 보고 수령은 감사이력으로 남고 의사결정 명령 또는 기술승인을 자동 실행하지 않음",
+        "금지 동작: 수령확인으로 계약 승인·검측판정·보고종결을 자동 처리하면 차단"
       ]
     },
     {
@@ -1375,11 +1393,11 @@
       "id": "UC-ADM-08",
       "role": "ADM",
       "domain": "platform",
-      "title": "보관·백업·복원과 재연결 충돌관리",
-      "trigger": "정기 백업 또는 저장실패·오프라인 재접속",
-      "operation": "백업복원 검증·파일 누락 확인·중복 제출 감시·버전충돌 안내",
-      "expected": "저장 장애 시 공식업무 성공처리를 막고 충돌을 사용자에게 표시",
-      "exception": "원본 잃어버린 채 완료 기록하거나 최신판 자동 덮어쓰면 차단",
+      "title": "프로젝트 자료 백업·복원 및 원본 무결성 검증",
+      "trigger": "정기 백업 시점 또는 장애 후 자료복원 필요",
+      "operation": "원본 DB 및 미디어 파일의 백업·복원시점과 해시·권한을 검증하고 감사기록 보존",
+      "expected": "복원된 업무버전·사진·도면의 원본 해시와 접근권한이 복구되고 실패 항목은 별도 표시",
+      "exception": "백업성공 로그만으로 복원성공 선언·원본 누락 파일 무시·타 프로젝트 접근권한 확장 차단",
       "registerIds": [
         "23",
         "28"
@@ -1389,19 +1407,21 @@
         "AC-OFFLINE-01",
         "AC-IDEMP-01"
       ],
-      "evidence": "백업복원 로그·실패기록·버전 이력",
-      "uiActionLabelCandidate": "백업·이력 확인",
+      "evidence": "백업 스냅샷·복원 검증로그·원본 파일 해시·권한 대조",
+      "uiActionLabelCandidate": "백업·복원 확인",
       "approvedTermIds": [],
       "implementationStatus": "unverified",
       "situationType": "admin_operations",
       "origin": {
-        "kind": "retained_v1"
+        "kind": "retained_v1_narrowed",
+        "originalTitle": "보관·백업·복원과 재연결 충돌관리",
+        "splitGroupId": "SG-ADM-08"
       },
       "testChecks": [
-        "시작조건 검증: 정기 백업 또는 저장실패·오프라인 재접속",
-        "역할별 수행 검증: 백업복원 검증·파일 누락 확인·중복 제출 감시·버전충돌 안내",
-        "업무 완료 확인: 저장 장애 시 공식업무 성공처리를 막고 충돌을 사용자에게 표시",
-        "실패·권한 검증: 원본 잃어버린 채 완료 기록하거나 최신판 자동 덮어쓰면 차단"
+        "시작조건: 정기 백업 시점 또는 장애 후 자료복원 필요",
+        "핵심 처리: 원본 DB 및 미디어 파일의 백업·복원시점과 해시·권한을 검증하고 감사기록 보존",
+        "독립 완료기준: 복원된 업무버전·사진·도면의 원본 해시와 접근권한이 복구되고 실패 항목은 별도 표시",
+        "금지 동작: 백업성공 로그만으로 복원성공 선언·원본 누락 파일 무시·타 프로젝트 접근권한 확장 차단"
       ]
     },
     {
@@ -1874,6 +1894,383 @@
         "비활성화 후 재로그인과 기존 세션 업무접근이 차단되는지 확인한다",
         "관리자에게 감리 판정·발주처 승인권한이 자동 부여되지 않는다"
       ]
+    },
+    {
+      "id": "UC-SUP-16",
+      "role": "SUP",
+      "domain": "safety",
+      "title": "위험 발견 시 작업중지 지시·대상범위 통보",
+      "trigger": "현장에서 급박한 위험 또는 사용금지 장비 발견",
+      "operation": "중지대상 작업·장비·구역과 원본 근거를 지정해 권한자가 작업중지 지시 발행 및 대상자 통보",
+      "expected": "작업중지와 관련 작업허가·작업가능 상태 변경 및 수신기록을 한 사건으로 확인",
+      "exception": "무권한 작업중지·중지사유 누락·관련 허가 부분 실패·시공사 자체 해제 차단",
+      "registerIds": [
+        "18",
+        "19",
+        "22"
+      ],
+      "acceptanceRefs": [
+        "AC-S-01",
+        "AC-REPORT-01"
+      ],
+      "evidence": "작업중지 지시서·원본사진·중지구역·허가 참조·수신 시각",
+      "uiActionLabelCandidate": "작업중지 지시",
+      "approvedTermIds": [
+        "SAF-STOP-001"
+      ],
+      "situationType": "incident_response",
+      "origin": {
+        "kind": "split_from_v1",
+        "sourceId": "UC-SUP-05",
+        "splitGroupId": "SG-SUP-05"
+      },
+      "testChecks": [
+        "권한·시작조건: 현장에서 급박한 위험 또는 사용금지 장비 발견",
+        "해당 하위사건 수행: 중지대상 작업·장비·구역과 원본 근거를 지정해 권한자가 작업중지 지시 발행 및 대상자 통보",
+        "다른 하위사건과 분리된 결과: 작업중지와 관련 작업허가·작업가능 상태 변경 및 수신기록을 한 사건으로 확인",
+        "실패 또는 부당한 상태 전이 거부: 무권한 작업중지·중지사유 누락·관련 허가 부분 실패·시공사 자체 해제 차단"
+      ],
+      "implementationStatus": "unverified"
+    },
+    {
+      "id": "UC-SUP-17",
+      "role": "SUP",
+      "domain": "safety",
+      "title": "작업중지 사유 시정검증·명시적 중지해제와 작업재개 조건 확인",
+      "trigger": "시공사로부터 작업중지 원인 해소 및 재개요청 접수",
+      "operation": "현재 시정주기 증빙·장비/인력 자격을 확인한 후 감리 권한으로 중지해제하고 별도 작업재개 허가조건을 검증",
+      "expected": "중지해제·재개요청·재개 승인·최종 작업가능 여부가 별도 명령/상태로 남음",
+      "exception": "부적합 자동종결 또는 작업허가 승인만으로 재개·시공사 자체 중지해제 차단",
+      "registerIds": [
+        "18",
+        "19"
+      ],
+      "acceptanceRefs": [
+        "AC-S-01",
+        "AC-QUAL-01"
+      ],
+      "evidence": "시정 전후사진·안전확인·중지해제 승인·작업재개 신청·허가상태",
+      "uiActionLabelCandidate": "작업중지 해제·작업재개 확인",
+      "approvedTermIds": [],
+      "situationType": "incident_response",
+      "origin": {
+        "kind": "split_from_v1",
+        "sourceId": "UC-SUP-05",
+        "splitGroupId": "SG-SUP-05"
+      },
+      "testChecks": [
+        "권한·시작조건: 시공사로부터 작업중지 원인 해소 및 재개요청 접수",
+        "해당 하위사건 수행: 현재 시정주기 증빙·장비/인력 자격을 확인한 후 감리 권한으로 중지해제하고 별도 작업재개 허가조건을 검증",
+        "다른 하위사건과 분리된 결과: 중지해제·재개요청·재개 승인·최종 작업가능 여부가 별도 명령/상태로 남음",
+        "실패 또는 부당한 상태 전이 거부: 부적합 자동종결 또는 작업허가 승인만으로 재개·시공사 자체 중지해제 차단"
+      ],
+      "implementationStatus": "unverified"
+    },
+    {
+      "id": "UC-SUP-18",
+      "role": "SUP",
+      "domain": "safety",
+      "title": "중대사항 발생 시 발주처 즉시보고 발행",
+      "trigger": "중대 사고·안전·품질·법정 조건 발생으로 즉시 보고 필요",
+      "operation": "사실·발생시각·초기조치·원본 증빙·추가결정 요청을 분리해 즉시 보고서 작성 및 공식 발송",
+      "expected": "즉시보고 시각·수신자·후속조치·결정기한은 정기보고와 독립 기록",
+      "exception": "정기보고 마감까지 보고 지연·최초사실 자동 삭제·수령으로 종결 차단",
+      "registerIds": [
+        "18",
+        "22",
+        "25"
+      ],
+      "acceptanceRefs": [
+        "AC-REPORT-01",
+        "AC-S-01"
+      ],
+      "evidence": "FM-20·현장 원본사진·발생시각·수신증빙·결정요청",
+      "uiActionLabelCandidate": "발주처 즉시보고 작성",
+      "approvedTermIds": [],
+      "situationType": "incident_response",
+      "origin": {
+        "kind": "split_from_v1",
+        "sourceId": "UC-SUP-09",
+        "splitGroupId": "SG-SUP-09"
+      },
+      "testChecks": [
+        "권한·시작조건: 중대 사고·안전·품질·법정 조건 발생으로 즉시 보고 필요",
+        "해당 하위사건 수행: 사실·발생시각·초기조치·원본 증빙·추가결정 요청을 분리해 즉시 보고서 작성 및 공식 발송",
+        "다른 하위사건과 분리된 결과: 즉시보고 시각·수신자·후속조치·결정기한은 정기보고와 독립 기록",
+        "실패 또는 부당한 상태 전이 거부: 정기보고 마감까지 보고 지연·최초사실 자동 삭제·수령으로 종결 차단"
+      ],
+      "implementationStatus": "unverified"
+    },
+    {
+      "id": "UC-SUP-19",
+      "role": "SUP",
+      "domain": "safety",
+      "title": "미결 지적사항·준공검사 결과의 독립 판정",
+      "trigger": "시운전 완료 후 시공사의 준공검사 및 Punch 목록 제출",
+      "operation": "준공검사 항목과 각 미결사항의 최신 시정증빙·재검사 결과를 점검하고 부분/최종 인수준비를 분리",
+      "expected": "시운전 통과·Punch 잔여·준공검사 판정이 구분되어 기록되고 미결사항 삭제만으로 완료 불가",
+      "exception": "취소·대체된 Punch를 종결로 취급하거나 미검증 재검사로 인수준비 완료 처리 차단",
+      "registerIds": [
+        "24"
+      ],
+      "acceptanceRefs": [
+        "AC-HO-01",
+        "AC-REF-01",
+        "AC-REF-02"
+      ],
+      "evidence": "준공검사기록·Punch 목록·시정결과·원본도면",
+      "uiActionLabelCandidate": "준공검사·미결사항 검토",
+      "approvedTermIds": [],
+      "situationType": "completion_closeout",
+      "origin": {
+        "kind": "split_from_v1",
+        "sourceId": "UC-SUP-11",
+        "splitGroupId": "SG-SUP-11"
+      },
+      "testChecks": [
+        "권한·시작조건: 시운전 완료 후 시공사의 준공검사 및 Punch 목록 제출",
+        "해당 하위사건 수행: 준공검사 항목과 각 미결사항의 최신 시정증빙·재검사 결과를 점검하고 부분/최종 인수준비를 분리",
+        "다른 하위사건과 분리된 결과: 시운전 통과·Punch 잔여·준공검사 판정이 구분되어 기록되고 미결사항 삭제만으로 완료 불가",
+        "실패 또는 부당한 상태 전이 거부: 취소·대체된 Punch를 종결로 취급하거나 미검증 재검사로 인수준비 완료 처리 차단"
+      ],
+      "implementationStatus": "unverified"
+    },
+    {
+      "id": "UC-SUP-20",
+      "role": "SUP",
+      "domain": "safety",
+      "title": "발주처 인수의견 작성·인수조건 최종 확인",
+      "trigger": "준공검사 판정 및 인수자료 준비 완료",
+      "operation": "운영자료·준공도면·검사결과·인수유보 사유를 확인해 발주처 인수결정 요청 및 후속사항 정리",
+      "expected": "감리 인수준비 의견과 발주처의 인수 승인 결과는 별도 기록",
+      "exception": "시운전 적합만으로 발주처 인수 완료·보완사항 삭제·감리 자체 인수승인 차단",
+      "registerIds": [
+        "24",
+        "22"
+      ],
+      "acceptanceRefs": [
+        "AC-HO-01",
+        "AC-REF-02"
+      ],
+      "evidence": "준공도면·인수목록·감리의견·발주처 결정참조",
+      "uiActionLabelCandidate": "인수 준비 검토·발주처 제출",
+      "approvedTermIds": [],
+      "situationType": "completion_closeout",
+      "origin": {
+        "kind": "split_from_v1",
+        "sourceId": "UC-SUP-11",
+        "splitGroupId": "SG-SUP-11"
+      },
+      "testChecks": [
+        "권한·시작조건: 준공검사 판정 및 인수자료 준비 완료",
+        "해당 하위사건 수행: 운영자료·준공도면·검사결과·인수유보 사유를 확인해 발주처 인수결정 요청 및 후속사항 정리",
+        "다른 하위사건과 분리된 결과: 감리 인수준비 의견과 발주처의 인수 승인 결과는 별도 기록",
+        "실패 또는 부당한 상태 전이 거부: 시운전 적합만으로 발주처 인수 완료·보완사항 삭제·감리 자체 인수승인 차단"
+      ],
+      "implementationStatus": "unverified"
+    },
+    {
+      "id": "UC-CON-17",
+      "role": "CON",
+      "domain": "schedule",
+      "title": "공정지연 발생 사실·원인·예상영향 통보",
+      "trigger": "현장 예정공정 대비 지연이 확인됨",
+      "operation": "실적 기준일·지연 발생구역·원인·지연활동·예상 영향과 근거를 첨부하여 감리에 지연 사실 통보",
+      "expected": "지연 사실과 계약통지·공기연장 청구가 별도 사건으로 추적됨",
+      "exception": "실적 누락 은폐·지연발생만으로 EOT 승인·이전 기준공정 임의 변경 차단",
+      "registerIds": [
+        "16",
+        "26"
+      ],
+      "acceptanceRefs": [
+        "AC-SCH-01"
+      ],
+      "evidence": "공정활동 ID·기준공정·지연원인·현장 기록·지연통보",
+      "uiActionLabelCandidate": "공정지연 발생 통보",
+      "approvedTermIds": [
+        "SCH-DELAY-001"
+      ],
+      "situationType": "incident_response",
+      "origin": {
+        "kind": "split_from_v1",
+        "sourceId": "UC-CON-08",
+        "splitGroupId": "SG-CON-08"
+      },
+      "testChecks": [
+        "권한·시작조건: 현장 예정공정 대비 지연이 확인됨",
+        "해당 하위사건 수행: 실적 기준일·지연 발생구역·원인·지연활동·예상 영향과 근거를 첨부하여 감리에 지연 사실 통보",
+        "다른 하위사건과 분리된 결과: 지연 사실과 계약통지·공기연장 청구가 별도 사건으로 추적됨",
+        "실패 또는 부당한 상태 전이 거부: 실적 누락 은폐·지연발생만으로 EOT 승인·이전 기준공정 임의 변경 차단"
+      ],
+      "implementationStatus": "unverified"
+    },
+    {
+      "id": "UC-CON-18",
+      "role": "CON",
+      "domain": "schedule",
+      "title": "지연 회복계획 작성·제출 및 보완요청 대응",
+      "trigger": "지연영향 검토 또는 감리 회복계획 제출 요청",
+      "operation": "인원·장비·순서·기간·예상 회복효과를 포함한 회복계획을 감리에 제출하고 검토의견과 보완요청에 응답",
+      "expected": "회복계획 제출·검토·이행점검은 기준공정 승인과 분리됨",
+      "exception": "회복계획 제출로 EOT 자동 승인·예상 회복률을 기준공정 실적으로 덮어쓰기 차단",
+      "registerIds": [
+        "16"
+      ],
+      "acceptanceRefs": [
+        "AC-SCH-01"
+      ],
+      "evidence": "회복계획서·변경 자원표·일별목표·검토·보완내역",
+      "uiActionLabelCandidate": "공정 회복계획 제출",
+      "approvedTermIds": [],
+      "situationType": "change_decision",
+      "origin": {
+        "kind": "split_from_v1",
+        "sourceId": "UC-CON-08",
+        "splitGroupId": "SG-CON-08"
+      },
+      "testChecks": [
+        "권한·시작조건: 지연영향 검토 또는 감리 회복계획 제출 요청",
+        "해당 하위사건 수행: 인원·장비·순서·기간·예상 회복효과를 포함한 회복계획을 감리에 제출하고 검토의견과 보완요청에 응답",
+        "다른 하위사건과 분리된 결과: 회복계획 제출·검토·이행점검은 기준공정 승인과 분리됨",
+        "실패 또는 부당한 상태 전이 거부: 회복계획 제출로 EOT 자동 승인·예상 회복률을 기준공정 실적으로 덮어쓰기 차단"
+      ],
+      "implementationStatus": "unverified"
+    },
+    {
+      "id": "UC-OWN-11",
+      "role": "OWN",
+      "domain": "owner",
+      "title": "보고서의 대안·계약영향을 검토해 발주처 결정 발행",
+      "trigger": "감리 보고의 수령이 완료되고 결정요청이 접수됨",
+      "operation": "권한 내 선택대안·조건·결정 사유·기한을 적어 정확한 문서 버전을 대상으로 발주처 공식 결정을 발행",
+      "expected": "보고 수령과 공식 결정이 분리되며 최종 의사결정의 적용 문서 버전이 기록됨",
+      "exception": "수령만으로 자동 승인·과거 판의 결정을 새 보고서에 자동 승계·권한 밖 계약승인 차단",
+      "registerIds": [
+        "22",
+        "14"
+      ],
+      "acceptanceRefs": [
+        "AC-REPORT-01",
+        "AC-VERSION-01"
+      ],
+      "evidence": "FM-21·보고서 원본버전·대안분석·결정서·서명",
+      "uiActionLabelCandidate": "발주처 의사결정",
+      "approvedTermIds": [],
+      "situationType": "change_decision",
+      "origin": {
+        "kind": "split_from_v1",
+        "sourceId": "UC-OWN-02",
+        "splitGroupId": "SG-OWN-02"
+      },
+      "testChecks": [
+        "권한·시작조건: 감리 보고의 수령이 완료되고 결정요청이 접수됨",
+        "해당 하위사건 수행: 권한 내 선택대안·조건·결정 사유·기한을 적어 정확한 문서 버전을 대상으로 발주처 공식 결정을 발행",
+        "다른 하위사건과 분리된 결과: 보고 수령과 공식 결정이 분리되며 최종 의사결정의 적용 문서 버전이 기록됨",
+        "실패 또는 부당한 상태 전이 거부: 수령만으로 자동 승인·과거 판의 결정을 새 보고서에 자동 승계·권한 밖 계약승인 차단"
+      ],
+      "implementationStatus": "unverified"
+    },
+    {
+      "id": "UC-OWN-12",
+      "role": "OWN",
+      "domain": "owner",
+      "title": "발주처 결정 후속조치 검증·보고종결 확인",
+      "trigger": "발주처 결정에 따른 담당자 조치완료 회신 도착",
+      "operation": "결정조건과 담당 조치증빙을 확인하고 감리 검증·발주처 후속조치 상태를 추적",
+      "expected": "도메인 지적사항 종결과 발주처 보고 후속종결은 별도 처리됨",
+      "exception": "개별 지적사항 종결만으로 보고 자동 종결·증빙 없는 후속조치 확인 차단",
+      "registerIds": [
+        "22",
+        "25"
+      ],
+      "acceptanceRefs": [
+        "AC-REPORT-01"
+      ],
+      "evidence": "결정서·조치 전후증빙·감리 검증·후속조치 수령·종결",
+      "uiActionLabelCandidate": "발주처 후속조치 확인",
+      "approvedTermIds": [],
+      "situationType": "daily_routine",
+      "origin": {
+        "kind": "split_from_v1",
+        "sourceId": "UC-OWN-02",
+        "splitGroupId": "SG-OWN-02"
+      },
+      "testChecks": [
+        "권한·시작조건: 발주처 결정에 따른 담당자 조치완료 회신 도착",
+        "해당 하위사건 수행: 결정조건과 담당 조치증빙을 확인하고 감리 검증·발주처 후속조치 상태를 추적",
+        "다른 하위사건과 분리된 결과: 도메인 지적사항 종결과 발주처 보고 후속종결은 별도 처리됨",
+        "실패 또는 부당한 상태 전이 거부: 개별 지적사항 종결만으로 보고 자동 종결·증빙 없는 후속조치 확인 차단"
+      ],
+      "implementationStatus": "unverified"
+    },
+    {
+      "id": "UC-ADM-12",
+      "role": "ADM",
+      "domain": "platform",
+      "title": "오프라인 재연결·버전충돌·중복제출 운영 대응",
+      "trigger": "현장 사용자가 오프라인으로 작성하고 접속이 복구됨",
+      "operation": "기존 원본·새 기록·중복 키·버전차이를 조회하고 이용자에게 충돌내용과 재처리 방식을 안내",
+      "expected": "충돌 경로·해결판·원본변경이력과 사용자 확인이 남고 무조건 마지막 저장값 덮어쓰기를 금지",
+      "exception": "무대응 자동 덮어쓰기·중복 공식문서·연결 복귀 시 과거 프로젝트 정보 유출 차단",
+      "registerIds": [
+        "23",
+        "28"
+      ],
+      "acceptanceRefs": [
+        "AC-OFFLINE-01",
+        "AC-IDEMP-01",
+        "AC-VERSION-01"
+      ],
+      "evidence": "오프라인 요청·버전 비교·중복키·운영기록",
+      "uiActionLabelCandidate": "재연결 충돌 확인",
+      "approvedTermIds": [],
+      "situationType": "admin_operations",
+      "origin": {
+        "kind": "split_from_v1",
+        "sourceId": "UC-ADM-08",
+        "splitGroupId": "SG-ADM-08"
+      },
+      "testChecks": [
+        "권한·시작조건: 현장 사용자가 오프라인으로 작성하고 접속이 복구됨",
+        "해당 하위사건 수행: 기존 원본·새 기록·중복 키·버전차이를 조회하고 이용자에게 충돌내용과 재처리 방식을 안내",
+        "다른 하위사건과 분리된 결과: 충돌 경로·해결판·원본변경이력과 사용자 확인이 남고 무조건 마지막 저장값 덮어쓰기를 금지",
+        "실패 또는 부당한 상태 전이 거부: 무대응 자동 덮어쓰기·중복 공식문서·연결 복귀 시 과거 프로젝트 정보 유출 차단"
+      ],
+      "implementationStatus": "unverified"
+    },
+    {
+      "id": "UC-ADM-13",
+      "role": "ADM",
+      "domain": "platform",
+      "title": "사진·원본문서 저장실패 및 누락 파일 복구 확인",
+      "trigger": "이미지·PDF 저장 또는 전송이 실패·중단됨",
+      "operation": "저장실패를 식별하고 원본 해시·기록 연결·재전송 상태를 확인한 뒤 이용자에게 안전한 재시도 안내",
+      "expected": "필수 원본이 없는 공식 업무는 성공처리되지 않으며 중복 파일 연결 없이 복구 상태를 표시",
+      "exception": "파일 누락 상태를 성공 표시·복구 전 임의 삭제·중복 전송을 서로 다른 증빙으로 처리 차단",
+      "registerIds": [
+        "23",
+        "28"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01",
+        "AC-IDEMP-01"
+      ],
+      "evidence": "원본파일 해시·실패 응답·재시도 로그·연결증빙·감사기록",
+      "uiActionLabelCandidate": "파일저장 오류·복구 확인",
+      "approvedTermIds": [],
+      "situationType": "incident_response",
+      "origin": {
+        "kind": "split_from_v1",
+        "sourceId": "UC-ADM-08",
+        "splitGroupId": "SG-ADM-08"
+      },
+      "testChecks": [
+        "권한·시작조건: 이미지·PDF 저장 또는 전송이 실패·중단됨",
+        "해당 하위사건 수행: 저장실패를 식별하고 원본 해시·기록 연결·재전송 상태를 확인한 뒤 이용자에게 안전한 재시도 안내",
+        "다른 하위사건과 분리된 결과: 필수 원본이 없는 공식 업무는 성공처리되지 않으며 중복 파일 연결 없이 복구 상태를 표시",
+        "실패 또는 부당한 상태 전이 거부: 파일 누락 상태를 성공 표시·복구 전 임의 삭제·중복 전송을 서로 다른 증빙으로 처리 차단"
+      ],
+      "implementationStatus": "unverified"
     }
   ],
   "flows": [
@@ -1884,31 +2281,39 @@
       "caseSteps": [
         {
           "caseId": "UC-CON-04",
-          "handoff": "검측 신청"
+          "handoff": "자체검측 후 검측요청"
+        },
+        {
+          "caseId": "UC-CON-14",
+          "handoff": "필요시 검측 일정 변경"
+        },
+        {
+          "caseId": "UC-SUP-14",
+          "handoff": "최신 도면 열람·마킹"
         },
         {
           "caseId": "UC-SUP-01",
-          "handoff": "검측 판정"
+          "handoff": "현장검측·판정"
+        },
+        {
+          "caseId": "UC-SUP-15",
+          "handoff": "별도로 발견한 문제 등록"
         },
         {
           "caseId": "UC-SUP-04",
-          "handoff": "부적합 발행"
+          "handoff": "부적합 지시 및 시정대상 확인"
         },
         {
           "caseId": "UC-CON-05",
-          "handoff": "시정 증빙 제출"
+          "handoff": "시정 증빙과 재검측 요청"
         },
         {
           "caseId": "UC-SUP-04",
-          "handoff": "재검측 및 부적합 종결"
+          "handoff": "재검측 후 권한자 종결"
         },
         {
-          "caseId": "UC-SUP-09",
-          "handoff": "필요시 발주처 보고"
-        },
-        {
-          "caseId": "UC-OWN-02",
-          "handoff": "필요시 보고 수령"
+          "caseId": "UC-SUP-19",
+          "handoff": "필요시 준공 Punch 및 잔여사항 검증"
         }
       ],
       "checks": [
@@ -1928,36 +2333,44 @@
       "acceptanceRef": "AC-S-01",
       "caseSteps": [
         {
+          "caseId": "UC-CON-15",
+          "handoff": "작업계획 제출"
+        },
+        {
           "caseId": "UC-CON-06",
           "handoff": "작업허가 신청"
         },
         {
           "caseId": "UC-SUP-05",
-          "handoff": "작업전 확인"
+          "handoff": "작업허가 사전조건 검토"
         },
         {
-          "caseId": "UC-SUP-05",
-          "handoff": "위험시 작업중지"
+          "caseId": "UC-CON-16",
+          "handoff": "사고·위험 최초보고"
+        },
+        {
+          "caseId": "UC-SUP-16",
+          "handoff": "안전위험 작업중지"
         },
         {
           "caseId": "UC-CON-05",
-          "handoff": "시정조치 증빙"
+          "handoff": "안전 시정 결과 제출"
         },
         {
-          "caseId": "UC-SUP-05",
-          "handoff": "시정검증 및 중지해제"
+          "caseId": "UC-SUP-17",
+          "handoff": "작업중지 시정 검증 및 명시적 해제"
         },
         {
           "caseId": "UC-CON-06",
-          "handoff": "작업재개 요청"
+          "handoff": "작업 재개요청"
         },
         {
-          "caseId": "UC-SUP-05",
-          "handoff": "별도 작업재개 승인"
+          "caseId": "UC-SUP-17",
+          "handoff": "별도 허가 재개조건 확인"
         },
         {
           "caseId": "UC-OWN-06",
-          "handoff": "중대사항 조건부 보고"
+          "handoff": "중대사항 필요 시 발주처 보고"
         }
       ],
       "checks": [
@@ -1978,27 +2391,31 @@
       "caseSteps": [
         {
           "caseId": "UC-CON-08",
-          "handoff": "실적 및 지연자료 제출"
+          "handoff": "정기 실적 제출"
+        },
+        {
+          "caseId": "UC-CON-17",
+          "handoff": "지연 발생 사실 통보"
         },
         {
           "caseId": "UC-SUP-07",
-          "handoff": "기준공정 대비 검증"
+          "handoff": "지연 영향 검토"
+        },
+        {
+          "caseId": "UC-CON-18",
+          "handoff": "회복계획 제출"
         },
         {
           "caseId": "UC-CON-09",
-          "handoff": "계약통지 공기연장 요청"
-        },
-        {
-          "caseId": "UC-SUP-07",
-          "handoff": "영향분석 의견"
+          "handoff": "계약통지·공기연장 신청"
         },
         {
           "caseId": "UC-OWN-05",
-          "handoff": "공기연장 계약결정"
+          "handoff": "계약권한 내 결정"
         },
         {
           "caseId": "UC-SUP-07",
-          "handoff": "승인시만 개정기준공정 확인"
+          "handoff": "승인된 경우에만 개정 기준공정 검토"
         }
       ],
       "checks": [
@@ -2019,27 +2436,27 @@
       "caseSteps": [
         {
           "caseId": "UC-CON-10",
-          "handoff": "BOQ별 기성청구"
+          "handoff": "BOQ 기성청구"
         },
         {
           "caseId": "UC-SUP-08",
-          "handoff": "수량 및 적격성 검증"
+          "handoff": "실측수량 및 적격성 검증"
         },
         {
           "caseId": "UC-SUP-08",
-          "handoff": "지급 검토의견"
+          "handoff": "지급추천 기술의견"
         },
         {
           "caseId": "UC-OWN-04",
-          "handoff": "승인 조정 반려"
+          "handoff": "지급 승인·조정·반려"
         },
         {
           "caseId": "UC-OWN-04",
-          "handoff": "지급 실행 여부 별도 확인"
+          "handoff": "실제 지급 여부 별도 확인"
         },
         {
           "caseId": "UC-ADM-05",
-          "handoff": "발행 문서 보존"
+          "handoff": "원본 기성문서 보존"
         }
       ],
       "checks": [
@@ -2060,27 +2477,35 @@
       "caseSteps": [
         {
           "caseId": "UC-CON-11",
-          "handoff": "시운전 준공자료 제출"
+          "handoff": "시운전 및 준공서류 제출"
         },
         {
           "caseId": "UC-SUP-11",
-          "handoff": "인수요건 및 Punch 검증"
+          "handoff": "시운전 결과 검토"
+        },
+        {
+          "caseId": "UC-SUP-19",
+          "handoff": "준공검사 및 미결사항 확인"
+        },
+        {
+          "caseId": "UC-SUP-20",
+          "handoff": "발주처 인수조건 확인"
         },
         {
           "caseId": "UC-OWN-07",
-          "handoff": "인수 결정"
+          "handoff": "부분 또는 최종 인수결정"
         },
         {
           "caseId": "UC-CON-13",
-          "handoff": "하자 보수 및 재검사 요청"
+          "handoff": "보증기간 하자보수"
         },
         {
-          "caseId": "UC-SUP-11",
-          "handoff": "재검증 및 근거확인"
+          "caseId": "UC-SUP-19",
+          "handoff": "재검사 및 종결근거"
         },
         {
           "caseId": "UC-OWN-08",
-          "handoff": "하자 후속 현황 확인"
+          "handoff": "하자 후속 검증"
         }
       ],
       "checks": [
@@ -2101,27 +2526,39 @@
       "caseSteps": [
         {
           "caseId": "UC-SUP-09",
-          "handoff": "근거와 대안 보고"
+          "handoff": "정기보고 작성·발행"
+        },
+        {
+          "caseId": "UC-SUP-18",
+          "handoff": "필요시 즉시보고 발행"
         },
         {
           "caseId": "UC-ADM-06",
-          "handoff": "수신 및 기한 알림"
+          "handoff": "수신기한 및 미회신 알림"
         },
         {
           "caseId": "UC-OWN-02",
-          "handoff": "보고 수령"
+          "handoff": "보고 원본 수령"
         },
         {
-          "caseId": "UC-OWN-02",
-          "handoff": "권한범위 결정"
+          "caseId": "UC-OWN-11",
+          "handoff": "필요한 의사결정"
+        },
+        {
+          "caseId": "UC-OWN-10",
+          "handoff": "미결 및 기한초과 재요청"
         },
         {
           "caseId": "UC-SUP-09",
-          "handoff": "후속조치 검증"
+          "handoff": "결정 관련 후속조치 검증"
+        },
+        {
+          "caseId": "UC-OWN-12",
+          "handoff": "검증 결과 확인"
         },
         {
           "caseId": "UC-ADM-06",
-          "handoff": "미결 대사"
+          "handoff": "미결 및 최종 종결상태 대사"
         }
       ],
       "checks": [
@@ -2144,31 +2581,35 @@
         },
         {
           "caseId": "UC-SUP-10",
-          "handoff": "감리 기술검토"
+          "handoff": "기술검토"
         },
         {
           "caseId": "UC-DES-01",
-          "handoff": "설계답변"
+          "handoff": "설계자 답변"
         },
         {
           "caseId": "UC-DES-02",
-          "handoff": "필요시 도면개정"
+          "handoff": "필요시 개정도면 제출"
         },
         {
           "caseId": "UC-ADM-04",
-          "handoff": "공식 배포"
+          "handoff": "개정도면 공식 배포"
         },
         {
           "caseId": "UC-CON-01",
-          "handoff": "유효개정 수령"
+          "handoff": "최신 도면 수령"
+        },
+        {
+          "caseId": "UC-SUP-14",
+          "handoff": "도면 비교·마킹 및 이슈 연결"
         },
         {
           "caseId": "UC-SUP-01",
-          "handoff": "최신도면 검측"
+          "handoff": "최신 승인도면 검측"
         },
         {
           "caseId": "UC-OWN-03",
-          "handoff": "비용공기 조건부 결정"
+          "handoff": "계약변경 시 별도 발주처 결정"
         }
       ],
       "checks": [
@@ -2185,10 +2626,10 @@
   ],
   "coverage": {
     "caseCountsByRole": {
-      "SUP": 15,
-      "CON": 16,
-      "OWN": 10,
-      "ADM": 11,
+      "SUP": 20,
+      "CON": 18,
+      "OWN": 12,
+      "ADM": 13,
       "DES": 4
     },
     "registerIds": [
@@ -2224,29 +2665,29 @@
     ],
     "registerCaseCounts": {
       "10": 2,
-      "11": 4,
-      "12": 2,
+      "11": 8,
+      "12": 4,
       "13": 3,
-      "14": 4,
-      "15": 2,
-      "16": 4,
+      "14": 5,
+      "15": 4,
+      "16": 6,
       "17": 5,
-      "18": 3,
-      "19": 2,
+      "18": 8,
+      "19": 5,
       "20": 2,
       "21": 2,
-      "22": 6,
-      "23": 4,
-      "24": 6,
-      "25": 4,
-      "26": 4,
+      "22": 13,
+      "23": 13,
+      "24": 8,
+      "25": 7,
+      "26": 5,
       "27": 1,
-      "28": 3,
+      "28": 6,
       "29": 2,
-      "01": 3,
-      "02": 2,
-      "03": 4,
-      "04": 5,
+      "01": 4,
+      "02": 3,
+      "03": 6,
+      "04": 7,
       "05": 3,
       "06": 2,
       "07": 3,
@@ -2340,5 +2781,84 @@
     "A07": "UC-OWN-10",
     "A09": "UC-ADM-10",
     "A10": "UC-ADM-11"
+  },
+  "splitGroups": [
+    {
+      "id": "SG-SUP-05",
+      "anchorId": "UC-SUP-05",
+      "previousTitle": "고위험작업 허가와 작업중지·재개",
+      "caseIds": [
+        "UC-SUP-05",
+        "UC-SUP-16",
+        "UC-SUP-17"
+      ],
+      "testBoundary": "각 하위사건은 독립된 트리거·명령·완료조건·오류·감사기록으로 검사하며 원본 ID/버전을 임의 통합하지 않는다"
+    },
+    {
+      "id": "SG-SUP-09",
+      "anchorId": "UC-SUP-09",
+      "previousTitle": "발주처 정기·즉시보고 및 후속조치",
+      "caseIds": [
+        "UC-SUP-09",
+        "UC-SUP-18"
+      ],
+      "testBoundary": "각 하위사건은 독립된 트리거·명령·완료조건·오류·감사기록으로 검사하며 원본 ID/버전을 임의 통합하지 않는다"
+    },
+    {
+      "id": "SG-SUP-11",
+      "anchorId": "UC-SUP-11",
+      "previousTitle": "시운전·준공검사·인수 준비 확인",
+      "caseIds": [
+        "UC-SUP-11",
+        "UC-SUP-19",
+        "UC-SUP-20"
+      ],
+      "testBoundary": "각 하위사건은 독립된 트리거·명령·완료조건·오류·감사기록으로 검사하며 원본 ID/버전을 임의 통합하지 않는다"
+    },
+    {
+      "id": "SG-CON-08",
+      "anchorId": "UC-CON-08",
+      "previousTitle": "일일실적·지연 통보 및 회복계획 제출",
+      "caseIds": [
+        "UC-CON-08",
+        "UC-CON-17",
+        "UC-CON-18"
+      ],
+      "testBoundary": "각 하위사건은 독립된 트리거·명령·완료조건·오류·감사기록으로 검사하며 원본 ID/버전을 임의 통합하지 않는다"
+    },
+    {
+      "id": "SG-OWN-02",
+      "anchorId": "UC-OWN-02",
+      "previousTitle": "보고 수령·결정·후속조치 분리",
+      "caseIds": [
+        "UC-OWN-02",
+        "UC-OWN-11",
+        "UC-OWN-12"
+      ],
+      "testBoundary": "각 하위사건은 독립된 트리거·명령·완료조건·오류·감사기록으로 검사하며 원본 ID/버전을 임의 통합하지 않는다"
+    },
+    {
+      "id": "SG-ADM-08",
+      "anchorId": "UC-ADM-08",
+      "previousTitle": "보관·백업·복원과 재연결 충돌관리",
+      "caseIds": [
+        "UC-ADM-08",
+        "UC-ADM-12",
+        "UC-ADM-13"
+      ],
+      "testBoundary": "각 하위사건은 독립된 트리거·명령·완료조건·오류·감사기록으로 검사하며 원본 ID/버전을 임의 통합하지 않는다"
+    }
+  ],
+  "reviewSplitSummary": {
+    "groupCount": 6,
+    "anchorCount": 6,
+    "childCount": 11,
+    "roleCounts": {
+      "SUP": 20,
+      "CON": 18,
+      "OWN": 12,
+      "ADM": 13,
+      "DES": 4
+    }
   }
 }
