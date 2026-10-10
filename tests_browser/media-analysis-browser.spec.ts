@@ -13,6 +13,7 @@ let fixtureDir: string | undefined;
 let dropNextIssueAcknowledgement = false;
 let failNextWorkspaceRefresh = false;
 let failNextRunReview = false;
+let holdNextConfirmAcknowledgement: { reached: () => void; wait: Promise<void> } | null = null;
 const issueRequests: Array<{ key: string | undefined; body: string | null }> = [];
 const reviewMutations: string[] = [];
 if (process.env.CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.CHROMIUM_PATH } });
@@ -109,6 +110,12 @@ async function routeApi(page: Page) {
         return;
       }
     }
+    if (route.request().method() === "POST" && /\/observations\/[^/]+\/confirm$/.test(target.pathname) && holdNextConfirmAcknowledgement) {
+      const gate = holdNextConfirmAcknowledgement;
+      holdNextConfirmAcknowledgement = null;
+      gate.reached();
+      await gate.wait;
+    }
     await route.fulfill({ response });
   });
 }
@@ -117,6 +124,74 @@ function localDateTime(date: Date) {
   const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
   return offsetDate.toISOString().slice(0, 16);
 }
+
+test("run selector stays locked until a human confirmation refresh finishes", async ({ page, request }) => {
+  test.setTimeout(60_000);
+  await routeApi(page);
+  const sup = await login(request, "SUP");
+  const adm = await login(request, "ADM");
+  await page.goto("/#/capture");
+  const panel = page.getByTestId("media-analysis-panel");
+  await expect(panel).toBeVisible();
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=", "base64");
+  await page.getByLabel("증빙 파일 선택").setInputFiles({ name: `synthetic-run-lock-${randomUUID()}.png`, mimeType: "image/png", buffer: png });
+  const uploadedWait = page.waitForResponse((response) => response.url().includes("/uploads/") && response.url().endsWith("/complete") && response.request().method() === "POST");
+  await page.getByRole("button", { name: "서버 전송", exact: true }).click();
+  const uploaded = await uploadedWait;
+  expect(uploaded.status(), await uploaded.text()).toBe(201);
+  const evidence = await uploaded.json() as { id: string };
+
+  const queue = async () => api<{ id: string }>(request, sup, "/media-analysis-runs", {
+    roleAssignmentId: sup.actor.roleAssignmentId,
+    clientObjectId: randomUUID(),
+    sourceEvidenceIds: [evidence.id],
+    mode: "photo",
+    languages: ["en"],
+  }, 201);
+  const [activeRun, otherRun] = await Promise.all([queue(), queue()]);
+  const start = await request.post(`${apiOrigin}/dev/media-worker/projects/${sup.projectId}/runs/${activeRun.id}/start`, { headers: headers(adm, true), data: {} });
+  expect(start.status(), await start.text()).toBe(200);
+  const completion = await request.post(`${apiOrigin}/dev/media-worker/projects/${sup.projectId}/runs/${activeRun.id}/complete`, {
+    headers: headers(adm, true),
+    data: {
+      outputs: [{
+        kind: "candidate", sourceEvidenceId: evidence.id, analysisRunId: activeRun.id,
+        description: "Synthetic run-selector confirmation candidate", claimSupport: "observed", channel: "visual", confidence: 0.8,
+        reviewFlags: ["synthetic_fixture", "human_confirmation_required"],
+        grounding: [{ evidenceId: evidence.id, channel: "visual", claimSupport: "observed" }],
+      }],
+      coverage: { sources: [{ sourceEvidenceId: evidence.id, analyzedRanges: [], missingRanges: [], audioProcessedRanges: [], complete: true }] },
+      completedAt: new Date().toISOString(),
+    },
+  });
+  expect(completion.status(), await completion.text()).toBe(200);
+
+  const runSelector = panel.getByLabel("분석 실행", { exact: true });
+  await expect(runSelector.locator("option")).toHaveCount(3);
+  await runSelector.selectOption(activeRun.id);
+  await panel.getByRole("button", { name: "실행 새로고침", exact: true }).click();
+  const candidate = panel.locator('[data-testid^="media-candidate-"]').filter({ hasText: "Synthetic run-selector confirmation candidate" });
+  await expect(candidate).toBeVisible();
+  await candidate.getByRole("button", { name: "검토 시작" }).click();
+  await candidate.getByRole("checkbox").check();
+  await candidate.locator("textarea").first().fill("SUP confirmed the synthetic candidate against the uploaded source");
+
+  let releaseAcknowledgement!: () => void;
+  let reportAcknowledgement!: () => void;
+  const acknowledgement = new Promise<void>((resolve) => { releaseAcknowledgement = resolve; });
+  const acknowledgementReached = new Promise<void>((resolve) => { reportAcknowledgement = resolve; });
+  holdNextConfirmAcknowledgement = { reached: reportAcknowledgement, wait: acknowledgement };
+  const confirmButton = candidate.getByRole("button", { name: "관찰 확인" });
+  await confirmButton.click();
+  await acknowledgementReached;
+  await expect(runSelector).toBeDisabled();
+  await expect(runSelector).toHaveValue(activeRun.id);
+  releaseAcknowledgement();
+  await expect(runSelector).toBeEnabled();
+  await expect(runSelector).toHaveValue(activeRun.id);
+  await runSelector.selectOption(otherRun.id);
+  await expect(runSelector).toHaveValue(otherRun.id);
+});
 
 test("Capture queues synthetic analysis, shows coverage, supports human confirm/reject, and issues only eligible confirmation", async ({ page, request }) => {
   test.setTimeout(120_000);
