@@ -950,6 +950,8 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
       expect(warrantyIssueSeedResponse.status).toBe(201);
       warrantyIssueRef = (await warrantyIssueSeedResponse.json()).ref as Ref;
       warrantyIssueTitle = "F-07 browser warranty defect Issue";
+      await page.reload();
+      await expect(workspace).toBeVisible();
     }
 
     await useRole(page, "OWN");
