@@ -131,7 +131,7 @@
       "assessment": "approved_C2_implemented; full_connected_browser_revalidation_and_exact_Mac_CI_pending; pilot_not_run",
       "contract": "confirmed",
       "backendApi": "real_http_persistence_with_postgres_acceptance_suite",
-      "ui": "real_api_connected_UI_proves_planned_commissioning_gate_and_handover_reservation_draft; no_C2_dependent_full_happy_path_in_candidate",
+      "ui": "Real-API connected UI implements approved Commissioning Punch refresh, Handover Issue refresh and Warranty remedy-reference refresh; five current connected scenarios are rerunning.",
       "integration": "Current API and refusal suites passed; complete five-scenario UI rerun pending. Prior stale-reference limitation is addressed by explicit approved C2 refresh, not automatic refresh.",
       "pilot": "not_run",
       "evidence": [
@@ -145,7 +145,7 @@
         "design/development/agents/non-c2-mvp-candidate-handoff.json",
         "design/development/product-change-reference-lifecycle-proposal.json"
       ],
-      "provenScope": "Commissioning, Handover and Warranty state machines/resources have real HTTP create/command coverage and an environment-gated PostgreSQL subclass. HTTP tests cover expired witness/equipment-certificate denials, preservation of original failed commissioning test and uploaded-evidence retest, Owner partial handover with a scoped reservation, and warranty remedy/reinspection/closure. F-07 WorkItem creation and transitions use HTTP. Trusted Requirement profiles and upstream accepted InformationItem, Asset, Inspection, Issue and Action references are seeded as test fixtures. The candidate includes two real-API Completion UI browser cases for a planned commissioning package/missing-current-procedure gate and a handover reservation draft; they do not establish the linked commissioning-to-handover-to-warranty happy path. The C2 behavior that refreshes a stale commissioning Punch snapshot is excluded. The stale-reference HTTP regression remains and expects 409 REFERENCE_STALE while preserving the prior package reference/version and audit history.",
+      "provenScope": "Current real-HTTP tests cover commissioning, conditional/partial/final handover, warranty failed reinspection/rework/current-cycle reconciliation and closure. Five additional real-HTTP tests cover malformed, stale, incomplete, substituted, unauthorized, cancelled/superseded and cross-scope reference refusal plus idempotent SQLite restart replay. Original reference, Owner approval and reservation snapshots remain immutable. Trusted upstream Requirement, evidence, accepted InformationItem/Asset and legal-signature verification remain synthetic fixtures. Current complete browser rerun and exact-head Mac CI are pending; historical two draft cases are not current full-flow proof.",
       "gaps": [
         "Full current integrated browser and Mac Actions acceptance remains pending.",
         "Actual adopted project configuration, qualified site actors, production signature provider and field acceptance are not proven."
