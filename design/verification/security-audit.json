@@ -44,6 +44,16 @@
       "status": "candidate_verified_locally_pending_mac_ci"
     }
   ],
+  "localBackports": [
+    {
+      "package": "braces",
+      "version": "3.0.3",
+      "advisory": "GHSA-vfj7-8cjw-p6xm",
+      "method": "checksum-guarded root postinstall applying selected upstream micromatch/braces PR 72 security commits; registry package identity and integrity retained",
+      "source": "security/backports/braces-3.0.3.md",
+      "status": "mitigated_locally_pending_upstream_release_and_release_review"
+    }
+  ],
   "toolchain": {
     "node": "24.19.0",
     "npm": "12.2.0"
