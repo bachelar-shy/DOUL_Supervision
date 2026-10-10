@@ -43,6 +43,7 @@ def translate_text(text, source, target, *, endpoint=None, model=None, timeout=7
         "model": model,
         "prompt": prompt,
         "stream": False,
+        "think": False,
         "options": {"temperature": 0, "num_predict": 480},
         "keep_alive": "1m",
     }, ensure_ascii=False).encode("utf-8")
