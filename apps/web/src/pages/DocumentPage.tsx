@@ -1,3 +1,4 @@
+import { TranslationPreviewPanel } from "./TranslationPreviewPanel";
 import { recordVersionLabel } from "../labels";
 import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -128,6 +129,7 @@ export function DocumentPage({
   return (
     <PageBoundary name="documents">
       <DocumentWorkspaceTemplate>
+      <div style={{ gridColumn: "1 / -1" }}><TranslationPreviewPanel client={client} workspace={workspace} /></div>
       <form className="panel editor-pane" onSubmit={(event) => void preview(event)}>
         <h2>{t("document.editor.title")}</h2>
         <label>
