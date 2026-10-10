@@ -176,6 +176,14 @@ async function runCompletionCommand(
     await expect(selection).toBeVisible();
     expect(await selection.locator("option:checked").count(), "current issue refs must start unselected").toBe(0);
   }
+  if (/refresh.*remedy references/i.test(command.source)) {
+    const issueSelection = dialog.getByLabel(commandFieldLabels.issueRef);
+    const actionSelection = dialog.getByLabel(commandFieldLabels.actionRefs);
+    await expect(issueSelection).toBeVisible();
+    await expect(actionSelection).toBeVisible();
+    expect(await issueSelection.locator("option:checked").count(), "current issue must start unselected").toBe(0);
+    expect(await actionSelection.locator("option:checked").count(), "current Actions must start unselected").toBe(0);
+  }
   for (const [field, value] of Object.entries(fields)) {
     const label = commandFieldLabels[field] || new RegExp(field, "i");
     const control = dialog.getByLabel(label)
@@ -977,8 +985,8 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await runCompletionCommand(page, /start remedy/i);
 
     // Start/submit the actual Action after Warranty has captured its assigned
-    // version. Any stale-reference guard on the next warranty transition is
-    // reported as a contract boundary, never worked around with a newer ref.
+    // version. Explicit reconciliation later supplies only the current Action
+    // references after the exact linked Issue completes its correction cycle.
     await page.getByRole("navigation").getByRole("button", { name: /corrective actions/i }).click();
     await runWorkbenchCommand(page, "actions", remedyActionTitle, /start/i);
     await runWorkbenchCommand(page, "actions", remedyActionTitle, /submit/i, {
