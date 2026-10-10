@@ -13,6 +13,14 @@ export const uiErrorKo = {
   "reason.SOURCE_CONTENT_INVALID": "정규화 JSON 구조와 값을 확인하십시오.",
   "reason.IDEMPOTENCY_CONFLICT": "같은 요청 키에 다른 내용이 사용되었습니다. 입력 내용을 다시 확인하십시오.",
   "reason.ADAPTER_NOT_CONFIGURED": "운영 서비스 연동 전입니다.",
+  "reason.REFERENCE_IDENTITY_MISMATCH": "원본 이슈 ID를 유지하고 최신 참조를 선택하십시오.",
+  "reason.REFERENCE_CYCLE_INCOMPLETE": "현재 시정 주기의 모든 연결 조치가 완료되고 검증되어야 합니다.",
+  "reason.REFERENCE_STALE": "원본 참조가 변경되었습니다. 최신 참조를 선택하고 다시 제출하십시오.",
+  "reason.HANDOVER_ISSUE_REFERENCE_INVALID": "인계 패키지에 원본과 같은 범위의 현재 이슈 참조를 지정하십시오.",
+  "reason.HANDOVER_ISSUE_DISPOSITION_INVALID": "현재 미결 이슈마다 승인된 유보 또는 해결을 기록하십시오.",
+  "reason.WARRANTY_ISSUE_REQUIRED": "현재 하자 범위와 같은 연결 이슈를 지정하십시오.",
+  "reason.COMMISSIONING_PUNCH_REQUIRED": "원본과 같은 잔여 이슈 ID의 현재 참조를 선택하십시오.",
+  "reason.COMMISSIONING_PUNCH_ACTION_REQUIRED": "현재 잔여 이슈의 시정 주기 조치를 모두 연결하십시오.",
 } as const;
 
 export const uiErrorVi = {
@@ -30,6 +38,14 @@ export const uiErrorVi = {
   "reason.SOURCE_CONTENT_INVALID": "Hãy kiểm tra cấu trúc và giá trị của dữ liệu nguồn.",
   "reason.IDEMPOTENCY_CONFLICT": "Nội dung không khớp với yêu cầu đã gửi trước đó. Hãy kiểm tra dữ liệu đầu vào.",
   "reason.ADAPTER_NOT_CONFIGURED": "Dịch vụ xử lý chưa được cấu hình.",
+  "reason.REFERENCE_IDENTITY_MISMATCH": "Giữ nguyên mã vấn đề nguồn và chọn tham chiếu hiện tại.",
+  "reason.REFERENCE_CYCLE_INCOMPLETE": "Mọi hành động liên kết trong chu kỳ khắc phục hiện tại phải hoàn tất và được xác minh.",
+  "reason.REFERENCE_STALE": "Tham chiếu nguồn đã thay đổi. Hãy chọn tham chiếu hiện tại rồi gửi lại.",
+  "reason.HANDOVER_ISSUE_REFERENCE_INVALID": "Hãy chỉ định vấn đề hiện tại cùng phạm vi với hồ sơ bàn giao ban đầu.",
+  "reason.HANDOVER_ISSUE_DISPOSITION_INVALID": "Hãy ghi nhận bảo lưu được chấp thuận hoặc giải quyết cho từng vấn đề chưa đóng.",
+  "reason.WARRANTY_ISSUE_REQUIRED": "Hãy chỉ định vấn đề liên kết hiện tại trong phạm vi khiếm khuyết.",
+  "reason.COMMISSIONING_PUNCH_REQUIRED": "Hãy chọn tham chiếu hiện tại có cùng mã vấn đề tồn đọng ban đầu.",
+  "reason.COMMISSIONING_PUNCH_ACTION_REQUIRED": "Hãy liên kết mọi hành động trong chu kỳ hiện tại của vấn đề tồn đọng.",
 } as const;
 
 export const uiErrorEn = {
@@ -47,4 +63,12 @@ export const uiErrorEn = {
   "reason.SOURCE_CONTENT_INVALID": "Check the source data structure and values.",
   "reason.IDEMPOTENCY_CONFLICT": "The content differs from an earlier request. Check the input data.",
   "reason.ADAPTER_NOT_CONFIGURED": "The processing service is not configured.",
+  "reason.REFERENCE_IDENTITY_MISMATCH": "Keep the original issue ID and select its current reference.",
+  "reason.REFERENCE_CYCLE_INCOMPLETE": "Every linked action in the current correction cycle must be complete and verified.",
+  "reason.REFERENCE_STALE": "The source reference changed. Select the current reference and submit again.",
+  "reason.HANDOVER_ISSUE_REFERENCE_INVALID": "Choose current issues in the same scope as the original handover package.",
+  "reason.HANDOVER_ISSUE_DISPOSITION_INVALID": "Record an approved reservation or resolution for each open issue.",
+  "reason.WARRANTY_ISSUE_REQUIRED": "Choose the current linked issue in the defect scope.",
+  "reason.COMMISSIONING_PUNCH_REQUIRED": "Select the current reference with the original punch issue ID.",
+  "reason.COMMISSIONING_PUNCH_ACTION_REQUIRED": "Link every action in the punch issue's current correction cycle.",
 } as const;

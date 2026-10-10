@@ -74,6 +74,8 @@ export const mandatoryWorkflowKo = {
   "command.link_followup": "후속조치 연결",
   "command.mark_measurement_disputed": "물량 측정 분쟁 표시",
   "command.mark_ready_for_handover": "인계 준비 완료 표시",
+  "command.refresh_issue_references": "최신 미결 이슈 참조 갱신",
+  "command.refresh_remedy_references": "최신 보수 참조 갱신",
   "command.mark_recovery_effective": "회복효과 확인",
   "command.mark_recovery_ineffective": "회복효과 미달 확인",
   "command.monitor": "지연 모니터링 시작",
