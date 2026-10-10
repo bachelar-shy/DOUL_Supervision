@@ -153,6 +153,7 @@ const workbenchFieldLabels: Record<string, RegExp> = {
   correction: /correction|시정.?조치 내용/i,
   rootCause: /root cause|원인/i,
   preventiveAction: /preventive action|재발방지 대책/i,
+  failureReason: /failureReason|failure reason|부적합 사유|실패 사유/i,
   "검측 항목·측정 결과": /검측 항목|check results/i,
   "접수 시각": /접수 시각|received at/i,
   "검측 예정시각": /검측 예정|scheduled at/i,
@@ -834,7 +835,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
       await page.goto("/#/documents");
       await page.getByLabel(/document form/i).selectOption("FM-09");
       await page.getByLabel(/document source/i).selectOption(reinspectionId);
-      await page.getByLabel(/document output language/i).selectOption("en");
+      await page.getByLabel(/document output language/i).selectOption("vi");
       await page.getByLabel(/render type/i).selectOption("final");
       const formValues: Record<string, string> = {
         "inspection.no": reinspectionId, "inspection.work_name": passedReinspection.workName,
