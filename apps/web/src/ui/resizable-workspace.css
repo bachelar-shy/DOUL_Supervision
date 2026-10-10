@@ -241,3 +241,21 @@
     scroll-behavior: auto;
   }
 }
+
+/* The legacy 620px workbench rules must not hide the content of a focused pane.
+   Hide the pane slot, never its child: the same record remains mounted. */
+.doul-resizable-workspace.workbench .doul-resizable-pane > .list-pane,
+.doul-resizable-workspace.workbench .doul-resizable-pane > .detail-pane {
+  display: block;
+}
+
+/* Diagnostic records use a grid list and one outer scrollport per panel. */
+.doul-resizable-workspace[data-kind="diagnostic"] .doul-resizable-pane > .parallel-test-list {
+  display: grid;
+  align-content: start;
+  gap: .4rem;
+  max-height: none;
+}
+.doul-resizable-workspace[data-kind="diagnostic"] .parallel-test-detail pre {
+  max-height: none;
+}

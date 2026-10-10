@@ -24,6 +24,7 @@ const translations = {
   group: { ko: "화면 배치", vi: "Bố cục màn hình", en: "Workspace layout" },
   split: { ko: "분할 보기", vi: "Chia đôi", en: "Split view" },
   both: { ko: "모두 보기", vi: "Xem tất cả", en: "Show both" },
+  automatic: { ko: "자동 보기", vi: "Xem tự động", en: "Automatic view" },
   reset: { ko: "패널 폭 초기화", vi: "Đặt lại chiều rộng", en: "Reset pane width" },
   separator: { ko: "패널 폭 조절", vi: "Điều chỉnh độ rộng", en: "Resize panes" },
   list: { ko: "목록만 보기", vi: "Chỉ xem danh sách", en: "List only" },
@@ -153,6 +154,9 @@ export function ResizableWorkspace({
     setRatio(steps[event.key]);
   };
 
+  const splitLabel = compact
+    ? (kind === "workbench" || kind === "owner" ? label("automatic") : label("both"))
+    : label("split");
   const firstLabel = kind === "document" ? label("editor") :
     kind === "dashboard" ? label("priority") : label("list");
   const secondLabel = kind === "document" ? label("preview") :
@@ -179,10 +183,10 @@ export function ResizableWorkspace({
             <PanelLeft aria-hidden="true" size={15} /><span>{firstLabel}</span>
           </button>
           <button type="button" data-layout-action="split" aria-pressed={view === "split"}
-            aria-label={compact ? label("both") : label("split")}
+            aria-label={splitLabel}
             onClick={() => setFocus({ scope, view: "split" })}>
             <Columns2 aria-hidden="true" size={15} />
-            <span>{compact ? label("both") : label("split")}</span>
+            <span>{splitLabel}</span>
           </button>
           <button type="button" data-layout-action="second" aria-pressed={view === "second"}
             aria-label={secondLabel} title={secondLabel}
