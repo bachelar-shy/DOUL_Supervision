@@ -108,6 +108,7 @@ const commandFieldLabels: Record<string, RegExp> = {
   outcome: /outcome|^시험 결과$/i,
   acceptanceCriteriaMet: /acceptanceCriteria|인수 기준 충족 여부|합격 기준/i,
   failureReason: /failureReason|부적합 사유|실패 사유/i,
+  reworkReason: /rework reason|재작업 사유|lý do (?:yêu cầu )?làm lại/i,
   correctionActionRefs: /correctionAction|시정.?조치/i,
   currentIssueRefs: /currentIssueRefs|current open issue references|현재 미결 이슈 참조|vấn đề hiện tại/i,
   issueRef: /issueRef|issue reference|이슈 참조|tham chiếu vấn đề/i,
