@@ -7655,6 +7655,32 @@
             "type": "string",
             "format": "date-time",
             "readOnly": true
+          },
+          "currentIssueRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Issue"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
           }
         },
         "required": [

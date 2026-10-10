@@ -10272,10 +10272,14 @@
             "evidence_provenance_valid",
             "drawing_revision_current",
             "upstream_hold_points_released",
-            "commissioning_handover_ready"
+            "commissioning_handover_ready",
+            "commissioning_punch_reference_refresh_ready"
           ],
           "required_evidence": true,
-          "payload_fields": [],
+          "payload_fields": [
+            "punchIssueRefs",
+            "correctionActionRefs"
+          ],
           "required_payload_fields": [],
           "failure_reasons": [
             "NOT_AUTHORIZED",
@@ -10284,7 +10288,8 @@
             "EVIDENCE_INVALID",
             "DRAWING_STALE",
             "HOLD_NOT_RELEASED",
-            "COMMISSIONING_HANDOVER_READY"
+            "COMMISSIONING_HANDOVER_READY",
+            "COMMISSIONING_PUNCH_REFERENCE_REFRESH_READY"
           ],
           "audit_event": true
         },
@@ -10708,6 +10713,262 @@
             "HANDOVER_CLOSE_READY"
           ],
           "audit_event": true
+        },
+        {
+          "from": "draft",
+          "to": "draft",
+          "command": "refresh_issue_references",
+          "authority": "completion.handover.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "handover_refresh_issue_references_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "currentIssueRefs"
+          ],
+          "required_payload_fields": [
+            "currentIssueRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "HANDOVER_REFRESH_ISSUE_REFERENCES_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "completeness_review",
+          "to": "completeness_review",
+          "command": "refresh_issue_references",
+          "authority": "completion.handover.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "handover_refresh_issue_references_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "currentIssueRefs"
+          ],
+          "required_payload_fields": [
+            "currentIssueRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "HANDOVER_REFRESH_ISSUE_REFERENCES_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "returned",
+          "to": "returned",
+          "command": "refresh_issue_references",
+          "authority": "completion.handover.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "handover_refresh_issue_references_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "currentIssueRefs"
+          ],
+          "required_payload_fields": [
+            "currentIssueRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "HANDOVER_REFRESH_ISSUE_REFERENCES_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "technical_readiness",
+          "to": "technical_readiness",
+          "command": "refresh_issue_references",
+          "authority": "completion.handover.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "handover_refresh_issue_references_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "currentIssueRefs"
+          ],
+          "required_payload_fields": [
+            "currentIssueRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "HANDOVER_REFRESH_ISSUE_REFERENCES_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "owner_review",
+          "to": "owner_review",
+          "command": "refresh_issue_references",
+          "authority": "completion.handover.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "handover_refresh_issue_references_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "currentIssueRefs"
+          ],
+          "required_payload_fields": [
+            "currentIssueRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "HANDOVER_REFRESH_ISSUE_REFERENCES_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "accepted_with_reservations",
+          "to": "accepted_with_reservations",
+          "command": "refresh_issue_references",
+          "authority": "completion.handover.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "handover_refresh_issue_references_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "currentIssueRefs"
+          ],
+          "required_payload_fields": [
+            "currentIssueRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "HANDOVER_REFRESH_ISSUE_REFERENCES_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "accepted",
+          "to": "accepted",
+          "command": "refresh_issue_references",
+          "authority": "completion.handover.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "handover_refresh_issue_references_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "currentIssueRefs"
+          ],
+          "required_payload_fields": [
+            "currentIssueRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "HANDOVER_REFRESH_ISSUE_REFERENCES_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "partial_handover",
+          "to": "partial_handover",
+          "command": "refresh_issue_references",
+          "authority": "completion.handover.review",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "handover_refresh_issue_references_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "currentIssueRefs"
+          ],
+          "required_payload_fields": [
+            "currentIssueRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "HANDOVER_REFRESH_ISSUE_REFERENCES_READY"
+          ],
+          "audit_event": true
         }
       ]
     },
@@ -10950,7 +11211,9 @@
           ],
           "required_evidence": true,
           "payload_fields": [
-            "reinspectionRef"
+            "reinspectionRef",
+            "issueRef",
+            "actionRefs"
           ],
           "required_payload_fields": [
             "reinspectionRef"
@@ -11030,6 +11293,40 @@
             "DRAWING_STALE",
             "HOLD_NOT_RELEASED",
             "WARRANTY_CLOSE_READY"
+          ],
+          "audit_event": true
+        },
+        {
+          "from": "rework_required",
+          "to": "rework_required",
+          "command": "refresh_remedy_references",
+          "authority": "completion.warranty.verify",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "warranty_refresh_remedy_references_ready"
+          ],
+          "required_evidence": false,
+          "payload_fields": [
+            "issueRef",
+            "actionRefs"
+          ],
+          "required_payload_fields": [
+            "issueRef",
+            "actionRefs"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "WARRANTY_REFRESH_REMEDY_REFERENCES_READY"
           ],
           "audit_event": true
         }
