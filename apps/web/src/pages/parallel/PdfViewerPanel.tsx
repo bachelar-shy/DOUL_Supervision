@@ -824,8 +824,8 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup, r
         <button type="button" aria-label={tx("nextPage")} disabled={page >= pageCount || savingPin} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>›</button>
         <button type="button" aria-label={tx("zoomOut")} disabled={savingPin} onClick={() => setZoom((value) => Math.max(.5, +(value - .1).toFixed(1)))}>−</button><span>{Math.round(zoom * 100)}%</span>
         <button type="button" aria-label={tx("zoomIn")} disabled={savingPin} onClick={() => setZoom((value) => Math.min(2.5, +(value + .1).toFixed(1)))}>＋</button>
-        <button type="button" aria-label={locale === "ko" ? "도면 이동" : locale === "vi" ? "Di chuyển bản vẽ" : "Pan drawing"} aria-pressed={panMode} onClick={() => setPanMode((value) => !value)}>{locale === "ko" ? "이동" : "Pan"}</button>
-        <button type="button" aria-label={locale === "ko" ? "화면 맞춤" : locale === "vi" ? "Vừa khung" : "Fit to screen"} onClick={() => { setZoom(1); const viewport = viewportRef.current; if (viewport) { viewport.scrollLeft = 0; viewport.scrollTop = 0; } }}>{locale === "ko" ? "화면 맞춤" : "Fit"}</button>
+        <button type="button" aria-label={language === "ko" ? "도면 이동" : language === "vi" ? "Di chuyển bản vẽ" : "Pan drawing"} aria-pressed={panMode} onClick={() => setPanMode((value) => !value)}>{language === "ko" ? "이동" : "Pan"}</button>
+        <button type="button" aria-label={language === "ko" ? "화면 맞춤" : language === "vi" ? "Vừa khung" : "Fit to screen"} onClick={() => { setZoom(1); const viewport = viewportRef.current; if (viewport) { viewport.scrollLeft = 0; viewport.scrollTop = 0; } }}>{language === "ko" ? "화면 맞춤" : "Fit"}</button>
         <button type="button" aria-label={tx("rotate")} disabled={savingPin} onClick={() => setRotation((value) => (value + 90) % 360)}>{tx("rotate")}</button>
         {matches.map((match) => <button type="button" key={match} onClick={() => setPage(match)}>{tx("searchResult", { page: match })}</button>)}
       </div>
