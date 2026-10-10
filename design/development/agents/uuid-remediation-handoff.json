@@ -6,7 +6,7 @@
     "override": "xcode -> uuid 11.1.1",
     "expo": "57.0.26 (unchanged)",
     "npm": "12.2.0",
-    "status": "local integrated candidate passed; awaiting exact-commit Mac CI"
+    "status": "merged PR136; exact PR head and main merge each passed all four triggered Mac workflows"
   },
   "provenance": {
     "uuidVersion": "11.1.1",
@@ -43,6 +43,10 @@
     {
       "command": "root npm12 audit, web/mobile typecheck, web build, UI boundary and web lint",
       "result": "passed all build checks; root audit reports 33 high/0 moderate with two root advisories; UUID absent; raw totals vary across npm/audit runs"
+    },
+    {
+      "command": "Mac CI disposable Expo iOS prebuild plus xcode PBX group mutation/roundtrip",
+      "result": "passed on final PR head; preserves original32 IDs and addedgroup, reparse33 objects"
     }
   ],
   "files": {
@@ -77,5 +81,13 @@
       "candidate": "https://github.com/digitalbazaar/forge/pull/1152",
       "candidateStatus": "open unmerged; no1.4.1 release"
     }
+  },
+  "integration": {
+    "prHead": "15bbc158863a86518c4d6e9fb05f5a1a5e422f2a",
+    "mainMerge": "7a3485e3ab71207a84cee2ec9ca3cf92d5816909",
+    "triggeredWorkflowsPerCommit": 4,
+    "bothCommits": "all four passed on doul-macmini-m4-linux",
+    "prProof": "/Users/automation/work/DOUL-ci-runtime/pr136-15bbc15-checks.json",
+    "mainProof": "/Users/automation/work/DOUL-ci-runtime/pr136-7a3485e-checks.json"
   }
 }

@@ -99,6 +99,33 @@ function ReferenceList({ label, value }: { label: string; value: unknown }) {
   </div>;
 }
 
+function ReferenceRefreshHistory({
+  label, value, t,
+}: {
+  label: string; value: unknown; t: (key: CompletionLabelKey) => string;
+}) {
+  const history = values(value);
+  return <section className="completion-section">
+    <SectionHeader title={label} meta={`${history.length}`} />
+    {history.length ? <ol className="completion-history">{history.map((entryValue, index) => {
+      const entry = object(entryValue);
+      const priorIssues = entry.priorCurrentIssueRefs ?? entry.priorPunchIssueRefs ?? entry.priorIssueRef;
+      const currentIssues = entry.currentIssueRefs ?? entry.currentPunchIssueRefs ?? entry.currentIssueRef;
+      const priorActions = entry.priorCorrectionActionRefs ?? entry.priorActionRefs;
+      const currentActions = entry.currentCorrectionActionRefs ?? entry.currentActionRefs;
+      return <li key={`${String(entry.recordedAt ?? index)}-${index}`}>
+        <FieldGrid t={t} items={[[t("recordedAt"), dateText(entry.recordedAt)], [t("reference"), entry.recordedBy]]} />
+        <div className="completion-reference-grid">
+          {priorIssues !== undefined && <ReferenceList label={t("referenceRefreshPrior")} value={Array.isArray(priorIssues) ? priorIssues : [priorIssues]} />}
+          {priorActions !== undefined && <ReferenceList label={t("referenceRefreshPrior")} value={priorActions} />}
+          {currentIssues !== undefined && <ReferenceList label={t("referenceRefreshCurrent")} value={Array.isArray(currentIssues) ? currentIssues : [currentIssues]} />}
+          {currentActions !== undefined && <ReferenceList label={t("referenceRefreshCurrent")} value={currentActions} />}
+        </div>
+      </li>;
+    })}</ol> : <p className="muted">—</p>}
+  </section>;
+}
+
 function CommissioningDetail({ item, t }: { item: WorkItem; t: (key: CompletionLabelKey) => string }) {
   const data = completionData(item);
   const history = values(data.testResultHistory);
@@ -130,8 +157,11 @@ function CommissioningDetail({ item, t }: { item: WorkItem; t: (key: CompletionL
         <ReferenceList label={t("testWitnessPartyIds")} value={data.testWitnessPartyIds} />
         <ReferenceList label={t("punchIssues")} value={data.punchIssueRefs} />
         <ReferenceList label={t("correctionActionRefs")} value={data.correctionActionRefs} />
+        <ReferenceList label={t("currentPunchIssueRefs")} value={data.currentPunchIssueRefs ?? data.punchIssueRefs} />
+        <ReferenceList label={t("currentCorrectionActionRefs")} value={data.currentCorrectionActionRefs ?? data.correctionActionRefs} />
       </div>
     </section>
+    <ReferenceRefreshHistory label={t("punchReferenceRefreshHistory")} value={data.punchReferenceRefreshHistory} t={t} />
     <section className="completion-section"><SectionHeader title={t("testHistory")} meta={`${history.length}`} />
       {history.length ? <ol className="completion-history">{history.map((value, index) => {
         const result = object(value);
@@ -175,8 +205,11 @@ function HandoverDetail({ item, t }: { item: WorkItem; t: (key: CompletionLabelK
     </section>
     <section className="completion-section"><SectionHeader title={t("submittedDocuments")} meta={`${documentRefs.length}`} />
       <div className="completion-document-grid">{handoverDocumentFields.map(([field, key]) => <ReferenceList key={field} label={t(key as CompletionLabelKey)} value={data[field]} />)}</div>
-      <ReferenceList label={t("openIssueRefs")} value={data.openIssueRefs} />
+      <ReferenceList label={t("submittedIssueRefs")} value={data.openIssueRefs} />
+      <ReferenceList label={t("currentIssueRefs")} value={data.currentIssueRefs ?? data.openIssueRefs} />
+      <ReferenceList label={t("currentOpenIssueRefs")} value={data.currentOpenIssueRefs ?? data.openIssueRefs} />
     </section>
+    <ReferenceRefreshHistory label={t("issueReferenceRefreshHistory")} value={data.issueReferenceRefreshHistory} t={t} />
     <section className="completion-section"><SectionHeader title={t("acceptedDocuments")} meta={`${values(data.acceptedDocumentRefs).length}`} />
       <ReferenceList label={t("acceptedDocuments")} value={data.acceptedDocumentRefs} />
     </section>
@@ -211,17 +244,19 @@ function WarrantyDetail({ item, t }: { item: WorkItem; t: (key: CompletionLabelK
         [t("observedAt"), dateText(data.defectObservedAt)], [t("responseDueAt"), dateText(data.responseDueAt)],
         [t("defectScope"), data.defectScope], [t("defectDescription"), data.defectDescription],
         [t("causeDescription"), data.causeDescription], [t("operationalImpact"), data.operationalImpact],
-        [t("issueRef"), data.issueRef], [t("remedySummary"), data.remedySummary], [t("reworkReason"), data.reworkReason],
+        [t("issueRef"), data.issueRef], [t("currentIssueRef"), data.currentIssueRef ?? data.issueRef], [t("remedySummary"), data.remedySummary], [t("reworkReason"), data.reworkReason],
         [t("reinspectionRef"), data.reinspectionRef], [t("closeout"), data.closureRef],
       ]} />
       <div className="completion-reference-grid">
         <ReferenceList label={t("actionRefs")} value={data.actionRefs} />
+        <ReferenceList label={t("currentActionRefs")} value={data.currentActionRefs ?? data.actionRefs} />
         <ReferenceList label={t("remedyEvidence")} value={data.remedyEvidenceIds} />
         <ReferenceList label={t("reinspectionHistory")} value={data.reinspectionHistoryRefs} />
         <ReferenceList label={t("closureEvidence")} value={data.closureEvidenceRefs} />
       </div>
       <p className="completion-boundary">{t("warrantyClosureBoundary")}</p>
     </section>
+    <ReferenceRefreshHistory label={t("remedyReferenceRefreshHistory")} value={data.remedyReferenceRefreshHistory} t={t} />
   </>;
 }
 

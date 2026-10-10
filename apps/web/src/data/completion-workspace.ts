@@ -25,7 +25,10 @@ export type CompletionLabelKey =
   | "notSet" | "yes" | "no" | "backToList" | "noCommands" | "createUnavailable" | "closeDialog" | "requiredHandoverScope"
   | "retestPreserved" | "partialHandoverBoundary" | "warrantyClosureBoundary"
   | "profileRequired" | "profileScopeNote" | "profileUnavailable" | "warrantyRequiredFields" | "evidenceRefs" | "error"
-  | "commandAvailable" | "commandBlocked" | "readinessReady" | "readinessNotReady";
+  | "commandAvailable" | "commandBlocked" | "readinessReady" | "readinessNotReady"
+  | "submittedIssueRefs" | "currentIssueRefs" | "currentOpenIssueRefs" | "issueReferenceRefreshHistory"
+  | "currentPunchIssueRefs" | "currentCorrectionActionRefs" | "punchReferenceRefreshHistory"
+  | "currentIssueRef" | "currentActionRefs" | "remedyReferenceRefreshHistory" | "referenceRefreshPrior" | "referenceRefreshCurrent";
 
 export const completionLabelKeys: readonly CompletionLabelKey[] = [
   "title", "description", "commissioning", "handover", "warranty", "commissioningDescription",
@@ -45,7 +48,9 @@ export const completionLabelKeys: readonly CompletionLabelKey[] = [
   "createUnavailable", "closeDialog", "requiredHandoverScope", "retestPreserved", "partialHandoverBoundary", "warrantyClosureBoundary",
   "profileRequired", "profileScopeNote", "profileUnavailable", "warrantyRequiredFields", "evidenceRefs", "error",
   "commandAvailable", "commandBlocked",
-  "readinessReady", "readinessNotReady",
+  "readinessReady", "readinessNotReady", "submittedIssueRefs", "currentIssueRefs", "currentOpenIssueRefs",
+  "issueReferenceRefreshHistory", "currentPunchIssueRefs", "currentCorrectionActionRefs", "punchReferenceRefreshHistory",
+  "currentIssueRef", "currentActionRefs", "remedyReferenceRefreshHistory", "referenceRefreshPrior", "referenceRefreshCurrent",
 ];
 
 export const completionFallbackLabels: Record<CompletionLabelKey, string> = {
@@ -86,6 +91,11 @@ export const completionFallbackLabels: Record<CompletionLabelKey, string> = {
   error: "요청을 완료하지 못했습니다. 입력값과 선행조건을 확인하십시오.",
   commandAvailable: "실행 가능", commandBlocked: "선행조건 대기",
   readinessReady: "준비 완료", readinessNotReady: "준비 미완료",
+  submittedIssueRefs: "제출 당시 이슈 참조", currentIssueRefs: "현재 이슈 참조", currentOpenIssueRefs: "현재 미결 이슈 참조",
+  issueReferenceRefreshHistory: "이슈 참조 갱신 이력", currentPunchIssueRefs: "현재 잔여 이슈 참조",
+  currentCorrectionActionRefs: "현재 시정조치 참조", punchReferenceRefreshHistory: "잔여 이슈 참조 갱신 이력",
+  currentIssueRef: "현재 연결 이슈 참조", currentActionRefs: "현재 시정조치 참조",
+  remedyReferenceRefreshHistory: "보수 참조 갱신 이력", referenceRefreshPrior: "이전 참조", referenceRefreshCurrent: "갱신 참조",
   retestPreserved: "재시험 후에도 실패한 시험결과는 이력에 유지됩니다.",
   partialHandoverBoundary: "부분인수는 정확한 인수 범위와 미결 유보사항을 그대로 유지합니다.",
   warrantyClosureBoundary: "보증 하자 종결은 인수와 별도이며 서버 제공 명령으로만 처리합니다.",
@@ -122,7 +132,7 @@ export function completionReferenceOptions(workspace: Workspace): CompletionRefe
     const title = source?.record.title || source?.record.workName || hint;
     refs.set(key, {
       ref,
-      label: `${title ? `${title} · ` : ""}${ref.objectType} · ${ref.objectId.slice(0, 8)} · v${ref.version}`,
+      label: `${title ? `${title} · ` : ""}${ref.objectType} · ${ref.objectId} · v${ref.version}`,
       ...(source?.record.status ? { status: source.record.status } : typeof catalogRecord?.status === "string" ? { status: catalogRecord.status } : {}),
       ...(source?.record.subtype ? { subtype: source.record.subtype } : typeof catalogRecord?.subtype === "string" ? { subtype: catalogRecord.subtype } : {}),
     });

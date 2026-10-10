@@ -260,7 +260,16 @@ export const commandInputs: Record<string, Record<string, Record<string, { type:
         "type": "array"
       }
     },
-    "mark_ready_for_handover": {},
+    "mark_ready_for_handover": {
+      "correctionActionRefs": {
+        "type": "array",
+        "reference": "multiple"
+      },
+      "punchIssueRefs": {
+        "type": "array",
+        "reference": "multiple"
+      }
+    },
     "reject_test": {
       "failureReason": {
         "type": "string"
@@ -771,6 +780,12 @@ export const commandInputs: Record<string, Record<string, Record<string, { type:
       },
       "warrantyTrigger": {
         "type": "boolean"
+      }
+    },
+    "refresh_issue_references": {
+      "currentIssueRefs": {
+        "type": "array",
+        "reference": "multiple"
       }
     },
     "resubmit_handover_package": {},
@@ -2162,6 +2177,14 @@ export const commandInputs: Record<string, Record<string, Record<string, { type:
   },
   "warranty_claim": {
     "accept_remedy": {
+      "actionRefs": {
+        "type": "array",
+        "reference": "multiple"
+      },
+      "issueRef": {
+        "type": "object",
+        "reference": "single"
+      },
       "reinspectionRef": {
         "type": "object",
         "reference": "single"
@@ -2174,6 +2197,16 @@ export const commandInputs: Record<string, Record<string, Record<string, { type:
         "type": "object"
       },
       "ownerDecisionRef": {
+        "type": "object",
+        "reference": "single"
+      }
+    },
+    "refresh_remedy_references": {
+      "actionRefs": {
+        "type": "array",
+        "reference": "multiple"
+      },
+      "issueRef": {
         "type": "object",
         "reference": "single"
       }

@@ -1,8 +1,8 @@
-# 48. Product Baseline Change Control v1.0
+# 48. Product Baseline Change Control v1.1
 
-기준일: 2026-10-06
+기준일: 2026-10-10
 상태: Product / Functional 운영계약
-기준선: Product / Functional Baseline v1.0
+기준선: Product / Functional Baseline v1.1 승인; 검증된 릴리스 채택 전까지 v1.0 효력 유지
 
 ## 1. 목적
 
@@ -80,3 +80,8 @@ C2 이상은 이전 버전의 정상업무가 깨지지 않는지 회귀시험�
 - Acceptance Scenario 결과
 - 변경 후 생성물/계약 검증
 - 적용 시작시점
+
+
+## 8. 승인 변경 및 릴리스 효력
+
+PCR-2026-002는 Product/Functional Owner가 C2, v1.0→v1.1 변경으로 승인했다. 승인 응답은 “제안대로 v1.1에 채택”이며 intended effectiveFrom은 `2026-10-10T00:00:00+07:00`이다. 승인 기록은 `app/reference/product_change_record_pcr_2026_002.json`에 있으며 변경은 검증된 릴리스에 포함된 때에만 효력이 생긴다. 구현이나 승인기록 단독으로 현재 release의 baseline을 승격하지 않는다.

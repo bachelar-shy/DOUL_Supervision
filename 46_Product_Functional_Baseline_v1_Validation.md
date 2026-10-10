@@ -256,3 +256,7 @@ Baseline v1.0 이후는 Product 의미를 임의 확장하지 않고 다음 원�
 3. 업무 API/UI가 나오는 단위마다 동일한 인수사례를 누적한다 (`49_Implementation_Acceptance_Scenarios_v1.md`).
 4. 진척도는 `contract_confirmed → backend_api_implemented → ui_connected → integration_passed → pilot_verified`로 기록한다 (`54_Implementation_Progress_Stage_Ledger_v1.md`).
 5. 시범운영은 `53_Field_Pilot_Acceptance_Plan_v1.md`의 착수·완료 Gate를 따른다.
+
+## 13. 승인된 v1.1 변경과 릴리스 효력
+
+PCR-2026-002는 F-07 Commissioning / Handover / Warranty의 동일 Issue identity와 현재 correction-cycle Action 참조 갱신만을 Baseline v1.1에 채택하도록 승인했다. 기존 제출 스냅샷, Owner 승인·예약, 감사 이력 및 종결 Gate는 그대로 보존한다. 이 검증서의 v1.0 PASS는 해당 시점의 검증 기록으로 유지되며, PCR-2026-002는 필요한 회귀시험과 검증을 통과해 verified release에 포함될 때만 효력이 발생한다. 그 릴리스 전에는 Baseline v1.0이 계속 적용된다.

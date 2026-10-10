@@ -34,14 +34,16 @@
     }
   },
   "releaseStatus": "BLOCKED_PENDING_REMEDIATION",
-  "note": "Counts include transitive propagation, not distinct vulnerabilities. npm 12.2.0 reports 33 high, zero moderate and two root advisories after the UUID fix. Earlier npm 11.9 reported 21 high/7 moderate; raw propagation counts across tool versions are not comparable. The node-forge local patch mitigates the cited RSA DigestInfo issue in installed source while preserving the original registry version and audit finding; its local status is mitigated_by_pinned_backport_pending_upstream_release_and_release_review. Release approval remains blocked while upstream release/review is pending and braces 3.0.3 remains affected. No advisory filter, forced Expo downgrade, graph-validation waiver or release approval was applied.",
+  "note": "Counts include transitive propagation, not distinct vulnerabilities. npm 12.2.0 reports 33 high, zero moderate and two root advisories after the UUID fix. Earlier npm 11.9 reported 21 high/7 moderate; raw propagation counts across tool versions are not comparable. The node-forge local patch mitigates the cited RSA DigestInfo issue in installed source while preserving the original registry version and audit finding; its local status is mitigated_by_pinned_backport_pending_upstream_release_and_release_review. Both node-forge and braces installed sources now have pinned checksum-guarded local mitigations. Their original registry versions and advisories remain visible; release approval remains blocked pending upstream release and security review. No advisory filter, forced Expo downgrade, graph-validation waiver or release approval was applied.",
   "remediatedAdvisories": [
     {
       "package": "uuid",
       "version": "11.1.1",
       "advisory": "GHSA-w5hq-g745-h8pq",
       "method": "root xcode override; npm 12.2.0 supports workspace graph inventory",
-      "status": "candidate_verified_locally_pending_mac_ci"
+      "status": "merged_and_verified_on_mac_ci",
+      "pullRequest": 136,
+      "mergeCommit": "7a3485e3ab71207a84cee2ec9ca3cf92d5816909"
     }
   ],
   "localBackports": {
@@ -63,5 +65,47 @@
   "toolchain": {
     "node": "24.19.0",
     "npm": "12.2.0"
+  },
+  "auditObservations": [
+    {
+      "scope": "isolated local npm12 locked audit",
+      "high": 33,
+      "moderate": 0,
+      "rootAdvisories": [
+        "braces",
+        "node-forge"
+      ]
+    },
+    {
+      "scope": "PR136 Mac CI locked install audit",
+      "head": "15bbc158863a86518c4d6e9fb05f5a1a5e422f2a",
+      "high": 21,
+      "moderate": 0,
+      "source": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/37974476628",
+      "limit": "Transitive counts depend on the audit response; do not infer a remediation rate by comparing raw counts."
+    }
+  ],
+  "verification": {
+    "prHead": "15bbc158863a86518c4d6e9fb05f5a1a5e422f2a",
+    "mainMerge": "7a3485e3ab71207a84cee2ec9ca3cf92d5816909",
+    "triggeredWorkflowsPerCommit": 4,
+    "bothCommits": "all four passed on doul-macmini-m4-linux",
+    "prProof": "/Users/automation/work/DOUL-ci-runtime/pr136-15bbc15-checks.json",
+    "mainProof": "/Users/automation/work/DOUL-ci-runtime/pr136-7a3485e-checks.json"
+  },
+  "localBackportVerification": {
+    "node-forge": {
+      "pullRequest": 137,
+      "mergeCommit": "49cae4f8a3d2eecb10fdb909c4669ef74fb7da30",
+      "MacPR": "all four triggered workflows passed",
+      "MacMain": "all four triggered workflows passed"
+    },
+    "braces": {
+      "pullRequest": 138,
+      "mergeCommit": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
+      "MacPR": "all four triggered workflows passed",
+      "MacMain": "all four triggered workflows passed",
+      "mainProof": "/Users/automation/work/DOUL-ci-runtime/pr138-6a24662-checks.json"
+    }
   }
 }

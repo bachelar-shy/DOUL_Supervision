@@ -24980,6 +24980,87 @@
         "x-domain-command": "handover_package:close_handover_package"
       }
     },
+    "/projects/{projectId}/handover-packages/{objectId}/refresh-issue-references": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_handover_packages_objectId_refresh_issue_references",
+        "summary": "handover_package / refresh_issue_references",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_handover_package"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_handover_package_refresh_issue_references"
+              }
+            }
+          }
+        },
+        "x-domain-command": "handover_package:refresh_issue_references"
+      }
+    },
     "/projects/{projectId}/warranty-claims": {
       "parameters": [
         {
@@ -25848,6 +25929,87 @@
           }
         },
         "x-domain-command": "warranty_claim:close_warranty_claim"
+      }
+    },
+    "/projects/{projectId}/warranty-claims/{objectId}/refresh-remedy-references": {
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "objectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "post_projects_projectId_warranty_claims_objectId_refresh_remedy_references",
+        "summary": "warranty_claim / refresh_remedy_references",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult_warranty_claim"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command_warranty_claim_refresh_remedy_references"
+              }
+            }
+          }
+        },
+        "x-domain-command": "warranty_claim:refresh_remedy_references"
       }
     },
     "/projects/{projectId}/registers/{registerId}": {
@@ -34369,6 +34531,190 @@
               "additionalProperties": false
             },
             "uniqueItems": true
+          },
+          "currentPunchIssueRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Issue"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "currentCorrectionActionRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Action"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "punchReferenceRefreshHistory": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "priorPunchIssueRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "priorCorrectionActionRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Action"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "currentPunchIssueRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "currentCorrectionActionRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Action"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "recordedBy": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "recordedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "priorPunchIssueRefs",
+                "priorCorrectionActionRefs",
+                "currentPunchIssueRefs",
+                "currentCorrectionActionRefs",
+                "recordedBy",
+                "recordedAt"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [
@@ -34796,6 +35142,136 @@
             "type": "string",
             "format": "date-time",
             "readOnly": true
+          },
+          "currentIssueRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Issue"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "currentOpenIssueRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Issue"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "issueReferenceRefreshHistory": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "priorCurrentIssueRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "currentIssueRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "recordedBy": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "recordedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "priorCurrentIssueRefs",
+                "currentIssueRefs",
+                "recordedBy",
+                "recordedAt"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [
@@ -35095,6 +35571,178 @@
             "type": "string",
             "format": "uuid",
             "readOnly": true
+          },
+          "currentIssueRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Issue"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false,
+            "readOnly": true
+          },
+          "currentActionRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Action"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "remedyReferenceRefreshHistory": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "priorIssueRef": {
+                  "type": "object",
+                  "properties": {
+                    "objectType": {
+                      "const": "Issue"
+                    },
+                    "objectId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "objectType",
+                    "objectId",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                },
+                "priorActionRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Action"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "currentIssueRef": {
+                  "type": "object",
+                  "properties": {
+                    "objectType": {
+                      "const": "Issue"
+                    },
+                    "objectId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "objectType",
+                    "objectId",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                },
+                "currentActionRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Action"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "recordedBy": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "recordedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "priorIssueRef",
+                "priorActionRefs",
+                "currentIssueRef",
+                "currentActionRefs",
+                "recordedBy",
+                "recordedAt"
+              ],
+              "additionalProperties": false
+            }
           }
         },
         "required": [
@@ -46144,7 +46792,60 @@
             "properties": {
               "payload": {
                 "type": "object",
-                "properties": {},
+                "properties": {
+                  "correctionActionRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "objectType": {
+                          "const": "Action"
+                        },
+                        "objectId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      },
+                      "required": [
+                        "objectType",
+                        "objectId",
+                        "version"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "uniqueItems": true
+                  },
+                  "punchIssueRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "objectType": {
+                          "const": "Issue"
+                        },
+                        "objectId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      },
+                      "required": [
+                        "objectType",
+                        "objectId",
+                        "version"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "uniqueItems": true
+                  }
+                },
                 "additionalProperties": false
               }
             }
@@ -46551,6 +47252,54 @@
           }
         ]
       },
+      "Command_handover_package_refresh_issue_references": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "currentIssueRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "objectType": {
+                          "const": "Issue"
+                        },
+                        "objectId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      },
+                      "required": [
+                        "objectType",
+                        "objectId",
+                        "version"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "uniqueItems": true,
+                    "readOnly": true
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "currentIssueRefs"
+                ]
+              }
+            }
+          }
+        ]
+      },
       "Create_warranty_claim": {
         "type": "object",
         "required": [
@@ -46817,6 +47566,54 @@
               "payload": {
                 "type": "object",
                 "properties": {
+                  "actionRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "objectType": {
+                          "const": "Action"
+                        },
+                        "objectId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      },
+                      "required": [
+                        "objectType",
+                        "objectId",
+                        "version"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "uniqueItems": true
+                  },
+                  "issueRef": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
                   "reinspectionRef": {
                     "type": "object",
                     "properties": {
@@ -46959,6 +47756,76 @@
                 "additionalProperties": false,
                 "required": [
                   "closureRef"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Command_warranty_claim_refresh_remedy_references": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CommandRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "actionRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "objectType": {
+                          "const": "Action"
+                        },
+                        "objectId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      },
+                      "required": [
+                        "objectType",
+                        "objectId",
+                        "version"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "uniqueItems": true
+                  },
+                  "issueRef": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "actionRefs",
+                  "issueRef"
                 ]
               }
             }

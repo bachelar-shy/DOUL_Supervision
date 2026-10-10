@@ -1,7 +1,7 @@
 {
   "goal": "DOUL Supervision Korean, Vietnamese and English field MVP",
   "status": "development_in_progress_with_external_acceptance_dependencies",
-  "integrationBase": "f6002aa8ab34cb717677971b0accf5bcebe7da98",
+  "integrationBase": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
   "mergedPrerequisites": [
     {
       "pr": 128,
@@ -22,7 +22,10 @@
       "i18n": "goal/i18n-integration-v1",
       "create-capabilities": "goal/create-capabilities-v1",
       "operations": "goal/operational-validation-v1",
-      "acceptance-audit": "goal/acceptance-audit-v1"
+      "acceptance-audit": "goal/acceptance-audit-v1",
+      "reference-api": "goal/f03-combined-safety",
+      "reference-ui": "goal/reference-ui-v1-1-resume",
+      "media-analysis": "goal/media-analysis-browser-v1"
     },
     "interruption": "Offline Luna agent exhausted workspace credits; root preserved scaffold and completed verified responsive-web slice."
   },
@@ -59,15 +62,10 @@
       "Execute quality, safety, schedule/contract, quantity/payment and handover cases with qualified roles; preserve exact versions, evidence and rejection paths",
       "Evaluate Korean/Vietnamese/English task completion, errors, time, confusing terms and user feedback; record severity and retest fixes"
     ],
-    "acceptance": "No actual-file upload or usability pass is claimed until supplied files and qualified users have been exercised; synthetic browser fixtures remain separate."
+    "acceptance": "No actual-file upload or usability pass is claimed until supplied files and qualified users have been exercised; synthetic browser fixtures remain separate.",
+    "suppliedFileDevelopmentEvidence": "Three uploaded PDF/BOQ/schedule originals exercised through real authorized UI in three languages on two screens (18 download/reopen hash checks) by PR135. Tender BOQ and graphical schedule are not approved imported baselines; actual pilot actors/photos/configuration and mappings remain required."
   },
   "blockedDependencies": [
-    {
-      "kind": "product_contract_decision",
-      "requiredInput": "Product/Functional Owner decision/classification/effective version for drafted same-Punch-identity explicit current-ref refresh; separately define Handover/Warranty audited reference reconciliation.",
-      "policy": "48_Product_Baseline_Change_Control_v1.md sections2-6",
-      "reviewableDraft": "design/development/product-change-reference-lifecycle-proposal.json"
-    },
     {
       "kind": "actual_field_and_operations_acceptance",
       "requiredInput": "Actual discipline PDFs, BOQ, schedule/photos, qualified users/project configuration, production legal signature provider, adopted forms/language policy and real pilot access.",
@@ -75,14 +73,14 @@
     },
     {
       "kind": "release_security_and_native_review",
-      "requiredInput": "Remaining braces/node-forge/uuid release blockers and native vi/en review/performance/recovery acceptance remain unresolved; failed UUID graph candidate was not integrated.",
+      "requiredInput": "UUID fix merged and verified; node-forge and braces pinned local mitigations merged with original advisories visible. Upstream releases/security release review, native vi/en review and actual operational/field acceptance remain external dependencies.",
       "evidence": "design/development/agents/uuid-remediation-handoff.json"
     }
   ],
   "restartAfterUnblocking": [
     "Inspect Git/worktree status and final root/worker handoffs; preserve readonly shared overlays and uncommitted worker changes.",
-    "Inspect exact-head integration candidate checks on the existing Mac mini runner; do not repeat completed CI provisioning or previous suites without new changes/failures. Original PR129 retains the pending C2 prototype; no C2 adoption is approved.",
-    "Record Product decision and approved effective contract before implementing/adopting reconciliation. Restore sanctioned workflow reachability with exact identity/version/history/authorization checks.",
+    "Use current reference integration handoff and existing Mac mini runner. PR129 is a historical unmerged draft; PR131 and security136/137/138 are merged. Do not repeat provisioning or request the recorded #132 approval again.",
+    "Continue approved C2 exact-identity/current-cycle reconciliation validation from committed checkpoint; preserve original references, Owner approvals/reservations, authority and closure gates.",
     "Rerun bounded Warranty/Handover positive and refusal scenarios; no state seeding or signature/authority bypass.",
     "Continue real-file pilot/usability and operational/provider/native acceptance after required actual inputs are supplied. Never label blocked or pilot-unrun Goal complete."
   ],
@@ -90,11 +88,30 @@
     "design/verification/goal-m4-native-20261009.json"
   ],
   "integrationVerification": {
-    "candidateBranch": "goal/non-c2-mvp-v1",
-    "status": "focused_candidate_verification_passed; final_exact_head_mac_ci_pending",
-    "previousExactHeadEvidence": "design/verification/goal-macmini-ci-pr129-main-20261009.json",
-    "c2Policy": "Pending same-Punch current-reference refresh and dependent success paths are excluded; existing exact-reference refusal remains enforced.",
-    "pullRequest": 131
+    "candidateBranch": "goal/reference-integration-v1-1",
+    "baseCommit": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
+    "status": "API_and_static_UI_passed; Warranty_final_browser_and_exact_head_Mac_CI_pending",
+    "c2Policy": "Explicit qualified SUP current-reference refresh only; Product-approved PCR-2026-002; no automatic rewrite or gate relaxation.",
+    "handoff": "design/development/agents/reference-integration-handoff.json"
   },
-  "remainingIndependentDevelopment": []
+  "remainingIndependentDevelopment": [
+    {
+      "branch": "goal/f03-combined-safety",
+      "work": "Join actual equipment inspection/certificate fail/pass, Permit activation, Stop, verified remedy, explicit lift and separate resume in one synthetic real-API browser acceptance",
+      "status": "one local isolated case passed; root review and integrated Mac CI pending"
+    },
+    {
+      "branch": "goal/media-analysis-browser-v1",
+      "work": "Connect existing media analysis APIs to operator browser review, full coverage/sources, human confirmation/rejection and eligible-only Issue creation",
+      "status": "implementation in progress; no actual provider or pilot claim"
+    }
+  ],
+  "productApproval": {
+    "record": "app/reference/product_change_record_pcr_2026_002.json",
+    "issue": 132,
+    "decision": "approved",
+    "statement": "제안대로 v1.1에 채택",
+    "releaseEffect": "approved for verified release; integrated C2 acceptance and security release review remain pending"
+  },
+  "latestCheckpoint": "54b2208"
 }

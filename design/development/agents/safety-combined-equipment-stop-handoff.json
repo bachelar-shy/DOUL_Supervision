@@ -1,0 +1,36 @@
+{
+  "task": "Joined Safety equipment, Permit, Stop, corrective Action, Stop lift, and Permit resume browser acceptance",
+  "branch": "goal/f03-combined-safety",
+  "base": "6a24662",
+  "files": [
+    "tests_browser/safety-equipment-closed-loop.spec.ts",
+    "design/development/agents/safety-combined-equipment-stop-handoff.json"
+  ],
+  "coverage": {
+    "joinedScenario": "One real browser/API case authors a scoped EquipmentInspection and equipment-backed Permit. It fails the current equipment inspection, proves Permit activation is denied atomically, records and passes reinspection with current safety/calibration certificate refs, then activates against the exact Equipment Asset ref. The same Permit is suspended by a Stop. The test creates a separate scoped corrective Action through the Action UI, has SUP assign it, CON start and submit correction, and SUP verify it. CON requests Stop resume; SUP verifies against a current passed Inspection and explicitly lifts the Stop. The Permit remains suspended/workAuthorized=false after lift; CON separately requests Permit resume and SUP approves it. Final stored records assert equipment refs, verified Action, lifted Stop, and active Permit.",
+    "gateBoundaries": "Equipment failure does not authorize work. Stop lift does not resume the affected Permit. Permit resumption requires a separate CON request and SUP approval. UI command requests assert expectedVersion and Idempotency-Key. The original separate Stop case remains in the file and continues to pass."
+  },
+  "fixtureBoundary": {
+    "directTrustedSetup": "The isolated fixture adds only upstream prerequisites: scoped Requirement, Equipment Asset, approved safety and calibration certificates, approved method statement, risk assessment, and emergency plan. It reads a current demo SUP qualification and uses demo evidence.",
+    "createdThroughUi": "EquipmentInspection, Permit, Stop, and the joined case's corrective Action are authored or transitioned through the browser against the isolated HTTP API.",
+    "trustedDemoWorkflowInput": "The joined case references a preexisting passed demo Inspection for Stop resume verification. It does not create or run that Inspection. Other synthetic data is limited to the local demo fixture.",
+    "actorsAndAcceptance": "CON and SUP are synthetic development actors. This result proves neither deployment with actual field Configuration Pack/project data nor real-user, site-pilot, or production acceptance."
+  },
+  "validation": {
+    "browser": {
+      "result": "PASS",
+      "passed": 2,
+      "duration": "58.8s",
+      "command": "DOUL_TEST_PYTHON=/workspace/DOUL_Supervision/work/priority-venv/bin/python DOUL_API_ALLOWED_ORIGINS=http://127.0.0.1:5192 node_modules/.bin/playwright test --config=playwright-f03.config.ts tests_browser/safety-equipment-closed-loop.spec.ts --reporter=line",
+      "runtime": "The run used a Vite server from this worktree on 127.0.0.1:5192 with its cache under /tmp, the test's own per-run isolated Uvicorn API/database, and system Chromium at /usr/bin/chromium. The temporary Playwright/Vite configs are untracked scratch files and are not required product files."
+    },
+    "other": [
+      "git diff --check"
+    ]
+  },
+  "remaining": [
+    "No real-site or pilot acceptance is established. Repeat with adopted project scope/configuration, real authorized actors and qualifications, actual equipment/certificate/calibration and evidence records, and the site's accepted Inspection and Stop procedures.",
+    "The Stop resume inspection is a trusted passed demo record; inspection execution and release are not part of this scenario.",
+    "No production legal-signature provider, statutory form policy, production deployment, or external banking/notification integration is established by this test."
+  ]
+}

@@ -517,6 +517,13 @@ class Engine:
             # command that intentionally omits an ERP/system reference.
             target.pop('externalSystemRef',None)
         for field,value in payload.items():
+            # F-07 reconciliation commands validate and persist new exact refs
+            # in separate current-reference projections, keeping submitted
+            # source snapshots intact.
+            if ((machine == 'commissioning_package' and command == 'mark_ready_for_handover' and field in {'punchIssueRefs','correctionActionRefs'})
+                    or (machine == 'handover_package' and command == 'refresh_issue_references' and field == 'currentIssueRefs')
+                    or (machine == 'warranty_claim' and command in {'refresh_remedy_references','accept_remedy'} and field in {'issueRef','actionRefs'})):
+                continue
             if machine in ['schedule_baseline','schedule_progress']:
                 if field=='revision':
                     proposed['revision']=deepcopy(value);target['revision']=deepcopy(value);continue

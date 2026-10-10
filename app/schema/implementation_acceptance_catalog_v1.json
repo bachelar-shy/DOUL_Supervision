@@ -198,6 +198,50 @@
         "silent overwrite"
       ],
       "ownerReportingCheck": false
+    },
+    {
+      "id": "AC-REF-01",
+      "domain": "commissioning",
+      "kind": "e2e",
+      "expected": [
+        "SUP explicitly refreshes the same current Punch Issue identity set and complete current-cycle verified/closed Action refs",
+        "Original Punch and Action snapshots and retest history are preserved"
+      ],
+      "forbidden": [
+        "automatic reference refresh",
+        "Punch removal, replacement, or cancellation treated as closure"
+      ],
+      "ownerReportingCheck": true
+    },
+    {
+      "id": "AC-REF-02",
+      "domain": "handover",
+      "kind": "e2e",
+      "expected": [
+        "SUP refreshes the original Issue identity set after legitimate Issue version changes",
+        "Owner acceptance and reservation snapshots survive current open Issue refresh and final handover requires zero current open Issues"
+      ],
+      "forbidden": [
+        "Issue addition, removal, or substitution",
+        "Owner approval or reservation rewrite",
+        "cancelled/superseded Issue treated as resolved"
+      ],
+      "ownerReportingCheck": true
+    },
+    {
+      "id": "AC-REF-03",
+      "domain": "warranty",
+      "kind": "e2e",
+      "expected": [
+        "SUP refreshes the same defect Issue and complete current correction-cycle Actions before contractor restart or remedy acceptance",
+        "Reinspection pass and Warranty closure evidence remain required"
+      ],
+      "forbidden": [
+        "replacement defect Issue",
+        "dropping current-cycle Actions",
+        "contractor self-acceptance or self-close"
+      ],
+      "ownerReportingCheck": true
     }
   ]
 }

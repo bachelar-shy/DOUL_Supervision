@@ -7,6 +7,7 @@ records through the HTTP endpoints.
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import json
 import sys
 from pathlib import Path
@@ -113,7 +114,26 @@ def main() -> None:
             } for call in verifier.calls],
         })
 
+    async def create_warranty_issue():
+        """Seed a separate actionable Warranty defect Issue after handover creation."""
+        from app.reference.engine import uid
+        issue_id = uid()
+        issue = deepcopy(reservation_issue)
+        issue.update(
+            id=issue_id, version=1, status="open", subtype="Punch",
+            title="F-07 browser warranty defect Issue", actionIds=[],
+            inspectionIds=[inspection["id"]], correctionCycle=0,
+            responsiblePartyId=store.meta["actors"]["CON"]["partyId"],
+            responsibleOrganizationId=setup.scope["responsibleOrganizationId"],
+            dueAt=setup.tomorrow,
+        )
+        with store.transaction(True):
+            setup.engine.bootstrap("Issue", issue)
+            setup.engine._record_machines[("Issue", issue_id)] = "issue"
+        return JSONResponse({"issue": issue, "ref": setup.ref("Issue", issue_id)}, status_code=201)
+
     app.add_api_route("/_test/signature-verifications", verifier_calls, methods=["GET"])
+    app.add_api_route("/_test/warranty-issue", create_warranty_issue, methods=["POST"])
     store = setup.store
     meta = {
         "projectId": setup.project,
@@ -138,7 +158,7 @@ def main() -> None:
         "warrantyStartAt": warranty_start_at,
         "actors": {group: actor["partyId"] for group, actor in store.meta["actors"].items()},
         "responsibleOrganizationId": setup.scope["responsibleOrganizationId"],
-        "disclosure": "HandoverHttpTests seeds explicit F-07 Requirement profiles, approved InformationItems, and accepted upstream Requirement, drawing, Evidence, project-scoped Inspection, and Asset records. The fixture creates two scoped open Punch Issues and verified Actions using the test contract helper: one for commissioning fail/retest and one reserved for partial handover/warranty. Both exact current Issue refs are linked to the passed source Inspection; this relationship is an explicit upstream fixture prerequisite so the authorized case UI can present the reserved warranty Punch for its later reinspection workflow. The fixture links exact current refs and source Evidence, selects the server-catalogued passed Inspection, and uploads a distinct retest Evidence through the HTTP upload endpoints. These are disclosed upstream prerequisites only. Browser-created commissioning and handover records, the Owner decision sequence, and the warranty claim use real UI and HTTP routes. The scenario stops at the server's current-reference boundary after actual correction, remedy, and reinspection transitions; it does not claim warranty acceptance or close.",
+        "disclosure": "HandoverHttpTests seeds explicit F-07 Requirement profiles, approved InformationItems, and accepted upstream Requirement, drawing, Evidence, project-scoped Inspection, and Asset records. The fixture creates two scoped open Punch Issues and verified Actions using the test contract helper: one for commissioning fail/retest and one reserved for partial handover. Both exact current Issue refs are linked to the passed source Inspection. After handover creation, the explicit test helper can seed a separate Warranty defect Issue in the same scope with no Actions yet; all Warranty Actions and correction transitions are then created through the real UI and HTTP routes. The fixture selects the server-catalogued passed Inspection and uploads a distinct retest Evidence through the HTTP upload endpoints. These are disclosed upstream prerequisites only. Browser-created commissioning and handover records, the Owner decision sequence, the Warranty claim, and its current-reference refresh use real UI and HTTP routes.",
     }
     print(json.dumps(meta), flush=True)
     try:

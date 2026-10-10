@@ -484,6 +484,30 @@ def create_reinspection_request(
 
     previous_id = issue['inspectionIds'][-1]
     previous = _record(engine, 'Inspection', previous_id, project_id)
+    action_ids = issue.get('actionIds', [])
+    require(isinstance(action_ids, list) and len(action_ids) == len(set(action_ids)),
+            'REFERENCE_CYCLE_INCOMPLETE', 'Issue-linked corrective Action identities are invalid')
+    linked_actions = [_record(engine, 'Action', action_id, project_id) for action_id in action_ids]
+    current_actions = [
+        action for action in linked_actions
+        if action.get('correctionCycle') == issue.get('correctionCycle')
+    ]
+    require(bool(current_actions), 'CORRECTIVE_ACTION_SUBMITTED',
+            'Current correction cycle must have linked corrective Actions')
+    require(all(
+        action.get('relatedIssueId') == issue['id']
+        and action.get('correctionCycle') == issue.get('correctionCycle')
+        and action.get('status') in {'submitted', 'verified', 'closed'}
+        and all(action.get(field) == issue.get(field) for field in (
+            'packageId', 'locationId', 'discipline', 'responsibleOrganizationId'
+        ))
+        for action in current_actions
+    ), 'CORRECTIVE_ACTION_SUBMITTED',
+        'Every current-cycle corrective Action must be submitted, verified or closed in the exact Issue scope')
+    corrective_action_refs = [
+        {'objectType': 'Action', 'objectId': action['id'], 'version': action['version']}
+        for action in current_actions
+    ]
     payload = dict(
         **_baseline(previous),
         workName=work_name,
@@ -495,6 +519,7 @@ def create_reinspection_request(
         relatedIssueId=issue['id'],
         previousInspectionId=previous['id'],
         correctionCycle=issue['correctionCycle'],
+        correctiveActionRefs=corrective_action_refs,
     )
     created = engine.create(
         'inspection',

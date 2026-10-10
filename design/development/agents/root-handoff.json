@@ -76,5 +76,9 @@
     "design/verification/goal-mvp-checkpoint-20261008.json",
     "design/verification/goal-m4-native-20261009.json"
   ],
-  "performanceCurrent": "Latest ff0fb39 50k live HTTP/PostgreSQL page1 median 3.556668s; exact total and authorization preserved. Not a field SLO acceptance; see issue124-live-http-after-ff0fb39-20261008.json."
+  "performanceCurrent": "Latest ff0fb39 50k live HTTP/PostgreSQL page1 median 3.556668s; exact total and authorization preserved. Not a field SLO acceptance; see issue124-live-http-after-ff0fb39-20261008.json.",
+  "recordRole": "historical_non_C2_checkpoint_preserved",
+  "supersededByCurrentHandoff": "design/development/agents/reference-integration-handoff.json",
+  "currentGoalRecord": "design/development/goal-mvp-completion-v1.json",
+  "currentProductApproval": "PCR-2026-002/#132 approved by user; do not treat historical remainingExternal.product_contract_decision as current blocker."
 }
