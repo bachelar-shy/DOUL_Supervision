@@ -296,7 +296,10 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
           onNavigate={nav}
           items={(fieldCoreMode
             ? fieldCoreRoutes[role].map((id) => routes.find((entry) => entry.id === id)).filter((entry): entry is (typeof routes)[number] => Boolean(entry))
-            : routes.filter((entry) => allowed.includes(entry.id)))
+            : routes.filter((entry) =>
+                allowed.includes(entry.id) &&
+                entry.id !== "drawings" &&
+                entry.id !== "corrections"))
             .map(({ id, label, labelKey, icon }) => ({
               id,
               label: routeLabel({ id, label, labelKey, icon }),
