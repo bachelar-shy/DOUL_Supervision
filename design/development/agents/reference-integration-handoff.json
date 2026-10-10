@@ -1,0 +1,35 @@
+{
+  "status": "in_progress_not_release_verified",
+  "branch": "goal/reference-integration-v1-1",
+  "baseCommit": "7a3485e3ab71207a84cee2ec9ca3cf92d5816909",
+  "productApproval": {
+    "issue": 132,
+    "decision": "approved",
+    "baselineFrom": "1.0",
+    "baselineTo": "1.1",
+    "changeClass": "C2",
+    "sourceAnswer": "제안대로 v1.1에 채택",
+    "limits": [
+      "explicit qualified SUP command only",
+      "same linked Issue identities and applicable current Action cycle",
+      "preserve original references, Owner approval, reservation and audit snapshots",
+      "no automatic refresh, identity add/remove/substitute or closure gate relaxation"
+    ]
+  },
+  "sourceCheckpoints": [
+    "2aa634b",
+    "cfbf5f0"
+  ],
+  "verification": {
+    "existingHandoverHTTP": "5 passed after initial API changes",
+    "newAcceptance": "pending",
+    "MacCI": "pending for this reference integration; prior security PR136 four passed"
+  },
+  "restart": [
+    "Read latest branch commits and API/UI agent handoffs; do not reset original worktrees",
+    "Use root isolated npm12 install or clean locked install, never mutate shared node_modules",
+    "Finish new HTTP and actual connected browser acceptance, codegen and required Mac CI before integration",
+    "Actual field pilot remains unperformed; supplied files and development fixtures are not field acceptance"
+  ],
+  "environmentInterruption": "Prior temporary uncommitted copies lost during environment replacement; new work commits small WIP checkpoints into durable repository metadata"
+}
