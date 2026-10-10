@@ -397,7 +397,7 @@ def main() -> int:
                     "requestedImage": args.postgres_image,
                     "imageIdAndRepoDigests": image_info,
                 },
-                "apiModulePath": str(APP_ROOT),
+                "apiModule": "services.api.main:create_app",
             },
             "fixture": {
                 "syntheticIssueRows": args.records,
