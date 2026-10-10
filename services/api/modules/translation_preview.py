@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 MAX_CHARS = 3000
 MODEL = "doul-gemma4-v2-agentic:q4"
 DEFAULT_URL = "http://127.0.0.1:11434/api/generate"
-PROTECTED = re.compile(r"(?<![\w])(?:\d+(?:[.,]\d+)*|(?:[A-Z]{1,5}-\d+(?:[A-Z0-9.]*)))(?![\w])")
+PROTECTED = re.compile(r"(?<![\w])(?:(?:[A-Z]{1,5}-\d+(?:[A-Z0-9.]*))|\d+(?:[.,]\d+)*)(?![\w])")
 
 
 def protected_tokens(value):
