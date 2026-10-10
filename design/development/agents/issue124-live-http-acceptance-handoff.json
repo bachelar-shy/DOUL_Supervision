@@ -13,7 +13,8 @@
       "sameProjectOutOfScopeRows": 1,
       "timedRoundsPerPageSize": 30,
       "warmupsPerPageSize": 2,
-      "pageSizes": [1, 100]
+      "pageSizes": [1, 100],
+      "rssSampleIntervalMs": "200 on macOS, 20 on other hosts by default; --rss-sample-ms accepts 10..5000 and effective interval is recorded in output"
     },
     "transport": "Loopback TCP HTTP to a local FastAPI process with an isolated PostgreSQL 16 Docker container; random container name and Docker-assigned host port.",
     "postgresImage": "--postgres-image defaults to postgres:16-bookworm; the disposable container's runtime server_version_num is checked to require major 16 before app setup/measurement, and output records requested image, image ID/repo digest, exact server version and numeric server version.",
@@ -21,6 +22,7 @@
       "Per-request latency samples, p50, nearest-rank p95, sample count, and second-page latency.",
       "API process CPU ticks where /proc is available, with POSIX `ps` accumulated CPU time fallback (centisecond resolution observed on macOS).",
       "API RSS baseline, sampled peak, final RSS, and peak above baseline via /proc or POSIX ps.",
+      "RSS polling interval; its host-specific default is explicit in the output.",
       "Measured response-byte totals and means.",
       "PostgreSQL cgroup CPU delta when the container exposes cgroup v2 cpu.stat.",
       "Source commit, Python version, host platform, and PostgreSQL server version."
@@ -41,8 +43,9 @@
   "acceptanceLimits": [
     "No latency SLO or p95 budget was found in inspected contracts; results will be descriptive and cannot be called a performance acceptance pass.",
     "Synthetic duplicated Issue records, one API process, and local snapshot persistence do not establish field data, concurrent-client behavior, M4/ARM64 performance, or production readiness.",
+    "CPU/RSS instrumentation adds observer overhead; RSS peak is sampled at the reported interval rather than read from a kernel peak counter.",
     "A product owner must supply the target workload and latency/CPU/memory budgets before field performance acceptance can be claimed."
   ],
-  "command": "DOCKER_CONTEXT=colima-doul-ci /Users/automation/.local/bin/python3.11 scripts/benchmark_work_inbox_http_acceptance.py --app-root <clean-checkout> --postgres-image postgres:16.15-alpine3.24 --rounds 30 --page-sizes 1 100 --output <unique-evidence-path.json>",
+  "command": "DOCKER_CONTEXT=colima-doul-ci /Users/automation/.local/bin/python3.11 scripts/benchmark_work_inbox_http_acceptance.py --app-root <clean-checkout> --postgres-image postgres:16.15-alpine3.24 --rounds 30 --page-sizes 1 100 --rss-sample-ms 200 --output <unique-evidence-path.json>",
   "restart": "After root confirms the Mac has no active CI job and enough memory/disk headroom, use a separate clean checkout at each exact app commit; use a dedicated locked venv or a verified existing dependency-cache venv without modifying another checkout. Verify the local Docker context before invoking the harness, preserve a unique output per commit, and do not benchmark while PR CI is active."
 }

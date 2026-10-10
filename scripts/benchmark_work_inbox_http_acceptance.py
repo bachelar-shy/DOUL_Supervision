@@ -136,12 +136,18 @@ def main() -> int:
     parser.add_argument("--app-root", type=Path, default=ROOT)
     parser.add_argument("--postgres-image", default="postgres:16-bookworm",
                         help="already available PostgreSQL Docker image (server major must be 16)")
+    parser.add_argument("--rss-sample-ms", type=int, default=None,
+                        help="RSS monitor interval in ms (default: 200 on macOS, 20 elsewhere; range 10..5000)")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.records < 100 or args.visible_fraction_denominator < 2 or args.rounds < 30 or args.warmups < 0:
         parser.error("need >=100 rows, filter denominator >=2, >=30 rounds, and nonnegative warmups")
     if not args.page_sizes or any(not 1 <= n <= 100 for n in args.page_sizes):
         parser.error("page sizes must be 1..100")
+    if args.rss_sample_ms is None:
+        args.rss_sample_ms = 200 if sys.platform == "darwin" else 20
+    if not 10 <= args.rss_sample_ms <= 5000:
+        parser.error("--rss-sample-ms must be between 10 and 5000")
     app_root = args.app_root.resolve()
     if not (app_root / "services/api/main.py").is_file():
         parser.error("--app-root must point to a checkout containing services/api/main.py")
@@ -293,7 +299,7 @@ def main() -> int:
             stop_monitor = threading.Event()
 
             def monitor() -> None:
-                sample_interval = .02 if stats_before else .1
+                sample_interval = args.rss_sample_ms / 1000
                 while not stop_monitor.wait(sample_interval):
                     stats = _proc_stats(server.pid)
                     rss = stats[1] if stats else _ps_rss(server.pid)
@@ -404,12 +410,14 @@ def main() -> int:
                 "actorGroup": "SUP",
             },
             "roundsPerPageSize": args.rounds,
+            "rssSampleIntervalMs": args.rss_sample_ms,
             "pageSizes": page_results,
             "limits": [
                 "Synthetic duplicate issue records, one local API process and development snapshot persistence; not production or field traffic.",
                 "Short single-client sample; p95 is descriptive and does not imply an agreed latency budget.",
                 "PostgreSQL CPU is reported when the container exposes cgroup v2 cpu.stat; otherwise null.",
                 "Linux process CPU ticks are reported when /proc is available; RSS uses /proc or POSIX ps sampling.",
+                "CPU/RSS instrumentation adds observer overhead; RSS peak is sampled at rssSampleIntervalMs and is not a kernel peak counter.",
                 "Real demo role/scope authorization remains active; no browser rendering or concurrent-client behavior is measured.",
             ],
         }
