@@ -4,9 +4,12 @@ Trusted synthetic upstream profiles/records come from the existing F-07 fixture;
 these tests establish development contract behavior, not field acceptance.
 """
 from copy import deepcopy
+from pathlib import Path
 import unittest
 
+from fastapi.testclient import TestClient
 from app.reference.engine import uid
+from services.api.main import create_app
 from tests_mvp import test_handover_http
 
 
@@ -98,6 +101,19 @@ class CompletionReferenceRefusalHttpTests(unittest.TestCase):
                            payload, actor="SUP", evidence=[], key=key)
         self.assertEqual(replay.status_code, 200, replay.text)
         self.assertEqual(replay.json()["record"], first.json()["record"])
+        self.assertEqual(len(f.engine._audit), before_audit + 1)
+        # A process restart must preserve command replay and the append-only
+        # reference history, rather than merely keeping an in-memory cache.
+        f.client.close()
+        f.store.close()
+        f.app = create_app(str(Path(f.temp.name) / "handover.db"), demo=True)
+        f.client = TestClient(f.app)
+        f.store = f.app.state.store
+        f.engine = f.store.engine
+        persisted_replay = f.command("handover-packages", handover, "refresh_issue_references",
+                                     payload, actor="SUP", evidence=[], key=key)
+        self.assertEqual(persisted_replay.status_code, 200, persisted_replay.text)
+        self.assertEqual(persisted_replay.json()["record"], first.json()["record"])
         self.assertEqual(len(f.engine._audit), before_audit + 1)
 
         result = f.engine.get("WorkItem", handover["id"])
