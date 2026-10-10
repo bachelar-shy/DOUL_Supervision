@@ -2,28 +2,34 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { CommandDescriptor, WorkItem, Workspace } from "../data/ui-contract";
 import type { IssuePackageInput } from "../data/ui-contract";
-import type { SupervisionClient } from "../data/supervision-client";
-import { reasonLabel, states } from "../labels";
+import { ApiError, type SupervisionClient } from "../data/supervision-client";
+import { creationCapabilityLabel, reasonLabel, states } from "../labels";
 
 const copy = {
   en: {
-    title: "Media analysis and human review", intro: "Select registered project evidence and request a server-authorized analysis run.",
+    title: "Media analysis and human review", intro: "Select registered project evidence and request a server-authorized analysis run.", issueUnavailable: "Issue creation is unavailable for this role or connection.",
     unavailable: "The server has not enabled the media analysis queue for this project.", synthetic: "Synthetic demo only — never a real site assessment or pilot result.", queueAccepted: "Analysis request accepted", refreshFailed: "The server write succeeded, but the latest status could not be refreshed.", evidence: "Source evidence", mode: "Analysis mode", inspection: "Link inspection (required before Issue creation)", noInspection: "No inspection link", queue: "Queue analysis", runs: "Analysis runs", reload: "Refresh run",
     noRuns: "No media analysis runs yet.", status: "Run status", model: "Model profile", sourceDetail: "Source details", coverage: "Coverage", frames: "Frames", transcripts: "Transcript segments", photoResults: "Photo results", candidates: "AI candidates",
     coverageEmpty: "No coverage has been reported yet.", coverageSummary: "Coverage summary", sourceRef: "Source evidence ID", analyzed: "Analyzed ranges", missing: "Missing ranges", audioProcessed: "Audio processed ranges", complete: "Complete", incomplete: "Incomplete", frameRef: "Source frame", noCandidates: "No candidates were proposed.", beginReview: "Begin review", confirm: "Confirm observation", reject: "Reject candidate", note: "Verification note", rejection: "Reason for rejection", requiredNote: "Enter a note before confirming or rejecting.", eligible: "Eligible for Issue", ineligible: "Not eligible for Issue", selected: "Select eligible confirmed observations for an Issue", issueTitle: "Issue title", actionTitle: "Corrective action title", subtype: "Issue type", subtypeDefect: "Defect", subtypeSafety: "Safety", subtypeNcr: "NCR", responsible: "Responsible contractor", dueAt: "Due date", createIssue: "Create Issue from selected observations", readiness: "Issue readiness", blockers: "Blocked by", issueCreated: "Issue created", working: "Working…", error: "The request could not be completed.", providerMissing: "The run needs an external worker/provider. The browser does not simulate analysis.", original: "Original evidence is unchanged.", noSources: "No eligible image, video, or audio evidence is available.", photo: "Photo", keyframes: "Selected video frames", adaptive: "Adaptive video ranges", everyFrame: "Every decoded frame", audio: "Audio time ranges", details: "Details", noProfile: "Server profile not reported", choose: "Choose…", notConfirmed: "Human confirmation is required before Issue creation.", unknownState: "Other state", stateNames: { succeeded: "Succeeded", candidate: "Candidate", under_review: "Under review", queued: "Queued", running: "Running" }, blockerNames: { INSPECTION_LINK_REQUIRED: "Link a failed inspection before creating an Issue.", ANALYSIS_NOT_COMPLETE: "Analysis is not complete.", CASE_ROOT_REQUIRED: "Resolve the inspection's existing case root first.", INSPECTION_NOT_FAILED: "The linked inspection must have a failed result.", OBSERVATION_UNVERIFIED: "A person must confirm an observation.", CLAIM_UNCORROBORATED: "A non-speech source must corroborate the observation." },
   },
   ko: {
-    title: "미디어 분석 및 사람 검토", intro: "등록된 프로젝트 증빙을 선택해 서버 권한으로 분석 실행을 요청합니다.",
+    title: "미디어 분석 및 사람 검토", intro: "등록된 프로젝트 증빙을 선택해 서버 권한으로 분석 실행을 요청합니다.", issueUnavailable: "현재 역할 또는 연결 상태에서는 Issue를 생성할 수 없습니다.",
     unavailable: "서버가 이 프로젝트의 미디어 분석 대기열을 활성화하지 않았습니다.", synthetic: "합성 데모 전용 — 실제 현장 평가 또는 파일럿 결과가 아닙니다.", queueAccepted: "분석 요청 접수", refreshFailed: "서버 기록은 성공했지만 최신 상태를 새로고침하지 못했습니다.", evidence: "원본 증빙", mode: "분석 모드", inspection: "검측 연결 (Issue 생성 전 필수)", noInspection: "검측 연결 없음", queue: "분석 요청", runs: "분석 실행", reload: "실행 새로고침",
     noRuns: "미디어 분석 실행이 없습니다.", status: "실행 상태", model: "모델 프로필", sourceDetail: "원본 상세", coverage: "분석 범위", frames: "프레임", transcripts: "전사 구간", photoResults: "사진 결과", candidates: "AI 후보",
     coverageEmpty: "보고된 분석 범위가 없습니다.", coverageSummary: "범위 요약", sourceRef: "원본 증빙 ID", analyzed: "분석 구간", missing: "누락 구간", audioProcessed: "오디오 처리 구간", complete: "완료", incomplete: "미완료", frameRef: "원본 프레임", noCandidates: "제안된 후보가 없습니다.", beginReview: "검토 시작", confirm: "관찰 확인", reject: "후보 반려", note: "검증 메모", rejection: "반려 사유", requiredNote: "확인 또는 반려 전에 메모를 입력하세요.", eligible: "Issue 생성 가능", ineligible: "Issue 생성 불가", selected: "Issue에 포함할 확인된 적격 관찰 선택", issueTitle: "Issue 제목", actionTitle: "시정조치 제목", subtype: "Issue 유형", subtypeDefect: "하자", subtypeSafety: "안전", subtypeNcr: "NCR", responsible: "담당 시공사", dueAt: "기한", createIssue: "선택 관찰로 Issue 생성", readiness: "Issue 준비 상태", blockers: "차단 사유", issueCreated: "Issue 생성 완료", working: "처리 중…", error: "요청을 완료할 수 없습니다.", providerMissing: "실행에는 외부 작업자/제공자가 필요합니다. 브라우저는 분석을 흉내 내지 않습니다.", original: "원본 증빙은 변경되지 않습니다.", noSources: "사용 가능한 이미지·동영상·오디오 증빙이 없습니다.", photo: "사진", keyframes: "선택 프레임", adaptive: "적응형 동영상 구간", everyFrame: "모든 디코딩 프레임", audio: "오디오 시간 구간", details: "상세", noProfile: "서버 프로필 정보 없음", choose: "선택…", notConfirmed: "Issue 생성 전 사람의 확인이 필요합니다.", unknownState: "기타 상태", stateNames: { succeeded: "분석 완료", candidate: "후보", under_review: "검토 중", queued: "대기열", running: "실행 중" }, blockerNames: { INSPECTION_LINK_REQUIRED: "Issue 생성 전에 부적합 검측을 연결하세요.", ANALYSIS_NOT_COMPLETE: "분석이 완료되지 않았습니다.", CASE_ROOT_REQUIRED: "검측의 기존 사례 루트를 먼저 해결하세요.", INSPECTION_NOT_FAILED: "연결된 검측 결과가 부적합이어야 합니다.", OBSERVATION_UNVERIFIED: "사람이 관찰을 확인해야 합니다.", CLAIM_UNCORROBORATED: "비음성 증거로 관찰을 뒷받침해야 합니다." },
   },
   vi: {
-    title: "Phân tích media và người duyệt", intro: "Chọn chứng cứ đã đăng ký để yêu cầu chạy phân tích theo quyền máy chủ.",
+    title: "Phân tích media và người duyệt", intro: "Chọn chứng cứ đã đăng ký để yêu cầu chạy phân tích theo quyền máy chủ.", issueUnavailable: "Không thể tạo Issue với vai trò hoặc kết nối hiện tại.",
     unavailable: "Máy chủ chưa bật hàng đợi phân tích media cho dự án này.", synthetic: "Chỉ là dữ liệu demo tổng hợp — không phải đánh giá công trường hay kết quả thí điểm.", queueAccepted: "Máy chủ đã nhận yêu cầu phân tích", refreshFailed: "Máy chủ đã ghi nhận, nhưng không thể làm mới trạng thái gần nhất.", evidence: "Chứng cứ nguồn", mode: "Chế độ phân tích", inspection: "Liên kết kiểm tra (bắt buộc trước khi tạo Issue)", noInspection: "Không liên kết kiểm tra", queue: "Đưa vào hàng đợi", runs: "Lượt phân tích", reload: "Làm mới lượt chạy",
     noRuns: "Chưa có lượt phân tích media.", status: "Trạng thái", model: "Hồ sơ mô hình", sourceDetail: "Chi tiết nguồn", coverage: "Phạm vi", frames: "Khung hình", transcripts: "Đoạn phiên âm", photoResults: "Kết quả ảnh", candidates: "Ứng viên AI",
     coverageEmpty: "Chưa có phạm vi được báo cáo.", coverageSummary: "Tóm tắt phạm vi", sourceRef: "ID chứng cứ nguồn", analyzed: "Khoảng đã phân tích", missing: "Khoảng bị thiếu", audioProcessed: "Khoảng âm thanh đã xử lý", complete: "Hoàn tất", incomplete: "Chưa hoàn tất", frameRef: "Khung hình nguồn", noCandidates: "Không có ứng viên được đề xuất.", beginReview: "Bắt đầu duyệt", confirm: "Xác nhận quan sát", reject: "Từ chối ứng viên", note: "Ghi chú xác minh", rejection: "Lý do từ chối", requiredNote: "Nhập ghi chú trước khi xác nhận hoặc từ chối.", eligible: "Đủ điều kiện tạo Issue", ineligible: "Không đủ điều kiện tạo Issue", selected: "Chọn quan sát đã xác nhận và đủ điều kiện", issueTitle: "Tiêu đề Issue", actionTitle: "Tiêu đề hành động khắc phục", subtype: "Loại Issue", subtypeDefect: "Khiếm khuyết", subtypeSafety: "An toàn", subtypeNcr: "NCR", responsible: "Nhà thầu phụ trách", dueAt: "Hạn hoàn thành", createIssue: "Tạo Issue từ quan sát đã chọn", readiness: "Điều kiện tạo Issue", blockers: "Lý do chặn", issueCreated: "Đã tạo Issue", working: "Đang xử lý…", error: "Không thể hoàn tất yêu cầu.", providerMissing: "Lượt chạy cần worker/provider bên ngoài. Trình duyệt không giả lập phân tích.", original: "Chứng cứ gốc không bị thay đổi.", noSources: "Không có chứng cứ ảnh, video hoặc âm thanh phù hợp.", photo: "Ảnh", keyframes: "Khung hình video đã chọn", adaptive: "Khoảng video thích ứng", everyFrame: "Mọi khung đã giải mã", audio: "Khoảng thời gian âm thanh", details: "Chi tiết", noProfile: "Máy chủ chưa báo hồ sơ", choose: "Chọn…", notConfirmed: "Cần người xác nhận trước khi tạo Issue.", unknownState: "Trạng thái khác", stateNames: { succeeded: "Đã phân tích xong", candidate: "Ứng viên", under_review: "Đang duyệt", queued: "Đang xếp hàng", running: "Đang thực hiện" }, blockerNames: { INSPECTION_LINK_REQUIRED: "Liên kết inspection không đạt trước khi tạo Issue.", ANALYSIS_NOT_COMPLETE: "Phân tích chưa hoàn tất.", CASE_ROOT_REQUIRED: "Trước tiên hãy xử lý case root hiện có của inspection.", INSPECTION_NOT_FAILED: "Inspection liên kết phải có kết quả không đạt.", OBSERVATION_UNVERIFIED: "Cần người xác nhận quan sát.", CLAIM_UNCORROBORATED: "Cần chứng cứ không phải lời nói để đối chiếu quan sát." },
   },
+} as const;
+
+const mediaErrorLabels = {
+  en: { ANALYSIS_NOT_COMPLETE: "Media analysis must finish before creating an Issue.", INSPECTION_LINK_REQUIRED: "Link an inspection before creating an Issue.", INSPECTION_LINK_INVALID: "The linked inspection is unavailable.", OBSERVATION_REQUIRED: "Select a confirmed observation.", OBSERVATION_UNVERIFIED: "A person must confirm the observation first.", ANALYSIS_CANDIDATE_MISMATCH: "The observation does not belong to this analysis run.", CLAIM_UNCORROBORATED: "A non-speech source must corroborate the observation.", INSPECTION_NOT_FAILED: "The linked inspection must have a failed result.", CASE_ROOT_REQUIRED: "Resolve the inspection's existing case root first." },
+  ko: { ANALYSIS_NOT_COMPLETE: "Issue 생성 전에 미디어 분석이 완료되어야 합니다.", INSPECTION_LINK_REQUIRED: "Issue 생성 전에 검측을 연결하세요.", INSPECTION_LINK_INVALID: "연결된 검측을 찾을 수 없습니다.", OBSERVATION_REQUIRED: "확인된 관찰을 선택하세요.", OBSERVATION_UNVERIFIED: "먼저 사람이 관찰을 확인해야 합니다.", ANALYSIS_CANDIDATE_MISMATCH: "이 관찰은 현재 분석 실행에 속하지 않습니다.", CLAIM_UNCORROBORATED: "비음성 증거로 관찰을 뒷받침해야 합니다.", INSPECTION_NOT_FAILED: "연결된 검측 결과가 부적합이어야 합니다.", CASE_ROOT_REQUIRED: "검측의 기존 사례 루트를 먼저 해결하세요." },
+  vi: { ANALYSIS_NOT_COMPLETE: "Phân tích media phải hoàn tất trước khi tạo Issue.", INSPECTION_LINK_REQUIRED: "Hãy liên kết inspection trước khi tạo Issue.", INSPECTION_LINK_INVALID: "Không tìm thấy inspection đã liên kết.", OBSERVATION_REQUIRED: "Hãy chọn một quan sát đã xác nhận.", OBSERVATION_UNVERIFIED: "Cần người xác nhận quan sát trước.", ANALYSIS_CANDIDATE_MISMATCH: "Quan sát không thuộc lượt phân tích này.", CLAIM_UNCORROBORATED: "Cần chứng cứ không phải lời nói để đối chiếu quan sát.", INSPECTION_NOT_FAILED: "Inspection liên kết phải có kết quả không đạt.", CASE_ROOT_REQUIRED: "Trước tiên hãy xử lý case root hiện có của inspection." },
 } as const;
 
 type Lang = keyof typeof copy;
@@ -59,6 +65,9 @@ export function MediaAnalysisPanel({ client, workspace, online, onChanged }: {
   const { i18n } = useTranslation();
   const language = detectLanguage(i18n.resolvedLanguage);
   const tx = copy[language];
+  const apiErrorText = useCallback((cause: unknown) => cause instanceof ApiError
+    ? (mediaErrorLabels[language] as Record<string, string>)[cause.detail.code] || reasonLabel(cause.detail.code)
+    : tx.error, [language, tx.error]);
   const stateText = (value: unknown) => {
     const code = String(value ?? "");
     return states[code] || (tx.stateNames as Record<string, string>)[code] || tx.unknownState;
@@ -88,6 +97,7 @@ export function MediaAnalysisPanel({ client, workspace, online, onChanged }: {
   const loadSequence = useRef(0);
 
   const capability = workspace.context.creationCapabilities?.analysis_run;
+  const issueCapability = workspace.context.creationCapabilities?.issue;
   const sourceEvidence = workspace.items
     .filter((item) => item.machine === "evidence" && ["photo", "video", "audio"].includes(String(item.record.mediaType)))
     .map((item) => item.record);
@@ -100,6 +110,8 @@ export function MediaAnalysisPanel({ client, workspace, online, onChanged }: {
   const provider = (workspace.context as unknown as { analysisProfile?: { model?: { provider?: string; name?: string; version?: string } } }).analysisProfile;
   const syntheticProvider = workspace.demo && provider?.model?.provider === "development-fixture";
   const createEnabled = client.kind === "http" && workspace.role.actorGroup === "SUP" && online && capability?.canCreate === true;
+  const createIssueEnabled = client.kind === "http" && online && issueCapability?.canCreate === true;
+  const queueUnavailable = capability?.status === "unauthorized" ? creationCapabilityLabel(capability) : tx.unavailable;
   const responsibleOptions = workspace.participants.filter((participant) => participant.actorGroup === "CON");
 
   const loadRun = useCallback(async (id: string) => {
@@ -112,9 +124,9 @@ export function MediaAnalysisPanel({ client, workspace, online, onChanged }: {
       setReview(result);
       setSelectedObservationIds((current) => current.filter((observationId) => result.issueReadiness.issueEligibleObservationIds.includes(observationId)));
     } catch (reason) {
-      if (sequence === loadSequence.current) setError(reason instanceof Error ? reason.message : tx.error);
+      if (sequence === loadSequence.current) setError(apiErrorText(reason));
     }
-  }, [client, tx.error]);
+  }, [apiErrorText, client]);
 
   useEffect(() => {
     if (!runId || client.kind !== "http") return;
@@ -128,12 +140,12 @@ export function MediaAnalysisPanel({ client, workspace, online, onChanged }: {
         setReview(result);
         setSelectedObservationIds((current) => current.filter((observationId) => result.issueReadiness.issueEligibleObservationIds.includes(observationId)));
       } catch (reason) {
-        if (active && sequence === loadSequence.current) setError(reason instanceof Error ? reason.message : tx.error);
+        if (active && sequence === loadSequence.current) setError(apiErrorText(reason));
       }
     };
     void refresh();
     return () => { active = false; };
-  }, [client, runId, tx.error]);
+  }, [apiErrorText, client, runId]);
 
   const activeReviewRunId = review?.run.record.id;
   const activeReviewStatus = String(review?.run.record.status ?? "");
@@ -165,12 +177,12 @@ export function MediaAnalysisPanel({ client, workspace, online, onChanged }: {
       setRunId(run.id);
       setMessage(`${tx.queueAccepted}: ${run.id}`);
       setReview(null);
-      let refreshFailure = "";
-      try { await onChanged(); } catch (reason) { refreshFailure = reason instanceof Error ? reason.message : tx.error; }
+      let refreshFailed = false;
+      try { await onChanged(); } catch { refreshFailed = true; }
       await loadRun(run.id);
-      if (refreshFailure) setError(`${tx.refreshFailed} ${refreshFailure}`);
+      if (refreshFailed) setError(tx.refreshFailed);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : tx.error);
+      setError(apiErrorText(reason));
     } finally { setBusy(false); }
   }
 
@@ -197,12 +209,12 @@ export function MediaAnalysisPanel({ client, workspace, online, onChanged }: {
       await onChanged();
       await loadRun(candidate.record.analysisRunId as string);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : tx.error);
+      setError(apiErrorText(reason));
     } finally { setBusy(false); }
   }
 
   async function createIssue() {
-    if (!review || submittedIssueRuns.includes(review.run.record.id) || !review.issueReadiness.ready || !selectedObservationIds.length || !issueTitle.trim() || !actionTitle.trim() || !responsiblePartyId || !dueAt) return;
+    if (!createIssueEnabled || !review || submittedIssueRuns.includes(review.run.record.id) || !review.issueReadiness.ready || !selectedObservationIds.length || !issueTitle.trim() || !actionTitle.trim() || !responsiblePartyId || !dueAt) return;
     setBusy(true); setError(""); setMessage("");
     try {
       const signature = JSON.stringify({ runId: review.run.record.id, observationIds: selectedObservationIds, subtype: issueSubtype, title: issueTitle.trim(), actionTitle: actionTitle.trim(), responsiblePartyId, dueAt: new Date(dueAt).toISOString() });
@@ -228,12 +240,12 @@ export function MediaAnalysisPanel({ client, workspace, online, onChanged }: {
       setSubmittedIssueRuns((current) => current.includes(review.run.record.id) ? current : [...current, review.run.record.id]);
       setMessage(`${tx.issueCreated}: ${result.issue.id}`);
       setSelectedObservationIds([]);
-      let refreshFailure = "";
-      try { await onChanged(); } catch (reason) { refreshFailure = reason instanceof Error ? reason.message : tx.error; }
+      let refreshFailed = false;
+      try { await onChanged(); } catch { refreshFailed = true; }
       await loadRun(review.run.record.id);
-      if (refreshFailure) setError(`${tx.refreshFailed} ${refreshFailure}`);
+      if (refreshFailed) setError(tx.refreshFailed);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : tx.error);
+      setError(apiErrorText(reason));
     } finally { setBusy(false); }
   }
 
@@ -249,7 +261,7 @@ export function MediaAnalysisPanel({ client, workspace, online, onChanged }: {
   return <section className="panel mt-4" data-testid="media-analysis-panel">
     <div className="section-heading"><div><h2>{tx.title}</h2><p className="muted">{tx.intro}</p></div><span>{tx.original}</span></div>
     {syntheticResult && <p className="notice" role="note">{tx.synthetic}</p>}
-    {!createEnabled && <p className="notice" role="status">{tx.unavailable}</p>}
+    {!createEnabled && <p className="notice" role="status">{queueUnavailable}</p>}
     {!sourceEvidence.length && <p className="muted">{tx.noSources}</p>}
     <div className="grid gap-3 md:grid-cols-4">
       <label className="grid gap-1">{tx.evidence}<select aria-label={tx.evidence} value={selectedEvidenceId} onChange={(event) => { const nextId = event.target.value; setSelectedEvidenceId(nextId); const nextMode = evidenceModes[String(sourceEvidence.find((source) => source.id === nextId)?.mediaType ?? "")]?.[0]?.value; if (nextMode) setMode(nextMode); }} disabled={!createEnabled || busy}>
@@ -307,14 +319,15 @@ export function MediaAnalysisPanel({ client, workspace, online, onChanged }: {
           {!actions.length && candidate.record.status !== "confirmed" && <p>{tx.notConfirmed}</p>}
         </article>;
       }) : <p>{tx.noCandidates}</p>}</section>
-      {review.issueReadiness.ready && !submittedIssueRuns.includes(review.run.record.id) && <section className="notice grid gap-3" data-testid="media-issue-authoring"><h3>{tx.selected}</h3>
+      {review.issueReadiness.ready && !createIssueEnabled && <p className="notice" role="status">{issueCapability?.status === "unauthorized" ? creationCapabilityLabel(issueCapability) : tx.issueUnavailable}</p>}
+      {review.issueReadiness.ready && createIssueEnabled && !submittedIssueRuns.includes(review.run.record.id) && <section className="notice grid gap-3" data-testid="media-issue-authoring"><h3>{tx.selected}</h3>
         {review.candidates.filter((candidate) => review.issueReadiness.issueEligibleObservationIds.includes(candidate.record.id)).map((candidate) => <label className="flex items-center gap-2" key={candidate.record.id}><input type="checkbox" checked={selectedObservationIds.includes(candidate.record.id)} onChange={(event) => setSelectedObservationIds((current) => event.target.checked ? [...current, candidate.record.id] : current.filter((id) => id !== candidate.record.id))} />{String(candidate.record.description ?? candidate.record.id)}</label>)}
         <label className="grid gap-1">{tx.issueTitle}<input value={issueTitle} onChange={(event) => setIssueTitle(event.target.value)} /></label>
         <label className="grid gap-1">{tx.actionTitle}<input value={actionTitle} onChange={(event) => setActionTitle(event.target.value)} /></label>
         <label className="grid gap-1">{tx.subtype}<select value={issueSubtype} onChange={(event) => setIssueSubtype(event.target.value)}><option value="NCR">{tx.subtypeNcr}</option><option value="Defect">{tx.subtypeDefect}</option><option value="Safety">{tx.subtypeSafety}</option></select></label>
         <label className="grid gap-1">{tx.responsible}<select value={responsiblePartyId} onChange={(event) => setResponsiblePartyId(event.target.value)}><option value="">{tx.choose}</option>{responsibleOptions.map((party) => <option key={party.partyId} value={party.partyId}>{party.name}</option>)}</select></label>
         <label className="grid gap-1">{tx.dueAt}<input type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} /></label>
-        <button className="primary" type="button" onClick={() => void createIssue()} disabled={busy || !online || !selectedEligible || !issueTitle.trim() || !actionTitle.trim() || !responsiblePartyId || !dueAt}>{busy ? tx.working : tx.createIssue}</button>
+        <button className="primary" type="button" onClick={() => void createIssue()} disabled={busy || !createIssueEnabled || !selectedEligible || !issueTitle.trim() || !actionTitle.trim() || !responsiblePartyId || !dueAt}>{busy ? tx.working : tx.createIssue}</button>
       </section>}
     </div>}
   </section>;
