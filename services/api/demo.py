@@ -2,6 +2,7 @@
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
+import os
 from app.reference.engine import uid
 
 HUMANS = {'SUP': 'chief_supervisor', 'CON': 'contractor_technical_lead',
@@ -102,16 +103,16 @@ def seed(engine):
     stamp = lambda dt: dt.isoformat().replace('+00:00', 'Z')
     start, end, due = stamp(now - timedelta(days=30)), stamp(now + timedelta(days=365)), stamp(now + timedelta(days=2))
     project, package, location, contractor = uid(), uid(), uid(), uid()
-    engine.bootstrap('Project', dict(id=project, projectId=project, name='DOUL 시범현장 · 예시 데이터', country='VN', timezone='Asia/Ho_Chi_Minh', qualificationRules=[dict(discipline='architecture', minimumRank=3)]))
+    engine.bootstrap('Project', dict(id=project, projectId=project, name=('DOUL WWT·공장 건설 데모 | 합성 테스트' if os.getenv('DOUL_DEMO_PROFILE') == 'wwt' else 'DOUL 시범현장 · 예시 데이터'), country='VN', timezone='Asia/Ho_Chi_Minh', qualificationRules=[dict(discipline='architecture', minimumRank=3)]))
     engine.bootstrap('Location', dict(id=location, projectId=project, name='A동 2층 / C-5', semanticAnchor='demo/A/2F/C-5'))
     scope = dict(packageId=package, locationId=location, discipline='architecture', responsibleOrganizationId=contractor, minimumQualificationRank=3)
     actors = {}
-    names = {'SUP': '김감리', 'CON': '시공사 담당자', 'OWN': '발주처 담당자', 'DES': '설계 담당자', 'ADM': '도울 관리자'}
+    names = {'SUP': '가상 감리책임자', 'CON': '가상 시공책임자', 'OWN': '가상 발주자', 'DES': '가상 설계자', 'ADM': '가상 행정관리자'}
     for group, role_code in HUMANS.items():
         party, role, qualification = uid(), uid(), uid()
         organization = contractor if group == 'CON' else uid()
         engine.bootstrap('Party', dict(id=party, projectId=project, kind='PERSON', name=names[group], loginEnabled=True, organizationId=organization))
-        engine.bootstrap('Qualification', dict(id=qualification, projectId=project, partyId=party, number='DEMO-NOT-A-CERTIFICATE', rank=1, disciplines=['architecture'], validFrom=start, validTo=end, verified=True, revoked=False))
+        engine.bootstrap('Qualification', dict(id=qualification, projectId=project, partyId=party, number='DEMO-NOT-A-CERTIFICATE', rank=(3 if os.getenv('DOUL_DEMO_PROFILE') == 'wwt' else 1), disciplines=['architecture'], validFrom=start, validTo=end, verified=True, revoked=False))
         engine.bootstrap('RoleAssignment', dict(id=role, projectId=project, partyId=party, organizationId=organization, actorGroup=group, roleCode=role_code, authorityCodes=[k for k, p in engine.policies.items() if group in p['actor_groups']], disciplines=['architecture'], packageIds=[package], locationIds=[location], qualificationIds=[qualification], validFrom=start, validTo=end, active=True, approvedBy=party))
         actors[group] = dict(partyId=party, roleAssignmentId=role, name=names[group], actorGroup=group)
     # Non-human service actors are explicit, scoped and never available to /dev/sessions.
@@ -185,6 +186,9 @@ def seed(engine):
     analysis_profile = deepcopy(ANALYSIS_PROFILE)
     return dict(
         projectId=project,
+        demoProfile=('wwt' if os.getenv('DOUL_DEMO_PROFILE') == 'wwt' else 'standard'),
+        dataClassification='SYNTHETIC_TEST_NOT_SITE_EVIDENCE',
+        projectConfiguration={'projectType':'WWT_FACTORY_CONSTRUCTION_DEMO','region':'Vietnam (fictional site)','timezone':'Asia/Ho_Chi_Minh','language':'ko','currency':'VND','measurement':'SI','baselineStatus':'UNAPPROVED_TEST_ASSUMPTION','offlinePolicy':'conflict_requires_review','acceptanceStatus':'MOCK_VALIDATION_ONLY'},
         actors=actors,
         serviceActors=service_actors,
         analysisProfile=analysis_profile,
