@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "asOf": "2026-10-09",
+  "asOf": "2026-10-10",
   "baseline": {
     "branch": "goal/acceptance-audit-v1",
     "baseCommit": "943d1dd",
@@ -128,11 +128,11 @@
     {
       "id": "AC-HO-01",
       "domain": "handover",
-      "assessment": "backend_http_and_partial_connected_browser_evidence; full_scenario_blocked_by_C2_reference_lifecycle; pilot_not_run",
+      "assessment": "approved_C2_implemented; full_connected_browser_revalidation_and_exact_Mac_CI_pending; pilot_not_run",
       "contract": "confirmed",
       "backendApi": "real_http_persistence_with_postgres_acceptance_suite",
       "ui": "real_api_connected_UI_proves_planned_commissioning_gate_and_handover_reservation_draft; no_C2_dependent_full_happy_path_in_candidate",
-      "integration": "HTTP_workflow_tests_and_two_focused_browser_draft_cases; stale_Punch_reference_refresh_excluded; Warranty stale Issue ref remains 409 REFERENCE_STALE",
+      "integration": "Current API and refusal suites passed; complete five-scenario UI rerun pending. Prior stale-reference limitation is addressed by explicit approved C2 refresh, not automatic refresh.",
       "pilot": "not_run",
       "evidence": [
         "34_Commissioning_Handover_Warranty_Functional_Contract.md",
@@ -147,11 +147,10 @@
       ],
       "provenScope": "Commissioning, Handover and Warranty state machines/resources have real HTTP create/command coverage and an environment-gated PostgreSQL subclass. HTTP tests cover expired witness/equipment-certificate denials, preservation of original failed commissioning test and uploaded-evidence retest, Owner partial handover with a scoped reservation, and warranty remedy/reinspection/closure. F-07 WorkItem creation and transitions use HTTP. Trusted Requirement profiles and upstream accepted InformationItem, Asset, Inspection, Issue and Action references are seeded as test fixtures. The candidate includes two real-API Completion UI browser cases for a planned commissioning package/missing-current-procedure gate and a handover reservation draft; they do not establish the linked commissioning-to-handover-to-warranty happy path. The C2 behavior that refreshes a stale commissioning Punch snapshot is excluded. The stale-reference HTTP regression remains and expects 409 REFERENCE_STALE while preserving the prior package reference/version and audit history.",
       "gaps": [
-        "The current candidate cannot complete the linked Commissioning/Punch-to-Handover path after the Punch reference becomes stale; C2 reference refresh is excluded pending Product/Functional Owner decision.",
-        "Warranty rework can advance the linked Issue version and a subsequent Warranty acceptance is rejected with 409 REFERENCE_STALE; no Product-approved reference reconciliation is implemented.",
-        "The browser cases cover draft/gate presentation only; full linked workflow, actual project configuration, production signature provider and site acceptance are not proven."
+        "Full current integrated browser and Mac Actions acceptance remains pending.",
+        "Actual adopted project configuration, qualified site actors, production signature provider and field acceptance are not proven."
       ],
-      "nextWork": "Obtain Product/Functional Owner decision for the C2 reference lifecycle proposal before changing behavior; then validate the approved linked Handover/Warranty path. Keep stage revalidation_required and pilot not run."
+      "nextWork": "Finish current full linked browser revalidation and exact-head Mac Actions; preserve all original snapshots and closure gates. Product approval is recorded; do not request it again."
     },
     {
       "id": "AC-MEDIA-01",
@@ -267,9 +266,9 @@
       ],
       "provenScope": "Stale version writes are rejected by selected real APIs; schedule browser proves real API rejection and refresh of saved version. New common-modal tests use distinct real HTTP writer sessions to change Inspection, Stop and Payment Claim while their UI modal is stale; each stale UI POST receives 409 VERSION_CONFLICT, keeps an explicit error, and cancel/manual refresh shows the committed version with one writer audit. Integrated focused regression: three cases passed.",
       "gaps": [
-        "Handover/Warranty current-reference lifecycle remains pending Product decision; real pilot actor/device concurrency not run."
+        "Approved Handover/Warranty C2 current-reference reconciliation implemented; final connected browser and Mac CI revalidation pending. Actual pilot actor/device concurrency not run."
       ],
-      "nextWork": "Validate adopted field concurrency and sanctioned handover lifecycle after Product decision; preserve explicit conflict and user-directed refresh."
+      "nextWork": "Verify approved explicit reference refresh with current integrated browser and Mac CI evidence; preserve manual conflict recovery and distinguish actual pilot."
     },
     {
       "id": "AC-IDEMP-01",
@@ -394,6 +393,54 @@
         "Actual field actor/device tests and adopted project configuration are not supplied."
       ],
       "nextWork": "Adopt the pilot device/platform scope and repeat real field conflict/task usability; extend native acceptance if required by the selected pack."
+    },
+    {
+      "id": "AC-REF-01",
+      "domain": "commissioning",
+      "assessment": "approved_C2_implemented_pending_integrated_validation",
+      "contract": "confirmed_v1.1_approved_for_verified_release",
+      "backendApi": "real_HTTP_positive_and_atomic_refusal_tests_passed",
+      "ui": "connected_browser_revalidation_pending",
+      "integration": "exact_head_Mac_Actions_pending",
+      "pilot": "not_run",
+      "evidence": [
+        "app/reference/product_change_record_pcr_2026_002.json",
+        "tests_mvp/test_handover_http.py",
+        "tests_mvp/test_completion_reference_refusals_http.py",
+        "tests_browser/handover-closed-loop.spec.ts"
+      ]
+    },
+    {
+      "id": "AC-REF-02",
+      "domain": "handover",
+      "assessment": "approved_C2_implemented_pending_integrated_validation",
+      "contract": "confirmed_v1.1_approved_for_verified_release",
+      "backendApi": "real_HTTP_positive_and_atomic_refusal_tests_passed",
+      "ui": "connected_browser_revalidation_pending",
+      "integration": "exact_head_Mac_Actions_pending",
+      "pilot": "not_run",
+      "evidence": [
+        "app/reference/product_change_record_pcr_2026_002.json",
+        "tests_mvp/test_handover_http.py",
+        "tests_mvp/test_completion_reference_refusals_http.py",
+        "tests_browser/handover-closed-loop.spec.ts"
+      ]
+    },
+    {
+      "id": "AC-REF-03",
+      "domain": "warranty",
+      "assessment": "approved_C2_implemented_pending_integrated_validation",
+      "contract": "confirmed_v1.1_approved_for_verified_release",
+      "backendApi": "real_HTTP_positive_and_atomic_refusal_tests_passed",
+      "ui": "connected_browser_revalidation_pending",
+      "integration": "exact_head_Mac_Actions_pending",
+      "pilot": "not_run",
+      "evidence": [
+        "app/reference/product_change_record_pcr_2026_002.json",
+        "tests_mvp/test_handover_http.py",
+        "tests_mvp/test_completion_reference_refusals_http.py",
+        "tests_browser/handover-closed-loop.spec.ts"
+      ]
     }
   ],
   "crossCuttingGaps": [
@@ -462,5 +509,12 @@
       "ci": "not_run",
       "limit": "Do not infer CI PASS for this candidate from PR129 checks."
     }
+  },
+  "referenceChangeApproval": {
+    "record": "app/reference/product_change_record_pcr_2026_002.json",
+    "decision": "approved",
+    "statement": "제안대로 v1.1에 채택",
+    "verification": "implemented_pending_final_browser_and_exact_Mac_CI",
+    "effectiveRelease": false
   }
 }

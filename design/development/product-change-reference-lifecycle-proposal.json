@@ -26,10 +26,13 @@
     "AC-HO-01",
     "AC-VERSION-01",
     "AC-IDEMP-01",
-    "AC-AUTH-01"
+    "AC-AUTH-01",
+    "AC-REF-01",
+    "AC-REF-02",
+    "AC-REF-03"
   ],
   "implementedDraft": {
-    "commit": "cfbf5f0",
+    "commit": "553e030",
     "api": "POST /projects/{projectId}/commissioning-packages/{objectId}/mark-ready-for-handover; POST /projects/{projectId}/handover-packages/{objectId}/refresh-issue-references; POST /projects/{projectId}/warranty-claims/{objectId}/refresh-remedy-references",
     "optionalPayload": {
       "mark_ready_for_handover": "punchIssueRefs + correctionActionRefs (paired; exact original Punch identity set and complete current verified/closed Action cycle)",
@@ -38,7 +41,7 @@
       "accept_remedy": "optional paired issueRef + actionRefs"
     },
     "preserved": "Submitted refs, original Owner approval/reservations, test/reinspection history, and one audited command event per accepted refresh; idempotent request replay.",
-    "verification": "Contract validator passes; HTTP acceptance scenarios and full API/contract suites pending."
+    "verification": "Reference suite 320 passed; API agent suite 407 tests run, 361 passed and 46 environment-specific skips; five additional real-HTTP atomic refusal, idempotency and SQLite restart tests passed. Five connected browser scenarios are rerunning; exact integrated Mac Actions pending. These are synthetic development fixtures, not actual field acceptance."
   },
   "additionalConfirmedGaps": [],
   "adoptionConditions": [
