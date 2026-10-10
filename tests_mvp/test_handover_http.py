@@ -643,7 +643,7 @@ class HandoverHttpTests(unittest.TestCase):
 
     def test_owner_partial_handover_reservation_and_warranty_close_http(self):
         commissioning = self._pass_commissioning()
-        issue_ref, _ = self._new_punch_and_action()
+        issue_ref, action_ref = self._new_punch_and_action()
         assets = [self.ref("Asset", asset_id) for asset_id in self.asset_ids]
         scope = {
             "scopeId": "SYS-A-GRID-1",
@@ -758,13 +758,12 @@ class HandoverHttpTests(unittest.TestCase):
         claim = self.expect("warranty-claims", claim, "report_warranty_defect", actor="OWN", evidence=[self.evidence_id])
         claim = self.expect("warranty-claims", claim, "acknowledge_claim", actor="CON", evidence=[])
         claim = self.expect("warranty-claims", claim, "assess_warranty", actor="SUP", evidence=[])
-        old_action = next(r for (kind, _), r in self.engine._records.items() if kind == "Action")
-        action_id = uid()
-        action = deepcopy(old_action)
         defect_issue = self.engine.get("Issue", issue_ref["objectId"])
-        action.update(id=action_id, version=1, status="in_progress", relatedIssueId=issue_ref["objectId"], correctionCycle=defect_issue.get("correctionCycle", 0), **self.scope)
+        action_id = action_ref["objectId"]
+        action = self.engine.get("Action", action_id)
+        action.update(version=action["version"] + 1, status="in_progress", updatedAt=self.engine.at())
         with self.store.transaction(True):
-            self.engine.bootstrap("Action", action)
+            self.engine._save("Action", action)
         action_ref = self.ref("Action", action_id)
         claim = self.expect(
             "warranty-claims", claim, "require_remedy",
@@ -776,10 +775,87 @@ class HandoverHttpTests(unittest.TestCase):
         action.update(version=action["version"] + 1, status="verified", updatedAt=self.engine.at())
         with self.store.transaction(True):
             self.engine._save("Action", action)
+        verified_action_ref = self.ref("Action", action_id)
         inspection = next(r for (kind, _), r in self.engine._records.items() if kind == "Inspection" and r.get("status") == "passed")
+        failed_reinspection_id = uid()
+        failed_reinspection = deepcopy(inspection)
+        failed_reinspection.update(
+            id=failed_reinspection_id, version=1, updatedAt=self.engine.at(),
+            status="completed", resultStatus="fail", nextWorkAllowed=False, holdPoint=False,
+            relatedIssueId=issue_ref["objectId"], correctionCycle=defect_issue.get("correctionCycle", 0),
+            previousInspectionId=defect_issue["inspectionIds"][-1], correctiveActionRefs=[verified_action_ref],
+            evidenceIds=[self.evidence_id], **self.scope,
+        )
+        with self.store.transaction(True):
+            self.engine.bootstrap("Inspection", failed_reinspection)
+            self.engine._record_machines[("Issue", defect_issue["id"])] = "issue"
+        defect_issue = self.expect("issues", defect_issue, "assign", {
+            "responsiblePartyId": defect_issue["responsiblePartyId"],
+            "responsibleOrganizationId": defect_issue["responsibleOrganizationId"],
+            "dueAt": self.tomorrow,
+            "actionIds": defect_issue["actionIds"],
+        }, actor="SUP", evidence=[])
+        defect_issue = self.expect("issues", defect_issue, "start_correction", actor="CON", evidence=[])
+        defect_issue = self.expect("issues", defect_issue, "request_reinspection", {
+            "inspectionIds": defect_issue["inspectionIds"] + [failed_reinspection_id],
+        }, actor="CON", evidence=[self.evidence_id])
+        defect_issue = self.expect("issues", defect_issue, "start_reinspection", actor="SUP", evidence=[])
+        failed_reinspection_ref = self.ref("Inspection", failed_reinspection_id)
+        claim = self.expect("warranty-claims", claim, "require_rework", {
+            "reinspectionRef": failed_reinspection_ref,
+            "reworkReason": "Inspection found leakage remains at the flange",
+        }, actor="SUP", evidence=[self.evidence_id])
+        defect_issue = self.expect("issues", defect_issue, "reject_reinspection", actor="SUP", evidence=[self.evidence_id])
+        defect_issue = self.expect("issues", defect_issue, "restart_correction", actor="CON", evidence=[])
+        self.assertEqual(defect_issue["correctionCycle"], 1)
+        replacement_action_id = uid()
+        replacement_action = deepcopy(action)
+        replacement_action.update(
+            id=replacement_action_id, version=1, status="in_progress", correctionCycle=1,
+            updatedAt=self.engine.at(), **self.scope,
+        )
+        with self.store.transaction(True):
+            self.engine.bootstrap("Action", replacement_action)
+        defect_issue = self.expect("issues", defect_issue, "link_actions", {
+            "actionIds": defect_issue["actionIds"] + [replacement_action_id],
+        }, actor="CON", evidence=[])
+        current_issue_ref = self.ref("Issue", defect_issue["id"])
+        replacement_action_ref = self.ref("Action", replacement_action_id)
+        incomplete_refresh = self.command("warranty-claims", claim, "refresh_remedy_references", {
+            "issueRef": current_issue_ref, "actionRefs": [],
+        }, actor="SUP", evidence=[])
+        self.assertEqual(incomplete_refresh.status_code, 409, incomplete_refresh.text)
+        self.assertEqual(incomplete_refresh.json()["code"], "REFERENCE_STALE")
+        self.assertEqual(self.engine.get("WorkItem", claim["id"])["version"], claim["version"])
+        unauthorized_refresh = self.command("warranty-claims", claim, "refresh_remedy_references", {
+            "issueRef": current_issue_ref, "actionRefs": [replacement_action_ref],
+        }, actor="CON", evidence=[])
+        self.assertEqual(unauthorized_refresh.status_code, 403, unauthorized_refresh.text)
+        self.assertEqual(self.engine.get("WorkItem", claim["id"])["version"], claim["version"])
+        claim = self.expect("warranty-claims", claim, "refresh_remedy_references", {
+            "issueRef": current_issue_ref,
+            "actionRefs": [replacement_action_ref],
+        }, actor="SUP", evidence=[])
+        self.assertEqual(claim["data"]["issueRef"], issue_ref)
+        self.assertEqual(claim["data"]["actionRefs"], [action_ref])
+        self.assertEqual(claim["data"]["currentIssueRef"], current_issue_ref)
+        self.assertEqual(claim["data"]["currentActionRefs"], [replacement_action_ref])
+        self.assertEqual(len(claim["data"]["remedyReferenceRefreshHistory"]), 1)
+        claim = self.expect("warranty-claims", claim, "start_remedy", actor="CON", evidence=[])
+        claim = self.expect("warranty-claims", claim, "submit_remedy", {"remedySummary": "Replaced seal in correction cycle 1"}, actor="CON", evidence=[self.evidence_id])
+        replacement_action = self.engine.get("Action", replacement_action_id)
+        replacement_action.update(version=replacement_action["version"] + 1, status="verified", updatedAt=self.engine.at())
+        with self.store.transaction(True):
+            self.engine._save("Action", replacement_action)
+        replacement_action_ref = self.ref("Action", replacement_action_id)
         reinspection_id = uid()
         reinspection = deepcopy(inspection)
-        reinspection.update(id=reinspection_id, version=1, updatedAt=self.engine.at(), status="passed", resultStatus="pass", nextWorkAllowed=True, holdPoint=False, relatedIssueId=issue_ref["objectId"], correctionCycle=defect_issue.get("correctionCycle", 0), correctiveActionRefs=[self.ref("Action", action_id)], **self.scope)
+        reinspection.update(
+            id=reinspection_id, version=1, updatedAt=self.engine.at(),
+            status="passed", resultStatus="pass", nextWorkAllowed=True, holdPoint=False,
+            relatedIssueId=issue_ref["objectId"], correctionCycle=1, previousInspectionId=failed_reinspection_id,
+            correctiveActionRefs=[replacement_action_ref], **self.scope,
+        )
         with self.store.transaction(True):
             self.engine.bootstrap("Inspection", reinspection)
         unrelated_reinspection_id = uid()
@@ -794,25 +870,15 @@ class HandoverHttpTests(unittest.TestCase):
         self.assertEqual(unrelated.status_code, 409, unrelated.text)
         self.assertEqual(unrelated.json()["code"], "WARRANTY_REINSPECTION_SCOPE_MISMATCH")
         self.assertEqual(self.engine.get("WorkItem", claim["id"])["version"], claim["version"])
-        current_issue = self.engine.get("Issue", issue_ref["objectId"])
-        with self.store.transaction(True):
-            self.engine._record_machines[("Issue", current_issue["id"])] = "issue"
-        current_issue = self.expect("issues", current_issue, "assign", {
-            "responsiblePartyId": current_issue["responsiblePartyId"],
-            "responsibleOrganizationId": current_issue["responsibleOrganizationId"],
-            "dueAt": self.tomorrow,
-            "actionIds": current_issue["actionIds"],
-        }, actor="SUP", evidence=[])
-        current_issue_ref = self.ref("Issue", current_issue["id"])
         claim = self.expect(
             "warranty-claims", claim, "accept_remedy",
             {"reinspectionRef": self.ref("Inspection", reinspection_id),
-             "issueRef": current_issue_ref, "actionRefs": [action_ref]},
+             "issueRef": current_issue_ref, "actionRefs": [replacement_action_ref]},
             actor="SUP", evidence=[self.evidence_id],
         )
         self.assertEqual(claim["data"]["issueRef"], issue_ref)
         self.assertEqual(claim["data"]["currentIssueRef"], current_issue_ref)
-        self.assertEqual(len(claim["data"]["remedyReferenceRefreshHistory"]), 1)
+        self.assertEqual(len(claim["data"]["remedyReferenceRefreshHistory"]), 2)
         unrelated_closure = self.ref("InformationItem", self.document_ids["closure"])
         denied = self.command("warranty-claims", claim, "close_warranty_claim", {"closureRef": unrelated_closure}, actor="SUP", evidence=[self.evidence_id])
         self.assertEqual(denied.status_code, 422, denied.text)
@@ -832,7 +898,7 @@ class HandoverHttpTests(unittest.TestCase):
         self.assertEqual(replay.status_code, 200, replay.text)
         self.assertEqual(replay.json()["auditEvent"]["id"], closed["auditEvent"]["id"])
         self.assertEqual(closed["record"]["status"], "closed")
-        self.assertEqual(len(closed["record"]["data"]["reinspectionHistoryRefs"]), 1)
+        self.assertEqual(len(closed["record"]["data"]["reinspectionHistoryRefs"]), 2)
         self.assertTrue(closed["record"]["data"]["closureEvidenceRefs"])
 
 

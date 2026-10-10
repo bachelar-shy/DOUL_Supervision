@@ -487,7 +487,17 @@ def _warranty(engine, guard, record, role, payload=None):
             action_refs = payload.get("actionRefs", [])
             require(_identity_key(issue_ref) == _identity_key(data.get("issueRef")),
                     "REFERENCE_IDENTITY_MISMATCH", "Warranty refresh must retain the original defect Issue identity")
-        issue = _ref(engine, issue_ref, project, "Issue", current=True, code="WARRANTY_ISSUE_REQUIRED")
+        if guard == "warranty_reinspection_failed":
+            # Rework is the state in which SUP can explicitly refresh these
+            # references. Allow the failure decision to inspect the latest
+            # version of the same original Issue identity without persisting
+            # a refresh or weakening the subsequent explicit command.
+            original_issue = _ref(engine, issue_ref, project, "Issue", current=False,
+                                  code="WARRANTY_ISSUE_REQUIRED")
+            issue = engine.get("Issue", original_issue["id"])
+        else:
+            issue = _ref(engine, issue_ref, project, "Issue", current=True,
+                         code="WARRANTY_ISSUE_REQUIRED")
         require(issue.get("subtype") in {"Defect", "Punch", "NCR"} and _in_scope(record, issue, data["defectScope"]["locationIds"], same_organization=True), "WARRANTY_ISSUE_REQUIRED", "A current defect Issue in the warranty scope is required")
         if guard == "warranty_refresh_remedy_references_ready":
             _complete_current_action_cycle(engine, record, [issue], action_refs,
@@ -523,7 +533,7 @@ def _warranty(engine, guard, record, role, payload=None):
         require(data.get("remedySubmittedAt"), "WARRANTY_REINSPECTION_REQUIRED", "Remedy must be submitted before reinspection")
         inspected_at = inspection.get("inspectedAt") or inspection.get("updatedAt")
         require(inspected_at and instant(inspected_at) >= instant(data["remedySubmittedAt"]) and instant(inspected_at) <= instant(engine.at()), "WARRANTY_REINSPECTION_CHRONOLOGY_INVALID", "Inspection must be dated after the submitted remedy and no later than the current time")
-        defect_issue = _ref(engine, issue_ref, project, "Issue", current=True, code="WARRANTY_ISSUE_REQUIRED")
+        defect_issue = issue
         require(inspection.get("correctionCycle") == defect_issue.get("correctionCycle"), "WARRANTY_REINSPECTION_CYCLE_INVALID", "Reinspection must belong to the current defect correction cycle")
         correction_refs = inspection.get("correctiveActionRefs")
         require(isinstance(correction_refs, list) and bool(correction_refs), "WARRANTY_REINSPECTION_ACTION_REQUIRED", "Reinspection must record the corrective Actions it verifies")
