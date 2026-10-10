@@ -26,13 +26,13 @@ async function availablePort() {
   return port;
 }
 
-test.beforeAll(async () => {
+test.beforeAll(async ({}, testInfo) => {
   apiPort = await availablePort();
   apiOrigin = `http://127.0.0.1:${apiPort}`;
-  process.env.DOUL_API_ALLOWED_ORIGINS = `http://127.0.0.1:5184,${apiOrigin}`;
+  const browserOrigin = new URL(String(testInfo.project.use.baseURL ?? "http://127.0.0.1:5181")).origin;
   fixtureDir = mkdtempSync(join(tmpdir(), "doul-media-ui-"));
   const python = process.env.DOUL_MEDIA_PYTHON ?? process.env.DOUL_TEST_PYTHON ?? resolve(process.cwd(), ".venv/bin/python");
-  apiProcess = spawn(python, ["-m", "tests_browser.support.media_analysis_api_fixture", "--host", "127.0.0.1", "--port", String(apiPort), "--database", join(fixtureDir, "media.sqlite3")], { cwd: process.cwd(), stdio: "ignore" });
+  apiProcess = spawn(python, ["-m", "tests_browser.support.media_analysis_api_fixture", "--host", "127.0.0.1", "--port", String(apiPort), "--database", join(fixtureDir, "media.sqlite3")], { cwd: process.cwd(), env: { ...process.env, DOUL_API_ALLOWED_ORIGINS: `${browserOrigin},${apiOrigin}` }, stdio: "ignore" });
   const deadline = Date.now() + 20_000;
   while (Date.now() < deadline) {
     if (apiProcess.exitCode !== null) throw new Error(`Media fixture API exited with ${apiProcess.exitCode}`);
