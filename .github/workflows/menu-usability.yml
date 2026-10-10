@@ -1,0 +1,70 @@
+name: menu-usability
+on:
+  pull_request:
+    paths:
+      - "apps/web/src/app/**"
+      - "apps/web/src/App.css"
+      - "apps/web/src/pages/DrawingReviewPage.tsx"
+      - "apps/web/src/ui/catalog.tsx"
+      - "packages/localization/src/index.ts"
+      - "app/reference/menu_usability_v1.json"
+      - "tests_contracts/test_menu_usability.py"
+      - "tests_browser/menu-usability.spec.ts"
+      - "81_Menu_Usability_Evaluation_v1.md"
+      - ".github/workflows/menu-usability.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: menu-usability-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  menu-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Prepare GitHub runner disk
+        run: bash infra/ci/prepare_github_runner.sh
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24.19.0"
+          cache: npm
+      - name: Install pinned npm
+        run: npm install --global npm@12.2.0
+      - name: Install locked dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -r services/api/requirements.lock
+          npm ci
+      - name: Contract and route usability validation
+        run: |
+          .venv/bin/python -m unittest discover -s tests_contracts -p "test_role_field_use_cases.py" -v
+          .venv/bin/python -m unittest discover -s tests_contracts -p "test_feature_interaction_use_cases.py" -v
+          .venv/bin/python -m unittest discover -s tests_contracts -p "test_menu_usability.py" -v
+      - name: Web typecheck and build
+        run: |
+          npm run typecheck --workspace apps/web
+          npm run web:build
+      - name: Chromium browser menu usability scenarios
+        env:
+          DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test tests_browser/menu-usability.spec.ts
+      - name: Upload failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: menu-usability-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-results/
+            .local/browser-results.json
+          if-no-files-found: warn
+          retention-days: 7
