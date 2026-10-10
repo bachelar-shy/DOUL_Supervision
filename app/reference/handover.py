@@ -366,14 +366,15 @@ def _commissioning(engine, guard, record, role, payload=None):
         raise ContractError("GUARD_UNIMPLEMENTED", guard)
 
 
-def _handover(engine, guard, record, role):
+def _handover(engine, guard, record, role, payload=None):
+    payload = payload or {}
     data = _data(record)
     project = record["projectId"]
     profile = None
     if data.get("handoverProfileRef"):
         profile = _profile(engine, data["handoverProfileRef"], record, "handoverProfile")
     if guard == "handover_refresh_issue_references_ready":
-        references = data.get("currentIssueRefs", [])
+        references = payload.get("currentIssueRefs", [])
         original = data.get("openIssueRefs", [])
         refs = _refs(engine, references, project, "Issue", current=True,
                      statuses=_ISSUE_OPEN | _ISSUE_RESOLVED,
@@ -570,7 +571,7 @@ def check_guard(engine, guard_name, record, payload, party_id, role, command=Non
     if guard_name.startswith("commissioning_"):
         return _commissioning(engine, guard_name, record, role, payload)
     if guard_name.startswith("handover_"):
-        return _handover(engine, guard_name, record, role)
+        return _handover(engine, guard_name, record, role, payload)
     if command == "accept_remedy":
         supplied = {"issueRef", "actionRefs"} & set(payload)
         require(not supplied or supplied == {"issueRef", "actionRefs"}, "COMMAND_FIELD_REQUIRED", "Issue and Action references must be refreshed together")
