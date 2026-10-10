@@ -31,17 +31,20 @@ _GUARD_NAMES = {
 
 _COMMISSIONING_SERVER_FIELDS = {
     "testResultRefs", "testResultHistory", "readinessStatus", "readyAt",
-    "closedAt", "lastTestResultAt", "lastTestOutcome",
+    "closedAt", "lastTestResultAt", "lastTestOutcome", "currentPunchIssueRefs",
+    "currentCorrectionActionRefs", "punchReferenceRefreshHistory",
 }
 _HANDOVER_SERVER_FIELDS = {
     "ownerAcceptanceRef", "reservations", "handoverReady", "readinessStatus",
     "readinessBlockers", "handoverDate", "acceptedDocumentRefs", "closedAt",
-    "warrantyStartAt",
+    "warrantyStartAt", "currentIssueRefs", "currentOpenIssueRefs",
+    "issueReferenceRefreshHistory",
 }
 _WARRANTY_SERVER_FIELDS = {
     "remedyEvidenceIds", "reinspectionHistoryRefs", "closureEvidenceRefs",
     "assessedAt", "acknowledgedAt", "reportedAt", "remedyStartedAt",
     "remedySubmittedAt", "acceptedAt", "closedAt", "recordedBy",
+    "remedyReferenceRefreshHistory",
 }
 _COMMAND_FIELDS = {
     "declare_test_ready": {"precommissioningChecklist"},
@@ -56,12 +59,15 @@ _COMMAND_FIELDS = {
     "record_final_handover": {"effectiveAt", "warrantyTrigger"},
     "require_remedy": {"actionRefs", "responseDueAt"},
     "submit_remedy": {"remedySummary"},
-    "accept_remedy": {"reinspectionRef"},
+    "accept_remedy": {"reinspectionRef", "issueRef", "actionRefs"},
+    "refresh_issue_references": {"currentIssueRefs"},
+    "refresh_remedy_references": {"issueRef", "actionRefs"},
     "require_rework": {"reinspectionRef", "reworkReason"},
     "close_warranty_claim": {"closureRef", "ownerDecisionRef"},
 }
 _ACCEPTED_REF_STATUSES = {"approved", "accepted", "active", "current", "effective", "verified", "passed", "completed", "closed", "released", "final", "signed"}
 _ISSUE_OPEN = {"open", "assigned", "in_progress", "ready_for_recheck", "reinspection", "rework_required"}
+_ISSUE_RESOLVED = {"closed", "verified"}
 _ACTION_VERIFIED = {"verified", "closed"}
 _REQUIRED_DOCUMENT_KEYS = {"asBuilt", "omManual", "training", "spareParts", "certificates", "statutoryAcceptance"}
 
