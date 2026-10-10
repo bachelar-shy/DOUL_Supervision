@@ -1,0 +1,25 @@
+name: ci-runner-policy
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - 'infra/ci/prepare_github_runner.sh'
+      - 'infra/ci/verify_github_runner_workflows.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'infra/ci/prepare_github_runner.sh'
+      - 'infra/ci/verify_github_runner_workflows.py'
+permissions:
+  contents: read
+jobs:
+  verify-github-hosted-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Require GitHub-hosted runners across all workflows
+        run: python3 infra/ci/verify_github_runner_workflows.py
+      - name: Shell syntax
+        run: bash -n infra/ci/prepare_github_runner.sh
