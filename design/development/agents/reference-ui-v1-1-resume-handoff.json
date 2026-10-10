@@ -1,0 +1,24 @@
+{
+  "branch": "goal/reference-ui-v1-1-resume",
+  "terminalCommit": "d6cc8dc23049d5fb11afbd187c952dfdb75de518",
+  "verifiedIntegrationCommit": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+  "scope": "Connected browser coverage for explicit current Handover and Warranty reference selection after authorized Issue and Action version changes.",
+  "completed": [
+    "Dedicated Warranty defect Issue is seeded through an isolated test-only HTTP helper after the partial Handover is recorded. It is an explicitly disclosed upstream prerequisite with open status, no Actions, and a link to the trusted fixture Inspection. The original Handover reservation Issue remains separate.",
+    "The Warranty path creates the claim and all initial/replacement Actions through the real UI, assigns and progresses them through authorized commands, requests linked reinspections through the real case UI, and executes the SUP rework, CON correction restart, current-reference refresh, remedy acceptance, and claim close flows through the connected browser UI and actual HTTP API.",
+    "Manual Warranty and Handover reference refresh dialogs begin with empty explicit selections. Exact current Issue and Action references are selected; original identity snapshots and immutable history are preserved. The Warranty test checks both manual refresh and paired acceptance history entries, latest Action version, and ko/vi/en visible current/history labels.",
+    "The Warranty path asserts the separate partial Handover version, Owner acceptance reference, reservations, and open Issue references remain unchanged after Warranty claim closure.",
+    "Final Handover browser flow exercises actual Owner and SUP UI transitions, reserved Issue closure, explicit refresh, FM-09 release, language-aware statutory rendering, and final package close. Prior focused browser evidence was reported to root; exact-head Mac CI is the integration release gate."
+  ],
+  "validation": {
+    "focusedWarrantyCommand": "npx playwright test --config=.local/reference-playwright.config.ts --grep 'real warranty UI accepts'",
+    "focusedWarrantyResult": "1 passed in 3.3m on integration commit f5947172f1b9688f5e59c8f5a6b49450608edd20",
+    "testEnvironment": "HTTP-backed fixture server, Chromium, Playwright; test-only MockTrustedVerifier. This does not establish external signature-provider proof.",
+    "knownUiLimitation": "close_warranty_claim closureRef currently renders as a JSON control because its schema has no single-reference kind. The browser helper supplies the exact current Issue ref as JSON; no production UI/schema change was made in this task.",
+    "remainingGate": "Root owns final C2 review and exact-head Mac CI; this focused browser pass is not a pilot or release-readiness claim."
+  },
+  "claims": [
+    "Test-only seeded prerequisite data is limited to the pre-workflow Warranty Issue boundary; workflow Actions, rework, replacement cycle, reinspection, refresh, acceptance, and closure are exercised through real UI/API routes.",
+    "No actual pilot or production signature-provider acceptance is claimed."
+  ]
+}
