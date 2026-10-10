@@ -183,6 +183,13 @@ export function AppShell({ client }: { client: SupervisionClient }) {
     ? Array.from(new Set([...roleRoutes[role], "parallel-test"]))
     : roleRoutes[role];
   const safeRoute = allowed.includes(route) ? route : "today";
+  useEffect(() => {
+    if (!workspace || allowed.includes(route)) return;
+    history.replaceState(null, "", "#/today");
+    setRoute("today");
+    setSelected(null);
+    setMenu(false);
+  }, [allowed, route, workspace]);
   const mobileItems = mobileRoutes[role]
     .filter((item) => allowed.includes(item.id))
     .map((item) => ({
