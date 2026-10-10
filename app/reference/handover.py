@@ -550,11 +550,17 @@ def _warranty(engine, guard, record, role, payload=None):
         corrections = _refs(engine, correction_refs, project, "Action", current=False,
                             code="WARRANTY_REINSPECTION_ACTION_REQUIRED", nonempty=True)
         if guard == "warranty_reinspection_failed":
-            # Failed-inspection evaluation has no separate refresh command in
-            # this state. Resolve the already-projected Action identities to
-            # their latest records for the existing verified-cycle gate only;
-            # do not persist a reference projection change.
-            current_action_refs = _latest_action_refs(engine, action_refs, project)
+            # The failed Inspection snapshot is the complete Action set the
+            # verifier saw. Resolve those identities to current records for
+            # this failure decision only; require every Warranty-projected
+            # remedy Action to be represented, but do not rewrite either
+            # original or current claim projections.
+            projected_action_ids = _identity_set(action_refs)
+            inspection_action_ids = _identity_set(correction_refs)
+            require(bool(projected_action_ids) and projected_action_ids <= inspection_action_ids,
+                    "WARRANTY_REINSPECTION_ACTION_REQUIRED",
+                    "Failed reinspection must retain every projected Warranty remedy Action")
+            current_action_refs = _latest_action_refs(engine, correction_refs, project)
         else:
             # Acceptance must use explicit current refs or the already-current
             # projection. Never silently advance stale projected versions.
