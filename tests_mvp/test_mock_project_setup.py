@@ -129,6 +129,7 @@ class MockProjectSetupTests(unittest.TestCase):
             store.db.execute("DELETE FROM blobs WHERE id=?", (file_id,))
         removed = cleanup(store)
         self.assertGreater(removed["removedRecords"], 30)
+        self.assertFalse(any(record.get("projectId") == project_id for record in store.engine._history.values()))
         self.assertEqual(store.meta, original_meta)
         self.assertIn(("Project", original_meta["projectId"]), store.engine._records)
         store.close()

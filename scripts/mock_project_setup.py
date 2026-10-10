@@ -230,7 +230,6 @@ def setup(store: SQLiteSnapshotAdapter) -> dict:
                 continue
             role_assignments.append(role)
             organizations.setdefault(role["actorGroup"], role["organizationId"])
-        roles_by_id = {role["id"]: role for role in role_assignments}
         config = _project_configuration(store.engine, project_id, actors, role_assignments,
             scope["packageId"], scope["locationId"], scope["discipline"], _stamp_now())
 
@@ -260,13 +259,18 @@ def cleanup(store: SQLiteSnapshotAdapter) -> dict:
             raise RuntimeError("Mock fixture owner marker is missing or unknown; refusing cleanup")
         project = marker["projectId"]
         owned = {tuple(entry) for entry in marker["owned"]}
+        if any(upload.get("public", {}).get("projectId") == project for upload in store.uploads.values()):
+            raise RuntimeError("Fixture project has later upload sessions; refusing cleanup")
+        if any(document.get("projectId") == project for document in store.documents._snapshots.values()):
+            raise RuntimeError("Fixture project has later document snapshots; refusing cleanup")
         unexpected = [(kind, oid) for (kind, oid), record in store.engine._records.items()
                       if record.get("projectId") == project and (kind, oid) not in owned]
         if unexpected:
             raise RuntimeError("Fixture project has unowned records; refusing cleanup: " + repr(unexpected[:5]))
         for kind, oid in owned:
             store.engine._records.pop((kind, oid), None)
-            store.engine._history.pop((kind, oid), None)
+            for history_key in [key for key in store.engine._history if key[:2] == (kind, oid)]:
+                store.engine._history.pop(history_key, None)
             store.engine._record_machines.pop((kind, oid), None)
         for file_id in marker.get("ownedBlobs", []):
             store.db.execute("DELETE FROM blobs WHERE id=?", (file_id,))

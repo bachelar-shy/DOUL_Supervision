@@ -1,6 +1,6 @@
 {
   "goal": "DOUL Supervision Korean, Vietnamese and English field MVP",
-  "status": "blocked_on_actual_field_and_operating_inputs",
+  "status": "mock_development_verification_in_progress_actual_field_acceptance_separate",
   "integrationBase": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
   "mergedPrerequisites": [
     {
@@ -106,7 +106,9 @@
     "c2Policy": "Explicit qualified SUP current-reference refresh only; Product-approved PCR-2026-002; no automatic rewrite or gate relaxation.",
     "evidence": "design/verification/reference-v1-1-main-mac-20261010.json"
   },
-  "remainingIndependentDevelopment": [],
+  "remainingIndependentDevelopment": [
+    "Verify and integrate Mock photo/project development milestone on Mac GitHub Actions"
+  ],
   "productApproval": {
     "record": "app/reference/product_change_record_pcr_2026_002.json",
     "issue": 132,
@@ -171,5 +173,15 @@
       "requiredForCurrentGoalCompletion": false,
       "scope": "Upstream advisory resolution and formal security release review; retain existing controls, regression tests, visible advisories and formal release gate. Deferral does not constitute production release approval."
     }
-  ]
+  ],
+  "mockDevelopmentMilestone": {
+    "authorization": "User updated the supplied Mock data prompt; create synthetic site photos, users and project config, then validate actual API/UI independently of real field actors.",
+    "status": "local_verified_Mac_CI_pending",
+    "branch": "goal/mock-usability-20261010",
+    "photoAsset": "design/development/mock-site/assets/SYNTHETIC_WWT_contact_sheet_P01-P12.png",
+    "photoDescription": "One generated PNG with12 labeled panels; no actual site evidence",
+    "fixture": "scripts/mock_project_setup.py",
+    "verification": "design/verification/mock-site-usability-20261010.json",
+    "actualFieldAcceptance": false
+  }
 }

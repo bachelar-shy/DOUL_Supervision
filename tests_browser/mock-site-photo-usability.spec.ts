@@ -15,6 +15,7 @@ const photoName = basename(photoPath);
 const photoMime = photoPath.toLowerCase().endsWith(".jpg") || photoPath.toLowerCase().endsWith(".jpeg")
   ? "image/jpeg"
   : "image/png";
+test.use({ timezoneId: "Asia/Ho_Chi_Minh" });
 if (process.env.CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.CHROMIUM_PATH } });
 
 const jpeg = photo[0] === 0xff && photo[1] === 0xd8 && photo[2] === 0xff;
@@ -82,10 +83,10 @@ test.beforeEach(async ({ page }, testInfo) => {
   const port = await availablePort();
   apiOrigin = `http://127.0.0.1:${port}`;
   fixtureDir = mkdtempSync(resolve(tmpdir(), "doul-mock-photo-"));
-  const python = process.env.DOUL_TEST_PYTHON || "/workspace/DOUL_Supervision/work/priority-venv/bin/python";
+  const python = process.env.DOUL_TEST_PYTHON || resolve(process.cwd(), ".venv/bin/python");
   const browserOrigin = new URL(String(testInfo.project.use.baseURL)).origin;
   apiProcess = spawn(python, [
-    "-m", "services.api", "--demo", "--database", resolve(fixtureDir, "demo.sqlite3"), "--port", String(port),
+    "-m", "tests_browser.support.mock_site_api_fixture", "--database", resolve(fixtureDir, "demo.sqlite3"), "--port", String(port),
   ], {
     cwd: process.cwd(),
     env: {
