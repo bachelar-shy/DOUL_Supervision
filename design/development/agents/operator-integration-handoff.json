@@ -1,7 +1,7 @@
 {
   "branch": "goal/operator-completion-v1",
   "baseCommit": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
-  "sourceCheckpoint": "0d77c71",
+  "sourceCheckpoint": "97695744d65b788530e2568debdea63259acb524",
   "completed": [
     "Media real API UI with authoritative creation capability gate and immutable source/version refs",
     "Payment append-only partial/correction/cancellation/final closure acceptance",
@@ -17,7 +17,7 @@
     "finalMediaBrowser": "1 passed, including ADM/CON restrictions and localized errors",
     "warrantySelectorBrowser": "1 passed",
     "web": "boundary/types/lint passed; strict npm12 dependency guard and responsive build passed",
-    "mac": "PR139 all11 PR and main Actions passed; PR140 exact-head checks pending",
+    "mac": "PR140 all7 exact-head Mac jobs passed;115 browser and7 isolated mock locales. Main all7 in progress.",
     "finalFocusedBrowser": {
       "mediaFlow": "passed14.4s",
       "handover": "passed1.2m after distinct output isolation",
@@ -56,9 +56,8 @@
     "fixtureLifecycle": "Mac first final attempt114 browser passed/1 pending inspection-case GET teardown failure; controlled old ordering reproduces ECONNREFUSED, tracked drain+finally cleanup passes3.6s. Updated specs tsc passed. Evidence design/verification/operator-retry-fixture-lifecycle-20261010.json"
   },
   "next": [
-    "Verify newest exact-head seven Mac Actions",
-    "Merge only verified expected SHA",
-    "Verify merged main and retain actual pilot/security-release blockers"
+    "Verify main4abc0a5 seven Mac jobs; do not remerge or redo accepted source",
+    "Retain133 actual pilot/operating inputs and134 upstream security-release review"
   ],
   "preservation": "Original /workspace checkout and metadata untouched; use isolated /tmp worktree and own npm12 dependencies. No reset or shared node_modules mutation.",
   "actualFieldPilot": false,
@@ -69,5 +68,6 @@
     "Concurrent local Playwright runs initially shared trace output and collided; output directories and JSON reports were separated and affected tests passed.",
     "Media run-selection fixture initially inspected an old UI workspace; it now verifies both records in real API and reloads before assertions."
   ],
-  "performanceArchitectureReview": "Full snapshot reload is required for cross-adapter freshness; exact role-visible total scans candidates. Page heap already bounded. Material production improvement requires normalized/indexed transactional records, not weakening authorization or totals."
+  "performanceArchitectureReview": "Full snapshot reload is required for cross-adapter freshness; exact role-visible total scans candidates. Page heap already bounded. Material production improvement requires normalized/indexed transactional records, not weakening authorization or totals.",
+  "mergeCommit": "4abc0a5d3337ee157c28d3f53419c1cbd7717019"
 }
