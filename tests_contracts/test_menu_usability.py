@@ -59,7 +59,16 @@ class MenuUsabilityContractTests(unittest.TestCase):
             if role != "ADM":
                 self.assertNotIn("admin", visible)
             self.assertEqual(detail["visibleRouteIds"][-1], "parallel-test")
-        self.assertEqual(set(roles["ADM"]["visibleRouteIds"]), set(ids))
+        # The full-development menu intentionally omits the grouped release-only
+        # "corrections" route; the release uses fieldCoreRoutes.
+        self.assertEqual(set(roles["ADM"]["visibleRouteIds"]), set(ids) - {"corrections"})
+        profiles = PLAN["menuProfiles"]
+        self.assertEqual(profiles["full"]["navigationByRole"],
+                         {role: detail["visibleRouteIds"] for role, detail in roles.items()})
+        self.assertEqual(profiles["fieldCore"]["navigationByRole"]["SUP"],
+                         ["today", "capture", "drawings", "inspections", "corrections", "owner"])
+        self.assertEqual(profiles["fieldCore"]["navigationByRole"]["CON"],
+                         ["today", "capture", "drawings", "inspections", "corrections"])
 
     def test_direct_drawing_view_uses_existing_components_and_role_permissions(self):
         source = (ROOT / "apps/web/src/pages/DrawingReviewPage.tsx").read_text(encoding="utf-8")
