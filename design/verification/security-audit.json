@@ -41,11 +41,40 @@
       "version": "11.1.1",
       "advisory": "GHSA-w5hq-g745-h8pq",
       "method": "root xcode override; npm 12.2.0 supports workspace graph inventory",
-      "status": "candidate_verified_locally_pending_mac_ci"
+      "status": "merged_and_verified_on_mac_ci",
+      "pullRequest": 136,
+      "mergeCommit": "7a3485e3ab71207a84cee2ec9ca3cf92d5816909"
     }
   ],
   "toolchain": {
     "node": "24.19.0",
     "npm": "12.2.0"
+  },
+  "auditObservations": [
+    {
+      "scope": "isolated local npm12 locked audit",
+      "high": 33,
+      "moderate": 0,
+      "rootAdvisories": [
+        "braces",
+        "node-forge"
+      ]
+    },
+    {
+      "scope": "PR136 Mac CI locked install audit",
+      "head": "15bbc158863a86518c4d6e9fb05f5a1a5e422f2a",
+      "high": 21,
+      "moderate": 0,
+      "source": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/37974476628",
+      "limit": "Transitive counts depend on the audit response; do not infer a remediation rate by comparing raw counts."
+    }
+  ],
+  "verification": {
+    "prHead": "15bbc158863a86518c4d6e9fb05f5a1a5e422f2a",
+    "mainMerge": "7a3485e3ab71207a84cee2ec9ca3cf92d5816909",
+    "triggeredWorkflowsPerCommit": 4,
+    "bothCommits": "all four passed on doul-macmini-m4-linux",
+    "prProof": "/Users/automation/work/DOUL-ci-runtime/pr136-15bbc15-checks.json",
+    "mainProof": "/Users/automation/work/DOUL-ci-runtime/pr136-7a3485e-checks.json"
   }
 }
