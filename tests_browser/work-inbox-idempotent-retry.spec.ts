@@ -20,10 +20,18 @@ type WorkRecord = {
   [key: string]: unknown;
 };
 type AuditEvent = { id: string; objectRef: { objectId: string }; eventType?: string };
+type CommandResponse = { status: number; body: string; auditId: string; record: Record<string, unknown> };
 
 let apiOrigin = "";
 let apiProcess: ChildProcess | undefined;
 let fixtureDir = "";
+let teardownProbeStarted = false;
+let teardownProbeStatus: number | undefined;
+const pendingProxyTasks = new Set<Promise<void>>();
+function trackProxy(task: Promise<void>): Promise<void> {
+  pendingProxyTasks.add(task);
+  return task.finally(() => pendingProxyTasks.delete(task));
+}
 
 async function availablePort() {
   const server = createServer();
@@ -39,6 +47,9 @@ async function availablePort() {
 }
 
 test.beforeEach(async () => {
+  test.setTimeout(30_000);
+  teardownProbeStarted = false;
+  teardownProbeStatus = undefined;
   const port = await availablePort();
   apiOrigin = `http://127.0.0.1:${port}`;
   fixtureDir = mkdtempSync(join(tmpdir(), "doul-inbox-retry-"));
@@ -63,36 +74,44 @@ test.beforeEach(async () => {
     await new Promise(resolveDelay => setTimeout(resolveDelay, 150));
   }
   throw new Error("Disposable API did not become healthy");
-}, 30_000);
+});
 
-test.afterEach(async () => {
-  if (apiProcess && apiProcess.exitCode === null) {
-    const child = apiProcess;
-    child.kill("SIGTERM");
-    await new Promise<void>(done => {
-      const timeout = setTimeout(() => { child.kill("SIGKILL"); done(); }, 3_000);
-      child.once("exit", () => { clearTimeout(timeout); done(); });
-    });
+test.afterEach(async ({ page }) => {
+  // A successful command starts background refreshes. Drain handlers before
+  // stopping their real API, then close the page so no new reads can start.
+  try {
+    while (pendingProxyTasks.size) await Promise.all([...pendingProxyTasks]);
+    await page.unrouteAll({ behavior: "wait" });
+    if (teardownProbeStarted) expect(teardownProbeStatus).toBe(200);
+    await page.close();
+  } finally {
+    if (apiProcess && apiProcess.exitCode === null) {
+      const child = apiProcess;
+      child.kill("SIGTERM");
+      await new Promise<void>(done => {
+        const timeout = setTimeout(() => { child.kill("SIGKILL"); done(); }, 3_000);
+        child.once("exit", () => { clearTimeout(timeout); done(); });
+      });
+    }
+    if (fixtureDir) rmSync(fixtureDir, { recursive: true, force: true });
   }
-  if (fixtureDir) rmSync(fixtureDir, { recursive: true, force: true });
 });
 
 test.beforeEach(async ({ page }) => {
   // Browser requests use the actual ASGI API and its isolated SQLite fixture.
-  await page.route("**/api/**", async route => {
+  await page.route("**/api/**", route => trackProxy((async () => {
     const requestUrl = new URL(route.request().url());
     const path = requestUrl.pathname.replace(/^\/api/, "");
     const response = await route.fetch({ url: `${apiOrigin}${path}${requestUrl.search}` });
     await route.fulfill({ response });
-  });
+  })()));
 });
 
 test("work inbox retries an uncertain command with the same idempotency key and server result", async ({ page, request }) => {
   const target = /\/api\/projects\/([^/]+)\/inspections\/([^/]+)\/start$/;
   const posts: Array<{ key: string | undefined; body: string | null }> = [];
-  let firstResponse: { status: number; body: string; auditId: string; record: Record<string, unknown> } | null = null;
-  let replayResponse: typeof firstResponse = null;
-  let authHeaders: Record<string, string> | null = null;
+  const responses: CommandResponse[] = [];
+  const authHeaders: Array<Record<string, string>> = [];
   let projectId = "";
   let recordId = "";
 
@@ -102,8 +121,9 @@ test("work inbox retries an uncertain command with the same idempotency key and 
     if (!match) throw new Error(`Unexpected command URL: ${req.url()}`);
     projectId = match[1];
     recordId = match[2];
-    authHeaders = await req.allHeaders();
-    posts.push({ key: authHeaders["idempotency-key"], body: req.postData() });
+    const requestHeaders = await req.allHeaders();
+    authHeaders.push(requestHeaders);
+    posts.push({ key: requestHeaders["idempotency-key"], body: req.postData() });
 
     // Let the real API receive and commit the first command, then discard only
     // its response to the browser to reproduce an uncertain transport outcome.
@@ -112,12 +132,11 @@ test("work inbox retries an uncertain command with the same idempotency key and 
     const body = await response.text();
     const parsed = JSON.parse(body) as { auditEvent: { id: string }; record: Record<string, unknown> };
     const captured = { status: response.status(), body, auditId: parsed.auditEvent.id, record: parsed.record };
+    responses.push(captured);
     if (posts.length === 1) {
-      firstResponse = captured;
       await route.abort("connectionreset");
       return;
     }
-    replayResponse = captured;
     await route.fulfill({ status: response.status(), headers: response.headers(), body });
   });
 
@@ -144,15 +163,17 @@ test("work inbox retries an uncertain command with the same idempotency key and 
   expect(posts[0].key).toBeTruthy();
   expect(posts[1].key).toBe(posts[0].key);
   expect(posts[1].body).toBe(posts[0].body);
-  expect(firstResponse).not.toBeNull();
-  expect(replayResponse).not.toBeNull();
+  expect(responses).toHaveLength(2);
+  const [firstResponse, replayResponse] = responses;
+  expect(firstResponse).toBeDefined();
+  expect(replayResponse).toBeDefined();
   expect(replayResponse?.status).toBe(200);
   expect(replayResponse?.body).toBe(firstResponse?.body);
   expect(replayResponse?.auditId).toBe(firstResponse?.auditId);
   expect(replayResponse?.record).toEqual(firstResponse?.record);
   expect(replayResponse?.record.status).toBe("in_progress");
 
-  const headers = authHeaders;
+  const headers = authHeaders[0];
   if (!headers) throw new Error("Missing browser authorization headers");
   const workspace = await request.get(`${apiOrigin}/projects/${projectId}/workspace`, {
     headers: {
@@ -164,4 +185,21 @@ test("work inbox retries an uncertain command with the same idempotency key and 
   const state = await workspace.json() as { items: Array<{ record: { id: string; status: string } }>; audit: Array<{ id: string; objectRef: { objectId: string } }> };
   expect(state.items.find(item => item.record.id === recordId)?.record.status).toBe("in_progress");
   expect(state.audit.filter(event => event.objectRef.objectId === recordId && event.id === firstResponse?.auditId)).toHaveLength(1);
+
+  // Leave one authenticated refresh deliberately in flight when this test ends.
+  // Teardown must let the read finish against the live API before killing it.
+  let signalEntered!: () => void;
+  const entered = new Promise<void>(resolveEntered => { signalEntered = resolveEntered; });
+  await page.route("**/workspace?teardownProbe=1", route => trackProxy((async () => {
+    teardownProbeStarted = true;
+    signalEntered();
+    await new Promise(resolveDelay => setTimeout(resolveDelay, 250));
+    const response = await route.fetch({ url: `${apiOrigin}/projects/${projectId}/workspace`, maxRetries: 0 });
+    teardownProbeStatus = response.status();
+    await route.fulfill({ response });
+  })()));
+  await page.evaluate(({ projectId, headers }) => {
+    void fetch(`/api/projects/${projectId}/workspace?teardownProbe=1`, { headers }).catch(() => {});
+  }, { projectId, headers: { authorization: headers.authorization, "x-roleassignment-id": headers["x-roleassignment-id"] } });
+  await entered;
 });

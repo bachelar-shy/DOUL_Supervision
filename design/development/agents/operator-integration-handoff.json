@@ -52,11 +52,13 @@
       "limits": "Synthetic development users and seeded data; no actual field usability or native device claim",
       "localResult": "7 cases passed29.7s covering135 screen states, existing capture/document locales and390px Contract dialog; real full Payment chain passed1.1m with9 populated-history display combinations and unchanged persisted official record",
       "populatedPayment": "Five historical payment rows across ko/vi/en ×390/768/1440 remain inside viewport; final API record equals pre-display-change snapshot exactly"
-    }
+    },
+    "fixtureLifecycle": "Mac first final attempt114 browser passed/1 pending inspection-case GET teardown failure; controlled old ordering reproduces ECONNREFUSED, tracked drain+finally cleanup passes3.6s. Updated specs tsc passed. Evidence design/verification/operator-retry-fixture-lifecycle-20261010.json"
   },
   "next": [
-    "Verify all exact-head Mac Actions; merge only verified candidate",
-    "Verify merged-main Actions and retain release/pilot blockers separately"
+    "Verify newest exact-head seven Mac Actions",
+    "Merge only verified expected SHA",
+    "Verify merged main and retain actual pilot/security-release blockers"
   ],
   "preservation": "Original /workspace checkout and metadata untouched; use isolated /tmp worktree and own npm12 dependencies. No reset or shared node_modules mutation.",
   "actualFieldPilot": false,

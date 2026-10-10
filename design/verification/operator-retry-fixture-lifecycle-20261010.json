@@ -1,0 +1,23 @@
+{
+  "sourceFailureHead": "ffa2d2b708110dc16cefe6248203880a11458383",
+  "macRun": 38039297823,
+  "browserFirstAttempt": {
+    "passed": 114,
+    "failed": 1,
+    "failure": "GET inspection-case proxy ECONNREFUSED after fixture lifetime ended"
+  },
+  "controlledRegression": {
+    "oldCleanupOrder": "failed with ECONNREFUSED on deliberately pending authenticated workspace GET",
+    "fixedCleanupOrder": "passed; late GET200 before API shutdown",
+    "finalFocusedResult": "1 passed3.6s (5.7s process)",
+    "specTypecheck": "updated retry/localization/payment specs passed standalone tsc"
+  },
+  "change": "Track outstanding proxy operations; drain before unroute/page close; always cleanup owned API in finally. No automatic command retry or swallowed proxy failures.",
+  "assertionsPreserved": [
+    "two manual command submissions use identical key/body",
+    "identical real response/auditID/record",
+    "exactly one matching audit event",
+    "late authenticated read200 before shutdown"
+  ],
+  "limits": "Disposable development API/browser fixture lifecycle proof; no production or actual pilot claim"
+}
