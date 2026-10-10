@@ -22,18 +22,27 @@
     "4a5e555",
     "0995c34",
     "aeee482",
-    "d1f2328"
+    "d1f2328",
+    "39ba94e",
+    "6a313a9",
+    "579921b",
+    "7628657",
+    "86aadde",
+    "0585b96",
+    "d31941e",
+    "2ae3a0e"
   ],
   "verification": {
     "referenceSuite": "320 passed using locked priority-venv",
-    "existingHandoverHTTP": "focused API and application tests passed; full API agent run 407 tests, 361 passed, 46 skipped",
-    "newAcceptance": "five real HTTP refusal/persistence/idempotency tests passed; full five browser cases rerunning after final-snapshot signature test completion",
+    "existingHandoverHTTP": "Six real Handover HTTP tests and five root refusal/restart/idempotency tests pass after failed-cycle snapshot regression fix.",
+    "newAcceptance": "Final Handover browser passed; Warranty retry pending final assertion verification. Safety joined equipment/Permit/Stop/Action/lift/separate-Permit-resume: two browser tests passed.",
     "types": "web and mobile typecheck passed",
     "locales": "350 mandatory keys across ko/vi/en passed",
     "MacCI": "C2 pending; PR136, PR137 and PR138 each four PR and four merged-main Mac Actions passed",
     "fullIntegratedAPI": "412 tests run, 366 passed, 46 environment-specific skips; locked priority-venv, source c032d6e (browser-only test updates after code)",
     "uiChecks": "UI boundary, web lint, responsive web build, web/mobile typecheck and generated API/types/command data checks passed",
-    "dependencyGuard": "Both pinned node-forge and braces appliers and regression probes passed; strict installed graph/source guard passed after security138 merge"
+    "dependencyGuard": "Both pinned node-forge and braces appliers and regression probes passed; strict installed graph/source guard passed after security138 merge",
+    "livePostgres": "Container workflow now executes six inherited Handover tests against real PostgreSQL with no-skip guard; actual final Mac run pending."
   },
   "restart": [
     "Remote goal/reference-integration-v1-1 preserves checkpoint. Active /tmp worktrees use /tmp/doul-preserved-mirror.git; original /workspace repository metadata is untouched. /workspace full; do not create sequencer there or prune old work.",
@@ -43,5 +52,6 @@
     "Actual field pilot remains unperformed; supplied files and development fixtures are not field acceptance"
   ],
   "environmentInterruption": "Source and checkpoints committed and pushed; temporary /tmp worktrees must be recovered from remote if execution environment changes.",
-  "integrationCheckpoint": "6d68d0d"
+  "integrationCheckpoint": "3473b98",
+  "failedCycleRegression": "Failed reinspection derives complete current-cycle Action identities from its immutable snapshot, verifies all projected remedy identities are included, and preserves the claim original/current projection. Acceptance and replacement refresh retain exact complete-cycle checks."
 }
