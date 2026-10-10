@@ -429,6 +429,30 @@ class ApplicationServiceHTTPTests(unittest.TestCase):
         self.assertEqual(missing_issue.status_code,404,missing_issue.text)
         self.assertEqual(missing_issue.json()['code'],'OBJECT_NOT_FOUND')
 
+        # The service captures the submitted Action version in the immutable
+        # Inspection snapshot. Advancing the Action afterwards must not rewrite
+        # that snapshot; Warranty acceptance resolves it as identity evidence.
+        captured_ref={
+            'objectType':'Action',
+            'objectId':submitted.json()['record']['id'],
+            'version':submitted.json()['record']['version'],
+        }
+        self.assertEqual(result['reinspection']['correctiveActionRefs'],[captured_ref])
+        self.login('SUP')
+        latest_action=next(
+            x['record'] for x in self.workspace()['items']
+            if x['machine']=='action' and x['record']['id']==captured_ref['objectId']
+        )
+        verified=self.command('actions',latest_action,'verify')
+        self.assertEqual(verified.status_code,200,verified.text)
+        latest_inspection=self.client.get(
+            f'/projects/{self.project}/inspections/{body["reinspectionObjectId"]}',
+            headers=self.headers,
+        )
+        self.assertEqual(latest_inspection.status_code,200,latest_inspection.text)
+        self.assertEqual(latest_inspection.json()['correctiveActionRefs'],[captured_ref])
+        self.assertGreater(verified.json()['record']['version'],captured_ref['version'])
+
     def test_reinspection_service_rolls_back_when_corrective_action_not_submitted(self):
         self.login('CON')
         workspace=self.workspace()
