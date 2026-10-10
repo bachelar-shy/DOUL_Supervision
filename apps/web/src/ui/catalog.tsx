@@ -63,6 +63,7 @@ export function NavigationList({
         <button
           key={item.id}
           type="button"
+          data-route={item.id}
           className={activeId === item.id ? "active" : ""}
           aria-current={activeId === item.id ? "page" : undefined}
           disabled={item.disabled}
@@ -125,6 +126,7 @@ export function MobileNavigation({
         <button
           key={item.id}
           type="button"
+          data-route={item.id}
           className={activeId === item.id ? "active" : ""}
           aria-current={activeId === item.id ? "page" : undefined}
           disabled={item.disabled}
