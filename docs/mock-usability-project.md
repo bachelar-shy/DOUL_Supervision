@@ -1,14 +1,22 @@
 # Local mock usability project
 
-This fixture provides a stable local project for DOUL API and UI development.
-It provisions synthetic `CON`, `SUP`, `OWN`, and `ADM` people, a schema-valid
-Project Configuration Pack, and two generated PNG evidence samples. Every login
-name and image is marked synthetic. The qualifications are test fixtures, not
-real credentials. This data supports development and usability review only; it
+This fixture seeds a full synthetic DOUL demo workflow project for API and UI
+development. It includes scoped `CON`, `SUP`, `OWN`, `DES`, and `ADM` users,
+service actors, requirements, a drawing, measurement evidence, inspections,
+observations, an issue and action, an owner report and decision, and an RFI.
+Names and project labels say `SYNTHETIC`; qualification numbers are explicitly
+not credentials. This data supports development and usability review only. It
 does not establish field acceptance.
 
-Use a dedicated local database so the project can be removed without touching
-another development database:
+The setup also stores two real-schema negative assignments for direct engine
+authorization checks: a supervisor with a rank 3 qualification against a rank
+1 requirement, and a contractor assignment with only `render_document`. The
+demo login endpoint still mints sessions only for the primary role in each
+group, so these secondary identities are not available as browser logins and
+do not create a new auth path.
+
+Use a dedicated local SQLite database so cleanup can preserve any other
+development data:
 
 ```sh
 python -m scripts.mock_project_setup setup --database .local/mock-usability.sqlite3
@@ -17,29 +25,27 @@ python -m services.api --demo --database .local/mock-usability.sqlite3
 npm run dev --workspace @doul/web
 ```
 
-The API listens at `http://127.0.0.1:8791`. Its development login accepts the
-four fixture role groups through `POST /dev/sessions`; the returned actor names
-include `SYNTHETIC`. The generated photo evidence is in the evidence collection
-and has ordinary PNG bytes and SHA-256 metadata, but the pixel art is a labeled
-test stand-in rather than a photograph of site conditions.
+The API listens at `http://127.0.0.1:8791`; the web app uses its normal HTTP
+adapter and Vite `/api` proxy. Development login uses `POST /dev/sessions` with
+one of `CON`, `SUP`, `OWN`, `DES`, or `ADM`. The returned actor name is marked
+synthetic. For photo upload workflows, use the normal upload API with a
+tool-generated, visibly labeled mock image; this fixture does not add a fake
+photo blob.
 
-Running setup again returns the same project and actors without duplicating
-records. To remove the fixture, stop the API and run:
+The project configuration pack passes the v1 schema at `baselineVersion 1.1`.
+It is a configuration review fixture, not proof that every config section is
+currently enforced at runtime. The reference engine continues to enforce its
+own authority matrix, role assignment, qualification validity/rank, scope, and
+project checks. Deadline, form, required qualification-kind, and project
+authority-binding configuration values are not all runtime policy inputs yet.
+
+Setup is idempotent within the database. To remove it, stop the API and run:
 
 ```sh
 python -m scripts.mock_project_setup cleanup --database .local/mock-usability.sqlite3
 ```
 
-Cleanup checks the fixture ownership marker and refuses to continue if it finds
-unowned records in the fixture project. It removes only the fixture's records,
-evidence blobs, audit entries, and idempotency entries, then restores the prior
-demo login context. Keep the database file itself if it contains other local
-development data.
-
-The existing demo login supports one actor per group, so foreign-project
-separation can be exercised by using another project ID with the fixture's
-session. The current login surface does not mint secondary underqualified or
-read-only identities. Although Qualification and RoleAssignment schemas can
-represent those cases, this fixture does not claim to validate those HTTP
-negative paths. It also does not model real login, qualification verification,
-legal/contract evidence, production persistence, or site acceptance.
+Cleanup requires the fixture ownership marker and refuses removal if the
+project contains an unowned record added after setup. On success it removes
+only owned project records, blobs, audit entries, and idempotency entries, then
+restores the database's prior demo metadata. The database file itself remains.

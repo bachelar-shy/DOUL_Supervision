@@ -1,229 +1,259 @@
-"""Create or remove a deterministic local usability fixture in a DOUL demo DB.
+"""Create or remove a local synthetic project for DOUL API/UI usability work.
 
-All people and evidence created here are synthetic. This fixture is for API/UI
-development and usability review, never field acceptance or qualification proof.
+All identities and workflow records are synthetic. Fixture qualifications are
+not credentials and this setup does not establish field acceptance.
 """
 from __future__ import annotations
 
 import argparse
 from copy import deepcopy
-from datetime import datetime, timedelta, timezone
-import hashlib
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sys
-from uuid import UUID, uuid5
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.reference.engine import Engine
+from app.reference.engine import Engine, uid
+from services.api.demo import seed as seed_demo_project
 from services.api.store import SQLiteSnapshotAdapter
 from scripts.product_schema_validation import validate_schema
 
-NAMESPACE = UUID("8c954d6e-13db-4fc7-8d7d-41eb37b32010")
 FIXTURE_KEY = "mock-usability-project-v1"
-GROUPS = {
-    "SUP": ("chief_supervisor", "SYNTHETIC · Supervisor"),
-    "CON": ("contractor_technical_lead", "SYNTHETIC · Contractor"),
-    "OWN": ("owner_decision_maker", "SYNTHETIC · Owner"),
-    "ADM": ("project_admin", "SYNTHETIC · Administrator"),
+HUMAN_GROUPS = ("SUP", "CON", "OWN", "DES", "ADM")
+PRIMARY_NAMES = {
+    "SUP": "SYNTHETIC · Supervisor",
+    "CON": "SYNTHETIC · Contractor",
+    "OWN": "SYNTHETIC · Owner",
+    "DES": "SYNTHETIC · Designer",
+    "ADM": "SYNTHETIC · Administrator",
 }
 
 
-def ident(name: str) -> str:
-    return str(uuid5(NAMESPACE, name))
+def _stamp_now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def stamp(value: datetime) -> str:
-    return value.isoformat().replace("+00:00", "Z")
-
-
-def _photo_png(label_seed: int) -> bytes:
-    """Small synthetic site-photo stand-in, PNG encoded with the stdlib only."""
-    import struct
-    import zlib
-
-    width, height = 320, 200
-    rows = []
-    for y in range(height):
-        row = bytearray([0])
-        for x in range(width):
-            # A simple construction-like color field with a visible diagonal
-            # grid. This is a test image, not a photograph of a real site.
-            grid = (x + y + label_seed * 17) % 48 < 2
-            if y < 42:
-                rgb = (88, 152, 190)
-            elif y > 148:
-                rgb = (151, 131, 99)
-            elif 82 < x < 236:
-                rgb = (218, 201, 164) if not grid else (112, 98, 78)
-            else:
-                rgb = (163, 170, 159) if not grid else (90, 102, 96)
-            row.extend(rgb)
-        rows.append(bytes(row))
-
-    def chunk(kind: bytes, data: bytes) -> bytes:
-        body = kind + data
-        return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body) & 0xFFFFFFFF)
-
-    raw = b"".join(rows)
-    return (b"\x89PNG\r\n\x1a\n" +
-            chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)) +
-            chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
-
-
-def _project_configuration(project_id, orgs, actors, qualifications, package, location, discipline, now):
+def _project_configuration(engine, project_id, actors, role_assignments, package, location, discipline, effective_from):
+    """Build a schema-valid pack from this project's actual role assignments."""
     schema = json.loads((ROOT / "app/schema/project_configuration_contract_v1.json").read_text())
-    policies = Engine().policies
+    primary_roles = {role["id"]: role for role in role_assignments}
+    owner_role_code = primary_roles[actors["OWN"]["roleAssignmentId"]]["roleCode"]
+    organizations_by_id = {}
+    for role in role_assignments:
+        organizations_by_id[role["organizationId"]] = role["actorGroup"]
+
     authority_bindings = []
-    for code, policy in sorted(policies.items()):
-        groups = sorted(set(policy["actor_groups"]) & set(GROUPS))
-        if not groups:
+    for code, policy in sorted(engine.policies.items()):
+        allowed_pairs = [role for role in role_assignments
+                         if role["actorGroup"] in policy["actor_groups"]
+                         and (not policy["role_codes"] or role["roleCode"] in policy["role_codes"])]
+        if not allowed_pairs:
             continue
-        roles = sorted(set(policy.get("role_codes") or [GROUPS[group][0] for group in groups]))
-        # Keep only actor/role pairs allowed by this exact engine policy.
-        valid = [group for group in groups if GROUPS[group][0] in roles]
-        if not valid:
-            continue
+        binding_groups = sorted({role["actorGroup"] for role in allowed_pairs})
+        binding_roles = sorted({role["roleCode"] for role in allowed_pairs})
         authority_bindings.append({
             "authorityCode": code,
             "implementationStatus": "active",
-            "actorGroups": valid,
-            "roleCodes": [GROUPS[group][0] for group in valid],
-            "disciplineRequired": True,
-            "packageRequired": True,
-            "locationRequired": True,
+            "actorGroups": binding_groups,
+            "roleCodes": binding_roles,
+            "disciplineRequired": bool(policy["discipline_scope_required"]),
+            "packageRequired": bool(policy["package_scope_required"]),
+            "locationRequired": bool(policy["location_scope_required"]),
         })
 
     config = {
-        "schemaVersion": "1.0", "configVersion": 1, "baselineVersion": "1.0",
-        "projectId": project_id, "timezone": "Asia/Ho_Chi_Minh", "effectiveFrom": stamp(now),
-        "organizations": [dict(organizationId=orgs[g], actorGroup=g, packageIds=[package], locationIds=[location]) for g in GROUPS],
-        "roleAssignments": [dict(
-            partyId=actors[g]["partyId"], organizationId=orgs[g], actorGroup=g,
-            roleCode=GROUPS[g][0], disciplineIds=[discipline], packageIds=[package],
-            locationIds=[location], qualificationRefs=([qualifications[g]] if g in qualifications else []),
-        ) for g in GROUPS],
+        "schemaVersion": "1.0",
+        "configVersion": 1,
+        "baselineVersion": "1.1",
+        "projectId": project_id,
+        "timezone": "Asia/Ho_Chi_Minh",
+        "effectiveFrom": effective_from,
+        "organizations": [
+            {"organizationId": org_id, "actorGroup": group,
+             "packageIds": [package], "locationIds": [location]}
+            for org_id, group in sorted(organizations_by_id.items())
+        ],
+        "roleAssignments": [
+            {"partyId": role["partyId"], "organizationId": role["organizationId"],
+             "actorGroup": role["actorGroup"], "roleCode": role["roleCode"],
+             "disciplineIds": list(role.get("disciplines", [])),
+             "packageIds": list(role.get("packageIds", [])),
+             "locationIds": list(role.get("locationIds", [])),
+             "qualificationRefs": list(role.get("qualificationIds", []))}
+            for role in role_assignments
+        ],
         "qualificationRules": [
-            {"roleCode": GROUPS["SUP"][0], "minimumRank": 3, "requiredKinds": ["supervision"], "validityRequired": True},
-            {"roleCode": GROUPS["CON"][0], "minimumRank": 3, "requiredKinds": ["construction"], "validityRequired": True},
+            {"roleCode": primary_roles[actors[group]["roleAssignmentId"]]["roleCode"], "minimumRank": 1,
+             "requiredKinds": ["synthetic-fixture"], "validityRequired": True}
+            for group in ("SUP", "CON")
         ],
         "scopes": {"disciplines": [discipline], "packages": [package], "locations": [location]},
         "authorityBindings": authority_bindings,
         "deadlineRules": [
-            {"code": "mock.inspection.response", "source": "internal", "calculation": "hours", "value": 24, "timezone": "Asia/Ho_Chi_Minh"},
-            {"code": "mock.owner.report", "source": "internal", "calculation": "hours", "value": 2, "timezone": "Asia/Ho_Chi_Minh"},
+            {"code": "mock.inspection.response", "source": "internal", "calculation": "hours",
+             "value": 24, "timezone": "Asia/Ho_Chi_Minh"},
+            {"code": "mock.owner.report", "source": "internal", "calculation": "hours",
+             "value": 2, "timezone": "Asia/Ho_Chi_Minh"},
         ],
-        "ownerReporting": {"priorities": [
-            {"priority": p, "receiptDueMinutes": r, "decisionDueMinutes": d, "recipientRoleCodes": [GROUPS["OWN"][0]]}
-            for p, r, d in (("P1", 30, 60), ("P2", 240, 1440), ("P3", 1440, 4320), ("P4", 4320, 10080))
-        ], "periodicCadences": [{"reportType": "mock_weekly", "cadence": "weekly", "recipientRoleCodes": [GROUPS["OWN"][0]]}]},
-        "forms": {"applicableFormIds": ["FM-07", "FM-12", "FM-17", "FM-19", "FM-20", "FM-21"], "statutoryOriginals": []},
-        "thresholds": {"schedule.criticalDelayDays": 7, "payment.reportVariancePercent": 10, "safety.majorStopHours": 4},
-        "mediaPolicy": {"enabled": True, "allowedModes": ["photo", "keyframes"],
-            "autoRetry": {"maxAttempts": 1, "backoffSeconds": [30]}, "userReanalysisAllowed": True,
-            "externalTransferPolicy": "forbidden", "retentionDays": 30,
-            "redactionRequiredForSharing": True, "originalExportAllowed": False,
-            "perRunCostLimit": 0, "monthlyCostLimit": 0, "costCurrency": "USD",
-            "providerRegionRule": "local-fixture-only"},
+        "ownerReporting": {
+            "priorities": [
+                {"priority": priority, "receiptDueMinutes": receipt, "decisionDueMinutes": decision,
+                 "recipientRoleCodes": [owner_role_code]}
+                for priority, receipt, decision in (("P1", 30, 60), ("P2", 240, 1440),
+                                                    ("P3", 1440, 4320), ("P4", 4320, 10080))
+            ],
+            "periodicCadences": [{"reportType": "mock_weekly", "cadence": "weekly",
+                                  "recipientRoleCodes": [owner_role_code]}],
+        },
+        "forms": {"applicableFormIds": ["FM-07", "FM-12", "FM-17", "FM-19", "FM-20", "FM-21"],
+                  "statutoryOriginals": []},
+        "thresholds": {"schedule.criticalDelayDays": 7, "payment.reportVariancePercent": 10,
+                       "safety.majorStopHours": 4},
+        "mediaPolicy": {"enabled": True, "allowedModes": ["photo", "keyframes", "adaptive"],
+                        "autoRetry": {"maxAttempts": 1, "backoffSeconds": [30]},
+                        "userReanalysisAllowed": True, "externalTransferPolicy": "forbidden",
+                        "retentionDays": 30, "redactionRequiredForSharing": True,
+                        "originalExportAllowed": False, "perRunCostLimit": 0,
+                        "monthlyCostLimit": 0, "costCurrency": "USD",
+                        "providerRegionRule": "local-fixture-only"},
         "acceptanceScenarioIds": ["AC-Q-01", "AC-AUTH-01", "AC-IDEMP-01"],
     }
     validate_schema(config, schema)
     return config
 
 
+def _add_negative_identities(store, project_id, scope, base_roles, start, end):
+    """Add real-schema role/qualification records for direct negative checks."""
+    engine = store.engine
+    roles = {role["actorGroup"]: role for role in base_roles}
+    under_party, under_qualification, under_role = uid(), uid(), uid()
+    readonly_party, readonly_role = uid(), uid()
+
+    engine.bootstrap("Party", {"id": under_party, "projectId": project_id, "kind": "PERSON",
+        "name": "SYNTHETIC · Insufficient qualification", "loginEnabled": False,
+        "organizationId": roles["SUP"]["organizationId"]})
+    engine.bootstrap("Qualification", {"id": under_qualification, "projectId": project_id,
+        "partyId": under_party, "number": "SYNTHETIC-RANK-3-NOT-A-CREDENTIAL", "rank": 3,
+        "disciplines": [scope["discipline"]], "validFrom": start, "validTo": end,
+        "verified": True, "revoked": False})
+    under_assignment = {"id": under_role, "projectId": project_id, "partyId": under_party,
+        "organizationId": roles["SUP"]["organizationId"], "actorGroup": "SUP",
+        "roleCode": roles["SUP"]["roleCode"],
+        "authorityCodes": ["close_issue", "render_document"],
+        "disciplines": list(scope["disciplines"]), "packageIds": [scope["packageId"]],
+        "locationIds": [scope["locationId"]], "qualificationIds": [under_qualification],
+        "validFrom": start, "validTo": end, "active": True, "approvedBy": roles["SUP"]["partyId"]}
+    engine.bootstrap("RoleAssignment", under_assignment)
+
+    engine.bootstrap("Party", {"id": readonly_party, "projectId": project_id, "kind": "PERSON",
+        "name": "SYNTHETIC · Read-only contractor", "loginEnabled": False,
+        "organizationId": roles["CON"]["organizationId"]})
+    readonly_assignment = {"id": readonly_role, "projectId": project_id, "partyId": readonly_party,
+        "organizationId": roles["CON"]["organizationId"], "actorGroup": "CON",
+        "roleCode": roles["CON"]["roleCode"], "authorityCodes": ["render_document"],
+        "disciplines": list(scope["disciplines"]), "packageIds": [scope["packageId"]],
+        "locationIds": [scope["locationId"]], "qualificationIds": [],
+        "validFrom": start, "validTo": end, "active": True, "approvedBy": roles["ADM"]["partyId"]}
+    engine.bootstrap("RoleAssignment", readonly_assignment)
+    return {
+        "insufficientQualification": {"partyId": under_party, "roleAssignmentId": under_role,
+            "qualificationId": under_qualification, "actorGroup": "SUP"},
+        "readOnly": {"partyId": readonly_party, "roleAssignmentId": readonly_role,
+            "actorGroup": "CON"},
+    }
+
+
 def setup(store: SQLiteSnapshotAdapter) -> dict:
-    """Idempotently add the fixture and select it for /dev/sessions."""
+    """Idempotently seed full mock workflows and select their project for demo logins."""
     with store.transaction(True):
-        previous = store.meta.get("mockProjectSetup")
-        if previous:
-            if previous.get("key") != FIXTURE_KEY:
+        existing = store.meta.get("mockProjectSetup")
+        if existing:
+            if existing.get("key") != FIXTURE_KEY:
                 raise RuntimeError("Unrecognized fixture owner marker; refusing to modify it")
-            missing = [(kind, oid) for kind, oid in previous.get("owned", [])
-                       if kind != "Blob" and (kind, oid) not in store.engine._records]
-            missing_blobs = [oid for kind, oid in previous.get("owned", []) if kind == "Blob"
-                             and store.db.execute("SELECT 1 FROM blobs WHERE id=?", (oid,)).fetchone() is None]
+            missing = [(kind, oid) for kind, oid in existing.get("owned", [])
+                       if (kind, oid) not in store.engine._records]
+            missing_blobs = [oid for oid in existing.get("ownedBlobs", [])
+                             if store.db.execute("SELECT 1 FROM blobs WHERE id=?", (oid,)).fetchone() is None]
             if missing or missing_blobs:
                 raise RuntimeError("Fixture owner marker references missing records or blobs; refusing to reuse it")
-            return {"projectId": previous["projectId"], "created": False, "actors": previous["actors"]}
+            return {"projectId": existing["projectId"], "created": False,
+                    "actors": existing["actors"], "negativeActors": existing["negativeActors"]}
 
-        now = datetime.now(timezone.utc)
-        start, end = stamp(now - timedelta(days=1)), stamp(now + timedelta(days=365))
-        project, package, location, discipline = ident("project"), ident("package"), ident("location"), "architecture"
-        organizations = {g: ident("organization:" + g) for g in GROUPS}
-        actors, qualifications = {}, {}
-        owned = []
+        previous_meta = deepcopy(store.meta)
+        before = set(store.engine._records)
+        seeded = seed_demo_project(store.engine)
+        project_id = seeded["projectId"]
+        actors = seeded["actors"]
+        scope = seeded["scope"]
+        project = store.engine._records[("Project", project_id)]
+        project["name"] = "SYNTHETIC USABILITY PROJECT · NOT FIELD ACCEPTANCE"
+        # The regular demo data is intentionally rank 1 (strongest). A rank 3
+        # assignment below provides a real-schema insufficient-rank example.
+        project["qualificationRules"] = [{"discipline": scope["discipline"], "minimumRank": 1}]
+        for history_key in [key for key in store.engine._history if key[:2] == ("Project", project_id)]:
+            store.engine._history[history_key] = deepcopy(project)
+        for group, actor in actors.items():
+            actor["name"] = PRIMARY_NAMES.get(group, f"SYNTHETIC · {group}")
+            party_key = ("Party", actor["partyId"])
+            store.engine._records[party_key]["name"] = actor["name"]
+            for history_key in [key for key in store.engine._history if key[:2] == party_key]:
+                store.engine._history[history_key] = deepcopy(store.engine._records[party_key])
+        for service_actor in seeded["serviceActors"].values():
+            party_key = ("Party", service_actor["partyId"])
+            party = store.engine._records[party_key]
+            party["name"] = "SYNTHETIC · " + party["name"]
+            service_actor["name"] = party["name"]
+            for history_key in [key for key in store.engine._history if key[:2] == party_key]:
+                store.engine._history[history_key] = deepcopy(party)
 
-        def add(kind, record):
-            store.engine.bootstrap(kind, record)
-            owned.append([kind, record["id"]])
-
-        add("Project", {"id": project, "projectId": project, "name": "SYNTHETIC USABILITY PROJECT · NOT FIELD ACCEPTANCE",
-            "country": "VN", "timezone": "Asia/Ho_Chi_Minh", "qualificationRules": [
-                {"discipline": discipline, "minimumRank": 3}]})
-        add("Location", {"id": location, "projectId": project, "name": "SYNTHETIC · Zone A / Level 2",
-            "semanticAnchor": "synthetic/mock-usability/A/2F"})
-
-        for group, (role_code, display_name) in GROUPS.items():
-            party, role = ident("party:" + group), ident("role:" + group)
-            actors[group] = {"partyId": party, "roleAssignmentId": role,
-                "name": display_name, "actorGroup": group}
-            add("Party", {"id": party, "projectId": project, "kind": "PERSON",
-                "name": display_name, "loginEnabled": True, "organizationId": organizations[group]})
-            qualification_ids = []
-            if group in ("SUP", "CON"):
-                qualification = ident("qualification:" + group)
-                qualifications[group] = qualification
-                qualification_ids = [qualification]
-                add("Qualification", {"id": qualification, "projectId": project, "partyId": party,
-                    "number": "SYNTHETIC-NOT-A-CERTIFICATE", "rank": 1,
-                    "disciplines": [discipline], "validFrom": start, "validTo": end,
-                    "verified": True, "revoked": False})
-            policy_codes = [code for code, policy in store.engine.policies.items() if group in policy["actor_groups"]]
-            add("RoleAssignment", {"id": role, "projectId": project, "partyId": party,
-                "organizationId": organizations[group], "actorGroup": group, "roleCode": role_code,
-                "authorityCodes": policy_codes, "disciplines": [discipline], "packageIds": [package],
-                "locationIds": [location], "qualificationIds": qualification_ids,
-                "validFrom": start, "validTo": end, "active": True, "approvedBy": party})
-
-        config = _project_configuration(project, organizations, actors, qualifications, package, location, discipline, now)
-
-        # Add two fully synthetic photo fixtures as ordinary evidence blobs.
-        photo_ids = []
-        for index in (1, 2):
-            content = _photo_png(index)
-            file_id, evidence_id = ident(f"photo-file:{index}"), ident(f"photo-evidence:{index}")
+        owned_actors = _add_negative_identities(
+            store, project_id, {**scope, "disciplines": [scope["discipline"]]},
+            [record for (kind, _), record in store.engine._records.items()
+             if kind == "RoleAssignment" and record["projectId"] == project_id],
+            store.engine.get("RoleAssignment", actors["SUP"]["roleAssignmentId"])["validFrom"],
+            store.engine.get("RoleAssignment", actors["SUP"]["roleAssignmentId"])["validTo"],
+        )
+        owned = sorted([[kind, oid] for kind, oid in set(store.engine._records) - before])
+        blob_contents = seeded.pop("blobs")
+        owned_blobs = sorted(blob_contents)
+        for file_id, content in blob_contents.items():
             store.put_blob(file_id, content)
-            photo_ids.append(evidence_id)
-            store.engine.add_evidence(evidence_id, project, {
-                "sourceType": "original", "mediaType": "photo", "fileId": file_id,
-                "fileHash": hashlib.sha256(content).hexdigest(), "sourcePartyId": actors["CON"]["partyId"],
-                "metadata": {"demo": True, "mockFixture": True, "mimeType": "image/png",
-                    "name": f"SYNTHETIC-usability-photo-{index}.png", "description": "Generated test image; not a site photograph."},
-                "packageId": package, "locationId": location, "discipline": discipline,
-                "responsibleOrganizationId": organizations["CON"],
-            }, content, actors["CON"]["partyId"], actors["CON"]["roleAssignmentId"], ident(f"photo-upload:{index}"))
-            owned.extend([["Evidence", evidence_id], ["Blob", file_id]])
 
-        previous_context = {"projectId": deepcopy(store.meta.get("projectId")),
-            "actors": deepcopy(store.meta.get("actors")), "scope": deepcopy(store.meta.get("scope")),
-            "projectConfiguration": deepcopy(store.meta.get("projectConfiguration"))}
-        store.meta["mockProjectSetup"] = {"key": FIXTURE_KEY, "projectId": project,
-            "owned": owned, "actors": actors, "photoEvidenceIds": photo_ids,
-            "previousContext": previous_context, "projectConfiguration": config}
-        store.meta["projectId"] = project
-        store.meta["actors"] = deepcopy(actors)
-        store.meta["scope"] = {"packageId": package, "locationId": location,
-            "discipline": discipline, "responsibleOrganizationId": organizations["CON"],
-            "minimumQualificationRank": 3}
-        store.meta["projectConfiguration"] = config
-        return {"projectId": project, "created": True, "actors": actors, "photoEvidenceIds": photo_ids}
+        organizations = {}
+        role_assignments = []
+        for (kind, _), role in store.engine._records.items():
+            if (kind != "RoleAssignment" or role.get("projectId") != project_id
+                    or role.get("actorGroup") not in HUMAN_GROUPS):
+                continue
+            role_assignments.append(role)
+            organizations.setdefault(role["actorGroup"], role["organizationId"])
+        roles_by_id = {role["id"]: role for role in role_assignments}
+        config = _project_configuration(store.engine, project_id, actors, role_assignments,
+            scope["packageId"], scope["locationId"], scope["discipline"], _stamp_now())
+
+        previous_context = previous_meta
+        fixture_meta = deepcopy(seeded)
+        fixture_meta["projectConfiguration"] = config
+        fixture_meta["actors"] = actors
+        fixture_meta["negativeActors"] = owned_actors
+        fixture_meta["mockProjectSetup"] = {
+            "key": FIXTURE_KEY, "projectId": project_id, "owned": owned,
+            "ownedBlobs": owned_blobs, "actors": deepcopy(actors),
+            "negativeActors": owned_actors, "previousMeta": previous_context,
+            "projectConfiguration": config,
+        }
+        fixture_meta["scope"] = scope
+        store.meta.clear()
+        store.meta.update(fixture_meta)
+        return {"projectId": project_id, "created": True, "actors": actors,
+                "negativeActors": owned_actors, "evidenceId": seeded["evidenceId"]}
 
 
 def cleanup(store: SQLiteSnapshotAdapter) -> dict:
-    """Remove only deterministic records listed under this helper's owner marker."""
+    """Remove only records/blobs named in this setup's owner marker."""
     with store.transaction(True):
         marker = store.meta.get("mockProjectSetup")
         if not marker or marker.get("key") != FIXTURE_KEY:
@@ -235,30 +265,24 @@ def cleanup(store: SQLiteSnapshotAdapter) -> dict:
         if unexpected:
             raise RuntimeError("Fixture project has unowned records; refusing cleanup: " + repr(unexpected[:5]))
         for kind, oid in owned:
-            if kind == "Blob":
-                store.db.execute("DELETE FROM blobs WHERE id=?", (oid,))
-                continue
             store.engine._records.pop((kind, oid), None)
             store.engine._history.pop((kind, oid), None)
             store.engine._record_machines.pop((kind, oid), None)
+        for file_id in marker.get("ownedBlobs", []):
+            store.db.execute("DELETE FROM blobs WHERE id=?", (file_id,))
         store.engine._audit = [event for event in store.engine._audit if event.get("projectId") != project]
-        store.engine._idempotency = {
-            key: value for key, value in store.engine._idempotency.items()
-            if not (isinstance(key, tuple) and key and key[0] == project)
-        }
-        context = marker["previousContext"]
-        for key, value in context.items():
-            if value is None:
-                store.meta.pop(key, None)
-            else:
-                store.meta[key] = value
-        del store.meta["mockProjectSetup"]
-        return {"projectId": project, "removedRecords": len(owned)}
+        store.engine._idempotency = {key: value for key, value in store.engine._idempotency.items()
+            if not (isinstance(key, tuple) and key and key[0] == project)}
+        previous_meta = marker["previousMeta"]
+        store.meta.clear()
+        store.meta.update(previous_meta)
+        return {"projectId": project, "removedRecords": len(owned),
+                "removedBlobs": len(marker.get("ownedBlobs", []))}
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--database", required=True, help="Local development SQLite database")
+    parser.add_argument("--database", required=True, help="Dedicated local development SQLite database")
     parser.add_argument("action", choices=("setup", "cleanup"))
     args = parser.parse_args()
     store = SQLiteSnapshotAdapter(args.database, demo=True)
