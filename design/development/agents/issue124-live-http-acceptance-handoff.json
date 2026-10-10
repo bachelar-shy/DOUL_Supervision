@@ -16,9 +16,10 @@
       "pageSizes": [1, 100]
     },
     "transport": "Loopback TCP HTTP to a local FastAPI process with an isolated PostgreSQL 16 Docker container; random container name and Docker-assigned host port.",
+    "postgresImage": "--postgres-image defaults to postgres:16-bookworm; the disposable container's runtime server_version_num is checked to require major 16 before app setup/measurement, and output records requested image, image ID/repo digest, exact server version and numeric server version.",
     "measurements": [
       "Per-request latency samples, p50, nearest-rank p95, sample count, and second-page latency.",
-      "API process CPU ticks where /proc is available.",
+      "API process CPU ticks where /proc is available, with POSIX `ps` accumulated CPU time fallback (centisecond resolution observed on macOS).",
       "API RSS baseline, sampled peak, final RSS, and peak above baseline via /proc or POSIX ps.",
       "Measured response-byte totals and means.",
       "PostgreSQL cgroup CPU delta when the container exposes cgroup v2 cpu.stat.",
@@ -36,12 +37,12 @@
       "python3 scripts/benchmark_work_inbox_http_acceptance.py --help"
     ]
   },
-  "runStatus": "Attempted the authorized local run on 2026-10-10 against clean app base 6a24662. Docker refused creation of the randomized disposable PostgreSQL container with `no space left on device`; the API did not start, so there are no measurements. A read-only `docker ps -a --filter name=doul-inbox-bench-` check found no leftover fixture container. Blocker evidence: design/verification/issue124-live-http-50k-30round-6a24662.json.",
+  "runStatus": "Attempted the authorized local run on 2026-10-10 against clean app base 6a24662. Linux Docker refused creation of the randomized disposable PostgreSQL container with `no space left on device`; the API did not start, so there are no measurements. A read-only `docker ps -a --filter name=doul-inbox-bench-` check found no leftover fixture container. Mac CI host read-only preflight on 2026-10-10 found the project CI runner and five project containers active, Data volume 99% used with 2.9 GiB available, ~450 MiB free RAM, and no `postgres:16-bookworm` image. It has cached `postgres:16.15-alpine3.24` with image/repo digest `sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea`; do not start while CI runs or resources remain low. Blocker evidence: design/verification/issue124-live-http-50k-30round-6a24662.json.",
   "acceptanceLimits": [
     "No latency SLO or p95 budget was found in inspected contracts; results will be descriptive and cannot be called a performance acceptance pass.",
     "Synthetic duplicated Issue records, one API process, and local snapshot persistence do not establish field data, concurrent-client behavior, M4/ARM64 performance, or production readiness.",
     "A product owner must supply the target workload and latency/CPU/memory budgets before field performance acceptance can be claimed."
   ],
-  "command": "python scripts/benchmark_work_inbox_http_acceptance.py --app-root <clean-checkout> --rounds 30 --page-sizes 1 100 --output <unique-evidence-path.json>",
-  "restart": "Wait for a quiet local CI/UI window before using the disposable PostgreSQL fixture. Preserve the evidence output under a unique filename and record the exact clean app commit; do not benchmark against Mac while PR CI is active."
+  "command": "DOCKER_CONTEXT=colima-doul-ci /Users/automation/.local/bin/python3.11 scripts/benchmark_work_inbox_http_acceptance.py --app-root <clean-checkout> --postgres-image postgres:16.15-alpine3.24 --rounds 30 --page-sizes 1 100 --output <unique-evidence-path.json>",
+  "restart": "After root confirms the Mac has no active CI job and enough memory/disk headroom, use a separate clean checkout at each exact app commit; use a dedicated locked venv or a verified existing dependency-cache venv without modifying another checkout. Verify the local Docker context before invoking the harness, preserve a unique output per commit, and do not benchmark while PR CI is active."
 }

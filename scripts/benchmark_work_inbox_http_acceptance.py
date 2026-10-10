@@ -28,8 +28,6 @@ from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 APP_ROOT = ROOT
-sys.path.insert(0, str(APP_ROOT))
-from app.reference.validation import ContractError
 
 
 def _proc_stats(pid: int) -> tuple[int, int] | None:
@@ -51,6 +49,35 @@ def _ps_rss(pid: int) -> int | None:
                                 text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         value = result.stdout.strip()
         return int(value) * 1024 if value else None
+    except (OSError, ValueError, subprocess.CalledProcessError):
+        return None
+
+
+def _parse_ps_time(value: str) -> float | None:
+    """Parse POSIX ps TIME/CPTIME fields: [[days-]hours:]minutes:seconds."""
+    value = value.strip()
+    if not value:
+        return None
+    days = 0
+    if "-" in value:
+        day_text, value = value.split("-", 1)
+        days = int(day_text)
+    parts = value.split(":")
+    if len(parts) == 3:
+        hours, minutes, seconds = int(parts[0]), int(parts[1]), float(parts[2])
+    elif len(parts) == 2:
+        hours, minutes, seconds = 0, int(parts[0]), float(parts[1])
+    else:
+        return None
+    return days * 86400 + hours * 3600 + minutes * 60 + seconds
+
+
+def _ps_cpu_seconds(pid: int) -> float | None:
+    """Portable POSIX accumulated CPU time fallback, including macOS."""
+    try:
+        result = subprocess.run(["ps", "-o", "cputime=", "-p", str(pid)], check=True,
+                                text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        return _parse_ps_time(result.stdout)
     except (OSError, ValueError, subprocess.CalledProcessError):
         return None
 
@@ -94,11 +121,6 @@ def expect_denial(url: str, headers: dict, *, expected_code: str) -> dict:
     raise AssertionError(f"expected denied request with {expected_code}")
 
 
-def process_cpu_ticks(pid: int) -> int | None:
-    stats = _proc_stats(pid)
-    return stats[0] if stats else None
-
-
 def rank_p95(samples: list[float]) -> float:
     return sorted(samples)[max(0, math.ceil(.95 * len(samples)) - 1)]
 
@@ -112,6 +134,8 @@ def main() -> int:
     parser.add_argument("--warmups", type=int, default=2)
     parser.add_argument("--page-sizes", type=int, nargs="+", default=[1, 100])
     parser.add_argument("--app-root", type=Path, default=ROOT)
+    parser.add_argument("--postgres-image", default="postgres:16-bookworm",
+                        help="already available PostgreSQL Docker image (server major must be 16)")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.records < 100 or args.visible_fraction_denominator < 2 or args.rounds < 30 or args.warmups < 0:
@@ -124,15 +148,19 @@ def main() -> int:
     global APP_ROOT
     APP_ROOT = app_root
     sys.path.insert(0, str(APP_ROOT))
+    from app.reference.validation import ContractError
 
     container = f"doul-inbox-bench-{uuid4().hex[:10]}"
-    docker_run(["run", "-d", "--name", container,
-                "-p", "127.0.0.1::5432",
-                "--tmpfs", "/var/lib/postgresql/data:rw,noexec,nosuid,size=1g",
-                "-e", "POSTGRES_DB=ops_bench", "-e", "POSTGRES_USER=ops",
-                "-e", "POSTGRES_PASSWORD=disposable-only", "postgres:16-bookworm"])
+    image_info = docker_run([
+        "image", "inspect", "--format", "{{.Id}} {{json .RepoDigests}}", args.postgres_image,
+    ]).stdout.strip()
     server = None
     try:
+        docker_run(["run", "-d", "--name", container,
+                    "-p", "127.0.0.1::5432",
+                    "--tmpfs", "/var/lib/postgresql/data:rw,noexec,nosuid,size=1g",
+                    "-e", "POSTGRES_DB=ops_bench", "-e", "POSTGRES_USER=ops",
+                    "-e", "POSTGRES_PASSWORD=disposable-only", args.postgres_image])
         port_info = docker_run(["port", container, "5432/tcp"]).stdout.strip().splitlines()[0]
         postgres_port = int(port_info.rsplit(":", 1)[1])
         deadline = time.time() + 90
@@ -145,6 +173,14 @@ def main() -> int:
             time.sleep(.5)
 
         dsn = f"postgresql://ops:disposable-only@127.0.0.1:{postgres_port}/ops_bench"
+        from psycopg import connect
+        with connect(dsn) as conn:
+            postgres_version, server_version_num = conn.execute(
+                "select version(), current_setting('server_version_num')"
+            ).fetchone()
+        postgres_major = int(server_version_num) // 10000
+        if postgres_major != 16:
+            raise RuntimeError(f"Expected PostgreSQL major version 16; server reports {postgres_version}")
         from services.api.main import create_app
         from services.api.persistence import create_postgres_persistence
         from services.api.modules.work_inbox import INBOX_MACHINES
@@ -248,12 +284,17 @@ def main() -> int:
 
             stats_before = _proc_stats(server.pid)
             rss_before = stats_before[1] if stats_before else _ps_rss(server.pid)
+            cpu_before_seconds = (
+                stats_before[0] / os.sysconf("SC_CLK_TCK")
+                if stats_before else _ps_cpu_seconds(server.pid)
+            )
             pg_before = postgres_cpu_usec(container)
             peak_rss = [rss_before or 0]
             stop_monitor = threading.Event()
 
             def monitor() -> None:
-                while not stop_monitor.wait(.02):
+                sample_interval = .02 if stats_before else .1
+                while not stop_monitor.wait(sample_interval):
                     stats = _proc_stats(server.pid)
                     rss = stats[1] if stats else _ps_rss(server.pid)
                     if rss is not None:
@@ -288,10 +329,17 @@ def main() -> int:
             monitor_thread.join()
             stats_after = _proc_stats(server.pid)
             rss_after = stats_after[1] if stats_after else _ps_rss(server.pid)
+            cpu_after_seconds = (
+                stats_after[0] / os.sysconf("SC_CLK_TCK")
+                if stats_after else _ps_cpu_seconds(server.pid)
+            )
             pg_after = postgres_cpu_usec(container)
             if stats_before and stats_after:
-                api_cpu_ms = (stats_after[0] - stats_before[0]) * 1000 / os.sysconf("SC_CLK_TCK")
+                api_cpu_ms = (cpu_after_seconds - cpu_before_seconds) * 1000
                 api_cpu_source = "proc process CPU ticks"
+            elif cpu_before_seconds is not None and cpu_after_seconds is not None:
+                api_cpu_ms = (cpu_after_seconds - cpu_before_seconds) * 1000
+                api_cpu_source = "POSIX ps process TIME (centisecond resolution on macOS)"
             else:
                 api_cpu_ms = None
                 api_cpu_source = None
@@ -328,9 +376,6 @@ def main() -> int:
             }
 
         # Capture exact toolchain/database identity from the same disposable DB.
-        from psycopg import connect
-        with connect(dsn) as conn:
-            postgres_version = conn.execute("select version()").fetchone()[0]
         result = {
             "scope": "Loopback TCP HTTP to FastAPI backed by a disposable PostgreSQL snapshot adapter",
             "status": "descriptive-measurement-no-SLO-claim",
@@ -339,7 +384,13 @@ def main() -> int:
                                           text=True, stdout=subprocess.PIPE, check=True).stdout.strip(),
                 "python": sys.version,
                 "platform": platform.platform(),
-                "postgres": postgres_version,
+                "postgres": {
+                    "version": postgres_version,
+                    "major": postgres_major,
+                    "serverVersionNum": server_version_num,
+                    "requestedImage": args.postgres_image,
+                    "imageIdAndRepoDigests": image_info,
+                },
                 "apiModulePath": str(APP_ROOT),
             },
             "fixture": {
@@ -378,6 +429,7 @@ def main() -> int:
 
 
 def _transition_authorized(engine, record, machine, authority, actor) -> bool:
+    from app.reference.validation import ContractError
     try:
         engine.authorize(record, authority, actor["partyId"], actor["roleAssignmentId"])
         return True
