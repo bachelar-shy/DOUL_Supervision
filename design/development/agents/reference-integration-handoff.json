@@ -27,7 +27,9 @@
     "newAcceptance": "five real HTTP refusal/persistence/idempotency tests passed; full five browser cases rerunning after final-snapshot signature test completion",
     "types": "web and mobile typecheck passed",
     "locales": "350 mandatory keys across ko/vi/en passed",
-    "MacCI": "C2 pending; PR136 and PR137 each four PR and four merged-main Mac Actions passed; PR138 pending"
+    "MacCI": "C2 pending; PR136 and PR137 each four PR and four merged-main Mac Actions passed; PR138 pending",
+    "fullIntegratedAPI": "412 tests run, 366 passed, 46 environment-specific skips; locked priority-venv, source c032d6e (browser-only test updates after code)",
+    "uiChecks": "UI boundary, web lint, responsive web build, web/mobile typecheck and generated API/types/command data checks passed"
   },
   "restart": [
     "Remote goal/reference-integration-v1-1 preserves checkpoint. Active /tmp worktrees use /tmp/doul-preserved-mirror.git; original /workspace repository metadata is untouched. /workspace full; do not create sequencer there or prune old work.",

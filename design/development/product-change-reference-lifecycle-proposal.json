@@ -41,7 +41,7 @@
       "accept_remedy": "optional paired issueRef + actionRefs"
     },
     "preserved": "Submitted refs, original Owner approval/reservations, test/reinspection history, and one audited command event per accepted refresh; idempotent request replay.",
-    "verification": "Reference suite 320 passed; API agent suite 407 tests run, 361 passed and 46 environment-specific skips; five additional real-HTTP atomic refusal, idempotency and SQLite restart tests passed. Five connected browser scenarios are rerunning; exact integrated Mac Actions pending. These are synthetic development fixtures, not actual field acceptance."
+    "verification": "Integrated root real API suite: 412 run, 366 passed, 46 environment-specific skips; reference suite 320 passed; generated API/types/command metadata, UI boundary, lint, responsive build and web/mobile types pass. Five browser scenarios revalidating; exact integrated Mac Actions pending. Synthetic fixtures do not establish actual field acceptance."
   },
   "additionalConfirmedGaps": [],
   "adoptionConditions": [
