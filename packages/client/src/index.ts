@@ -285,6 +285,7 @@ export class ApiError extends Error {
 export class ApiClient {
   session: Session | null = null;
   private loginGeneration = 0;
+  onUnauthorized: (() => void) | null = null;
   baseUrl: string;
   constructor(baseUrl = "/api") {
     this.baseUrl = baseUrl;
@@ -306,6 +307,10 @@ export class ApiClient {
         signal: init.signal || controller.signal,
       });
       if (!response.ok) {
+        if (response.status === 401 && this.session?.mode === "PASSWORD") {
+          this.session = null;
+          this.onUnauthorized?.();
+        }
         const detail = await response
           .json()
           .catch(() => ({

@@ -58,6 +58,8 @@ jobs:
         run: |
           npx playwright install --with-deps chromium
           npx playwright test
+      - name: Password authentication UI boundary and session expiry tests
+        run: npx playwright test --config playwright.auth.config.ts
       - name: Isolated mock localization tests
         run: npx playwright test --config playwright.localization.config.ts
       - name: Preserve browser failure evidence

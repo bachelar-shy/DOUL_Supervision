@@ -30,9 +30,9 @@ export function AdminPage({
     if (!selected) {setCreating(false); return;}
     try {
       await client.request("/auth/accounts", {method:"POST",body:JSON.stringify({username,password,partyId:selected.partyId,roleAssignmentId:selected.id})});
-      setAccountMessage("계정이 생성되었습니다. 사용자에게 아이디와 초기 비밀번호를 안전하게 전달하세요.");
+      setAccountMessage(t("auth.admin.success"));
       setUsername(""); setPassword(""); setAccountRole("");
-    } catch {setAccountError("계정 생성에 실패했습니다. 중복 아이디, 역할·권한, 비밀번호 규칙을 확인하세요.");}
+    } catch {setAccountError(t("auth.admin.error"));}
     finally {setCreating(false);}
   }
   useEffect(() => {
@@ -56,17 +56,17 @@ export function AdminPage({
       >
         {passwordMode && client.session?.actor.actorGroup === "ADM" && (
           <form onSubmit={event => void createAccount(event)} className="panel" style={{padding:20,display:"grid",gap:12,maxWidth:600}}>
-            <h2>사용자 계정 생성</h2>
-            <p>기존 프로젝트 관계자에게 로그인 계정을 발급합니다. 담당자와 역할은 먼저 등록되어 있어야 합니다.</p>
-            <label>담당자·역할<select required value={accountRole} onChange={event=>setAccountRole(event.target.value)}>
-              <option value="">담당자 선택</option>
+            <h2>{t("auth.admin.createTitle")}</h2>
+            <p>{t("auth.admin.createHelp")}</p>
+            <label>{t("auth.admin.actor")}<select required value={accountRole} onChange={event=>setAccountRole(event.target.value)}>
+              <option value="">{t("auth.admin.chooseActor")}</option>
               {rows.filter(row => row.active && row.partyId).map(row=><option key={row.id} value={row.id}>{roles[String(row.actorGroup)] || String(row.actorGroup)} · {String(row.roleCode)} · {String(row.partyId).slice(0,8)}</option>)}
             </select></label>
-            <label>로그인 아이디<input value={username} onChange={event=>setUsername(event.target.value)} pattern="[a-z][a-z0-9._-]{2,63}" maxLength={64} autoComplete="off" required/></label>
-            <label>초기 비밀번호 (12자 이상)<input type="password" value={password} onChange={event=>setPassword(event.target.value)} minLength={12} maxLength={128} autoComplete="new-password" required/></label>
+            <label>{t("auth.admin.username")}<input value={username} onChange={event=>setUsername(event.target.value)} pattern="[a-z][a-z0-9._-]{2,63}" maxLength={64} autoComplete="off" required/></label>
+            <label>{t("auth.admin.password")}<input type="password" value={password} onChange={event=>setPassword(event.target.value)} minLength={12} maxLength={128} autoComplete="new-password" required/></label>
             {accountError && <p role="alert">{accountError}</p>}
             {accountMessage && <p role="status">{accountMessage}</p>}
-            <button className="primary" type="submit" disabled={creating || !accountRole}>{creating?"생성 중…":"계정 생성"}</button>
+            <button className="primary" type="submit" disabled={creating || !accountRole}>{creating?t("auth.admin.submitting"):t("auth.admin.submit")}</button>
           </form>
         )}
         <RegisterTable

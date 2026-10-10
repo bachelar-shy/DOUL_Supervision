@@ -46,6 +46,8 @@ export class MockSupervisionClient implements SupervisionClient {
     throw new Error("비밀번호 로그인은 실제 운영 API에서만 지원합니다.");
   }
   async logout(): Promise<void> { this.session = null; }
+  async authMode(): Promise<"demo"> { return "demo"; }
+  onAuthenticationExpired(_handler: () => void): () => void { return () => {}; }
 
   async workspace(): Promise<Workspace> {
     return createMockWorkspace(this.role);

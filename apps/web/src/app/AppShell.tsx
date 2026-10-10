@@ -47,7 +47,7 @@ function millisecondsUntilNextLocalDay(now: Date) {
   return Math.max(1000, next.getTime() - now.getTime());
 }
 
-export function AppShell({ client, passwordMode = false, onLogout }: { client: SupervisionClient; passwordMode?: boolean; onLogout?: () => void }) {
+export function AppShell({ client, passwordMode = false, onLogout }: { client: SupervisionClient; passwordMode?: boolean; onLogout?: (revoked: boolean) => void }) {
   const { t, i18n } = useTranslation();
   const roleLabel = (value: HumanRole) =>
     t(`roles.${value}`, { defaultValue: roles[value] });
@@ -286,7 +286,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                 ))}
               </select>
             </label>}
-            {passwordMode && <button className="secondary" onClick={() => {void client.logout().finally(() => onLogout?.());}}>로그아웃</button>}
+            {passwordMode && <button className="secondary" onClick={() => {void client.logout().then(() => onLogout?.(true)).catch(() => onLogout?.(false));}}>{t("auth.logout")}</button>}
             <span className="avatar">{roleLabel(role)[0]}</span>
           </div>
         </header>
