@@ -10,6 +10,7 @@ import { FloorPlan, Icon } from "./shared";
 import { recordTitle } from "./record-utils";
 import { EvidenceDetailPreview } from "./EvidenceDetailPreview";
 import { evidenceMediaLabel, evidenceSourceLabel } from "./evidence-utils";
+import { MediaAnalysisPanel } from "./MediaAnalysisPanel";
 
 interface LocalCapture {
   id: string;
@@ -267,13 +268,11 @@ export function CapturePage({
                 selected: item.record.id === selectedEvidenceId,
                 onSelect: () => setSelectedEvidenceId(item.record.id),
               }))}
-              footer={
-                <button className="secondary wide" disabled>
-                  {t("capture.evidence.aiDisconnected")}
-                </button>
-              }
             />
           </section>
+        </div>
+        <div className="col-span-full">
+          <MediaAnalysisPanel client={client} workspace={workspace} online={online} onChanged={refresh} />
         </div>
       </CaptureTemplate>
 
