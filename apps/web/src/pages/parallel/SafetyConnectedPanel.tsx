@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../../labels";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { CommandDescriptor, RecordDTO, WorkItem, Workspace } from "../../data/ui-contract";
@@ -21,34 +22,34 @@ const copy: Record<Locale, Record<string, string>> = {
   ko: {
     title: "안전 연결 추적",
     readOnly: "읽기 전용 조회",
-    description: "SafetyStopOrder의 정확한 참조와 현재 명령 가용성을 확인합니다. 이 화면은 OwnerReport를 자동 발송하지 않습니다.",
+    description: "작업중지 지시의 정확한 참조와 현재 업무 처리 처리 가능 여부을 확인합니다. 이 화면은 발주처 보고서를 자동 발송하지 않습니다.",
     picker: "작업중지 원본",
     sourceSelect: "원본 선택",
-    noSource: "현재 표시 가능한 SafetyStopOrder가 없습니다.",
+    noSource: "현재 표시 가능한 작업중지 지시가 없습니다.",
     stopOrder: "작업중지",
     statusUnavailable: "상태 확인",
-    commands: "현재 작업중지 명령",
-    commandsDescription: "서버가 제공한 명령만 표시합니다. 재개 명령은 기존 증빙과 선행조건 검증을 거칩니다.",
-    noCommands: "현재 버전에서 열 수 있는 명령이 없습니다.",
+    commands: "현재 작업중지 업무 처리",
+    commandsDescription: "업무 시스템이 제공한 업무 처리만 표시합니다. 작업 재개는 기존 증빙과 선행조건을 확인한 뒤 처리합니다.",
+    noCommands: "현재 작성 차수에서 열 수 있는 업무 처리가 없습니다.",
     open: "열기",
     status: "상태",
-    inputAndServerCheck: "입력 후 서버 검증",
+    inputAndServerCheck: "입력 후 업무 시스템 검증",
     loading: "연결 기록을 읽는 중…",
     readOnlyUnchanged: "읽기 전용 조회 · 공식 상태 변경 없음",
     stateUnknown: "상태 변경 여부를 확인할 수 없습니다.",
     linkedRecord: "연결 기록",
     noStatus: "상태 정보 없음",
-    currentNoVersion: "원본에 버전이 없는 현재 조회",
-    sourceVersion: "원본 v",
-    currentReadOnly: "현재 조회 전용 · 원본 참조 버전 미기록",
-    historicalInactive: "역사 또는 미확인 버전 · 변경 명령 비활성",
-    currentVersionMatch: "현재 작업공간 버전과 일치",
+    currentNoVersion: "원본에 작성 차수가 없는 현재 조회",
+    sourceVersion: "기록 작성 차수 ",
+    currentReadOnly: "현재 조회 전용 · 원본 참조 작성 차수 미기록",
+    historicalInactive: "역사 또는 미확인 작성 차수 · 변경 업무 처리 비활성",
+    currentVersionMatch: "현재 업무 화면 작성 차수와 일치",
     readDetails: "상세 읽기",
     sourceDetail: "원본 상세",
     ownerReportBoundary: "발주자 보고는 별도 발송·접수 절차로 처리됩니다. 이 화면은 보고를 발송하지 않습니다.",
     diagnostics: "참조 진단",
-    staleSource: "원본 버전이 변경되었습니다. 최신 작업공간을 새로고침하십시오.",
-    staleCommand: "명령 기준 버전이 변경되었습니다. 최신 작업공간을 새로고침하십시오.",
+    staleSource: "원본 작성 차수가 변경되었습니다. 최신 업무 화면을 새로고침하십시오.",
+    staleCommand: "업무 처리 기준 작성 차수가 변경되었습니다. 최신 업무 화면을 새로고침하십시오.",
     readFailed: "연결 추적 정보를 조회하지 못했습니다.",
     detailFailed: "연결 기록 상세를 조회하지 못했습니다.",
   },
@@ -124,9 +125,9 @@ const copy: Record<Locale, Record<string, string>> = {
 
 const relationNames: Record<Locale, Record<string, string>> = {
   ko: {
-    affectedPermitRefs: "영향 작업허가", issueRefs: "연결 Issue", correctiveActionRefs: "시정조치",
-    resumeVerificationRefs: "재개 재검증", ownerReportRefs: "발주자 보고", "issue.actionIds": "Issue 조치",
-    "issue.inspectionIds": "Issue 재검사", "stopOrder.drawing": "도면", "stopOrder.location": "위치", "stopOrder.evidence": "안전 증빙",
+    affectedPermitRefs: "영향 작업허가", issueRefs: "연결 지적사항", correctiveActionRefs: "시정조치",
+    resumeVerificationRefs: "재개 재검증", ownerReportRefs: "발주자 보고", "issue.actionIds": "지적사항 조치",
+    "issue.inspectionIds": "지적사항 재검사", "stopOrder.drawing": "도면", "stopOrder.location": "위치", "stopOrder.evidence": "안전 증빙",
   },
   vi: {
     affectedPermitRefs: "Giấy phép công việc bị ảnh hưởng", issueRefs: "Issue được liên kết", correctiveActionRefs: "Hành động khắc phục",
@@ -152,7 +153,7 @@ const collections: Record<string, string> = {
 };
 
 const linkStatuses: Record<Locale, Record<string, string>> = {
-  ko: { readable: "열람 가능", missing: "대상 없음", unauthorized: "열람 권한 없음", foreign_project: "다른 프로젝트", invalid_reference: "참조 확인 필요" },
+  ko: { readable: "열람 가능", missing: "대상 없음", unauthorized: "열람 권한 없음", foreign_project: "다른 현장", invalid_reference: "참조 확인 필요" },
   vi: { readable: "Có thể xem", missing: "Không tìm thấy đối tượng", unauthorized: "Không có quyền xem", foreign_project: "Dự án khác", invalid_reference: "Cần kiểm tra tham chiếu" },
   en: { readable: "Readable", missing: "Target missing", unauthorized: "Not authorized to read", foreign_project: "Different project", invalid_reference: "Reference needs review" },
 };
@@ -215,7 +216,7 @@ function stateName(value: string | undefined, fallback: string, subtype: string 
 function recordTypeName(value: string | undefined, language: Locale) {
   if (!value) return undefined;
   const names: Record<Locale, Record<string, string>> = {
-    ko: { SafetyPermit: "안전 작업허가", SafetyStopOrder: "안전 작업중지", SafetyEquipmentInspection: "안전장비 점검", Issue: "Issue", Action: "조치", Inspection: "검사", OwnerReport: "발주자 보고", Evidence: "증빙", Document: "문서" },
+    ko: { SafetyPermit: "안전 작업허가", SafetyStopOrder: "안전 작업중지", SafetyEquipmentInspection: "안전장비 점검", Issue: "지적사항", Action: "조치", Inspection: "검사", OwnerReport: "발주자 보고", Evidence: "증빙", Document: "문서" },
     vi: { SafetyPermit: "Giấy phép công việc an toàn", SafetyStopOrder: "Lệnh dừng công việc an toàn", SafetyEquipmentInspection: "Kiểm tra thiết bị an toàn", Issue: "Issue", Action: "Hành động", Inspection: "Nghiệm thu", OwnerReport: "Báo cáo Chủ đầu tư", Evidence: "Bằng chứng", Document: "Tài liệu" },
     en: { SafetyPermit: "Safety work permit", SafetyStopOrder: "Safety stop order", SafetyEquipmentInspection: "Safety equipment inspection", Issue: "Issue", Action: "Action", Inspection: "Inspection", OwnerReport: "Owner Report", Evidence: "Evidence", Document: "Document" },
   };
@@ -293,9 +294,9 @@ export function SafetyConnectedPanel({ client, workspace, onChanged, onSelect, o
   return <section className="safety-connected" data-ui-component="safety-connected"><Panel>
     <SectionHeader title={tx("title")} meta={tx("readOnly")} />
     <p className="muted">{tx("description")}</p>
-    <div className="safety-connected-picker"><label htmlFor="safety-stop-pick">{tx("picker")}</label><select id="safety-stop-pick" value={active?.record.id || ""} onChange={event => { setId(event.target.value); onSelect?.(event.target.value || null); onChanged?.(); }}><option value="">{tx("sourceSelect")}</option>{stops.map(item => <option key={item.record.id} value={item.record.id}>{item.record.title || item.record.workName || item.record.id} · v{item.record.version}</option>)}</select></div>
+    <div className="safety-connected-picker"><label htmlFor="safety-stop-pick">{tx("picker")}</label><select id="safety-stop-pick" value={active?.record.id || ""} onChange={event => { setId(event.target.value); onSelect?.(event.target.value || null); onChanged?.(); }}><option value="">{tx("sourceSelect")}</option>{stops.map(item => <option key={item.record.id} value={item.record.id}>{item.record.title || item.record.workName || item.record.id} · {recordVersionLabel(item.record.version)}</option>)}</select></div>
     {!active && <p className="safety-connected-empty">{tx("noSource")}</p>}
-    {active && <><div className="safety-connected-root"><strong>{active.record.title || active.record.workName || tx("stopOrder")}</strong><span>{recordTypeName("SafetyStopOrder", language)} · {active.record.id} · v{active.record.version}</span><StatusBadge status={active.record.status}>{rootStatus}</StatusBadge></div>
+    {active && <><div className="safety-connected-root"><strong>{active.record.title || active.record.workName || tx("stopOrder")}</strong><span>{recordTypeName("SafetyStopOrder", language)} · {active.record.id} · {recordVersionLabel(active.record.version)}</span><StatusBadge status={active.record.status}>{rootStatus}</StatusBadge></div>
       <section className="safety-connected-commands" aria-label={tx("commands")}><h3>{tx("commands")}</h3><p>{tx("commandsDescription")}</p>{rootActions.length ? rootActions.map(action => <ActionButton key={action.command} disabled={!onOpenCommand} onClick={() => onOpenCommand?.(active, action)}>{commandNames[language][action.command] || action.command} {tx("open")}{action.requiresInput && !action.ready ? ` · ${tx("inputAndServerCheck")}` : ""}</ActionButton>) : <span>{tx("noCommands")}</span>}</section>
     </>}
     {loading && <p role="status">{tx("loading")}</p>}{error && <div role="alert" className="error-box">{errorText(error, tx)}</div>}
@@ -311,7 +312,7 @@ export function SafetyConnectedPanel({ client, workspace, onChanged, onSelect, o
         <div className="safety-connected-card-body"><strong>{recordTypeName(row.subtype || ref?.objectType, language) || tx("linkedRecord")}</strong><span>{row.status ? `${tx("status")} · ${stateName(row.status, tx("noStatus"), row.subtype || ref?.objectType, language)}` : tx("noStatus")}</span><span>{ref?.version == null ? tx("currentNoVersion") : `${tx("sourceVersion")}${ref.version}`}</span></div>
         <p className="safety-connected-version">{ref?.version == null ? tx("currentReadOnly") : !current ? tx("historicalInactive") : tx("currentVersionMatch")}</p>
         {exact && <ActionButton onClick={() => void open(link)}>{tx("readDetails")}</ActionButton>}
-        {dto && <div className="safety-connected-detail"><strong>{dto.title || dto.workName || recordTypeName(dto.subtype, language) || tx("sourceDetail")}</strong><span>{stateName(dto.status, tx("noStatus"), dto.subtype, language)} · v{dto.version}</span></div>}
+        {dto && <div className="safety-connected-detail"><strong>{dto.title || dto.workName || recordTypeName(dto.subtype, language) || tx("sourceDetail")}</strong><span>{stateName(dto.status, tx("noStatus"), dto.subtype, language)} · {recordVersionLabel(dto.version)}</span></div>}
         {item && exact && (actions[key] || []).filter(action => action.expectedVersion === ref?.version && (action.ready || action.requiresInput)).map(action => <ActionButton key={action.command} disabled={!onOpenCommand} onClick={() => onOpenCommand?.(item, action)}>{commandNames[language][action.command] || action.command} {tx("open")}</ActionButton>)}
         {link.relation === "ownerReportRefs" && <p className="safety-connected-report">{tx("ownerReportBoundary")}</p>}
       </>}</article>;

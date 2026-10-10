@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../labels";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { RecordDTO, Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
@@ -14,15 +15,15 @@ type LabelKey =
 const copy: Record<"ko" | "vi" | "en", Record<LabelKey, string>> = {
   ko: {
     title: "법적 서명",
-    help: "최종 스냅샷의 정확한 출력 해시에 대해 서명을 요청합니다. 검증은 서버의 신뢰된 서명 검증기가 수행합니다.",
-    document: "최종 문서 스냅샷", selectDocument: "문서 선택", noFinalDocuments: "서명할 최종 문서가 없습니다. 먼저 최종 문서를 생성하세요.",
-    status: "상태", hash: "출력 해시", roles: "서버 필수 서명 역할", signerRole: "현재 서명 역할", selectRole: "역할 선택",
+    help: "최종 확인 당시 기록의 정확한 출력 파일 무결성 확인값에 대해 서명을 요청합니다. 검증은 업무 시스템의 신뢰된 서명 검증기가 수행합니다.",
+    document: "최종 문서 확인 당시 기록", selectDocument: "문서 선택", noFinalDocuments: "서명할 최종 문서가 없습니다. 먼저 최종 문서를 생성하세요.",
+    status: "상태", hash: "출력 파일 무결성 확인값", roles: "업무 시스템 필수 서명 역할", signerRole: "현재 서명 역할", selectRole: "역할 선택",
     method: "서명 방식", selectMethod: "방식 선택", electronic: "승인된 전자 서명", wetOriginal: "서명된 원본 실물 확인",
     originalEvidence: "읽을 수 있는 원본 증빙 파일", selectEvidence: "원본 증빙 선택", noOriginalEvidence: "선택 가능한 원본 증빙 파일이 없습니다.",
     authorityMissing: "현재 역할에는 법적 서명을 요청할 권한이 없습니다.", unavailable: "실제 HTTP 연결에서 온라인 상태일 때 서명을 요청할 수 있습니다.",
-    finalRequired: "초안은 서명할 수 없습니다. 최종 스냅샷을 선택하세요.", alreadySigned: "이 스냅샷의 필수 서명이 완료되었습니다.",
+    finalRequired: "초안은 서명할 수 없습니다. 최종 확인 당시 기록을 선택하세요.", alreadySigned: "이 확인 당시 기록의 필수 서명이 완료되었습니다.",
     submit: "서명 검증 요청", signing: "서명 검증을 요청하는 중…", signed: "서명 검증기가 서명 기록을 반환했습니다.",
-    refreshError: "서명 기록은 저장되었지만 작업공간을 갱신하지 못했습니다.", genericError: "서명 검증을 완료할 수 없습니다. 입력과 연결을 확인한 뒤 다시 시도하세요.",
+    refreshError: "서명 기록은 저장되었지만 업무 화면을 갱신하지 못했습니다.", genericError: "서명 검증을 완료할 수 없습니다. 입력과 연결을 확인한 뒤 다시 시도하세요.",
   },
   vi: {
     title: "Chữ ký pháp lý",
@@ -97,7 +98,7 @@ function errorMessage(cause: unknown, labels: Record<LabelKey, string>): string 
 }
 function titleOf(snapshot: RecordDTO) {
   const formId = typeof snapshot.formId === "string" ? snapshot.formId : "Document";
-  return `${formId} · ${snapshot.id} · v${snapshot.version}`;
+  return `${formId} · ${snapshot.id} · ${recordVersionLabel(snapshot.version)}`;
 }
 
 export function DocumentSigningPanel({

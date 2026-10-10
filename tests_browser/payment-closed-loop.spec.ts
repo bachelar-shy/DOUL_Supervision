@@ -131,7 +131,7 @@ function auth(session: Session) {
 }
 
 async function chooseRole(page: Page, group: string, route = paymentRoute) {
-  const picker = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const picker = page.getByRole("combobox", { name: "시험 사용자 역할 선택" });
   if (await picker.count()) {
     if ((await picker.inputValue()) !== group) {
       const refreshed = page.waitForResponse((r) => r.url().endsWith("/workspace") && r.ok());
@@ -143,7 +143,7 @@ async function chooseRole(page: Page, group: string, route = paymentRoute) {
   await expect(page.locator(route === ownerRoute ? '[data-owner-governance="true"]' : '[data-ui-component="measurement-payment-workspace"]')).toBeVisible();
 }
 
-async function selectTab(page: Page, name: "계약 BOQ" | "물량 측정" | "기성 신청") {
+async function selectTab(page: Page, name: "계약내역서" | "물량 측정" | "기성 신청") {
   await page.getByRole("tab", { name, exact: true }).click();
 }
 
@@ -235,7 +235,7 @@ async function runCommand(
   const record = body.record;
   expect(record.id).toBe(recordId);
   expectedVersions.set(record.id, record.version);
-  if (verifyPaymentDetailVersion) await expect(page.locator(".detail-head")).toContainText(`v${record.version}`);
+  if (verifyPaymentDetailVersion) await expect(page.locator(".detail-head")).toContainText(`기록 제${record.version}차`);
   return record;
 }
 
@@ -317,8 +317,8 @@ test("real UI/API payment chain authors exact-version Owner decisions and preser
   const adm = await login(request, "ADM");
 
   await chooseRole(page, "SUP");
-  await selectTab(page, "계약 BOQ");
-  const boqDraft = await createDraft(page, "계약 BOQ", boqTitle, `BOQ-${suffix}`);
+  await selectTab(page, "계약내역서");
+  const boqDraft = await createDraft(page, "계약내역서", boqTitle, `BOQ-${suffix}`);
   const boqRef = (record: any): Ref => ({ objectType: "InformationItem", objectId: record.id, version: record.version });
   let boqItemId = "";
   let boq = await runCommand(page, "submit_boq", {
@@ -350,11 +350,11 @@ test("real UI/API payment chain authors exact-version Owner decisions and preser
   const boqDecision = await createAndDecideThroughOwnerUi(page, { objectType: "InformationItem", objectId: boq.id, version: boq.version }, `BOQ decision ${suffix}`, suffix);
   expect(boqDecision.record.targetRef.version).toBe(boq.version);
   await chooseRole(page, "OWN");
-  await selectTab(page, "계약 BOQ");
+  await selectTab(page, "계약내역서");
   await selectRecord(page, boqTitle);
   boq = await runCommand(page, "approve_boq", { ownerDecisionRef: boqDecision.ref }, [seeded.evidenceId]);
   await chooseRole(page, "SUP");
-  await selectTab(page, "계약 BOQ");
+  await selectTab(page, "계약내역서");
   await selectRecord(page, boqTitle);
   boq = await runCommand(page, "activate_boq");
   expect(boq.status).toBe("effective");

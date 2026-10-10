@@ -145,12 +145,12 @@ test("mocked drawing binding plus real Location API stages, saves, and restores 
 
   try {
     await page.goto("/#/parallel-test");
-    await page.getByLabel("개발 역할 선택").selectOption("ADM");
-    await expect(page.getByLabel("개발 역할 선택")).toHaveValue("ADM");
+    await page.getByLabel("시험 사용자 역할 선택").selectOption("ADM");
+    await expect(page.getByLabel("시험 사용자 역할 선택")).toHaveValue("ADM");
     await expect.poll(() => adminWorkspace?.role.actorGroup).toBe("ADM");
     await page.goto("/#/parallel-test");
-    await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
-    const viewer = page.getByLabel("PDF 도면 뷰어");
+    await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
+    const viewer = page.getByLabel("PDF 도면 보기");
     await expect(viewer).toBeVisible();
 
     const completeResponse = page.waitForResponse((response) =>
@@ -237,12 +237,12 @@ test("mocked drawing binding plus real Location API stages, saves, and restores 
     adminWorkspace = undefined;
     adminSession = undefined;
     await page.reload();
-    await page.getByLabel("개발 역할 선택").selectOption("ADM");
+    await page.getByLabel("시험 사용자 역할 선택").selectOption("ADM");
     await expect.poll(() => adminWorkspace?.role.actorGroup).toBe("ADM");
     await expect.poll(() => adminSession?.actor.roleAssignmentId).toBeTruthy();
     await page.goto("/#/parallel-test");
-    await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
-    const restoredViewer = page.getByLabel("PDF 도면 뷰어");
+    await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
+    const restoredViewer = page.getByLabel("PDF 도면 보기");
     await expect(restoredViewer).toBeVisible();
     await restoredViewer.getByLabel("PDF 원본 선택").selectOption(evidenceId);
     await expect(restoredViewer.getByRole("button", { name: initialLocation.name + " 위치 핀" })).toBeVisible();

@@ -1,3 +1,5 @@
+import { recordTypeLabel } from "../../labels";
+import { recordVersionLabel } from "../../labels";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { normalizeLanguage } from "@doul/localization";
@@ -13,8 +15,8 @@ const sameRef = (a: DomainRef, b: DomainRef) => a.objectType === b.objectType &&
 type Locale = "ko" | "vi" | "en";
 const copy: Record<Locale, Record<string, string>> = {
   ko: {
-    sourceChanged: "원본 개정 변경", approvalUnavailable: "승인 근거 사용 불가", fieldSourceUnavailable: "현장 사용 조건 변경", inspection: "검측", issue: "현장 이슈", corrective: "시정조치", historical: "사건 당시 기록 · ", responsible: "담당", exactSource: "업무 원본 보기", pastWarning: "과거 업무 버전입니다. 현재 v{{version}}과 구분하여 확인하십시오.", currentSource: "현재 업무 별도 보기", sourceUnavailable: "업무 원본을 현재 작업공간에서 열 수 없습니다.",
-    title: "도면 영향 업무", meta: "읽기 전용 · 현재 권한으로 조회", refresh: "다시 조회", selectedVersion: "선택한 도면의 정확한 버전을 기준으로 표시합니다. 다른 개정본으로 자동 이동하지 않습니다.", loading: "영향 업무를 불러오는 중…", closePdf: "도면 원본 닫기", openPdf: "해당 버전 도면 원본 보기", pdfUnavailable: "해당 버전의 PDF 원본을 현재 권한으로 열 수 없습니다.", pdfLoading: "도면 원본을 불러오는 중…", pdfError: "도면 원본을 열 수 없습니다. {{detail}}", pdfFallback: "잠시 후 다시 시도하십시오.", pdfTitle: "해당 버전 도면 원본", currentTitle: "현재 미완료 영향 업무", currentLoadError: "영향 업무를 불러오지 못했습니다. {{detail}}", currentFallback: "잠시 후 다시 시도하십시오.", noCurrent: "현재 조회 가능한 미완료 영향 업무가 없습니다. 과거 알림의 업무가 완료되거나 도면 사용 조건이 복구되었을 수 있습니다.", drawing: "도면", revision: "개정", needsReason: "사용 조건 확인 필요", currentItems: "현재 조회 가능한 미완료 업무 {{count}}건", historyTitle: "발생·해소 이력", historyDescription: "사건 당시 관측한 업무 버전의 기록입니다. 연결 업무의 완료 또는 재승인을 뜻하지 않습니다.", historyLoadError: "발생·해소 이력을 불러오지 못했습니다. {{detail}}", historyFallback: "잠시 후 다시 시도하십시오.", noHistory: "현재 조회 가능한 발생·해소 이력이 없습니다.", restored: "사용 조건 복구 관측", occurred: "발생", restoredAt: "복구 관측 {{time}}", restoredTimeMissing: "복구 시각 미기록", noRevision: "미표기",
+    sourceChanged: "원본 개정 변경", approvalUnavailable: "승인 근거 사용 불가", fieldSourceUnavailable: "현장 사용 조건 변경", inspection: "검측", issue: "현장 지적사항", corrective: "시정조치", historical: "사건 당시 기록 · ", responsible: "담당", exactSource: "업무 원본 보기", pastWarning: "과거 업무 작성 차수입니다. 현재 제{{version}}차과 구분하여 확인하십시오.", currentSource: "현재 업무 별도 보기", sourceUnavailable: "업무 원본을 현재 업무 화면에서 열 수 없습니다.",
+    title: "도면 영향 업무", meta: "읽기 전용 · 현재 권한으로 조회", refresh: "다시 조회", selectedVersion: "선택한 도면의 정확한 작성 차수를 기준으로 표시합니다. 다른 개정본으로 자동 이동하지 않습니다.", loading: "영향 업무를 불러오는 중…", closePdf: "도면 원본 닫기", openPdf: "해당 작성 차수 도면 원본 보기", pdfUnavailable: "해당 작성 차수의 PDF 원본을 현재 권한으로 열 수 없습니다.", pdfLoading: "도면 원본을 불러오는 중…", pdfError: "도면 원본을 열 수 없습니다. {{detail}}", pdfFallback: "잠시 후 다시 시도하십시오.", pdfTitle: "해당 작성 차수 도면 원본", currentTitle: "현재 미완료 영향 업무", currentLoadError: "영향 업무를 불러오지 못했습니다. {{detail}}", currentFallback: "잠시 후 다시 시도하십시오.", noCurrent: "현재 조회 가능한 미완료 영향 업무가 없습니다. 과거 알림의 업무가 완료되거나 도면 사용 조건이 복구되었을 수 있습니다.", drawing: "도면", revision: "개정", needsReason: "사용 조건 확인 필요", currentItems: "현재 조회 가능한 미완료 업무 {{count}}건", historyTitle: "발생·해소 이력", historyDescription: "사건 당시 관측한 업무 작성 차수의 기록입니다. 연결 업무의 완료 또는 재승인을 뜻하지 않습니다.", historyLoadError: "발생·해소 이력을 불러오지 못했습니다. {{detail}}", historyFallback: "잠시 후 다시 시도하십시오.", noHistory: "현재 조회 가능한 발생·해소 이력이 없습니다.", restored: "사용 조건 복구 관측", occurred: "발생", restoredAt: "복구 관측 {{time}}", restoredTimeMissing: "복구 시각 미기록", noRevision: "미표기",
   },
   vi: {
     sourceChanged: "Phiên bản nguồn đã thay đổi", approvalUnavailable: "Không thể dùng căn cứ phê duyệt", fieldSourceUnavailable: "Điều kiện sử dụng tại hiện trường đã thay đổi", inspection: "Kiểm tra", issue: "Sự cố hiện trường", corrective: "Hành động khắc phục", historical: "Bản ghi tại thời điểm sự kiện · ", responsible: "Phụ trách", exactSource: "Mở công việc gốc", pastWarning: "Đây là phiên bản công việc cũ. Hãy phân biệt với phiên bản hiện tại v{{version}}.", currentSource: "Mở riêng công việc hiện tại", sourceUnavailable: "Không thể mở công việc gốc trong không gian làm việc hiện tại.",
@@ -90,7 +92,7 @@ export function DrawingImpactPanel({ client, workspace, drawingRef, incidentId, 
       const target = resolveNotificationSourceTarget(row.sourceRef, workspace.project.id, workspace);
       return <li key={JSON.stringify(row.sourceRef)} {...(historical ? { "data-impact-history-work": row.sourceRef.objectId } : { "data-impact-work": row.sourceRef.objectId })}>
         <strong>{row.title}</strong> · {row.sourceRef.objectType === "Inspection" ? tx("inspection") : row.sourceRef.objectType === "Issue" ? tx("issue") : tx("corrective")} · {states[row.status] || row.status}
-        <p>{historical ? tx("historical") : ""}{row.sourceRef.objectId} · v{row.sourceRef.version} · {tx("responsible")} {row.responsiblePartyId}</p>
+        <p>{historical ? tx("historical") : ""}{row.sourceRef.objectId} · {recordVersionLabel(row.sourceRef.version)} · {tx("responsible")} {row.responsiblePartyId}</p>
         {target.kind === "exact" && onNavigate && <ActionButton onClick={() => open(target.item.record.id, target.route)}>{tx("exactSource")}</ActionButton>}
         {target.kind === "past" && <p>{tx("pastWarning", { version: target.currentItem.record.version })}
           {onNavigate && <ActionButton onClick={() => open(target.currentItem.record.id, target.route)}>{tx("currentSource")}</ActionButton>}
@@ -102,7 +104,7 @@ export function DrawingImpactPanel({ client, workspace, drawingRef, incidentId, 
   return <Panel className="drawing-impact-panel" data-testid="drawing-impact-panel">
     <SectionHeader title={tx("title")} meta={tx("meta")} />
     <ActionButton onClick={() => { setPdf(null); setPreviewScope(""); setRefresh(value => value + 1); }}>{tx("refresh")}</ActionButton>
-    <p data-testid="impact-drawing-ref">{drawingRef.objectType} · {drawingRef.objectId} · v{drawingRef.version}</p>
+    <p data-testid="impact-drawing-ref">{recordTypeLabel(drawingRef.objectType)} · {drawingRef.objectId} · {recordVersionLabel(drawingRef.version)}</p>
     <p>{tx("selectedVersion")}</p>
     {!ready && <p role="status">{tx("loading")}</p>}
     {ready && <>

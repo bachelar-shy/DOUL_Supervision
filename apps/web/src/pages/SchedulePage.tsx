@@ -1,3 +1,6 @@
+import { formatRegisterValue } from "../data/register-format";
+import { recordTypeLabel } from "../labels";
+import { recordVersionLabel } from "../labels";
 import { useEffect, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CommandDescriptor, WorkItem, Workspace } from "../data/ui-contract";
@@ -78,10 +81,10 @@ function display(value: unknown): string {
   }
   if (typeof value === "object") {
     const ref = object(value);
-    if (ref.objectId) return `${ref.objectType} · ${ref.objectId} · v${ref.version}`;
-    return JSON.stringify(value);
+    if (ref.objectId) return `${recordTypeLabel(ref.objectType)} · ${ref.objectId} · ${recordVersionLabel(ref.version)}`;
+    return formatRegisterValue(value);
   }
-  return String(value);
+  return value === scheduleSourceImport.inputMode ? tr("schedule.import.fieldFormat") : String(value);
 }
 
 function scheduleState(item: WorkItem) {
@@ -145,7 +148,7 @@ function ScheduleDetail({ item, workspace }: { item: WorkItem; workspace: Worksp
           label: tr("schedule.detail.baselineFinish"),
           value: display(baselineData.contractualCompletionAt),
           detail: baseline
-            ? `${recordTitle(baseline.record)} · v${baseline.record.version}`
+            ? `${recordTitle(baseline.record)} · ${recordVersionLabel(baseline.record.version)}`
             : tr("schedule.detail.baselineFinishFallback"),
         },
         {
@@ -164,7 +167,7 @@ function ScheduleDetail({ item, workspace }: { item: WorkItem; workspace: Worksp
     />
     <div className="meta-grid mt-3">
       <div><span>{tr("schedule.detail.originalId")}</span><strong className="break-all">{item.record.id}</strong></div>
-      <div><span>{tr("schedule.detail.originalVersion")}</span><strong>v{item.record.version}</strong></div>
+      <div><span>{tr("schedule.detail.originalVersion")}</span><strong>{recordVersionLabel(item.record.version)}</strong></div>
       <div><span>{tr("schedule.detail.fileHash")}</span><strong className="break-all">{display(data.sourceFileHash)}</strong></div>
       <div><span>{tr("schedule.detail.sourceFileVersion")}</span><strong>{display(data.sourceFileVersion)}</strong></div>
     </div>
@@ -251,14 +254,14 @@ function ImportedSourceDetail({
         {
           id: "original-version",
           label: tr("schedule.imported.originalVersion"),
-          value: detail ? `v${detail.record.version}` : tr("schedule.imported.loading"),
+          value: detail ? recordVersionLabel(detail.record.version) : tr("schedule.imported.loading"),
           detail: tr("schedule.imported.originalVersionDetail"),
         },
       ]}
     />
     <div className="meta-grid mt-3">
-      <div><span>{tr("schedule.imported.inputMode")}</span><strong>{display(metadata.inputMode)}</strong></div>
-      <div><span>{tr("schedule.imported.parserVersion")}</span><strong>{display(metadata.parserVersion)}</strong></div>
+      <div><span>{tr("schedule.imported.inputMode")}</span><strong>{metadata.inputMode === scheduleSourceImport.inputMode ? tr("schedule.import.fieldFormat") : tr("common.unknown")}</strong></div>
+      <div><span>{tr("schedule.imported.parserVersion")}</span><strong>{metadata.parserVersion === scheduleSourceImport.parserVersion ? tr("schedule.import.fieldFormat") : tr("common.unknown")}</strong></div>
       <div><span>{tr("schedule.imported.sourceEvidence")}</span><strong className="break-all">{display(metadata.sourceEvidenceRef)}</strong></div>
       <div><span>{tr("schedule.imported.activityCount")}</span><strong>{display(currentData.activityCount ?? detail?.activities.length)}</strong></div>
     </div>
@@ -290,7 +293,7 @@ function ImportedSourceDetail({
       <section className="detail-section" aria-label={tr("schedule.imported.activityAria")}>
         <SectionHeader
           title={tr("schedule.imported.activityTitle")}
-          meta={`${tr("schedule.count", { count: detail.activities.length })} · read-only`}
+          meta={`${tr("schedule.count", { count: detail.activities.length })} · ${tr("admin.meta")}`}
         />
         <div className="schedule-activity-list">
           {detail.activities.map((activity) => {
@@ -302,7 +305,7 @@ function ImportedSourceDetail({
                   <span className="eyebrow">{display(data.wbsPath)}</span>
                   <strong>{display(data.activityId)} · {display(data.activityName)}</strong>
                 </div>
-                {isCritical && <span className="schedule-critical">CRITICAL</span>}
+                {isCritical && <span className="schedule-critical">{tr("schedule.activity.critical")}</span>}
               </div>
               <dl>
                 <div><dt>{tr("schedule.activity.plan")}</dt><dd>{display(data.plannedStartAt)} → {display(data.plannedFinishAt)}</dd></div>
@@ -512,12 +515,12 @@ function parseNormalizedSource(bytes: Uint8Array): NormalizedScheduleSource {
   }
   for (const key of scheduleSourceImport.scheduleExcludes) {
     if (key in schedule) {
-      throw new ScheduleInputError(tr("schedule.parser.excluded", { key }));
+      throw new ScheduleInputError(tr("schedule.parser.excluded", { key: fields[key] || tr("schedule.create.additional") }));
     }
   }
   for (const key of ["scheduleNo", "scheduleKind", "revision", "sourceFormat", "sourceFileVersion"]) {
     if (typeof schedule[key] !== "string" || !String(schedule[key]).trim()) {
-      throw new ScheduleInputError(tr("schedule.parser.scheduleValueRequired", { key }));
+      throw new ScheduleInputError(tr("schedule.parser.scheduleValueRequired", { key: fields[key] || tr("schedule.create.additional") }));
     }
   }
   if (!(schedule.scheduleKind as string in scheduleSourceImport.kinds)) {
@@ -526,7 +529,7 @@ function parseNormalizedSource(bytes: Uint8Array): NormalizedScheduleSource {
   if (schedule.sourceFormat !== scheduleSourceImport.inputMode) {
     throw new ScheduleInputError(
       tr("schedule.parser.formatInvalid", {
-        format: scheduleSourceImport.inputMode,
+        format: tr("schedule.import.fieldFormat"),
       }),
     );
   }
@@ -543,8 +546,8 @@ function parseNormalizedSource(bytes: Uint8Array): NormalizedScheduleSource {
     if (invalid.length) {
       throw new ScheduleInputError(
         tr("schedule.parser.activityMetadata", {
-          index,
-          fields: invalid.join(", "),
+          index: index + 1,
+          fields: invalid.map(key => fields[key] || tr("schedule.create.additional")).join(", "),
         }),
       );
     }
@@ -553,8 +556,8 @@ function parseNormalizedSource(bytes: Uint8Array): NormalizedScheduleSource {
       if (typeof data[key] !== "string" || !String(data[key]).trim()) {
         throw new ScheduleInputError(
           tr("schedule.parser.activityDataRequired", {
-            index,
-            key,
+            index: index + 1,
+            key: fields[key] || tr("schedule.create.additional"),
           }),
         );
       }
@@ -564,8 +567,8 @@ function parseNormalizedSource(bytes: Uint8Array): NormalizedScheduleSource {
       if (value !== undefined && (!Array.isArray(value) || value.some((id) => typeof id !== "string"))) {
         throw new ScheduleInputError(
           tr("schedule.parser.activityArrayRequired", {
-            index,
-            key,
+            index: index + 1,
+            key: fields[key] || tr("schedule.create.additional"),
           }),
         );
       }
@@ -772,7 +775,7 @@ function ImportScheduleSource({
       </div>
       <div className="schedule-source-contract" role="note">
         <strong>{tr("schedule.import.supportTitle")}</strong>
-        <span>{scheduleSourceImport.inputMode} · {scheduleSourceImport.parserVersion}</span>
+        <span>{tr("schedule.import.fieldFormat")}</span>
         <small>{tr("schedule.import.parserUnsupported")}</small>
       </div>
       <div className="modal-fields">
@@ -796,8 +799,8 @@ function ImportScheduleSource({
         <div><span>{tr("schedule.import.preview.scheduleNo")}</span><strong>{display(preview.schedule.scheduleNo)}</strong></div>
         <div><span>{tr("schedule.import.preview.revision")}</span><strong>{display(preview.schedule.revision)}</strong></div>
         <div><span>{tr("schedule.import.preview.activity")}</span><strong>{tr("schedule.count", { count: preview.activities.length })}</strong></div>
-        <div><span>Critical Activity</span><strong>{preview.criticalActivityId}</strong></div>
-        <div><span>{tr("schedule.import.preview.sourceFormat")}</span><strong>{display(preview.schedule.sourceFormat)}</strong></div>
+        <div><span>{tr("schedule.activity.critical")}</span><strong>{preview.criticalActivityId}</strong></div>
+        <div><span>{tr("schedule.import.preview.sourceFormat")}</span><strong>{tr("schedule.import.fieldFormat")}</strong></div>
       </div>}
       {(busy || progress > 0) && <div className="schedule-source-progress" aria-live="polite">
         <div><strong>{stage}</strong><span>{progress}%</span></div>

@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../labels";
 import type { CommandDescriptor, RecordDTO, WorkItem, Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
 import { OwnerDecisionAuthoringPanel } from "./OwnerDecisionAuthoringPanel";
@@ -192,7 +193,7 @@ export function OwnerGovernancePage({
                   <small className="block text-slate-400">
                     {tr("owner.meta.sourceVersion")}
                   </small>
-                  <b className="mt-1 block text-sm text-slate-700">v{detail?.version}</b>
+                  <b className="mt-1 block text-sm text-slate-700">{recordVersionLabel(detail?.version)}</b>
                 </div>
                 <div className="rounded-sm border border-border bg-slate-50 p-3">
                   <small className="block text-slate-400">

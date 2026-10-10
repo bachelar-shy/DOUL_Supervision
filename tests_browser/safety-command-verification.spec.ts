@@ -55,7 +55,7 @@ async function createVisibleStop(request: APIRequestContext) {
 }
 
 async function selectRole(page: Page, role: string) {
-  const picker = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const picker = page.getByRole("combobox", { name: "시험 사용자 역할 선택" });
   if (await picker.inputValue() !== role) {
     const refreshed = page.waitForResponse(response => response.url().endsWith("/workspace") && response.ok());
     await picker.selectOption(role);
@@ -73,9 +73,9 @@ test("selected current SafetyStopOrder uses server actions and refuses a guarded
   });
   await page.goto("/#/parallel-test");
   await selectRole(page, "CON");
-  await expect(page.getByText("병렬 기능 통합 테스트", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "업무별 상세 확인", exact: true, level: 1 })).toBeVisible();
   uiWrites.length = 0;
-  await page.getByRole("tab", { name: "안전 추적성", exact: true }).click();
+  await page.getByRole("tab", { name: "안전 관련 기록 확인", exact: true }).click();
   const panel = page.locator('[data-ui-component="safety-connected"]');
   await panel.getByLabel("작업중지 원본", { exact: true }).selectOption(stop.id);
   await expect(panel.getByLabel("작업중지 원본", { exact: true })).toHaveValue(stop.id);
@@ -86,13 +86,13 @@ test("selected current SafetyStopOrder uses server actions and refuses a guarded
 
   await acknowledge.click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.locator("p").filter({ hasText: `원본 v${stop.version} 기준` })).toBeVisible();
+  await expect(dialog.locator("p").filter({ hasText: `기록 제${stop.version}차 기준` })).toBeVisible();
   await dialog.getByRole("button", { name: "취소", exact: true }).click();
   expect(uiWrites).toEqual([]);
 
   await acknowledge.click();
   const acknowledgeDialog = page.getByRole("dialog");
-  const commandEvidence = acknowledgeDialog.getByLabel("명령 증빙 ID", { exact: true });
+  const commandEvidence = acknowledgeDialog.getByLabel("처리 근거 증빙번호", { exact: true });
   if (await commandEvidence.count()) await commandEvidence.fill(context.evidenceId);
   const acknowledgeResponse = page.waitForResponse(response => response.request().method() === "POST" && response.url().endsWith(`/safety-stop-orders/${stop.id}/acknowledge-stop`));
   await acknowledgeDialog.getByRole("button", { name: "확인 후 실행", exact: true }).click();

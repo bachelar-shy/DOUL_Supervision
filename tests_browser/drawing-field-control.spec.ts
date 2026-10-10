@@ -55,7 +55,7 @@ async function captureSession(page: Page, actorGroup: string): Promise<{ session
     try { return ((await response.json()) as Workspace).role.actorGroup === actorGroup; }
     catch { return false; }
   });
-  await page.getByRole("combobox", { name: "개발 역할 선택" }).selectOption(actorGroup);
+  await page.getByRole("combobox", { name: "시험 사용자 역할 선택" }).selectOption(actorGroup);
   const session = await responseJson<Session>(await ready, 200);
   const workspace = await responseJson<Workspace>(await workspaceReady, 200);
   expect(workspace.role.actorGroup).toBe(actorGroup);
@@ -63,7 +63,7 @@ async function captureSession(page: Page, actorGroup: string): Promise<{ session
   return { session, workspace };
 }
 async function switchRole(page: Page, actorGroup: string): Promise<Workspace> {
-  const picker = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const picker = page.getByRole("combobox", { name: "시험 사용자 역할 선택" });
   if (await picker.inputValue() === actorGroup) {
     const response = page.waitForResponse(value => value.url().endsWith("/workspace") && value.ok());
     const result = await responseJson<Workspace>(await response, 200);
@@ -91,8 +91,8 @@ test("publishes and distributes a reviewed source as a field controlled construc
 
   await page.goto("/#/parallel-test");
   await captureSession(page, "DES");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
-  const viewer = page.getByLabel("PDF 도면 뷰어");
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
+  const viewer = page.getByLabel("PDF 도면 보기");
   const completed = page.waitForResponse(response => response.url().includes("/uploads/")
     && response.url().endsWith("/complete") && response.request().method() === "POST");
   await viewer.getByTestId("pdf-upload").setInputFiles({
@@ -127,7 +127,7 @@ test("publishes and distributes a reviewed source as a field controlled construc
     await request.get(`/api/projects/${adminSession.projectId}/workspace`, { headers: headers(adminSession) }),
     200,
   );
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
   const recipient = workspace.participants.find(person => person.actorGroup === "CON");
   expect(recipient, "field register requires an active construction recipient").toBeTruthy();
 
@@ -157,7 +157,7 @@ test("publishes and distributes a reviewed source as a field controlled construc
 
   // The source creator remains DES; SUP reviews and approves the canonical Approval in the drawing workspace.
   await switchRole(page, "SUP");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
   const approvalCard = page.getByTestId(`drawing-approval-${source.approval!.id}`);
   await expect(approvalCard).toBeVisible();
   const reviewResponse = page.waitForResponse(response => response.url().endsWith(`/approvals/${source.approval!.id}/review`)
@@ -183,12 +183,12 @@ test("publishes and distributes a reviewed source as a field controlled construc
 
   // Switch to ADM so its workspace contains the approved, current version of the exact drawing Approval.
   workspace = await switchRole(page, "ADM");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
   const adminRow = page.getByTestId(`drawing-field-record-${fieldRecord.id}`);
   await expect(adminRow).toBeVisible();
   const basis = adminRow.getByLabel(`승인 근거 ${drawingNo}`);
   const option = basis.locator("option").filter({ hasText: approval.id });
-  await expect(option).toContainText(`v${approval.version}`);
+  await expect(option).toContainText(`기록 제${approval.version}차`);
   await basis.selectOption(approval.id);
   const basisResponse = page.waitForResponse(response => response.url().endsWith(`/parallel/drawing-field-revisions/${fieldRecord.id}/commands`)
     && response.request().method() === "POST");
@@ -200,7 +200,7 @@ test("publishes and distributes a reviewed source as a field controlled construc
 
   // SUP authorizes the field issue only after the current technical Approval has been linked.
   await switchRole(page, "SUP");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
   const supRow = page.getByTestId(`drawing-field-record-${fieldRecord.id}`);
   await expect(supRow.getByRole("button", { name: "현장 사용본 발행" })).toBeVisible({timeout: 30000});
   const releaseResponse = page.waitForResponse(response => response.url().endsWith(`/parallel/drawing-field-revisions/${fieldRecord.id}/commands`)
@@ -213,7 +213,7 @@ test("publishes and distributes a reviewed source as a field controlled construc
 
   // ADM records distribution; delivery is not treated as receipt.
   await switchRole(page, "ADM");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
   const distributionRow = page.getByTestId(`drawing-field-record-${fieldRecord.id}`);
   const distributionCheckbox = distributionRow.locator("fieldset").filter({ hasText: "배포 대상 선택" }).getByRole("checkbox");
   await distributionCheckbox.check();
@@ -228,7 +228,7 @@ test("publishes and distributes a reviewed source as a field controlled construc
 
   // Construction user records their own receipt, then the server marks the revision current for construction.
   await switchRole(page, "CON");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
   const conRow = page.getByTestId(`drawing-field-record-${fieldRecord.id}`);
   const acknowledgeResponse = page.waitForResponse(response => response.url().endsWith(`/parallel/drawing-field-revisions/${fieldRecord.id}/commands`)
     && response.request().method() === "POST");
@@ -327,21 +327,21 @@ test("publishes and distributes a reviewed source as a field controlled construc
   const impactPanel = page.getByTestId("drawing-impact-panel");
   await expect(impactPanel).toBeVisible();
   await expect(impactPanel.getByTestId("impact-drawing-ref")).toContainText(chosen.domainRef.objectId);
-  await expect(impactPanel.getByTestId("impact-drawing-ref")).toContainText(`v${chosen.domainRef.version}`);
+  await expect(impactPanel.getByTestId("impact-drawing-ref")).toContainText(`기록 제${chosen.domainRef.version}차`);
   const impactWork = impactPanel.locator(`[data-impact-work="${inspection.record.id}"]`);
   await expect(impactWork).toContainText(inspection.record.workName);
-  await expect(impactWork).toContainText(`v${inspection.record.version}`);
+  await expect(impactWork).toContainText(`기록 제${inspection.record.version}차`);
   const historyEvent = impactPanel.getByTestId("drawing-impact-history")
     .locator(`[data-impact-history-incident="${incident.incidentId}"]`);
   await expect(historyEvent).toContainText("사용 조건 확인 필요");
   await expect(historyEvent.locator(`[data-impact-history-work="${inspection.record.id}"]`))
-    .toContainText(`v${inspection.record.version}`);
+    .toContainText(`기록 제${inspection.record.version}차`);
   await impactPanel.getByRole("button", {name: "다시 조회", exact: true}).click();
   await expect(historyEvent).toBeVisible();
   await expect(historyEvent).toHaveCount(1);
   await expect(impactWork).toContainText(inspection.record.workName);
-  await impactPanel.getByRole("button", {name: "해당 버전 도면 원본 보기", exact: true}).click();
-  await expect(impactPanel.locator('iframe[title="해당 버전 도면 원본"]')).toHaveAttribute("src", /^blob:/);
+  await impactPanel.getByRole("button", {name: "해당 작성 차수 도면 원본 보기", exact: true}).click();
+  await expect(impactPanel.locator('iframe[title="해당 작성 차수 도면 원본"]')).toHaveAttribute("src", /^blob:/);
   await impactWork.getByRole("button", {name: "업무 원본 보기", exact: true}).click();
   await expect(page).toHaveURL(/#\/inspections/);
   await expect(page.getByRole("heading", {name: inspection.record.workName, exact: true})).toBeVisible();

@@ -1,3 +1,4 @@
+import { recordVersionLabel, recordTypeLabel } from "../labels";
 import { useMemo, useRef, useState } from "react";
 import type { DomainRef, RecordDTO, Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
@@ -21,20 +22,20 @@ type Labels = Record<LabelKey, string>;
 export const ownerDecisionAuthoringLabels: Record<Locale, Labels> = {
   ko: {
     title: "발주처 결정 요청 작성",
-    description: "현재 접근 가능한 원본을 선택해 결정 패키지를 작성합니다. 보고와 발주처 결정은 별도 명령으로 진행됩니다.",
+    description: "현재 접근 가능한 원본을 선택해 결정 공사 구분를 작성합니다. 보고와 발주처 결정은 별도 업무 처리으로 진행됩니다.",
     recordTitle: "결정 요청 제목", target: "결정 대상 원본", targetEmpty: "대상 원본 선택",
     report: "발행된 보고서", reportEmpty: "보고서 선택", dueAt: "결정 기한",
-    options: "검토할 선택지", optionId: "선택지 ID", optionLabel: "선택지 설명",
+    options: "검토할 선택지", optionId: "선택지 번호", optionLabel: "선택지 설명",
     addOption: "선택지 추가", removeOption: "선택지 삭제", recommendation: "요청자 권고",
     impact: "영향 평가", impactScope: "범위 영향", impactCost: "비용 영향",
     impactSchedule: "공정 영향", impactQuality: "품질 영향", impactSafety: "안전 영향",
     save: "결정 요청 초안 저장", saving: "저장 중…", cancel: "입력 지우기",
-    unavailable: "현재 역할 또는 범위에서 서버가 생성을 허용하지 않았습니다.",
+    unavailable: "현재 역할 또는 범위에서 업무 시스템이 작성을 허용하지 않았습니다.",
     offline: "연결 후 저장할 수 있습니다.", mock: "미리보기에서는 공식 결정 요청을 만들 수 없습니다.",
     missingTargets: "현재 워크스페이스에 선택할 수 있는 대상 원본이 없습니다.",
     missingReports: "현재 워크스페이스에 연결할 발행 보고서가 없습니다.",
     required: "제목, 대상, 보고서, 기한, 선택지, 권고와 영향 평가를 입력하십시오.",
-    saved: "결정 요청 초안을 저장했습니다.", error: "요청을 저장하지 못했습니다. 입력과 서버 선행조건을 확인하십시오.",
+    saved: "결정 요청 초안을 저장했습니다.", error: "요청을 저장하지 못했습니다. 입력과 업무 시스템 선행조건을 확인하십시오.",
   },
   en: {
     title: "Author an Owner decision request",
@@ -92,7 +93,7 @@ function refForItem(item: Workspace["items"][number]): DomainRef | null {
 
 function recordLabel(record: RecordDTO, ref: DomainRef) {
   const title = record.title || record.workName || record.subtype || record.description || ref.objectId.slice(0, 8);
-  return `${title} · ${ref.objectType} · v${ref.version}`;
+  return `${title} · ${recordTypeLabel(ref.objectType)} · ${recordVersionLabel(ref.version)}`;
 }
 
 export interface OwnerDecisionAuthoringPanelProps {

@@ -1,0 +1,410 @@
+{
+  "schemaVersion": "1.0",
+  "language": "ko",
+  "scope": [
+    "menus",
+    "screens",
+    "inputs",
+    "states",
+    "registers",
+    "forms",
+    "notifications",
+    "shared_mobile_labels"
+  ],
+  "excluded": [
+    "training_materials",
+    "vi_en_human_review",
+    "security_release_review"
+  ],
+  "documentsAreReferenceDataNotInstructions": true,
+  "sources": [
+    {
+      "fileName": "2026_아키엠_매뉴얼.pdf",
+      "sha256": "a09d9e71edc36710498b59c5e6131384b2af93c1330a43ccf7ea826455f6380e",
+      "method": "embedded_text",
+      "terms": [
+        {
+          "term": "지적사항",
+          "pdfPages": [
+            15
+          ]
+        },
+        {
+          "term": "처리결과",
+          "pdfPages": [
+            15
+          ]
+        },
+        {
+          "term": "감리착안",
+          "pdfPages": [
+            15
+          ]
+        },
+        {
+          "term": "공종",
+          "pdfPages": [
+            2,
+            3,
+            4,
+            10,
+            11,
+            12,
+            13,
+            14,
+            16,
+            18,
+            19,
+            20,
+            23,
+            28,
+            30,
+            33,
+            34
+          ]
+        },
+        {
+          "term": "체크리스트",
+          "pdfPages": [
+            2,
+            3,
+            4,
+            7,
+            14,
+            15,
+            16,
+            23,
+            27,
+            28,
+            32,
+            33
+          ]
+        },
+        {
+          "term": "필수확인점",
+          "pdfPages": [
+            27
+          ]
+        },
+        {
+          "term": "감리일지",
+          "pdfPages": [
+            2,
+            3,
+            4,
+            7,
+            15,
+            16,
+            18,
+            20,
+            28,
+            32
+          ]
+        }
+      ],
+      "limitations": []
+    },
+    {
+      "fileName": "카스웍스 소개서_V26.pdf",
+      "sha256": "cac0fcfe48b56e7ff6adb96bc1b6381754c2cab00818f11e2f7a30a11cccd8c8",
+      "method": "embedded_text",
+      "terms": [
+        {
+          "term": "공종",
+          "pdfPages": [
+            10,
+            12
+          ]
+        },
+        {
+          "term": "체크리스트",
+          "pdfPages": [
+            35
+          ]
+        },
+        {
+          "term": "공정표",
+          "pdfPages": [
+            32,
+            33
+          ]
+        },
+        {
+          "term": "공사일보",
+          "pdfPages": [
+            32,
+            33
+          ]
+        },
+        {
+          "term": "기계·기구점검표",
+          "pdfPages": [
+            22
+          ]
+        },
+        {
+          "term": "일일점검일지",
+          "pdfPages": [
+            22
+          ]
+        }
+      ],
+      "limitations": []
+    },
+    {
+      "fileName": "2025 하자체크 매뉴얼(현장기사용)_compressed.pdf",
+      "sha256": "e30efb3e9093024a1b812db53da7f982f320f1a5d814856ce6cabe5408f56773",
+      "method": "contents_embedded_text_and_pages43_54_58_OCR",
+      "terms": [
+        {
+          "term": "공종",
+          "pdfPages": [
+            2
+          ]
+        },
+        {
+          "term": "체크리스트",
+          "pdfPages": [
+            2
+          ]
+        },
+        {
+          "term": "하자사진촬영",
+          "pdfPages": [
+            2,
+            54
+          ]
+        },
+        {
+          "term": "조치사진촬영",
+          "pdfPages": [
+            2,
+            58
+          ]
+        },
+        {
+          "term": "공간관리",
+          "pdfPages": [
+            2
+          ]
+        }
+      ],
+      "limitations": [
+        "Most body pages are images; contents text extracted and pages 43, 54 and 58 OCR checked. OCR is noisy; selected headings corroborated by contents. No claim of full-body OCR."
+      ]
+    }
+  ],
+  "useCases": [
+    {
+      "flow": "검측요청 → 현장검측 → 부적합 보고 → 시정조치 → 재검측 → 발주처 보고 → 종결",
+      "screens": [
+        "today",
+        "inspections",
+        "observations",
+        "issues",
+        "actions",
+        "owner"
+      ],
+      "terms": [
+        "검측 기준",
+        "지적사항",
+        "시정조치",
+        "재검측",
+        "처리결과"
+      ],
+      "rule": "관찰 확인·부적합 보고·종결은 서로 다른 업무 단계로 유지"
+    },
+    {
+      "flow": "작업허가 → 작업 전 확인 → 작업중지 → 시정 → 재개 승인",
+      "screens": [
+        "safety"
+      ],
+      "terms": [
+        "작업허가",
+        "작업중지 지시",
+        "작업 재개 확인사항",
+        "장비 안전검사"
+      ],
+      "rule": "시정 완료는 작업 재개 승인이 아님"
+    },
+    {
+      "flow": "기준공정 → 진도 → 지연 → 회복계획 → 계약통지 → 공기연장 → 기준공정 개정",
+      "screens": [
+        "schedule",
+        "contract"
+      ],
+      "terms": [
+        "공정표",
+        "공정 작업",
+        "진도기록",
+        "계약통지",
+        "공기연장"
+      ],
+      "rule": "공기연장 승인과 기준공정 개정은 별도 처리"
+    },
+    {
+      "flow": "물량 검증 → 기성 청구 → 지급추천 → 발주처 승인 → 지급·정정",
+      "screens": [
+        "payment"
+      ],
+      "terms": [
+        "계약내역서",
+        "검증 물량",
+        "기성",
+        "지급추천"
+      ],
+      "rule": "추천·승인·실제 지급내역은 서로 다른 기록"
+    },
+    {
+      "flow": "시운전 → 미비사항 조치 → 준공 인수인계 → 하자보수",
+      "screens": [
+        "completion"
+      ],
+      "terms": [
+        "미비사항",
+        "하자",
+        "하자보수",
+        "인수인계"
+      ],
+      "rule": "시정조치·준공 미비사항·하자보수를 모두 같은 상태로 축약하지 않음"
+    },
+    {
+      "flow": "현장 사진·도면 등록 → 위치 지정 → 관련 업무 연결 → 알림 확인",
+      "screens": [
+        "capture",
+        "parallel-test"
+      ],
+      "terms": [
+        "원본 증빙",
+        "도면 개정",
+        "도면 표시 위치",
+        "하자사진",
+        "조치사진",
+        "업무함",
+        "알림"
+      ],
+      "rule": "제품명·홍보상의 자동 승인 표현은 채택하지 않음"
+    },
+    {
+      "flow": "관리대장 조회 → 관련 기록 확인 → 감리보고서·양식 작성",
+      "screens": [
+        "registers",
+        "documents",
+        "rfis"
+      ],
+      "terms": [
+        "관리대장",
+        "관련 업무 기록",
+        "집계·확인 항목",
+        "작성 차수",
+        "설계질의"
+      ],
+      "rule": "원본 기록 차수와 도면 개정 및 법정 서명을 구분"
+    }
+  ],
+  "invariants": [
+    "stable domain identifiers",
+    "unchanged permissions and state transitions",
+    "unchanged official record content",
+    "independent document output language"
+  ],
+  "verificationStatus": "native_development_review_verified",
+  "termDecisions": [
+    {
+      "before": "이슈",
+      "after": "지적사항",
+      "rule": "부적합 보고와 준공 미비사항 및 하자는 업무별 의미를 유지"
+    },
+    {
+      "before": "Action",
+      "after": "시정·후속조치",
+      "rule": "부적합 시정과 일반 후속조치를 구분"
+    },
+    {
+      "before": "Projection",
+      "after": "관리대장 집계·확인 항목"
+    },
+    {
+      "before": "DomainRef",
+      "after": "관련 업무 기록"
+    },
+    {
+      "before": "명령",
+      "after": "업무 처리"
+    },
+    {
+      "before": "Gate",
+      "after": "진행 조건"
+    },
+    {
+      "before": "Snapshot",
+      "after": "확인 당시 기록 또는 보존 원본",
+      "rule": "원본의 작성 차수와 도면 개정번호를 구분"
+    },
+    {
+      "before": "개발 역할 선택",
+      "after": "시험 사용자 역할 선택",
+      "rule": "시험용 사용자 전환 기능임을 표시"
+    },
+    {
+      "before": "파서 버전",
+      "after": "자료 확인 기준"
+    },
+    {
+      "before": "JSON 위치 입력",
+      "after": "도면·쪽·가로 위치·세로 위치 입력",
+      "rule": "기존 도면 참조와 pdf_points 저장 규칙 유지"
+    },
+    {
+      "before": "알림 상태 queued/sent/delivered/acknowledged/failed",
+      "after": "알림 등록/발송 완료/전달 완료/수신 확인/전달 실패",
+      "rule": "알림 읽음과 전달 상태 및 업무 승인은 서로 다른 사실로 유지"
+    }
+  ],
+  "validation": {
+    "runner": "Mac mini native macOS; GitHub CI uses the existing Mac mini Linux ARM64 self-hosted runner",
+    "contracts": {
+      "run": 320,
+      "passed": 320
+    },
+    "api": {
+      "run": 416,
+      "passed": 370,
+      "skipped": 46,
+      "limits": "PostgreSQL/document-runtime conditions were unavailable in this native environment"
+    },
+    "browser": {
+      "fullBeforeFinalHeadingFix": {
+        "passed": 117,
+        "failed": 2,
+        "total": 119
+      },
+      "finalFocused": {
+        "passed": 30,
+        "failed": 0
+      },
+      "latestSourcePreview": {
+        "passed": 1,
+        "failed": 0
+      },
+      "isolatedMockLocalization": {
+        "passed": 7,
+        "failed": 0
+      },
+      "limits": "The two full-suite failures were duplicate accessible heading locators; final focused checks cover both repairs. Exact PR-head CI is recorded by GitHub checks."
+    },
+    "localizationDocuments": {
+      "passed": 22
+    },
+    "web": "typecheck/build passed; lint passed with existing hook warnings",
+    "mobile": "typecheck passed",
+    "translationKeyIntegrity": "All original string translation property identifiers retained",
+    "identifierIntegrity": "No Korean identifiers introduced in changed TypeScript source/tests",
+    "limits": [
+      "Development and synthetic workflow verification; not actual field pilot acceptance",
+      "Vietnamese/English human review remains deferred",
+      "Training materials excluded",
+      "Security release review remains deferred"
+    ]
+  }
+}

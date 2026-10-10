@@ -1,9 +1,11 @@
+import { recordVersionLabel } from "../../labels";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SupervisionClient } from "../../data/supervision-client";
 import { ApiError } from "../../data/supervision-client";
 import type { Workspace } from "../../data/ui-contract";
 import { formatNumber } from "../../i18n/format";
 import { reasonLabel } from "../../labels";
+import { DrawingLocationFields } from "./DrawingLocationFields";
 
 type LocationRow = {
   reference: { objectId: string; version: number };
@@ -31,14 +33,14 @@ type LabelKey =
   | "saving" | "save" | "addChild" | "readOnly" | "anchorsArrayError" | "created" | "updated";
 const copy: Record<"ko" | "vi" | "en", Record<LabelKey, string>> = {
   ko: {
-    region: "위치 편집", title: "위치 계층 편집", project: "프로젝트", drawingHint: "도면 앵커는 도면 버전과 PDF 포인트 좌표를 사용합니다.",
+    region: "위치 편집", title: "위치 계층 편집", project: "현장", drawingHint: "도면 표시 위치는 도면 작성 차수와 PDF 도면 좌표를 사용합니다.",
     refresh: "새로고침", loading: "위치를 불러오는 중입니다…", errorGeneric: "위치 요청을 완료할 수 없습니다. 연결을 확인한 뒤 다시 시도하세요.",
     empty: "표시할 위치가 없습니다.", list: "위치 목록", name: "위치 이름",
-    anchor: "의미 앵커", parent: "상위 위치", root: "프로젝트 최상위", drawingAnchors: "도면 앵커 (JSON)",
-    anchorHint: "정확한 도면 참조, 1 이상의 페이지, 유한한 x/y, 좌표계 pdf_points가 필요합니다.",
+    anchor: "위치 구분명", parent: "상위 위치", root: "현장 최상위", drawingAnchors: "도면 표시 위치",
+    anchorHint: "도면과 작성 차수, 도면 쪽, 가로·세로 표시 위치를 지정하십시오.",
     saving: "저장 중…", save: "변경 저장", addChild: "하위 위치 추가",
-    readOnly: "조회 전용입니다. 데모 프로젝트의 ADM / project_admin 역할과 render_document 권한이 확인되면 편집할 수 있습니다. 저장 권한은 서버가 다시 확인합니다.",
-    anchorsArrayError: "도면 앵커는 JSON 배열이어야 합니다.", created: "위치를 만들었습니다.", updated: "위치를 수정했습니다.",
+    readOnly: "조회 전용입니다. 위치 관리 권한이 있는 시험 현장 관리자만 편집할 수 있습니다. 저장 시 담당 권한을 다시 확인합니다.",
+    anchorsArrayError: "도면 표시 위치를 확인하십시오.", created: "위치를 만들었습니다.", updated: "위치를 수정했습니다.",
   },
   vi: {
     region: "Chỉnh sửa vị trí", title: "Chỉnh sửa hệ thống phân cấp vị trí", project: "Dự án", drawingHint: "Neo bản vẽ sử dụng phiên bản bản vẽ và tọa độ điểm PDF.",
@@ -204,7 +206,7 @@ export function LocationEditorPanel({ client, workspace, onChanged }: {
               onClick={() => setSelectedId(idOf(row))}
               className={`flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-muted ${selectedId === idOf(row) ? "bg-doul-primary-muted font-medium text-doul-primary-deep" : ""}`}
               style={{ paddingLeft: `${8 + row.depth * 16}px` }}>
-              <span className="truncate">{row.name}</span><small className="shrink-0 text-muted-foreground">v{formatNumber(row.reference.version)}</small>
+              <span className="truncate">{row.name}</span><small className="shrink-0 text-muted-foreground">{recordVersionLabel(formatNumber(row.reference.version))}</small>
             </button>
           ))}
         </nav>
@@ -221,9 +223,9 @@ export function LocationEditorPanel({ client, workspace, onChanged }: {
               {rows.filter(row => idOf(row) !== selectedId).map(row => <option key={idOf(row)} value={idOf(row)}>{"　".repeat(row.depth)}{row.name}</option>)}
             </select>
           </label>
-          <label className="block space-y-1 text-sm font-medium">{t.drawingAnchors}
-            <textarea className="w-full rounded-sm border border-input bg-background px-3 py-2 font-mono text-xs font-normal" rows={8} value={drawingJson} onChange={event => setDrawingJson(event.target.value)} readOnly={!canManage} spellCheck={false} />
-          </label>
+          <fieldset className="block space-y-1 text-sm font-medium"><legend>{t.drawingAnchors}</legend>
+            <DrawingLocationFields client={client} projectId={workspace.project.id} value={drawingJson} onChange={setDrawingJson} disabled={!canManage || saving} />
+          </fieldset>
           <p className="-mt-2 text-xs text-muted-foreground">{t.anchorHint}</p>
           {canManage ? (
             <div className="flex flex-wrap gap-2">

@@ -52,7 +52,7 @@ export interface DrawingMarkupIssueResult {
 }
 
 function projectPath(client: SupervisionClient, projectId: string, suffix: string) {
-  if (client.session?.projectId !== projectId) throw new Error("현재 프로젝트가 일치하지 않습니다.");
+  if (client.session?.projectId !== projectId) throw new Error("현재 현장이 일치하지 않습니다.");
   return client.path(suffix);
 }
 

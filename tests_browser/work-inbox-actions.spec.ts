@@ -10,7 +10,7 @@ test("work inbox shows server candidates and requires explicit confirmation befo
   const action = page.locator(".work-inbox-card .work-inbox-candidate:not([disabled])").first();
   await expect(action, "server must provide at least one ready or input-requiring command candidate").toBeVisible();
   const record = action.locator("xpath=ancestor::article[contains(@class, 'work-inbox-card')]");
-  await expect(record.getByText(/ID .*v\d+.*상태/)).toBeVisible();
+  await expect(record.getByText(/기록번호 .*기록 제\d+차.*상태/)).toBeVisible();
   let transitionPosts = 0;
   const onRequest = (request: { method(): string; url(): string }) => {
     if (request.method() === "POST" && /\/api\/projects\/[^/]+\/[^/]+\/[^/]+\/[^/?]+$/.test(new URL(request.url()).pathname)) transitionPosts++;

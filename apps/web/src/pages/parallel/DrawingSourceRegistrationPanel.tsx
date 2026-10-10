@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../../labels";
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, type SupervisionClient } from '../../data/supervision-client';
@@ -11,10 +12,10 @@ type Locale = 'ko' | 'vi' | 'en';
 const copy: Record<Locale, Record<string, string>> = {
   ko: {
     section: '도면 개정 등록', title: '도면 개정 등록', meta: '새 원본 · 검토 요청',
-    help: '새 개정본은 이전 도면을 보존하며 별도 등록합니다. 먼저 PDF 뷰어에서 원본을 업로드하십시오.',
+    help: '새 개정본은 이전 도면을 보존하며 별도 등록합니다. 먼저 PDF 보기에서 원본을 업로드하십시오.',
     drawingTitle: '도면 제목', revision: '개정 번호', pdfSource: 'PDF 원본', select: '선택', previousDrawing: '이전 도면', newDrawing: '신규 도면',
-    requestReview: '등록 후 검토 요청', reviewButton: '새 개정 등록 검토', denied: '도면 원본 등록은 설계자 개발 역할에서 진행하십시오. 승인과 현장 배포는 별도 절차입니다.',
-    created: '등록 완료: {{title}}', revisionResult: '개정 {{revision}} · 원본 v{{version}}', reviewRequest: '검토 요청', receiptPending: '접수 대기', notRequested: '요청하지 않음',
+    requestReview: '등록 후 검토 요청', reviewButton: '새 개정 등록 검토', denied: '도면 원본 등록은 설계자 시험 사용자 역할에서 진행하십시오. 승인과 현장 배포는 별도 절차입니다.',
+    created: '등록 완료: {{title}}', revisionResult: '개정 {{revision}} · 기록 제{{version}}차', reviewRequest: '검토 요청', receiptPending: '접수 대기', notRequested: '요청하지 않음',
     fieldUseBoundary: '현장 사용 전 승인·배포 확인 필요', reviewScreen: '승인 검토 화면', confirmTitle: '새 도면 개정 등록 확인',
     unchanged: '원본을 변경하지 않고 새 기록으로 등록합니다. 검토 요청은 승인 완료를 의미하지 않습니다.', cancel: '취소', registering: '등록 중…', confirmRegister: '확인 후 개정 등록',
     errRequired: '도면 제목, 개정 번호와 PDF 원본을 입력하십시오.', errGeneric: '요청을 처리하지 못했습니다. 다시 시도하십시오.',
@@ -87,8 +88,8 @@ export function DrawingSourceRegistrationPanel({ client, workspace, onChanged, o
     {canRegister ? <div className="grid gap-3 sm:grid-cols-2">
       <label>{tx('drawingTitle')}<input aria-label={locale === 'ko' ? '새 도면 제목' : tx('drawingTitle')} value={title} maxLength={240} onChange={e => setTitle(e.target.value)} /></label>
       <label>{tx('revision')}<input aria-label={locale === 'ko' ? '새 개정 번호' : tx('revision')} value={revision} maxLength={80} onChange={e => setRevision(e.target.value)} /></label>
-      <label>{tx('pdfSource')}<select aria-label={locale === 'ko' ? '새 도면 PDF' : tx('pdfSource')} value={evidenceId} onChange={e => setEvidenceId(e.target.value)}><option value="">{tx('select')}</option>{pdfs.map(item => <option key={item.id} value={item.id}>{String(item.metadata?.name ?? item.id)} · v{item.version}</option>)}</select></label>
-      <label>{tx('previousDrawing')}<select aria-label={locale === 'ko' ? '이전 도면 개정' : tx('previousDrawing')} value={predecessorId} onChange={e => setPredecessorId(e.target.value)}><option value="">{tx('newDrawing')}</option>{drawings.map(item => <option key={item.domainRef.objectId} value={item.domainRef.objectId}>{item.title} · {item.revision} · v{item.domainRef.version}</option>)}</select></label>
+      <label>{tx('pdfSource')}<select aria-label={locale === 'ko' ? '새 도면 PDF' : tx('pdfSource')} value={evidenceId} onChange={e => setEvidenceId(e.target.value)}><option value="">{tx('select')}</option>{pdfs.map(item => <option key={item.id} value={item.id}>{String(item.metadata?.name ?? item.id)} · {recordVersionLabel(item.version)}</option>)}</select></label>
+      <label>{tx('previousDrawing')}<select aria-label={locale === 'ko' ? '이전 도면 개정' : tx('previousDrawing')} value={predecessorId} onChange={e => setPredecessorId(e.target.value)}><option value="">{tx('newDrawing')}</option>{drawings.map(item => <option key={item.domainRef.objectId} value={item.domainRef.objectId}>{item.title} · {item.revision} · {recordVersionLabel(item.domainRef.version)}</option>)}</select></label>
       <label><input type="checkbox" checked={review} onChange={e => setReview(e.target.checked)} /> {tx('requestReview')}</label>
       <ActionButton onClick={prepare} disabled={busy}>{tx('reviewButton')}</ActionButton>
     </div> : <p>{tx('denied')}</p>}

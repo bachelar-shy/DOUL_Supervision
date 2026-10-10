@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../labels";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Eye, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -121,7 +122,7 @@ function RegisterDetail({
           <dt className="text-muted-foreground">
             {t("register.detail.sourceVersion")}
           </dt>
-          <dd>v{ref?.version ?? "-"}</dd>
+          <dd>{recordVersionLabel(ref?.version ?? "-")}</dd>
           {detailFields.map((key) => (
             <FragmentPair
               key={key}
@@ -162,7 +163,7 @@ function RegisterDetail({
             >
               <strong>{registerSourceLabel(item.objectType)}</strong>
               <span className="ml-2 text-muted-foreground">
-                {item.objectId.slice(0, 12)} · v{item.version}
+                {item.objectId.slice(0, 12)} · {recordVersionLabel(item.version)}
               </span>
             </div>
           ))}
@@ -347,7 +348,7 @@ export function RegisterPage({
                 {registerSourceLabel(ref?.objectType)}
               </strong>
               <span className="block text-[9px] text-slate-400">
-                {ref?.objectId.slice(0, 8)} · v{ref?.version}
+                {ref?.objectId.slice(0, 8)} · {recordVersionLabel(ref?.version)}
               </span>
             </div>
           );

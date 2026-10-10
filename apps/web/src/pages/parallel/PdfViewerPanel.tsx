@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../../labels";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { getDocument, GlobalWorkerOptions, type PDFDocumentLoadingTask, type PDFDocumentProxy, type RenderTask } from "pdfjs-dist";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -30,17 +31,17 @@ type Locale = "ko" | "vi" | "en";
 
 const copy: Record<Locale, Record<string, string>> = {
   ko: {
-    panel: "PDF 도면 뷰어", title: "도면 PDF", description: "원본 증빙을 읽기 전용으로 확인합니다.", upload: "PDF 업로드",
-    sourceLabel: "원본 선택", sourceSelect: "PDF 원본 선택", evidence: "증빙 · {{name}}", historical: "등록된 역사 원본 · {{id}} · v{{version}}", uploaded: "업로드한 PDF · {{id}}",
+    panel: "PDF 도면 보기", title: "도면 PDF", description: "원본 증빙을 읽기 전용으로 확인합니다.", upload: "PDF 업로드",
+    sourceLabel: "원본 선택", sourceSelect: "PDF 원본 선택", evidence: "증빙 · {{name}}", historical: "등록된 역사 원본 · {{id}} · 제{{version}}차", uploaded: "업로드한 PDF · {{id}}",
     search: "문서 검색", searchPlaceholder: "텍스트 검색 (2자 이상)", searching: "검색 중…", pagesFound: "{{count}}개 페이지",
     selectOrUpload: "등록된 PDF를 선택하거나 새 PDF를 업로드하세요.", checkingDirectory: "도면 연결과 위치 정보를 불러오는 중…", noBinding: "이 PDF 증빙에 등록된 정확한 도면 연결이 없습니다. 연결을 등록한 뒤 핀을 사용할 수 있습니다.",
-    bindingVersion: "도면 버전 선택", chooseBinding: "도면 버전을 선택하세요…", boundDrawing: "연결 도면", registeredEvidence: "등록 증빙", evidenceVersion: "증빙",
+    bindingVersion: "도면 작성 차수 선택", chooseBinding: "도면 작성 차수를 선택하세요…", boundDrawing: "연결 도면", registeredEvidence: "등록 증빙", evidenceVersion: "증빙",
     markup: "주석", loading: "불러오는 중…", count: "{{count}}개", rectangleMemo: "사각형 메모", showMarkup: "주석 표시", showPins: "위치 핀 표시", stopDrawing: "주석 그리기 종료", addMemo: "사각형 메모 추가",
     drawingInstructions: "페이지에서 드래그해 영역을 지정하세요. 메모를 입력한 뒤 저장합니다.", memo: "메모", memoLabel: "주석 메모", memoPlaceholder: "이 영역에 대한 메모", editReason: "수정 사유", editReasonLabel: "주석 수정 사유", deleteReasonLabel: "주석 삭제 사유", saving: "저장 중…", saveEdit: "수정 저장", saveMarkup: "주석 저장", savedMarkups: "저장된 도면 주석",
-    selectedMarkup: "선택한 주석", version: "버전", deleted: "삭제됨", editMarkup: "주석 수정", deleteMarkup: "주석 삭제", deleteWarning: "이 주석을 삭제하면 새 이슈 연결에 사용할 수 없게 됩니다. 기존 이슈 연결과 이력은 보존됩니다.", deleteReason: "삭제 사유", deleting: "삭제 중…", confirmDelete: "삭제 확인", cancel: "취소", reason: "사유", hideHistory: "이력 숨기기", showHistory: "이력 보기", history: "주석 이력", eventReason: "사유: {{reason}}",
+    selectedMarkup: "선택한 주석", version: "작성 차수", deleted: "삭제됨", editMarkup: "주석 수정", deleteMarkup: "주석 삭제", deleteWarning: "이 주석을 삭제하면 새 지적사항 연결에 사용할 수 없게 됩니다. 기존 지적사항 연결과 이력은 보존됩니다.", deleteReason: "삭제 사유", deleting: "삭제 중…", confirmDelete: "삭제 확인", cancel: "취소", reason: "사유", hideHistory: "이력 숨기기", showHistory: "이력 보기", history: "주석 이력", eventReason: "사유: {{reason}}",
     location: "위치 선택", pinLocationLabel: "핀을 연결할 위치", locationSelect: "위치를 선택하세요…", pinInstructions: "페이지를 클릭해 미저장 핀을 놓은 뒤 저장하세요.", pinAdminOnly: "위치 핀은 데모 ADM에서만 저장할 수 있습니다.", savePin: "위치 핀 저장",
     previousPage: "이전 페이지", page: "페이지", pageNumber: "페이지 번호", nextPage: "다음 페이지", zoomOut: "축소", zoomIn: "확대", rotate: "회전", searchResult: "검색 결과 {{page}}", canvasPage: "PDF 페이지 {{page}} / {{count}}", markupArea: "도면 주석 영역", markupItem: "주석: {{text}}", pinLayer: "도면 위치 핀", pinLabel: "{{name}} 위치 핀", rendering: "페이지를 표시하는 중…", readOnly: "읽기 전용 미리보기 · 업로드한 원본은 변경하지 않습니다.",
-    checkingBinding: "도면 PDF 연결을 확인하는 중…", chooseRevision: "연결된 도면 버전을 선택하세요.", loadingPdf: "PDF를 불러오는 중…", password: "암호로 보호된 PDF는 현재 열 수 없습니다.", invalidPdf: "파일이 손상되었거나 올바른 PDF가 아닙니다.", openPdfFailed: "PDF를 열지 못했습니다.", canvasUnavailable: "캔버스를 사용할 수 없습니다.", renderFailed: "페이지를 그리지 못했습니다.", searchFailed: "문서 텍스트를 검색할 수 없습니다.", uploadLoading: "업로드 중…", uploadFailed: "PDF 업로드를 완료하지 못했습니다.", markupLoadFailed: "주석을 불러오지 못했습니다.", markupDetailFailed: "주석 상세를 불러오지 못했습니다.", locationLoadFailed: "위치 연결을 불러오지 못했습니다.", bindingLoadFailed: "도면 PDF 연결을 불러오지 못했습니다.", markupSaveFailed: "주석을 저장하지 못했습니다.", markupConflict: "주석 버전이 변경되어 최신 상태를 불러왔습니다. 변경 내용을 확인한 뒤 다시 수정하세요.", markupDeleteFailed: "주석을 삭제하지 못했습니다.", pinConflict: "위치가 다른 곳에서 변경되어 핀을 저장하지 못했습니다. 최신 정보로 다시 불러왔습니다.", pinSaveFailed: "핀을 저장하지 못했습니다.", unsaved: "미저장",
+    checkingBinding: "도면 PDF 연결을 확인하는 중…", chooseRevision: "연결된 도면 작성 차수를 선택하세요.", loadingPdf: "PDF를 불러오는 중…", password: "암호로 보호된 PDF는 현재 열 수 없습니다.", invalidPdf: "파일이 손상되었거나 올바른 PDF가 아닙니다.", openPdfFailed: "PDF를 열지 못했습니다.", canvasUnavailable: "캔버스를 사용할 수 없습니다.", renderFailed: "페이지를 그리지 못했습니다.", searchFailed: "문서 텍스트를 검색할 수 없습니다.", uploadLoading: "업로드 중…", uploadFailed: "PDF 업로드를 완료하지 못했습니다.", markupLoadFailed: "주석을 불러오지 못했습니다.", markupDetailFailed: "주석 상세를 불러오지 못했습니다.", locationLoadFailed: "위치 연결을 불러오지 못했습니다.", bindingLoadFailed: "도면 PDF 연결을 불러오지 못했습니다.", markupSaveFailed: "주석을 저장하지 못했습니다.", markupConflict: "주석 작성 차수가 변경되어 최신 상태를 불러왔습니다. 변경 내용을 확인한 뒤 다시 수정하세요.", markupDeleteFailed: "주석을 삭제하지 못했습니다.", pinConflict: "위치가 다른 곳에서 변경되어 핀을 저장하지 못했습니다. 최신 정보로 다시 불러왔습니다.", pinSaveFailed: "핀을 저장하지 못했습니다.", unsaved: "미저장",
   },
   vi: {
     panel: "Trình xem PDF bản vẽ", title: "PDF bản vẽ", description: "Xem chứng cứ gốc ở chế độ chỉ đọc.", upload: "Tải PDF lên",
@@ -762,9 +763,9 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
       {!directoryLoading && matchingBindings.length === 0 && <p className="pdf-state">{tx("noBinding")}</p>}
       {matchingBindings.length > 1 && <label className="pdf-source-label">{tx("bindingVersion")}<select aria-label={tx("bindingVersion")} disabled={savingPin} value={activeBinding?.id ?? ""} onChange={(event) => setSelectedBindingId(event.target.value)}>
         <option value="">{tx("chooseBinding")}</option>
-        {matchingBindings.map((binding) => <option key={binding.id} value={binding.id}>{binding.drawingRef.objectId} · v{binding.drawingRef.version} · {tx("evidenceVersion")} v{binding.evidenceRef.version}</option>)}
+        {matchingBindings.map((binding) => <option key={binding.id} value={binding.id}>{binding.drawingRef.objectId} · {recordVersionLabel(binding.drawingRef.version)} · {tx("evidenceVersion")} {recordVersionLabel(binding.evidenceRef.version)}</option>)}
       </select></label>}
-      {matchingBindings.length === 1 && <p className="pdf-binding-label">{tx("boundDrawing")} {matchingBindings[0].drawingRef.objectId} · v{matchingBindings[0].drawingRef.version} · {tx("registeredEvidence")} v{matchingBindings[0].evidenceRef.version} · {matchingBindings[0].fileHash.slice(0, 12)}</p>}
+      {matchingBindings.length === 1 && <p className="pdf-binding-label">{tx("boundDrawing")} {matchingBindings[0].drawingRef.objectId} · {recordVersionLabel(matchingBindings[0].drawingRef.version)} · {tx("registeredEvidence")} {recordVersionLabel(matchingBindings[0].evidenceRef.version)} · {matchingBindings[0].fileHash.slice(0, 12)}</p>}
       {activeBinding && <div className="pdf-markup-controls">
         <div className="pdf-markup-heading"><strong>{tx("markup")}</strong><span>{markupLoading ? tx("loading") : tx("count", { count: markups.length })} · {tx("rectangleMemo")}</span></div>
         <div className="pdf-layer-toggles">
@@ -781,7 +782,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
         {markupError && <span role="alert" className="pdf-error-text">{markupError}</span>}
         {markups.length > 0 && <ul className="pdf-markup-list" aria-label={tx("savedMarkups")}>{markups.filter((item) => item.page === page).map((item) =>
           <li key={item.id}><button type="button" className={selectedMarkupId === item.id ? "is-selected" : ""} onClick={() => { setEditingMarkup(false); setDeletingMarkup(false); setMarkupReason(""); selectMarkup(selectedMarkupId === item.id ? null : item.id); }}>
-            p.{item.page} · {item.text} · v{item.version}
+            p.{item.page} · {item.text} · {recordVersionLabel(item.version)}
           </button></li>)}
         </ul>}
         {selectedMarkup && <div className="pdf-markup-detail">
@@ -791,7 +792,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
           {deletingMarkup && <><p>{tx("deleteWarning")}</p><label className="pdf-markup-memo">{tx("deleteReason")}<textarea aria-label={tx("deleteReasonLabel")} maxLength={500} rows={2} value={markupReason} onChange={(event) => setMarkupReason(event.target.value)} /></label><button type="button" disabled={markupActionLoading || !markupReason.trim()} onClick={() => void deleteSelectedMarkup()}>{markupActionLoading ? tx("deleting") : tx("confirmDelete")}</button><button type="button" onClick={() => { setDeletingMarkup(false); setMarkupReason(""); }}>{tx("cancel")}</button></>}
           {selectedMarkup.deleteReason && <p>{tx("deleteReason")}: {selectedMarkup.deleteReason}</p>}
           <button type="button" aria-expanded={showMarkupHistory} onClick={() => setShowMarkupHistory((value) => !value)}>{showMarkupHistory ? tx("hideHistory") : `${tx("showHistory")}${selectedMarkup.historySummary ? ` (${selectedMarkup.historySummary.count})` : ""}`}</button>
-          {showMarkupHistory && <ol className="pdf-markup-history" aria-label={tx("history")}>{markupHistory.map((snapshot) => <li key={snapshot.version}><strong>v{snapshot.version}</strong> · {snapshot.text}{snapshot.eventAt ? ` · ${new Date(snapshot.eventAt).toLocaleString(language)}` : ""}{snapshot.eventBy ? ` · ${snapshot.eventBy}` : ""}{snapshot.reason || snapshot.updateReason || snapshot.deleteReason ? ` · ${tx("eventReason", { reason: snapshot.reason || snapshot.updateReason || snapshot.deleteReason || "" })}` : ""}</li>)}</ol>}
+          {showMarkupHistory && <ol className="pdf-markup-history" aria-label={tx("history")}>{markupHistory.map((snapshot) => <li key={snapshot.version}><strong>{recordVersionLabel(snapshot.version)}</strong> · {snapshot.text}{snapshot.eventAt ? ` · ${new Date(snapshot.eventAt).toLocaleString(language)}` : ""}{snapshot.eventBy ? ` · ${snapshot.eventBy}` : ""}{snapshot.reason || snapshot.updateReason || snapshot.deleteReason ? ` · ${tx("eventReason", { reason: snapshot.reason || snapshot.updateReason || snapshot.deleteReason || "" })}` : ""}</li>)}</ol>}
         </div>}
       </div>}
       {activeBinding && <div className="pdf-pin-controls">

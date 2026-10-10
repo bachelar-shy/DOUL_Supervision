@@ -1,3 +1,5 @@
+import { recordVersionLabel } from "../labels";
+import { RecordDetails } from "./RecordDetails";
 import { useMemo, useState } from "react";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -102,7 +104,7 @@ function objectValue(value: unknown): Record<string, unknown> {
 function refText(value: unknown) {
   const ref = objectValue(value);
   if (typeof ref.objectId !== "string") return tr("contract.value.none");
-  return `${String(ref.objectType || "Object")} · ${ref.objectId.slice(0, 8)} · v${String(ref.version || "?")}`;
+  return `${String(ref.objectType || "Object")} · ${ref.objectId.slice(0, 8)} · ${recordVersionLabel(String(ref.version || "?"))}`;
 }
 
 function formatDate(value: unknown) {
@@ -513,7 +515,7 @@ function CreateContractRecord({
                   {eventItems.map((item) => (
                     <option key={item.record.id} value={item.record.id}>
                       {machineLabels[item.machine] || item.machine} ·{" "}
-                      {recordTitle(item.record)} · v{item.record.version}
+                      {recordTitle(item.record)} · {recordVersionLabel(item.record.version)}
                     </option>
                   ))}
                 </select>
@@ -763,7 +765,7 @@ export function ContractPage({
 
                 <details className="technical">
                   <summary>{tr("contract.page.technicalSummary")}</summary>
-                  <pre>{JSON.stringify(selectedItem.record, null, 2)}</pre>
+                  <RecordDetails value={selectedItem.record} />
                 </details>
               </>
             )}

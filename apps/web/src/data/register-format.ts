@@ -1,5 +1,5 @@
 import type { RegisterProjectionRow } from "./ui-contract";
-import { states } from "../labels";
+import { states, fields, recordTypeLabel, recordVersionLabel } from "../labels";
 import { formatDateTime, formatNumber } from "../i18n/format";
 import i18n from "../i18n/config";
 import {
@@ -10,7 +10,7 @@ import {
 const dateLike = /(?:^|_)(?:at|due|expiry|date)$/i;
 
 export function registerFieldLabel(key: string) {
-  const fallback = koreanRegisterFieldLabels[key] || key.replaceAll("_", " ");
+  const fallback = koreanRegisterFieldLabels[key] || fields[key] || i18n.t("register.detail.calculatedFields");
   return i18n.t(`register.field.${key}`, { defaultValue: fallback });
 }
 
@@ -52,11 +52,15 @@ export function formatRegisterValue(value: unknown, fieldKey = ""): string {
         ["string", "number", "boolean"].includes(typeof item),
       )
     ) {
-      return value.map((item) => String(item)).join(", ");
+      return value.map((item) => formatRegisterValue(item, fieldKey)).join(", ");
     }
     return i18n.t("register.value.count", { count: value.length });
   }
-  if (typeof value === "object") return JSON.stringify(value);
+  if (typeof value === "object") {
+    const row = value as Record<string, unknown>;
+    if (typeof row.objectId === "string") return `${recordTypeLabel(row.objectType)} · ${row.objectId} · ${recordVersionLabel(row.version)}`;
+    return Object.entries(row).map(([key, item]) => `${registerFieldLabel(key)}: ${formatRegisterValue(item, key)}`).join(" · ");
+  }
 
   const text = String(value);
   if (states[text]) return states[text];

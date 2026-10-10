@@ -8,7 +8,7 @@ export const machineLabels: Record<string, string> = {
   eot_request: "공기연장(EOT)",
   inspection: "검측",
   observation: "관찰",
-  issue: "이슈",
+  issue: "지적사항",
   action: "시정조치",
   safety_permit: "작업허가",
   safety_stop_order: "작업중지",

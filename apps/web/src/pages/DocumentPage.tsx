@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../labels";
 import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { documentRenderCopy, documentOutputLanguageLabels, formFieldLabel } from "@doul/localization";
@@ -158,7 +159,7 @@ export function DocumentPage({
             <option value="">{t("document.source.auto")}</option>
             {sources.map((x) => (
               <option value={x.record.id} key={x.record.id}>
-                {recordTitle(x.record)} · v{x.record.version}
+                {recordTitle(x.record)} · {recordVersionLabel(x.record.version)}
               </option>
             ))}
           </select>

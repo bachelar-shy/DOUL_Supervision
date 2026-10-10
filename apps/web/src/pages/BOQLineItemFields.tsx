@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../labels";
 import type { Json, Workspace } from "../data/ui-contract";
 
 type Props = {
@@ -54,20 +55,20 @@ const labels: Record<"en" | "ko" | "vi", Record<LabelKey, string>> = {
     title: "내역서 항목",
     addLine: "항목 추가",
     removeLine: "항목 삭제",
-    itemId: "고정 항목 ID",
+    itemId: "고정 항목 번호",
     itemNo: "항목 번호",
     description: "설명",
     unit: "단위",
     quantity: "계약 수량",
     unitRate: "단가",
     contractAmount: "계약 금액",
-    packageId: "패키지 ID (UUID)",
+    packageId: "공사 구분 번호 (U화면D)",
     discipline: "공종",
-    locationScope: "위치 범위 (UUID, 쉼표로 구분)",
+    locationScope: "위치 범위 (U화면D, 쉼표로 구분)",
     measurementRule: "기성 측정 규칙 참조",
-    objectType: "객체 유형",
-    objectId: "객체 ID",
-    version: "버전",
+    objectType: "기록 유형",
+    objectId: "기록 번호",
+    version: "작성 차수",
     variationEligible: "변경 대상 가능",
     provisional: "잠정 항목",
   },
@@ -188,7 +189,7 @@ export function BOQLineItemFields({ value, onChange, workspace }: Props) {
               <legend className="px-1 text-sm">{t.measurementRule}</legend>
               {workspace ? <select aria-label={t.measurementRule} className={inputClass} value={reference.objectId ? JSON.stringify(reference) : ""} onChange={(event) => update(index, { measurementRuleRef: event.target.value ? JSON.parse(event.target.value) as Json : {} })}>
                 <option value="">—</option>
-                {(workspace.context.referenceCatalog?.requirements ?? []).map((entry) => <option key={JSON.stringify(entry.ref)} value={JSON.stringify(entry.ref)}>{String(entry.record.title ?? entry.ref.objectId)} · v{entry.ref.version}</option>)}
+                {(workspace.context.referenceCatalog?.requirements ?? []).map((entry) => <option key={JSON.stringify(entry.ref)} value={JSON.stringify(entry.ref)}>{String(entry.record.title ?? entry.ref.objectId)} · {recordVersionLabel(entry.ref.version)}</option>)}
               </select> : <div className="grid gap-3 sm:grid-cols-3">
                 <label className={fieldClass}>{t.objectType}<input className={inputClass} value={textValue(reference.objectType)} onChange={event => updateReference(index, { objectType: event.target.value })} /></label>
                 <label className={fieldClass}>{t.objectId}<input className={inputClass} value={textValue(reference.objectId)} onChange={event => updateReference(index, { objectId: event.target.value })} /></label>

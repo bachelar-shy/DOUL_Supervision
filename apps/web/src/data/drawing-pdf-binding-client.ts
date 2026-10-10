@@ -19,12 +19,12 @@ export interface DrawingPdfBinding {
 }
 
 function projectEndpoint(client: SupervisionClient, projectId: string, path: string) {
-  if (client.session?.projectId !== projectId) throw new Error("현재 프로젝트가 일치하지 않습니다.");
+  if (client.session?.projectId !== projectId) throw new Error("현재 현장이 일치하지 않습니다.");
   return client.path(path);
 }
 
 function endpoint(client: SupervisionClient, projectId: string) {
-  if (client.session?.projectId !== projectId) throw new Error("현재 프로젝트가 일치하지 않습니다.");
+  if (client.session?.projectId !== projectId) throw new Error("현재 현장이 일치하지 않습니다.");
   return client.path("/parallel/drawing-pdf-bindings");
 }
 

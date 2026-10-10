@@ -12,7 +12,7 @@ test("Korean, Vietnamese and English field views switch without changing form id
   await page.goto("/#/documents");
   const form = page.getByRole("combobox", { name: "문서 양식" });
   await expect(form).toHaveValue("FM-20");
-  await expect(page.getByRole("heading", { name: "데이터 연결 문서" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "감리보고서·양식 작성" })).toBeVisible();
 
   const keysBefore = await page.locator(".document-fields input").evaluateAll((items) =>
     items.map((item) => item.getAttribute("name")),
@@ -108,7 +108,7 @@ test("Contract notice editor translates in place without creating or changing a 
 
   const dialog = page.locator('[role="dialog"].modal');
   await expect(dialog).toHaveAttribute("aria-label", "계약통지 기록 추가");
-  await expect(dialog.getByText(/생성 권한과 범위는 제출 시 서버가 다시 검증/)).toBeVisible();
+  await expect(dialog.getByText(/생성 권한과 범위는 제출 시 업무 시스템이 다시 검증/)).toBeVisible();
   const titleInput = dialog.getByRole("textbox", { name: "제목 *", exact: true });
   const numberInput = dialog.getByRole("textbox", { name: "계약통지 번호 *", exact: true });
   await titleInput.fill("SITE-CONTRACT-001");
@@ -175,10 +175,10 @@ test("Evidence summary, origin, and technical metadata translate without changin
   const readFieldValue = async (label: string) =>
     sheet.getByText(label, { exact: true }).locator("..").locator("div").innerText();
   await sheet.getByRole("tab", { name: "출처·연결" }).click();
-  const evidenceId = await readFieldValue("증빙 ID");
+  const evidenceId = await readFieldValue("증빙 번호");
   expect(evidenceId.trim()).not.toBe("");
   await sheet.getByRole("tab", { name: "기술정보" }).click();
-  const sourceVersion = await readFieldValue("원본 기록 버전");
+  const sourceVersion = await readFieldValue("원본 기록 작성 차수");
 
   const locale = page.locator(".topbar .role-picker select").first();
   await locale.selectOption("vi");
@@ -205,9 +205,9 @@ test("Evidence summary, origin, and technical metadata translate without changin
   await locale.selectOption("ko");
   await expect(sheet.getByRole("heading").first()).toHaveText(rawTitle);
   await sheet.getByRole("tab", { name: "출처·연결" }).click();
-  await expect(await readFieldValue("증빙 ID")).toBe(evidenceId);
+  await expect(await readFieldValue("증빙 번호")).toBe(evidenceId);
   await sheet.getByRole("tab", { name: "기술정보" }).click();
-  await expect(await readFieldValue("원본 기록 버전")).toBe(sourceVersion);
+  await expect(await readFieldValue("원본 기록 작성 차수")).toBe(sourceVersion);
   await expect(sheet.getByRole("tab", { name: "출처·연결" })).toBeVisible();
   expect(mutationRequests).toBe(0);
 });

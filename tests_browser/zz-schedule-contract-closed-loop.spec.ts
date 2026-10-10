@@ -91,10 +91,10 @@ test('AC-SCH-01: live UI schedule → recovery → Owner EOT decision → approv
   async function uiCommand(collection: string, record: RecordData, name: string, role: Role, payload: any = {}) {
     const contract = ['contract-notices', 'eot-requests'].includes(collection);
     await page.goto(contract ? '/#/contract' : '/#/schedule');
-    const picker = page.getByRole('combobox', { name: '개발 역할 선택' });
+    const picker = page.getByRole('combobox', { name: '시험 사용자 역할 선택' });
     await expect(picker).toBeVisible();
     await picker.selectOption(role);
-    await expect(page.getByText({ CON: '시공사 작업공간', SUP: '감리 작업공간', OWN: '발주처 작업공간' }[role], { exact: true })).toBeVisible();
+    await expect(page.getByText({ CON: '시공사 업무 화면', SUP: '감리 업무 화면', OWN: '발주처 업무 화면' }[role], { exact: true })).toBeVisible();
     await page.goto(contract ? '/#/contract' : '/#/schedule');
     await page.getByRole('button', { name: '새로고침', exact: true }).click();
     const tab: Record<string, string> = { 'schedule-baselines': '기준공정', 'schedule-progress-updates': '진도기록',
@@ -114,7 +114,7 @@ test('AC-SCH-01: live UI schedule → recovery → Owner EOT decision → approv
           : typeof value === 'object' ? JSON.stringify(value) : String(value));
       } else await input.fill(typeof value === 'object' ? JSON.stringify(value) : String(value));
     }
-    const evidence = dialog.getByLabel('명령 증빙 ID', { exact: true });
+    const evidence = dialog.getByLabel('처리 근거 증빙번호', { exact: true });
     if (await evidence.count()) await evidence.fill(evidenceId);
     const response = page.waitForResponse(r => r.url().endsWith(`/${record.id}/${name.replaceAll('_', '-')}`)
       && r.request().method() === 'POST');

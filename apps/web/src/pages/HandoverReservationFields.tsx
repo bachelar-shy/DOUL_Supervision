@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../labels";
 import { useTranslation } from "react-i18next";
 import type { DomainRef, Workspace } from "../data/ui-contract";
 
@@ -29,7 +30,7 @@ export function HandoverReservationFields({ issues, participants, value, onChang
     {issues.map(({ ref, label }) => {
       const entry = row(ref);
       return <fieldset key={`${ref.objectId}:${ref.version}`} aria-label={`${label} · ${ref.objectId}`}>
-        <legend>{label} · v{ref.version}</legend>
+        <legend>{label} · {recordVersionLabel(ref.version)}</legend>
         <label>{t("completion.reservationOwner")}<select aria-label={t("completion.reservationOwner")} value={entry.ownerPartyId ?? ""} onChange={(event) => update(ref, { ownerPartyId: event.target.value })}>
           <option value="">{t("commandModal.partySelect")}</option>
           {participants.map((participant) => <option key={participant.partyId} value={participant.partyId}>{participant.name}</option>)}

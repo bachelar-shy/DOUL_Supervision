@@ -136,7 +136,7 @@ function escapeRegExp(value: string): string {
 }
 
 async function selectRole(page: Page, role: string) {
-  const picker = page.getByLabel("개발 역할 선택");
+  const picker = page.getByLabel("시험 사용자 역할 선택");
   await picker.selectOption(role);
   await expect(picker).toHaveValue(role);
   await page.goto("/#/inspections");
@@ -164,7 +164,7 @@ async function runCommand(
         if (await row.count() === 0) {
           await editor.getByRole("button", { name: "추가 검측 결과", exact: true }).click();
           row = editor.locator("fieldset").last();
-          await row.getByLabel("검측 항목 ID", { exact: true }).fill(check.itemId);
+          await row.getByLabel("검측 항목 번호", { exact: true }).fill(check.itemId);
           row = editor.locator("fieldset").filter({ has: page.locator(`input[value=${JSON.stringify(check.itemId)}]`) });
         }
         await row.getByRole("combobox").first().selectOption(`${check.requirementRef.objectType}:${check.requirementRef.objectId}:${check.requirementRef.version}`);
@@ -185,7 +185,7 @@ async function runCommand(
     }
   }
   if (evidenceIds.length) {
-    const evidence = dialog.getByLabel("명령 증빙 ID");
+    const evidence = dialog.getByLabel("처리 근거 증빙번호");
     await expect(evidence).toBeVisible();
     await evidence.fill(evidenceIds.join("\n"));
   }
@@ -282,8 +282,8 @@ test("connected Quality UI completes linked reinspection, issue, and Owner repor
   await page.goto("/#/parallel-test");
   await selectRole(page, "ADM");
   await page.goto("/#/parallel-test");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
-  const viewer = page.getByLabel("PDF 도면 뷰어");
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
+  const viewer = page.getByLabel("PDF 도면 보기");
   const uploaded = page.waitForResponse((response) => response.url().includes("/uploads/")
     && response.url().endsWith("/complete") && response.request().method() === "POST");
   await viewer.getByTestId("pdf-upload").setInputFiles({ name: `quality-${suffix}.pdf`, mimeType: "application/pdf", buffer: onePagePdf() });
@@ -297,10 +297,10 @@ test("connected Quality UI completes linked reinspection, issue, and Owner repor
   expect(reinspectionUploadResponse.status()).toBe(201);
   const reinspectionOnlyEvidence = await reinspectionUploadResponse.json() as { id: string; version: number };
   const bindingPanel = page.getByRole("region", { name: "도면 PDF 연결" });
-  await bindingPanel.getByLabel("도면 버전").selectOption(`${workspace.context.drawingRef.objectType}:${workspace.context.drawingRef.objectId}:${workspace.context.drawingRef.version}`);
+  await bindingPanel.getByLabel("도면 작성 차수").selectOption(`${workspace.context.drawingRef.objectType}:${workspace.context.drawingRef.objectId}:${workspace.context.drawingRef.version}`);
   await bindingPanel.getByLabel("PDF 원본").selectOption(`Evidence:${pdfEvidence.id}:${pdfEvidence.version}`);
   const bindingResponse = page.waitForResponse((response) => response.url().endsWith("/parallel/drawing-pdf-bindings") && response.request().method() === "POST");
-  await bindingPanel.getByRole("button", { name: "선택한 버전 연결" }).click();
+  await bindingPanel.getByRole("button", { name: "선택한 작성 차수 연결" }).click();
   expect((await bindingResponse).status()).toBe(201);
   await viewer.getByLabel("PDF 원본 선택").selectOption(pdfEvidence.id);
   await expect(viewer.locator("canvas")).toHaveAttribute("aria-label", /PDF 페이지 1 \/ /);
@@ -322,10 +322,10 @@ test("connected Quality UI completes linked reinspection, issue, and Owner repor
   expect(markupResponse.status()).toBe(201);
   const markup = await markupResponse.json() as { id: string; version: number };
 
-  await page.getByLabel("개발 역할 선택").selectOption("SUP");
+  await page.getByLabel("시험 사용자 역할 선택").selectOption("SUP");
   await page.goto("/#/parallel-test");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
-  const supervisorViewer = page.getByLabel("PDF 도면 뷰어");
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
+  const supervisorViewer = page.getByLabel("PDF 도면 보기");
   await supervisorViewer.getByLabel("PDF 원본 선택").selectOption(pdfEvidence.id);
   const savedMarkup = supervisorViewer.getByRole("list", { name: "저장된 도면 주석" }).getByRole("button", { name: new RegExp(markupText) });
   await expect(savedMarkup).toBeVisible();
@@ -333,18 +333,18 @@ test("connected Quality UI completes linked reinspection, issue, and Owner repor
   const issuePanel = page.getByTestId("drawing-markup-issue");
   await issuePanel.getByLabel("실패 원 검측").selectOption(draft.id);
   await issuePanel.getByLabel("확인된 관찰").selectOption(String(seededCandidate!.record.id));
-  await issuePanel.getByLabel("Issue 유형").selectOption("NCR");
+  await issuePanel.getByLabel("지적사항 유형").selectOption("NCR");
   const issueTitle = `Browser quality issue ${suffix}`;
   const actionTitle = `Browser corrective action ${suffix}`;
-  await issuePanel.getByLabel("Issue 제목").fill(issueTitle);
+  await issuePanel.getByLabel("지적사항 제목").fill(issueTitle);
   await issuePanel.getByLabel("시정조치 제목").fill(actionTitle);
   await issuePanel.getByLabel("담당자").selectOption(con.actor.partyId);
   await issuePanel.getByLabel("기한").fill(await localDateTime(page, Date.now() + 86_400_000));
-  await issuePanel.getByRole("button", { name: "이슈 등록 검토" }).click();
-  const issueDialog = page.getByRole("dialog", { name: "Issue 및 시정조치 등록 확인" });
+  await issuePanel.getByRole("button", { name: "지적사항 등록 검토" }).click();
+  const issueDialog = page.getByRole("dialog", { name: "지적사항·시정조치 등록 확인" });
   const issueCreatedPromise = page.waitForResponse((response) => response.url().includes(`/parallel/drawing-markups/${markup.id}/issues`)
     && response.request().method() === "POST");
-  await issueDialog.getByRole("button", { name: "확인 후 Issue와 조치 등록" }).click();
+  await issueDialog.getByRole("button", { name: "확인 후 지적사항과 조치 등록" }).click();
   const issueCreated = await issueCreatedPromise;
   expect(issueCreated.status()).toBe(201);
   const pair = await issueCreated.json() as { issue: { id: string; inspectionIds: string[]; observationIds: string[] }; correctiveAction: { id: string } };
@@ -462,7 +462,7 @@ test("connected Quality UI completes linked reinspection, issue, and Owner repor
   }
   const finalRenderResponsePromise = page.waitForResponse((response) => response.url().includes(`/forms/FM-09/render`)
     && response.request().method() === "POST");
-  await page.getByRole("button", { name: "최종 HTML 스냅샷 생성", exact: true }).click();
+  await page.getByRole("button", { name: "최종 HTML 확인 당시 기록 생성", exact: true }).click();
   const finalRenderResponse = await finalRenderResponsePromise;
   expect(finalRenderResponse.status(), await finalRenderResponse.text()).toBe(200);
   const finalDocument = await finalRenderResponse.json() as { id: string; status: string; renderHash: string; sourceDomainRefs: Array<{ objectId: string; version: number }> };
@@ -574,7 +574,7 @@ test("connected Quality UI completes linked reinspection, issue, and Owner repor
   await casePanel.getByLabel("원 검측 선택", { exact: true }).selectOption(draft.id);
   issueCard = casePanel.locator(".inspection-case-issue").filter({ hasText: issueTitle });
   const closedReadiness = issueCard.locator(".inspection-case-readiness");
-  await expect(closedReadiness.getByText("Issue 종결 준비", { exact: true })).toHaveCount(0);
+  await expect(closedReadiness.getByText("지적사항 종결 준비", { exact: true })).toHaveCount(0);
   await expect(closedReadiness.getByText("종결 차단 사유", { exact: true })).toHaveCount(0);
   await expect(closedReadiness.getByText("종결보고 초안 준비", { exact: true })).toBeVisible();
   const reportForm = issueCard.getByRole("form", { name: "연결된 발주자 보고 초안 작성" });
