@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0",
   "date": "2026-10-11",
-  "documentStatus": "menu_evaluation_in_progress",
-  "sourceCommitBasis": "PR #158; main branch functional/authority contracts unchanged",
+  "documentStatus": "menu_evaluation_in_progress_after_main_integration",
+  "sourceCommitBasis": "PR #158 based on main field-core/password-login merge #156; both menu profiles preserved",
   "relatedArtifacts": [
     "app/reference/role_field_use_cases_v1.json",
     "app/reference/feature_interaction_use_cases_v1.json",
@@ -17,9 +17,9 @@
     "SUP": {
       "visibleRouteIds": [
         "today",
+        "drawings",
         "inspections",
         "capture",
-        "drawings",
         "observations",
         "issues",
         "actions",
@@ -60,9 +60,9 @@
     "CON": {
       "visibleRouteIds": [
         "today",
+        "drawings",
         "inspections",
         "capture",
-        "drawings",
         "issues",
         "actions",
         "schedule",
@@ -138,9 +138,9 @@
     "ADM": {
       "visibleRouteIds": [
         "today",
+        "drawings",
         "inspections",
         "capture",
-        "drawings",
         "observations",
         "issues",
         "actions",
@@ -182,8 +182,8 @@
     "DES": {
       "visibleRouteIds": [
         "today",
-        "capture",
         "drawings",
+        "capture",
         "documents",
         "registers",
         "rfis",
@@ -846,8 +846,8 @@
       "priority": "P0",
       "status": "confirmed_source_before_fix",
       "title": "도면이 독립 메뉴가 아니라 개발/업무별 상세 확인 안에 숨겨짐",
-      "before": "routes.ts에서 drawings 직접 route 없음; ParallelTestPage 내부 도면 탭만 존재",
-      "implementedChange": "drawings 직접 route 및 전용 보기·비교·등록/배포 탭 신설",
+      "before": "초기 전체 기능화면(full)에는 도면 직접 메뉴가 없었고 개발 상세 탭에서 접근. 최신 main의 field-core 출시는 이미 '도면조회' 읽기 전용 메뉴가 있음",
+      "implementedChange": "출시용 field-core의 기존 '도면조회' 유지. full 개발/검증 화면에도 도면 조회·검토 직접 진입 및 PDF/비교·마킹 제공",
       "verification": "MC-01,MC-06,MC-18: CI 브라우저 검증 대기",
       "owner": "Frontend"
     },
@@ -886,7 +886,7 @@
       "priority": "P1",
       "status": "review_pending",
       "title": "감리자의 긴 단일 메뉴 목록 및 그룹 구분 부족",
-      "before": "감리자에게 다수 업무기능이 동일 계층에 나열됨",
+      "before": "개발용 full 모드에는 감리 메뉴가 17개 나열됨. 출시용 field-core 모드는 6개로 축소되어 이미 구분돼 있음",
       "implementedChange": "직접 도면 바로가기 및 스크롤 기능 검증, 그룹 구조 변경은 제품협의 대기",
       "verification": "MC-26 실제 현장 사용자 목표 탐색시간 측정 필요",
       "owner": "Product"
@@ -964,5 +964,131 @@
   "humanEvaluationStatus": "not_run",
   "securityBoundary": "Server authorization must still deny cross-project and cross-role commands; hiding UI does not grant or revoke domain commands",
   "projectSwitchPolicy": "Development mock directory selector only visible when demoProjects.length>1; production project selection remains separate product design work",
-  "languagePolicy": "Korean field terminology master; Vietnamese/English terminology human approval deferred"
+  "languagePolicy": "Korean field terminology master; Vietnamese/English terminology human approval deferred",
+  "menuProfiles": {
+    "full": {
+      "environment": "Vite development or VITE_DOUL_UI_SCOPE=full",
+      "description": "사용성 상세 및 개발 검증 메뉴. RoleRoutes 기반, 도면은 기존 dev 페이지에서 독립 진입 추가.",
+      "navigationByRole": {
+        "SUP": [
+          "today",
+          "drawings",
+          "inspections",
+          "capture",
+          "observations",
+          "issues",
+          "actions",
+          "schedule",
+          "contract",
+          "payment",
+          "completion",
+          "safety",
+          "owner",
+          "documents",
+          "registers",
+          "rfis",
+          "parallel-test"
+        ],
+        "CON": [
+          "today",
+          "drawings",
+          "inspections",
+          "capture",
+          "issues",
+          "actions",
+          "schedule",
+          "contract",
+          "payment",
+          "completion",
+          "safety",
+          "documents",
+          "registers",
+          "rfis",
+          "parallel-test"
+        ],
+        "OWN": [
+          "today",
+          "drawings",
+          "issues",
+          "schedule",
+          "contract",
+          "payment",
+          "completion",
+          "owner",
+          "documents",
+          "registers",
+          "parallel-test"
+        ],
+        "ADM": [
+          "today",
+          "drawings",
+          "inspections",
+          "capture",
+          "observations",
+          "issues",
+          "actions",
+          "schedule",
+          "contract",
+          "payment",
+          "completion",
+          "safety",
+          "owner",
+          "documents",
+          "registers",
+          "rfis",
+          "admin",
+          "parallel-test"
+        ],
+        "DES": [
+          "today",
+          "drawings",
+          "capture",
+          "documents",
+          "registers",
+          "rfis",
+          "parallel-test"
+        ]
+      }
+    },
+    "fieldCore": {
+      "environment": "Production default or VITE_DOUL_UI_SCOPE=field-core",
+      "description": "최초 공개 5개 핵심 기능을 기준으로 간결한 업무 메뉴. 도면조회는 기존 읽기 전용 viewer, 시정조치는 그룹화, 감리보고는 발주처 보고에 하위 양식.",
+      "navigationByRole": {
+        "SUP": [
+          "today",
+          "capture",
+          "drawings",
+          "inspections",
+          "corrections",
+          "owner"
+        ],
+        "CON": [
+          "today",
+          "capture",
+          "drawings",
+          "inspections",
+          "corrections"
+        ],
+        "OWN": [
+          "today",
+          "drawings",
+          "corrections",
+          "owner"
+        ],
+        "DES": [
+          "today",
+          "drawings"
+        ],
+        "ADM": [
+          "today",
+          "capture",
+          "drawings",
+          "inspections",
+          "corrections",
+          "owner",
+          "admin"
+        ]
+      }
+    }
+  }
 }
