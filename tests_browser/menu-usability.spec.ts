@@ -191,7 +191,7 @@ test("unauthorized deep links return to a canonical safe menu and do not expose 
   test.setTimeout(60_000);
   await page.goto("/#/today");
   await selectRole(page, "CON");
-  await page.goto("/#/admin");
+  await page.evaluate(() => { location.hash = "#/admin"; });
   await expect(page).toHaveURL(/#\/today$/);
   const nav = page.locator(navSelector);
   await expect(nav.locator('button[data-route="admin"]')).toHaveCount(0);
