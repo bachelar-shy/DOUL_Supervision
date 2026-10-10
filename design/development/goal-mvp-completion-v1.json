@@ -15,7 +15,7 @@
       "pr": 139,
       "head": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
       "merge": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
-      "validation": "All11 exact-head Mac workflows passed;109browser+7mock+320reference+412API and6livePGHandover; main verification running",
+      "validation": "All11 exact-head PR and all11 merged-main Mac workflows passed;109 browser,7 mock locales,320 reference,412 API and6 live PG Handover tests; synthetic trust providers, no actual pilot.",
       "evidence": "design/verification/reference-v1-1-mac-20261010.json"
     }
   ],
@@ -124,18 +124,22 @@
   "latestCheckpoint": "54b2208",
   "operatorCandidate": {
     "branch": "goal/operator-completion-v1",
-    "sourceCheckpoint": "8fa9c49",
+    "sourceCheckpoint": "7e2c70a",
     "scope": [
       "real media upload/analysis/review/eligible Issue UI, canonical server Issue authority and tri-language errors",
       "same-defect current Warranty closure selector",
       "full partial-payment/correction/cancellation/final-payment UI acceptance"
     ],
-    "verification": "Root Media+Payment integrated2cases pass; final Media authority/error case13.2s pass; selector focusedWarranty2.7min pass; boundary/web-mobile types/lint/build pass; final MacCI pending",
+    "verification": "Root focused Media, final Handover, read-only connection-reset transport and delayed Media mutation-selection tests passed; Payment and Warranty selector focused browser proof remains valid; strict npm12 build, web types/lint/boundary passed. Exact latest Mac Actions pending; superseded dee3988 runs intentionally cancelled.",
     "actualPilotPerformed": false
   },
   "mergedMainVerification": {
-    "status": "failed_under_investigation",
-    "workflow": "mvp-development",
-    "runId": 38018503065
+    "status": "passed",
+    "head": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
+    "workflowCount": 11,
+    "evidence": "design/verification/reference-v1-1-main-mac-20261010.json",
+    "mvpBrowserPassed": 109,
+    "mockLocalizationPassed": 7,
+    "firstAttempt": "One ECONNRESET fixture transport failure; unchanged source passed failed-job rerun. GET-only fixture transport resilience is a separate operator candidate change."
   }
 }

@@ -282,7 +282,7 @@
   ],
   "allExactHeadChecksPassedOnMacMini": true,
   "mergeCommit": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
-  "mainVerification": "in_progress",
+  "mainVerification": "passed",
   "tests": {
     "reference": 320,
     "apiRun": 412,
@@ -295,8 +295,12 @@
   "actualFieldPilot": false,
   "productionTrustProviderVerified": false,
   "mergedMainVerification": {
-    "status": "failed_under_investigation",
-    "workflow": "mvp-development",
-    "runId": 38018503065
+    "status": "passed",
+    "head": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
+    "workflowCount": 11,
+    "evidence": "design/verification/reference-v1-1-main-mac-20261010.json",
+    "mvpBrowserPassed": 109,
+    "mockLocalizationPassed": 7,
+    "firstAttempt": "One ECONNRESET fixture transport failure; unchanged source passed failed-job rerun. GET-only fixture transport resilience is a separate operator candidate change."
   }
 }

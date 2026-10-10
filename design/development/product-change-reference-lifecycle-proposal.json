@@ -41,7 +41,7 @@
       "accept_remedy": "optional paired issueRef + actionRefs"
     },
     "preserved": "Submitted refs, original Owner approval/reservations, test/reinspection history, and one audited command event per accepted refresh; idempotent request replay.",
-    "verification": "PR139: all 11 Mac mini Actions passed; reference 320; API 412 run/366 passed/46 environment-specific skips; real browser 109; real PostgreSQL Handover 6. Merged-main MVP job failed and is under investigation; main verification is not accepted. Synthetic providers and actual field pilot remain unverified.",
+    "verification": "PR139 and merged-main72c8934: all11 Mac Actions each passed; reference320, API412run/366passed/46environment-specific skips, real browser109, mock locales7, live PostgreSQL Handover6. One main fixture GET connection reset passed unchanged-source rerun; candidate adds GET-only transport resilience while never retrying writes. Production providers and actual field pilot unverified.",
     "mergeCommit": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb"
   },
   "additionalConfirmedGaps": [],
@@ -56,7 +56,7 @@
   "baselineTo": "1.1",
   "changeClass": "C2",
   "recordRef": "app/reference/product_change_record_pcr_2026_002.json",
-  "implementationStatus": "in_progress_pending_verified_release",
+  "implementationStatus": "implemented_and_development_verified_pending_verified_release",
   "approvedBoundaries": [
     "SUP may explicitly refresh exact current references while retaining the original identity set and all submitted history.",
     "No automatic refresh and no Issue addition, removal, or substitution.",
@@ -64,7 +64,7 @@
     "Owner approval, reservation snapshots, audit history, expectedVersion, idempotency and all existing closure gates remain in force.",
     "No formal product-change-record schema or Project Configuration validator changes."
   ],
-  "verificationStatus": "pending_ci",
+  "verificationStatus": "development_pr_and_main_ci_passed; verified_release_adoption_pending",
   "releaseEffect": "Only becomes effective when included in a verified release.",
   "acceptanceConditions": [
     "Commissioning correction/retest/Issue closure can reach readiness through explicit current Punch/Action references.",

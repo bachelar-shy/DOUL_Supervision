@@ -16,7 +16,7 @@
     "pilotEvidenceFound": false,
     "pilotEvidenceLimit": "Existing dated verification artifacts explicitly say synthetic development/staging and actualPilotDeployed=false. The example configuration pack is not a selected project pack. No actual project role assignments, field work IDs, snapshots, or owner acceptance evidence were found.",
     "comparedRootCommit": "9d0f2be C2-free candidate before final checkpoint",
-    "candidateVerification": "PR139 all11 Mac Actions passed before merge; merged-main MVP failed, investigation pending. Operator candidate Media, Payment and Warranty selector real-API browser acceptance passed locally; exact-head Mac verification pending.",
+    "candidateVerification": "PR139 all11 PR and merged-main Mac Actions passed. First main fixture GET ECONNRESET passed unchanged-source rerun; operator candidate includes GET-only transport resilience, explicit selection/race fixes and Media/Payment/Warranty UI acceptance. Exact new candidate Mac verification pending.",
     "currentIntegrationBase": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
     "operatorCandidateBranch": "goal/operator-completion-v1"
   },
@@ -28,7 +28,7 @@
       "contract": "confirmed",
       "backendApi": "full_real_http_sqlite_quality_closeout_scenario; no_postgres_quality_suite_identified",
       "ui": "connected_real_http_browser_closeout_passed_test_verifier_boundary",
-      "integration": "PR139 all11 Mac Actions and 109 real-API browser cases passed; merged-main MVP failed, investigation pending; synthetic providers, no actual pilot",
+      "integration": "PR139 all11 Mac Actions and 109 real-API browser cases passed; merged-main all11 Mac Actions passed after one fixture transport rerun; synthetic providers, no actual pilot",
       "pilot": "not_run",
       "evidence": [
         "tests_mvp/test_quality_closed_loop_http.py",
@@ -45,7 +45,7 @@
         "A foreign-scope Evidence selection at Issue close is not tested: the API rejects creation of that evidence at upload with SCOPE_MISMATCH under the demo role scope. Do not claim closure-level cross-scope rejection from this test.",
         "The test exercises SQLite only; no dedicated PostgreSQL closed-loop Quality acceptance suite is identified."
       ],
-      "nextWork": "Production trusted signature provider, adopted forms, selected-project configuration and actual project pilot; candidate CI remains not run and PR129 CI evidence is source-limited."
+      "nextWork": "Production trusted signature provider, adopted forms, selected-project configuration and actual project pilot; PR139 exact-head Mac suite passed, merged-main verification is tracked separately."
     },
     {
       "id": "AC-S-01",
@@ -54,7 +54,7 @@
       "contract": "confirmed",
       "backendApi": "real_http_persistence_and_current_equipment_gates",
       "ui": "connected_real_api_equipment_permit_stop_resume",
-      "integration": "PR139 all11 Mac Actions and 109 real-API browser cases passed; merged-main MVP failed, investigation pending; synthetic providers, no actual pilot",
+      "integration": "PR139 all11 Mac Actions and 109 real-API browser cases passed; merged-main all11 Mac Actions passed after one fixture transport rerun; synthetic providers, no actual pilot",
       "pilot": "not_run",
       "evidence": [
         "app/schema/safety_execution_contract_v1.json",
@@ -68,7 +68,7 @@
         "design/development/agents/safety-connected-browser-handoff.json",
         "design/development/agents/safety-combined-equipment-stop-handoff.json"
       ],
-      "provenScope": "Real browser/API flow completes permit review/authorization/activation; creates and idempotently replays a Stop through HTTP; exercises browser acknowledgement, verified Action remedy linkage, resume request, supervisor verification and explicit lift; proves lift does not reactivate the Permit, then requires separate SUP permit-resume approval. It proves CON self-lift and contractor resume approval are denied, stale Stop version is rejected, and the permit retains the exact immutable Stop v1 reference after later Stop versions. The required Hold Point inspection release is attempted and rejected with ACCEPTANCE_SIGNED. All evidence uses synthetic development demo actors and records. The newer equipment/Stop spec creates EquipmentInspection, Permit and Stop through real UI, proves failed-current-equipment atomic activation refusal, performs passing reinspection, links/verifies a current Action, verifies/lifts Stop, and separately requests/approves Permit resume. Trusted synthetic equipment/certificates/plans and pre-existing Action/passed Inspection are disclosed. Joined candidate regression now creates a separate corrective Action through UI (SUP assignment, CON start/submission, SUP verification) within the failed-equipment→Permit→Stop→lift→separate Permit-resume scenario; two isolated browser tests passed. Final integrated Mac verification pending.",
+      "provenScope": "Real browser/API flow completes permit review/authorization/activation; creates and idempotently replays a Stop through HTTP; exercises browser acknowledgement, verified Action remedy linkage, resume request, supervisor verification and explicit lift; proves lift does not reactivate the Permit, then requires separate SUP permit-resume approval. It proves CON self-lift and contractor resume approval are denied, stale Stop version is rejected, and the permit retains the exact immutable Stop v1 reference after later Stop versions. The required Hold Point inspection release is attempted and rejected with ACCEPTANCE_SIGNED. All evidence uses synthetic development demo actors and records. The newer equipment/Stop spec creates EquipmentInspection, Permit and Stop through real UI, proves failed-current-equipment atomic activation refusal, performs passing reinspection, links/verifies a current Action, verifies/lifts Stop, and separately requests/approves Permit resume. Trusted synthetic equipment/certificates/plans and pre-existing Action/passed Inspection are disclosed. Joined candidate regression now creates a separate corrective Action through UI (SUP assignment, CON start/submission, SUP verification) within the failed-equipment→Permit→Stop→lift→separate Permit-resume scenario; two isolated browser tests passed. PR139 all11 exact-head Mac Actions passed; merged-main verification is tracked separately.",
       "gaps": [
         "Actual adopted equipment registry, certificates/calibration, work scope/permit/plans and field actors/evidence are not supplied.",
         "The newer Stop path consumes a pre-existing synthetic passed Inspection ; the joined candidate now creates and verifies its separate Action through UI, but does not execute that Inspection or prove production legal signatures. The separate quality flow proves release using a test-only verifier.",
@@ -155,27 +155,29 @@
         "Actual adopted project configuration, qualified site actors, production signature provider and field acceptance are not proven."
       ],
       "nextWork": "Finish current full linked browser revalidation and exact-head Mac Actions; preserve all original snapshots and closure gates. Product approval is recorded; do not request it again.",
-      "currentVerification": "PR139 all11 Mac Actions, 109 browser and live PostgreSQL Handover6 passed. Main MVP failure under investigation. Current exact-reference closure selector browser passed locally; operator Mac pending. Actual pilot/provider certification unverified."
+      "currentVerification": "PR139 all11 Mac Actions, 109 browser and live PostgreSQL Handover6 passed. Merged-main all11 Mac Actions passed after one fixture transport rerun. Current exact-reference closure selector browser passed locally; operator Mac pending. Actual pilot/provider certification unverified."
     },
     {
       "id": "AC-MEDIA-01",
       "domain": "media",
-      "assessment": "substantial_backend_api_tests; full_connected_e2e_not_proven",
+      "assessment": "connected_real_API_browser_flow_proven_with_synthetic_analysis_worker; external_provider_accuracy_and_field_pilot_not_proven",
       "contract": "confirmed",
       "backendApi": "real_http_and_worker_tests_exist",
       "ui": "operator candidate connected real API browser passed; synthetic worker/provider fixture",
-      "integration": "partial",
+      "integration": "operator candidate upload, run, coverage, human review and eligible Issue creation passed locally; exact-head Mac pending",
       "pilot": "not_run",
       "evidence": [
         "tests_mvp/test_media_pipeline_http.py",
         "tests_mvp/test_media_to_issue_http.py",
         "tests_mvp/test_worker_jobs.py",
         "tests/test_media_documents.py",
-        "20_Media_Analysis_Detailed_Definition.md"
+        "20_Media_Analysis_Detailed_Definition.md",
+        "tests_browser/media-analysis-browser.spec.ts",
+        "tests_browser/support/media_analysis_api_fixture.py",
+        "docs/media-analysis-browser-handoff.md"
       ],
-      "provenScope": "HTTP coverage includes human review gates, no-findings not becoming official pass, video coverage/PTS, original transcript and worker retry/audit behavior; separate HTTP tests cover eligible observation-to-issue provenance.",
+      "provenScope": "Connected browser uploads source evidence through real API, queues and reads MediaAnalysis runs, renders coverage/immutable source refs, confirms and rejects candidates, and creates an eligible Issue with exact evidence provenance. It also proves ADM/CON authority restrictions, no official pass from no-findings/incomplete/speech-only analysis, Korean/Vietnamese/English view changes without record mutation, and uncertain-acknowledgement idempotent replay. Worker normalized outputs are explicitly synthetic development fixtures; external model inference/accuracy is not measured.",
       "gaps": [
-        "No connected browser E2E was found spanning resumable upload, completed analysis coverage, candidate confirmation/rejection, and eligible-only official Issue creation.",
         "External provider availability, multilingual accuracy and field false-positive performance remain separate operational/data-set validation; mocks or test providers cannot establish model performance."
       ],
       "nextWork": "Verify exact integrated Mac Actions and actual media provider accuracy with authorized site datasets; no actual pilot claim."
@@ -414,7 +416,7 @@
         "tests_mvp/test_completion_reference_refusals_http.py",
         "tests_browser/handover-closed-loop.spec.ts"
       ],
-      "currentVerification": "PR139 all11 Mac Actions, 109 browser and live PostgreSQL Handover6 passed. Main MVP failure under investigation. Current exact-reference closure selector browser passed locally; operator Mac pending. Actual pilot/provider certification unverified."
+      "currentVerification": "PR139 all11 Mac Actions, 109 browser and live PostgreSQL Handover6 passed. Merged-main all11 Mac Actions passed after one fixture transport rerun. Current exact-reference closure selector browser passed locally; operator Mac pending. Actual pilot/provider certification unverified."
     },
     {
       "id": "AC-REF-02",
@@ -431,7 +433,7 @@
         "tests_mvp/test_completion_reference_refusals_http.py",
         "tests_browser/handover-closed-loop.spec.ts"
       ],
-      "currentVerification": "PR139 all11 Mac Actions, 109 browser and live PostgreSQL Handover6 passed. Main MVP failure under investigation. Current exact-reference closure selector browser passed locally; operator Mac pending. Actual pilot/provider certification unverified."
+      "currentVerification": "PR139 all11 Mac Actions, 109 browser and live PostgreSQL Handover6 passed. Merged-main all11 Mac Actions passed after one fixture transport rerun. Current exact-reference closure selector browser passed locally; operator Mac pending. Actual pilot/provider certification unverified."
     },
     {
       "id": "AC-REF-03",
@@ -448,7 +450,7 @@
         "tests_mvp/test_completion_reference_refusals_http.py",
         "tests_browser/handover-closed-loop.spec.ts"
       ],
-      "currentVerification": "PR139 all11 Mac Actions, 109 browser and live PostgreSQL Handover6 passed. Main MVP failure under investigation. Current exact-reference closure selector browser passed locally; operator Mac pending. Actual pilot/provider certification unverified."
+      "currentVerification": "PR139 all11 Mac Actions, 109 browser and live PostgreSQL Handover6 passed. Merged-main all11 Mac Actions passed after one fixture transport rerun. Current exact-reference closure selector browser passed locally; operator Mac pending. Actual pilot/provider certification unverified."
     }
   ],
   "crossCuttingGaps": [
