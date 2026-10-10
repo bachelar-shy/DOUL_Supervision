@@ -57,7 +57,7 @@
   },
   "next": [
     "Continue actual field/operating acceptance133 when qualified users, adopted configuration, approved mappings/photos and operating/provider access are available",
-    "Complete134 upstream/security-release review; descriptive50k performance measurements require adopted workload/budgets and concurrent production validation",
+    "Adopt workload/budgets and complete concurrent production/operating validation; Vietnamese/English human review and #134 security release review are deferred, not current Goal blockers.",
     "Preserve verified implementation; read checkpoint branch, actual Git status and handoffs on platform resume"
   ],
   "preservation": "Original /workspace checkout and metadata untouched; use isolated /tmp worktree and own npm12 dependencies. No reset or shared node_modules mutation.",
@@ -71,5 +71,20 @@
   ],
   "performanceArchitectureReview": "Full snapshot reload is required for cross-adapter freshness; exact role-visible total scans candidates. Page heap already bounded. Material production improvement requires normalized/indexed transactional records, not weakening authorization or totals.",
   "mergeCommit": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
-  "status": "development_verified_external_acceptance_pending"
+  "status": "development_verified_external_acceptance_pending",
+  "deferredFollowups": [
+    {
+      "kind": "vietnamese_english_human_review",
+      "status": "deferred_by_product_owner",
+      "requiredForCurrentGoalCompletion": false,
+      "scope": "Native terminology, translation and field usability review of Vietnamese/English; tri-language implementation and automated layout/errors/formats/report validation remain mandatory."
+    },
+    {
+      "kind": "security_release_review",
+      "issue": 134,
+      "status": "deferred_by_product_owner",
+      "requiredForCurrentGoalCompletion": false,
+      "scope": "Upstream advisory resolution and formal security release review; retain existing controls, regression tests, visible advisories and formal release gate. Deferral does not constitute production release approval."
+    }
+  ]
 }

@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-10 11:13:25 UTC",
+  "checkedAt": "2026-10-10 11:17:53 UTC",
   "outcome": "blocked",
   "verifiedCodeMain": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
   "mainChecks": "all7 success on Mac mini;115 browser/7 isolated mock locales",
@@ -15,12 +15,13 @@
     "Actual site photos with capture time/location and project rights",
     "Approved drawing revisions and BOQ units/currency/contract mapping;explicit schedule activity IDs/dates/calendars/dependencies and baseline decision",
     "Actual signature/storage/recovery access and agreed workload/latency/memory/RPO/RTO targets",
-    "Vietnamese/English field terminology reviewers and adopted devices/offline scope"
+    "Adopted devices/offline acceptance scope for actual pilot"
   ],
   "securityRegistryRecheck": {
     "bracesLatest": "3.0.3",
     "nodeForgeLatest": "1.4.0",
-    "releaseGate": "Pinned backports verified;official upstream fix/security release approval remain unproven"
+    "releaseGate": "Pinned backports verified;official upstream fix/security release approval remain unproven",
+    "requiredForCurrentGoalCompletion": false
   },
   "context7Review": {
     "library": "/microsoft/playwright/v1.61.0",
@@ -29,5 +30,23 @@
   },
   "resume": "When required inputs become available and the platform resumes the Goal, inspect checkpoint branch/current Git and issue state, then continue real field/operating acceptance;do not reimplement verified work or delete uncommitted changes",
   "actualFieldPilotPerformed": false,
-  "goalComplete": false
+  "goalComplete": false,
+  "goalBlockingIssues": [
+    133
+  ],
+  "deferredFollowups": [
+    {
+      "kind": "vietnamese_english_human_review",
+      "status": "deferred_by_product_owner",
+      "requiredForCurrentGoalCompletion": false,
+      "scope": "Native terminology, translation and field usability review of Vietnamese/English; tri-language implementation and automated layout/errors/formats/report validation remain mandatory."
+    },
+    {
+      "kind": "security_release_review",
+      "issue": 134,
+      "status": "deferred_by_product_owner",
+      "requiredForCurrentGoalCompletion": false,
+      "scope": "Upstream advisory resolution and formal security release review; retain existing controls, regression tests, visible advisories and formal release gate. Deferral does not constitute production release approval."
+    }
+  ]
 }

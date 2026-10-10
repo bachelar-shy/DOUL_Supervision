@@ -1,6 +1,6 @@
 {
   "goal": "DOUL Supervision Korean, Vietnamese and English field MVP",
-  "status": "blocked_on_actual_field_operating_inputs_and_security_release_review",
+  "status": "blocked_on_actual_field_and_operating_inputs",
   "integrationBase": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
   "mergedPrerequisites": [
     {
@@ -59,7 +59,10 @@
     "developmentVerificationIsPilot": false,
     "actualPilotPerformed": false,
     "quotaRecoveryAloneGuaranteesExecution": false,
-    "resume": "When the platform resumes execution, inspect handoffs, Git/worktrees, running tasks and worker changes; continue from the last verified checkpoint without deleting uncommitted work."
+    "resume": "When the platform resumes execution, inspect handoffs, Git/worktrees, running tasks and worker changes; continue from the last verified checkpoint without deleting uncommitted work.",
+    "vietnameseEnglishHumanReviewRequired": false,
+    "securityReleaseReviewRequired": false,
+    "triLanguageImplementationAndAutomatedLayoutChecksRequired": true
   },
   "realFileUsabilityEvaluation": {
     "status": "awaiting_actual_site_inputs",
@@ -75,7 +78,7 @@
       "Register original files through the real authorized upload UI and verify durable download/version/project access",
       "Derive plausible register-specific cases from inspected actual contents; record source page, row, activity or photo reference and distinguish proposed case from an actual event",
       "Execute quality, safety, schedule/contract, quantity/payment and handover cases with qualified roles; preserve exact versions, evidence and rejection paths",
-      "Evaluate Korean/Vietnamese/English task completion, errors, time, confusing terms and user feedback; record severity and retest fixes"
+      "Execute required field acceptance with qualified users; retain Korean acceptance and ko/vi/en technical implementation/layout verification. Defer Vietnamese/English human terminology and usability review to a follow-up."
     ],
     "acceptance": "No actual-file upload or usability pass is claimed until supplied files and qualified users have been exercised; synthetic browser fixtures remain separate.",
     "suppliedFileDevelopmentEvidence": "Three uploaded PDF/BOQ/schedule originals exercised through real authorized UI in three languages on two screens (18 download/reopen hash checks) by PR135. Tender BOQ and graphical schedule are not approved imported baselines; actual pilot actors/photos/configuration and mappings remain required."
@@ -85,18 +88,13 @@
       "kind": "actual_field_and_operations_acceptance",
       "requiredInput": "Actual discipline PDFs, BOQ, schedule/photos, qualified users/project configuration, production legal signature provider, adopted forms/language policy and real pilot access.",
       "plan": "53_Field_Pilot_Acceptance_Plan_v1.md#8"
-    },
-    {
-      "kind": "release_security_and_native_review",
-      "requiredInput": "UUID fix merged and verified; node-forge and braces pinned local mitigations merged with original advisories visible. Upstream releases/security release review, native vi/en review and actual operational/field acceptance remain external dependencies.",
-      "evidence": "design/development/agents/uuid-remediation-handoff.json"
     }
   ],
   "restartAfterUnblocking": [
     "Inspect latest Git status, handoffs, PR and main exact-head checks; preserve uncommitted and original checkout data.",
     "PR139/C2 and PR140/operator workflows are merged. Do not redo their implementations or request recorded132 approval.",
     "PR140 main4abc0a5 all7 Mac workflows are verified. Continue from verified checkpoint; do not repeat implementation or CI provisioning.",
-    "Continue actual field/native-language/provider and operating acceptance when133/134 inputs are available; do not declare full Goal complete."
+    "Continue actual field and operating acceptance when #133 inputs are available. Vietnamese/English human review and #134 security release review are deferred follow-ups, not current Goal blockers."
   ],
   "supplementalVerificationEvidence": [
     "design/verification/goal-m4-native-20261009.json"
@@ -114,7 +112,7 @@
     "issue": 132,
     "decision": "approved",
     "statement": "제안대로 v1.1에 채택",
-    "releaseEffect": "C2 implementation integrated and main validated; official release and actual pilot remain dependent on #133/#134"
+    "releaseEffect": "C2 implementation integrated and main validated; actual pilot remains dependent on #133. Formal release review remains a separate deferred #134 follow-up."
   },
   "latestCheckpoint": "97695744d65b788530e2568debdea63259acb524",
   "operatorCandidate": {
@@ -153,5 +151,25 @@
     "sampledPeakRssBytes": 3420848128,
     "limitation": "Synthetic single client, development snapshot adapter; no agreed production workload/SLO or field acceptance."
   },
-  "blockedStatusEvidence": "design/verification/goal-external-acceptance-blocked-20261010.json"
+  "blockedStatusEvidence": "design/verification/goal-external-acceptance-blocked-20261010.json",
+  "scopeRevision": {
+    "date": "2026-10-10",
+    "authorization": "베트남어/ 영어 검토는 나중에 해도 된다. 보안릴리스도 나중에 해도 된다. goal을 수정하자.",
+    "effect": "Defer these two reviews from current Goal completion; retain actual field and operating acceptance."
+  },
+  "deferredFollowups": [
+    {
+      "kind": "vietnamese_english_human_review",
+      "status": "deferred_by_product_owner",
+      "requiredForCurrentGoalCompletion": false,
+      "scope": "Native terminology, translation and field usability review of Vietnamese/English; tri-language implementation and automated layout/errors/formats/report validation remain mandatory."
+    },
+    {
+      "kind": "security_release_review",
+      "issue": 134,
+      "status": "deferred_by_product_owner",
+      "requiredForCurrentGoalCompletion": false,
+      "scope": "Upstream advisory resolution and formal security release review; retain existing controls, regression tests, visible advisories and formal release gate. Deferral does not constitute production release approval."
+    }
+  ]
 }
