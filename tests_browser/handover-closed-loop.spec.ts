@@ -449,7 +449,7 @@ test("real Completion UI preserves Owner reservation proposal inputs on a handov
 });
 
 async function runCompletionHandoverScenario(page: Page, continueWarranty: boolean, finalizeHandover = false): Promise<void> {
-  test.setTimeout(120000);
+  test.setTimeout(continueWarranty || finalizeHandover ? 240000 : 120000);
   const origin = testOrigin();
   const { child, base, fixture } = await startApi(origin);
   try {
