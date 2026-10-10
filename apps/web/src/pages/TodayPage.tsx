@@ -101,7 +101,10 @@ export function TodayPage({
               }
               meta={t("today.meta.currentState")}
             />
-            <RecordList items={priorityItems} onSelect={onOpenItem} />
+            <RecordList items={priorityItems} onSelect={onOpenItem}
+              contextLabel={(item) => workspace.locations?.find(
+                location => location.id === item.record.locationId,
+              )?.name ?? item.record.locationId ?? t("record.context.sample")} />
           </Panel>
           <div className="right-stack">
             <DecisionPanel

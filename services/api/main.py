@@ -340,6 +340,81 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     @app.get('/health')
     def health():return dict(status='ok',mode='local-demo' if demo else stage,baseCommit=(os.getenv('DOUL_RELEASE_SHA', '') if re.fullmatch(r'[a-f0-9]{40}', os.getenv('DOUL_RELEASE_SHA', '')) else 'unversioned-development'),adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo' if demo else 'pinned-rs256-access-token','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
 
+    def demo_project_directory():
+        registry = store.meta.get('demoProjectDirectory')
+        if isinstance(registry, dict):
+            return registry['projects'], registry['defaultProjectId']
+        project = store.meta['projectId']
+        return {project: dict(projectId=project, name=store.engine.get('Project', project)['name'],
+                              sample=False, actors=store.meta['actors'],
+                              context={key: deepcopy(value) for key, value in store.meta.items()
+                                       if key in ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId']})}, project
+
+    if demo:
+        @app.get('/dev/projects')
+        def dev_projects(request: Request):
+            origin=request.headers.get('origin')
+            require(origin is None or origin in origins,'ORIGIN_DENIED','Development origin not allowed')
+            with store.transaction():
+                projects, preferred=demo_project_directory()
+                return {'defaultProjectId': preferred,
+                        'items': [dict(projectId=p['projectId'], name=p['name'], sample=p['sample'])
+                                  for p in projects.values()]}
+
+    if demo:
+        def require_sample_administrator(request: Request, project_id: str):
+            from scripts.sample_project_registry import FIXTURE_KEY
+            actor=identity(request)
+            role=role_for(actor,project_id,request.headers.get('x-roleassignment-id'))
+            require(role['actorGroup']=='ADM' and role['roleCode']=='project_admin',
+                    'NOT_AUTHORIZED','Sample verification requires the development project administrator')
+            marker=store.meta.get('mockProjectSetup') or {}
+            fixture=store.meta.get('sampleRealisticFixture') or {}
+            require(marker.get('key')==FIXTURE_KEY and marker.get('projectId')==project_id
+                    and fixture.get('projectId')==project_id,
+                    'NOT_FOUND','Registered synthetic sample project required')
+            return actor
+
+        @app.get('/dev/sample/usecases')
+        def sample_usecases(request: Request, projectId: str):
+            from scripts.sample_usecases import catalog
+            with store.transaction():
+                require_sample_administrator(request,projectId)
+                fixture=store.meta['sampleRealisticFixture']
+                kinds=['drawing','photo','report']
+                files=[item.get('kind') for item in fixture['files'].values()]
+                return {'projectId':projectId,'cases':catalog(),
+                        'runs':deepcopy(store.meta.get('sampleUseCaseRuns',{})),
+                        'sampleStats':{
+                            'drawings':files.count('drawing'),
+                            'photos':files.count('photo'),
+                            'reportFiles':files.count('report'),
+                            'inspections':len(fixture['records']['inspections']),
+                            'issues':len(fixture['records']['issues']),
+                            'actions':len(fixture['records']['actions']),
+                            'reports':len(fixture['records']['reports'])},
+                        'actualFieldAcceptance':False}
+
+        @app.post('/dev/sample/usecases/{case_id}/run')
+        async def execute_sample_usecase(case_id: str, request: Request):
+            from scripts.sample_usecases import CASES, run_on_backup
+            body=await body_json(request)
+            require(set(body)=={'projectId'},'INVALID_REQUEST','Sample projectId required')
+            project_id=body['projectId']
+            require(case_id in {row[0] for row in CASES},'NOT_FOUND','Unknown case')
+            with store.transaction():
+                require_sample_administrator(request,project_id)
+            # All mutation/experimentation occurs in a disposable SQLite
+            # backup. The sample DB stores only the outcome and never the
+            # changed scenario state.
+            outcome=run_on_backup(store,case_id)
+            with store.transaction(True):
+                require_sample_administrator(request,project_id)
+                outcome['runAt']=datetime.now(timezone.utc).isoformat()
+                runs=store.meta.setdefault('sampleUseCaseRuns',{})
+                runs[case_id]=deepcopy(outcome)
+            return outcome
+
     @app.get('/dev/actors')
     def actors():
         with store.transaction():return [dict(actorGroup=g,name=a['name']) for g,a in store.meta['actors'].items()]
@@ -349,8 +424,15 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         origin=request.headers.get('origin')
         require(origin is None or origin in origins,'ORIGIN_DENIED','Development origin not allowed')
         body=await body_json(request)
-        require(set(body)=={'actorGroup'} and body['actorGroup'] in ['SUP','CON','OWN','DES','ADM'],'INVALID_REQUEST','Choose one demo human role; service/source parties cannot log in')
-        with store.transaction():a=deepcopy(store.meta['actors'][body['actorGroup']]);project=store.meta['projectId']
+        require(set(body) in ({'actorGroup'}, {'actorGroup','projectId'})
+                and body['actorGroup'] in ['SUP','CON','OWN','DES','ADM'],
+                'INVALID_REQUEST','Choose one demo human role and an optional registered project')
+        with store.transaction():
+            projects, preferred = demo_project_directory()
+            project = body.get('projectId', preferred)
+            require(isinstance(project, str) and project in projects,
+                    'PROJECT_MISMATCH','Development project is not registered')
+            a = deepcopy(projects[project]['actors'][body['actorGroup']])
         token=secrets.token_urlsafe(32)
         with session_lock:sessions[token]=dict(a,expires=datetime.now(timezone.utc)+timedelta(hours=8))
         return dict(accessToken=token,projectId=project,actor=a,mode='LOCAL_DEMO_NOT_PRODUCTION')
@@ -483,13 +565,22 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                 items.append(dict(machine=machine or supporting or ('evidence' if kind=='Evidence' else 'document'),record=deepcopy(r),actions=preflight(machine,r,session,role) if machine else []))
             visible_ids={x['record']['id'] for x in items}
             audits=[x for x in store.engine.audit_events if x['projectId']==project_id and x['objectRef']['objectId'] in visible_ids][-50:]
-            context=({k:deepcopy(v) for k,v in store.meta.items() if k in ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId']} if store.meta.get('projectId')==project_id else {'projectId':project_id})
+            if demo:
+                projects, _ = demo_project_directory()
+                source_context = projects.get(project_id, {}).get('context', {'projectId': project_id})
+                context = deepcopy(source_context)
+            else:
+                context=({k:deepcopy(v) for k,v in store.meta.items() if k in ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId']} if store.meta.get('projectId')==project_id else {'projectId':project_id})
             context['creationCapabilities']=build_creation_capabilities(
                 store.engine,project_id,session['partyId'],role,context.get('scope'),
                 queue_enabled=app.state.queue_enabled,
             )
             context['referenceCatalog']=build_reference_catalog(store.engine,project_id,session['partyId'],role['id'])
-            return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context=context,participants=[dict(partyId=r['partyId'],name=store.engine.get('Party',r['partyId'])['name'],actorGroup=r['actorGroup']) for (kind,_),r in store.engine._records.items() if kind=='RoleAssignment' and r['projectId']==project_id and r['active'] and r['actorGroup'] in ['SUP','CON','OWN','DES','ADM']],formSchemas=store.documents.schemas,demo=demo)
+            locations=[dict(id=r["id"],name=r["name"])
+                       for (kind,_),r in store.engine._records.items()
+                       if kind=="Location" and r.get("projectId")==project_id
+                       and (r["id"] in role.get("locationIds",[]) or role.get("actorGroup")=="ADM")]
+            return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context=context,locations=locations,participants=[dict(partyId=r['partyId'],name=store.engine.get('Party',r['partyId'])['name'],actorGroup=r['actorGroup']) for (kind,_),r in store.engine._records.items() if kind=='RoleAssignment' and r['projectId']==project_id and r['active'] and r['actorGroup'] in ['SUP','CON','OWN','DES','ADM']],formSchemas=store.documents.schemas,demo=demo)
 
     @app.get('/projects/{project_id}/roles')
     def roles(project_id:str,request:Request):

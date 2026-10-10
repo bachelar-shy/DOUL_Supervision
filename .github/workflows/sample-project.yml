@@ -1,0 +1,116 @@
+name: sample-project-verification
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/sample-project.yml"
+      - "apps/web/**"
+      - "packages/client/**"
+      - "services/api/**"
+      - "app/reference/**"
+      - "app/schema/**"
+      - "scripts/sample_*.py"
+      - "scripts/mock_project_setup.py"
+      - "tests_mvp/test_sample_project_full_workflow.py"
+      - "tests_browser_sample/**"
+      - "playwright.sample.config.ts"
+      - "design/development/mock-site/**"
+      - "package.json"
+      - "package-lock.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/sample-project.yml"
+      - "apps/web/**"
+      - "packages/client/**"
+      - "services/api/**"
+      - "app/reference/**"
+      - "app/schema/**"
+      - "scripts/sample_*.py"
+      - "scripts/mock_project_setup.py"
+      - "tests_mvp/test_sample_project_full_workflow.py"
+      - "tests_browser_sample/**"
+      - "playwright.sample.config.ts"
+      - "design/development/mock-site/**"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-sample-api-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - name: Install locked test dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install -r services/api/requirements.lock
+          npm install --global npm@12.2.0
+          npm ci --no-audit --no-fund
+      - name: UI boundary and typechecked build
+        run: |
+          npm run check:ui-boundary
+          npm run lint --workspace apps/web
+          npm run web:build
+      - name: Full fixture, restart, permissions and 15 case checks
+        run: |
+          mkdir -p .local
+          .venv/bin/python -m unittest tests_mvp.test_sample_project_full_workflow -v > .local/sample-unittest.log 2>&1 || {
+            tail -n 100 .local/sample-unittest.log
+            exit 1
+          }
+      - name: Generate and register isolated synthetic sample database
+        run: |
+          .venv/bin/python -m scripts.sample_project_materials --output .local/sample-materials
+          .venv/bin/python -m scripts.sample_project_load --database .local/DOUL_SAMPLE_WWT.sqlite3 --materials .local/sample-materials > .local/sample-loader.log 2>&1 || {
+            tail -n 100 .local/sample-loader.log
+            exit 1
+          }
+          .venv/bin/python -m scripts.sample_usecases --database .local/DOUL_SAMPLE_WWT.sqlite3 --case all --output .local/sample-results.json > .local/sample-usecases.log 2>&1
+      - name: Install Chromium for UI verification
+        run: npx playwright install --with-deps chromium
+      - name: Execute real browser scenarios
+        env:
+          DOUL_TEST_API_TARGET: http://127.0.0.1:8794
+          DOUL_SAMPLE_BASE_URL: http://127.0.0.1:5187
+        run: |
+          set -eu
+          .venv/bin/python -m services.api --demo --database .local/DOUL_SAMPLE_WWT.sqlite3 --port 8794 > .local/sample-api.log 2>&1 &
+          api_pid=$!
+          npm run dev --workspace apps/web -- --host 127.0.0.1 --port 5187 > .local/sample-web.log 2>&1 &
+          web_pid=$!
+          trap 'kill "$api_pid" "$web_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 50); do
+            if curl --fail --silent http://127.0.0.1:8794/ready >/dev/null && curl --fail --silent http://127.0.0.1:5187/ >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail http://127.0.0.1:8794/ready
+          curl --fail http://127.0.0.1:5187/ >/dev/null
+          npm run test:sample-browser
+      - name: Preserve failed synthetic test evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sample-project-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .local/*.log
+            .local/sample-results.json
+            test-results/
+          if-no-files-found: warn
+          retention-days: 7

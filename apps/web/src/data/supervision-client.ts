@@ -83,10 +83,21 @@ export interface ScheduleSourceImportDetail {
   activityRefs: DomainRef[];
 }
 
+export interface DemoProject {
+  projectId: string;
+  name: string;
+  sample: boolean;
+}
+export interface DemoProjectDirectory {
+  defaultProjectId: string;
+  items: DemoProject[];
+}
+
 export interface SupervisionClient {
   readonly kind: "http" | "mock";
   readonly session: Session | null;
-  login(role: HumanRole): Promise<Session>;
+  login(role: HumanRole, projectId?: string): Promise<Session>;
+  demoProjects(): Promise<DemoProjectDirectory>;
   workspace(): Promise<Workspace>;
   execute(
     item: WorkItem,
@@ -147,8 +158,12 @@ class HttpSupervisionClient implements SupervisionClient {
     return this.client.session;
   }
 
-  login(role: HumanRole) {
-    return this.client.login(role);
+  login(role: HumanRole, projectId?: string) {
+    return this.client.login(role, projectId);
+  }
+
+  demoProjects(): Promise<DemoProjectDirectory> {
+    return this.client.request<DemoProjectDirectory>("/dev/projects");
   }
 
   workspace() {

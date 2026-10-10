@@ -106,7 +106,7 @@ export function WorkbenchPage({
               <div className="meta-grid">
                 <div>
                   <small>{t("workbench.location")}</small>
-                  <b>{current.record.locationId || t("workbench.sampleLocation")}</b>
+                  <b>{workspace.locations?.find(location => location.id === current.record.locationId)?.name || current.record.locationId || t("workbench.sampleLocation")}</b>
                 </div>
                 <div>
                   <small>{t("workbench.originalVersion")}</small>
