@@ -136,7 +136,7 @@ jobs:
             echo "DOUL_TEST_POSTGRES_DSN=$test_database_url"
           } >> "$GITHUB_ENV"
 
-      - name: Run live PostgreSQL persistence and Schedule import integration tests
+      - name: Run live PostgreSQL persistence, Schedule import and Handover integration tests
         if: steps.postgres_adapter.outputs.available == 'true'
         run: |
           set -o pipefail
@@ -171,6 +171,10 @@ jobs:
           run_postgres_suite \
             /tmp/schedule-source-import-postgres-tests.txt \
             tests_mvp.test_schedule_source_import_postgres
+
+          run_postgres_suite \
+            /tmp/handover-postgres-tests.txt \
+            tests_mvp.test_handover_postgres.HandoverPostgresTests
 
       - name: Start development stack
         run: |
