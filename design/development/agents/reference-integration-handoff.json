@@ -1,7 +1,7 @@
 {
   "status": "in_progress_not_release_verified",
   "branch": "goal/reference-integration-v1-1",
-  "baseCommit": "49cae4f8a3d2eecb10fdb909c4669ef74fb7da30",
+  "baseCommit": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
   "productApproval": {
     "issue": 132,
     "decision": "approved",
@@ -19,7 +19,10 @@
   "sourceCheckpoints": [
     "553e030",
     "ca3f531",
-    "4a5e555"
+    "4a5e555",
+    "0995c34",
+    "aeee482",
+    "d1f2328"
   ],
   "verification": {
     "referenceSuite": "320 passed using locked priority-venv",
@@ -27,9 +30,10 @@
     "newAcceptance": "five real HTTP refusal/persistence/idempotency tests passed; full five browser cases rerunning after final-snapshot signature test completion",
     "types": "web and mobile typecheck passed",
     "locales": "350 mandatory keys across ko/vi/en passed",
-    "MacCI": "C2 pending; PR136 and PR137 each four PR and four merged-main Mac Actions passed; PR138 pending",
+    "MacCI": "C2 pending; PR136/137 each four PR and four merged-main Mac Actions passed; PR138 four PR passed, merged main verification pending",
     "fullIntegratedAPI": "412 tests run, 366 passed, 46 environment-specific skips; locked priority-venv, source c032d6e (browser-only test updates after code)",
-    "uiChecks": "UI boundary, web lint, responsive web build, web/mobile typecheck and generated API/types/command data checks passed"
+    "uiChecks": "UI boundary, web lint, responsive web build, web/mobile typecheck and generated API/types/command data checks passed",
+    "dependencyGuard": "Both pinned node-forge and braces appliers and regression probes passed; strict installed graph/source guard passed after security138 merge"
   },
   "restart": [
     "Remote goal/reference-integration-v1-1 preserves checkpoint. Active /tmp worktrees use /tmp/doul-preserved-mirror.git; original /workspace repository metadata is untouched. /workspace full; do not create sequencer there or prune old work.",
@@ -39,5 +43,5 @@
     "Actual field pilot remains unperformed; supplied files and development fixtures are not field acceptance"
   ],
   "environmentInterruption": "Source and checkpoints committed and pushed; temporary /tmp worktrees must be recovered from remote if execution environment changes.",
-  "integrationCheckpoint": "1de113c"
+  "integrationCheckpoint": "6d68d0d"
 }

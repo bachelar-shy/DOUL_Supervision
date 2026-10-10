@@ -34,7 +34,7 @@
     }
   },
   "releaseStatus": "BLOCKED_PENDING_REMEDIATION",
-  "note": "Counts include transitive propagation, not distinct vulnerabilities. npm 12.2.0 reports 33 high, zero moderate and two root advisories after the UUID fix. Earlier npm 11.9 reported 21 high/7 moderate; raw propagation counts across tool versions are not comparable. The node-forge local patch mitigates the cited RSA DigestInfo issue in installed source while preserving the original registry version and audit finding; its local status is mitigated_by_pinned_backport_pending_upstream_release_and_release_review. Release approval remains blocked while upstream release/review is pending and braces 3.0.3 remains affected. No advisory filter, forced Expo downgrade, graph-validation waiver or release approval was applied.",
+  "note": "Counts include transitive propagation, not distinct vulnerabilities. npm 12.2.0 reports 33 high, zero moderate and two root advisories after the UUID fix. Earlier npm 11.9 reported 21 high/7 moderate; raw propagation counts across tool versions are not comparable. The node-forge local patch mitigates the cited RSA DigestInfo issue in installed source while preserving the original registry version and audit finding; its local status is mitigated_by_pinned_backport_pending_upstream_release_and_release_review. Both node-forge and braces installed sources now have pinned checksum-guarded local mitigations. Their original registry versions and advisories remain visible; release approval remains blocked pending upstream release and security review. No advisory filter, forced Expo downgrade, graph-validation waiver or release approval was applied.",
   "remediatedAdvisories": [
     {
       "package": "uuid",
@@ -92,5 +92,19 @@
     "bothCommits": "all four passed on doul-macmini-m4-linux",
     "prProof": "/Users/automation/work/DOUL-ci-runtime/pr136-15bbc15-checks.json",
     "mainProof": "/Users/automation/work/DOUL-ci-runtime/pr136-7a3485e-checks.json"
+  },
+  "localBackportVerification": {
+    "node-forge": {
+      "pullRequest": 137,
+      "mergeCommit": "49cae4f8a3d2eecb10fdb909c4669ef74fb7da30",
+      "MacPR": "all four triggered workflows passed",
+      "MacMain": "all four triggered workflows passed"
+    },
+    "braces": {
+      "pullRequest": 138,
+      "mergeCommit": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
+      "MacPR": "all four triggered workflows passed",
+      "MacMain": "pending"
+    }
   }
 }
