@@ -1209,8 +1209,14 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
       await expect(workspace.getByText(labels.issue, { exact: true })).toBeVisible();
       await expect(workspace.getByText(labels.actions, { exact: true })).toBeVisible();
       await expect(workspace.getByRole("heading", { name: labels.history, exact: true })).toBeVisible();
-      await expect(workspace.getByText(labels.prior, { exact: true })).toBeVisible();
-      await expect(workspace.getByText(labels.updated, { exact: true })).toBeVisible();
+      const priorLabels = workspace.getByText(labels.prior, { exact: true });
+      const updatedLabels = workspace.getByText(labels.updated, { exact: true });
+      await expect(priorLabels).toHaveCount(2);
+      await expect(updatedLabels).toHaveCount(2);
+      await expect(priorLabels.first()).toBeVisible();
+      await expect(priorLabels.nth(1)).toBeVisible();
+      await expect(updatedLabels.first()).toBeVisible();
+      await expect(updatedLabels.nth(1)).toBeVisible();
       expect(latestWorkspace.items.find((item: any) => item.record.id === claimId).record.version).toBe(refreshedRemedy.version);
       expect(latestWorkspace.items.find((item: any) => item.record.id === claimId).record.data.issueRef).toEqual(originalRemedyIssueRef);
       expect(latestWorkspace.items.find((item: any) => item.record.id === claimId).record.data.actionRefs).toEqual(originalRemedyActionRefs);
