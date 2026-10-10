@@ -1,0 +1,47 @@
+{
+  "branch": "goal/issue124-live-http-benchmark-v1",
+  "baseCommit": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
+  "scope": "Portable descriptive real-HTTP/PostgreSQL work-inbox benchmark harness; no API, domain, authorization, persistence-schema, or SLO changes.",
+  "files": [
+    "scripts/benchmark_work_inbox_http_acceptance.py",
+    "design/development/agents/issue124-live-http-acceptance-handoff.json"
+  ],
+  "harness": {
+    "defaults": {
+      "syntheticIssueRows": 50000,
+      "otherProjectRows": 5000,
+      "sameProjectOutOfScopeRows": 1,
+      "timedRoundsPerPageSize": 30,
+      "warmupsPerPageSize": 2,
+      "pageSizes": [1, 100]
+    },
+    "transport": "Loopback TCP HTTP to a local FastAPI process with an isolated PostgreSQL 16 Docker container; random container name and Docker-assigned host port.",
+    "measurements": [
+      "Per-request latency samples, p50, nearest-rank p95, sample count, and second-page latency.",
+      "API process CPU ticks where /proc is available.",
+      "API RSS baseline, sampled peak, final RSS, and peak above baseline via /proc or POSIX ps.",
+      "Measured response-byte totals and means.",
+      "PostgreSQL cgroup CPU delta when the container exposes cgroup v2 cpu.stat.",
+      "Source commit, Python version, host platform, and PostgreSQL server version."
+    ],
+    "correctnessChecks": [
+      "Exact project-filtered eligible total matches independent fixture authorization enumeration for every timed request and second page.",
+      "Page one and its keyset continuation contain the requested number of rows and do not overlap.",
+      "A newest same-project row with a forbidden location is denied by the real read guard and never appears in either page; total excludes it.",
+      "A foreign actor role assignment sent with the SUP session produces HTTP 403 NOT_AUTHORIZED."
+    ],
+    "cleanup": "Stops the child API process and removes only this invocation's randomized disposable PostgreSQL container.",
+    "validation": [
+      "python3 -m py_compile scripts/benchmark_work_inbox_http_acceptance.py",
+      "python3 scripts/benchmark_work_inbox_http_acceptance.py --help"
+    ]
+  },
+  "runStatus": "Not run. Docker is available in the current Linux environment, but no PostgreSQL container/listener was already running; the root requested notice before measurement to avoid contention with active CI/UI work.",
+  "acceptanceLimits": [
+    "No latency SLO or p95 budget was found in inspected contracts; results will be descriptive and cannot be called a performance acceptance pass.",
+    "Synthetic duplicated Issue records, one API process, and local snapshot persistence do not establish field data, concurrent-client behavior, M4/ARM64 performance, or production readiness.",
+    "A product owner must supply the target workload and latency/CPU/memory budgets before field performance acceptance can be claimed."
+  ],
+  "command": "python scripts/benchmark_work_inbox_http_acceptance.py --app-root <clean-checkout> --rounds 30 --page-sizes 1 100 --output <unique-evidence-path.json>",
+  "restart": "Wait for a quiet local CI/UI window before using the disposable PostgreSQL fixture. Preserve the evidence output under a unique filename and record the exact clean app commit; do not benchmark against Mac while PR CI is active."
+}
