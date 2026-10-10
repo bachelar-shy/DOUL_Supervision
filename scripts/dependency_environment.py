@@ -123,6 +123,47 @@ def compare_node(root, packages):
             errors.append("Locked version differs: " + relative)
     return errors, manifests, installed
 
+def check_braces_backport(root, lock_data):
+    metadata_path = root / "security/backports/braces-3.0.3.json"
+    metadata = json.loads(metadata_path.read_text())
+    expected = metadata["package"]
+    matches = [(name, package) for name, package in lock_data["packages"].items()
+               if name == "node_modules/braces" or name.endswith("/node_modules/braces")]
+    errors = []
+    report = {"metadata": str(metadata_path), "advisory": metadata["advisory"]["id"],
+              "expected_version": expected["version"], "upstream_head": metadata["upstream"]["headCommit"],
+              "files": []}
+    if len(matches) != 1 or matches[0][0] != expected["lockPath"]:
+        errors.append("braces backport expects exactly one locked copy at " + expected["lockPath"])
+        report["errors"] = errors
+        return report
+    lock_path, locked = matches[0]
+    if locked.get("version") != expected["version"] or locked.get("integrity") != expected["integrity"]:
+        errors.append("braces lock identity differs from the reviewed backport source")
+    package_root = root / lock_path
+    manifest_path = package_root / "package.json"
+    license_path = package_root / "LICENSE"
+    if not manifest_path.is_file() or not license_path.is_file():
+        errors.append("braces package or MIT license is missing; install locked dependencies first")
+    else:
+        manifest = json.loads(manifest_path.read_text())
+        if manifest.get("name") != expected["name"] or manifest.get("version") != expected["version"]:
+            errors.append("installed braces identity differs from the reviewed backport source")
+        if manifest.get("license") != metadata["license"]["expression"]:
+            errors.append("installed braces license differs from the reviewed backport source")
+    for source in metadata["files"]:
+        target = package_root / source["path"]
+        if not target.is_file():
+            errors.append("braces backport source is missing: " + source["path"])
+            continue
+        actual_hash = digest(target)
+        report["files"].append({"path": source["path"], "sha256": actual_hash,
+                                "patched": actual_hash == source["patchedSha256"]})
+        if actual_hash != source["patchedSha256"]:
+            errors.append("braces security backport is missing or differs from the reviewed target: " + source["path"])
+    report["errors"] = errors
+    return report
+
 def check_node_forge_backport(root, lock_data):
     metadata_path = root / "security/backports/node-forge-1.4.0.json"
     metadata = json.loads(metadata_path.read_text())
@@ -161,8 +202,10 @@ def check_node(root):
     if data.get("lockfileVersion", 0) < 2:
         raise ValueError("package-lock v2/v3 required")
     errors, manifests, installed = compare_node(root, data["packages"])
-    backport = check_node_forge_backport(root, data)
-    errors.extend(backport["errors"])
+    braces_backport = check_braces_backport(root, data)
+    node_forge_backport = check_node_forge_backport(root, data)
+    errors.extend(braces_backport["errors"])
+    errors.extend(node_forge_backport["errors"])
     tree = subprocess.run(["npm", "ls", "--all", "--json"], cwd=root, text=True,
                           capture_output=True)
     try:
@@ -176,7 +219,8 @@ def check_node(root):
             "inventory_sha256": hashlib.sha256(json.dumps(sorted(installed)).encode()).hexdigest(),
             "node_version": subprocess.check_output(["node", "--version"], text=True).strip(),
             "npm_version": subprocess.check_output(["npm", "--version"], text=True).strip(),
-            "node_forge_backport": backport,
+            "braces_backport": braces_backport,
+            "node_forge_backport": node_forge_backport,
             "errors": errors}
 
 def main(argv=None):
