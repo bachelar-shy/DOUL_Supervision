@@ -5,7 +5,7 @@ type ActorGroup = "CON" | "SUP" | "OWN";
 
 async function selectRole(page: Page, role: ActorGroup) {
   const route = new URL(page.url()).hash || "#/today";
-  const picker = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const picker = page.getByRole("combobox", { name: "시험 사용자 역할 선택" });
   if ((await picker.inputValue()) !== role) {
     const response = page.waitForResponse(
       (value) => value.url().endsWith("/workspace") && value.ok(),
@@ -37,7 +37,7 @@ async function evidenceId(request: APIRequestContext) {
 
 async function createNotice(page: Page) {
   const suffix = randomUUID().slice(0, 8);
-  const title = `계약통지 UI ${suffix}`;
+  const title = `계약통지 화면 ${suffix}`;
 
   await page.goto("/#/contract");
   await selectRole(page, "CON");
@@ -154,7 +154,7 @@ test("Contract Notice creates, calculates due date, and submits through real API
   const submitDialog = page.getByRole("dialog", {
     name: "계약통지 제출",
   });
-  await submitDialog.getByLabel("명령 증빙 ID").fill(evidence);
+  await submitDialog.getByLabel("처리 근거 증빙번호").fill(evidence);
   const submitResponse = page.waitForResponse((response) =>
     response.url().endsWith(`/${record.id}/submit-notice`),
   );
@@ -178,7 +178,7 @@ test("Claim and EOT drafts follow server capabilities and the API rejects owner 
   await selectRole(page, "CON");
 
   const claimSuffix = randomUUID().slice(0, 8);
-  const claimTitle = `클레임 UI ${claimSuffix}`;
+  const claimTitle = `클레임 화면 ${claimSuffix}`;
   await page.getByRole("tab", { name: "클레임", exact: true }).click();
   await page
     .getByRole("button", { name: "클레임 기록 추가", exact: true })
@@ -201,7 +201,7 @@ test("Claim and EOT drafts follow server capabilities and the API rejects owner 
   ).toContainText("원 청구액");
 
   const eotSuffix = randomUUID().slice(0, 8);
-  const eotTitle = `공기연장 UI ${eotSuffix}`;
+  const eotTitle = `공기연장 화면 ${eotSuffix}`;
   await page
     .getByRole("tab", { name: "공기연장(EOT)", exact: true })
     .click();

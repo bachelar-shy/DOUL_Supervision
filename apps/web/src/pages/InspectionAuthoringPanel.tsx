@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../labels";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { SupervisionClient } from "../data/supervision-client";
@@ -18,7 +19,7 @@ type LabelKey =
 const copy: Record<Locale, Record<LabelKey, string>> = {
   ko: {
     title: "자체검측 작성",
-    description: "사용 가능한 도면과 실제 검측 위치·기준·증빙을 선택합니다. 출처 범위와 선행조건은 서버가 검증하며, 초안 저장은 검측 요청 제출이 아닙니다.",
+    description: "사용 가능한 도면과 실제 검측 위치·기준·증빙을 선택합니다. 출처 범위와 선행조건은 업무 시스템이 검증하며, 초안 저장은 검측 요청 제출이 아닙니다.",
     workName: "공종·작업명", drawing: "검측 기준 도면", selectDrawing: "도면 선택", revision: "개정", location: "검측 위치", selectLocation: "위치 선택",
     requirements: "검측 기준", evidence: "현장 증빙", noRequirementsOrEvidence: "이 위치의 검측 기준 또는 증빙이 없습니다. 해당 위치의 기준·증빙을 등록한 후 작성하십시오.",
     fieldChecks: "현장 확인", selfComplete: "자체검측 완료", drawingCheck: "도면 확인", materialCheck: "자재 확인", testCheck: "시험 확인",
@@ -108,10 +109,10 @@ export function InspectionAuthoringPanel({ client, workspace, online, onCreated 
   return <form aria-label={t.title} className="grid gap-3 p-3" onSubmit={event => { event.preventDefault(); void save(); }}>
     <h3>{t.title}</h3><p>{t.description}</p>
     <label>{t.workName}<input value={workName} maxLength={300} required disabled={busy} onChange={event => setWorkName(event.target.value)} /></label>
-    <label>{t.drawing}<select value={drawingId} disabled={loading || busy} onChange={event => { setDrawingId(event.target.value); setLocationId(""); setRequirementIds([]); setEvidenceIds([]); }}><option value="">{t.selectDrawing}</option>{sources.drawings.map(d => <option key={d.domainRef.objectId} value={d.domainRef.objectId}>{d.title} · {t.revision} {d.revision} · v{formatNumber(d.domainRef.version)}</option>)}</select></label>
+    <label>{t.drawing}<select value={drawingId} disabled={loading || busy} onChange={event => { setDrawingId(event.target.value); setLocationId(""); setRequirementIds([]); setEvidenceIds([]); }}><option value="">{t.selectDrawing}</option>{sources.drawings.map(d => <option key={d.domainRef.objectId} value={d.domainRef.objectId}>{d.title} · {t.revision} {d.revision} · {recordVersionLabel(formatNumber(d.domainRef.version))}</option>)}</select></label>
     <label>{t.location}<select value={locationId} disabled={!drawing || loading || busy} onChange={event => { setLocationId(event.target.value); setRequirementIds([]); setEvidenceIds([]); }}><option value="">{t.selectLocation}</option>{drawing?.locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
-    <fieldset disabled={loading || busy}><legend>{t.requirements}</legend>{sources.requirements.map(r => <label className="block" key={r.domainRef.objectId}><input type="checkbox" checked={requirementIds.includes(r.domainRef.objectId)} onChange={() => toggle(r.domainRef.objectId, requirementIds, setRequirementIds)} /> {r.title} · v{formatNumber(r.domainRef.version)}</label>)}</fieldset>
-    <fieldset disabled={loading || busy}><legend>{t.evidence}</legend>{sources.evidence.map(e => <label className="block" key={e.domainRef.objectId}><input type="checkbox" checked={evidenceIds.includes(e.domainRef.objectId)} onChange={() => toggle(e.domainRef.objectId, evidenceIds, setEvidenceIds)} /> {e.title} · {e.mediaType} · v{formatNumber(e.domainRef.version)}</label>)}</fieldset>
+    <fieldset disabled={loading || busy}><legend>{t.requirements}</legend>{sources.requirements.map(r => <label className="block" key={r.domainRef.objectId}><input type="checkbox" checked={requirementIds.includes(r.domainRef.objectId)} onChange={() => toggle(r.domainRef.objectId, requirementIds, setRequirementIds)} /> {r.title} · {recordVersionLabel(formatNumber(r.domainRef.version))}</label>)}</fieldset>
+    <fieldset disabled={loading || busy}><legend>{t.evidence}</legend>{sources.evidence.map(e => <label className="block" key={e.domainRef.objectId}><input type="checkbox" checked={evidenceIds.includes(e.domainRef.objectId)} onChange={() => toggle(e.domainRef.objectId, evidenceIds, setEvidenceIds)} /> {e.title} · {e.mediaType} · {recordVersionLabel(formatNumber(e.domainRef.version))}</label>)}</fieldset>
     {locationId && !loading && (!sources.requirements.length || !sources.evidence.length) && <p>{t.noRequirementsOrEvidence}</p>}
     <fieldset disabled={busy}><legend>{t.fieldChecks}</legend><label className="block"><input type="checkbox" checked={selfComplete} onChange={event => setSelfComplete(event.target.checked)} /> {t.selfComplete}</label>{precheckKeys.map((key, index) => <label className="block" key={key}><input type="checkbox" checked={precheck[key]} onChange={event => setPrecheck({ ...precheck, [key]: event.target.checked })} /> {t[precheckLabels[index]]}</label>)}<label className="block"><input type="checkbox" checked={hold} onChange={event => setHold(event.target.checked)} /> {t.holdPoint}</label></fieldset>
     {loading && <p role="status">{t.loadingSources}</p>}{!loading && !sources.drawings.length && <p>{t.noDrawings}</p>}{error && <p role="alert">{error}</p>}{saved && <p role="status">{saved}</p>}

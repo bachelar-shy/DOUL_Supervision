@@ -2,6 +2,8 @@ import i18n from "./i18n/config";
 import type { CreationCapability } from "./data/ui-contract";
 import {
   koreanCommands,
+  koreanMachineLabels,
+  koreanRegisterObjectLabels,
   koreanFields,
   koreanReasonLabel,
   koreanRoles,
@@ -23,7 +25,7 @@ function localizedRecord(
       if (typeof property !== "string") {
         return Reflect.get(target, property, receiver);
       }
-      if (!(property in target)) return undefined;
+      if (!(property in target) && !i18n.exists(`${prefix}.${property}`)) return undefined;
       return i18n.t(`${prefix}.${property}`, {
         defaultValue: target[property],
       });
@@ -34,6 +36,23 @@ function localizedRecord(
 export const roles = localizedRecord("roles", {
   ...legacyKoreanRoles,
   ...koreanRoles,
+});
+
+// Audit storage codes are never shown as field instructions or activity names.
+export function auditCommandLabel(command: string): string {
+  const [category, action] = command.split(":");
+  if (category === "create") {
+    const label = i18n.t(`machine.${action}`, { defaultValue: koreanMachineLabels[action] || i18n.t("audit.record") });
+    return i18n.t("audit.created", { type: label });
+  }
+  return commands[action || category] || i18n.t("audit.processed");
+}
+
+export const recordVersionLabel = (version: unknown) => typeof version === "number" || typeof version === "string"
+  ? i18n.t("record.version", { version }) : i18n.t("common.unknown");
+
+export const recordTypeLabel = (objectType: unknown) => i18n.t(`register.object.${objectType}`, {
+  defaultValue: typeof objectType === "string" ? koreanRegisterObjectLabels[objectType] || i18n.t("register.value.sourceUnknown") : i18n.t("register.value.sourceUnknown"),
 });
 export const states = localizedRecord("state", {
   ...legacyKoreanStates,

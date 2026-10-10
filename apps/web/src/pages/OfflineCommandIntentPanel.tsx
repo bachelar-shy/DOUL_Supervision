@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../labels";
 import { useEffect, useMemo, useState } from "react";
 import { ApiError, type SupervisionClient } from "../data/supervision-client";
 import type { CommandDescriptor, Fields, WorkItem, Workspace } from "../data/ui-contract";
@@ -94,13 +95,13 @@ export function OfflineCommandIntentPanel({ client, workspace, online, onChanged
     <h3 className="text-sm font-semibold">{t.title}</h3><p className="my-2 text-xs text-muted-foreground">{t.help}</p>
     {!intent && <div className="flex flex-wrap gap-2">
       <select aria-label={t.choose} value={selectedKey} onChange={event => setSelectedKey(event.target.value)} className="min-w-64 rounded-sm border border-input bg-background px-2 py-2 text-sm">
-        <option value="">{t.choose}</option>{choices.map(choice => <option key={choice.key} value={choice.key}>{choice.item.record.title || String(choice.item.record.workName ?? choice.item.record.data?.workName ?? choice.item.record.data?.title ?? choice.item.record.id)} · v{choice.item.record.version} · {commands[choice.action.command] ?? choice.action.command}</option>)}
+        <option value="">{t.choose}</option>{choices.map(choice => <option key={choice.key} value={choice.key}>{choice.item.record.title || String(choice.item.record.workName ?? choice.item.record.data?.workName ?? choice.item.record.data?.title ?? choice.item.record.id)} · {recordVersionLabel(choice.item.record.version)} · {commands[choice.action.command] ?? choice.action.command}</option>)}
       </select>
       <button type="button" className="secondary" disabled={!selected} onClick={() => selected && setDialog(selected)}>{t.open}</button>
     </div>}
     {intent && <div className="space-y-2 text-sm">
       <p><strong>{t.pending}</strong> · {intent.record.title || intent.itemId} · {commands[intent.command] ?? intent.command}</p>
-      <p>{t.old}: v{intent.expectedVersion}{currentItem ? ` · ${t.latest}: v${currentItem.record.version}` : ""}</p>
+      <p>{t.old}: {recordVersionLabel(intent.expectedVersion)}{currentItem ? ` · ${t.latest}: ${recordVersionLabel(currentItem.record.version)}` : ""}</p>
       <details><summary>{t.payload}</summary><pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-sm bg-muted p-2 text-xs">{JSON.stringify({ payload: intent.payload, evidenceIds: intent.evidenceIds }, null, 2)}</pre></details>
       {checked && <p role={conflict ? "alert" : "status"}>{!identityMatches ? t.identity : conflict ? t.conflict : t.currentVersion}</p>}
       {!commandAvailable && checked && identityMatches && <p role="alert">{t.unavailable}</p>}

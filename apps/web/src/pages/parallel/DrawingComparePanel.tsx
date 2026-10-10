@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../../labels";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { normalizeLanguage } from "@doul/localization";
@@ -44,7 +45,7 @@ function recordTitle(workspace: Workspace, objectId: string, version: number): s
 }
 
 function bindingLabel(workspace: Workspace, binding: DrawingPdfBinding): string {
-  return `${recordTitle(workspace, binding.drawingRef.objectId, binding.drawingRef.version)} v${binding.drawingRef.version} · ${recordTitle(workspace, binding.evidenceRef.objectId, binding.evidenceRef.version)} v${binding.evidenceRef.version}`;
+  return `${recordTitle(workspace, binding.drawingRef.objectId, binding.drawingRef.version)} ${recordVersionLabel(binding.drawingRef.version)} · ${recordTitle(workspace, binding.evidenceRef.objectId, binding.evidenceRef.version)} ${recordVersionLabel(binding.evidenceRef.version)}`;
 }
 
 function PdfComparePane({ client, binding, label, side }: {
@@ -237,7 +238,7 @@ function PdfComparePane({ client, binding, label, side }: {
     <section className="drawing-compare-pane" aria-label={title + " " + tx("pdf")}>
       <header className="drawing-compare-pane-header">
         <div><h3>{title}</h3><p title={label}>{label}</p>
-          {binding && <small>{tx("drawing")} {binding.drawingRef.objectId} v{binding.drawingRef.version} · {tx("evidence")} {binding.evidenceRef.objectId} v{binding.evidenceRef.version}</small>}
+          {binding && <small>{tx("drawing")} {binding.drawingRef.objectId} {recordVersionLabel(binding.drawingRef.version)} · {tx("evidence")} {binding.evidenceRef.objectId} {recordVersionLabel(binding.evidenceRef.version)}</small>}
         </div>
       </header>
       <div className="drawing-compare-toolbar">

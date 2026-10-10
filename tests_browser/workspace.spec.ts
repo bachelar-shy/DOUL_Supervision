@@ -52,7 +52,7 @@ for (const width of [390, 768, 1440]) {
 
 test("schedule normalized source import preserves original Schedule v1 and Activity snapshots", async ({ page }) => {
   const suffix = randomUUID().slice(0, 8);
-  const title = `UI 원본입력 ${suffix}`;
+  const title = `화면 원본입력 ${suffix}`;
   const scheduleNo = `UI-BL-${suffix}`;
   const criticalName = `Critical Activity ${suffix}`;
   const nextName = `Next Activity ${suffix}`;
@@ -105,13 +105,13 @@ test("schedule normalized source import preserves original Schedule v1 and Activ
     (response) => response.url().endsWith("/workspace") && response.ok(),
   );
   await page
-    .getByRole("combobox", { name: "개발 역할 선택" })
+    .getByRole("combobox", { name: "시험 사용자 역할 선택" })
     .selectOption("CON");
   await workspaceResponse;
   await page.goto("/#/schedule");
 
   const importButton = page.getByRole("button", {
-    name: "정규화 JSON 원본 입력",
+    name: "공정 자료 입력 양식 원본 입력",
     exact: true,
   });
   await expect(importButton).toBeEnabled();
@@ -119,13 +119,13 @@ test("schedule normalized source import preserves original Schedule v1 and Activ
 
   const dialog = page.getByRole("dialog", { name: "공정 원본 입력" });
   await expect(dialog).toContainText(
-    "normalized_json · doul-normalized-json-v1",
+    "확인된 공정 자료 파일",
   );
   await expect(dialog).toContainText(
-    "XER / MSP / CSV 직접 파서는 아직 지원하지 않습니다.",
+    "XER / MSP / CSV 파일 직접 변환은 아직 지원하지 않습니다.",
   );
   await dialog.getByLabel("제목 *").fill(title);
-  await dialog.getByLabel("공정 원본 JSON").setInputFiles({
+  await dialog.getByLabel("공정 자료 파일").setInputFiles({
     name: `schedule-source-${suffix}.json`,
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify(source), "utf8"),
@@ -138,6 +138,9 @@ test("schedule normalized source import preserves original Schedule v1 and Activ
   await expect(preview).toContainText(scheduleNo);
   await expect(preview).toContainText("2건");
   await expect(preview).toContainText("A-100");
+  await expect(preview).toContainText("주공정");
+  await expect(preview).toContainText("확인된 공정 자료 파일");
+  await expect(preview).not.toContainText("normalized_json");
 
   await dialog.getByRole("button", { name: "원본 입력", exact: true }).click();
   await expect(dialog).toHaveCount(0);
@@ -146,12 +149,12 @@ test("schedule normalized source import preserves original Schedule v1 and Activ
   await expect(sourceTab).toHaveAttribute("data-state", "active");
   const detail = page.locator(".detail-pane");
   await expect(detail).toContainText(title);
-  await expect(detail).toContainText("보존 원본 Schedule v1");
-  await expect(detail).toContainText("Activity 스냅샷");
+  await expect(detail).toContainText("보존 공정 원본 기록 제1차");
+  await expect(detail).toContainText("공정 작업 확인 당시 기록");
   await expect(detail).toContainText(criticalName);
   await expect(detail).toContainText(nextName);
-  await expect(detail).toContainText("normalized_json");
-  await expect(detail).toContainText("doul-normalized-json-v1");
+  await expect(detail).toContainText("확인된 공정 자료 파일");
+  await expect(detail).not.toContainText("doul-normalized-json-v1");
 
   await page.getByRole("tab", { name: "기준공정", exact: true }).click();
   await page
@@ -161,7 +164,7 @@ test("schedule normalized source import preserves original Schedule v1 and Activ
     .click();
   await expect(page.locator(".detail-head")).toContainText(title);
   await expect(page.locator(".detail-section").last()).toContainText(
-    "가능한 업무 명령",
+    "가능한 업무 처리",
   );
 });
 
@@ -224,7 +227,7 @@ test("DOUL component catalog is mounted on representative surfaces", async ({ pa
     '[data-ui-component="status-boundary-group"]',
   );
   await expect(ownerBoundary).toBeVisible();
-  await expect(ownerBoundary).toContainText("수령·결정 상태 경계");
+  await expect(ownerBoundary).toContainText("수령·결정 진행 단계별 유의사항");
   await expect(ownerBoundary).toContainText("수령 확인");
   await expect(ownerBoundary).toContainText("결정 제출");
 
@@ -368,7 +371,7 @@ test("safety workspace keeps permit, stop, resume gate, and equipment states sep
 
   await page.goto("/");
   await page
-    .getByRole("combobox", { name: "개발 역할 선택" })
+    .getByRole("combobox", { name: "시험 사용자 역할 선택" })
     .selectOption("CON");
   await page.waitForResponse((response) =>
     response.url().endsWith("/workspace") && response.ok(),
@@ -399,7 +402,7 @@ test("safety workspace keeps permit, stop, resume gate, and equipment states sep
     .first()
     .click();
   const resumeGate = page.locator('[data-ui-component="safety-resume-gate"]');
-  await expect(resumeGate).toContainText("재개 Gate");
+  await expect(resumeGate).toContainText("재개 진행 조건");
   await expect(resumeGate).toContainText("환경조건 적합");
   await expect(resumeGate).toContainText("미충족");
 
@@ -465,11 +468,11 @@ test("safety workspace keeps permit, stop, resume gate, and equipment states sep
     .getByRole("button", { name: "확인 후 실행", exact: true })
     .click();
   await expect(evidenceDialog.getByRole("alert")).toContainText(
-    "현재 단계의 증빙 ID가 필요합니다",
+    "현재 업무 단계의 근거 증빙을 선택하십시오.",
   );
   expect(evidenceCommandBody).toBeNull();
   await evidenceDialog
-    .getByRole("textbox", { name: "명령 증빙 ID" })
+    .getByRole("textbox", { name: "처리 근거 증빙번호" })
     .fill("EVD-COMMAND-001, EVD-COMMAND-002");
   await evidenceDialog
     .getByRole("button", { name: "확인 후 실행", exact: true })
@@ -497,7 +500,7 @@ test("29 register projections support selection, filtering, and detail", async (
   await expect(page.getByText("29개 표준 관리대장", { exact: true })).toBeVisible();
   await expect(page.locator('[data-ui-component="register-table"] tbody tr')).not.toHaveCount(0);
 
-  await page.getByPlaceholder("제목, 상태, 위치, ID 검색").fill("경량벽체");
+  await page.getByPlaceholder("제목, 상태, 위치, 번호 검색").fill("경량벽체");
   await expect(page.getByText("경량벽체 은폐 전 검측", { exact: true })).toBeVisible();
 
   const registerNavigator = page.locator('[data-ui-component="register-navigator"]');
@@ -526,7 +529,7 @@ test("register entry adapts to the active human role without defining authority"
   page,
 }) => {
   await page.goto("/");
-  const rolePicker = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const rolePicker = page.getByRole("combobox", { name: "시험 사용자 역할 선택" });
   const cases = [
     { role: "CON", label: "시공사", id: "11", name: "검측·검수" },
     { role: "OWN", label: "발주처", id: "22", name: "회의·발주처 보고·결정" },
@@ -537,7 +540,7 @@ test("register entry adapts to the active human role without defining authority"
   for (const item of cases) {
     await rolePicker.selectOption(item.role);
     await expect(
-      page.getByText(`${item.label} 작업공간`, { exact: true }),
+      page.getByText(`${item.label} 업무 화면`, { exact: true }),
     ).toBeVisible();
     await page.goto("/#/registers");
 
@@ -552,7 +555,7 @@ test("register entry adapts to the active human role without defining authority"
       }),
     ).toHaveAttribute("aria-current", "page");
     await expect(registerNavigator).toContainText(
-      "추천은 진입 편의용 · 실제 조회 범위는 서버 권한 기준",
+      "추천은 진입 편의용 · 실제 조회 범위는 업무 시스템 권한 기준",
     );
   }
 });
@@ -651,7 +654,7 @@ test("mobile interactive controls keep 44px touch targets", async ({ page }) => 
     page.getByRole("button", { name: "메뉴 열기", exact: true }),
   );
   await expectTouchTarget(
-    page.getByRole("combobox", { name: "개발 역할 선택" }),
+    page.getByRole("combobox", { name: "시험 사용자 역할 선택" }),
   );
   await expectTouchTarget(page.locator(".bottom-nav button").first());
 
@@ -723,7 +726,7 @@ test("mobile navigation follows the active role route map", async ({ page }) => 
   await expect(mobileNav.getByRole("button")).toHaveCount(5);
 
   await page
-    .getByRole("combobox", { name: "개발 역할 선택" })
+    .getByRole("combobox", { name: "시험 사용자 역할 선택" })
     .selectOption("DES");
   await expect(mobileNav.getByRole("button", { name: "설계질의" })).toBeVisible();
   await expect(mobileNav.getByRole("button", { name: "문서" })).toBeVisible();
@@ -732,7 +735,7 @@ test("mobile navigation follows the active role route map", async ({ page }) => 
   await expect(page.locator("h1")).toHaveText("설계질의");
 
   await page
-    .getByRole("combobox", { name: "개발 역할 선택" })
+    .getByRole("combobox", { name: "시험 사용자 역할 선택" })
     .selectOption("ADM");
   await expect(mobileNav.getByRole("button", { name: "대장" })).toBeVisible();
   await expect(mobileNav.getByRole("button", { name: "권한" })).toBeVisible();
@@ -744,7 +747,7 @@ test("register table header remains visible during long internal scroll", async 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await page
-    .getByRole("combobox", { name: "개발 역할 선택" })
+    .getByRole("combobox", { name: "시험 사용자 역할 선택" })
     .selectOption("ADM");
   await page.waitForResponse((response) =>
     response.url().endsWith("/workspace") && response.ok(),
@@ -873,10 +876,10 @@ test("server command starts a scheduled inspection", async ({
 test("contractor has no issue closure control", async ({ page }) => {
   await page.goto("/");
   await page
-    .getByRole("combobox", { name: "개발 역할 선택" })
+    .getByRole("combobox", { name: "시험 사용자 역할 선택" })
     .selectOption("CON");
   await expect(
-    page.getByText("시공사 작업공간", { exact: true }),
+    page.getByText("시공사 업무 화면", { exact: true }),
   ).toBeVisible();
   await page.waitForResponse((r) => r.url().endsWith("/workspace") && r.ok());
   await page.evaluate(() => {
@@ -923,7 +926,7 @@ test("owner and designer role surfaces", async ({ page }) => {
     page.getByText("우선 확인할 업무", { exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("combobox", { name: "개발 역할 선택" })
+    .getByRole("combobox", { name: "시험 사용자 역할 선택" })
     .selectOption("OWN");
   await expect(page.getByText("보고·결정 대기", { exact: true })).toBeVisible();
   await page.evaluate(() => {
@@ -953,7 +956,7 @@ test("owner and designer role surfaces", async ({ page }) => {
     fullPage: true,
   });
   await page
-    .getByRole("combobox", { name: "개발 역할 선택" })
+    .getByRole("combobox", { name: "시험 사용자 역할 선택" })
     .selectOption("DES");
   await expect(page.getByText("설계질의 대기", { exact: true })).toBeVisible();
   await page.evaluate(() => {
@@ -971,7 +974,7 @@ test("owner and designer role surfaces", async ({ page }) => {
 
 test("draft document renders from versioned source", async ({ page }) => {
   await page.goto("/#/documents");
-  await page.getByRole("button", { name: "초안 HTML 생성" }).click();
+  await page.getByRole("button", { name: "초안 미리보기 생성" }).click();
   await expect(page.getByTitle("문서 초안 미리보기")).toBeVisible();
   await expect(
     page.frameLocator("iframe").getByRole("heading", { level: 1 }),
@@ -1009,14 +1012,14 @@ test("offline evidence stays local until explicit upload", async ({
     page.locator(".pending-row").getByText("offline-test.png", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "서버 전송", exact: true }),
+    page.getByRole("button", { name: "업무 시스템 전송", exact: true }),
   ).toBeDisabled();
   await context.setOffline(false);
   await expect(
-    page.getByRole("button", { name: "서버 전송", exact: true }),
+    page.getByRole("button", { name: "업무 시스템 전송", exact: true }),
   ).toBeEnabled();
-  await page.getByRole("button", { name: "서버 전송", exact: true }).click();
-  await expect(page.locator(".toast")).toContainText("서버 해시 확인");
+  await page.getByRole("button", { name: "업무 시스템 전송", exact: true }).click();
+  await expect(page.locator(".toast")).toContainText("파일 무결성 확인 후 증빙을 등록했습니다.");
 
   const uploadedEvidence = page.getByRole("button", {
     name: "offline-test.png 상세보기",

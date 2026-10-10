@@ -1,3 +1,4 @@
+import { recordVersionLabel, recordTypeLabel } from "../labels";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { normalizeLanguage } from "@doul/localization";
@@ -20,13 +21,13 @@ interface Copy {
 
 const copy: Record<Locale, Copy> = {
   ko: {
-    title: "안전 기록 초안 작성", description: "현재 서버가 제공한 작업 범위와 열람 가능한 참조로 안전 기록 초안을 작성합니다. 초안 저장은 제출·승인·작업 허가 또는 작업중지 발행을 수행하지 않습니다.",
-    scope: "서버 작업 범위", project: "프로젝트", package: "패키지", location: "위치", discipline: "분야", organization: "담당 조직", qualificationRank: "최소 자격 등급",
+    title: "안전 기록 초안 작성", description: "현재 업무 시스템이 제공한 작업 범위와 열람 가능한 참조로 안전 기록 초안을 작성합니다. 초안 저장은 제출·승인·작업 허가 또는 작업중지 발행을 수행하지 않습니다.",
+    scope: "업무 시스템 작업 범위", project: "현장", package: "공사 구분", location: "위치", discipline: "분야", organization: "담당 조직", qualificationRank: "최소 자격 등급",
     recordTitle: "기록 제목", reason: "기록 사유", dueAt: "기한", requirements: "적용 요건", noRequirements: "현재 열람 가능한 활성 요건이 없습니다.", evidence: "증빙", noEvidence: "현재 열람 가능한 증빙이 없습니다.", equipment: "장비", noEquipment: "현재 열람 가능한 Equipment 자산이 없습니다.",
     permit: "작업허가 초안", stop: "작업중지 초안", equipmentInspection: "장비 안전검사 초안", permitNo: "허가 번호", workType: "작업 유형", riskLevel: "위험 수준",
     stopOrderNo: "작업중지 번호", stopScopeType: "중지 범위 유형", stopScopeDescription: "중지 범위 설명", stopReason: "작업중지 사유", hazardDescription: "위험 설명", observedAt: "발견 시각", effectiveAt: "시행 시각", affectedPermits: "영향 작업허가", noPermits: "현재 열람 가능한 작업허가 초안이 없습니다.",
     inspectionNo: "검사 번호", inspectionKind: "검사 유형", scheduledAt: "검사 예정 시각",
-    createDraft: "안전 초안 저장", saving: "저장 중…", created: "안전 기록 초안을 저장했습니다.", failed: "안전 기록 초안을 저장하지 못했습니다. 입력과 서버 선행조건을 확인하십시오.", unavailable: "서버가 현재 역할과 범위에서 이 기록의 생성을 허용하지 않았습니다.", offline: "연결 후 안전 초안을 저장할 수 있습니다.", preview: "미리보기에서는 서버 안전 기록을 만들 수 없습니다.", capability: "생성 가능 여부는 현재 서버 권한과 프로젝트 범위에 따라 결정됩니다.", required: "필수 항목을 입력하고 필요한 참조를 선택하십시오.", scopeNote: "초안은 현재 서버 작업 범위에 기록됩니다.", draftOnly: "초안만 저장합니다. 안전 검토, 허가 승인, 작업 개시, 위험 판단, 작업중지 명령을 자동으로 수행하지 않습니다.",
+    createDraft: "안전 초안 저장", saving: "저장 중…", created: "안전 기록 초안을 저장했습니다.", failed: "안전 기록 초안을 저장하지 못했습니다. 입력과 업무 시스템 선행조건을 확인하십시오.", unavailable: "업무 시스템이 현재 역할과 범위에서 이 기록의 작성을 허용하지 않았습니다.", offline: "연결 후 안전 초안을 저장할 수 있습니다.", preview: "미리보기에서는 업무 시스템 안전 기록을 만들 수 없습니다.", capability: "작성 가능 여부는 현재 업무 시스템 권한과 현장 범위에 따라 결정됩니다.", required: "필수 항목을 입력하고 필요한 참조를 선택하십시오.", scopeNote: "초안은 현재 업무 시스템 작업 범위에 기록됩니다.", draftOnly: "초안만 저장합니다. 안전 검토, 허가 승인, 작업 개시, 위험 판단, 작업중지 업무 처리를 자동으로 수행하지 않습니다.",
   },
   vi: {
     title: "Tạo bản nháp hồ sơ an toàn", description: "Tạo bản nháp an toàn bằng phạm vi do máy chủ cung cấp và các tham chiếu mà bạn có quyền xem. Lưu bản nháp không gửi, phê duyệt, cấp phép làm việc hoặc ban hành lệnh dừng.",
@@ -53,7 +54,7 @@ function displayRecord(record: RecordDTO, ref: DomainRef) {
   const title = typeof record.title === "string" ? record.title
     : typeof record.name === "string" ? record.name
       : typeof metadata.name === "string" ? metadata.name : ref.objectId;
-  return `${title} · ${ref.objectType} · v${ref.version}`;
+  return `${title} · ${recordTypeLabel(ref.objectType)} · ${recordVersionLabel(ref.version)}`;
 }
 
 function validRef(ref: DomainRef | undefined, objectType: string): ref is DomainRef {

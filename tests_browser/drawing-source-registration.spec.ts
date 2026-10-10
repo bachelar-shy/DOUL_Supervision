@@ -26,10 +26,10 @@ function onePagePdf(): Buffer {
 test('designer registers an immutable PDF revision and explicitly requests technical review', async ({ page }) => {
   const suffix = randomUUID().slice(0,8); const title = `Synthetic authored drawing ${suffix}`;
   await page.goto('/#/parallel-test');
-  await page.getByLabel('개발 역할 선택').selectOption('DES');
+  await page.getByLabel('시험 사용자 역할 선택').selectOption('DES');
   await page.goto('/#/parallel-test');
-  await page.getByRole('tab', { name: '도면 버전', exact: true }).click();
-  const viewer = page.getByLabel('PDF 도면 뷰어');
+  await page.getByRole('tab', { name: '도면 작성 차수', exact: true }).click();
+  const viewer = page.getByLabel('PDF 도면 보기');
   const upload = page.waitForResponse(r => r.url().includes('/uploads/') && r.url().endsWith('/complete') && r.request().method() === 'POST');
   await viewer.getByTestId('pdf-upload').setInputFiles({ name: `authored-${suffix}.pdf`, mimeType:'application/pdf', buffer:onePagePdf() });
   const completed = await upload; expect(completed.ok(), await completed.text()).toBeTruthy();
@@ -50,5 +50,5 @@ test('designer registers an immutable PDF revision and explicitly requests techn
   expect(result.drawing.status).toBe('draft'); expect(result.approval.status).toBe('pending');
   expect(result.approval.targetRef.objectId).toBe(result.drawing.id); expect(result.binding.drawingRef.objectId).toBe(result.drawing.id);
   expect(writes).toHaveLength(1); await expect(panel.getByText(new RegExp(`등록 완료: ${title}`))).toBeVisible();
-  await page.reload(); await expect(page.getByLabel('도면 버전 기록').getByRole('button', {name: new RegExp(title)})).toBeVisible();
+  await page.reload(); await expect(page.getByLabel('도면 작성 차수 기록').getByRole('button', {name: new RegExp(title)})).toBeVisible();
 });

@@ -41,11 +41,11 @@ test("compares two uploaded PDFs with independent page controls and no compare w
   });
 
   await page.goto("/#/parallel-test");
-  await page.getByLabel("개발 역할 선택").selectOption("DES");
+  await page.getByLabel("시험 사용자 역할 선택").selectOption("DES");
   await expect.poll(() => workspace?.role.actorGroup).toBe("DES");
   await page.goto("/#/parallel-test");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
-  const viewer = page.getByLabel("PDF 도면 뷰어");
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
+  const viewer = page.getByLabel("PDF 도면 보기");
   await expect(viewer).toBeVisible();
 
   const upload = async (filename: string, pages: number) => {

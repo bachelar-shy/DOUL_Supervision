@@ -1,3 +1,4 @@
+import { recordVersionLabel, recordTypeLabel } from "../labels";
 import { useTranslation } from "react-i18next";
 import type { DomainRef, Json, RecordDTO, WorkItem, Workspace } from "../data/ui-contract";
 
@@ -18,8 +19,8 @@ type EvidenceChoice = { id: string; version?: number; title: string };
 const copy: Record<Locale, Record<string, string>> = {
   ko: {
     title: "검측 항목 결과",
-    description: "서버가 선언한 요구 항목과 원본 기준 참조를 표시합니다. 판정과 증빙은 사용자가 직접 입력해야 합니다.",
-    itemId: "검측 항목 ID",
+    description: "업무 시스템이 선언한 요구 항목과 원본 기준 참조를 표시합니다. 판정과 증빙은 사용자가 직접 입력해야 합니다.",
+    itemId: "검측 항목 번호",
     requirement: "요구사항 기준",
     measuredValue: "측정값",
     unit: "단위",
@@ -34,10 +35,10 @@ const copy: Record<Locale, Record<string, string>> = {
     addRow: "추가 검측 결과",
     removeRow: "결과 행 삭제",
     noRequirement: "이 검측에 연결된 요구사항 기준이 없습니다. 기존 결과가 있으면 해당 원본 값을 유지합니다.",
-    noEvidence: "현재 작업공간에서 선택할 수 있는 증빙이 없습니다.",
-    savedUnavailableEvidence: "현재 열람할 수 없는 기존 증빙 ID",
+    noEvidence: "현재 업무 화면에서 선택할 수 있는 증빙이 없습니다.",
+    savedUnavailableEvidence: "현재 열람할 수 없는 기존 증빙 번호",
     savedRequirementUnavailable: "현재 목록에서 확인할 수 없는 저장된 요구사항 참조",
-    emptyItem: "항목 ID를 입력하십시오.",
+    emptyItem: "항목 번호를 입력하십시오.",
     blankResult: "판정 미입력",
   },
   vi: {
@@ -107,7 +108,7 @@ function refKey(ref: DomainRef) {
 }
 
 function formatRef(ref: DomainRef) {
-  return `${ref.objectType} · ${ref.objectId} · v${ref.version}`;
+  return `${recordTypeLabel(ref.objectType)} · ${ref.objectId} · ${recordVersionLabel(ref.version)}`;
 }
 
 function recordTitle(record: RecordDTO) {
@@ -286,7 +287,7 @@ export function InspectionCheckResultFields({ workspace, item, value, onChange }
           <label className="grid gap-1">{tx("evidence")}
             <select multiple size={Math.min(Math.max(evidence.length, 2), 5)} value={selectedIds} onChange={(event) => updateRow(index, { evidenceIds: Array.from(event.currentTarget.selectedOptions, (option) => option.value) })}>
               {selectedIds.filter((id) => !evidence.some((candidate) => candidate.id === id)).map((id) => <option key={id} value={id} disabled>{tx("savedUnavailableEvidence")}: {id}</option>)}
-              {evidence.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.title} · {candidate.id}{candidate.version == null ? "" : ` · v${candidate.version}`}</option>)}
+              {evidence.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.title} · {candidate.id}{candidate.version == null ? "" : ` · ${recordVersionLabel(candidate.version)}`}</option>)}
             </select>
             <small>{tx("evidenceHint")}</small>
           </label>

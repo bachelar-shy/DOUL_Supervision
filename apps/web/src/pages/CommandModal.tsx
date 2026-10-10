@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../labels";
 import { scheduleInputs } from "../data/schedule-fields.generated";
 import { completionDecisionReferenceOptions, completionReferenceOptions } from "../data/completion-workspace";
 import { commandInputs } from "../data/command-fields.generated";
@@ -200,7 +201,7 @@ function referenceOptions(
     return ref
       ? [
           {
-            label: `${item.record.title || item.record.workName || item.machine} · v${item.record.version}`,
+            label: `${item.record.title || item.record.workName || item.machine} · ${recordVersionLabel(item.record.version)}`,
             ref,
           },
         ]

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("ADM demo role creates and updates a persisted location", async ({ page }) => {
   await page.goto("/#/parallel-test");
-  const rolePicker = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const rolePicker = page.getByRole("combobox", { name: "시험 사용자 역할 선택" });
   if (await rolePicker.inputValue() !== "ADM") {
     const workspace = page.waitForResponse(response =>
       response.url().endsWith("/workspace") && response.ok());
@@ -22,7 +22,7 @@ test("ADM demo role creates and updates a persisted location", async ({ page }) 
   await expect(page.getByRole("button", { name: "하위 위치 추가", exact: true })).toBeEnabled();
   const uniqueName = `브라우저 검증 위치 ${Date.now()}`;
   await page.getByLabel("위치 이름", { exact: true }).fill(uniqueName);
-  await page.getByLabel("의미 앵커", { exact: true }).fill(`browser/${Date.now()}`);
+  await page.getByLabel("위치 구분명", { exact: true }).fill(`browser/${Date.now()}`);
   const createdResponse = page.waitForResponse(response => response.url().endsWith("/parallel/locations") && response.request().method() === "POST");
   await page.getByRole("button", { name: "하위 위치 추가", exact: true }).click();
   const created = await createdResponse;

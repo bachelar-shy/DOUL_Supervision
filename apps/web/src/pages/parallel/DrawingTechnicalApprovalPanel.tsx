@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../../labels";
 import { useEffect, useState } from "react";
 import { useTranslation } from 'react-i18next';
 import { normalizeLanguage } from '@doul/localization';
@@ -37,7 +38,7 @@ export function DrawingTechnicalApprovalPanel({client,workspace,onOpenCommand}: 
     {error && <p role="alert">{error}</p>}
     {!approvals.length && <p>{tx('empty')}</p>}
     <div className="grid gap-3">{approvals.map(item => <article key={item.record.id} data-testid={`drawing-approval-${item.record.id}`} className="rounded-lg border p-3">
-      <strong>{tx('technicalApproval')} · {item.record.id} · v{item.record.version}</strong><p>{tx('status')} · {item.record.status === 'under_review' ? tx('underReview') : states[String(item.record.status)] || String(item.record.status)}</p>
+      <strong>{tx('technicalApproval')} · {item.record.id} · {recordVersionLabel(item.record.version)}</strong><p>{tx('status')} · {item.record.status === 'under_review' ? tx('underReview') : states[String(item.record.status)] || String(item.record.status)}</p>
       <p>{tx('targetDrawing')} · {String((item.record.targetRef as {objectId?: string}).objectId)}</p>
       {item.actions.map(action => { const availability = describeCommandAvailability(action, true); return <span key={action.command}><ActionButton disabled={!onOpenCommand || availability.disabled} onClick={() => onOpenCommand?.(item,action)}>{commands[action.command] || action.command}</ActionButton>{availability.reason && <small>{availability.reason}</small>}</span>; })}
       {!item.actions.length && <p className="muted">{tx('noActions')}</p>}

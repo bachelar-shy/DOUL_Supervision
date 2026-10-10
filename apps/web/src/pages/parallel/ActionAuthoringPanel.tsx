@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../../labels";
 import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { actionAuthoringTranslations, normalizeLanguage } from "@doul/localization";
@@ -109,7 +110,7 @@ export function ActionAuthoringPanel({ client, workspace, online, onCreated, ini
       <label className="grid gap-1 text-sm font-medium">{t("relatedIssue")}
         <select aria-label={t("relatedIssue")} className="min-h-11 rounded-sm border border-input bg-background px-3" value={issueId} required disabled={!canCreate || busy || created || !issues.length} onChange={(event) => { setIssueId(event.target.value); setCreated(false); setError(""); }}>
           <option value="">{t("selectIssue")}</option>
-          {issues.map(({ ref, record }) => <option key={ref.objectId} value={ref.objectId}>{record.title || ref.objectId} · {ref.objectId} · v{ref.version}</option>)}
+          {issues.map(({ ref, record }) => <option key={ref.objectId} value={ref.objectId}>{record.title || ref.objectId} · {ref.objectId} · {recordVersionLabel(ref.version)}</option>)}
         </select>
       </label>
       <div className="grid gap-3 sm:grid-cols-2">

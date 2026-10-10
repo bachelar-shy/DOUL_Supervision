@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../labels";
 import { useState } from "react";
 import type { SupervisionClient } from "../data/supervision-client";
 import { SafetyAuthoringPanel } from "./SafetyAuthoringPanel";
@@ -95,16 +96,16 @@ function detailRows(record: RecordDTO) {
         record.status ||
         tr("safety.value.originalPreserved"),
     ],
-    [tr("safety.detail.sourceVersion"), `v${record.version}`],
+    [tr("safety.detail.sourceVersion"), recordVersionLabel(record.version)],
   ];
 
-  if (typeof data.permitNo === "string") rows.push(["Permit No.", data.permitNo]);
+  if (typeof data.permitNo === "string") rows.push([tr("field.permitNo"), data.permitNo]);
   if (typeof data.workType === "string")
     rows.push([tr("safety.detail.workType"), data.workType]);
   if (typeof data.riskLevel === "string")
     rows.push([tr("safety.detail.riskLevel"), data.riskLevel]);
   if (typeof data.stopOrderNo === "string")
-    rows.push(["Stop No.", data.stopOrderNo]);
+    rows.push([tr("field.stopOrderNo"), data.stopOrderNo]);
   if (typeof data.stopReason === "string")
     rows.push([tr("safety.detail.stopReason"), data.stopReason]);
   if (typeof data.inspectionKind === "string")

@@ -1,10 +1,10 @@
 export const creationKo = {
-  "creation.offline": "서버 연결 후 초안 작성 권한을 확인하십시오.",
-  "creation.mock": "UI Mock Preview에서는 초안을 작성할 수 없습니다.",
-  "creation.missing": "프로젝트 또는 작업공간 정보가 없습니다.",
+  "creation.offline": "업무 시스템 연결 후 초안 작성 권한을 확인하십시오.",
+  "creation.mock": "화면 미리보기에서는 초안을 작성할 수 없습니다.",
+  "creation.missing": "현장 또는 업무 화면 정보가 없습니다.",
   "creation.unauthorized": "현재 역할은 초안을 작성할 권한이 없습니다.",
   "creation.prerequisites": "필수 선행조건을 먼저 충족해야 합니다.",
-  "creation.unavailable": "서버가 현재 범위에서 초안 작성을 허용하지 않았습니다.",
+  "creation.unavailable": "업무 시스템이 현재 범위에서 초안 작성을 허용하지 않았습니다.",
   "creation.unknown": "초안 작성이 현재 제공되지 않습니다.",
 } as const;
 

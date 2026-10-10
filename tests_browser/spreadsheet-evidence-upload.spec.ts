@@ -9,7 +9,7 @@ for (const locale of ["ko", "vi", "en"]) {
   test(`original workbook upload and exact download in ${locale}`, async ({ page }) => {
     await page.addInitScript((language) => localStorage.setItem("doul.locale", language), locale);
     await page.goto("/#/parallel-test");
-    await page.getByRole("tab").filter({ hasText: /증빙 격리|Evidence quarantine|Kiểm thử cách ly bằng chứng/ }).click();
+    await page.getByRole("tab").filter({ hasText: /미등록 파일 확인|Evidence quarantine|Kiểm thử cách ly bằng chứng/ }).click();
     await expect(page.locator("#official-evidence-file")).toBeVisible();
     const files = paths.length ? paths.map(path => ({ name: basename(path), buffer: readFileSync(path), mimeType: path.endsWith(".pdf") ? "application/pdf" : mime })) : [{name: "field-boq.xlsx", buffer: fixture, mimeType: mime}];
     for (const file of files) {
@@ -31,7 +31,7 @@ for (const locale of ["ko", "vi", "en"]) {
 
 test("renamed non-workbook ZIP is refused by the server", async ({page}) => {
   await page.goto("/#/parallel-test");
-  await page.getByRole("tab", {name: "증빙 격리 테스트", exact: true}).click();
+  await page.getByRole("tab", {name: "미등록 파일 확인", exact: true}).click();
   const completed = page.waitForResponse(response => response.url().endsWith("/complete") && response.request().method() === "POST");
   await page.locator("#official-evidence-file").setInputFiles({name:"fake.xlsx",mimeType:mime,buffer:Buffer.from("PK\x03\x04not a workbook")});
   const response = await completed;

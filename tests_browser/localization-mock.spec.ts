@@ -11,7 +11,7 @@ test("Mock document labels switch while form fields and entered values stay unch
   await page.goto("/#/documents");
   const form = page.getByRole("combobox", { name: "문서 양식" });
   await expect(form).toHaveValue("FM-20");
-  await expect(page.getByRole("heading", { name: "데이터 연결 문서" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "감리보고서·양식 작성" })).toBeVisible();
 
   const inputNames = await page.locator(".document-fields input").evaluateAll((items) =>
     items.map((item) => item.getAttribute("name")),
@@ -62,7 +62,7 @@ test("Mock contract creation remains unavailable across locales without changing
   const createButton = surface.getByRole("button", { name: "계약통지 기록 추가", exact: true });
   const reason = surface.getByTestId("creation-capability-reason");
   await expect(createButton).toBeDisabled();
-  await expect(reason).toContainText("UI Mock Preview");
+  await expect(reason).toContainText("화면 미리보기");
 
   let mutationRequests = 0;
   page.on("request", (request) => {
@@ -74,7 +74,7 @@ test("Mock contract creation remains unavailable across locales without changing
   for (const [language, label, reasonText, htmlLang] of [
     ["vi", "Thêm hồ sơ Thông báo hợp đồng", "UI Mock Preview", "vi-VN"],
     ["en", "Add Contract notice record", "UI Mock Preview", "en-US"],
-    ["ko", "계약통지 기록 추가", "UI Mock Preview", "ko-KR"],
+    ["ko", "계약통지 기록 추가", "화면 미리보기", "ko-KR"],
   ]) {
     await chooseLanguage(page, language);
     await expect(page.locator("html")).toHaveAttribute("lang", htmlLang);
@@ -117,7 +117,7 @@ test("Mock safety command availability and evidence source stay stable across lo
   for (const [language, tab, idLabel, technicalTab, versionLabel, htmlLang] of [
     ["vi", "Nguồn gốc · Liên kết", "Mã minh chứng", "Thông tin kỹ thuật", "Phiên bản hồ sơ gốc", "vi-VN"],
     ["en", "Provenance · Links", "Evidence ID", "Technical details", "Source record version", "en-US"],
-    ["ko", "출처·연결", "증빙 ID", "기술정보", "원본 기록 버전", "ko-KR"],
+    ["ko", "출처·연결", "증빙 번호", "기술정보", "원본 기록 작성 차수", "ko-KR"],
   ]) {
     await chooseLanguage(page, language);
     await expect(page.locator("html")).toHaveAttribute("lang", htmlLang);

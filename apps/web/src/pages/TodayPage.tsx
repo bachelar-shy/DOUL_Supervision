@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { HumanRole, WorkItem, Workspace } from "../data/ui-contract";
-import { commands, states } from "../labels";
+import { auditCommandLabel, states } from "../labels";
 import { KpiCard, Panel, SectionHeader } from "../ui";
 import { AuditTimeline, DecisionPanel } from "../ui/catalog";
 import { DashboardTemplate } from "../ui/templates";
@@ -136,11 +136,11 @@ export function TodayPage({
                   .reverse()
                   .map((x) => ({
                     id: x.id,
-                    title: commands[x.command.split(":")[1]] || x.command,
+                    title: auditCommandLabel(x.command),
                     meta: (
                       <>
                         {formatTime(x.at)} ·{" "}
-                        {states[x.afterState] || x.afterState}
+                        {states[x.afterState] || t("audit.stateUnknown")}
                       </>
                     ),
                   }))}

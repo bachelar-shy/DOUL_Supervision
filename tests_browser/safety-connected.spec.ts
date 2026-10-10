@@ -73,16 +73,16 @@ test("safety connected trace follows a real visible stop order without issuing c
     }
   });
   await page.goto("/#/parallel-test");
-  await expect(page.getByText("병렬 기능 통합 테스트", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "업무별 상세 확인", exact: true })).toBeVisible();
   writes.length = 0;
-  await page.getByRole("tab", { name: "안전 추적성", exact: true }).click();
+  await page.getByRole("tab", { name: "안전 관련 기록 확인", exact: true }).click();
   const panel = page.locator('[data-ui-component="safety-connected"]');
   await expect(panel).toBeVisible();
-  await panel.getByLabel("작업중지 원본", { exact: true }).selectOption({ label: `${title} · v1` });
+  await panel.getByLabel("작업중지 원본", { exact: true }).selectOption({ label: `${title} · 기록 제1차` });
   await expect(panel.getByText("읽기 전용 조회 · 공식 상태 변경 없음", { exact: true })).toBeVisible();
   await expect(panel.getByText(title, { exact: true })).toBeVisible();
   await expect(panel.getByText("영향 작업허가", { exact: true })).toBeVisible();
-  await expect(panel.getByText(/원본 v\d+/).first()).toBeVisible();
+  await expect(panel.getByText(/기록 작성 차수 \d+/).first()).toBeVisible();
   expect(writes).toEqual([]);
   expect(pageErrors).toEqual([]);
 });

@@ -1,8 +1,8 @@
 export const documentRenderCopy = {
   ko: {
-    language: "문서 출력 언어", mode: "렌더링 종류", draft: "초안 렌더", final: "최종 스냅샷 렌더",
-    finalButton: "최종 HTML 스냅샷 생성", draftStatus: "초안 · 법정 발행본 아님", yes: "예", no: "아니요",
-    finalStatus: "최종 스냅샷 · 서명은 별도 절차", noFinalData: "최종 렌더에 필요한 항목을 모두 입력하세요.",
+    language: "문서 출력 언어", mode: "렌더링 종류", draft: "초안 렌더", final: "최종 확인 당시 기록 렌더",
+    finalButton: "최종 HTML 확인 당시 기록 생성", draftStatus: "초안 · 법정 발행본 아님", yes: "예", no: "아니요",
+    finalStatus: "최종 확인 당시 기록 · 서명은 별도 절차", noFinalData: "최종 렌더에 필요한 항목을 모두 입력하세요.",
     genericError: "문서 렌더를 완료할 수 없습니다. 입력과 연결을 확인한 뒤 다시 시도하세요.",
   },
   vi: {

@@ -123,10 +123,10 @@ const commandFieldLabels: Record<string, RegExp> = {
   failureReason: /failureReason|부적합 사유|실패 사유/i,
   reworkReason: /rework reason|재작업 사유|lý do (?:yêu cầu )?làm lại/i,
   correctionActionRefs: /correctionAction|시정.?조치/i,
-  currentIssueRefs: /currentIssueRefs|current open issue references|현재 미결 이슈 참조|vấn đề hiện tại/i,
-  issueRef: /issueRef|issue reference|이슈 참조|tham chiếu vấn đề/i,
+  currentIssueRefs: /currentIssueRefs|current open issue references|현재 미결 지적사항 참조|vấn đề hiện tại/i,
+  issueRef: /issueRef|issue reference|지적사항 참조|tham chiếu vấn đề/i,
   retestBasisRefs: /retestBasis|재시험 근거/i,
-  punchIssueRefs: /punchIssue|punch issue|펀치|이슈/i,
+  punchIssueRefs: /punchIssue|punch issue|미비사항|잔여 지적사항/i,
   ownerDecisionRef: /owner decision reference|발주처 결정/i,
   closureRef: /closure reference|종결 근거 참조/i,
   reinspectionRef: /reinspection reference|재검측 참조/i,
@@ -138,7 +138,7 @@ const commandFieldLabels: Record<string, RegExp> = {
   remedySummary: /remedySummary|보수 요약/i,
   decisionReason: /decisionReason|결정 사유/i,
   selectedOption: /selectedOption|선택 옵션/i,
-  evidenceIds: /evidence ids|명령 증빙 ID/i,
+  evidenceIds: /evidence ids|처리 근거 증빙번호/i,
 };
 
 async function exactReferenceOption(select: Locator, ref: Ref): Promise<string> {
@@ -155,14 +155,14 @@ async function exactReferenceOption(select: Locator, ref: Ref): Promise<string> 
       return objectType === ref.objectType && objectId === ref.objectId && Number(version) === ref.version;
     }
   });
-  expect(matches, `exact ${ref.objectType} ${ref.objectId} v${ref.version} option; options: ${options.map(option => option.label).join(" | ")}`).toHaveLength(1);
+  expect(matches, `exact ${ref.objectType} ${ref.objectId} 기록 제${ref.version}차 option; options: ${options.map(option => option.label).join(" | ")}`).toHaveLength(1);
   return matches[0].value;
 }
 const workbenchFieldLabels: Record<string, RegExp> = {
   responsiblePartyId: /responsible party|담당자/i,
-  responsibleOrganizationId: /responsible organization|company ID|담당 회사 ID/i,
+  responsibleOrganizationId: /responsible organization|company 번호|담당 회사 번호/i,
   dueAt: /due at|기한|처리기한/i,
-  actionIds: /action IDs|연결 조치 ID/i,
+  actionIds: /action 번호s|연결 조치 번호/i,
   closureEvidenceIds: /closureEvidenceIds|closure evidence|종결 증빙/i,
   correction: /correction|시정.?조치 내용/i,
   rootCause: /root cause|원인/i,
@@ -295,7 +295,7 @@ async function runWorkbenchCommand(page: Page, route: "issues" | "inspections" |
         if (await row.count() === 0) {
           await editor.getByRole("button", { name: /add inspection result|추가 검측 결과/i }).click();
           row = editor.locator("fieldset").last();
-          await row.getByLabel(/inspection item ID|검측 항목 ID/i).fill(check.itemId);
+          await row.getByLabel(/inspection item 번호|검측 항목 번호/i).fill(check.itemId);
           row = editor.locator("fieldset").filter({ has: page.locator(`input[value=${JSON.stringify(check.itemId)}]`) });
         }
         await row.getByRole("combobox").first().selectOption(`${check.requirementRef.objectType}:${check.requirementRef.objectId}:${check.requirementRef.version}`);
@@ -316,7 +316,7 @@ async function runWorkbenchCommand(page: Page, route: "issues" | "inspections" |
     else if (await control.evaluateAll((nodes) => nodes.some((node) => node instanceof HTMLSelectElement))) await control.selectOption(value);
     else await control.fill(value);
   }
-  if (evidenceIds.length) await dialog.getByLabel(/evidence ids|명령 증빙 ID/i).fill(evidenceIds.join(","));
+  if (evidenceIds.length) await dialog.getByLabel(/evidence ids|처리 근거 증빙번호/i).fill(evidenceIds.join(","));
   const posted = page.waitForResponse((response) => response.request().method() === "POST" && /\/api\/projects\/.*\/(issues|inspections|actions)\/[^/]+\//.test(new URL(response.url()).pathname));
   const refreshed = page.waitForResponse((response) => response.request().method() === "GET" && response.url().includes("/workspace"));
   await dialog.getByRole("button", { name: /execute|확인 후 실행/i }).click();
@@ -970,7 +970,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
       expect(refreshed.data.issueReferenceRefreshHistory).toHaveLength(1);
       const locale = page.locator(".top-actions .role-picker select").first();
       const handoverLocaleLabels = [
-        { locale: "ko", current: "현재 이슈 참조", open: "현재 미결 이슈 참조", history: "이슈 참조 갱신 이력", prior: "이전 참조", updated: "갱신 참조" },
+        { locale: "ko", current: "현재 지적사항 참조", open: "현재 미결 지적사항 참조", history: "지적사항 참조 갱신 이력", prior: "이전 참조", updated: "갱신 참조" },
         { locale: "vi", current: "Tham chiếu vấn đề hiện tại", open: "Tham chiếu vấn đề hiện tại chưa đóng", history: "Lịch sử cập nhật tham chiếu vấn đề", prior: "Tham chiếu trước đó", updated: "Tham chiếu đã cập nhật" },
         { locale: "en", current: "Current issue references", open: "Current open issue references", history: "Issue reference refresh history", prior: "Prior references", updated: "Refreshed references" },
       ];
@@ -1277,7 +1277,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     expect(refreshedRemedy.data.remedyReferenceRefreshHistory).toHaveLength(1);
     const locale = page.locator(".top-actions .role-picker select").first();
     const remedyLocaleLabels = [
-      { locale: "ko", issue: "현재 연결 이슈 참조", actions: "현재 시정조치 참조", history: "보수 참조 갱신 이력", prior: "이전 참조", updated: "갱신 참조" },
+      { locale: "ko", issue: "현재 연결 지적사항 참조", actions: "현재 시정조치 참조", history: "보수 참조 갱신 이력", prior: "이전 참조", updated: "갱신 참조" },
       { locale: "vi", issue: "Tham chiếu vấn đề liên kết hiện tại", actions: "Tham chiếu hành động khắc phục hiện tại", history: "Lịch sử cập nhật tham chiếu khắc phục", prior: "Tham chiếu trước đó", updated: "Tham chiếu đã cập nhật" },
       { locale: "en", issue: "Current linked issue reference", actions: "Current corrective action references", history: "Remedy reference refresh history", prior: "Prior references", updated: "Refreshed references" },
     ];

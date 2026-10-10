@@ -63,24 +63,24 @@ test("uses synthetic Drawing/PDF fixtures and registers the technical binding th
   });
 
   await page.goto("/#/parallel-test");
-  const rolePicker = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const rolePicker = page.getByRole("combobox", { name: "시험 사용자 역할 선택" });
   if (await rolePicker.inputValue() !== "ADM") {
     const workspace = page.waitForResponse((response) => response.url().endsWith("/workspace") && response.ok());
     await rolePicker.selectOption("ADM");
     await workspace;
   }
   await page.goto("/#/parallel-test");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
   const panel = page.getByRole("region", { name: "도면 PDF 연결" });
   await expect(panel).toBeVisible();
-  await panel.getByLabel("도면 버전").selectOption(`${drawingRef.objectType}:${drawingId}:${drawingRef.version}`);
+  await panel.getByLabel("도면 작성 차수").selectOption(`${drawingRef.objectType}:${drawingId}:${drawingRef.version}`);
   await panel.getByLabel("PDF 원본").selectOption(`${evidenceRef.objectType}:${evidenceId}:${evidenceRef.version}`);
   const saved = page.waitForResponse((response) =>
     response.url().endsWith("/parallel/drawing-pdf-bindings") && response.request().method() === "POST");
-  await panel.getByRole("button", { name: "선택한 버전 연결" }).click();
+  await panel.getByRole("button", { name: "선택한 작성 차수 연결" }).click();
   expect((await saved).status()).toBe(201);
   expect(submittedBodies).toEqual([{ drawingRef, evidenceRef }]);
   await expect(panel.getByRole("list", {name: "저장된 도면 PDF 연결"}).getByText(new RegExp(fixtureBinding(actualProjectId).fileHash))).toBeVisible();
-  await expect(panel.getByRole("button", { name: "이 도면 버전은 이미 PDF와 연결됨" })).toBeDisabled();
+  await expect(panel.getByRole("button", { name: "이 도면 작성 차수는 이미 PDF와 연결됨" })).toBeDisabled();
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });

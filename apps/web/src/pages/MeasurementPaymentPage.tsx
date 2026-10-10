@@ -1,3 +1,4 @@
+import { recordVersionLabel } from "../labels";
 import { useMemo, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CommandDescriptor, WorkItem, Workspace } from "../data/ui-contract";
@@ -291,7 +292,7 @@ export function MeasurementPaymentPage({
             {items.length ? items.map((item) => {
               const data = paymentRecordData(item);
               return <button type="button" className={`payment-record-row${selected === item.record.id ? " selected" : ""}`} key={item.record.id} onClick={() => onSelect(item.record.id)}>
-                <span className="payment-record-main"><strong>{recordTitle(item.record)}</strong><small>{paymentIdentity(item)} · v{item.record.version}</small></span>
+                <span className="payment-record-main"><strong>{recordTitle(item.record)}</strong><small>{paymentIdentity(item)} · {recordVersionLabel(item.record.version)}</small></span>
                 <span className="payment-record-amount">{amount(machine === "payment_claim" ? data.claimedGrossAmount : machine === "quantity_measurement" ? data.claimedQuantity : data.contractAmount, machine === "quantity_measurement" ? data.unit : data.currency)}</span>
                 <StatusBadge status={item.record.status}>{states[item.record.status || ""] || item.record.status || "—"}</StatusBadge>
               </button>;
@@ -302,7 +303,7 @@ export function MeasurementPaymentPage({
           {!selectedItem ? <div className="empty compact"><h2>{t(tabs.find((tab) => tab.id === machine)!.key)}</h2><p>{t("selectToInspect")}</p></div>
             : <>
               <button type="button" className="mobile-back" onClick={() => onSelect(null)}>← {t("backToList")}</button>
-              <div className="detail-head"><div><span className="eyebrow">{t(tabs.find((tab) => tab.id === machine)!.key)}</span><h2>{recordTitle(selectedItem.record)}</h2><p>{t("sourceVersion")} v{selectedItem.record.version}</p></div>
+              <div className="detail-head"><div><span className="eyebrow">{t(tabs.find((tab) => tab.id === machine)!.key)}</span><h2>{recordTitle(selectedItem.record)}</h2><p>{t("sourceVersion")} {recordVersionLabel(selectedItem.record.version)}</p></div>
                 <StatusBadge status={selectedItem.record.status}>{states[selectedItem.record.status || ""] || selectedItem.record.status || "—"}</StatusBadge>
               </div>
               <PaymentDetail item={selectedItem} t={t} />

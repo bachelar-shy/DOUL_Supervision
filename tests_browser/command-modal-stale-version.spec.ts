@@ -140,7 +140,7 @@ async function openRoleRoute(page: Page, route: string, role: string) {
   const initialLoad = page.waitForResponse(response => response.request().method() === "GET" && response.url().endsWith("/workspace") && response.ok());
   await page.goto("/#/today");
   await initialLoad;
-  const picker = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const picker = page.getByRole("combobox", { name: "시험 사용자 역할 선택" });
   if (await picker.inputValue() !== role) {
     const loaded = page.waitForResponse(response => response.request().method() === "GET" && response.url().endsWith("/workspace") && response.ok());
     await picker.selectOption(role);
@@ -183,7 +183,7 @@ async function refreshAndCheck(page: Page, request: APIRequestContext, session: 
   await page.getByRole("button", { name: "새로고침", exact: true }).first().click();
   await refresh;
   const detail = page.locator(".detail-pane");
-  await expect(detail).toContainText(`v${record.version}`);
+  await expect(detail).toContainText(`기록 제${record.version}차`);
   await expect(detail).toContainText(states[record.status] ?? record.status);
   const response = await request.get(`${apiOrigin}/projects/${session.projectId}/workspace`, {
     headers: { Authorization: `Bearer ${session.accessToken}`, "X-Role-Assignment-Id": session.actor.roleAssignmentId },

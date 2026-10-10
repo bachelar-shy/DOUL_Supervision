@@ -75,7 +75,7 @@ test("inspection case panel shows the server-linked graph and opens commands onl
   page.on("pageerror", error => errors.push(error.message));
   page.on("request", req => { if (req.method() === "POST" && /\/api\/projects\/[^/]+\/(?:issues|actions|inspections|owner-reports)\//.test(new URL(req.url()).pathname)) transitionPosts.push(req.url()); });
   await page.goto("/#/parallel-test");
-  await page.getByLabel("개발 역할 선택").selectOption("SUP");
+  await page.getByLabel("시험 사용자 역할 선택").selectOption("SUP");
   await page.goto("/#/parallel-test");
   await page.getByRole("tab", { name: "작업함", exact: true }).click();
   const panel = page.getByTestId("inspection-case-flow");
@@ -92,7 +92,7 @@ test("inspection case panel shows the server-linked graph and opens commands onl
   await expect(observationRef).toBeVisible();
   await expect(correctionRef).toHaveCount(1);
   await expect(correctionRef).toBeVisible();
-  await expect(panel.getByText("서버 준비상태 · 시정 주기 0", { exact: true })).toBeVisible();
+  await expect(panel.getByText("업무 시스템 준비상태 · 시정 주기 0", { exact: true })).toBeVisible();
   const candidate = panel.locator(".inspection-case-actions button:not([disabled])").first();
   await expect(candidate, "synthetic linked graph must expose a server-provided current command candidate").toBeVisible();
   transitionPosts.length = 0;

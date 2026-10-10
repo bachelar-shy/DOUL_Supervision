@@ -63,7 +63,7 @@ export interface DrawingFieldHistoryEvent {
 
 function projectPath(client: SupervisionClient, projectId: string, suffix: string) {
   if (!client.session) throw new Error("로그인이 필요합니다.");
-  if (client.session.projectId !== projectId) throw new Error("현재 프로젝트가 일치하지 않습니다.");
+  if (client.session.projectId !== projectId) throw new Error("현재 현장이 일치하지 않습니다.");
   return client.path(suffix);
 }
 

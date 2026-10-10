@@ -32,8 +32,8 @@ test("uploads a PDF, renders and navigates pages, zooms, and reports a corrupt f
   page.on("pageerror", (error) => pageErrors.push(error.message));
 
   await page.goto("/#/parallel-test");
-  await page.getByRole("tab", { name: "도면 버전", exact: true }).click();
-  const viewer = page.getByLabel("PDF 도면 뷰어");
+  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
+  const viewer = page.getByLabel("PDF 도면 보기");
   await expect(viewer).toBeVisible();
 
   await viewer.getByTestId("pdf-upload").setInputFiles({
