@@ -10969,6 +10969,40 @@
             "HANDOVER_REFRESH_ISSUE_REFERENCES_READY"
           ],
           "audit_event": true
+        },
+        {
+          "from": "accepted_with_reservations",
+          "to": "final_handover",
+          "command": "record_final_handover",
+          "authority": "completion.handover.partial",
+          "guards": [
+            "assignment_authorized",
+            "expected_version_matches",
+            "requirement_versions_current",
+            "evidence_provenance_valid",
+            "drawing_revision_current",
+            "upstream_hold_points_released",
+            "handover_final_scope_ready"
+          ],
+          "required_evidence": true,
+          "payload_fields": [
+            "effectiveAt",
+            "warrantyTrigger"
+          ],
+          "required_payload_fields": [
+            "effectiveAt",
+            "warrantyTrigger"
+          ],
+          "failure_reasons": [
+            "NOT_AUTHORIZED",
+            "VERSION_CONFLICT",
+            "REQUIREMENT_STALE",
+            "EVIDENCE_INVALID",
+            "DRAWING_STALE",
+            "HOLD_NOT_RELEASED",
+            "HANDOVER_FINAL_SCOPE_READY"
+          ],
+          "audit_event": true
         }
       ]
     },

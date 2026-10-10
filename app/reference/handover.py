@@ -47,7 +47,7 @@ _WARRANTY_SERVER_FIELDS = {
     "remedyEvidenceIds", "reinspectionHistoryRefs", "closureEvidenceRefs",
     "assessedAt", "acknowledgedAt", "reportedAt", "remedyStartedAt",
     "remedySubmittedAt", "acceptedAt", "closedAt", "recordedBy",
-    "remedyReferenceRefreshHistory",
+    "currentIssueRef", "currentActionRefs", "remedyReferenceRefreshHistory",
 }
 _COMMAND_FIELDS = {
     "declare_test_ready": {"precommissioningChecklist"},
@@ -717,10 +717,12 @@ def _ref_key(reference):
 
 
 def _identity_key(reference):
+    require(isinstance(reference, dict), "REFERENCE_INVALID", "An exact typed reference is required")
     return (reference.get("objectType"), reference.get("objectId"))
 
 
 def _identity_set(references):
+    require(isinstance(references, list), "REFERENCE_INVALID", "An exact reference list is required")
     return {_identity_key(reference) for reference in references}
 
 
@@ -731,10 +733,10 @@ def _complete_current_action_cycle(engine, source, issue_records, references, lo
     issue_ids = {issue["id"] for issue in issue_records}
     expected = {}
     for issue in issue_records:
-        cycle_actions = [value for (kind, _), value in engine._records.items()
-                         if kind == "Action" and value.get("projectId") == source["projectId"]
-                         and value.get("relatedIssueId") == issue["id"]
-                         and value.get("correctionCycle") == issue.get("correctionCycle")]
+        linked_ids = issue.get("actionIds", [])
+        require(isinstance(linked_ids, list), "REFERENCE_CYCLE_INCOMPLETE", "Issue-linked Action identities are invalid")
+        cycle_actions = [engine.get("Action", action_id) for action_id in linked_ids
+                         if engine.get("Action", action_id).get("correctionCycle") == issue.get("correctionCycle")]
         expected.update({value["id"]: value for value in cycle_actions})
     require({value["id"] for value in actions} == set(expected),
             "REFERENCE_IDENTITY_MISMATCH", "Every Action in the current correction cycle must be retained")
