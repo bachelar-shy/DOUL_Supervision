@@ -36,11 +36,13 @@ permissions:
 
 jobs:
   compose-smoke:
-    # Dedicated Linux VM on the Mac mini; one runner serializes jobs.
-    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
+    # Isolated, ephemeral GitHub-hosted Linux x64 runner (no Mac mini).
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Prepare ephemeral runner disk for CI
+        run: bash infra/ci/prepare_github_runner.sh
 
       - name: Validate Compose model
         run: docker compose -f infra/compose/compose.dev.yml config --quiet
