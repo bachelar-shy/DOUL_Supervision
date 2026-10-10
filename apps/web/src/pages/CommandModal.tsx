@@ -70,6 +70,7 @@ const multipleReferenceFields = new Set([
   "evidenceRefs",
   "delayEventRefs",
   "impactAnalysisRefs",
+  "currentIssueRefs",
 ]);
 
 const selectableReferenceFields = new Set([
@@ -102,12 +103,38 @@ function referenceOptions(
   current: WorkItem,
   currentRequirementLabel: string,
   referenceKind?: "single" | "multiple",
+  command?: string,
 ): Array<{ label: string; ref: DomainRef }> {
   if (["decisionRef", "ownerDecisionRef", "decisionRefs"].includes(field)) return completionDecisionReferenceOptions(workspace, current);
   if (["testResultRef", "evidenceRefs", "impactAnalysisRefs", "sourceFileRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Evidence");
   if (["reinspectionRef", "inspectionRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Inspection");
-  if (["issueRef", "punchIssueRefs", "openIssueRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Issue");
-  if (["actionRef", "remedyActionRefs", "correctiveActionRefs", "correctionActionRefs", "retestBasisRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Action");
+  if (["issueRef", "punchIssueRefs", "openIssueRefs", "currentIssueRefs"].includes(field)) {
+    const allIssues = completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Issue");
+    const data = current.record.data ?? {};
+    const sourceRefs = command === "refresh_issue_references"
+      ? data.openIssueRefs
+      : command === "mark_ready_for_handover" && field === "punchIssueRefs"
+        ? (data.currentPunchIssueRefs ?? data.punchIssueRefs)
+        : ["refresh_remedy_references", "accept_remedy"].includes(command ?? "") && field === "issueRef"
+          ? [data.issueRef]
+          : undefined;
+    if (!Array.isArray(sourceRefs)) return allIssues;
+    const allowedIds = new Set(sourceRefs.flatMap(ref =>
+      ref && typeof ref === "object" && typeof (ref as DomainRef).objectId === "string" ? [(ref as DomainRef).objectId] : []));
+    return allIssues.filter(option => allowedIds.has(option.ref.objectId));
+  }
+  if (["actionRef", "remedyActionRefs", "correctiveActionRefs", "correctionActionRefs", "retestBasisRefs", "actionRefs"].includes(field)) {
+    let allowedIds: Set<string> | undefined;
+    if (command === "mark_ready_for_handover" && field === "correctionActionRefs") {
+      const refs = Array.isArray(current.record.data?.currentPunchIssueRefs ?? current.record.data?.punchIssueRefs) ? (current.record.data?.currentPunchIssueRefs ?? current.record.data?.punchIssueRefs) as DomainRef[] : [];
+      allowedIds = linkedActionIds(workspace, refs.map(ref => ref.objectId));
+    } else if (["refresh_remedy_references", "accept_remedy"].includes(command ?? "") && field === "actionRefs") {
+      const issueRef = current.record.data?.issueRef as DomainRef | undefined;
+      allowedIds = linkedActionIds(workspace, issueRef ? [issueRef.objectId] : []);
+    }
+    return completionReferenceOptions(workspace).filter(option =>
+      option.ref.objectType === "Action" && (!allowedIds || allowedIds.has(option.ref.objectId)));
+  }
   if (["equipmentRef", "equipmentRefs"].includes(field)) return completionReferenceOptions(workspace).filter(option => option.ref.objectType === "Asset" && option.subtype === "Equipment");
   if (!selectableReferenceFields.has(field)) return referenceKind ? completionReferenceOptions(workspace) : [];
   if (field === "clauseRefs") {
@@ -164,6 +191,33 @@ function referenceOptions(
   });
 }
 
+function linkedActionIds(workspace: Workspace, issueIds: string[]): Set<string> | undefined {
+  if (!issueIds.length) return undefined;
+  const catalog = workspace.context.referenceCatalog as typeof workspace.context.referenceCatalog & {
+    issues?: Array<{ ref: DomainRef; record: Record<string, unknown> }>;
+  };
+  const ids = new Set<string>();
+  for (const entry of catalog?.issues ?? []) {
+    if (issueIds.includes(entry.ref.objectId) && Array.isArray(entry.record.actionIds)) {
+      for (const id of entry.record.actionIds) if (typeof id === "string") ids.add(id);
+    }
+  }
+  for (const item of workspace.items) {
+    if (item.machine === "issue" && issueIds.includes(item.record.id)) {
+      const actionIds = item.record.actionIds;
+      if (Array.isArray(actionIds)) for (const id of actionIds) if (typeof id === "string") ids.add(id);
+    }
+  }
+  return ids;
+}
+
+function exactSelectionField(machine: string, command: string, field: string): boolean {
+  return (command === "refresh_issue_references" && field === "currentIssueRefs")
+    || (command === "refresh_remedy_references" && ["issueRef", "actionRefs"].includes(field))
+    || (machine === "warranty_claim" && command === "accept_remedy" && ["issueRef", "actionRefs"].includes(field))
+    || (machine === "commissioning_package" && command === "mark_ready_for_handover" && ["punchIssueRefs", "correctionActionRefs"].includes(field));
+}
+
 function selectedReferenceValues(value: string): string[] {
   if (!value.trim()) return [];
   try {
@@ -174,7 +228,10 @@ function selectedReferenceValues(value: string): string[] {
   }
 }
 
-function fieldDefault(field: string, w: Workspace, item: WorkItem): string {
+function fieldDefault(field: string, w: Workspace, item: WorkItem, command?: string): string {
+  if (command === "refresh_issue_references" || command === "refresh_remedy_references") return "";
+  if (command === "accept_remedy" && ["issueRef", "actionRefs"].includes(field)) return "";
+  if (command === "mark_ready_for_handover" && ["punchIssueRefs", "correctionActionRefs"].includes(field)) return "";
   if (field === "ownerReservationInputs") return JSON.stringify(item.record.data?.ownerReservationInputs ?? item.record.data?.reservationProposals ?? [], null, 2);
   const existing =
     item.record.data?.[field] ??
@@ -221,7 +278,7 @@ export function CommandModal({
     Object.fromEntries(
       dialog.action.fields.map((f) => [
         f,
-        fieldDefault(f, workspace, dialog.item),
+        fieldDefault(f, workspace, dialog.item, dialog.action.command),
       ]),
     ),
   );
@@ -233,6 +290,22 @@ export function CommandModal({
     setBusy(true);
     setErr("");
     try {
+      if (dialog.action.command === "refresh_issue_references" && !values.currentIssueRefs?.trim()) {
+        throw new CommandInputError(t("completion.currentIssueRefsRequired"));
+      }
+      if (dialog.action.command === "refresh_remedy_references" && (!values.issueRef?.trim() || !values.actionRefs?.trim())) {
+        throw new CommandInputError(t("completion.remedyReferencesRequired"));
+      }
+      if (dialog.item.machine === "commissioning_package" && dialog.action.command === "mark_ready_for_handover") {
+        const hasPunchIssues = Boolean(values.punchIssueRefs?.trim());
+        const hasActions = Boolean(values.correctionActionRefs?.trim());
+        if (hasPunchIssues !== hasActions) throw new CommandInputError(t("completion.punchActionPairRequired"));
+      }
+      if (dialog.item.machine === "warranty_claim" && dialog.action.command === "accept_remedy") {
+        const hasIssue = Boolean(values.issueRef?.trim());
+        const hasActions = Boolean(values.actionRefs?.trim());
+        if (hasIssue !== hasActions) throw new CommandInputError(t("completion.warrantyReferencePairRequired"));
+      }
       const payload: Fields = {};
       for (const f of dialog.action.fields) {
         const v = values[f];
@@ -382,17 +455,18 @@ export function CommandModal({
                   dialog.item,
                   t("commandModal.currentRequirement"),
                   commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference,
-                ).length ? (
+                  dialog.action.command,
+              ).length || exactSelectionField(dialog.item.machine, dialog.action.command, f) ? (
                 <select
                   aria-label={fields[f] || f}
-                  multiple={(commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f))}
+                  multiple={(commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f) || exactSelectionField(dialog.item.machine, dialog.action.command, f) && f !== "issueRef")}
                   value={
-                    (commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f))
+                    (commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f) || exactSelectionField(dialog.item.machine, dialog.action.command, f) && f !== "issueRef")
                       ? selectedReferenceValues(values[f])
                       : values[f]
                   }
                   onChange={(e) => {
-                    if ((commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f))) {
+                    if ((commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference === "multiple" || multipleReferenceFields.has(f) || exactSelectionField(dialog.item.machine, dialog.action.command, f) && f !== "issueRef")) {
                       const refs = Array.from(e.currentTarget.selectedOptions).map(
                         (option) => JSON.parse(option.value) as DomainRef,
                       );
@@ -414,16 +488,27 @@ export function CommandModal({
                     dialog.item,
                     t("commandModal.currentRequirement"),
                   commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference,
+                    dialog.action.command,
                   ).map(
                     ({ label, ref }) => {
                       const value = JSON.stringify(ref);
+                      const status = completionReferenceOptions(workspace).find(option =>
+                        option.ref.objectType === ref.objectType && option.ref.objectId === ref.objectId && option.ref.version === ref.version)?.status;
                       return (
                         <option key={value} value={value}>
-                          {label}
+                          {label}{status ? ` · ${status}` : ""}
                         </option>
                       );
                     },
                   )}
+                  {!referenceOptions(
+                    f,
+                    workspace,
+                    dialog.item,
+                    t("commandModal.currentRequirement"),
+                    commandInputs[dialog.item.machine]?.[dialog.action.command]?.[f]?.reference,
+                    dialog.action.command,
+                  ).length && <option value="" disabled>{t("completion.noReferenceOptions")}</option>}
                 </select>
               ) : (
                 <textarea
@@ -439,6 +524,10 @@ export function CommandModal({
                   }
                 />
               )}
+              {dialog.action.command === "refresh_issue_references" && f === "currentIssueRefs" && <span className="muted">{t("completion.currentIssueRefsHint")}</span>}
+              {dialog.action.command === "refresh_remedy_references" && ["issueRef", "actionRefs"].includes(f) && <span className="muted">{t("completion.remedyReferencesHint")}</span>}
+              {dialog.item.machine === "warranty_claim" && dialog.action.command === "accept_remedy" && ["issueRef", "actionRefs"].includes(f) && <span className="muted">{t("completion.warrantyAcceptReferencesHint")}</span>}
+              {dialog.item.machine === "commissioning_package" && dialog.action.command === "mark_ready_for_handover" && ["punchIssueRefs", "correctionActionRefs"].includes(f) && <span className="muted">{t("completion.punchActionPairHint")}</span>}
             </label>
           ))}
         </div>

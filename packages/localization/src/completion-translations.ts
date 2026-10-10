@@ -110,6 +110,15 @@ export const completionKo = {
   "completion.profileUnavailable": "현재 범위에서 사용할 수 있는 프로필이 없습니다.",
   "completion.warrantyRequiredFields": "필수 하자 정보를 입력하십시오.",
   "completion.error": "요청을 완료하지 못했습니다. 입력값과 선행조건을 확인하십시오.",
+  "completion.currentIssueRefsRequired": "원본 미결 이슈와 같은 이슈 ID의 최신 참조를 하나 이상 선택하십시오.",
+  "completion.remedyReferencesRequired": "하자 이슈와 현재 시정 주기의 조치를 명시적으로 선택하십시오.",
+  "completion.punchActionPairRequired": "잔여 이슈 참조와 시정조치 참조를 함께 선택하거나 둘 다 비우십시오.",
+  "completion.noReferenceOptions": "현재 범위에서 선택 가능한 원본 참조가 없습니다.",
+  "completion.currentIssueRefsHint": "원본 미결 이슈의 ID를 유지하면서 현재 버전의 참조를 선택하십시오. 선택값은 자동으로 채워지지 않습니다.",
+  "completion.remedyReferencesHint": "하자 이슈와 현재 시정 주기의 조치를 선택하십시오. 선택값은 자동으로 채워지지 않습니다.",
+  "completion.punchActionPairHint": "수정 후 최신 참조가 필요한 경우 잔여 이슈와 연결 시정조치를 함께 선택하십시오. 선택은 명시적입니다.",
+  "completion.warrantyReferencePairRequired": "하자 이슈 참조와 시정조치 참조를 함께 선택하거나 둘 다 비우십시오.",
+  "completion.warrantyAcceptReferencesHint": "승인 전에 최신 이슈와 현재 시정 주기의 조치를 명시적으로 선택할 수 있습니다. 선택값은 자동으로 채워지지 않습니다.",
 } as const;
 
 export const completionVi = {
@@ -224,6 +233,15 @@ export const completionVi = {
   "completion.profileUnavailable": "Không có hồ sơ cấu hình khả dụng trong phạm vi hiện tại.",
   "completion.warrantyRequiredFields": "Vui lòng nhập thông tin khiếm khuyết bắt buộc.",
   "completion.error": "Không thể hoàn tất yêu cầu. Vui lòng kiểm tra dữ liệu nhập và các điều kiện tiên quyết.",
+  "completion.currentIssueRefsRequired": "Hãy chọn ít nhất một tham chiếu hiện tại có cùng mã vấn đề với danh sách ban đầu chưa xử lý.",
+  "completion.remedyReferencesRequired": "Hãy chọn rõ vấn đề khiếm khuyết và các hành động trong chu kỳ khắc phục hiện tại.",
+  "completion.punchActionPairRequired": "Hãy chọn cả tham chiếu vấn đề tồn đọng và hành động khắc phục, hoặc để trống cả hai.",
+  "completion.noReferenceOptions": "Không có tham chiếu nguồn khả dụng trong phạm vi hiện tại.",
+  "completion.currentIssueRefsHint": "Giữ nguyên mã vấn đề ban đầu và chọn phiên bản tham chiếu hiện tại. Không có lựa chọn nào được tự động điền.",
+  "completion.remedyReferencesHint": "Chọn vấn đề khiếm khuyết và các hành động trong chu kỳ khắc phục hiện tại. Không có lựa chọn nào được tự động điền.",
+  "completion.punchActionPairHint": "Sau khi sửa chữa, hãy chọn cả vấn đề tồn đọng và hành động khắc phục liên kết để dùng tham chiếu mới nhất.",
+  "completion.warrantyReferencePairRequired": "Hãy chọn cả tham chiếu vấn đề khiếm khuyết và hành động khắc phục, hoặc để trống cả hai.",
+  "completion.warrantyAcceptReferencesHint": "Trước khi chấp nhận, hãy chọn rõ vấn đề hiện tại và các hành động trong chu kỳ khắc phục hiện tại. Không có lựa chọn nào được tự động điền.",
 } as const;
 
 export const completionEn = {
@@ -338,4 +356,13 @@ export const completionEn = {
   "completion.profileUnavailable": "No profile is available in the current scope.",
   "completion.warrantyRequiredFields": "Enter the required defect information.",
   "completion.error": "The request could not be completed. Check the input and prerequisites.",
+  "completion.currentIssueRefsRequired": "Select at least one current reference whose issue ID matches the original open issue list.",
+  "completion.remedyReferencesRequired": "Explicitly select the defect issue and actions from its current correction cycle.",
+  "completion.punchActionPairRequired": "Select both punch issue and correction action references, or leave both empty.",
+  "completion.noReferenceOptions": "No source references are selectable in the current scope.",
+  "completion.currentIssueRefsHint": "Keep each original open issue ID and select its current version. Values are not preselected.",
+  "completion.remedyReferencesHint": "Select the defect issue and actions from its current correction cycle. Values are not preselected.",
+  "completion.punchActionPairHint": "After correction, select the punch issue and its linked correction actions together to use current references.",
+  "completion.warrantyReferencePairRequired": "Select both the defect issue reference and correction action references, or leave both empty.",
+  "completion.warrantyAcceptReferencesHint": "Before acceptance, explicitly select the current issue and actions from its current correction cycle. Values are not preselected.",
 } as const;

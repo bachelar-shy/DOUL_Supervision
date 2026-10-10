@@ -122,7 +122,7 @@ export function completionReferenceOptions(workspace: Workspace): CompletionRefe
     const title = source?.record.title || source?.record.workName || hint;
     refs.set(key, {
       ref,
-      label: `${title ? `${title} · ` : ""}${ref.objectType} · ${ref.objectId.slice(0, 8)} · v${ref.version}`,
+      label: `${title ? `${title} · ` : ""}${ref.objectType} · ${ref.objectId} · v${ref.version}`,
       ...(source?.record.status ? { status: source.record.status } : typeof catalogRecord?.status === "string" ? { status: catalogRecord.status } : {}),
       ...(source?.record.subtype ? { subtype: source.record.subtype } : typeof catalogRecord?.subtype === "string" ? { subtype: catalogRecord.subtype } : {}),
     });
