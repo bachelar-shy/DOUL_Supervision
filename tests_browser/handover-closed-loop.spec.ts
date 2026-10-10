@@ -193,7 +193,12 @@ async function runCompletionCommand(
       .or(dialog.getByRole("combobox", { name: label }));
     await expect(control, `command field ${field} should be exposed with its current localized label`).toHaveCount(1, { timeout: 5000 });
     if (value && typeof value === "object" && !Array.isArray(value) && "objectType" in value && typeof value.objectId === "string") {
-      await control.selectOption(await exactReferenceOption(control, value as Ref));
+      const isSelect = await control.evaluateAll((nodes) => nodes.some((node) => node instanceof HTMLSelectElement));
+      if (isSelect) {
+        await control.selectOption(await exactReferenceOption(control, value as Ref));
+      } else {
+        await control.fill(JSON.stringify(value));
+      }
     } else if (Array.isArray(value) && value.length && value.every((item) => item && typeof item === "object" && "objectType" in item)) {
       const select = control;
       const isSelect = await select.evaluateAll((nodes) => nodes.some((node) => node instanceof HTMLSelectElement));
