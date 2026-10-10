@@ -210,7 +210,7 @@ class CompletionReferenceRefusalHttpTests(unittest.TestCase):
                     f.engine._save("Issue", changed)
                 refused = self.assert_atomic_refusal("handover-packages", handover,
                     "refresh_issue_references", {"currentIssueRefs": [f.ref("Issue", changed["id"])]})
-                self.assertEqual(refused.json()["code"], "PROJECT_MISMATCH" if field == "projectId" else "SCOPE_MISMATCH")
+                self.assertEqual(refused.json()["code"], "PROJECT_MISMATCH" if field == "projectId" else "HANDOVER_ISSUE_REFERENCE_INVALID")
 
 
 if __name__ == "__main__":
