@@ -1,0 +1,302 @@
+{
+  "recordedAt": "2026-10-10T02:50:17.022952+00:00",
+  "repository": "bachelar-shy/DOUL_Supervision",
+  "pullRequest": 139,
+  "head": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+  "runs": [
+    {
+      "conclusion": "success",
+      "databaseId": 38017362607,
+      "headSha": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "name": "platform-storage-policy",
+      "status": "completed",
+      "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/38017362607",
+      "jobs": [
+        {
+          "id": 114110505998,
+          "name": "storage-policy",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_name": "doul-macmini-m4-linux",
+          "labels": [
+            "self-hosted",
+            "Linux",
+            "ARM64",
+            "doul-macmini"
+          ],
+          "started_at": "2026-10-10T02:32:52Z",
+          "completed_at": "2026-10-10T02:33:06Z"
+        }
+      ]
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38017362628,
+      "headSha": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "name": "platform-worker-runtime",
+      "status": "completed",
+      "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/38017362628",
+      "jobs": [
+        {
+          "id": 114110506113,
+          "name": "worker-runtime-smoke",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_name": "doul-macmini-m4-linux",
+          "labels": [
+            "self-hosted",
+            "Linux",
+            "ARM64",
+            "doul-macmini"
+          ],
+          "started_at": "2026-10-10T02:33:15Z",
+          "completed_at": "2026-10-10T02:34:11Z"
+        }
+      ]
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38017362612,
+      "headSha": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "name": "platform-observability",
+      "status": "completed",
+      "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/38017362612",
+      "jobs": [
+        {
+          "id": 114110506186,
+          "name": "runtime-health-contract",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_name": "doul-macmini-m4-linux",
+          "labels": [
+            "self-hosted",
+            "Linux",
+            "ARM64",
+            "doul-macmini"
+          ],
+          "started_at": "2026-10-10T02:34:19Z",
+          "completed_at": "2026-10-10T02:34:58Z"
+        }
+      ]
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38017362657,
+      "headSha": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "name": "mvp-development",
+      "status": "completed",
+      "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/38017362657",
+      "jobs": [
+        {
+          "id": 114110506270,
+          "name": "local-adapter-and-ui",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_name": "doul-macmini-m4-linux",
+          "labels": [
+            "self-hosted",
+            "Linux",
+            "ARM64",
+            "doul-macmini"
+          ],
+          "started_at": "2026-10-10T02:35:06Z",
+          "completed_at": "2026-10-10T02:43:48Z"
+        }
+      ]
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38017362672,
+      "headSha": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "name": "platform-container-baseline",
+      "status": "completed",
+      "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/38017362672",
+      "jobs": [
+        {
+          "id": 114110506312,
+          "name": "compose-smoke",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_name": "doul-macmini-m4-linux",
+          "labels": [
+            "self-hosted",
+            "Linux",
+            "ARM64",
+            "doul-macmini"
+          ],
+          "started_at": "2026-10-10T02:43:56Z",
+          "completed_at": "2026-10-10T02:45:31Z"
+        }
+      ]
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38017362606,
+      "headSha": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "name": "platform-consistent-recovery",
+      "status": "completed",
+      "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/38017362606",
+      "jobs": [
+        {
+          "id": 114110506065,
+          "name": "clean-environment-recovery",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_name": "doul-macmini-m4-linux",
+          "labels": [
+            "self-hosted",
+            "Linux",
+            "ARM64",
+            "doul-macmini"
+          ],
+          "started_at": "2026-10-10T02:45:39Z",
+          "completed_at": "2026-10-10T02:46:24Z"
+        }
+      ]
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38017362610,
+      "headSha": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "name": "platform-postgres-backup",
+      "status": "completed",
+      "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/38017362610",
+      "jobs": [
+        {
+          "id": 114110506071,
+          "name": "clean-restore",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_name": "doul-macmini-m4-linux",
+          "labels": [
+            "self-hosted",
+            "Linux",
+            "ARM64",
+            "doul-macmini"
+          ],
+          "started_at": "2026-10-10T02:46:32Z",
+          "completed_at": "2026-10-10T02:46:56Z"
+        }
+      ]
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38017362613,
+      "headSha": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "name": "platform-operational-environments",
+      "status": "completed",
+      "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/38017362613",
+      "jobs": [
+        {
+          "id": 114110506089,
+          "name": "verify-operational-boundaries",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_name": "doul-macmini-m4-linux",
+          "labels": [
+            "self-hosted",
+            "Linux",
+            "ARM64",
+            "doul-macmini"
+          ],
+          "started_at": "2026-10-10T02:47:04Z",
+          "completed_at": "2026-10-10T02:47:54Z"
+        }
+      ]
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38017362608,
+      "headSha": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "name": "backend-worker-integration",
+      "status": "completed",
+      "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/38017362608",
+      "jobs": [
+        {
+          "id": 114110506112,
+          "name": "redis-worker",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_name": "doul-macmini-m4-linux",
+          "labels": [
+            "self-hosted",
+            "Linux",
+            "ARM64",
+            "doul-macmini"
+          ],
+          "started_at": "2026-10-10T02:48:02Z",
+          "completed_at": "2026-10-10T02:48:41Z"
+        }
+      ]
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38017362625,
+      "headSha": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "name": "contracts",
+      "status": "completed",
+      "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/38017362625",
+      "jobs": [
+        {
+          "id": 114110506199,
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_name": "doul-macmini-m4-linux",
+          "labels": [
+            "self-hosted",
+            "Linux",
+            "ARM64",
+            "doul-macmini"
+          ],
+          "started_at": "2026-10-10T02:48:50Z",
+          "completed_at": "2026-10-10T02:49:16Z"
+        }
+      ]
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38017362609,
+      "headSha": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "name": "platform-document-runtime",
+      "status": "completed",
+      "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/38017362609",
+      "jobs": [
+        {
+          "id": 114110506943,
+          "name": "render-verify",
+          "status": "completed",
+          "conclusion": "success",
+          "runner_name": "doul-macmini-m4-linux",
+          "labels": [
+            "self-hosted",
+            "Linux",
+            "ARM64",
+            "doul-macmini"
+          ],
+          "started_at": "2026-10-10T02:49:25Z",
+          "completed_at": "2026-10-10T02:49:59Z"
+        }
+      ]
+    }
+  ],
+  "allExactHeadChecksPassedOnMacMini": true,
+  "mergeCommit": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
+  "mainVerification": "in_progress",
+  "tests": {
+    "reference": 320,
+    "apiRun": 412,
+    "apiPassed": 366,
+    "apiEnvironmentSkips": 46,
+    "browser": 109,
+    "mockLocales": 7,
+    "livePostgresHandover": 6
+  },
+  "actualFieldPilot": false,
+  "productionTrustProviderVerified": false,
+  "mergedMainVerification": {
+    "status": "failed_under_investigation",
+    "workflow": "mvp-development",
+    "runId": 38018503065
+  }
+}

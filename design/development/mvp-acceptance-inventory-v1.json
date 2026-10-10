@@ -16,7 +16,9 @@
     "pilotEvidenceFound": false,
     "pilotEvidenceLimit": "Existing dated verification artifacts explicitly say synthetic development/staging and actualPilotDeployed=false. The example configuration pack is not a selected project pack. No actual project role assignments, field work IDs, snapshots, or owner acceptance evidence were found.",
     "comparedRootCommit": "9d0f2be C2-free candidate before final checkpoint",
-    "candidateVerification": "Focused integrated browser6PASS, AC-STORE HTTP1PASS, web/mobile typecheck and responsive build; final exact-head Mac CI pending."
+    "candidateVerification": "PR139 all11 Mac Actions passed before merge; merged-main MVP failed, investigation pending. Operator candidate Media, Payment and Warranty selector real-API browser acceptance passed locally; exact-head Mac verification pending.",
+    "currentIntegrationBase": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
+    "operatorCandidateBranch": "goal/operator-completion-v1"
   },
   "scenarios": [
     {
@@ -26,7 +28,7 @@
       "contract": "confirmed",
       "backendApi": "full_real_http_sqlite_quality_closeout_scenario; no_postgres_quality_suite_identified",
       "ui": "connected_real_http_browser_closeout_passed_test_verifier_boundary",
-      "integration": "real_http_and_connected_ui_quality_closeout_passed_with_test_only_verifier; pr129_source_ci_passed_candidate_ci_not_run",
+      "integration": "PR139 all11 Mac Actions and 109 real-API browser cases passed; merged-main MVP failed, investigation pending; synthetic providers, no actual pilot",
       "pilot": "not_run",
       "evidence": [
         "tests_mvp/test_quality_closed_loop_http.py",
@@ -52,7 +54,7 @@
       "contract": "confirmed",
       "backendApi": "real_http_persistence_and_current_equipment_gates",
       "ui": "connected_real_api_equipment_permit_stop_resume",
-      "integration": "synthetic_trusted_upstream_action_and_inspection_boundary",
+      "integration": "PR139 all11 Mac Actions and 109 real-API browser cases passed; merged-main MVP failed, investigation pending; synthetic providers, no actual pilot",
       "pilot": "not_run",
       "evidence": [
         "app/schema/safety_execution_contract_v1.json",
@@ -124,7 +126,8 @@
         "Acceptance fixtures use demo project configuration and synthetic data; no actual project BOQ, measurements, authorized actors, banking/ERP records, or pilot acceptance is included.",
         "The PostgreSQL suite is environment-gated by DOUL_TEST_POSTGRES_DSN; its presence or a passing test does not prove a deployed project or external payment."
       ],
-      "nextWork": "Keep project/pilot claims bounded to synthetic development evidence; obtain selected-project calculation rules, BOQ, measurements, authorized actors, and real payment evidence before pilot acceptance."
+      "nextWork": "Keep project/pilot claims bounded to synthetic development evidence; obtain selected-project calculation rules, BOQ, measurements, authorized actors, and real payment evidence before pilot acceptance.",
+      "operatorCandidateEvidence": "Real API browser passed: partial payments, append-only correction/cancellation, final payment and claim closure; five preserved rows, paid/certified800 and unpaid0; actual bank transfer not tested."
     },
     {
       "id": "AC-HO-01",
@@ -151,7 +154,8 @@
         "Full current integrated browser and Mac Actions acceptance remains pending.",
         "Actual adopted project configuration, qualified site actors, production signature provider and field acceptance are not proven."
       ],
-      "nextWork": "Finish current full linked browser revalidation and exact-head Mac Actions; preserve all original snapshots and closure gates. Product approval is recorded; do not request it again."
+      "nextWork": "Finish current full linked browser revalidation and exact-head Mac Actions; preserve all original snapshots and closure gates. Product approval is recorded; do not request it again.",
+      "currentVerification": "PR139 all11 Mac Actions, 109 browser and live PostgreSQL Handover6 passed. Main MVP failure under investigation. Current exact-reference closure selector browser passed locally; operator Mac pending. Actual pilot/provider certification unverified."
     },
     {
       "id": "AC-MEDIA-01",
@@ -159,7 +163,7 @@
       "assessment": "substantial_backend_api_tests; full_connected_e2e_not_proven",
       "contract": "confirmed",
       "backendApi": "real_http_and_worker_tests_exist",
-      "ui": "not_proven_for_review_to_issue_full_flow",
+      "ui": "operator candidate connected real API browser passed; synthetic worker/provider fixture",
       "integration": "partial",
       "pilot": "not_run",
       "evidence": [
@@ -174,7 +178,7 @@
         "No connected browser E2E was found spanning resumable upload, completed analysis coverage, candidate confirmation/rejection, and eligible-only official Issue creation.",
         "External provider availability, multilingual accuracy and field false-positive performance remain separate operational/data-set validation; mocks or test providers cannot establish model performance."
       ],
-      "nextWork": "Add real API-backed UI candidate-review E2E plus worker restart/failure and actual approved-provider representative dataset acceptance if media is enabled."
+      "nextWork": "Verify exact integrated Mac Actions and actual media provider accuracy with authorized site datasets; no actual pilot claim."
     },
     {
       "id": "AC-AUTH-01",
@@ -409,7 +413,8 @@
         "tests_mvp/test_handover_http.py",
         "tests_mvp/test_completion_reference_refusals_http.py",
         "tests_browser/handover-closed-loop.spec.ts"
-      ]
+      ],
+      "currentVerification": "PR139 all11 Mac Actions, 109 browser and live PostgreSQL Handover6 passed. Main MVP failure under investigation. Current exact-reference closure selector browser passed locally; operator Mac pending. Actual pilot/provider certification unverified."
     },
     {
       "id": "AC-REF-02",
@@ -425,7 +430,8 @@
         "tests_mvp/test_handover_http.py",
         "tests_mvp/test_completion_reference_refusals_http.py",
         "tests_browser/handover-closed-loop.spec.ts"
-      ]
+      ],
+      "currentVerification": "PR139 all11 Mac Actions, 109 browser and live PostgreSQL Handover6 passed. Main MVP failure under investigation. Current exact-reference closure selector browser passed locally; operator Mac pending. Actual pilot/provider certification unverified."
     },
     {
       "id": "AC-REF-03",
@@ -441,7 +447,8 @@
         "tests_mvp/test_handover_http.py",
         "tests_mvp/test_completion_reference_refusals_http.py",
         "tests_browser/handover-closed-loop.spec.ts"
-      ]
+      ],
+      "currentVerification": "PR139 all11 Mac Actions, 109 browser and live PostgreSQL Handover6 passed. Main MVP failure under investigation. Current exact-reference closure selector browser passed locally; operator Mac pending. Actual pilot/provider certification unverified."
     }
   ],
   "crossCuttingGaps": [

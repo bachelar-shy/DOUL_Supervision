@@ -11,16 +11,17 @@
   "functions": [
     {
       "functionId": "F-01",
-      "currentStage": "contract_confirmed",
+      "currentStage": "ui_connected",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "46_Product_Functional_Baseline_v1_Validation.md",
         "tests_mvp/test_quality_closed_loop_http.py",
         "design/verification/goal-mvp-checkpoint-20261008.json",
         "tests_browser/quality-closed-loop.spec.ts",
-        "tests_browser/support/quality_api_fixture.py"
+        "tests_browser/support/quality_api_fixture.py",
+        "design/verification/reference-v1-1-mac-20261010.json"
       ],
-      "note": "Real HTTP and connected browser development evidence covers inspection fail, Issue/Action correction, linked reinspection pass, final FM09 render and two explicit test-verifier signatures, Inspection release, Issue close and separate Owner Report receipt/follow-up closure. Terminal Issue UI no longer presents unavailable close as a pending task. Actual production legal verifier, adopted project configuration and field pilot remain unproven; Hosted CI dispatch blocker resolved by PR130; final PR131 exact-head Mac mini regression is pending. No whole-function promotion until all required acceptance boundaries pass."
+      "note": "Connected real API/browser quality closeout and separate Owner Report workflow passed in the 109-test PR139 Mac suite. Promote UI connection only: upstream project configuration and final FM09 signatures use disclosed development fixtures/test verifier. Production trust-provider and actual field pilot remain unverified. Hosted billing is not a current CI blocker; Mac runner evidence is recorded."
     },
     {
       "functionId": "F-02",
@@ -33,7 +34,7 @@
     },
     {
       "functionId": "F-03",
-      "currentStage": "backend_api_implemented",
+      "currentStage": "ui_connected",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "46_Product_Functional_Baseline_v1_Validation.md",
@@ -49,9 +50,11 @@
         "design/verification/priority-issues-validation.json",
         "tests_browser/safety-equipment-closed-loop.spec.ts",
         "tests_browser/zz-safety-closed-loop.spec.ts",
-        "design/verification/goal-mvp-checkpoint-20261008.json"
+        "design/verification/goal-mvp-checkpoint-20261008.json",
+        "design/verification/reference-v1-1-mac-20261010.json",
+        "design/development/agents/safety-combined-equipment-stop-handoff.json"
       ],
-      "note": "Real API persistence acceptance remains verified. New connected UI creates Equipment Inspection and Permit workflow records; failed current equipment inspection atomically blocks Permit activation and actual passing reinspection permits it, using trusted synthetic upstream Equipment/current certificates/approved plans. Separate legacy Stop loop proves explicit lift and independent Permit resume but provisions some workflow prerequisites through HTTP and uses passed/unreleased Inspection. Entire combined UI/field scenario not yet accepted; latest exact-head CI blocked by billing. No pilot promotion."
+      "note": "Connected equipment failure/reinspection, Permit activation, Stop, UI-authored separate corrective Action, Stop verification/lift and separate Permit-resume request/approval passed in PR139 Mac browser regression. Trusted Equipment/certificates/plans, demo actors and a preexisting passed Inspection are disclosed. Actual adopted project/equipment/field acceptance is unverified."
     },
     {
       "functionId": "F-04",
@@ -80,7 +83,7 @@
     },
     {
       "functionId": "F-05",
-      "currentStage": "backend_api_implemented",
+      "currentStage": "ui_connected",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "32_Progress_Measurement_Payment_Functional_Contract.md",
@@ -91,9 +94,11 @@
         "tests_mvp/test_measurement_payment_postgres.py",
         "tests_browser/payment-workspace.spec.ts",
         "design/development/agents/payment-api-handoff.json",
-        "design/verification/goal-mvp-checkpoint-20261008.json"
+        "design/verification/goal-mvp-checkpoint-20261008.json",
+        "tests_browser/payment-closed-loop.spec.ts",
+        "design/development/agents/f05-payment-acceptance-handoff.json"
       ],
-      "note": "ContractBOQ, QuantityMeasurement and PaymentClaim persistent HTTP workflow acceptance passed locally and on PostgreSQL 16, including exact decimal/rule checks, Owner adjustment, individual partial payments and append-only correction/cancellation history. Trusted upstream Requirements, accepted Inspection and Decisions are fixture seeded. Connected Payment UI browser evidence is partial and does not prove all AC-PAY-01 commands through the UI; no integration or pilot promotion."
+      "note": "Complete connected UI/API acceptance now includes BOQ/quantity verification, exact Owner recommendation/adjustment/approval, two partial payments, append-only correction and cancellation, final balance payment, claim closure and exact cumulative values; five historical payment entries remain unchanged. Agent isolated run52.5s and root integrated payment run34.0s pass. Final operator candidate Mac integration pending. Upstream calculation Requirement and accepted Inspection are synthetic; real BOQ/rates, bank/ERP evidence and field actors remain unverified."
     },
     {
       "functionId": "F-06",
@@ -106,8 +111,8 @@
     },
     {
       "functionId": "F-07",
-      "currentStage": "backend_api_implemented",
-      "stageStatus": "revalidation_required",
+      "currentStage": "ui_connected",
+      "stageStatus": "accepted",
       "evidenceRefs": [
         "46_Product_Functional_Baseline_v1_Validation.md",
         "app/reference/handover.py",
@@ -123,9 +128,12 @@
         "design/verification/goal-m4-native-20261009.json",
         "app/reference/product_change_record_pcr_2026_002.json",
         "tests_mvp/test_completion_reference_refusals_http.py",
-        "design/development/agents/reference-integration-handoff.json"
+        "design/development/agents/reference-integration-handoff.json",
+        "design/verification/reference-v1-1-mac-20261010.json",
+        "design/development/agents/reference-ui-v1-1-resume-handoff.json",
+        "design/development/agents/warranty-close-reference-selector-handoff.json"
       ],
-      "note": "C2 reference lifecycle approved by the Product Owner for Baseline v1.1 (PCR-2026-002). Implementation supports explicit qualified SUP refresh of the same Commissioning Punch/Handover Issue identities and complete Warranty current Action cycle, preserving original snapshots, Owner decisions, reservations, versions and audit history. Reference suite 320 passed; integrated API suite 412 run, 366 passed, 46 environment skips; five added real HTTP atomic refusal/idempotency/SQLite restart tests passed. Complete five-scenario connected browser rerun and exact integrated Mac Actions remain pending, so retain backend_api_implemented/revalidation_required. Historical stale-reference rejection remains correct unless the new explicit approved command is used. Trusted upstream profiles and signature verifier remain synthetic; actual provider/project adoption and field pilot are unproven."
+      "note": "Approved C2 Baseline v1.1 (PCR-2026-002) source implemented and merged in PR139 at72c8934. All11 PR-head Mac workflows,109 browser cases,320 reference tests,412 API tests (366passed46environment-specificskips), and6 live PostgreSQL Handover tests pass. Same Issue identities/current complete Action cycles reconcile only through explicit qualified SUP inputs; original snapshots, Owner decisions/reservations and audit history remain immutable. Main verification is running. Next operator candidate adds an explicit blank single-select for current same-defect Warranty closureRef; its isolated browser run passes2.7min. Production legal provider, adopted project and actual field pilot remain unverified."
     },
     {
       "functionId": "F-08",

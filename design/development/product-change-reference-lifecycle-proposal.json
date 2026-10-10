@@ -32,7 +32,7 @@
     "AC-REF-03"
   ],
   "implementedDraft": {
-    "commit": "553e030",
+    "commit": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
     "api": "POST /projects/{projectId}/commissioning-packages/{objectId}/mark-ready-for-handover; POST /projects/{projectId}/handover-packages/{objectId}/refresh-issue-references; POST /projects/{projectId}/warranty-claims/{objectId}/refresh-remedy-references",
     "optionalPayload": {
       "mark_ready_for_handover": "punchIssueRefs + correctionActionRefs (paired; exact original Punch identity set and complete current verified/closed Action cycle)",
@@ -41,7 +41,8 @@
       "accept_remedy": "optional paired issueRef + actionRefs"
     },
     "preserved": "Submitted refs, original Owner approval/reservations, test/reinspection history, and one audited command event per accepted refresh; idempotent request replay.",
-    "verification": "Integrated root real API suite: 412 run, 366 passed, 46 environment-specific skips; reference suite 320 passed; generated API/types/command metadata, UI boundary, lint, responsive build and web/mobile types pass. Five browser scenarios revalidating; exact integrated Mac Actions pending. Synthetic fixtures do not establish actual field acceptance."
+    "verification": "PR139: all 11 Mac mini Actions passed; reference 320; API 412 run/366 passed/46 environment-specific skips; real browser 109; real PostgreSQL Handover 6. Merged-main MVP job failed and is under investigation; main verification is not accepted. Synthetic providers and actual field pilot remain unverified.",
+    "mergeCommit": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb"
   },
   "additionalConfirmedGaps": [],
   "adoptionConditions": [

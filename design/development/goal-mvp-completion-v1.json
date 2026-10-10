@@ -1,7 +1,7 @@
 {
   "goal": "DOUL Supervision Korean, Vietnamese and English field MVP",
   "status": "development_in_progress_with_external_acceptance_dependencies",
-  "integrationBase": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
+  "integrationBase": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
   "mergedPrerequisites": [
     {
       "pr": 128,
@@ -10,6 +10,13 @@
     {
       "pr": 130,
       "validation": "All 11 exact-head CI workflows passed on doul-macmini-m4-linux before merge; main f6002aa all 11 passed afterwards."
+    },
+    {
+      "pr": 139,
+      "head": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "merge": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
+      "validation": "All11 exact-head Mac workflows passed;109browser+7mock+320reference+412API and6livePGHandover; main verification running",
+      "evidence": "design/verification/reference-v1-1-mac-20261010.json"
     }
   ],
   "coordination": {
@@ -18,14 +25,15 @@
     "sharedFilesOwner": "root",
     "workers": {
       "payment-api": "goal/payment-api-v1",
-      "payment-ui": "goal/payment-ui-v1",
+      "payment-ui": "goal/f05-payment-acceptance",
       "i18n": "goal/i18n-integration-v1",
       "create-capabilities": "goal/create-capabilities-v1",
       "operations": "goal/operational-validation-v1",
       "acceptance-audit": "goal/acceptance-audit-v1",
       "reference-api": "goal/f03-combined-safety",
-      "reference-ui": "goal/reference-ui-v1-1-resume",
-      "media-analysis": "goal/media-analysis-browser-v1"
+      "reference-ui": "goal/warranty-close-ref-select",
+      "media-analysis": "goal/media-analysis-browser-v1",
+      "performance": "goal/issue124-live-http-benchmark-v1"
     },
     "interruption": "Offline Luna agent exhausted workspace credits; root preserved scaffold and completed verified responsive-web slice."
   },
@@ -113,5 +121,21 @@
     "statement": "제안대로 v1.1에 채택",
     "releaseEffect": "approved for verified release; integrated C2 acceptance and security release review remain pending"
   },
-  "latestCheckpoint": "54b2208"
+  "latestCheckpoint": "54b2208",
+  "operatorCandidate": {
+    "branch": "goal/operator-completion-v1",
+    "sourceCheckpoint": "8fa9c49",
+    "scope": [
+      "real media upload/analysis/review/eligible Issue UI, canonical server Issue authority and tri-language errors",
+      "same-defect current Warranty closure selector",
+      "full partial-payment/correction/cancellation/final-payment UI acceptance"
+    ],
+    "verification": "Root Media+Payment integrated2cases pass; final Media authority/error case13.2s pass; selector focusedWarranty2.7min pass; boundary/web-mobile types/lint/build pass; final MacCI pending",
+    "actualPilotPerformed": false
+  },
+  "mergedMainVerification": {
+    "status": "failed_under_investigation",
+    "workflow": "mvp-development",
+    "runId": 38018503065
+  }
 }

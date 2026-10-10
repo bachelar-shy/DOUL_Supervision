@@ -1,0 +1,26 @@
+{
+  "branch": "goal/operator-completion-v1",
+  "baseCommit": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
+  "sourceCheckpoint": "8fa9c49",
+  "completed": [
+    "Media real API UI with authoritative creation capability gate and immutable source/version refs",
+    "Payment append-only partial/correction/cancellation/final closure acceptance",
+    "Warranty current original-Issue reference selector"
+  ],
+  "verification": {
+    "integratedMediaPaymentBrowser": "2 passed",
+    "finalMediaBrowser": "1 passed, including ADM/CON restrictions and localized errors",
+    "warrantySelectorBrowser": "1 passed",
+    "web": "boundary, types, lint, build passed",
+    "mac": "pending; PR139 merged-main MVP failed, investigate before integration"
+  },
+  "next": [
+    "Investigate main MVP failure without weakening assertions",
+    "Commit and push current docs",
+    "Open operator PR and verify exact head on Mac mini Actions",
+    "Merge only after required checks pass"
+  ],
+  "preservation": "Original /workspace checkout and metadata untouched; use isolated /tmp worktree and own npm12 dependencies. No reset or shared node_modules mutation.",
+  "actualFieldPilot": false,
+  "productionProviderCertification": false
+}
