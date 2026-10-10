@@ -1,0 +1,45 @@
+{
+  "task": "F-05 connected UI acceptance for measurement, Owner-approved payment, partial payment, correction, cancellation, and cumulative totals",
+  "branch": "goal/f05-payment-acceptance",
+  "baseCommit": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
+  "sourceCommit": "c086a07e267edf02e31c031a783a3579718c0f5a",
+  "scope": "Payment-specific browser test, isolated Playwright config, and evidence handoff only. No production or shared-schema changes.",
+  "files": [
+    "tests_browser/payment-closed-loop.spec.ts",
+    "playwright.payment-acceptance.config.ts",
+    "design/development/agents/f05-payment-acceptance-handoff.json"
+  ],
+  "verifiedFlow": [
+    "SUP authors and activates a Contract BOQ in the live UI/API workflow; CON submits a QuantityMeasurement; SUP records claimed 80.125 and verified 70.125 through the real measurement commands.",
+    "CON submits a PaymentClaim from the measurement. SUP prepares and submits the server calculation recommendation (850 VND); SUP authors an exact-version Owner Decision request through Owner Governance, and OWN acknowledges and decides it through that UI.",
+    "OWN adjusts the claim to 800 VND using the resulting exact Decision reference, preserving the 850 VND recommendation. ADM records partial payments of 500 and 100; corrects the first payment to 450; cancels that correction; and records the remaining 700. Earlier payment rows stay unchanged as correction and cancellation entries append.",
+    "SUP closes the claim. Persisted payment history has five entries; paid, cumulative certified, and cumulative paid amounts are 800 VND and unpaid balance is zero. UI detail displays all five payment references. Owner view does not offer the ADM payment-recording action."
+  ],
+  "verification": {
+    "command": "PAYMENT_TEST_WEB_ORIGIN=http://127.0.0.1:5193 PAYMENT_TEST_PYTHON=/workspace/DOUL_Supervision/work/priority-venv/bin/python PAYMENT_TEST_CHROMIUM=/usr/bin/chromium ./node_modules/.bin/playwright test --config=playwright.payment-acceptance.config.ts",
+    "result": "PASS: 1 connected browser test passed in 52.5 seconds using the isolated port-5193 Vite app and test-owned Uvicorn API/SQLite database.",
+    "apiSource": "The browser forwards /api requests via Playwright route.fetch to a real isolated Uvicorn app. State-changing BOQ, Measurement, PaymentClaim, Owner Decision, and payment commands use the normal HTTP API; command version/idempotency assertions remain enabled."
+  },
+  "trustedFixtureBoundary": {
+    "bootstrapped": [
+      "One scoped active Requirement with paymentCalculationRule applicability.",
+      "One distinct accepted/released Inspection prerequisite. The demo's passed Inspection remains a hold point; this test begins beyond the separately covered release step."
+    ],
+    "readFromDemo": [
+      "An issued Report selected through Owner Governance UI.",
+      "Evidence and Drawing records used by the workflow."
+    ],
+    "createdAndCommandedThroughUiAndHttp": [
+      "Contract BOQ, QuantityMeasurement, PaymentClaim, Owner Decision and its report/acknowledge/decide commands, payment adjustment, payment records, correction, cancellation, and claim closure."
+    ]
+  },
+  "claimLimits": [
+    "Focused development/browser acceptance only; not a pilot, production readiness, provider proof, or proof that live project inputs/configuration are available.",
+    "The real project must supply its scoped active calculation rule, approved BOQ and measurement rules, accepted/released Inspection, readable issued Report, role assignments, evidence, payment references, and any commercial adjustment rationale."
+  ],
+  "isolation": {
+    "web": "Dedicated Vite server on 127.0.0.1:5193; Playwright config uses strictPort and does not reuse an existing server.",
+    "api": "The browser spec starts and cleans up its own API process and unique temporary SQLite database.",
+    "dependencies": "npm ci was run inside this isolated worktree with npm 12.2.0 and /tmp/doul-npm-cache; shared node_modules were not modified."
+  }
+}
