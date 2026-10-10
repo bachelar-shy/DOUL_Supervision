@@ -104,7 +104,7 @@ test("sidebar remains independently scrollable with all routes reachable on a sh
     await expect(nav.locator('button[data-route="drawings"]')).toHaveAttribute("aria-current", "page");
     const navBounds = await nav.boundingBox();
     expect(navBounds).not.toBeNull();
-    expect(navBounds!.bottom).toBeLessThanOrEqual(520);
+    expect(navBounds!.y + navBounds!.height).toBeLessThanOrEqual(520);
   }
 });
 
