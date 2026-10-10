@@ -102,6 +102,7 @@ class CompletionReferenceRefusalHttpTests(unittest.TestCase):
         self.assertEqual(replay.status_code, 200, replay.text)
         self.assertEqual(replay.json()["record"], first.json()["record"])
         self.assertEqual(len(f.engine._audit), before_audit + 1)
+
         # A process restart must preserve command replay and the append-only
         # reference history, rather than merely keeping an in-memory cache.
         f.client.close()
@@ -125,6 +126,22 @@ class CompletionReferenceRefusalHttpTests(unittest.TestCase):
         self.assertEqual(altered.json()["code"], "IDEMPOTENCY_CONFLICT")
         self.assertEqual(f.engine.get("WorkItem", handover["id"]), result)
         self.assertEqual(len(f.engine._audit), before_audit + 1)
+
+    def test_cancelled_and_superseded_issues_cannot_be_refreshed_as_resolved(self):
+        f = self.fixture
+        for command in ("cancel", "supersede"):
+            with self.subTest(command=command):
+                handover, _, current, _ = self.handover_draft()
+                issue = f.engine.get("Issue", current["objectId"])
+                payload = {"reason": "Explicit negative lifecycle acceptance test"}
+                if command == "supersede":
+                    replacement, _ = f._new_punch_and_action()
+                    payload["replacementRef"] = replacement
+                changed = f.expect("issues", issue, command, payload, actor="SUP", evidence=[])
+                self.assertIn(changed["status"], ("cancelled", "superseded"))
+                refusal = self.assert_atomic_refusal("handover-packages", handover,
+                    "refresh_issue_references", {"currentIssueRefs": [f.ref("Issue", issue["id"])]})
+                self.assertEqual(refusal.json()["code"], "HANDOVER_ISSUE_REFERENCE_INVALID")
 
     def test_commissioning_refresh_requires_the_exact_complete_paired_cycle(self):
         f = self.fixture
