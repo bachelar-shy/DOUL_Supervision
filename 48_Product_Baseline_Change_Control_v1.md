@@ -2,7 +2,7 @@
 
 기준일: 2026-10-10
 상태: Product / Functional 운영계약
-기준선: Product / Functional Baseline v1.1 승인 예정; 검증된 릴리스 채택 전까지 v1.0 효력 유지
+기준선: Product / Functional Baseline v1.1 승인; 검증된 릴리스 채택 전까지 v1.0 효력 유지
 
 ## 1. 목적
 

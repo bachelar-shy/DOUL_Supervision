@@ -34,7 +34,7 @@
     "optionalPayload": {
       "mark_ready_for_handover": "punchIssueRefs + correctionActionRefs (paired; exact original Punch identity set and complete current verified/closed Action cycle)",
       "refresh_issue_references": "currentIssueRefs (exact original Issue identity set; open or explicitly closed/verified only)",
-      "refresh_remedy_references": "issueRef + actionRefs (same defect Issue identity and complete current verified/closed Action cycle)",
+      "refresh_remedy_references": "issueRef + actionRefs (same defect Issue identity and exact linked Actions in its current correction cycle; assigned/in-progress Actions are allowed before remedy start, while remedy acceptance still requires verified/closed Actions)",
       "accept_remedy": "optional paired issueRef + actionRefs"
     },
     "preserved": "Submitted refs, original Owner approval/reservations, test/reinspection history, and one audited command event per accepted refresh; idempotent request replay.",
