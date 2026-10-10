@@ -223,8 +223,16 @@ test("mocked drawing binding plus real Location API stages, saves, and restores 
     await viewer.getByRole("button", { name: "확대" }).click();
     await expect(viewer.getByText("110%", { exact: true })).toBeVisible();
     await expect(viewer.getByRole("status", { name: "페이지를 표시하는 중…" })).toHaveCount(0);
-    const zoomPinBox = await viewer.getByRole("button", { name: initialLocation.name + " 위치 핀" }).boundingBox();
-    const zoomCanvasBox = await canvas.boundingBox();
+    // The PDF canvas is re-created during zoom. On slower GitHub-hosted
+    // browsers the pin and canvas can briefly be absent in adjacent frames.
+    const savedPin = viewer.getByRole("button", { name: initialLocation.name + " 위치 핀" });
+    let zoomPinBox = await savedPin.boundingBox();
+    let zoomCanvasBox = await canvas.boundingBox();
+    await expect.poll(async () => {
+      zoomPinBox = await savedPin.boundingBox();
+      zoomCanvasBox = await canvas.boundingBox();
+      return Boolean(zoomPinBox && zoomCanvasBox);
+    }, { timeout: 15_000 }).toBe(true);
     expect(zoomPinBox && zoomCanvasBox).toBeTruthy();
     expect(zoomPinBox!.x).toBeGreaterThanOrEqual(zoomCanvasBox!.x);
     expect(zoomPinBox!.y).toBeGreaterThanOrEqual(zoomCanvasBox!.y);

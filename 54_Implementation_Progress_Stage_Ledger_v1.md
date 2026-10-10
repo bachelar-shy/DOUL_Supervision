@@ -35,3 +35,7 @@ Queue/Worker, Object Storage, 인증, 알림, 문서출력 등은 개별 Functio
 ## 5. 완료 기준
 
 프로젝트 시범운영 완료 시 선택된 필수 Function/Scenario가 `pilot_verified`에 도달하고, 권한·장애·복구 인수사례도 요구수준을 충족해야 한다.
+
+## 2026-10-10 WWT operational-style demo validation (partial)
+
+Dedicated local-development WWT demo database and actual API Evidence upload/download exercised for 20 synthetic cases with distinct capture IDs, SHA-256 checks, project-scope denial and idempotent rerun. See `55_WWT_Operational_Demo_Validation_Handoff_v1.md` and untracked private `.local/wwt-demo/manifest.json`. This is a **partial development verification**, not `integration_passed`, not `pilot_verified`, and not actual operating/field acceptance. Open items include real browser usability E2E, source WWT documents, the original 20 register scenarios and the five end-to-end business flows.

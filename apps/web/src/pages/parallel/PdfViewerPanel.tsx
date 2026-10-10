@@ -23,7 +23,7 @@ import { createPdfDrawingMarkup, deletePdfDrawingMarkup, editPdfDrawingMarkup, f
 
 GlobalWorkerOptions.workerSrc = workerSrc;
 
-interface Props { client: SupervisionClient; workspace: Workspace; onChanged?: () => void; onSelectMarkup?: (id: string | null) => void }
+interface Props { client: SupervisionClient; workspace: Workspace; onChanged?: () => void; onSelectMarkup?: (id: string | null) => void; readOnly?: boolean }
 type Status = { kind: "idle" | "loading" | "ready" | "error"; message?: string };
 interface CommittedViewport { page: number; viewport: PdfViewport; sequence: number }
 interface PinView { locationName: string; point: CssPoint; anchor: PdfDrawingAnchor }
@@ -34,6 +34,7 @@ const copy: Record<Locale, Record<string, string>> = {
     panel: "PDF 도면 보기", title: "도면 PDF", description: "원본 증빙을 읽기 전용으로 확인합니다.", upload: "PDF 업로드",
     sourceLabel: "원본 선택", sourceSelect: "PDF 원본 선택", evidence: "증빙 · {{name}}", historical: "등록된 역사 원본 · {{id}} · 제{{version}}차", uploaded: "업로드한 PDF · {{id}}",
     search: "문서 검색", searchPlaceholder: "텍스트 검색 (2자 이상)", searching: "검색 중…", pagesFound: "{{count}}개 페이지",
+    officialWarning: "도면의 승인 상태·개정·현장 배포 여부는 별도로 확인하십시오.",
     selectOrUpload: "등록된 PDF를 선택하거나 새 PDF를 업로드하세요.", checkingDirectory: "도면 연결과 위치 정보를 불러오는 중…", noBinding: "이 PDF 증빙에 등록된 정확한 도면 연결이 없습니다. 연결을 등록한 뒤 핀을 사용할 수 있습니다.",
     bindingVersion: "도면 작성 차수 선택", chooseBinding: "도면 작성 차수를 선택하세요…", boundDrawing: "연결 도면", registeredEvidence: "등록 증빙", evidenceVersion: "증빙",
     markup: "주석", loading: "불러오는 중…", count: "{{count}}개", rectangleMemo: "사각형 메모", showMarkup: "주석 표시", showPins: "위치 핀 표시", stopDrawing: "주석 그리기 종료", addMemo: "사각형 메모 추가",
@@ -47,6 +48,7 @@ const copy: Record<Locale, Record<string, string>> = {
     panel: "Trình xem PDF bản vẽ", title: "PDF bản vẽ", description: "Xem chứng cứ gốc ở chế độ chỉ đọc.", upload: "Tải PDF lên",
     sourceLabel: "Chọn bản gốc", sourceSelect: "Chọn PDF gốc", evidence: "Chứng cứ · {{name}}", historical: "Bản gốc lịch sử đã đăng ký · {{id}} · v{{version}}", uploaded: "PDF đã tải lên · {{id}}",
     search: "Tìm trong tài liệu", searchPlaceholder: "Tìm văn bản (ít nhất 2 ký tự)", searching: "Đang tìm…", pagesFound: "{{count}} trang",
+    officialWarning: "Cần kiểm tra phê duyệt, phiên bản và tình trạng phát hành bản vẽ trước khi thi công.",
     selectOrUpload: "Chọn PDF đã đăng ký hoặc tải lên PDF mới.", checkingDirectory: "Đang tải liên kết bản vẽ và thông tin vị trí…", noBinding: "Chứng cứ PDF này chưa có liên kết chính xác với bản vẽ. Hãy đăng ký liên kết trước khi dùng ghim.",
     bindingVersion: "Chọn phiên bản bản vẽ", chooseBinding: "Chọn phiên bản bản vẽ…", boundDrawing: "Bản vẽ liên kết", registeredEvidence: "Chứng cứ đã đăng ký", evidenceVersion: "Chứng cứ",
     markup: "Chú thích", loading: "Đang tải…", count: "{{count}} mục", rectangleMemo: "Ghi chú hình chữ nhật", showMarkup: "Hiện chú thích", showPins: "Hiện ghim vị trí", stopDrawing: "Dừng vẽ chú thích", addMemo: "Thêm ghi chú hình chữ nhật",
@@ -58,6 +60,7 @@ const copy: Record<Locale, Record<string, string>> = {
   },
   en: {
     panel: "PDF drawing viewer", title: "Drawing PDF", description: "View original evidence in read-only mode.", upload: "Upload PDF",
+    officialWarning: "Check drawing approval, revision and site distribution status separately.",
     sourceLabel: "Select source", sourceSelect: "Select PDF source", evidence: "Evidence · {{name}}", historical: "Registered historical source · {{id}} · v{{version}}", uploaded: "Uploaded PDF · {{id}}",
     search: "Search document", searchPlaceholder: "Search text (2 or more characters)", searching: "Searching…", pagesFound: "{{count}} pages",
     selectOrUpload: "Select a registered PDF or upload a new PDF.", checkingDirectory: "Loading drawing bindings and location information…", noBinding: "This PDF evidence has no exact drawing binding. Register a binding before using pins.",
@@ -86,8 +89,8 @@ function validAnchor(value: unknown): value is PdfDrawingAnchor {
     && anchor.coordinateSystem === "pdf_points";
 }
 
-export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }: Props) {
-  const { i18n } = useTranslation();
+export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup, readOnly = false }: Props) {
+  const { i18n, t } = useTranslation();
   const language: Locale = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language);
   const tx = (key: string, values?: Record<string, string | number>) => {
     let result = copy[language][key] ?? copy.en[key] ?? key;
@@ -175,7 +178,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
   const activeBinding = matchingBindings.length === 1
     ? matchingBindings[0]
     : matchingBindings.find((binding) => binding.id === selectedBindingId);
-  const isDemoAdmin = workspace.demo && client.session?.actor.actorGroup === "ADM";
+  const isDemoAdmin = !readOnly && workspace.demo && client.session?.actor.actorGroup === "ADM";
   const selectedLocation = locations.find((location) => location.reference.objectId === selectedLocationRef);
   const markupSelectionKey = [workspace.project.id, workspace.role.id, selectedId, activeBinding?.id ?? "", page].join(":");
   const markupContextKey = `${markupSelectionKey}:${committedViewport?.sequence ?? ""}`;
@@ -546,7 +549,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
   }, [pendingMarkup, committedViewport, page, canvasSize]);
 
   async function chooseFile(file?: File) {
-    if (!file) return;
+    if (readOnly || !file) return;
     setUploading(true);
     setStatus({ kind: "loading", message: tx("uploadLoading") });
     try {
@@ -739,8 +742,8 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
 
   return <section aria-label={tx("panel")} className="pdf-viewer-panel">
     <header className="pdf-viewer-header">
-      <div><h2>{tx("title")}</h2><p>{tx("description")}</p></div>
-      <label className="pdf-upload-button">{tx("upload")}<input data-testid="pdf-upload" type="file" accept="application/pdf,.pdf" disabled={uploading} onChange={(event) => { void chooseFile(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} /></label>
+      <div><h2>{tx("title")}</h2><p>{tx("description")}</p>{readOnly && <p className="text-sm text-slate-500">{tx("officialWarning")}</p>}</div>
+      {!readOnly && <label className="pdf-upload-button">{tx("upload")}<input data-testid="pdf-upload" type="file" accept="application/pdf,.pdf" disabled={uploading} onChange={(event) => { void chooseFile(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} /></label>}
     </header>
     <div className="pdf-toolbar">
       <label className="pdf-source-label">{tx("sourceLabel")}<select aria-label={tx("sourceSelect")} disabled={savingPin} value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
@@ -753,7 +756,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
     </div>
     {status.kind === "error" && <p className="pdf-state pdf-error" role="alert">{status.message}</p>}
     {status.kind === "loading" && <p className="pdf-state" role="status">{status.message}</p>}
-    {status.kind === "idle" && !selectedId && <p className="pdf-state">{tx("selectOrUpload")}</p>}
+    {status.kind === "idle" && !selectedId && <p className="pdf-state">{readOnly ? t("launch.pdfEmpty", { defaultValue: tx("sourceSelect") }) : tx("selectOrUpload")}</p>}
     {status.kind === "idle" && selectedId && status.message && <p className="pdf-state">{status.message}</p>}
 
     {selectedId && <>
@@ -766,7 +769,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
         {matchingBindings.map((binding) => <option key={binding.id} value={binding.id}>{binding.drawingRef.objectId} · {recordVersionLabel(binding.drawingRef.version)} · {tx("evidenceVersion")} {recordVersionLabel(binding.evidenceRef.version)}</option>)}
       </select></label>}
       {matchingBindings.length === 1 && <p className="pdf-binding-label">{tx("boundDrawing")} {matchingBindings[0].drawingRef.objectId} · {recordVersionLabel(matchingBindings[0].drawingRef.version)} · {tx("registeredEvidence")} {recordVersionLabel(matchingBindings[0].evidenceRef.version)} · {matchingBindings[0].fileHash.slice(0, 12)}</p>}
-      {activeBinding && <div className="pdf-markup-controls">
+      {!readOnly && activeBinding && <div className="pdf-markup-controls">
         <div className="pdf-markup-heading"><strong>{tx("markup")}</strong><span>{markupLoading ? tx("loading") : tx("count", { count: markups.length })} · {tx("rectangleMemo")}</span></div>
         <div className="pdf-layer-toggles">
           <label><input type="checkbox" checked={showMarkupLayer} onChange={(event) => setShowMarkupLayer(event.target.checked)} />{tx("showMarkup")}</label>
@@ -795,7 +798,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup }:
           {showMarkupHistory && <ol className="pdf-markup-history" aria-label={tx("history")}>{markupHistory.map((snapshot) => <li key={snapshot.version}><strong>{recordVersionLabel(snapshot.version)}</strong> · {snapshot.text}{snapshot.eventAt ? ` · ${new Date(snapshot.eventAt).toLocaleString(language)}` : ""}{snapshot.eventBy ? ` · ${snapshot.eventBy}` : ""}{snapshot.reason || snapshot.updateReason || snapshot.deleteReason ? ` · ${tx("eventReason", { reason: snapshot.reason || snapshot.updateReason || snapshot.deleteReason || "" })}` : ""}</li>)}</ol>}
         </div>}
       </div>}
-      {activeBinding && <div className="pdf-pin-controls">
+      {!readOnly && activeBinding && <div className="pdf-pin-controls">
         <label>{tx("location")}<select aria-label={tx("pinLocationLabel")} disabled={savingPin} value={selectedLocationRef} onChange={(event) => setSelectedLocationRef(event.target.value)}>
           <option value="">{tx("locationSelect")}</option>
           {locations.map((location) => <option key={location.reference.objectId} value={location.reference.objectId}>{location.name}</option>)}

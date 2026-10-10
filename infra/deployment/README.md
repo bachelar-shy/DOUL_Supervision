@@ -20,6 +20,13 @@ image digests, public origin, storage capacity budgets and alert receiver.
 
 ## Identity and provisioning
 
+The base `compose.operational.yml` is an **external RS256 identity** deployment (no password-signing private key required).
+To **select local password authentication**, add `infra/compose/compose.operational.password.yml` as a second Compose file, provide the matching private/public signing key as restricted operator secrets, and build the immutable Web image with `--build-arg VITE_DOUL_AUTH_MODE=password`.
+The deployed API `/health.adapters.authentication` must report `local-password-pinned-rs256`; otherwise the browser refuses the password login screen.
+Images built with the default Web `VITE_DOUL_AUTH_MODE=external` fail closed with an explicit not-connected message until an approved external browser identity integration is installed. Neither mode offers a production demo role picker.
+Deployments must not switch their `DOUL_AUTH_MODE` without rebuilding/retagging the corresponding Web image and verifying it at startup.
+See [password identity procedures](../../services/deployment/PASSWORD_LOGIN.md) for account bootstrap and remaining staging/pilot acceptance blockers.
+
 Non-demo API startup requires an approved, explicitly provisioned DB and an
 RSA public key, fixed key ID, issuer and audience. Access tokens must use RS256,
 have required bounded timestamps and an explicit subject. Token-provided roles,

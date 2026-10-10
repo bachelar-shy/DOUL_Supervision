@@ -4,6 +4,8 @@ import i18n from "../i18n/config";
 
 export const routes: readonly UiRoute[] = [
   { id: "today", label: "Today", labelKey: "navigation.today", icon: "home" },
+  { id: "drawings", label: "Drawings", labelKey: "launch.drawings", icon: "layers" },
+  { id: "corrections", label: "Corrective actions", labelKey: "launch.corrections", icon: "flag" },
   {
     id: "inspections",
     label: "Inspections",
@@ -86,6 +88,23 @@ export const routes: readonly UiRoute[] = [
   { id: "admin", label: "Admin", labelKey: "navigation.admin", icon: "users" },
   { id: "parallel-test", label: "Parallel feature tests", labelKey: "navigation.parallelTest", icon: "layers" },
 ];
+
+// Stage-one field release limits navigation; original workflows and data remain intact.
+export const fieldCoreRoutes: Record<HumanRole, readonly string[]> = {
+  SUP: ["today","capture","drawings","inspections","corrections","owner"],
+  CON: ["today","capture","drawings","inspections","corrections"],
+  OWN: ["today","drawings","corrections","owner"],
+  DES: ["today","drawings"],
+  ADM: ["today","capture","drawings","inspections","corrections","owner","admin"],
+};
+export type CorrectionSection = "observations" | "issues" | "actions";
+export function fieldCoreRouteFor(target: string): { route: string; correction?: CorrectionSection; reportForm?: boolean } {
+  if (target === "observations" || target === "issues" || target === "actions") {
+    return { route: "corrections", correction: target };
+  }
+  if (target === "documents") return { route: "owner", reportForm: true };
+  return { route: target };
+}
 
 const allRouteIds = routes.map((route) => route.id);
 

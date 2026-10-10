@@ -156,6 +156,10 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     app.state.store=store
     app.state.queue_enabled = (os.getenv('DOUL_QUEUE_ENABLED', '').lower() == 'true') if queue_enabled is None else bool(queue_enabled)
     app.state.allowed_origins=origins
+    password_accounts = None
+    if not demo and os.getenv('DOUL_AUTH_MODE') == 'local-password':
+        from services.deployment.password_auth import PasswordAccounts
+        password_accounts = PasswordAccounts(store, authentication)
 
     async def system_request_log(request, call_next):
         import time
@@ -189,7 +193,11 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     def identity(request):
         auth=request.headers.get('authorization','')
         token=auth[7:] if auth.startswith('Bearer ') else ''
-        if not demo:return authentication.session(token,store)
+        if not demo:
+            session=authentication.session(token,store)
+            if password_accounts is not None and password_accounts.is_revoked(token):
+                raise ContractError('UNAUTHENTICATED','Session revoked')
+            return session
         with session_lock:session=sessions.get(token)
         require(session is not None and session['expires']>datetime.now(timezone.utc),'UNAUTHENTICATED','Development session missing or expired')
         return session
@@ -338,7 +346,35 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             return JSONResponse({'status': 'error', 'errorType': type(exc).__name__}, status_code=503)
 
     @app.get('/health')
-    def health():return dict(status='ok',mode='local-demo' if demo else stage,baseCommit=(os.getenv('DOUL_RELEASE_SHA', '') if re.fullmatch(r'[a-f0-9]{40}', os.getenv('DOUL_RELEASE_SHA', '')) else 'unversioned-development'),adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo' if demo else 'pinned-rs256-access-token','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
+
+    def health():return dict(status='ok',mode='local-demo' if demo else stage,demoProfile=store.meta.get('demoProfile') if demo else None,baseCommit=(os.getenv('DOUL_RELEASE_SHA', '') if re.fullmatch(r'[a-f0-9]{40}', os.getenv('DOUL_RELEASE_SHA', '')) else 'unversioned-development'),adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo' if demo else 'local-password-pinned-rs256' if password_accounts is not None else 'pinned-rs256-access-token','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
+
+    if password_accounts is not None:
+        @app.post('/auth/login')
+        async def password_login(request:Request):
+            require(request.headers.get('origin') in origins, 'ORIGIN_DENIED', 'Approved browser origin required')
+            body=await body_json(request)
+            require(set(body)=={'username','password'}, 'INVALID_REQUEST', 'Unexpected login fields')
+            return password_accounts.login(body['username'],body['password'])
+
+        @app.post('/auth/logout')
+        async def password_logout(request:Request):
+            identity(request)
+            password_accounts.revoke(request.headers.get('authorization','')[7:])
+            return {'status':'ok'}
+
+        @app.post('/auth/accounts')
+        async def password_create_account(request:Request):
+            require(request.headers.get('origin') in origins, 'ORIGIN_DENIED', 'Approved browser origin required')
+            actor=identity(request)
+            with store.transaction():
+                admin_role=store.engine.get('RoleAssignment',actor['roleAssignmentId'])
+                require(admin_role['actorGroup']=='ADM' and admin_role['active'] and instant(admin_role['validFrom'])<=instant(store.engine.at())<instant(admin_role['validTo']), 'NOT_AUTHORIZED', 'Current administrator role required')
+                project_id=admin_role['projectId']
+            body=await body_json(request)
+            require(set(body)=={'username','password','partyId','roleAssignmentId'}, 'INVALID_REQUEST', 'Unexpected account fields')
+            return password_accounts.create(dict(actorGroup='ADM',projectId=project_id), body['username'],body['password'],body['partyId'],body['roleAssignmentId'])
+
 
     def demo_project_directory():
         registry = store.meta.get('demoProjectDirectory')
@@ -569,6 +605,10 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                 projects, _ = demo_project_directory()
                 source_context = projects.get(project_id, {}).get('context', {'projectId': project_id})
                 context = deepcopy(source_context)
+                if store.meta.get('projectId') == project_id:
+                    for key in ('demoProfile', 'wwtZoneIds', 'dataClassification'):
+                        if key in store.meta:
+                            context[key] = deepcopy(store.meta[key])
             else:
                 context=({k:deepcopy(v) for k,v in store.meta.items() if k in ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId']} if store.meta.get('projectId')==project_id else {'projectId':project_id})
             context['creationCapabilities']=build_creation_capabilities(
@@ -581,6 +621,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                        if kind=="Location" and r.get("projectId")==project_id
                        and (r["id"] in role.get("locationIds",[]) or role.get("actorGroup")=="ADM")]
             return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context=context,locations=locations,participants=[dict(partyId=r['partyId'],name=store.engine.get('Party',r['partyId'])['name'],actorGroup=r['actorGroup']) for (kind,_),r in store.engine._records.items() if kind=='RoleAssignment' and r['projectId']==project_id and r['active'] and r['actorGroup'] in ['SUP','CON','OWN','DES','ADM']],formSchemas=store.documents.schemas,demo=demo)
+
 
     @app.get('/projects/{project_id}/roles')
     def roles(project_id:str,request:Request):
@@ -1081,6 +1122,9 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             scope=dict(discipline=body['discipline'],packageId=body['packageId'],locationId=body['locationId'],responsibleOrganizationId=role['organizationId'] if role['actorGroup']=='CON' else store.meta['scope']['responsibleOrganizationId'])
             store.engine.authorize(dict(projectId=project_id,**scope),'create_evidence',session['partyId'],role['id'])
             source=store.engine.get('Party',body['sourcePartyId']);require(source['projectId']==project_id,'PROJECT_MISMATCH','Source party unavailable')
+            if demo and store.meta.get('demoProfile') == 'wwt' and body['fileName'].startswith('WWT__'):
+                match=re.fullmatch(r'WWT__([A-Z0-9-]+)__([a-z_]+)__(ZONE-[A-F])__SYNTHETIC\.png',body['fileName'])
+                require(match is not None and body['locationId']==store.meta['wwtZoneIds'].get(match.group(3)), 'INVALID_REQUEST', 'WWT synthetic case location mismatch')
             request_key='upload:'+project_id+':'+session['partyId']+':'+key
             fingerprint=sha256(canonical(body)).hexdigest()
             if request_key in store.requests:
@@ -1137,7 +1181,14 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             require(actual_mime==p['mimeType'],'MIME_INVALID','Declared MIME does not match bytes')
             expected_media='photo' if actual_mime.startswith('image/') else 'video' if actual_mime.startswith('video/') else 'audio' if actual_mime.startswith('audio/') else 'document'
             require(u['mediaType']==expected_media,'MIME_INVALID','Media category does not match bytes')
-            payload=dict(sourceType='original',mediaType=u['mediaType'],fileId=upload_id,fileHash=p['expectedHash'],sourcePartyId=u['sourcePartyId'],metadata={'name':p['fileName'],'mimeType':actual_mime,'byteCount':len(content)},**u['scope'])
+            metadata={'name':p['fileName'],'mimeType':actual_mime,'byteCount':len(content)}
+            if demo and store.meta.get('demoProfile') == 'wwt':
+                match=re.fullmatch(r'WWT__([A-Z0-9-]+)__([a-z_]+)__(ZONE-[A-F])__SYNTHETIC\.png',p['fileName'])
+                if match:
+                    metadata.update(demoCaseId=match.group(1),demoStage=match.group(2),demoZone=match.group(3),
+                                    demoClassification='SYNTHETIC_NOT_SITE_EVIDENCE',
+                                    demoNotice='합성 시험자료 / 실제 현장 증빙 아님')
+            payload=dict(sourceType='original',mediaType=u['mediaType'],fileId=upload_id,fileHash=p['expectedHash'],sourcePartyId=u['sourcePartyId'],metadata=metadata,**u['scope'])
             if u['capturedAt']:payload['capturedAt']=u['capturedAt']
             result=store.engine.add_evidence(p['captureId'],project_id,payload,content,session['partyId'],role['id'],key)
             p['status']='completed';return JSONResponse(result['record'],status_code=201)

@@ -25,6 +25,8 @@ RUN --mount=type=cache,target=/root/.npm \
       npm ci --include=optional && node -e "import('rolldown')" && exit 0; \
     done; exit 1
 
+ARG VITE_DOUL_AUTH_MODE=external
+ENV VITE_DOUL_AUTH_MODE=${VITE_DOUL_AUTH_MODE}
 COPY apps/web ./apps/web
 COPY packages/client ./packages/client
 COPY packages/localization ./packages/localization
