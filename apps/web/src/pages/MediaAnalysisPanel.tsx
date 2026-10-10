@@ -105,10 +105,10 @@ export function MediaAnalysisPanel({ client, workspace, online, onChanged }: {
   const loadRun = useCallback(async (id: string) => {
     if (!id || client.kind !== "http") return;
     const sequence = ++loadSequence.current;
-    setError("");
     try {
       const result = await client.mediaAnalysisReview(id);
       if (sequence !== loadSequence.current) return;
+      setError("");
       setReview(result);
       setSelectedObservationIds((current) => current.filter((observationId) => result.issueReadiness.issueEligibleObservationIds.includes(observationId)));
     } catch (reason) {
@@ -117,8 +117,23 @@ export function MediaAnalysisPanel({ client, workspace, online, onChanged }: {
   }, [client, tx.error]);
 
   useEffect(() => {
-    if (runId) void loadRun(runId);
-  }, [runId, loadRun]);
+    if (!runId || client.kind !== "http") return;
+    const sequence = ++loadSequence.current;
+    let active = true;
+    const refresh = async () => {
+      try {
+        const result = await client.mediaAnalysisReview(runId);
+        if (!active || sequence !== loadSequence.current) return;
+        setError("");
+        setReview(result);
+        setSelectedObservationIds((current) => current.filter((observationId) => result.issueReadiness.issueEligibleObservationIds.includes(observationId)));
+      } catch (reason) {
+        if (active && sequence === loadSequence.current) setError(reason instanceof Error ? reason.message : tx.error);
+      }
+    };
+    void refresh();
+    return () => { active = false; };
+  }, [client, runId, tx.error]);
 
   const activeReviewRunId = review?.run.record.id;
   const activeReviewStatus = String(review?.run.record.status ?? "");
