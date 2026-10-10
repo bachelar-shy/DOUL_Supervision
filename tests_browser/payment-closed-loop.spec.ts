@@ -445,6 +445,17 @@ test("real UI/API payment chain authors exact-version Owner decisions and preser
   expect(claim.data.paidAmount).toBe("500");
   expect(claim.data.unpaidBalance).toBe("300");
 
+  claim = await runCommand(page, "record_additional_payment", {
+    paymentAmount: "100", paidAt: "2026-10-04T12:00:00Z", paymentReference: `BANK-PARTIAL-${suffix}`,
+    externalSystemRef: `ERP-PARTIAL-${suffix}`,
+  }, [seeded.evidenceId]);
+  const secondPartial = structuredClone(claim.data.paymentRecords[1]);
+  expect(claim.data.paymentRecords).toHaveLength(2);
+  expect(secondPartial.kind).toBe("payment");
+  expect(secondPartial.amount).toBe("100");
+  expect(claim.data.paidAmount).toBe("600");
+  expect(claim.data.unpaidBalance).toBe("200");
+
   claim = await runCommand(page, "correct_payment_record", {
     supersedesPaymentRecordId: originalRecords[0].recordId,
     paymentAmount: "450", paidAt: "2026-10-04T12:00:00Z",
@@ -452,13 +463,52 @@ test("real UI/API payment chain authors exact-version Owner decisions and preser
     externalSystemRef: `ERP-CORR-${suffix}`,
     correctionReason: "Bank advice corrected the first transfer",
   }, [seeded.evidenceId]);
-  expect(claim.data.paymentRecords).toHaveLength(2);
+  expect(claim.data.paymentRecords).toHaveLength(3);
   expect(claim.data.paymentRecords[0]).toEqual(originalRecords[0]);
-  expect(claim.data.paymentRecords[1].kind).toBe("correction");
-  expect(claim.data.paymentRecords[1].supersedesPaymentRecordId).toBe(originalRecords[0].recordId);
-  expect(claim.data.paymentRecords[1].amount).toBe("450");
-  expect(claim.data.paidAmount).toBe("450");
-  expect(claim.data.unpaidBalance).toBe("350");
+  expect(claim.data.paymentRecords[1]).toEqual(secondPartial);
+  const correction = structuredClone(claim.data.paymentRecords[2]);
+  expect(correction.kind).toBe("correction");
+  expect(correction.supersedesPaymentRecordId).toBe(originalRecords[0].recordId);
+  expect(correction.amount).toBe("450");
+  expect(claim.data.paidAmount).toBe("550");
+  expect(claim.data.unpaidBalance).toBe("250");
+
+  claim = await runCommand(page, "cancel_payment_record", {
+    supersedesPaymentRecordId: correction.recordId,
+    paidAt: "2026-10-04T12:00:00Z",
+    paymentReference: `BANK-CANCEL-${suffix}`,
+    externalSystemRef: `ERP-CANCEL-${suffix}`,
+    correctionReason: "The correction entry was voided after bank reconciliation",
+  }, [seeded.evidenceId]);
+  expect(claim.data.paymentRecords).toHaveLength(4);
+  expect(claim.data.paymentRecords[0]).toEqual(originalRecords[0]);
+  expect(claim.data.paymentRecords[1]).toEqual(secondPartial);
+  expect(claim.data.paymentRecords[2]).toEqual(correction);
+  const cancellation = claim.data.paymentRecords[3];
+  expect(cancellation.kind).toBe("cancellation");
+  expect(cancellation.supersedesPaymentRecordId).toBe(correction.recordId);
+  expect(claim.data.paidAmount).toBe("100");
+  expect(claim.data.unpaidBalance).toBe("700");
+
+  claim = await runCommand(page, "record_additional_payment", {
+    paymentAmount: "700", paidAt: "2026-10-04T12:00:00Z", paymentReference: `BANK-FINAL-${suffix}`,
+    externalSystemRef: `ERP-FINAL-${suffix}`,
+  }, [seeded.evidenceId]);
+  expect(claim.data.paymentRecords).toHaveLength(5);
+  expect(claim.data.paymentRecords.slice(0, 4)).toEqual([
+    originalRecords[0], secondPartial, correction, cancellation,
+  ]);
+  expect(claim.data.paymentRecords[4].kind).toBe("payment");
+  expect(claim.data.paymentRecords[4].amount).toBe("700");
+  expect(claim.data.paidAmount).toBe("800");
+  expect(claim.data.unpaidBalance).toBe("0");
+  await chooseRole(page, "SUP");
+  await selectTab(page, "기성 신청");
+  await selectRecord(page, claimTitle);
+  claim = await runCommand(page, "close_payment_claim");
+  expect(claim.status).toBe("closed");
+  expect(claim.data.cumulativeCertifiedAmount).toBe("800");
+  expect(claim.data.cumulativePaidAmount).toBe("800");
 
   // Read-only API snapshots confirm the UI's displayed server values and the
   // original payment row remain unchanged after the append-only correction.
@@ -467,10 +517,13 @@ test("real UI/API payment chain authors exact-version Owner decisions and preser
   expect(persisted.record.version).toBe(claim.version);
   expect(persisted.record.data.ownerApprovedAmount).toBe("800");
   expect(persisted.record.data.paymentRecords).toEqual(claim.data.paymentRecords);
-  await expect(page.locator(".payment-history li")).toHaveCount(2);
+  await expect(page.locator(".payment-history li")).toHaveCount(5);
   await expect(page.locator(".payment-history")).toContainText(`BANK-${suffix}`);
   await expect(page.locator(".payment-history")).toContainText(`BANK-CORR-${suffix}`);
-  await expect(page.locator(".payment-summary")).toContainText("450");
+  await expect(page.locator(".payment-history")).toContainText(`BANK-PARTIAL-${suffix}`);
+  await expect(page.locator(".payment-history")).toContainText(`BANK-CANCEL-${suffix}`);
+  await expect(page.locator(".payment-history")).toContainText(`BANK-FINAL-${suffix}`);
+  await expect(page.locator(".payment-summary")).toContainText("800");
 
   // Authority boundary: an Owner view must not offer the administrator's
   // actual payment-recording command on this same persisted record.
