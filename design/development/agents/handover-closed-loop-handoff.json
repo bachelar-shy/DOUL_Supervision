@@ -31,6 +31,12 @@
       "361f8e3",
       "d3ca0ed"
     ],
+    "failedInspectionGuard": {
+      "sourceCommit": "39ba94e511208ce5779427c554392e2c8a75d80e",
+      "rootIntegrationCommit": "d4307f1",
+      "behavior": "require_rework validates the complete current Issue-linked Action cycle using identities in the immutable failed Inspection snapshot, resolving those identities to current Action versions only for this guard. Every Warranty-projected remedy Action must be retained; exact Issue, project, organization, scope, cycle, verified/closed state, pre-inspection chronology, and actionable Issue gates remain. The command does not alter original/current Warranty reference projections or perform an automatic refresh.",
+      "validation": "Root focused 11 Warranty/Handover/refusal HTTP tests passed; full API suite 366 passed, 46 skipped. The positive case includes an existing verified reservation Action and a distinct Warranty remedy Action in the same Issue cycle; missing/unlinked refs, wrong-cycle/cancelled actions, and terminal Issue statuses are refused atomically."
+    },
     "browser": "4 PASS1.7m work/goal-handover-current-ref-browser.log",
     "typing": "Connected browser standalone TS PASS work/goal-connected-browser-typecheck-final.log; helper route union and explicit JSON input type narrowed after browser run, valid tested input semantics unchanged.",
     "boundary": "Actual accept_remedy409 REFERENCE_STALE is expected refusal, not accepted Warranty. Currentpassed reinspection is not finalFM09 released; laterrelease/acceptance/close remainunproven."
