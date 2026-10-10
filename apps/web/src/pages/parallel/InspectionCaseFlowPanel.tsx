@@ -337,7 +337,7 @@ export function InspectionCaseFlowPanel({ client, workspace, online, onChanged, 
     finally { if (requestId === seq.current) setLoading(false); }
   }, [client]);
   useEffect(() => {
-    setGraph(null); setError(null); setSelectedId(inspections[0]?.record.id || "");
+    setGraph(null); setError(null);
     return () => { seq.current += 1; };
   }, [roleKey]);
   useEffect(() => {

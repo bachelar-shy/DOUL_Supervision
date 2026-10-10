@@ -1,7 +1,7 @@
 {
   "goal": "DOUL Supervision Korean, Vietnamese and English field MVP",
   "status": "development_in_progress_with_external_acceptance_dependencies",
-  "integrationBase": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
+  "integrationBase": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
   "mergedPrerequisites": [
     {
       "pr": 128,
@@ -10,6 +10,13 @@
     {
       "pr": 130,
       "validation": "All 11 exact-head CI workflows passed on doul-macmini-m4-linux before merge; main f6002aa all 11 passed afterwards."
+    },
+    {
+      "pr": 139,
+      "head": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "merge": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
+      "validation": "All11 exact-head PR and all11 merged-main Mac workflows passed;109 browser,7 mock locales,320 reference,412 API and6 live PG Handover tests; synthetic trust providers, no actual pilot.",
+      "evidence": "design/verification/reference-v1-1-mac-20261010.json"
     }
   ],
   "coordination": {
@@ -18,14 +25,15 @@
     "sharedFilesOwner": "root",
     "workers": {
       "payment-api": "goal/payment-api-v1",
-      "payment-ui": "goal/payment-ui-v1",
+      "payment-ui": "goal/f05-payment-acceptance",
       "i18n": "goal/i18n-integration-v1",
       "create-capabilities": "goal/create-capabilities-v1",
       "operations": "goal/operational-validation-v1",
       "acceptance-audit": "goal/acceptance-audit-v1",
       "reference-api": "goal/f03-combined-safety",
-      "reference-ui": "goal/reference-ui-v1-1-resume",
-      "media-analysis": "goal/media-analysis-browser-v1"
+      "reference-ui": "goal/warranty-close-ref-select",
+      "media-analysis": "goal/media-analysis-browser-v1",
+      "performance": "goal/issue124-live-http-benchmark-v1"
     },
     "interruption": "Offline Luna agent exhausted workspace credits; root preserved scaffold and completed verified responsive-web slice."
   },
@@ -89,21 +97,16 @@
   ],
   "integrationVerification": {
     "candidateBranch": "goal/reference-integration-v1-1",
-    "baseCommit": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
-    "status": "API_and_static_UI_passed; Warranty_final_browser_and_exact_head_Mac_CI_pending",
+    "status": "merged_and_PR_and_main_11_Mac_workflows_passed",
+    "mergeCommit": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
     "c2Policy": "Explicit qualified SUP current-reference refresh only; Product-approved PCR-2026-002; no automatic rewrite or gate relaxation.",
-    "handoff": "design/development/agents/reference-integration-handoff.json"
+    "evidence": "design/verification/reference-v1-1-main-mac-20261010.json"
   },
   "remainingIndependentDevelopment": [
     {
-      "branch": "goal/f03-combined-safety",
-      "work": "Join actual equipment inspection/certificate fail/pass, Permit activation, Stop, verified remedy, explicit lift and separate resume in one synthetic real-API browser acceptance",
-      "status": "one local isolated case passed; root review and integrated Mac CI pending"
-    },
-    {
-      "branch": "goal/media-analysis-browser-v1",
-      "work": "Connect existing media analysis APIs to operator browser review, full coverage/sources, human confirmation/rejection and eligible-only Issue creation",
-      "status": "implementation in progress; no actual provider or pilot claim"
+      "branch": "goal/operator-completion-v1",
+      "work": "Media, Warranty and Payment acceptance plus corrected responsive Media layout",
+      "status": "local passed; final exact-head Mac Actions pending"
     }
   ],
   "productApproval": {
@@ -111,7 +114,38 @@
     "issue": 132,
     "decision": "approved",
     "statement": "제안대로 v1.1에 채택",
-    "releaseEffect": "approved for verified release; integrated C2 acceptance and security release review remain pending"
+    "releaseEffect": "C2 implementation integrated and main validated; official release and actual pilot remain dependent on #133/#134"
   },
-  "latestCheckpoint": "54b2208"
+  "latestCheckpoint": "924b5f0",
+  "operatorCandidate": {
+    "branch": "goal/operator-completion-v1",
+    "sourceCheckpoint": "0d77c71",
+    "scope": [
+      "real media upload/analysis/review/eligible Issue UI, canonical server Issue authority and tri-language errors",
+      "same-defect current Warranty closure selector",
+      "full partial-payment/correction/cancellation/final-payment UI acceptance",
+      "135 localized screen states and9 populated payment-history display combinations; mobile Action bounds and vi/en navigation labels"
+    ],
+    "verification": "Local boundary/types/lint/npm12 build and focused workflows passed, including responsive Media source/hash review,135 screen states, mobile Contract draft and9 populated Payment display combinations with official record preserved. Final exact-head Mac CI pending; no actual pilot claim.",
+    "actualPilotPerformed": false
+  },
+  "mergedMainVerification": {
+    "status": "passed",
+    "head": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
+    "workflowCount": 11,
+    "evidence": "design/verification/reference-v1-1-main-mac-20261010.json",
+    "mvpBrowserPassed": 109,
+    "mockLocalizationPassed": 7,
+    "firstAttempt": "One ECONNRESET fixture transport failure; unchanged source passed failed-job rerun. GET-only fixture transport resilience is a separate operator candidate change."
+  },
+  "performanceVerification": {
+    "evidence": "design/verification/issue124-live-http-50k-30round-72c8934.json",
+    "status": "descriptive_actual_HTTP_PostgreSQL_measurement_completed",
+    "p95Ms": [
+      2092.879,
+      2114.625
+    ],
+    "sampledPeakRssBytes": 3420848128,
+    "limitation": "Synthetic single client, development snapshot adapter; no agreed production workload/SLO or field acceptance."
+  }
 }

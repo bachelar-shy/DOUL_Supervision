@@ -107,5 +107,15 @@
       "MacMain": "all four triggered workflows passed",
       "mainProof": "/Users/automation/work/DOUL-ci-runtime/pr138-6a24662-checks.json"
     }
+  },
+  "registryRecheck20261010": {
+    "checkedAt": "2026-10-10T03:31:00Z",
+    "method": "read-only npm12 registry latest-tag queries",
+    "latest": {
+      "braces": "3.0.3",
+      "node-forge": "1.4.0",
+      "uuid": "14.0.3"
+    },
+    "conclusion": "No newer published latest braces/node-forge release is available from this check. Locked UUID11.1.1 already remediates the cited advisory and passed Expo/Xcode compatibility. Local checksum-guarded backports remain mitigations, not upstream registry remediation or release approval."
   }
 }

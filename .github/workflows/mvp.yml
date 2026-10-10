@@ -60,6 +60,16 @@ jobs:
           npx playwright test
       - name: Isolated mock localization tests
         run: npx playwright test --config playwright.localization.config.ts
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: browser-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-results/
+            .local/browser-results.json
+          if-no-files-found: warn
+          retention-days: 7
       - name: Android and iOS JavaScript bundles (not signed native builds)
         working-directory: apps/mobile
         run: npx expo export --platform ios --platform android --output-dir ../../.local/mobile-export

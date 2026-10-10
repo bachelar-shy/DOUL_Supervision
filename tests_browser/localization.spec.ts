@@ -95,6 +95,7 @@ for (const width of [390, 768, 1440]) {
 test("Contract notice editor translates in place without creating or changing a contract record", async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 390, height: 940 });
   await page.goto("/#/contract");
   const surface = page.locator('[data-ui-page="contract"]');
   await expect(surface).toBeVisible();
@@ -126,6 +127,7 @@ test("Contract notice editor translates in place without creating or changing a 
   await expect(dialog).toHaveAttribute("aria-label", "Thêm hồ sơ Thông báo hợp đồng");
   await expect(dialog.getByText(/Máy chủ sẽ kiểm tra lại quyền và phạm vi tại thời điểm nộp/)).toBeVisible();
   await expect(dialog.locator("input").first()).toHaveValue("SITE-CONTRACT-001");
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
   await expect(dialog.locator("input").nth(1)).toHaveValue("NT-001");
   await expect(dialog.getByRole("button", { name: "Thêm hồ sơ" })).toBeEnabled();
   expect(await createAction.isEnabled()).toBe(createActionEnabled);
@@ -139,6 +141,7 @@ test("Contract notice editor translates in place without creating or changing a 
   expect(await createAction.isEnabled()).toBe(createActionEnabled);
   expect(await dialog.getByRole("button", { name: "Add record" }).isEnabled()).toBe(submitEnabled);
   await expect(dialog.locator("input").first()).toHaveValue("SITE-CONTRACT-001");
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
 
   await locale.selectOption("ko");
   await expect(dialog).toHaveAttribute("aria-label", "계약통지 기록 추가");
@@ -260,6 +263,54 @@ for (const width of [390, 768, 1440]) {
         const box = await sheet.boundingBox();
         return box !== null && box.x + box.width <= width + 1;
       }).toBeTruthy();
+    }
+  });
+}
+
+for (const width of [390, 768, 1440]) {
+  test(`Localized field workspace keeps controls and headings in bounds at ${width}px`, async ({ page }, testInfo) => {
+    test.setTimeout(120_000); // Fifteen real API-backed screens in each of three languages.
+    await page.setViewportSize({ width, height: 940 });
+    await page.goto("/#/today");
+    const locale = page.locator(".topbar .role-picker select").first();
+    for (const language of ["ko", "vi", "en"] as const) {
+      await locale.selectOption(language);
+      await expect(page.locator("html")).toHaveAttribute("lang", { ko: "ko-KR", vi: "vi-VN", en: "en-US" }[language]);
+      for (const route of ["today", "inspections", "capture", "observations", "issues", "actions", "schedule", "contract", "payment", "completion", "safety", "owner", "documents", "registers", "rfis"]) {
+        await test.step(`${language}/${route}/${width}`, async () => {
+          await page.goto("/#/" + route);
+          await expect(page.locator("main h1")).toBeVisible();
+          const surface = route === "registers" ? '[data-ui-template="register"]' : `[data-ui-page="${route === "payment" ? "measurement-payment" : route === "completion" ? "completion-handover" : route}"]`;
+          await expect(page.locator(surface)).toBeVisible();
+          await expect(page.locator("html")).toHaveAttribute("lang", { ko: "ko-KR", vi: "vi-VN", en: "en-US" }[language]);
+          await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), { message: `${language}/${route}: horizontal overflow` }).toBeTruthy();
+          if (width === 390) {
+            await expect(page.locator(".bottom-nav").getByRole("button", { name: { ko: "더보기", vi: "Thêm", en: "More" }[language], exact: true })).toBeVisible();
+          }
+          const defects = await page.locator("main").evaluate((main) => {
+            const result: string[] = [];
+            for (const element of main.querySelectorAll<HTMLElement>("button, input:not([type=hidden]), select, textarea, h1")) {
+              const box = element.getBoundingClientRect();
+              if (!box.width || !box.height || getComputedStyle(element).visibility === "hidden") continue;
+              // Explicit scrolling tables preserve their columns within a scrollable viewport.
+              let scrollContainer: HTMLElement | null = element.parentElement;
+              while (scrollContainer && scrollContainer !== main && !["auto", "scroll"].includes(getComputedStyle(scrollContainer).overflowX)) scrollContainer = scrollContainer.parentElement;
+              if (scrollContainer && scrollContainer !== main) continue;
+              if (box.left < -1 || box.right > innerWidth + 1) result.push(`${element.tagName}: ${element.getAttribute("aria-label") || element.textContent?.trim().slice(0, 60)} [${Math.round(box.left)},${Math.round(box.right)}]`);
+            }
+            const title = main.querySelector(".page-heading h1")?.getBoundingClientRect();
+            for (const button of main.querySelectorAll(".heading-actions button")) {
+              const box = button.getBoundingClientRect();
+              if (title && box.width && Math.min(title.right, box.right) - Math.max(title.left, box.left) > 1 && Math.min(title.bottom, box.bottom) - Math.max(title.top, box.top) > 1) result.push("page title overlaps its action button");
+            }
+            return result;
+          });
+          expect(defects, `${language}/${route}: displaced or overlapping controls`).toEqual([]);
+          if (width === 390 && ["capture", "payment", "completion"].includes(route)) {
+            await page.screenshot({ path: testInfo.outputPath(`${language}-${route}-390.png`), fullPage: true });
+          }
+        });
+      }
     }
   });
 }

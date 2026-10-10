@@ -2,6 +2,10 @@ import type {
   DomainRef,
   Fields,
   HumanRole,
+  IssuePackageInput,
+  IssuePackageResult,
+  MediaAnalysisRequestInput,
+  MediaAnalysisReview,
   RecordDTO,
   RegisterProjectionRow,
   Session,
@@ -66,6 +70,22 @@ export class MockSupervisionClient implements SupervisionClient {
     _options: UploadOptions,
     _progress?: (offset: number, total: number) => void,
   ): Promise<RecordDTO> {
+    return previewOnly();
+  }
+
+  requestMediaAnalysis(_input: MediaAnalysisRequestInput, _key?: string): Promise<RecordDTO> {
+    return previewOnly();
+  }
+
+  mediaAnalysisReview(_runId: string): Promise<MediaAnalysisReview> {
+    return previewOnly();
+  }
+
+  createMediaIssuePackage(
+    _runId: string,
+    _input: IssuePackageInput,
+    _key?: string,
+  ): Promise<IssuePackageResult> {
     return previewOnly();
   }
 

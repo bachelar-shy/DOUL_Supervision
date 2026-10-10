@@ -1,7 +1,8 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page, type Route } from "@playwright/test";
 import { localDateTime } from "./support/local-datetime";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createServer } from "node:net";
+import { createServer as createHttpServer } from "node:http";
 import { createInterface } from "node:readline";
 
 type Ref = { objectType: string; objectId: string; version: number };
@@ -93,6 +94,17 @@ async function startApi(origin: string): Promise<{ child: ChildProcess; base: st
   throw new Error(`Fixture server did not become healthy: ${stderr}`);
 }
 
+function fetchFixture(route: Route, base: string, origin: string) {
+  const request = route.request();
+  return route.fetch({
+    url: request.url().replace(/http:\/\/127\.0\.0\.1:\d+\/api/, base),
+    headers: { ...request.headers(), origin },
+    // Playwright retries only ECONNRESET here. Retry idempotent reads; never
+    // replay a command whose server-side outcome may be unknown.
+    maxRetries: request.method() === "GET" ? 1 : 0,
+  });
+}
+
 async function useRole(page: Page, role: "CON" | "SUP" | "OWN") {
   await page.locator(".top-actions .role-picker select").nth(1).selectOption(role);
   await expect(page.locator(".top-actions .role-picker select").nth(1)).toHaveValue(role);
@@ -103,6 +115,7 @@ async function useRole(page: Page, role: "CON" | "SUP" | "OWN") {
 type CommandInput = string | boolean | Ref | Ref[] | Record<string, unknown> | Array<Record<string, unknown>>;
 
 const commandFieldLabels: Record<string, RegExp> = {
+  closureRef: /closure evidence reference|종결 근거 참조|tham chiếu bằng chứng đóng hồ sơ/i,
   precommissioningChecklist: /precommission|checklist|시운전|점검/i,
   testResultRef: /testResultRef|시험 결과 증빙 참조|시험 증빙/i,
   outcome: /outcome|^시험 결과$/i,
@@ -185,6 +198,20 @@ async function runCompletionCommand(
     await expect(actionSelection).toBeVisible();
     expect(await issueSelection.inputValue(), "current issue must start with an empty selection").toBe("");
     expect(await actionSelection.locator("option:checked").count(), "current Actions must start unselected").toBe(0);
+  }
+  if (/close warranty claim/i.test(command.source)) {
+    const closureSelect = dialog.getByLabel(commandFieldLabels.closureRef);
+    const closureRef = fields.closureRef as Ref;
+    await expect(closureSelect).toBeVisible();
+    expect(await closureSelect.inputValue(), "closure Issue must start unselected").toBe("");
+    const options = await closureSelect.locator("option").evaluateAll((nodes) => nodes
+      .map((node) => (node as HTMLOptionElement).value)
+      .filter(Boolean)
+      .map((value) => JSON.parse(value) as Ref));
+    expect(options).toHaveLength(1);
+    expect(options[0]).toMatchObject({
+      objectType: "Issue", objectId: closureRef.objectId, version: closureRef.version,
+    });
   }
   for (const [field, value] of Object.entries(fields)) {
     const label = commandFieldLabels[field] || new RegExp(field, "i");
@@ -332,6 +359,48 @@ async function runOwnerDecisionCommand(page: Page, command: RegExp, commandName:
   return body.record;
 }
 
+test("fixture bridge retries a reset GET once and never replays a reset POST", async ({ page }) => {
+  let getAttempts = 0;
+  let postAttempts = 0;
+  const server = createHttpServer((request, response) => {
+    if (request.method === "GET") {
+      getAttempts += 1;
+      if (getAttempts === 1) { request.socket.destroy(); return; }
+      response.writeHead(200, { "content-type": "text/plain" }).end("GET recovered");
+      return;
+    }
+    if (request.method === "POST") {
+      postAttempts += 1;
+      request.socket.destroy();
+      return;
+    }
+    response.writeHead(405).end();
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("Could not allocate retry fixture port");
+  const upstream = `http://127.0.0.1:${address.port}`;
+  const path = "/api/fixture-bridge-retry-check";
+  await page.route(`**${path}`, async (route) => {
+    try { await route.fulfill({ response: await fetchFixture(route, upstream, testOrigin()) }); }
+    catch { await route.abort(); }
+  });
+  try {
+    await page.goto("/");
+    const getBody = await page.evaluate(async (url) => await (await fetch(url)).text(), path);
+    expect(getBody).toBe("GET recovered");
+    expect(getAttempts).toBe(2);
+    const postFailed = await page.evaluate(async (url) => {
+      try { await fetch(url, { method: "POST", body: "command" }); return false; }
+      catch { return true; }
+    }, path);
+    expect(postFailed).toBe(true);
+    expect(postAttempts).toBe(1);
+  } finally {
+    await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+  }
+});
+
 test("real Completion UI creates a planned commissioning package and respects the missing current procedure gate", async ({ page }) => {
   test.setTimeout(90000);
   const origin = testOrigin();
@@ -339,7 +408,7 @@ test("real Completion UI creates a planned commissioning package and respects th
   try {
     let latestWorkspace: any;
     await page.route("**/api/**", async (route) => {
-      const response = await route.fetch({ url: route.request().url().replace(/http:\/\/127\.0\.0\.1:\d+\/api/, base), headers: { ...route.request().headers(), origin } });
+      const response = await fetchFixture(route, base, origin);
       if (route.request().url().includes("/workspace")) {
         latestWorkspace = await response.json();
         await route.fulfill({ response, json: latestWorkspace });
@@ -391,7 +460,7 @@ test("real Completion UI preserves Owner reservation proposal inputs on a handov
   try {
     let latestWorkspace: any;
     await page.route("**/api/**", async (route) => {
-      const response = await route.fetch({ url: route.request().url().replace(/http:\/\/127\.0\.0\.1:\d+\/api/, base), headers: { ...route.request().headers(), origin } });
+      const response = await fetchFixture(route, base, origin);
       if (route.request().url().includes("/workspace")) {
         latestWorkspace = await response.json();
         await route.fulfill({ response, json: latestWorkspace });
@@ -461,10 +530,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
   try {
     let latestWorkspace: any;
     await page.route("**/api/**", async (route) => {
-      const response = await route.fetch({
-        url: route.request().url().replace(/http:\/\/127\.0\.0\.1:\d+\/api/, base),
-        headers: { ...route.request().headers(), origin },
-      });
+      const response = await fetchFixture(route, base, origin);
       if (route.request().url().includes("/workspace")) {
         latestWorkspace = await response.json();
         await route.fulfill({ response, json: latestWorkspace });
@@ -810,8 +876,12 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
       await page.goto("/#/parallel-test");
       await page.getByRole("tab", { name: /work inbox|작업함/i }).click();
       const casePanel = page.getByTestId("inspection-case-flow");
-      await casePanel.getByLabel(/source inspection|root inspection|원 검측 선택/i).selectOption(fixture.inspectionRef.objectId);
+      const inspectionPicker = casePanel.getByLabel(/source inspection|root inspection|원 검측 선택/i);
+      await inspectionPicker.selectOption(fixture.inspectionRef.objectId);
+      await expect(inspectionPicker, "the selected root Inspection must survive the panel's initial workspace effects")
+        .toHaveValue(fixture.inspectionRef.objectId);
       const issueCard = casePanel.locator(".inspection-case-issue").filter({ hasText: "F-07 browser reservation Punch" });
+      await expect(issueCard).toBeVisible();
       const reinspectionForm = issueCard.getByRole("form", { name: /request linked reinspection|연결된 재검측 요청/i });
       const reinspectionName = "F-07 browser final handover reinspection";
       await reinspectionForm.getByLabel(/work name|작업명/i).fill(reinspectionName);
@@ -825,6 +895,8 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
       const reinspectionBody = await reinspectionResponse.json();
       expect(reinspectionResponse.status(), JSON.stringify(reinspectionBody)).toBe(201);
       const reinspectionId = reinspectionBody.reinspection.id as string;
+      await expect(inspectionPicker).toHaveValue(fixture.inspectionRef.objectId);
+      await expect(issueCard.getByText(reinspectionName)).toBeVisible();
 
       await useRole(page, "SUP");
       await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
