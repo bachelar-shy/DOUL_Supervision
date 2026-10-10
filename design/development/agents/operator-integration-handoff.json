@@ -86,5 +86,12 @@
       "requiredForCurrentGoalCompletion": false,
       "scope": "Upstream advisory resolution and formal security release review; retain existing controls, regression tests, visible advisories and formal release gate. Deferral does not constitute production release approval."
     }
-  ]
+  ],
+  "subsequentVerifiedMilestone": {
+    "pr": 142,
+    "merge": "0a4dd540cc8c31df4ce4b26756ed238fbe046071",
+    "handoff": "design/development/agents/mock-site-usability-handoff.json",
+    "mockDevelopmentCompleted": true,
+    "actualFieldAcceptance": false
+  }
 }

@@ -1,0 +1,9 @@
+{
+  "classification": "synthetic_fixture_direct_authorization_engine",
+  "actualHTTPLoginOfSecondaryActor": false,
+  "sameProjectScopeAndActorGroup": "CON",
+  "primaryCreateEvidence": "allowed",
+  "secondaryReadEvidence": "allowed",
+  "secondaryCreateEvidence": "NOT_AUTHORIZED",
+  "explanation": "Controls use the same CON group and evidence scope, isolating reduced assignment authority rather than testing a command disallowed to all contractors."
+}

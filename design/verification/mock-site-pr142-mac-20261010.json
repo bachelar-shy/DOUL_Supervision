@@ -1,0 +1,37 @@
+{
+  "headRefOid": "a020bc4685a55bb249c2435c2154f1acc5c1d844",
+  "statusCheckRollup": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-10T12:12:20Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/38051056777/job/114210099919",
+      "name": "validate",
+      "startedAt": "2026-10-10T12:11:55Z",
+      "status": "COMPLETED",
+      "workflowName": "contracts"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-10T12:21:26Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/38051056840/job/114210100075",
+      "name": "local-adapter-and-ui",
+      "startedAt": "2026-10-10T12:12:28Z",
+      "status": "COMPLETED",
+      "workflowName": "mvp-development"
+    }
+  ],
+  "pr": 142,
+  "mergeCommit": "0a4dd540cc8c31df4ce4b26756ed238fbe046071",
+  "runner": "doul-macmini-m4-linux",
+  "testResults": {
+    "reference": 320,
+    "api": 416,
+    "apiEnvironmentSkips": 46,
+    "browser": 117,
+    "mockLocales": 7
+  },
+  "mvpRun": 38051056840,
+  "actualFieldAcceptance": false
+}

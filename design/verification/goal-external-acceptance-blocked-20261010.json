@@ -1,15 +1,15 @@
 {
-  "checkedAt": "2026-10-10 11:17:53 UTC",
-  "outcome": "blocked",
-  "verifiedCodeMain": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
-  "mainChecks": "all7 success on Mac mini;115 browser/7 isolated mock locales",
+  "checkedAt": "2026-10-10 12:36:03 UTC",
+  "outcome": "blocked_actual_field_operating_stage_only",
+  "verifiedCodeMain": "0a4dd540cc8c31df4ce4b26756ed238fbe046071",
+  "mainChecks": "all2 triggered Mac workflows passed;117 browser/7 isolated mock locales,320 reference,416 API with46 environment skips",
   "openIssues": [
     133,
     134
   ],
   "historicalUnmergedDraft": 129,
   "independentDevelopmentForCurrentMVPScope": [],
-  "suppliedOriginals": "Three received originals verified in18 browser executions;20 proposed source-backed cases prepared privately;no actual field pilot",
+  "suppliedOriginals": "Three received originals and one generated12-panel image registered in isolated synthetic project;all4 hash-match and reopen reuse;20 source-backed proposed cases available privately;not actual field acceptance",
   "requiredInputs": [
     "Qualified CON/SUP/OWN pilot actors and adopted project configuration/forms/official-language policy",
     "Actual site photos with capture time/location and project rights",
@@ -48,5 +48,8 @@
       "requiredForCurrentGoalCompletion": false,
       "scope": "Upstream advisory resolution and formal security release review; retain existing controls, regression tests, visible advisories and formal release gate. Deferral does not constitute production release approval."
     }
-  ]
+  ],
+  "developmentMilestoneComplete": true,
+  "requiredInputsApplyTo": "actual field/operating acceptance, not completed Mock development milestone",
+  "mockMilestoneEvidence": "design/verification/mock-site-main-mac-20261010.json"
 }

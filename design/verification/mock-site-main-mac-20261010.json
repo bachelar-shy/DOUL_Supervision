@@ -1,0 +1,49 @@
+{
+  "head": "0a4dd540cc8c31df4ce4b26756ed238fbe046071",
+  "runs": [
+    {
+      "conclusion": "success",
+      "databaseId": 38051743559,
+      "headSha": "0a4dd540cc8c31df4ce4b26756ed238fbe046071",
+      "name": "contracts",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 38051743492,
+      "headSha": "0a4dd540cc8c31df4ce4b26756ed238fbe046071",
+      "name": "mvp-development",
+      "status": "completed"
+    }
+  ],
+  "testLogSummary": [
+    "local-adapter-and-ui\tReference contracts and adapter tests\t2026-10-10T12:25:29.7045443Z Ran 320 tests in 2.417s",
+    "local-adapter-and-ui\tReference contracts and adapter tests\t2026-10-10T12:26:01.8685345Z Ran 416 tests in 31.909s",
+    "local-adapter-and-ui\tReference contracts and adapter tests\t2026-10-10T12:26:01.8685479Z OK (skipped=46)",
+    "local-adapter-and-ui\tBrowser integration tests\t2026-10-10T12:32:13.4727465Z   117 passed (6.0m)",
+    "local-adapter-and-ui\tIsolated mock localization tests\t2026-10-10T12:32:21.4343151Z   7 passed (7.6s)"
+  ],
+  "jobs": [
+    {
+      "runId": 38051743559,
+      "name": "validate",
+      "runner": "doul-macmini-m4-linux",
+      "conclusion": "success"
+    },
+    {
+      "runId": 38051743492,
+      "name": "local-adapter-and-ui",
+      "runner": "doul-macmini-m4-linux",
+      "conclusion": "success"
+    }
+  ],
+  "pr": 142,
+  "actualFieldAcceptance": false,
+  "testResults": {
+    "reference": 320,
+    "api": 416,
+    "apiEnvironmentSkips": 46,
+    "browser": 117,
+    "mockLocales": 7
+  }
+}

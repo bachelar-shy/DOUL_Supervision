@@ -43,7 +43,20 @@
     }
   },
   "macCI": {
-    "status": "pending"
+    "status": "PR_and_merged_main_passed",
+    "pr": 142,
+    "head": "a020bc4685a55bb249c2435c2154f1acc5c1d844",
+    "merge": "0a4dd540cc8c31df4ce4b26756ed238fbe046071",
+    "PRWorkflowCount": 2,
+    "mainWorkflowCount": 2,
+    "runner": "doul-macmini-m4-linux",
+    "reference": 320,
+    "api": 416,
+    "apiEnvironmentSkips": 46,
+    "browser": 117,
+    "mockLocales": 7,
+    "PRProof": "design/verification/mock-site-pr142-mac-20261010.json",
+    "mainProof": "design/verification/mock-site-main-mac-20261010.json"
   },
   "limitations": [
     "Not actual site pilot or production provider certification",
@@ -51,5 +64,14 @@
     "Project pack is schema-valid; not every deadline/form/qualification-kind/authority-binding value is runtime-enforced",
     "Twenty private original-source proposed cases retained, not all claimed executed by real users",
     "Vietnamese/English human review and security release review are deferred"
-  ]
+  ],
+  "preparedPrivateContext": {
+    "receivedOriginals": 3,
+    "syntheticAssets": 1,
+    "proposedSourceCases": 20,
+    "registeredAndReopenReused": 4,
+    "originalBytesHashMatched": true,
+    "notAnApprovedBaseline": true
+  },
+  "readOnlySameGroupControl": "design/verification/mock-readonly-authority-control-20261010.json"
 }

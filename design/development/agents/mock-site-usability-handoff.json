@@ -1,0 +1,75 @@
+{
+  "status": "Mock_development_milestone_complete_PR_and_main_Mac_verified",
+  "codeBranch": "goal/mock-usability-20261010",
+  "verifiedSource": "a020bc4685a55bb249c2435c2154f1acc5c1d844",
+  "mergeCommit": "0a4dd540cc8c31df4ce4b26756ed238fbe046071",
+  "proofBranch": "goal/mock-verified-handoff-20261010",
+  "workers": {
+    "projectSetup": {
+      "branch": "goal/mock-project-setup-20261010",
+      "commit": "1ddd6d367144fda0489529c4e401a15614c92877",
+      "model": "gpt-6-luna",
+      "reasoning": "high"
+    },
+    "photoBrowser": {
+      "branch": "goal/mock-photo-browser-20261010",
+      "commit": "5f8b2c0",
+      "model": "gpt-6-luna",
+      "reasoning": "high"
+    }
+  },
+  "rootReviewFixes": [
+    "Use complete seed graph and project-scoped service actors",
+    "Remove placeholder generated pixel-art images; upload visibly labeled imagegen asset",
+    "Remove all owned history versions on cleanup and refuse later uploads/document snapshots",
+    "Pin browser timezone in spec so ordinary CI config also validates VN display",
+    "Use owned synthetic-project API fixture and portable Python fallback",
+    "Use actual generated3.33MB image in controlled media human-review/Issue flow"
+  ],
+  "verification": {
+    "PR": "all2 triggered Mac workflows passed",
+    "reference": 320,
+    "api": 416,
+    "apiEnvironmentSkips": 46,
+    "browser": 117,
+    "isolatedMockLocales": 7,
+    "photoAPIAssertions": 17,
+    "newProjectAPIUnitTests": 4,
+    "newPhotoBrowserTests": 2,
+    "generatedPhotoMediaClosedLoop": 1,
+    "main": "all2 triggered Mac workflows passed:320 reference,416 API (46 environment skips),117 browser,7 isolated mock locales",
+    "mainProof": "design/verification/mock-site-main-mac-20261010.json",
+    "readOnlySameGroupControl": "design/verification/mock-readonly-authority-control-20261010.json"
+  },
+  "privateContext": {
+    "database": "/tmp/doul-mock-usability-20261010/.local/mock-usability.sqlite3",
+    "manifest": "/tmp/doul-mock-usability-20261010/work/private-mock-context-manifest.json",
+    "caseContext": "/tmp/doul-mock-usability-20261010/work/private-mock-case-context.json",
+    "receivedOriginals": 3,
+    "syntheticAssets": 1,
+    "panels": 12,
+    "sourceCases": 20,
+    "registrationAndRestartReuse": "All4 original-byte downloads match hashes; after reopen all4 reused without duplication",
+    "actualFieldAcceptance": false
+  },
+  "localEnvironmentNotes": [
+    "Initial isolated web run missed workspace-local radix-ui links; own worktree links corrected without changing shared dependencies or lockfile",
+    "Targeted TypeScript verification passed with explicit --types node; final integrated photo tests2 passed12.5s and generated-photo media flow1 passed12.7s"
+  ],
+  "reviewedUnmergedPR141": {
+    "source": "2805744fcd72cd2c85a39cc48f883941735debc4",
+    "scope": "Four intended files in three-dot diff; do not treat stale-base two-dot comparison as deletions",
+    "remaining": [
+      "Namespace synthetic Q-01 rebar IDs separately from original DN110 source cases",
+      "Recover expired incomplete uploads and retain explicit diagram/source-binding limitations"
+    ],
+    "integration": "Not merged by this task; current tested fixture/photo milestone does not depend on it"
+  },
+  "next": [
+    "Current Mock development milestone complete; preserve original files/private context and verified code.",
+    "Actual field and operating acceptance #133 remains separate; do not declare actual pilot or production acceptance.",
+    "Vietnamese/English human review and #134 security release review remain deferred follow-ups.",
+    "On platform resume inspect Git, current main/PR state and handoffs; no repeat CI provisioning or reimplementation."
+  ],
+  "actualFieldAcceptance": false
+}
