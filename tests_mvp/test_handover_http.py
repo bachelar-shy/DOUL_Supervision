@@ -220,13 +220,47 @@ class HandoverHttpTests(unittest.TestCase):
         old_issue = next(r for (kind, _), r in self.engine._records.items() if kind == "Issue")
         issue_id, action_id = uid(), uid()
         issue = deepcopy(old_issue)
-        issue.update(id=issue_id, version=1, status="open", subtype="Punch", **self.scope)
+        issue.update(id=issue_id, version=1, status="open", subtype="Punch", actionIds=[action_id], **self.scope)
         action = deepcopy(next(r for (kind, _), r in self.engine._records.items() if kind == "Action"))
         action.update(id=action_id, version=1, status="verified", relatedIssueId=issue_id, **self.scope)
         with self.store.transaction(True):
             self.engine.bootstrap("Issue", issue)
             self.engine.bootstrap("Action", action)
         return self.ref("Issue", issue_id), self.ref("Action", action_id)
+
+    def _close_issue_via_http(self, issue_ref, action_ref):
+        issue = self.engine.get("Issue", issue_ref["objectId"])
+        action = self.engine.get("Action", action_ref["objectId"])
+        with self.store.transaction(True):
+            self.engine._record_machines[("Issue", issue["id"])] = "issue"
+        if issue["status"] == "open":
+            issue = self.expect("issues", issue, "assign", {
+                "responsiblePartyId": issue["responsiblePartyId"],
+                "responsibleOrganizationId": issue["responsibleOrganizationId"],
+                "dueAt": self.tomorrow,
+                "actionIds": issue["actionIds"],
+            }, actor="SUP", evidence=[])
+        self.assertEqual(issue["status"], "assigned")
+        issue = self.expect("issues", issue, "start_correction", actor="CON", evidence=[])
+        previous = self.engine.get("Inspection", issue["inspectionIds"][-1])
+        inspection_id = uid()
+        inspection = deepcopy(previous)
+        inspection.update(
+            id=inspection_id, version=1, previousInspectionId=previous["id"],
+            relatedIssueId=issue["id"], correctionCycle=issue["correctionCycle"],
+            status="completed", resultStatus="pass", nextWorkAllowed=True,
+            correctiveActionRefs=[action_ref], evidenceIds=list(action.get("evidenceIds", [])),
+        )
+        with self.store.transaction(True):
+            self.engine.bootstrap("Inspection", inspection)
+        issue = self.expect("issues", issue, "request_reinspection", {
+            "inspectionIds": issue["inspectionIds"] + [inspection_id],
+        }, actor="CON", evidence=action.get("evidenceIds", []))
+        issue = self.expect("issues", issue, "start_reinspection", actor="SUP", evidence=[])
+        closure_evidence = list(dict.fromkeys(action.get("evidenceIds", []) + inspection.get("evidenceIds", [])))
+        return self.expect("issues", issue, "close", {
+            "closureEvidenceIds": closure_evidence,
+        }, actor="SUP", evidence=closure_evidence)
 
     def upload_test_evidence(self, label):
         self.login("CON")
@@ -451,7 +485,7 @@ class HandoverHttpTests(unittest.TestCase):
         self.assertEqual(package["status"], "passed")
 
     def test_readiness_refuses_a_stale_punch_snapshot_without_refresh_input(self):
-        punch_ref, _ = self._new_punch_and_action()
+        punch_ref, action_ref = self._new_punch_and_action()
         package = self.create("commissioning-packages", self._commissioning_payload(punch_refs=[punch_ref]), "CON")
         package = self.expect("commissioning-packages", package, "start_prerequisite_review", actor="SUP", evidence=[])
         package = self.expect("commissioning-packages", package, "start_precommissioning", actor="SUP", evidence=[])
@@ -468,12 +502,17 @@ class HandoverHttpTests(unittest.TestCase):
         )
         package = self.expect("commissioning-packages", package, "accept_test", actor="SUP", evidence=[self.evidence_id])
 
-        # Trusted upstream fixture change: the Issue advanced independently;
+        # Advance the Issue through its authorized HTTP assignment command;
         # this baseline command has no Punch-ref refresh input.
-        punch = deepcopy(self.engine.get("Issue", punch_ref["objectId"]))
-        punch.update(version=punch["version"] + 1, status="closed")
+        punch = self.engine.get("Issue", punch_ref["objectId"])
         with self.store.transaction(True):
-            self.engine._save("Issue", punch)
+            self.engine._record_machines[("Issue", punch["id"])] = "issue"
+        punch = self.expect("issues", punch, "assign", {
+            "responsiblePartyId": punch["responsiblePartyId"],
+            "responsibleOrganizationId": punch["responsibleOrganizationId"],
+            "dueAt": self.tomorrow,
+            "actionIds": punch["actionIds"],
+        }, actor="SUP", evidence=[])
 
         audit_before = len(self.engine._audit)
         rejected = self.command(
@@ -486,6 +525,95 @@ class HandoverHttpTests(unittest.TestCase):
         self.assertEqual(current["version"], package["version"])
         self.assertEqual(current["data"]["punchIssueRefs"], [punch_ref])
         self.assertEqual(len(self.engine._audit), audit_before)
+
+        # Resolve the Issue through its HTTP correction/reinspection/close
+        # lifecycle, then explicitly refresh the same identity set.
+        closed_issue = self._close_issue_via_http(punch_ref, action_ref)
+        current_issue_ref = self.ref("Issue", closed_issue["id"])
+        before_audit = len(self.engine._audit)
+        package = self.expect("commissioning-packages", package, "mark_ready_for_handover", {
+            "punchIssueRefs": [current_issue_ref],
+            "correctionActionRefs": [action_ref],
+        }, actor="SUP", evidence=[self.evidence_id])
+        self.assertEqual(package["status"], "ready_for_handover")
+        self.assertEqual(package["data"]["punchIssueRefs"], [punch_ref])
+        self.assertEqual(package["data"]["currentPunchIssueRefs"], [current_issue_ref])
+        self.assertEqual(package["data"]["currentCorrectionActionRefs"], [action_ref])
+        self.assertEqual(len(package["data"]["punchReferenceRefreshHistory"]), 1)
+        self.assertEqual(len(self.engine._audit), before_audit + 1)
+
+    def test_handover_refresh_preserves_owner_reservation_through_final_handover(self):
+        commissioning = self._pass_commissioning()
+        issue_ref, action_ref = self._new_punch_and_action()
+        assets = [self.ref("Asset", asset_id) for asset_id in self.asset_ids]
+        scope = {"scopeId": "SYS-A-REFRESH", "system": "SYS-A",
+                 "locationIds": [self.scope["locationId"]], "assetRefs": assets}
+        handover_data = {
+            "handoverNo": "HP-REFRESH-001", "handoverScope": scope,
+            "handoverProfileRef": self.ref("Requirement", self.handover_profile_id),
+            "commissioningPackageRefs": [self.ref("WorkItem", commissioning["id"])],
+            "asBuiltRefs": [self.ref("InformationItem", self.document_ids["asBuilt"])],
+            "omManualRefs": [self.ref("InformationItem", self.document_ids["omManual"])],
+            "trainingRefs": [self.ref("InformationItem", self.document_ids["training"])],
+            "sparePartsRefs": [self.ref("InformationItem", self.document_ids["spareParts"])],
+            "certificateRefs": [self.ref("InformationItem", self.document_ids["certificates"])],
+            "statutoryAcceptanceRefs": [self.ref("InformationItem", self.document_ids["statutoryAcceptance"])],
+            "openIssueRefs": [issue_ref],
+            "reservationProposals": [{
+                "issueRef": issue_ref,
+                "ownerPartyId": self.store.meta["actors"]["OWN"]["partyId"],
+                "dueAt": self.tomorrow,
+                "closureRequirement": "Close and verify the Punch Issue before final handover",
+            }],
+        }
+        handover = self.create("handover-packages", {
+            **self.scope, "subtype": "HandoverPackage",
+            "title": "Handover with a tracked Punch reservation",
+            "requirementRefs": [self.ref("Requirement", self.requirement_id)],
+            "drawingRef": self.ref("InformationItem", self.drawing_id),
+            "data": handover_data,
+        }, "CON")
+        handover = self.expect("handover-packages", handover, "submit_handover_package", actor="CON", evidence=[])
+        handover = self.expect("handover-packages", handover, "start_readiness_review", actor="SUP", evidence=[])
+        handover = self.expect("handover-packages", handover, "submit_owner_review", actor="SUP", evidence=[self.evidence_id])
+        decision = self._owner_decision(handover, "Conditional acceptance with tracked Punch reservation")
+        handover = self.expect("handover-packages", handover, "accept_with_reservations", {
+            "ownerDecisionRef": decision,
+            "ownerReservationInputs": handover_data["reservationProposals"],
+        }, actor="OWN", evidence=[self.evidence_id])
+        reservation_snapshot = deepcopy(handover["data"]["reservations"])
+        owner_acceptance_snapshot = deepcopy(handover["data"]["ownerAcceptanceRef"])
+
+        closed_issue = self._close_issue_via_http(issue_ref, action_ref)
+        latest_issue_ref = self.ref("Issue", closed_issue["id"])
+        stale_final = self.command("handover-packages", handover, "record_final_handover", {
+            "effectiveAt": self.now, "warrantyTrigger": True,
+        }, actor="OWN", evidence=[self.evidence_id])
+        self.assertEqual(stale_final.status_code, 409, stale_final.text)
+        self.assertEqual(stale_final.json()["code"], "REFERENCE_STALE")
+        self.assertEqual(self.engine.get("WorkItem", handover["id"])["version"], handover["version"])
+
+        denied = self.command("handover-packages", handover, "refresh_issue_references", {
+            "currentIssueRefs": [latest_issue_ref],
+        }, actor="CON", evidence=[])
+        self.assertEqual(denied.status_code, 403, denied.text)
+        handover = self.expect("handover-packages", handover, "refresh_issue_references", {
+            "currentIssueRefs": [latest_issue_ref],
+        }, actor="SUP", evidence=[])
+        self.assertEqual(handover["data"]["openIssueRefs"], [issue_ref])
+        self.assertEqual(handover["data"]["currentIssueRefs"], [latest_issue_ref])
+        self.assertEqual(handover["data"]["currentOpenIssueRefs"], [])
+        self.assertEqual(handover["data"]["reservations"], reservation_snapshot)
+        self.assertEqual(handover["data"]["ownerAcceptanceRef"], owner_acceptance_snapshot)
+        self.assertEqual(len(handover["data"]["issueReferenceRefreshHistory"]), 1)
+
+        handover = self.expect("handover-packages", handover, "record_final_handover", {
+            "effectiveAt": self.now, "warrantyTrigger": True,
+        }, actor="OWN", evidence=[self.evidence_id])
+        self.assertEqual(handover["status"], "final_handover")
+        self.assertEqual(handover["data"]["reservations"], reservation_snapshot)
+        handover = self.expect("handover-packages", handover, "close_handover_package", actor="SUP", evidence=[])
+        self.assertEqual(handover["status"], "closed")
 
     def _owner_decision(self, target, title):
         decision_id = uid()

@@ -55,6 +55,7 @@ _COMMAND_FIELDS = {
     "reject_test": {"failureReason"},
     "require_punch_resolution": {"punchIssueRefs", "correctionActionRefs"},
     "request_retest": {"retestBasisRefs"},
+    "mark_ready_for_handover": {"punchIssueRefs", "correctionActionRefs"},
     "return_handover": {"returnReason", "missingItems"},
     "accept_with_reservations": {"ownerDecisionRef", "ownerReservationInputs"},
     "accept_handover": {"ownerDecisionRef"},
@@ -488,7 +489,8 @@ def _warranty(engine, guard, record, role, payload=None):
         require(issue.get("subtype") in {"Defect", "Punch", "NCR"} and _in_scope(record, issue, data["defectScope"]["locationIds"], same_organization=True), "WARRANTY_ISSUE_REQUIRED", "A current defect Issue in the warranty scope is required")
         if guard == "warranty_refresh_remedy_references_ready":
             _complete_current_action_cycle(engine, record, [issue], action_refs,
-                                           data["defectScope"]["locationIds"])
+                                           data["defectScope"]["locationIds"],
+                                           allowed_statuses={"assigned", "in_progress", "verified", "closed"})
         elif guard == "warranty_remedy_required_ready":
             require(data.get("responseDueAt"), "WARRANTY_RESPONSE_DUE_INVALID", "Supervisor must record a response deadline from the exact contract period")
             require(instant(data["responseDueAt"]) >= observed, "WARRANTY_RESPONSE_DUE_INVALID", "Contract response deadline cannot precede the defect observation")
@@ -727,7 +729,8 @@ def _identity_set(references):
     return {_identity_key(reference) for reference in references}
 
 
-def _complete_current_action_cycle(engine, source, issue_records, references, locations=None):
+def _complete_current_action_cycle(engine, source, issue_records, references, locations=None,
+                                   allowed_statuses=None):
     """Require exact current refs for every completed Action in each Issue cycle."""
     actions = _refs(engine, references, source["projectId"], "Action", current=True,
                     code="REFERENCE_STALE", nonempty=bool(issue_records))
@@ -742,7 +745,7 @@ def _complete_current_action_cycle(engine, source, issue_records, references, lo
     require({value["id"] for value in actions} == set(expected),
             "REFERENCE_IDENTITY_MISMATCH", "Every Action in the current correction cycle must be retained")
     require(all(value.get("relatedIssueId") in issue_ids
-                and value.get("status") in _ACTION_VERIFIED
+                and value.get("status") in (allowed_statuses or _ACTION_VERIFIED)
                 and _in_scope(source, value, locations, same_organization=True)
                 for value in actions),
             "REFERENCE_CYCLE_INCOMPLETE", "Current correction-cycle Actions must be in scope and verified or closed")

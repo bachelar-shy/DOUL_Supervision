@@ -1,6 +1,6 @@
-# 34. Commissioning / Handover / Warranty Functional Contract v1.0
+# 34. Commissioning / Handover / Warranty Functional Contract v1.1
 
-기준일: 2026-10-06
+기준일: 2026-10-10
 Functional ID: F-07
 Domain: D9 Completion / Handover
 대상 관리대장: 24 준공·인수·하자
@@ -255,3 +255,17 @@ WarrantyClaim: remedy + reinspection + closure evidence + decision authority com
 ## 22. Backend / UI Handoff
 
 Backend must keep separate objects/states for Commissioning, Handover, Warranty. UI must not collapse `test passed`, `ready for handover`, `owner accepted`, and `warranty closed` into one completion status.
+
+
+## 23. Reference Lifecycle Amendment v1.1 (PCR-2026-002, C2)
+
+승인: Product/Functional Owner — “제안대로 v1.1에 채택”
+적용 예정: 2026-10-10 00:00 +07:00. 검증된 릴리스에 포함되어야 효력이 발생한다.
+
+Exact reference의 정상적인 Issue correction/reinspection 버전 증가로 workflow가 막히면 SUP가 명시적 refresh command를 실행한다. 기존 authority, expectedVersion, exact current version 확인, audit, idempotency 및 모든 readiness/acceptance/closure gate는 유지한다. 자동 refresh는 금지한다. refresh는 기존 Issue identity 집합과 defect identity를 그대로 유지하며 Issue 추가·삭제·대체를 허용하지 않는다. cancelled/superseded Issue는 closure로 인정하지 않는다. 제출 당시 refs와 모든 이전 snapshot은 보존한다.
+
+- Commissioning `mark_ready_for_handover`는 선택적으로 `punchIssueRefs`와 `correctionActionRefs`를 함께 받는다. Punch identity 집합은 기존과 같아야 하고 모든 current-cycle Action은 최신이며 in-scope, verified/closed여야 한다. 두 목록이 없는 기존 no-Punch 요청은 계속 허용한다.
+- Handover `refresh_issue_references`는 선택적으로 `currentIssueRefs`를 받는다. 기존 `openIssueRefs`와 identity 집합이 같아야 한다. 서버가 current open/resolved refs를 파생 저장한다. Owner 승인 및 reservation snapshot은 바꾸지 않는다. final handover는 현재 open Issue가 없어야 한다.
+- Warranty `refresh_remedy_references`는 `issueRef`와 `actionRefs`를 함께 받아 같은 defect Issue 및 완전한 current correction cycle을 확인한다. `accept_remedy`도 두 refs를 선택적으로 함께 받을 수 있다. Remedy, 재검측 및 Warranty close 조건은 유지한다.
+
+Formal change record는 `app/reference/product_change_record_pcr_2026_002.json`이다. 기존 product-change-record schema와 Project Configuration validator는 변경하지 않는다.
