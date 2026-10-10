@@ -499,6 +499,9 @@ def _warranty(engine, guard, record, role, payload=None):
             issue = _ref(engine, issue_ref, project, "Issue", current=True,
                          code="WARRANTY_ISSUE_REQUIRED")
         require(issue.get("subtype") in {"Defect", "Punch", "NCR"} and _in_scope(record, issue, data["defectScope"]["locationIds"], same_organization=True), "WARRANTY_ISSUE_REQUIRED", "A current defect Issue in the warranty scope is required")
+        if guard == "warranty_reinspection_failed":
+            require(issue.get("status") in _ISSUE_OPEN, "WARRANTY_ISSUE_REQUIRED",
+                    "A failed reinspection can require rework only while its defect Issue remains actionable")
         if guard == "warranty_refresh_remedy_references_ready":
             _complete_current_action_cycle(engine, record, [issue], action_refs,
                                            data["defectScope"]["locationIds"],
@@ -537,16 +540,36 @@ def _warranty(engine, guard, record, role, payload=None):
         require(inspection.get("correctionCycle") == defect_issue.get("correctionCycle"), "WARRANTY_REINSPECTION_CYCLE_INVALID", "Reinspection must belong to the current defect correction cycle")
         correction_refs = inspection.get("correctiveActionRefs")
         require(isinstance(correction_refs, list) and bool(correction_refs), "WARRANTY_REINSPECTION_ACTION_REQUIRED", "Reinspection must record the corrective Actions it verifies")
-        corrections = _refs(engine, correction_refs, project, "Action", current=True, statuses=_ACTION_VERIFIED, code="WARRANTY_REINSPECTION_ACTION_REQUIRED", nonempty=True)
-        linked_action_refs = action_refs
-        linked_actions = [_ref(engine, x, project, "Action", current=False, code="WARRANTY_REINSPECTION_ACTION_REQUIRED") for x in linked_action_refs]
-        require({x["id"] for x in corrections} == {x["objectId"] for x in linked_action_refs}
+        # Inspection refs are immutable snapshots made when reinspection is
+        # requested; Actions can legitimately advance from submitted to
+        # verified/closed afterwards. Resolve the snapshot historically for
+        # its identity/scope/cycle evidence, then check the full current Issue
+        # cycle using exact current Action refs. A caller may supply fresh refs
+        # with accept_remedy; otherwise acceptance uses the existing exact
+        # current projection, while failed rework uses its existing state gate.
+        corrections = _refs(engine, correction_refs, project, "Action", current=False,
+                            code="WARRANTY_REINSPECTION_ACTION_REQUIRED", nonempty=True)
+        if guard == "warranty_reinspection_failed":
+            # Failed-inspection evaluation has no separate refresh command in
+            # this state. Resolve the already-projected Action identities to
+            # their latest records for the existing verified-cycle gate only;
+            # do not persist a reference projection change.
+            current_action_refs = _latest_action_refs(engine, action_refs, project)
+        else:
+            # Acceptance must use explicit current refs or the already-current
+            # projection. Never silently advance stale projected versions.
+            current_action_refs = action_refs
+        current_actions = _complete_current_action_cycle(
+            engine, record, [issue], current_action_refs,
+            data["defectScope"]["locationIds"], allowed_statuses=_ACTION_VERIFIED,
+        )
+        require({x["id"] for x in corrections} == {x["id"] for x in current_actions}
                 and all(x.get("relatedIssueId") == issue_ref["objectId"]
                         and x.get("correctionCycle") == defect_issue.get("correctionCycle")
                         and _in_scope(record, x, data["defectScope"]["locationIds"], same_organization=True)
-                        for x in corrections + linked_actions),
+                        for x in corrections + current_actions),
                 "WARRANTY_REINSPECTION_ACTION_REQUIRED", "Reinspection must verify every current corrective Action linked to this exact defect")
-        require(all((x.get("verifiedAt") or x.get("completedAt") or x.get("updatedAt")) and instant(x.get("verifiedAt") or x.get("completedAt") or x.get("updatedAt")) <= instant(inspected_at) for x in corrections),
+        require(all((x.get("verifiedAt") or x.get("completedAt") or x.get("updatedAt")) and instant(x.get("verifiedAt") or x.get("completedAt") or x.get("updatedAt")) <= instant(inspected_at) for x in current_actions),
                 "WARRANTY_REINSPECTION_CHRONOLOGY_INVALID", "Corrective Actions must be verified before the reinspection date")
         history_ids = {x.get("objectId") for x in data.get("reinspectionHistoryRefs", [])}
         require(inspection["id"] not in history_ids, "WARRANTY_REINSPECTION_DUPLICATE", "Every reinspection cycle must use a new immutable Inspection record")
@@ -775,6 +798,32 @@ def _complete_current_action_cycle(engine, source, issue_records, references, lo
                 for value in actions),
             "REFERENCE_CYCLE_INCOMPLETE", "Current correction-cycle Actions must be in scope and verified or closed")
     return actions
+
+
+def _latest_action_refs(engine, references, project_id):
+    """Resolve projected Action identities for the failed-inspection gate only.
+
+    This guard has no separate refresh command in its transition state, so it
+    checks the latest records for the already-projected identities without
+    mutating the claim projection. Later remedy work still requires its
+    explicit reference-refresh command.
+    """
+    require(isinstance(references, list), "WARRANTY_REINSPECTION_ACTION_REQUIRED",
+            "A projected corrective Action reference list is required")
+    latest = []
+    seen = set()
+    for reference in references:
+        _validate_reference_shape(reference, "WARRANTY_REINSPECTION_ACTION_REQUIRED")
+        require(reference["objectType"] == "Action", "WARRANTY_REINSPECTION_ACTION_REQUIRED",
+                "Corrective Action references must identify Actions")
+        identity = reference["objectId"]
+        require(identity not in seen, "REFERENCE_DUPLICATE", "Duplicate corrective Action identities are not allowed")
+        seen.add(identity)
+        action = engine.get("Action", identity)
+        require(action.get("projectId") == project_id, "WARRANTY_REINSPECTION_ACTION_REQUIRED",
+                "Corrective Action must belong to the current project")
+        latest.append({"objectType": "Action", "objectId": identity, "version": action["version"]})
+    return latest
 
 
 def _date_current(record, engine, code):
