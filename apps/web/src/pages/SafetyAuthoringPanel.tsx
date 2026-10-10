@@ -213,7 +213,7 @@ export function SafetyAuthoringPanel({ client, workspace, machine, online, onCre
     </header>
     <section className="grid gap-2 rounded-sm border border-border p-3" aria-label={t("scope")}>
       <h3 className="text-sm font-semibold">{t("scope")}</h3>
-      <dl className="grid gap-2 text-sm sm:grid-cols-2">
+      <dl className="grid gap-2 text-sm safety-authoring-responsive-grid">
         <div><dt className="font-medium">{t("project")}</dt><dd>{workspace.project.name} · {workspace.context.projectId}</dd></div>
         <div><dt className="font-medium">{t("package")}</dt><dd>{scope.packageId || "—"}</dd></div>
         <div><dt className="font-medium">{t("location")}</dt><dd>{scope.locationId || "—"}</dd></div>
@@ -229,7 +229,7 @@ export function SafetyAuthoringPanel({ client, workspace, machine, online, onCre
       <label className="grid gap-1 text-sm font-medium">{t("recordTitle")}
         <input className="min-h-11 rounded-sm border border-input bg-background px-3" value={title} maxLength={300} required disabled={busy || created} onChange={(event) => { setTitle(event.target.value); setCreated(false); setError(""); }} />
       </label>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 safety-authoring-responsive-grid">
         <label className="grid gap-1 text-sm font-medium">{t("reason")}<textarea className="rounded-sm border border-input bg-background px-3 py-2" maxLength={2000} disabled={busy || created} value={recordReason} onChange={(event) => setRecordReason(event.target.value)} /></label>
         <label className="grid gap-1 text-sm font-medium">{t("dueAt")}<input type="datetime-local" className="min-h-11 rounded-sm border border-input bg-background px-3" disabled={busy || created} value={dueAt} onChange={(event) => setDueAt(event.target.value)} /></label>
       </div>
@@ -249,13 +249,13 @@ export function SafetyAuthoringPanel({ client, workspace, machine, online, onCre
         {evidence.map(({ ref, record }) => <label key={ref.objectId} className="flex items-start gap-2 text-sm"><input type="checkbox" checked={evidenceIds.includes(ref.objectId)} onChange={() => toggle(evidenceIds, ref.objectId, setEvidenceIds)} /><span>{displayRecord(record, ref)}</span></label>)}
       </fieldset>
 
-      {machine === "safety_permit" && <div className="grid gap-3 sm:grid-cols-2">
+      {machine === "safety_permit" && <div className="grid gap-3 safety-authoring-responsive-grid">
         <label className="grid gap-1 text-sm font-medium">{t("permitNo")}<input className="min-h-11 rounded-sm border border-input bg-background px-3" maxLength={120} disabled={busy || created} value={permitNo} onChange={(event) => setPermitNo(event.target.value)} /></label>
         <label className="grid gap-1 text-sm font-medium">{t("workType")}<input className="min-h-11 rounded-sm border border-input bg-background px-3" maxLength={200} disabled={busy || created} value={workType} onChange={(event) => setWorkType(event.target.value)} /></label>
         <label className="grid gap-1 text-sm font-medium">{t("riskLevel")}<input className="min-h-11 rounded-sm border border-input bg-background px-3" maxLength={120} disabled={busy || created} value={riskLevel} onChange={(event) => setRiskLevel(event.target.value)} /></label>
       </div>}
 
-      {machine === "safety_stop_order" && <div className="grid gap-3 sm:grid-cols-2">
+      {machine === "safety_stop_order" && <div className="grid gap-3 safety-authoring-responsive-grid">
         <label className="grid gap-1 text-sm font-medium">{t("stopOrderNo")}<input className="min-h-11 rounded-sm border border-input bg-background px-3" maxLength={120} required disabled={busy || created} value={stopOrderNo} onChange={(event) => setStopOrderNo(event.target.value)} /></label>
         <label className="grid gap-1 text-sm font-medium">{t("stopScopeType")}<input className="min-h-11 rounded-sm border border-input bg-background px-3" maxLength={120} required disabled={busy || created} value={stopScopeType} onChange={(event) => setStopScopeType(event.target.value)} /></label>
         <label className="grid gap-1 text-sm font-medium">{t("stopReason")}<textarea className="rounded-sm border border-input bg-background px-3 py-2" maxLength={2000} required disabled={busy || created} value={stopReason} onChange={(event) => setStopReason(event.target.value)} /></label>
@@ -270,7 +270,7 @@ export function SafetyAuthoringPanel({ client, workspace, machine, online, onCre
         </fieldset>
       </div>}
 
-      {machine === "safety_equipment_inspection" && <div className="grid gap-3 sm:grid-cols-2">
+      {machine === "safety_equipment_inspection" && <div className="grid gap-3 safety-authoring-responsive-grid">
         <label className="grid gap-1 text-sm font-medium">{t("equipment")}<select className="min-h-11 rounded-sm border border-input bg-background px-3" required disabled={busy || created || !equipment.length} value={equipmentKey} onChange={(event) => setEquipmentKey(event.target.value)}>
           <option value="">{equipment.length ? t("equipment") : t("noEquipment")}</option>
           {equipment.map(({ ref, record }) => <option key={`${ref.objectType}:${ref.objectId}:${ref.version}`} value={`${ref.objectType}:${ref.objectId}:${ref.version}`}>{displayRecord(record, ref)}</option>)}
