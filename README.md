@@ -13,9 +13,11 @@ PR #2 병합 커밋 `d13e744`의 계약·검증 엔진을 재사용한 반응형
 
 Node.js 24.19.0과 npm 12.2.0을 CI 및 웹 이미지 빌드에서 사용합니다. 로컬에서도 `npm install --global npm@12.2.0` 후 `npm ci`를 실행하십시오. `packageManager`는 선언이며 npm을 자동 설치하지 않습니다.
 
-루트 `postinstall`은 잠금 파일에서 확인한 `node-forge@1.4.0`에 체크섬 고정 로컬 보안 패치를 적용합니다. 설치 그래프 검사는 패치된 소스 체크섬도 확인합니다. `npm ci --ignore-scripts`를 사용하면 패치가 생략되므로 이 검사는 실패합니다. 그런 설치에서는 검사 전에 `node scripts/apply_node_forge_backport.cjs`를 직접 실행하십시오. npm 잠금 버전과 GHSA 감사 항목은 그대로 유지되며, 로컬 완화는 업스트림 수정 릴리스와 출시 검토를 기다립니다.
+루트 `postinstall`은 잠금 파일에서 확인한 `braces@3.0.3`과 `node-forge@1.4.0`에 체크섬 고정 로컬 보안 백포트를 적용합니다. 설치 그래프 검사는 두 패치의 소스 체크섬을 확인합니다. `npm ci --ignore-scripts`에서는 패치가 생략되므로 검사 전에 `node scripts/apply_braces_backport.cjs`와 `node scripts/apply_node_forge_backport.cjs`를 직접 실행해야 합니다. Registry 패키지 이름·버전·integrity와 GHSA 감사 항목은 그대로 유지됩니다.
 
-`xcode`의 `uuid`는 보안 수정 버전 11.1.1로 제한합니다. npm 11.9는 이 workspace override를 설치하고도 `npm ls`에서 잘못된 범위로 보고하므로 npm 12.2.0이 필요합니다. 기존 lock·설치 그래프 검사는 유지합니다. `braces`는 여전히 취약 버전이며 출시 승인은 보류 상태입니다.
+`braces`의 기본 brace/parenthesis 중첩 한도는 100이며, 이를 넘는 패턴은 결정적으로 오류를 반환합니다. 두 로컬 백포트의 출처와 검토 대기 상태는 [`security/backports/braces-3.0.3.md`](security/backports/braces-3.0.3.md) 및 [`security/backports/node-forge-1.4.0.md`](security/backports/node-forge-1.4.0.md)에 기록했습니다. 이 패치들은 보고된 코드 경로를 완화하지만, 공식 수정 릴리스와 출시 검토는 대기 중입니다.
+
+`xcode`의 `uuid`는 보안 수정 버전 11.1.1로 제한합니다. npm 11.9는 이 workspace override를 설치하고도 `npm ls`에서 잘못된 범위로 보고하므로 npm 12.2.0이 필요합니다. 기존 lock·설치 그래프 검사는 유지합니다.
 
 ## 문서목록
 

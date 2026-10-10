@@ -47,6 +47,13 @@
     }
   ],
   "localBackports": {
+    "braces": {
+      "lockedVersion": "3.0.3",
+      "advisory": "GHSA-vfj7-8cjw-p6xm",
+      "patch": "security/backports/braces-3.0.3.json",
+      "upstreamCommit": "28d440b5dd449dbf1fe6f3506cf94ecca4d02660",
+      "status": "mitigated_by_pinned_backport_pending_upstream_release_and_release_review"
+    },
     "node-forge": {
       "lockedVersion": "1.4.0",
       "advisory": "GHSA-86w9-cpqp-85rv",
