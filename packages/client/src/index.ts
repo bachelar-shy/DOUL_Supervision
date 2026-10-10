@@ -227,6 +227,7 @@ export interface FormSchema {
 }
 export interface Workspace {
   project: { id: string; name: string };
+  locations?: Array<{ id: string; name: string }>;
   role: { id: string; actorGroup: HumanRole; roleCode: string; authorityCodes?: string[] };
   items: WorkItem[];
   audit: { id: string; command: string; at: string; afterState: string }[];
@@ -320,11 +321,11 @@ export class ApiClient {
       clearTimeout(timeout);
     }
   }
-  async login(actorGroup: HumanRole): Promise<Session> {
+  async login(actorGroup: HumanRole, projectId?: string): Promise<Session> {
     const generation = ++this.loginGeneration;
     const session = await this.request<Session>("/dev/sessions", {
       method: "POST",
-      body: JSON.stringify({ actorGroup }),
+      body: JSON.stringify(projectId ? { actorGroup, projectId } : { actorGroup }),
     });
     if (generation === this.loginGeneration) this.session = session;
     return session;

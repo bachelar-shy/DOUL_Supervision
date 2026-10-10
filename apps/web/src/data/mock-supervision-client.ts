@@ -12,7 +12,7 @@ import type {
   WorkItem,
   Workspace,
 } from "./ui-contract";
-import type { ScheduleSourceImportDetail, ScheduleSourceImportInput, ScheduleSourceImportResult, SupervisionClient, UploadOptions } from "./supervision-client";
+import type { DemoProjectDirectory, ScheduleSourceImportDetail, ScheduleSourceImportInput, ScheduleSourceImportResult, SupervisionClient, UploadOptions } from "./supervision-client";
 import { createMockWorkspace } from "./mock-workspace";
 import { registerProjectionCatalog } from "./register-projection-catalog.generated";
 
@@ -26,7 +26,7 @@ export class MockSupervisionClient implements SupervisionClient {
   session: Session | null = null;
   private role: HumanRole = "SUP";
 
-  async login(role: HumanRole): Promise<Session> {
+  async login(role: HumanRole, _projectId?: string): Promise<Session> {
     this.role = role;
     this.session = {
       accessToken: "ui-mock-preview",
@@ -40,6 +40,10 @@ export class MockSupervisionClient implements SupervisionClient {
       mode: "ui-mock-preview",
     };
     return this.session;
+  }
+
+  async demoProjects(): Promise<DemoProjectDirectory> {
+    return { defaultProjectId: "UI-MOCK", items: [] };
   }
 
   async workspace(): Promise<Workspace> {

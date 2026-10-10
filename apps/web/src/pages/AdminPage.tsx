@@ -7,6 +7,7 @@ import { RegisterTemplate } from "../ui/templates";
 import { SectionHeader } from "../ui";
 import { RegisterTable } from "../ui/catalog";
 import { PageBoundary } from "./PageBoundary";
+import { SampleUseCasePanel } from "./SampleUseCasePanel";
 
 export function AdminPage({
   client,
@@ -69,6 +70,11 @@ export function AdminPage({
             },
           ]}
         />
+        {client.kind === "http" && workspace.demo === true &&
+          workspace.role.actorGroup === "ADM" &&
+          workspace.project.name.includes("DOUL SAMPLE") && (
+            <SampleUseCasePanel client={client} projectId={workspace.project.id} />
+          )}
       </RegisterTemplate>
     </PageBoundary>
   );

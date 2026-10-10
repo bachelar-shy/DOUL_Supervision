@@ -8,7 +8,7 @@ import type {
   WorkItem,
   Workspace,
 } from "../data/ui-contract";
-import { ApiError, type SupervisionClient } from "../data/supervision-client";
+import { ApiError, type DemoProject, type SupervisionClient } from "../data/supervision-client";
 import { reasonLabel, roles } from "../labels";
 import { ActionButton, EmptyState, PageHeader } from "../ui";
 import { MobileNavigation, NavigationList } from "../ui/catalog";
@@ -56,6 +56,9 @@ export function AppShell({ client }: { client: SupervisionClient }) {
       ? t(value.labelKey ?? "", { defaultValue: value.label })
       : "";
   const [role, setRole] = useState<HumanRole>("SUP");
+  const [demoProjects, setDemoProjects] = useState<DemoProject[]>([]);
+  const [projectChoice, setProjectChoice] = useState("");
+  const [projectDirectoryReady, setProjectDirectoryReady] = useState(client.kind !== "http");
   const [todayDate, setTodayDate] = useState(() => formatLongDate(new Date()));
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [route, setRoute] = useState(location.hash.slice(2) || "today");
@@ -90,9 +93,30 @@ export function AppShell({ client }: { client: SupervisionClient }) {
     }
   }, [client, t]);
   useEffect(() => {
+    if (client.kind !== "http") return;
+    let mounted = true;
+    setProjectDirectoryReady(false);
+    void client.demoProjects().then((directory) => {
+      if (!mounted) return;
+      setDemoProjects(directory.items);
+      setProjectChoice(directory.defaultProjectId);
+    }).catch(() => {
+      /* Production hosts never expose /dev/projects. */
+      if (mounted) {
+        setDemoProjects([]);
+        setProjectChoice("");
+      }
+    }).finally(() => {
+      if (mounted) setProjectDirectoryReady(true);
+    });
+    return () => { mounted = false; };
+  }, [client]);
+  useEffect(() => {
+    if (!projectDirectoryReady) return;
     const n = ++sequence.current;
+    setLoading(true);
     client
-      .login(role)
+      .login(role, projectChoice || undefined)
       .then(() => n === sequence.current ? client.workspace() : undefined)
       .then((w) => {
         if (w && n === sequence.current) { setWorkspace(w); setError(""); }
@@ -104,7 +128,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         if (n === sequence.current) setLoading(false);
       });
     return () => { ++sequence.current; };
-  }, [client, role]);
+  }, [client, role, projectChoice, projectDirectoryReady]);
   useEffect(() => {
     let timer = 0;
     setTodayDate(formatLongDate(new Date()));
@@ -192,6 +216,8 @@ export function AppShell({ client }: { client: SupervisionClient }) {
   return (
     <div className="app-shell">
       <aside className={"sidebar " + (menu ? "open" : "")}>
+        <button type="button" className="sidebar-close" aria-label="사이드바 닫기"
+          onClick={() => setMenu(false)}>×</button>
         <div className="brand">
           <b>
             DOUL<span> / </span>
@@ -202,8 +228,32 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         <div className="project-chip">
           <span className="project-mark">D</span>
           <div>
-            <strong>{t("app.sampleSite")}</strong>
-            <small>{t("app.sampleData")}</small>
+            <strong>{workspace?.project.name ?? t("app.sampleSite")}</strong>
+            {workspace?.demo && <small>{t("app.sampleData")}</small>}
+                {demoProjects.length > 1 && (
+                  <label className="project-switch">
+                    시험 프로젝트{" "}
+                    <select aria-label="프로젝트 선택" value={projectChoice}
+                      onChange={(e) => {
+                        if (e.target.value === projectChoice) return;
+                        ++sequence.current;
+                        setDialog(null);
+                        setSelected(null);
+                        setError("");
+                        setWorkspace(null);
+                        setLoading(true);
+                        setProjectChoice(e.target.value);
+                        nav("today");
+                        setMenu(false);
+                      }}>
+                      {demoProjects.map((project) => (
+                        <option key={project.projectId} value={project.projectId}>
+                          {project.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
           </div>
         </div>
         <NavigationList
