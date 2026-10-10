@@ -457,3 +457,26 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
   .sidebar nav button, .record-row { transition: none; }
 }
+
+/*
+ * Safety draft fields respond to panel width rather than global breakpoints.
+ * Native date-time inputs otherwise overflow a two-column form near 768px.
+ */
+[data-ui-component="safety-authoring-panel"],
+[data-ui-component="safety-authoring-panel"] :is(form, fieldset, label),
+[data-ui-component="safety-authoring-panel"] .safety-authoring-responsive-grid,
+[data-ui-component="safety-authoring-panel"] .safety-authoring-responsive-grid > * {
+  min-width: 0;
+  max-width: 100%;
+}
+[data-ui-component="safety-authoring-panel"] .safety-authoring-responsive-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+}
+[data-ui-component="safety-authoring-panel"] :is(input:not([type="checkbox"]), select, textarea) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+[data-ui-component="safety-authoring-panel"] :is(dd, legend, label span) {
+  overflow-wrap: anywhere;
+}
