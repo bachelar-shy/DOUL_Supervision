@@ -18,6 +18,24 @@ export function AdminPage({
 }) {
   const { t } = useTranslation();
   const [rows, setRows] = useState<RecordDTO[]>([]);
+  const [accountRole, setAccountRole] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [accountMessage, setAccountMessage] = useState("");
+  const [accountError, setAccountError] = useState("");
+  const passwordMode = client.session?.mode === "PASSWORD";
+  async function createAccount(event: React.FormEvent) {
+    event.preventDefault(); setCreating(true); setAccountMessage(""); setAccountError("");
+    const selected = rows.find(row => row.id === accountRole);
+    if (!selected) {setCreating(false); return;}
+    try {
+      await client.request("/auth/accounts", {method:"POST",body:JSON.stringify({username,password,partyId:selected.partyId,roleAssignmentId:selected.id})});
+      setAccountMessage(t("auth.admin.success"));
+      setUsername(""); setPassword(""); setAccountRole("");
+    } catch {setAccountError(t("auth.admin.error"));}
+    finally {setCreating(false);}
+  }
   useEffect(() => {
     client
       .request<RecordDTO[]>(client.path("/roles"))
@@ -37,6 +55,21 @@ export function AdminPage({
           <div className="notice">{t("admin.notice")}</div>
         }
       >
+        {passwordMode && client.session?.actor.actorGroup === "ADM" && (
+          <form onSubmit={event => void createAccount(event)} className="panel" style={{padding:20,display:"grid",gap:12,maxWidth:600}}>
+            <h2>{t("auth.admin.createTitle")}</h2>
+            <p>{t("auth.admin.createHelp")}</p>
+            <label>{t("auth.admin.actor")}<select required value={accountRole} onChange={event=>setAccountRole(event.target.value)}>
+              <option value="">{t("auth.admin.chooseActor")}</option>
+              {rows.filter(row => row.active && row.partyId).map(row=><option key={row.id} value={row.id}>{roles[String(row.actorGroup)] || String(row.actorGroup)} · {String(row.roleCode)} · {String(row.partyId).slice(0,8)}</option>)}
+            </select></label>
+            <label>{t("auth.admin.username")}<input value={username} onChange={event=>setUsername(event.target.value)} pattern="[a-z][a-z0-9._-]{2,63}" maxLength={64} autoComplete="off" required/></label>
+            <label>{t("auth.admin.password")}<input type="password" value={password} onChange={event=>setPassword(event.target.value)} minLength={12} maxLength={128} autoComplete="new-password" required/></label>
+            {accountError && <p role="alert">{accountError}</p>}
+            {accountMessage && <p role="status">{accountMessage}</p>}
+            <button className="primary" type="submit" disabled={creating || !accountRole}>{creating?t("auth.admin.submitting"):t("auth.admin.submit")}</button>
+          </form>
+        )}
         <RegisterTable
           rows={rows}
           rowKey={(row) => row.id}

@@ -98,6 +98,10 @@ export interface SupervisionClient {
   readonly session: Session | null;
   login(role: HumanRole, projectId?: string): Promise<Session>;
   demoProjects(): Promise<DemoProjectDirectory>;
+  loginPassword(username: string, password: string): Promise<Session>;
+  logout(): Promise<void>;
+  authMode(): Promise<"password" | "external" | "demo">;
+  onAuthenticationExpired(handler: () => void): () => void;
   workspace(): Promise<Workspace>;
   execute(
     item: WorkItem,
@@ -166,6 +170,19 @@ class HttpSupervisionClient implements SupervisionClient {
     return this.client.request<DemoProjectDirectory>("/dev/projects");
   }
 
+  loginPassword(username: string, password: string) {
+    return this.client.loginPassword(username, password);
+  }
+  logout() { return this.client.logout(); }
+  async authMode(): Promise<"password" | "external" | "demo"> {
+    const status = await this.client.request<{ mode: string; adapters: { authentication: string } }>("/health");
+    if (status.mode === "local-demo") return "demo";
+    return status.adapters.authentication === "local-password-pinned-rs256" ? "password" : "external";
+  }
+  onAuthenticationExpired(handler: () => void) {
+    this.client.onUnauthorized = handler;
+    return () => { if (this.client.onUnauthorized === handler) this.client.onUnauthorized = null; };
+  }
   workspace() {
     return this.client.workspace();
   }

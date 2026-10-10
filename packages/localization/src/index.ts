@@ -35,6 +35,7 @@ import {
 import { creationEn, creationKo, creationVi } from "./creation-translations";
 import { mandatoryWorkflowEn, mandatoryWorkflowKo, mandatoryWorkflowVi } from "./mandatory-workflow-translations";
 export { actionAuthoringTranslations } from "./action-authoring-translations";
+import { authLoginKo, authLoginVi, authLoginEn } from "./auth-login-translations";
 
 export {
   commands as koreanCommands,
@@ -114,6 +115,7 @@ export function languageDirection(value?: string | null): "ltr" | "rtl" {
 }
 
 const ko = {
+  ...authLoginKo,
   "audit.created": "{{type}} 작성",
   "audit.record": "업무 기록",
   "audit.processed": "업무 처리 기록",
@@ -719,6 +721,7 @@ export type TranslationKey = keyof typeof ko;
 type DraftTranslationDictionary = Partial<Record<TranslationKey, string>>;
 
 const vi: DraftTranslationDictionary = {
+  ...authLoginVi,
   "audit.created": "Tạo {{type}}",
   "audit.record": "Hồ sơ công việc",
   "audit.processed": "Lịch sử xử lý",
@@ -991,6 +994,7 @@ const vi: DraftTranslationDictionary = {
 };
 
 const en: DraftTranslationDictionary = {
+  ...authLoginEn,
   "audit.created": "Created {{type}}",
   "audit.record": "Work record",
   "audit.processed": "Work processing record",

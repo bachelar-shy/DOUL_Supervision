@@ -47,7 +47,7 @@ function millisecondsUntilNextLocalDay(now: Date) {
   return Math.max(1000, next.getTime() - now.getTime());
 }
 
-export function AppShell({ client }: { client: SupervisionClient }) {
+export function AppShell({ client, passwordMode = false, onLogout }: { client: SupervisionClient; passwordMode?: boolean; onLogout?: (revoked: boolean) => void }) {
   const { t, i18n } = useTranslation();
   const roleLabel = (value: HumanRole) =>
     t(`roles.${value}`, { defaultValue: roles[value] });
@@ -55,10 +55,10 @@ export function AppShell({ client }: { client: SupervisionClient }) {
     value
       ? t(value.labelKey ?? "", { defaultValue: value.label })
       : "";
-  const [role, setRole] = useState<HumanRole>("SUP");
+  const [role, setRole] = useState<HumanRole>(passwordMode ? client.session?.actor.actorGroup ?? "SUP" : "SUP");
   const [demoProjects, setDemoProjects] = useState<DemoProject[]>([]);
   const [projectChoice, setProjectChoice] = useState("");
-  const [projectDirectoryReady, setProjectDirectoryReady] = useState(client.kind !== "http");
+  const [projectDirectoryReady, setProjectDirectoryReady] = useState(client.kind !== "http" || passwordMode);
   const [todayDate, setTodayDate] = useState(() => formatLongDate(new Date()));
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [route, setRoute] = useState(location.hash.slice(2) || "today");
@@ -93,7 +93,10 @@ export function AppShell({ client }: { client: SupervisionClient }) {
     }
   }, [client, t]);
   useEffect(() => {
-    if (client.kind !== "http") return;
+    if (client.kind !== "http" || passwordMode) {
+      setProjectDirectoryReady(true);
+      return;
+    }
     let mounted = true;
     setProjectDirectoryReady(false);
     void client.demoProjects().then((directory) => {
@@ -110,13 +113,12 @@ export function AppShell({ client }: { client: SupervisionClient }) {
       if (mounted) setProjectDirectoryReady(true);
     });
     return () => { mounted = false; };
-  }, [client]);
+  }, [client, passwordMode]);
   useEffect(() => {
     if (!projectDirectoryReady) return;
     const n = ++sequence.current;
     setLoading(true);
-    client
-      .login(role, projectChoice || undefined)
+    (passwordMode ? Promise.resolve(client.session) : client.login(role, projectChoice || undefined))
       .then(() => n === sequence.current ? client.workspace() : undefined)
       .then((w) => {
         if (w && n === sequence.current) { setWorkspace(w); setError(""); }
@@ -128,7 +130,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         if (n === sequence.current) setLoading(false);
       });
     return () => { ++sequence.current; };
-  }, [client, role, projectChoice, projectDirectoryReady]);
+  }, [client, role, passwordMode, projectChoice, projectDirectoryReady]);
   useEffect(() => {
     let timer = 0;
     setTodayDate(formatLongDate(new Date()));
@@ -230,7 +232,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
           <div>
             <strong>{workspace?.project.name ?? t("app.sampleSite")}</strong>
             {workspace?.demo && <small>{t("app.sampleData")}</small>}
-                {demoProjects.length > 1 && (
+                {!passwordMode && demoProjects.length > 1 && (
                   <label className="project-switch">
                     시험 프로젝트{" "}
                     <select aria-label="프로젝트 선택" value={projectChoice}
@@ -312,7 +314,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                 ))}
               </select>
             </label>
-            <label className="role-picker">
+            {!passwordMode && <label className="role-picker">
               {t("app.rolePicker")}{" "}
               <select
                 aria-label={t("app.rolePickerAria")}
@@ -336,7 +338,8 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   </option>
                 ))}
               </select>
-            </label>
+            </label>}
+            {passwordMode && <button className="secondary" onClick={() => {void client.logout().then(() => onLogout?.(true)).catch(() => onLogout?.(false));}}>{t("auth.logout")}</button>}
             <span className="avatar">{roleLabel(role)[0]}</span>
           </div>
         </header>
