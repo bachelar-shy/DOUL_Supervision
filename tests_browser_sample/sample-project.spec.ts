@@ -39,14 +39,25 @@ test("긴 관리자 메뉴가 화면에 가려지지 않고 스크롤된다", as
   await page.setViewportSize({ width: 1365, height: 780 });
   await page.goto("/#/today");
   await expect(page.getByLabel("프로젝트 선택")).toBeVisible();
+  await expect(page.locator("aside.sidebar .project-chip strong"))
+    .toHaveText("DOUL SAMPLE · WWT 공장 (합성 시험자료)", { timeout: 30_000 });
+  // A role picker is available before the server has returned that role's
+  // workspace. Wait for the authenticated ADM workspace before navigation.
+  const administratorWorkspace = page.waitForResponse(async (response) => {
+    if (!/\/projects\/[^/]+\/workspace(?:\?|$)/.test(response.url()) || response.status() !== 200) return false;
+    const body = await response.json();
+    return body?.role?.actorGroup === "ADM";
+  }, { timeout: 30_000 });
   await page.locator("header.topbar .role-picker select").last().selectOption("ADM");
+  await administratorWorkspace;
   const nav = page.locator("aside.sidebar nav");
   await expect(nav).toBeVisible();
-  await expect.poll(async () => nav.evaluate(node => ({
+  const metrics = await nav.evaluate(node => ({
     scroll: node.scrollHeight, client: node.clientHeight,
-  }))).toMatchObject({ scroll: expect.any(Number), client: expect.any(Number) });
+  }));
+  expect(metrics.scroll).toBeGreaterThan(metrics.client);
   await nav.getByRole("button", { name: "배치·권한" }).click();
-  await expect(page.getByTestId("sample-usecase-panel")).toBeVisible();
+  await expect(page.getByTestId("sample-usecase-panel")).toBeVisible({ timeout: 20_000 });
 });
 
 test("샘플 검증 패널은 모바일·태블릿·데스크톱에서 가로 넘침이 없다", async ({ page }) => {
