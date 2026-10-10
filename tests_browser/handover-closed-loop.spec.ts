@@ -103,6 +103,7 @@ async function useRole(page: Page, role: "CON" | "SUP" | "OWN") {
 type CommandInput = string | boolean | Ref | Ref[] | Record<string, unknown> | Array<Record<string, unknown>>;
 
 const commandFieldLabels: Record<string, RegExp> = {
+  closureRef: /closure evidence reference|종결 근거 참조|tham chiếu bằng chứng đóng hồ sơ/i,
   precommissioningChecklist: /precommission|checklist|시운전|점검/i,
   testResultRef: /testResultRef|시험 결과 증빙 참조|시험 증빙/i,
   outcome: /outcome|^시험 결과$/i,
@@ -185,6 +186,20 @@ async function runCompletionCommand(
     await expect(actionSelection).toBeVisible();
     expect(await issueSelection.inputValue(), "current issue must start with an empty selection").toBe("");
     expect(await actionSelection.locator("option:checked").count(), "current Actions must start unselected").toBe(0);
+  }
+  if (/close warranty claim/i.test(command.source)) {
+    const closureSelect = dialog.getByLabel(commandFieldLabels.closureRef);
+    const closureRef = fields.closureRef as Ref;
+    await expect(closureSelect).toBeVisible();
+    expect(await closureSelect.inputValue(), "closure Issue must start unselected").toBe("");
+    const options = await closureSelect.locator("option").evaluateAll((nodes) => nodes
+      .map((node) => (node as HTMLOptionElement).value)
+      .filter(Boolean)
+      .map((value) => JSON.parse(value) as Ref));
+    expect(options).toHaveLength(1);
+    expect(options[0]).toMatchObject({
+      objectType: "Issue", objectId: closureRef.objectId, version: closureRef.version,
+    });
   }
   for (const [field, value] of Object.entries(fields)) {
     const label = commandFieldLabels[field] || new RegExp(field, "i");
