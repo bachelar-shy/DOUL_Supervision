@@ -183,7 +183,7 @@ async function runCompletionCommand(
     const actionSelection = dialog.getByLabel(commandFieldLabels.actionRefs);
     await expect(issueSelection).toBeVisible();
     await expect(actionSelection).toBeVisible();
-    expect(await issueSelection.locator("option:checked").count(), "current issue must start unselected").toBe(0);
+    expect(await issueSelection.inputValue(), "current issue must start with an empty selection").toBe("");
     expect(await actionSelection.locator("option:checked").count(), "current Actions must start unselected").toBe(0);
   }
   for (const [field, value] of Object.entries(fields)) {
