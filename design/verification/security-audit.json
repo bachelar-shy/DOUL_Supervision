@@ -104,7 +104,8 @@
       "pullRequest": 138,
       "mergeCommit": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
       "MacPR": "all four triggered workflows passed",
-      "MacMain": "pending"
+      "MacMain": "all four triggered workflows passed",
+      "mainProof": "/Users/automation/work/DOUL-ci-runtime/pr138-6a24662-checks.json"
     }
   }
 }
