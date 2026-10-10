@@ -258,7 +258,7 @@ export function MediaAnalysisPanel({ client, workspace, online, onChanged }: {
   const missingRangeCount = coverageSources.reduce((sum, source) => sum + records(source.missingRanges).length, 0);
   const audioRangeCount = coverageSources.reduce((sum, source) => sum + records(source.audioProcessedRanges).length, 0);
 
-  return <section className="panel mt-4" data-testid="media-analysis-panel">
+  return <section className="panel media-analysis-panel mt-4" data-testid="media-analysis-panel">
     <div className="section-heading"><div><h2>{tx.title}</h2><p className="muted">{tx.intro}</p></div><span>{tx.original}</span></div>
     {syntheticResult && <p className="notice" role="note">{tx.synthetic}</p>}
     {!createEnabled && <p className="notice" role="status">{queueUnavailable}</p>}

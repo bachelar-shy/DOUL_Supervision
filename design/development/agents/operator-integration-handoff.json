@@ -33,6 +33,13 @@
       ],
       "sampledPeakRssBytes": 3420848128,
       "acceptance": "descriptive only; workload/budget and concurrent production validation remain required"
+    },
+    "responsiveFix": {
+      "firstMacHead": "924b5f060225a7bbd215dd1bbb18a2bf6d382e1e",
+      "firstMacResult": "6 workflows passed;109 browser passed and3 mobile overflow tests failed",
+      "cause": "Media native selects and auto-sized grid children expanded to long option intrinsic widths",
+      "change": "Scoped min-width0/width100% controls, wrapped long references and mobile heading",
+      "local": "9 responsive cases390/768/1440 passed44.6s; full real Media flow with390px ko/vi/en source/hash checks passed18.4s; boundary/types/lint/build passed"
     }
   },
   "next": [

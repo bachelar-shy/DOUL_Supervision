@@ -1663,3 +1663,26 @@ strong {
 .parallel-test-detail pre, .empty-state pre { max-height: 32rem; overflow: auto; padding: 1rem; border-radius: .5rem; background: var(--muted, #f3f5f6); font-size: .8rem; white-space: pre-wrap; overflow-wrap: anywhere; }
 .parallel-test-detail { min-width: 0; }
 @media (max-width: 760px) { .parallel-test-grid { grid-template-columns: 1fr; } .parallel-test-list { max-height: 16rem; } }
+
+/* Native selects must not size the media grid to their longest option. */
+.media-analysis-panel,
+.media-analysis-panel .grid,
+.media-analysis-panel .grid > *,
+.media-analysis-panel .section-heading > * {
+  min-width: 0;
+}
+.media-analysis-panel select,
+.media-analysis-panel input:not([type="checkbox"]),
+.media-analysis-panel textarea {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.media-analysis-panel {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px) {
+  .media-analysis-panel .section-heading {
+    flex-wrap: wrap;
+  }
+}

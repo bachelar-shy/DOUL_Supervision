@@ -97,21 +97,16 @@
   ],
   "integrationVerification": {
     "candidateBranch": "goal/reference-integration-v1-1",
-    "baseCommit": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
-    "status": "API_and_static_UI_passed; Warranty_final_browser_and_exact_head_Mac_CI_pending",
+    "status": "merged_and_PR_and_main_11_Mac_workflows_passed",
+    "mergeCommit": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
     "c2Policy": "Explicit qualified SUP current-reference refresh only; Product-approved PCR-2026-002; no automatic rewrite or gate relaxation.",
-    "handoff": "design/development/agents/reference-integration-handoff.json"
+    "evidence": "design/verification/reference-v1-1-main-mac-20261010.json"
   },
   "remainingIndependentDevelopment": [
     {
-      "branch": "goal/f03-combined-safety",
-      "work": "Join actual equipment inspection/certificate fail/pass, Permit activation, Stop, verified remedy, explicit lift and separate resume in one synthetic real-API browser acceptance",
-      "status": "one local isolated case passed; root review and integrated Mac CI pending"
-    },
-    {
-      "branch": "goal/media-analysis-browser-v1",
-      "work": "Connect existing media analysis APIs to operator browser review, full coverage/sources, human confirmation/rejection and eligible-only Issue creation",
-      "status": "implementation in progress; no actual provider or pilot claim"
+      "branch": "goal/operator-completion-v1",
+      "work": "Media, Warranty and Payment acceptance plus corrected responsive Media layout",
+      "status": "local passed; final exact-head Mac Actions pending"
     }
   ],
   "productApproval": {
@@ -119,9 +114,9 @@
     "issue": 132,
     "decision": "approved",
     "statement": "제안대로 v1.1에 채택",
-    "releaseEffect": "approved for verified release; integrated C2 acceptance and security release review remain pending"
+    "releaseEffect": "C2 implementation integrated and main validated; official release and actual pilot remain dependent on #133/#134"
   },
-  "latestCheckpoint": "54b2208",
+  "latestCheckpoint": "924b5f0",
   "operatorCandidate": {
     "branch": "goal/operator-completion-v1",
     "sourceCheckpoint": "7e2c70a",
@@ -130,7 +125,7 @@
       "same-defect current Warranty closure selector",
       "full partial-payment/correction/cancellation/final-payment UI acceptance"
     ],
-    "verification": "Root focused Media, final Handover, read-only connection-reset transport and delayed Media mutation-selection tests passed; Payment and Warranty selector focused browser proof remains valid; strict npm12 build, web types/lint/boundary passed. Exact latest Mac Actions pending; superseded dee3988 runs intentionally cancelled.",
+    "verification": "Local types/lint/boundary/npm12 build and focused workflow tests passed. First exact-head Mac attempt:6/7 workflows passed;109 browser passed,3 mobile overflow cases failed. Responsive Media controls corrected; final-head CI required.",
     "actualPilotPerformed": false
   },
   "mergedMainVerification": {
@@ -141,5 +136,15 @@
     "mvpBrowserPassed": 109,
     "mockLocalizationPassed": 7,
     "firstAttempt": "One ECONNRESET fixture transport failure; unchanged source passed failed-job rerun. GET-only fixture transport resilience is a separate operator candidate change."
+  },
+  "performanceVerification": {
+    "evidence": "design/verification/issue124-live-http-50k-30round-72c8934.json",
+    "status": "descriptive_actual_HTTP_PostgreSQL_measurement_completed",
+    "p95Ms": [
+      2092.879,
+      2114.625
+    ],
+    "sampledPeakRssBytes": 3420848128,
+    "limitation": "Synthetic single client, development snapshot adapter; no agreed production workload/SLO or field acceptance."
   }
 }
