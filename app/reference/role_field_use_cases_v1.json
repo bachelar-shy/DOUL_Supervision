@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.1",
   "documentStatus": "proposed_for_product_and_field_review",
   "sourceBranch": "product/field-role-use-cases-v1-20261011",
   "date": "2026-10-11",
@@ -32,7 +32,28 @@
     "roleBehaviorValidation": "proposed_cases_not_tested",
     "pilotStatus": "not_started",
     "humanTermValidation": "pending",
-    "foreignLanguageValidation": "deferred"
+    "foreignLanguageValidation": "deferred",
+    "implementationStatus": "design_only",
+    "situationTypes": [
+      "daily_routine",
+      "request_review",
+      "incident_response",
+      "change_decision",
+      "completion_closeout",
+      "admin_operations",
+      "statutory_compliance"
+    ],
+    "requestedProposals": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A06",
+      "A07",
+      "A09",
+      "A10"
+    ]
   },
   "commonConstraints": [
     "공식 업무명령은 RoleAssignment·Qualification·Project/Package/Location/Discipline 범위 내에서만 허용",
@@ -68,7 +89,17 @@
         "QA-FIELD-INSP-001",
         "QA-NEXTWORK-001"
       ],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 검측요청 접수",
+        "역할별 수행 검증: 해당 공종의 유효 도면·개정·요건과 위치를 확인하고 검측 및 판정 기록",
+        "업무 완료 확인: 판정 근거와 서명 및 후속공정 허용 여부를 별도로 기록",
+        "실패·권한 검증: 구버전 도면 또는 누락 증빙이면 검측 보류"
+      ]
     },
     {
       "id": "UC-SUP-02",
@@ -90,7 +121,17 @@
       "evidence": "제출문서·시방·상세도·승인결과",
       "uiActionLabelCandidate": "제출자료 검토",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 시공사 제출자료 접수",
+        "역할별 수행 검증: 제출 범위·도면·시방·견본·공종 간 간섭을 검토하고 보완 또는 승인 절차 연결",
+        "업무 완료 확인: 검토 의견과 유효 승인 버전의 명시적 기록",
+        "실패·권한 검증: 시공사의 재제출 자료가 이전판을 덮어쓰면 차단"
+      ]
     },
     {
       "id": "UC-SUP-03",
@@ -112,7 +153,17 @@
       "evidence": "반입검사표·시험성적서·로트·사진",
       "uiActionLabelCandidate": "자재 반입검사",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 자재 반입 또는 시험결과 제출",
+        "역할별 수행 검증: 승인품 일치·반입 로트·시험기준 및 부적합 여부 확인",
+        "업무 완료 확인: 사용가능 여부와 불합격의 후속조치를 분리 기록",
+        "실패·권한 검증: 시험성적서 누락 또는 로트 불일치 시 사용 제한"
+      ]
     },
     {
       "id": "UC-SUP-04",
@@ -139,7 +190,17 @@
         "QA-CORR-001",
         "QA-REINSP-001"
       ],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "incident_response",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 부적합 판정 및 시정자료 접수",
+        "역할별 수행 검증: 시정 지시·재검측·현 주기 증빙 확인 후 별도로 부적합 종결",
+        "업무 완료 확인: 최신 재검측 합격 및 시정 증빙을 참조해 권한자 종결",
+        "실패·권한 검증: 시공사 자체 종결 또는 과거 증빙 재사용 차단"
+      ]
     },
     {
       "id": "UC-SUP-05",
@@ -162,7 +223,17 @@
       "approvedTermIds": [
         "SAF-STOP-001"
       ],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 고위험작업 신청 또는 위험 발견",
+        "역할별 수행 검증: 작업 전 조건과 장비상태 확인 후 권한 내 허가 및 중지·시정검증·중지해제 수행",
+        "업무 완료 확인: 중지해제 및 별도 작업재개 요건 충족 전 작업불가",
+        "실패·권한 검증: 허가 승인만으로 작업가능 처리하거나 시공사가 자체 재개하면 차단"
+      ]
     },
     {
       "id": "UC-SUP-06",
@@ -184,7 +255,17 @@
       "evidence": "법정 승인서·시험성적·환경측정·점검표",
       "uiActionLabelCandidate": "법정조건 확인",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "statutory_compliance",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 법정검사 또는 조건 충족 시점 도래",
+        "역할별 수행 검증: 허가조건·소방검사·환경 측정 및 법정 제출자료를 검토하고 미충족사항 기록",
+        "업무 완료 확인: 법정기관 판단과 감리 확인을 별도로 식별",
+        "실패·권한 검증: 법정 수용을 감리 내부 확인만으로 대체하면 차단"
+      ]
     },
     {
       "id": "UC-SUP-07",
@@ -208,7 +289,17 @@
         "SCH-BASE-001",
         "SCH-DELAY-001"
       ],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "daily_routine",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 시공사 진도·지연보고 제출",
+        "역할별 수행 검증: 기준공정과 실적·예측을 비교하고 지연 사실·영향·회복계획 검토",
+        "업무 완료 확인: 동결된 실적과 기준공정 개정의 근거가 남음",
+        "실패·권한 검증: 지연사건만으로 공기연장을 인정하거나 예측을 기준선에 덮어쓰면 차단"
+      ]
     },
     {
       "id": "UC-SUP-08",
@@ -231,7 +322,17 @@
         "PAY-MEAS-001",
         "PAY-REC-001"
       ],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "daily_routine",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 기성청구 및 물량내역 제출",
+        "역할별 수행 검증: 도면·BOQ·기성기간·중복청구를 검토하고 검증수량과 추천금액 기록",
+        "업무 완료 확인: 청구수량·검증수량·추천액을 분리 표시",
+        "실패·권한 검증: 감리 추천을 발주처 지급승인으로 표시하면 차단"
+      ]
     },
     {
       "id": "UC-SUP-09",
@@ -252,7 +353,17 @@
       "evidence": "보고서·근거도면·사진·의사결정 참조",
       "uiActionLabelCandidate": "발주처 보고",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "daily_routine",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 보고 주기 도래 또는 중대사항 발생",
+        "역할별 수행 검증: 사실·위험·대안·기한·요청 결정을 기록하고 수령 이후 조치 추적",
+        "업무 완료 확인: 발주처 결정 후 후속조치 검증까지 별도 완료",
+        "실패·권한 검증: 보고 수령과 결정 또는 업무 종결을 동일 처리하면 차단"
+      ]
     },
     {
       "id": "UC-SUP-10",
@@ -274,7 +385,17 @@
       "evidence": "기술질의·개정도면·배포확인·변경결정",
       "uiActionLabelCandidate": "설계질의 검토",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "change_decision",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 설계질의 또는 개정도면 도착",
+        "역할별 수행 검증: 설계답변·개정 사유·현장배포·변경 영향 및 필요한 발주처 결정 확인",
+        "업무 완료 확인: 구도면 회수와 유효 개정 및 관련 검측 재확인",
+        "실패·권한 검증: 설계자의 기술답변만으로 비용·공기 승인 처리하면 차단"
+      ]
     },
     {
       "id": "UC-SUP-11",
@@ -296,7 +417,17 @@
       "evidence": "시운전 기록·Punch 목록·준공도면·인계서",
       "uiActionLabelCandidate": "준공검사·인수 준비",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "completion_closeout",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 시공사 준공자료와 시운전결과 제출",
+        "역할별 수행 검증: 시험결과·미결하자·준공도서·인수요건을 검증하여 발주처에 보고",
+        "업무 완료 확인: 시운전 적합과 인수 승인과 하자 종결의 독립 기록",
+        "실패·권한 검증: 미결 지적사항을 숨기고 인수완료 처리하면 차단"
+      ]
     },
     {
       "id": "UC-SUP-12",
@@ -316,7 +447,17 @@
       "evidence": "위험대장·감사기록·조치검증·교훈 검토",
       "uiActionLabelCandidate": "위험·감사 후속확인",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "admin_operations",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 위험등록 또는 감사 부적합 발견",
+        "역할별 수행 검증: 위험대응책·감사 지적·독립 검증·재발방지 지식을 기록",
+        "업무 완료 확인: 위험 수용권한과 감사종결 근거 및 채택된 교훈 식별",
+        "실패·권한 검증: 담당자가 자신의 감사 지적을 독립검증 없이 종결하면 차단"
+      ]
     },
     {
       "id": "UC-CON-01",
@@ -337,7 +478,17 @@
       "evidence": "도면번호·개정·수신기록",
       "uiActionLabelCandidate": "도면 수령확인",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 신규 개정도면 배포",
+        "역할별 수행 검증: 유효 개정·배포이력·이전판 사용중지를 확인하고 현장반영",
+        "업무 완료 확인: 수령확인과 현장 사용가능판을 분리 기록",
+        "실패·권한 검증: 구개정 도면으로 검측 요청하면 차단"
+      ]
     },
     {
       "id": "UC-CON-02",
@@ -359,7 +510,17 @@
       "evidence": "상세도·시방대조표·카탈로그·시료정보",
       "uiActionLabelCandidate": "시공자료 제출",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 작업 착수에 필요한 자료 준비",
+        "역할별 수행 검증: 상세도·제품 규격·견본·인증 및 시방 적합성을 제출하고 보완요청 대응",
+        "업무 완료 확인: 검토결과를 확인하고 유효 승인자료만 사용",
+        "실패·권한 검증: 제출만으로 승인 처리하거나 반려판을 사용하면 차단"
+      ]
     },
     {
       "id": "UC-CON-03",
@@ -380,7 +541,17 @@
       "evidence": "납품서·로트·시험성적·현장사진",
       "uiActionLabelCandidate": "반입·시험자료 제출",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 자재 반입 또는 시험시점 도래",
+        "역할별 수행 검증: 로트·수량·시험계획과 성적서를 등록하고 감리 확인 요청",
+        "업무 완료 확인: 반입·시험 이력과 사용허용 근거 확인",
+        "실패·권한 검증: 부적합 로트를 다른 로트로 바꾸어 재사용하면 차단"
+      ]
     },
     {
       "id": "UC-CON-04",
@@ -402,7 +573,17 @@
       "approvedTermIds": [
         "QA-INSP-REQ-001"
       ],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 공종별 선행작업 완료",
+        "역할별 수행 검증: 자체점검·위치·검측항목·적용 도면을 등록하여 감리에 요청",
+        "업무 완료 확인: 검측 접수와 예정일을 확인하고 공식 판정 대기",
+        "실패·권한 검증: 자체점검 없이 검측 완료로 간주하거나 승인 없이 후속공정 진행하면 차단"
+      ]
     },
     {
       "id": "UC-CON-05",
@@ -426,7 +607,17 @@
         "QA-CORR-001",
         "QA-REINSP-001"
       ],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "incident_response",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 감리 부적합 또는 현장지시 수령",
+        "역할별 수행 검증: 원인·시정 방법·조치사진·책임자를 등록하고 재검측 요청",
+        "업무 완료 확인: 감리 확인 전 시정 제출 상태로 유지",
+        "실패·권한 검증: 자체 종결·사진 재사용·현 주기 누락을 차단"
+      ]
     },
     {
       "id": "UC-CON-06",
@@ -447,7 +638,17 @@
       "evidence": "작업허가 신청·장비검사·안전조치 사진",
       "uiActionLabelCandidate": "작업허가 신청",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 고위험작업 예정",
+        "역할별 수행 검증: 작업계획·위험성평가·장비 인증·작업자 자격을 첨부해 허가 요청",
+        "업무 완료 확인: 사전 확인·허가·작업가능 상태를 구분 확인",
+        "실패·권한 검증: 허가만으로 작업가능이라고 오인하거나 자체 작업재개하면 차단"
+      ]
     },
     {
       "id": "UC-CON-07",
@@ -468,7 +669,17 @@
       "evidence": "원본 사진·영상·일일기록·해시",
       "uiActionLabelCandidate": "현장사진 등록",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "daily_routine",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 시공 및 점검 진행",
+        "역할별 수행 검증: 촬영시각·위치·작업내용·원본파일·도면연계를 기록",
+        "업무 완료 확인: 원본과 가공본을 구별하고 일일기록에 추적가능하게 연결",
+        "실패·권한 검증: 분석후보를 공식 감리판정으로 자동 간주하면 차단"
+      ]
     },
     {
       "id": "UC-CON-08",
@@ -488,7 +699,17 @@
       "evidence": "실적표·공정표·지연 근거·회복계획",
       "uiActionLabelCandidate": "공정 실적 제출",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "daily_routine",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 공정 실적집계 또는 지연 징후",
+        "역할별 수행 검증: 실적 기준일·활동 ID·지연사유·회복안을 제출하고 감리 회신 추적",
+        "업무 완료 확인: 기준선과 예측·실적 및 회복계획 이력 유지",
+        "실패·권한 검증: 예측치를 기존 기준공정으로 덮어쓰면 차단"
+      ]
     },
     {
       "id": "UC-CON-09",
@@ -511,7 +732,17 @@
         "CON-NOTICE-001",
         "CON-EOT-001"
       ],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "change_decision",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 계약상 통지사유 발생",
+        "역할별 수행 검증: 계약기한·영향 분석·근거문서를 첨부하여 통지 및 EOT 요청",
+        "업무 완료 확인: 통지·권리주장·기술검토·발주처 결정 분리",
+        "실패·권한 검증: 지연 기록만으로 자동 공기연장을 인정하면 차단"
+      ]
     },
     {
       "id": "UC-CON-10",
@@ -533,7 +764,17 @@
       "approvedTermIds": [
         "PAY-CLAIM-001"
       ],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "daily_routine",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 기성기간 마감",
+        "역할별 수행 검증: BOQ 항목별 물량·기성금액·증빙을 제출하고 보완 대응",
+        "업무 완료 확인: 청구와 검증·추천·발주처 승인·실제 지급을 구별",
+        "실패·권한 검증: 자체 청구금액을 승인금액으로 자동 반영하면 차단"
+      ]
     },
     {
       "id": "UC-CON-11",
@@ -553,7 +794,17 @@
       "evidence": "시운전 결과·준공도서·인계목록",
       "uiActionLabelCandidate": "준공서류 제출",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "completion_closeout",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 부분 또는 최종 준공 준비",
+        "역할별 수행 검증: 시운전성적·준공도면·자재증서·운영자료·미결 목록을 제출",
+        "업무 완료 확인: 감리 검토 및 발주처 인수 여부를 분리 확인",
+        "실패·권한 검증: 시운전 합격만으로 준공 인수를 완료 처리하면 차단"
+      ]
     },
     {
       "id": "UC-CON-12",
@@ -574,7 +825,17 @@
       "evidence": "RFI·도면·현장사진·변경제안",
       "uiActionLabelCandidate": "설계질의 제출",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "change_decision",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 도면 간섭·설계 불명확 발견",
+        "역할별 수행 검증: 위치·도면·문제·제안·공기·비용 영향을 구분하여 질의 제출",
+        "업무 완료 확인: 설계 답변·감리 검토·변경승인·시공지시를 분리 확인",
+        "실패·권한 검증: 질의회신만으로 변경공사 실행 처리하면 차단"
+      ]
     },
     {
       "id": "UC-CON-13",
@@ -595,7 +856,17 @@
       "evidence": "하자 지적·보수 전후사진·재검사 요청",
       "uiActionLabelCandidate": "하자 보수결과 제출",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "completion_closeout",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 보증기간 내 하자 통보",
+        "역할별 수행 검증: 하자 위치·원인·보수내용·사진을 제출하고 재검사 요청",
+        "업무 완료 확인: 권한자의 재검사 및 하자 종결결정 대기",
+        "실패·권한 검증: 시공사 자체 하자종결을 차단"
+      ]
     },
     {
       "id": "UC-OWN-01",
@@ -618,7 +889,17 @@
       "evidence": "발주처 보고·미결목록·기준공정 참조",
       "uiActionLabelCandidate": "현장 현황 확인",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "daily_routine",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 발주처 대시보드 접속",
+        "역할별 수행 검증: 공정·기성·주요 위험·미결 결정 및 보고기한 확인",
+        "업무 완료 확인: 원본 업무와 연계된 최신 지표만 표시",
+        "실패·권한 검증: 단순 보고수령을 승인·종결 건수로 표시하면 차단"
+      ]
     },
     {
       "id": "UC-OWN-02",
@@ -640,7 +921,17 @@
       "approvedTermIds": [
         "OWN-DEC-001"
       ],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 정기·즉시보고 또는 결정요청 수신",
+        "역할별 수행 검증: 수령을 기록하고 선택안·조건·담당·기한을 포함한 결정",
+        "업무 완료 확인: 수령일·결정문서·후속검증·보고종결이 각각 기록",
+        "실패·권한 검증: 수령만으로 기술승인 또는 보고종결 처리하면 차단"
+      ]
     },
     {
       "id": "UC-OWN-03",
@@ -661,7 +952,17 @@
       "evidence": "변경검토·비용산정·공기영향·결정서",
       "uiActionLabelCandidate": "설계변경 결정",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "change_decision",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 변경안 기술검토 후 계약상 결재요청",
+        "역할별 수행 검증: 기술의견과 별도로 변경범위·금액·기간을 계약권한에 따라 결정",
+        "업무 완료 확인: 결정된 정확한 도면개정·계약근거와 연계",
+        "실패·권한 검증: 설계자 회신 또는 감리 의견을 계약승인으로 자동 대체하면 차단"
+      ]
     },
     {
       "id": "UC-OWN-04",
@@ -681,7 +982,17 @@
       "evidence": "감리검토서·승인서·지급증빙·누적대장",
       "uiActionLabelCandidate": "기성 승인 및 지급 확인",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "change_decision",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 감리 추천내역 및 기성청구 도착",
+        "역할별 수행 검증: 계약권한에 따라 승인·조정·반려 후 지급실행 여부를 별도 확인",
+        "업무 완료 확인: 청구·검증·추천·승인·지급 금액의 누적 대사",
+        "실패·권한 검증: 감리 추천이나 승인만으로 실제 지급 완료 표시하면 차단"
+      ]
     },
     {
       "id": "UC-OWN-05",
@@ -704,7 +1015,17 @@
       "approvedTermIds": [
         "CON-EOT-001"
       ],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "change_decision",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 계약통지와 감리 검토자료 수신",
+        "역할별 수행 검증: 계약권한 및 근거에 따라 공기연장·금액·조건을 결정",
+        "업무 완료 확인: 승인된 경우만 기준공정 개정 절차 연결",
+        "실패·권한 검증: 지연만으로 EOT 승인하거나 기존 기준공정 이력을 지우면 차단"
+      ]
     },
     {
       "id": "UC-OWN-06",
@@ -728,7 +1049,17 @@
       "evidence": "안전보고·허가현황·법정문서·결정서",
       "uiActionLabelCandidate": "중대사항 결정",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "incident_response",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 중대 위험 보고 또는 법정 조건 미충족",
+        "역할별 수행 검증: 보고된 사실과 대안을 검토해 본인 계약·법령상 권한 내 조치 결정",
+        "업무 완료 확인: 작업 재개 기술확인과 발주처 의사결정 구별",
+        "실패·권한 검증: 감리 작업중지 해제를 발주처 수령행위로 자동 처리하면 차단"
+      ]
     },
     {
       "id": "UC-OWN-07",
@@ -749,7 +1080,17 @@
       "evidence": "준공검사표·Punch·운영자료·인수결정",
       "uiActionLabelCandidate": "준공 인수 결정",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "completion_closeout",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 준공검사 및 인수 준비결과 도착",
+        "역할별 수행 검증: 미결 Punch·조건부 사항·인계자료를 검토하여 인수 또는 보완 결정",
+        "업무 완료 확인: 인수 조건과 보류사항·결정 근거 보존",
+        "실패·권한 검증: 시운전 합격 또는 서류제출만으로 자동 인수 처리하면 차단"
+      ]
     },
     {
       "id": "UC-OWN-08",
@@ -771,7 +1112,17 @@
       "evidence": "하자대장·보수증빙·검사결과·후속보고",
       "uiActionLabelCandidate": "하자 처리현황",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "completion_closeout",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 하자 통보 또는 인수 조건 잔여",
+        "역할별 수행 검증: 보수 상태·재검증 결과·계약보증 범위를 확인하고 후속조치 추적",
+        "업무 완료 확인: 하자 종결과 보고 후속조치 종결을 구별",
+        "실패·권한 검증: 시공사 자체 보수완료로 최종 하자종결하면 차단"
+      ]
     },
     {
       "id": "UC-OWN-09",
@@ -790,7 +1141,17 @@
       "evidence": "계약서·보험증권·보증서·기간표",
       "uiActionLabelCandidate": "계약·보증 확인",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "daily_routine",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 정기 계약검토 또는 만료 임박",
+        "역할별 수행 검증: 계약범위·보험·보증금·유효기간을 검토하고 권한 내 결정 요청",
+        "업무 완료 확인: 계약기준선과 보증갱신 근거 유지",
+        "실패·권한 검증: 관리자 등록행위 자체를 계약조건 변경승인으로 간주하면 차단"
+      ]
     },
     {
       "id": "UC-ADM-01",
@@ -812,7 +1173,17 @@
       "evidence": "프로젝트 설정판·계약 기준정보·담당 조직",
       "uiActionLabelCandidate": "프로젝트 개설",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "admin_operations",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 신규 프로젝트 착수",
+        "역할별 수행 검증: 회사·공종·구역·계약·법령·역할 범위를 프로젝트 설정으로 등록",
+        "업무 완료 확인: 각 계정이 해당 프로젝트의 허용 범위만 조회",
+        "실패·권한 검증: 프로젝트 간 권한 공유나 임의 범위 확장을 차단"
+      ]
     },
     {
       "id": "UC-ADM-02",
@@ -833,7 +1204,17 @@
       "evidence": "사용자·조직·역할·권한 변경 기록",
       "uiActionLabelCandidate": "사용자 및 권한 관리",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "admin_operations",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 사용자 초대·이동·퇴사",
+        "역할별 수행 검증: 조직·역할·공종·구역·유효기간 설정 및 변경 이력 기록",
+        "업무 완료 확인: SUP·CON·OWN·DES의 업무권한과 관리자 권한 분리",
+        "실패·권한 검증: ADM이 업무 판정권한을 자동 부여받으면 차단"
+      ]
     },
     {
       "id": "UC-ADM-03",
@@ -853,7 +1234,17 @@
       "evidence": "자격증·배치내역·유효기간·이력",
       "uiActionLabelCandidate": "자격·배치 확인",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "admin_operations",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 신규 감리인력 배치 또는 자격 만료 도래",
+        "역할별 수행 검증: 자격증·담당분야·배치기간을 등록·재검증하고 알림 제공",
+        "업무 완료 확인: 만료 뒤 새 공식 판정은 불허하고 과거 기록은 보존",
+        "실패·권한 검증: 만료 자격으로 승인 명령 실행하면 차단"
+      ]
     },
     {
       "id": "UC-ADM-04",
@@ -874,7 +1265,17 @@
       "evidence": "문서 원본·배포대장·수신 확인",
       "uiActionLabelCandidate": "문서 배포 및 수령관리",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 승인도면·공문·제출자료 도착",
+        "역할별 수행 검증: 수신·등록·개정번호·배포대상·수령확인을 기록",
+        "업무 완료 확인: 도면판과 배포·수령 시점·확인자가 추적됨",
+        "실패·권한 검증: 문서 수령을 기술승인 또는 공식 개정결정으로 변경하면 차단"
+      ]
     },
     {
       "id": "UC-ADM-05",
@@ -896,7 +1297,17 @@
       "evidence": "출력 문서·서명·파일 해시·원본서식",
       "uiActionLabelCandidate": "양식·문서관리",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "admin_operations",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 보고서 또는 표준양식 작성 필요",
+        "역할별 수행 검증: 적용 양식·법정 언어·버전·서명 구비 여부를 점검하고 출력·보존 지원",
+        "업무 완료 확인: 초안과 공식 발행본·법정 원본을 구별",
+        "실패·권한 검증: 권한 없는 관리자 서명으로 기술승인 문서 발행 차단"
+      ]
     },
     {
       "id": "UC-ADM-06",
@@ -916,7 +1327,17 @@
       "evidence": "발송기록·기한·수령 및 회신 현황",
       "uiActionLabelCandidate": "보고·회신 현황",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "daily_routine",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 주간보고 또는 긴급 보고기한 도래",
+        "역할별 수행 검증: 접수·미회신·기한초과를 담당자에게 알리고 상태 대조",
+        "업무 완료 확인: 의사결정과 후속검증 상태를 보고목록에 분리 표시",
+        "실패·권한 검증: 알림 완료를 발주처 승인으로 처리하면 차단"
+      ]
     },
     {
       "id": "UC-ADM-07",
@@ -938,7 +1359,17 @@
       "evidence": "관리대장·감사추적·시정 이력·교훈판",
       "uiActionLabelCandidate": "관리대장·감사기록",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "admin_operations",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 정기 자료점검 또는 감사 실시",
+        "역할별 수행 검증: 원본 참조·누락·변경이력·감사 근거와 채택된 교훈을 정리",
+        "업무 완료 확인: 29개 대장의 원본 연결과 감사추적을 확인",
+        "실패·권한 검증: 관리자가 부적합이나 감사결과를 기술판정으로 자체 종결하면 차단"
+      ]
     },
     {
       "id": "UC-ADM-08",
@@ -961,7 +1392,17 @@
       "evidence": "백업복원 로그·실패기록·버전 이력",
       "uiActionLabelCandidate": "백업·이력 확인",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "admin_operations",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 정기 백업 또는 저장실패·오프라인 재접속",
+        "역할별 수행 검증: 백업복원 검증·파일 누락 확인·중복 제출 감시·버전충돌 안내",
+        "업무 완료 확인: 저장 장애 시 공식업무 성공처리를 막고 충돌을 사용자에게 표시",
+        "실패·권한 검증: 원본 잃어버린 채 완료 기록하거나 최신판 자동 덮어쓰면 차단"
+      ]
     },
     {
       "id": "UC-ADM-09",
@@ -983,7 +1424,17 @@
       "evidence": "권한시험 로그·거부 이유·감사기록",
       "uiActionLabelCandidate": "권한 점검",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "admin_operations",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 감리 또는 발주처 전용 행위 접근",
+        "역할별 수행 검증: 프로젝트 설정권한과 기술·계약 결재권한을 구분하고 접근제어 확인",
+        "업무 완료 확인: 감리 검측판정·부적합 종결·발주처 기성승인 동작 차단",
+        "실패·권한 검증: 관리자 화면에서 공식 승인 가능하면 실패"
+      ]
     },
     {
       "id": "UC-DES-01",
@@ -1003,7 +1454,17 @@
       "evidence": "RFI·설계근거·회신서",
       "uiActionLabelCandidate": "설계질의 회신",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 설계 검토요청 접수",
+        "역할별 수행 검증: 승인된 설계의도·기준도면을 근거로 기술답변 및 필요 개정 알림",
+        "업무 완료 확인: 회신 버전과 감리 재검토 절차 연계",
+        "실패·권한 검증: 설계답변만으로 발주처 비용결정 또는 시공지시 완료 처리하면 차단"
+      ]
     },
     {
       "id": "UC-DES-02",
@@ -1025,7 +1486,17 @@
       "evidence": "원도면·개정도면·변경사유",
       "uiActionLabelCandidate": "개정도면 제출",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "change_decision",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 설계변경 또는 오류수정 필요",
+        "역할별 수행 검증: 도면번호·개정·변경내역을 식별해 감리 및 공식 배포절차 전달",
+        "업무 완료 확인: 이전판과 신규판의 비교·적용시점 명시",
+        "실패·권한 검증: 기존 유효 도면파일을 덮어써 개정이력 삭제하면 차단"
+      ]
     },
     {
       "id": "UC-DES-03",
@@ -1045,7 +1516,17 @@
       "evidence": "성능자료·비교표·설계의견",
       "uiActionLabelCandidate": "대체자재 검토",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 자재 대체안 또는 시공상세도 질의",
+        "역할별 수행 검증: 설계의도·재료성능·도면 정합 검토결과 회신",
+        "업무 완료 확인: 기술의견을 시공사/감리 승인기록에 별도로 연결",
+        "실패·권한 검증: 기술의견 회신만으로 자재 최종승인 처리하면 차단"
+      ]
     },
     {
       "id": "UC-DES-04",
@@ -1065,7 +1546,334 @@
       "evidence": "준공도면·변경이력·기술의견",
       "uiActionLabelCandidate": "준공도면 검토",
       "approvedTermIds": [],
-      "implementationStatus": "unverified"
+      "implementationStatus": "unverified",
+      "situationType": "completion_closeout",
+      "origin": {
+        "kind": "retained_v1"
+      },
+      "testChecks": [
+        "시작조건 검증: 준공 또는 인수 준비",
+        "역할별 수행 검증: 최종 설치상태·설계변경·준공도면의 기술적 정합성 의견 제출",
+        "업무 완료 확인: 감리 준공판정 및 발주처 인수결정과 분리",
+        "실패·권한 검증: 설계의도 확인만으로 준공 또는 하자종결 처리하면 차단"
+      ]
+    },
+    {
+      "id": "UC-SUP-13",
+      "role": "SUP",
+      "domain": "document",
+      "title": "현장 순회점검 및 일일 감리기록 작성",
+      "trigger": "감리자가 당일 현장순회 또는 일일기록 마감을 시작",
+      "operation": "프로젝트·공종·위치·참여자·현장 확인내용·원본사진·도면을 연결해 일일 감리기록을 작성하고 검토·확정",
+      "expected": "현장 기록과 관련 검측·지적사항이 연결되고 확정 이후 정정은 별도 이력으로 보존",
+      "exception": "타일자 사진 재사용·원본 없이 공식확정·확정본 원본 덮어쓰기·무권한 서명을 차단",
+      "registerIds": [
+        "11",
+        "15",
+        "23"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01",
+        "AC-STORE-01",
+        "AC-VERSION-01"
+      ],
+      "evidence": "감리일지·현장사진·촬영시각·도면 개정·작성 및 확인 이력",
+      "uiActionLabelCandidate": "현장 순회점검·감리일지 작성",
+      "approvedTermIds": [],
+      "implementationStatus": "unverified",
+      "situationType": "daily_routine",
+      "origin": {
+        "kind": "added_from_review",
+        "proposalId": "A01"
+      },
+      "testChecks": [
+        "당일 위치·공종을 선택하고 현장순회 기록을 만든다",
+        "원본사진과 적용 도면 번호·개정이 감리일지 재조회 시 동일하다",
+        "확정 후 정정은 과거 내용을 삭제하지 않고 기록 버전을 추가한다",
+        "시공사 또는 다른 현장 사용자는 감리 확인·서명을 대신할 수 없다"
+      ]
+    },
+    {
+      "id": "UC-SUP-14",
+      "role": "SUP",
+      "domain": "design",
+      "title": "도면 조회·개정 비교·마킹 및 지적사항 연결",
+      "trigger": "검측·현장순회 또는 새 도면개정 수신",
+      "operation": "실제 PDF 원본을 열어 확대·이동·페이지 전환·회전을 하고 두 개정을 비교하며 도면 마킹을 저장하여 검측·지적사항과 연결",
+      "expected": "원본 PDF의 해시·도면번호·개정·페이지·마킹 좌표·이슈 참조가 보존되고 공식 지적사항 생성은 명시적 승인으로 처리",
+      "exception": "실제 PDF 원본 없는 예시 제목만으로 열람 성공처리·과거개정을 최신판으로 표시·마킹만으로 공식 지적 자동발행 차단",
+      "registerIds": [
+        "04",
+        "11",
+        "12",
+        "23"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01",
+        "AC-AUTH-01",
+        "AC-VERSION-01"
+      ],
+      "evidence": "도면 PDF 원본·해시·개정내역·페이지·마킹좌표·검측/지적 ID",
+      "uiActionLabelCandidate": "도면 보기·개정 비교·검토 표시",
+      "approvedTermIds": [],
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "added_from_review",
+        "proposalId": "A02"
+      },
+      "testChecks": [
+        "실제 PDF 도면 두 개정을 선택해 확대·이동·페이지 전환·회전 후 비교한다",
+        "마킹을 저장하고 페이지·좌표·원본 버전과 연결한 뒤 화면을 벗어나 재진입한다",
+        "마킹을 정식 지적사항으로 전환할 때 담당자·증빙·검측근거 및 권한을 재확인한다",
+        "원본 미등록·구버전·권한없는 도면은 성공 또는 최신판으로 표시하지 않는다"
+      ]
+    },
+    {
+      "id": "UC-SUP-15",
+      "role": "SUP",
+      "domain": "quality",
+      "title": "현장 발견 지적사항 즉시등록·담당자 통보",
+      "trigger": "요청된 검측 이외의 현장순회 중 시공오류를 발견",
+      "operation": "위치·공종·사진·위반 근거를 첨부해 현장 확인내용을 남기고 확인 후 정식 부적합/현장지시로 전환해 담당 시공사에 통보",
+      "expected": "최초 발견시각·원본 증빙·시정 담당자·기한·수령 상태를 기록하고 비공식 메모와 공식 기술판정을 구분",
+      "exception": "증빙 누락·AI 후보 자동 공식판정·타 프로젝트 담당자 노출·시공사의 자체 종결 차단",
+      "registerIds": [
+        "12",
+        "15",
+        "23"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01",
+        "AC-REPORT-01",
+        "AC-AUTH-01"
+      ],
+      "evidence": "현장 원본사진·발견시각·구역/공종·적용도면·지시문·수신이력",
+      "uiActionLabelCandidate": "현장 지적사항 등록·조치 요청",
+      "approvedTermIds": [],
+      "implementationStatus": "unverified",
+      "situationType": "incident_response",
+      "origin": {
+        "kind": "added_from_review",
+        "proposalId": "A03"
+      },
+      "testChecks": [
+        "감리자는 검측 신청이 없는 장소에서 사진과 위치를 지정해 지적을 작성한다",
+        "현장 확인 메모와 권한자가 발행한 공식 부적합 기록을 구분한다",
+        "조치 요청 대상 시공사에 회신기한과 근거가 전달되고 이력을 재조회한다",
+        "다른 프로젝트 권한 또는 공식 서명이 없는 계정은 지시 발행이 거부된다"
+      ]
+    },
+    {
+      "id": "UC-CON-14",
+      "role": "CON",
+      "domain": "quality",
+      "title": "검측요청 일정 변경·취소·재신청",
+      "trigger": "검측 예정일 지연 또는 일정 중복이 발생",
+      "operation": "기존 검측요청의 번호와 원본 버전을 유지해 일정변경 사유·요청일·희망일을 제출하고 감리 수령·수락 또는 반려를 확인",
+      "expected": "기존 신청과 변경 요청의 시각·담당자·사유·감리 응답이 연결되고 판정된 검측 결과는 보존",
+      "exception": "이미 판정한 검측 삭제·부적합 증빙 제거·동일 재신청 중복생성·감리 통보없는 변경 차단",
+      "registerIds": [
+        "11",
+        "23"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01",
+        "AC-VERSION-01",
+        "AC-IDEMP-01"
+      ],
+      "evidence": "검측요청 ID·개정·변경사유·일정·감리 수신 및 조정기록",
+      "uiActionLabelCandidate": "검측 일정 변경·취소 요청",
+      "approvedTermIds": [
+        "QA-INSP-REQ-001"
+      ],
+      "implementationStatus": "unverified",
+      "situationType": "request_review",
+      "origin": {
+        "kind": "added_from_review",
+        "proposalId": "A04"
+      },
+      "testChecks": [
+        "시공사는 미판정 검측의 희망일과 변경 사유를 제출한다",
+        "감리는 기존 검측요청과 변경 전후 시각을 확인하고 조정 여부를 기록한다",
+        "동일 중복제출은 새 공식 검측건을 추가하지 않는다",
+        "판정된 검측이나 부적합 기록은 취소를 통해 원본 삭제되지 않는다"
+      ]
+    },
+    {
+      "id": "UC-CON-15",
+      "role": "CON",
+      "domain": "safety",
+      "title": "일일 작업계획·인원·장비·작업구역 등록",
+      "trigger": "당일 작업 착수 전 현장 작업계획 작성",
+      "operation": "작업일·공종·작업구역·예정 인원·장비·시간·고위험 여부를 등록하고 관련 작업허가와 장비검사에 연결",
+      "expected": "작업계획과 실제 일일 기록이 비교되며 작업계획 등록 자체는 허가 또는 작업 가능 판정과 분리",
+      "exception": "자격 미충족 장비나 작업자의 계획 등록만으로 고위험 작업이 승인되거나 시작 처리되는 것을 차단",
+      "registerIds": [
+        "18",
+        "19",
+        "23"
+      ],
+      "acceptanceRefs": [
+        "AC-S-01",
+        "AC-QUAL-01"
+      ],
+      "evidence": "일일작업계획표·구역·작업자·장비검사·안전허가 참조",
+      "uiActionLabelCandidate": "오늘의 작업계획 등록",
+      "approvedTermIds": [],
+      "implementationStatus": "unverified",
+      "situationType": "daily_routine",
+      "origin": {
+        "kind": "added_from_review",
+        "proposalId": "A05"
+      },
+      "testChecks": [
+        "시공사는 날짜·구역별 작업 계획과 담당 공종·예정인원을 입력한다",
+        "작업자·장비 유효상태와 허가 여부를 독립된 정보로 확인한다",
+        "계획 제출만으로 작업허가 승인·작업가능 상태로 표시되지 않는다",
+        "계획 변경·작업 실적 차이가 이력에서 확인된다"
+      ]
+    },
+    {
+      "id": "UC-CON-16",
+      "role": "CON",
+      "domain": "safety",
+      "title": "사고·급박 위험 발생 최초 보고",
+      "trigger": "사고·아차사고 또는 즉시 대응이 필요한 위험 발생",
+      "operation": "사고 시각·위치·피해·최초조치·현장사진을 등록하고 해당 안전관리자·감리자·발주처 보고선에 긴급 알림",
+      "expected": "사고 최초 통보·수신·후속보고·작업중지 판단은 각각 독립 기록되며 원본 증빙 유지",
+      "exception": "작성지연으로 긴급 통보 차단·사고를 정기보고에 숨김·첨부 실패를 성공표시·자동 작업재개 처리 차단",
+      "registerIds": [
+        "18",
+        "22",
+        "23"
+      ],
+      "acceptanceRefs": [
+        "AC-S-01",
+        "AC-REPORT-01",
+        "AC-STORE-01"
+      ],
+      "evidence": "최초 사고통보·발생시각·위치·피해정보·현장사진·수신 및 보고이력",
+      "uiActionLabelCandidate": "사고·위험 즉시 보고",
+      "approvedTermIds": [],
+      "implementationStatus": "unverified",
+      "situationType": "incident_response",
+      "origin": {
+        "kind": "added_from_review",
+        "proposalId": "A06"
+      },
+      "testChecks": [
+        "시공사는 사고발생 즉시 시각·위치·긴급 조치를 입력해 긴급 보고한다",
+        "즉시보고 수신대상과 수령·후속조치 기한을 확인한다",
+        "작업중지 권한과 보고서 수령행위는 서로 별도로 처리한다",
+        "사진저장 실패 때 완료를 표시하지 않고 재시도 또는 정정 절차를 알린다"
+      ]
+    },
+    {
+      "id": "UC-OWN-10",
+      "role": "OWN",
+      "domain": "owner",
+      "title": "결정 기한초과·미회신 확인 및 재요청",
+      "trigger": "본인 권한의 결정요청 회신기한이 경과",
+      "operation": "원본 보고·담당자·결정기한과 미회신 사유를 확인한 뒤 보완자료 요청·담당자 변경 또는 재회신 요청",
+      "expected": "원 결정요청의 번호·회신지연 이력과 새로운 기한·요청내용이 함께 남으며 결정과 수령은 구분",
+      "exception": "알림 확인만으로 승인 완료·재요청으로 과거 미회신 기록 삭제·타 프로젝트 내용 접근 차단",
+      "registerIds": [
+        "22",
+        "25"
+      ],
+      "acceptanceRefs": [
+        "AC-REPORT-01",
+        "AC-VERSION-01",
+        "AC-AUTH-01"
+      ],
+      "evidence": "결정요청 원본·기한·지연사유·재요청·수령 및 후속조치",
+      "uiActionLabelCandidate": "결정 대기·기한초과 확인",
+      "approvedTermIds": [],
+      "implementationStatus": "unverified",
+      "situationType": "incident_response",
+      "origin": {
+        "kind": "added_from_review",
+        "proposalId": "A07"
+      },
+      "testChecks": [
+        "발주처는 미회신 결정 목록을 원 보고와 실제 요청기한 기준으로 조회한다",
+        "재요청은 기존 요청에 연결되어 날짜와 지연이력이 유지된다",
+        "알림 수령과 계약상 발주처 결정은 동일 처리되지 않는다",
+        "권한 없는 다른 프로젝트는 목록·상세 모두 접근 거부된다"
+      ]
+    },
+    {
+      "id": "UC-ADM-10",
+      "role": "ADM",
+      "domain": "setup",
+      "title": "다중 프로젝트 목록·선택·전환 및 권한 확인",
+      "trigger": "관리자가 여러 현장을 개설하거나 현장 간 작업을 전환",
+      "operation": "프로젝트를 검색·선택하고 프로젝트별 담당 역할·도면·검측·증빙·관리대장이 해당 범위로 함께 바뀌는지 확인",
+      "expected": "선택 프로젝트와 권한 범위가 명확하고 이전 프로젝트 자료가 남지 않음",
+      "exception": "타 프로젝트 권한 자동승계·캐시잔존·늦은 API응답으로 이전 현장자료 노출·임의 URL 접근 차단",
+      "registerIds": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "11",
+        "23"
+      ],
+      "acceptanceRefs": [
+        "AC-AUTH-01",
+        "AC-ADM-01",
+        "AC-OFFLINE-01"
+      ],
+      "evidence": "프로젝트 목록·권한·전환 전후 업무조회·감사로그",
+      "uiActionLabelCandidate": "프로젝트 선택·전환",
+      "approvedTermIds": [],
+      "implementationStatus": "unverified",
+      "situationType": "admin_operations",
+      "origin": {
+        "kind": "added_from_review",
+        "proposalId": "A09"
+      },
+      "testChecks": [
+        "관리자가 개설한 프로젝트를 선택 가능한 목록에서 찾는다",
+        "현장 변경 후 도면·검측·증빙·역할 범위가 새 현장만 나타난다",
+        "이전 현장 데이터가 캐시 및 늦은 요청 결과로 노출되지 않는다",
+        "권한 없는 프로젝트는 목록·직접 URL·API에서 접근 거부된다"
+      ]
+    },
+    {
+      "id": "UC-ADM-11",
+      "role": "ADM",
+      "domain": "setup",
+      "title": "관리자 계정 생성·비밀번호 초기화·비활성화",
+      "trigger": "신규 사용자 투입·비밀번호 분실·퇴사 또는 현장 이동",
+      "operation": "승인된 계정을 생성하고 초기 인증·비밀번호 재설정·계정상태 및 프로젝트 권한을 갱신",
+      "expected": "각 변경에 담당자·시각·계정 ID·범위가 감사추적되고 비활성 계정의 새 로그인과 기존 유효하지 않은 세션이 차단됨",
+      "exception": "비밀번호 평문 노출·권한 외 재설정·퇴사자 로그인·관리자 자동 기술승인권한 부여 차단",
+      "registerIds": [
+        "03",
+        "28"
+      ],
+      "acceptanceRefs": [
+        "AC-AUTH-01",
+        "AC-ADM-01",
+        "AC-VERSION-01"
+      ],
+      "evidence": "계정등록 요청·역할 및 현장 배치·비밀번호 재설정 감사로그·접근차단 결과",
+      "uiActionLabelCandidate": "사용자 계정 만들기·비밀번호 재설정",
+      "approvedTermIds": [],
+      "implementationStatus": "unverified",
+      "situationType": "admin_operations",
+      "origin": {
+        "kind": "added_from_review",
+        "proposalId": "A10"
+      },
+      "testChecks": [
+        "관리자는 해당 현장 사용자 계정을 생성하고 초기 비밀번호 설정 절차를 시작한다",
+        "비밀번호 재설정 과정에서 민감정보가 로그·문서·화면에 노출되지 않는다",
+        "비활성화 후 재로그인과 기존 세션 업무접근이 차단되는지 확인한다",
+        "관리자에게 감리 판정·발주처 승인권한이 자동 부여되지 않는다"
+      ]
     }
   ],
   "flows": [
@@ -1377,10 +2185,10 @@
   ],
   "coverage": {
     "caseCountsByRole": {
-      "SUP": 12,
-      "CON": 13,
-      "OWN": 9,
-      "ADM": 9,
+      "SUP": 15,
+      "CON": 16,
+      "OWN": 10,
+      "ADM": 11,
       "DES": 4
     },
     "registerIds": [
@@ -1521,5 +2329,16 @@
         "UC-ADM-08"
       ]
     }
-  ]
+  ],
+  "reviewAdditions": {
+    "A01": "UC-SUP-13",
+    "A02": "UC-SUP-14",
+    "A03": "UC-SUP-15",
+    "A04": "UC-CON-14",
+    "A05": "UC-CON-15",
+    "A06": "UC-CON-16",
+    "A07": "UC-OWN-10",
+    "A09": "UC-ADM-10",
+    "A10": "UC-ADM-11"
+  }
 }
