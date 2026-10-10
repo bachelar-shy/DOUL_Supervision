@@ -13,6 +13,7 @@ for (const role of ["SUP", "CON", "OWN", "ADM", "DES"] as Role[]) {
     if (role !== "SUP") await page.getByLabel("시험 사용자 역할 선택").selectOption(role);
     const nav = page.locator('aside.sidebar [data-ui-component="navigation"]');
     await expect(nav).toBeVisible();
+    await expect(nav.locator("button[data-route]")).toHaveCount(menu.menuProfiles.fieldCore.navigationByRole[role].length);
     const actual = await nav.locator("button[data-route]").evaluateAll(
       (nodes) => nodes.map((node) => node.getAttribute("data-route")),
     );
