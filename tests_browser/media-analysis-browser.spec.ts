@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -218,7 +218,9 @@ test("Capture queues synthetic analysis, shows coverage, supports human confirm/
   await page.goto("/#/capture");
   await expect(page.getByTestId("media-analysis-panel")).toBeVisible();
   await expect(page.getByText(/Synthetic demo only|합성 데모 전용/)).toBeVisible();
-  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=", "base64");
+  // Use visibly labeled generated construction scenes as the immutable source.
+  // Worker findings below are controlled fixture output, not model-quality proof.
+  const png = readFileSync(resolve(process.cwd(), "design/development/mock-site/assets/SYNTHETIC_WWT_contact_sheet_P01-P12.png"));
   await page.getByLabel("증빙 파일 선택").setInputFiles({ name: `synthetic-media-${randomUUID()}.png`, mimeType: "image/png", buffer: png });
   const uploadedResponse = page.waitForResponse((response) => response.url().includes("/uploads/") && response.url().endsWith("/complete") && response.request().method() === "POST");
   await page.getByRole("button", { name: "서버 전송", exact: true }).click();

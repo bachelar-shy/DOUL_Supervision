@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0",
+  "classification": "synthetic_development_only",
+  "actualFieldEvidence": false,
+  "asset": "SYNTHETIC_WWT_contact_sheet_P01-P12.png",
+  "assetStructure": "One immutable generated contact sheet containing twelve labeled panels. Panel references are views of this single file, not twelve independently captured photos.",
+  "syntheticScenarioDate": "2026-10-10T08:00:00+07:00",
+  "dateMeaning": "Fictional scenario date, not verified EXIF or actual site capture time. UI intake timestamps are separately recorded by the app.",
+  "fictionalLocation": "MOCK WWT factory / tank and pipe installation test zone",
+  "panels": [
+    {
+      "id": "P01",
+      "case": "Q-MOCK-01",
+      "stage": "initial",
+      "description": "Rebar missing ties",
+      "expected": "Request human inspection; image alone cannot prove measurements or noncompliance"
+    },
+    {
+      "id": "P02",
+      "case": "Q-MOCK-01",
+      "stage": "correction",
+      "description": "Rebar ties corrected",
+      "expected": "Attach correction evidence; preserve original refs"
+    },
+    {
+      "id": "P03",
+      "case": "Q-MOCK-01",
+      "stage": "reinspection",
+      "description": "Corrected ties with inspection ruler",
+      "expected": "Require qualified SUP judgment and actual test measurements, not AI approval"
+    },
+    {
+      "id": "P04",
+      "case": "Q-02",
+      "stage": "initial",
+      "description": "FRP flange missing bolts/gasket",
+      "expected": "Human confirms suspected defect; Issue creation follows server gates"
+    },
+    {
+      "id": "P05",
+      "case": "Q-02",
+      "stage": "correction",
+      "description": "Flange bolts/gasket installed",
+      "expected": "Submit correction separately from Issue closure"
+    },
+    {
+      "id": "P06",
+      "case": "Q-02",
+      "stage": "reinspection",
+      "description": "Repaired flange inspection view",
+      "expected": "Explicit reinspection and separate Owner report closure"
+    },
+    {
+      "id": "P07",
+      "case": "S-MOCK-01",
+      "stage": "initial",
+      "description": "Unguarded excavation",
+      "expected": "Stop workflow remains subject to authorized human decision"
+    },
+    {
+      "id": "P08",
+      "case": "S-MOCK-01",
+      "stage": "remedy",
+      "description": "Barricade around excavation (access ladder not established by this image)",
+      "expected": "Verification then explicit stop lift and work resume"
+    },
+    {
+      "id": "P09",
+      "case": "S-MOCK-02",
+      "stage": "initial",
+      "description": "Damaged sling beside crane hook",
+      "expected": "Equipment inspection and deny use until authorized clearance"
+    },
+    {
+      "id": "P10",
+      "case": "S-MOCK-02",
+      "stage": "remedy",
+      "description": "Replacement intact sling",
+      "expected": "Separate equipment clearance from permit authorization"
+    },
+    {
+      "id": "P11",
+      "case": "SCH-MOCK-01",
+      "stage": "delay",
+      "description": "Loose pipes and incomplete trench",
+      "expected": "Support synthetic delay record; does not prove actual delay entitlement"
+    },
+    {
+      "id": "P12",
+      "case": "PAY-MOCK-01",
+      "stage": "completed_work",
+      "description": "Installed pipe with joints",
+      "expected": "Quantity measurement evidence still required; photo is not an approved payable quantity"
+    }
+  ],
+  "sourceLinkLimitations": [
+    "P01-P03 are additional illustrative rebar cases Q-MOCK-01, not the DN110 gradient measurements in original Q-01; never replace original case facts.",
+    "WWT/BOQ/schedule originals remain private and unmodified; no real baseline approval is inferred.",
+    "No legal compliance, actual measured dimensions, equipment certificate or payment approval can be inferred from generated pixels."
+  ]
+}
