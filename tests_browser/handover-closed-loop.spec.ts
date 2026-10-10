@@ -830,6 +830,44 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
       await runWorkbenchCommand(page, "inspections", reinspectionName, /submit results|결과 제출/i, { "검측 항목·측정 결과": passingChecks }, [fixture.evidenceId, fixture.retestEvidenceId]);
       await runWorkbenchCommand(page, "inspections", reinspectionName, /mark compliant|pass|적합 판정/i, {}, [fixture.evidenceId, fixture.retestEvidenceId]);
       expect(latestWorkspace.items.find((item: any) => item.record.id === reinspectionId)?.record.status).toBe("passed");
+      const passedReinspection = latestWorkspace.items.find((item: any) => item.record.id === reinspectionId).record;
+      await page.goto("/#/documents");
+      await page.getByLabel(/document form/i).selectOption("FM-09");
+      await page.getByLabel(/document source/i).selectOption(reinspectionId);
+      await page.getByLabel(/document output language/i).selectOption("en");
+      await page.getByLabel(/render type/i).selectOption("final");
+      const formValues: Record<string, string> = {
+        "inspection.no": reinspectionId, "inspection.work_name": passedReinspection.workName,
+        "work.discipline": latestWorkspace.context.scope.discipline, "work.location": latestWorkspace.context.scope.locationId,
+        "inspection.datetime": await localDateTime(page, Date.now()), "inspection.place": latestWorkspace.context.scope.locationId,
+        "basis.drawings": fixture.drawingRef.objectId, "basis.criteria": fixture.requirementRef.objectId,
+        "basis.tests": "dimension", "result.status": "pass", "result.next_work_allowed": "false",
+      };
+      for (const [name, value] of Object.entries(formValues)) {
+        const field = page.locator(`[name="${name}"]`);
+        if (await field.evaluate((node) => node.tagName.toLowerCase()) === "select") await field.selectOption(value);
+        else await field.fill(value);
+      }
+      const finalRender = page.waitForResponse((response) => response.url().includes("/forms/FM-09/render") && response.request().method() === "POST");
+      await page.getByRole("button", { name: /generate final html snapshot/i }).click();
+      const finalRenderBody = await (await finalRender).json();
+      expect(finalRenderBody.status).toBe("final");
+      expect(finalRenderBody.sourceDomainRefs[0]).toMatchObject({ objectId: reinspectionId, version: passedReinspection.version });
+      const finalDocumentId = finalRenderBody.id as string;
+      const signFinalInspection = async (role: "owner_side_supervisor" | "contractor_technical_lead") => {
+        const signing = page.getByRole("region", { name: /legal signature/i });
+        await signing.getByLabel(/current signer role/i).selectOption(role);
+        await signing.getByLabel(/signing method/i).selectOption("approved_e_signature");
+        const signed = page.waitForResponse((response) => response.url().includes(`/documents/${finalDocumentId}/sign`) && response.request().method() === "POST");
+        await signing.getByRole("button", { name: /request signature verification/i }).click();
+        expect((await signed).status()).toBe(200);
+      };
+      await signFinalInspection("owner_side_supervisor");
+      await useRole(page, "CON");
+      await page.goto("/#/documents");
+      await page.getByLabel("Select document", { exact: true }).selectOption(finalDocumentId);
+      await signFinalInspection("contractor_technical_lead");
+      await useRole(page, "SUP");
       await runWorkbenchCommand(page, "inspections", reinspectionName, /release next work|후속공정 허용/i, {}, [fixture.evidenceId]);
       await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
       await runWorkbenchCommand(page, "issues", "F-07 browser reservation Punch", /review closure|close/i, {
@@ -1067,7 +1105,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await runWorkbenchCommand(page, "inspections", warrantyReinspectionName, /start|시작/i);
     const warrantyFailingChecks = JSON.stringify([{ itemId: "dimension", requirementRef: fixture.requirementRef, result: "fail", evidenceIds: [fixture.evidenceId, fixture.retestEvidenceId], measuredValue: 1, unit: "count", note: "Leakage remains at the flange" }]);
     await runWorkbenchCommand(page, "inspections", warrantyReinspectionName, /submit results|결과 제출/i, { "검측 항목·측정 결과": warrantyFailingChecks }, [fixture.evidenceId, fixture.retestEvidenceId]);
-    await runWorkbenchCommand(page, "inspections", warrantyReinspectionName, /fail|부적합/i, { failureReason: "Leakage remains at the flange" }, [fixture.evidenceId, fixture.retestEvidenceId]);
+    await runWorkbenchCommand(page, "inspections", warrantyReinspectionName, /fail|noncompliant|부적합/i, { failureReason: "Leakage remains at the flange" }, [fixture.evidenceId, fixture.retestEvidenceId]);
     expect(latestWorkspace.items.find((item: any) => item.record.id === failedWarrantyReinspectionId)?.record.status).toBe("failed");
 
     const failedWarrantyReinspectionRef = latestWorkspace.context.referenceCatalog.inspections
