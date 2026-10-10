@@ -1,0 +1,22 @@
+{
+  "branch": "goal/warranty-close-ref-select",
+  "baseCommit": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+  "sourceCheckpoint": "bf43587",
+  "scope": "Present Warranty close closureRef as a blank explicit current Issue selector restricted to the claim's original Issue identity.",
+  "implementation": [
+    "CommandModal maps only warranty_claim:close_warranty_claim.closureRef to an exact single-reference select. The option list uses the server workspace reference catalog for the latest version and filters by the immutable original claim data.issueRef objectId; it never rewrites the claim projection or refreshes a reference automatically.",
+    "The selector opens blank even if any preexisting closureRef value is projected. The browser helper asserts the only nonempty option is an Issue with the claim's original Issue identity and exact current version, then selects that option through the UI and closes the actual Warranty claim.",
+    "No schema, API, backend guard, common dependency, or authorization behavior changed. Existing backend wrong/missing/unrelated closure proofs remain unchanged."
+  ],
+  "validation": {
+    "browserCommand": "PATH=/tmp/doul-npm12-tool/node_modules/.bin:$PATH npx playwright test --config=.local/warranty-close-ref-playwright.config.ts --grep 'real warranty UI accepts'",
+    "browserResult": "1 passed in 2.7m on the isolated branch, Chromium, HTTP-backed fixture, port 5194.",
+    "typecheck": "npm run typecheck --workspace @doul/web passed with isolated npm 12.2 dependencies.",
+    "uiBoundary": "python3 scripts/check_ui_boundary.py passed.",
+    "lint": "npm run lint --workspace @doul/web exited 0; only inherited repository warnings were reported."
+  },
+  "limits": [
+    "The focused browser scenario proves successful selection and closure for the exact current same-defect Issue. Wrong/missing-reference rejection remains a backend API concern and was not changed by this UI-only patch.",
+    "The fixture uses a test-only trusted verifier; this is not production signature-provider or pilot evidence."
+  ]
+}
