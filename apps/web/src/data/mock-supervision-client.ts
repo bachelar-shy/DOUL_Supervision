@@ -73,7 +73,7 @@ export class MockSupervisionClient implements SupervisionClient {
     return previewOnly();
   }
 
-  requestMediaAnalysis(_input: MediaAnalysisRequestInput): Promise<RecordDTO> {
+  requestMediaAnalysis(_input: MediaAnalysisRequestInput, _key?: string): Promise<RecordDTO> {
     return previewOnly();
   }
 
@@ -83,7 +83,8 @@ export class MockSupervisionClient implements SupervisionClient {
 
   createMediaIssuePackage(
     _runId: string,
-    _input: Omit<IssuePackageInput, "issueObjectId" | "actionObjectId">,
+    _input: IssuePackageInput,
+    _key?: string,
   ): Promise<IssuePackageResult> {
     return previewOnly();
   }

@@ -10,6 +10,10 @@ let apiPort = 0;
 let apiOrigin = "";
 let apiProcess: ChildProcess | undefined;
 let fixtureDir: string | undefined;
+let dropNextIssueAcknowledgement = false;
+let failNextWorkspaceRefresh = false;
+const issueRequests: Array<{ key: string | undefined; body: string | null }> = [];
+const reviewMutations: string[] = [];
 if (process.env.CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.CHROMIUM_PATH } });
 
 async function availablePort() {
@@ -81,7 +85,25 @@ async function routeApi(page: Page) {
     if (!target.pathname.startsWith("/api/")) return route.continue();
     target.pathname = target.pathname.replace(/^\/api(?=\/)/, "");
     target.hostname = "127.0.0.1"; target.port = String(apiPort);
-    await route.fulfill({ response: await route.fetch({ url: target.toString() }) });
+    if (["POST", "PUT"].includes(route.request().method()) && (/\/observations\//.test(target.pathname) || /\/media-analysis-runs/.test(target.pathname))) {
+      reviewMutations.push(`${route.request().method()} ${target.pathname}`);
+    }
+    if (route.request().method() === "GET" && target.pathname.endsWith("/workspace") && failNextWorkspaceRefresh) {
+      failNextWorkspaceRefresh = false;
+      await route.fulfill({ status: 502, body: "Synthetic workspace refresh failure after committed Issue" });
+      return;
+    }
+    const response = await route.fetch({ url: target.toString() });
+    if (route.request().method() === "POST" && /\/media-analysis-runs\/[^/]+\/issues$/.test(target.pathname)) {
+      issueRequests.push({ key: route.request().headers()["idempotency-key"], body: route.request().postData() });
+      if (dropNextIssueAcknowledgement) {
+        dropNextIssueAcknowledgement = false;
+        await response.dispose();
+        await route.fulfill({ status: 502, body: "Synthetic lost acknowledgement after the server committed the request" });
+        return;
+      }
+    }
+    await route.fulfill({ response });
   });
 }
 
@@ -118,7 +140,19 @@ test("Capture queues synthetic analysis, shows coverage, supports human confirm/
   const evidence = await uploaded.json() as { id: string; fileHash: string };
 
   const panel = page.getByTestId("media-analysis-panel");
+  const runWritesBeforeRoleGate = reviewMutations.filter((entry) => entry.endsWith("/media-analysis-runs")).length;
+  await page.getByLabel("개발 역할 선택").selectOption("CON");
+  await page.goto("/#/capture");
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText("서버가 이 프로젝트의 미디어 분석 대기열을 활성화하지 않았습니다.")).toBeVisible();
+  await expect(panel.getByLabel("원본 증빙", { exact: true })).toBeDisabled();
+  await expect(panel.getByRole("button", { name: "분석 요청", exact: true })).toBeDisabled();
+  expect(reviewMutations.filter((entry) => entry.endsWith("/media-analysis-runs"))).toHaveLength(runWritesBeforeRoleGate);
+  await page.getByLabel("개발 역할 선택").selectOption("SUP");
+  await page.goto("/#/capture");
+  await expect(panel).toBeVisible();
   await panel.getByLabel("원본 증빙", { exact: true }).selectOption(evidence.id);
+  await expect(panel.getByRole("button", { name: "분석 요청", exact: true })).toBeEnabled();
   await panel.getByLabel("검측 연결 (Issue 생성 전 필수)", { exact: true }).selectOption(inspection.id);
   const queuedResponse = page.waitForResponse((response) => response.url().endsWith("/media-analysis-runs") && response.request().method() === "POST");
   await panel.getByRole("button", { name: "분석 요청", exact: true }).click();
@@ -162,7 +196,24 @@ test("Capture queues synthetic analysis, shows coverage, supports human confirm/
   await expect(panel.getByText("Synthetic claim to reject", { exact: false })).toBeVisible();
   await expect(panel.getByText("Synthetic inferred claim", { exact: false })).toBeVisible();
   await expect(panel.getByText(/합성 데모 전용/)).toBeVisible();
-  await expect(panel.getByText(/missingRanges/)).toBeVisible();
+  await expect(panel.locator("code").filter({ hasText: evidence.id }).first()).toBeVisible();
+  await expect(panel.locator("code").filter({ hasText: evidence.fileHash }).first()).toBeVisible();
+  await expect(panel.getByText("완료: 완료")).toBeVisible();
+  const beforeLocale = await api<{ candidates: Array<{ record: { id: string; version: number; status: string } }>; issueReadiness: { issueEligibleObservationIds: string[] } }>(request, sup, `/media-analysis-runs/${run.id}`);
+  const mutationCountBeforeLocale = reviewMutations.length;
+  await page.getByRole("combobox").first().selectOption("vi");
+  await expect(panel.getByRole("heading", { name: "Phân tích media và người duyệt" })).toBeVisible();
+  await expect(panel.getByText(evidence.fileHash, { exact: false })).toBeVisible();
+  await page.getByRole("combobox").first().selectOption("en");
+  await expect(panel.getByRole("heading", { name: "Media analysis and human review" })).toBeVisible();
+  await expect(panel.getByText("Synthetic visually grounded finding", { exact: false })).toBeVisible();
+  await expect(panel.locator("code").filter({ hasText: evidence.fileHash }).first()).toBeVisible();
+  const afterLocale = await api<{ candidates: Array<{ record: { id: string; version: number; status: string } }>; issueReadiness: { issueEligibleObservationIds: string[] } }>(request, sup, `/media-analysis-runs/${run.id}`);
+  expect(afterLocale.candidates.map(({ record }) => [record.id, record.version, record.status])).toEqual(beforeLocale.candidates.map(({ record }) => [record.id, record.version, record.status]));
+  expect(afterLocale.issueReadiness).toEqual(beforeLocale.issueReadiness);
+  expect(reviewMutations).toHaveLength(mutationCountBeforeLocale);
+  await page.getByRole("combobox").first().selectOption("ko");
+  await expect(panel.getByRole("heading", { name: "미디어 분석 및 사람 검토" })).toBeVisible();
 
   const confirmedCard = panel.locator('[data-testid^="media-candidate-"]').filter({ hasText: "Synthetic visually grounded finding" });
   await confirmedCard.getByRole("button", { name: "검토 시작" }).click();
@@ -225,6 +276,25 @@ test("Capture queues synthetic analysis, shows coverage, supports human confirm/
   expect(speechIssue.status(), await speechIssue.text()).toBe(409);
   expect((await speechIssue.json()).code).toBe("CLAIM_UNCORROBORATED");
   expect((await request.get(`${apiOrigin}/projects/${sup.projectId}/issues/${ineligibleIssueId}`, { headers: headers(sup) })).status()).toBe(404);
+
+  await panel.getByLabel("원본 증빙", { exact: true }).selectOption(audio.id);
+  await expect(panel.getByLabel("분석 모드", { exact: true })).toHaveValue("audio");
+  const incompleteQueuedWait = page.waitForResponse((response) => response.url().endsWith("/media-analysis-runs") && response.request().method() === "POST");
+  await panel.getByRole("button", { name: "분석 요청", exact: true }).click();
+  const incompleteQueued = await incompleteQueuedWait; expect(incompleteQueued.status(), await incompleteQueued.text()).toBe(201);
+  const incompleteRun = await incompleteQueued.json() as { id: string };
+  const incompleteStart = await request.post(`${apiOrigin}/dev/media-worker/projects/${sup.projectId}/runs/${incompleteRun.id}/start`, { headers: headers(adm, true), data: {} });
+  expect(incompleteStart.status(), await incompleteStart.text()).toBe(200);
+  const incompleteComplete = await request.post(`${apiOrigin}/dev/media-worker/projects/${sup.projectId}/runs/${incompleteRun.id}/complete`, {
+    headers: headers(adm, true), data: { outputs: [], coverage: { sources: [{ sourceEvidenceId: audio.id, analyzedRanges: [{ startMs: 0, endMs: 500 }], missingRanges: [{ startMs: 500, endMs: 1000, reason: "synthetic fixture intentionally skipped tail" }], audioProcessedRanges: [{ startMs: 0, endMs: 500 }], complete: false }] }, completedAt: new Date().toISOString() },
+  });
+  expect(incompleteComplete.status(), await incompleteComplete.text()).toBe(200);
+  await panel.getByLabel("분석 실행", { exact: true }).selectOption(incompleteRun.id);
+  await panel.getByRole("button", { name: "실행 새로고침", exact: true }).click();
+  await expect(panel.getByText("제안된 후보가 없습니다.")).toBeVisible();
+  await expect(panel.getByText(/intentionally skipped tail/).first()).toBeVisible();
+  await expect(panel.getByTestId("media-issue-authoring")).toHaveCount(0);
+
   await panel.getByLabel("분석 실행", { exact: true }).selectOption(run.id);
   await panel.getByRole("button", { name: "실행 새로고침", exact: true }).click();
 
@@ -236,10 +306,23 @@ test("Capture queues synthetic analysis, shows coverage, supports human confirm/
   await issuePanel.getByLabel("시정조치 제목").fill("Synthetic corrective action");
   await issuePanel.getByLabel("담당 시공사").selectOption({ index: 1 });
   await issuePanel.getByLabel("기한").fill(localDateTime(new Date(Date.now() + 7 * 86_400_000)));
+  issueRequests.length = 0;
+  dropNextIssueAcknowledgement = true;
   const issueResponse = page.waitForResponse((response) => /\/media-analysis-runs\/[^/]+\/issues$/.test(new URL(response.url()).pathname) && response.request().method() === "POST");
   await issuePanel.getByRole("button", { name: "선택 관찰로 Issue 생성" }).click();
-  const issued = await issueResponse; expect(issued.status(), await issued.text()).toBe(201);
+  const dropped = await issueResponse; expect(dropped.status()).toBe(502);
+  await expect(panel.getByRole("alert")).toBeVisible();
+  const retryResponse = page.waitForResponse((response) => /\/media-analysis-runs\/[^/]+\/issues$/.test(new URL(response.url()).pathname) && response.request().method() === "POST");
+  failNextWorkspaceRefresh = true;
+  await issuePanel.getByRole("button", { name: "선택 관찰로 Issue 생성" }).click();
+  const issued = await retryResponse; expect(issued.status(), await issued.text()).toBe(201);
   const issue = await issued.json() as { issue: { id: string; observationIds: string[] } };
   expect(issue.issue.observationIds).toHaveLength(1);
+  expect(issueRequests).toHaveLength(2);
+  expect(issueRequests[1].key).toBe(issueRequests[0].key);
+  expect(issueRequests[1].body).toBe(issueRequests[0].body);
+  await expect(panel.getByTestId("media-issue-authoring")).toHaveCount(0);
+  const persistedIssue = await api<{ id: string; evidenceIds?: string[] }>(request, sup, `/issues/${issue.issue.id}`);
+  expect(persistedIssue.evidenceIds).toContain(evidence.id);
   await expect(panel.getByText(new RegExp(`Issue 생성 완료: ${issue.issue.id}`))).toBeVisible();
 });
