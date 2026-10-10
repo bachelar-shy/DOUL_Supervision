@@ -41,7 +41,7 @@ export function TranslationPreviewPanel({ client, workspace }: { client: Supervi
       setBusy(false);
     }
   }
-  return <section className="panel" data-ui-component="translation-preview" aria-label={korean ? "한·베 번역 미리보기" : "Xem trước bản dịch Hàn–Việt"}>
+  return <section className="panel" data-ui-component="translation-preview" data-project-id={workspace.project.id} aria-label={korean ? "한·베 번역 미리보기" : "Xem trước bản dịch Hàn–Việt"}>
     <h3>{korean ? "한·베 번역 미리보기 (Gemma 4)" : "Xem trước bản dịch Hàn–Việt (Gemma 4)"}</h3>
     <p className="muted">{korean ? "원문은 변경되지 않습니다. 자동 번역은 공식 보고·승인 전에 담당자 검수가 필요합니다." : "Bản gốc không bị thay đổi. Cần người phụ trách kiểm tra trước khi phát hành."}</p>
     <label>{korean ? "원문 언어" : "Ngôn ngữ gốc"}<select aria-label={korean ? "원문 언어" : "Ngôn ngữ gốc"} value={sourceLanguage} onChange={e => { setSourceLanguage(e.target.value as Language); setTranslated(null); }}>
