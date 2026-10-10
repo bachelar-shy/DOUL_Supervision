@@ -120,9 +120,12 @@
         "tests_browser/handover-closed-loop.spec.ts",
         "tests_browser/action-authoring.spec.ts",
         "design/development/agents/handover-closed-loop-handoff.json",
-        "design/verification/goal-m4-native-20261009.json"
+        "design/verification/goal-m4-native-20261009.json",
+        "app/reference/product_change_record_pcr_2026_002.json",
+        "tests_mvp/test_completion_reference_refusals_http.py",
+        "design/development/agents/reference-integration-handoff.json"
       ],
-      "note": "Persistent F-07 HTTP/PostgreSQL tests and four additional browser cases verify explicitly disclosed synthetic prerequisites. The Action draft UI passes two cases. Commissioning close, an actual Owner decision, partial handover, Warranty remedy submission, and linked reinspection have local evidence. An actual accept_remedy request with the current passed Inspection reference and evidence returns HTTP 409 REFERENCE_STALE after legitimate Issue progression. Warranty acceptance, closure, and its final FM-09 release remain unproven. The C2 commissioning Punch reference refresh is a draft, and Handover/Warranty reference reconciliation requires a Product decision under policy 48. Retain backend_api_implemented with revalidation_required under policy 54; no whole AC-HO-01 or pilot promotion. Supplementary Mac M4 normal suite passes 95 cases with explicit browser-local datetime fixtures, including the four F-07 cases; UTC/Seoul transport failure and retest are separately recorded. This does not change the accepted business scope or stage."
+      "note": "C2 reference lifecycle approved by the Product Owner for Baseline v1.1 (PCR-2026-002). Implementation supports explicit qualified SUP refresh of the same Commissioning Punch/Handover Issue identities and complete Warranty current Action cycle, preserving original snapshots, Owner decisions, reservations, versions and audit history. Reference suite 320 passed; API agent suite 407 run, 361 passed, 46 environment skips; five added real HTTP atomic refusal/idempotency/SQLite restart tests passed. Complete five-scenario connected browser rerun and exact integrated Mac Actions remain pending, so retain backend_api_implemented/revalidation_required. Historical stale-reference rejection remains correct unless the new explicit approved command is used. Trusted upstream profiles and signature verifier remain synthetic; actual provider/project adoption and field pilot are unproven."
     },
     {
       "functionId": "F-08",
