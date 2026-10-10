@@ -1137,10 +1137,10 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     expect(reworkRequired.status).toBe("rework_required");
 
     await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
-    await runWorkbenchCommand(page, "issues", warrantyIssueTitle, /reject reinspection|재검측 반려/i, {}, [fixture.evidenceId]);
+    await runWorkbenchCommand(page, "issues", warrantyIssueTitle, /request recorrection|재시정 요청|yêu cầu khắc phục lại/i, {}, [fixture.evidenceId]);
     await useRole(page, "CON");
     await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
-    await runWorkbenchCommand(page, "issues", warrantyIssueTitle, /restart correction|시정 재개/i);
+    await runWorkbenchCommand(page, "issues", warrantyIssueTitle, /restart corrective work|재시정 시작|bắt đầu lại công việc khắc phục/i);
     const issueAtReplacementCycle = latestWorkspace.items.find((item: any) => item.record.id === warrantyIssueRef.objectId);
     expect(issueAtReplacementCycle.record.correctionCycle).toBe(1);
 
