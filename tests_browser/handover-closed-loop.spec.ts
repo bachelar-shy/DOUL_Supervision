@@ -939,6 +939,14 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     expect(partial.record.status).toBe("partial_handover");
     expect(partial.record.data.acceptedScope).toEqual(acceptedScope);
     expect(partial.record.data.warrantyStartAt).toBe(fixture.warrantyStartAt);
+    let warrantyIssueRef = fixture.reservationIssueRef;
+    let warrantyIssueTitle = "F-07 browser reservation Punch";
+    if (continueWarranty) {
+      const warrantyIssueSeedResponse = await fetch(`${base}/_test/warranty-issue`, { method: "POST" });
+      expect(warrantyIssueSeedResponse.status).toBe(201);
+      warrantyIssueRef = (await warrantyIssueSeedResponse.json()).ref as Ref;
+      warrantyIssueTitle = "F-07 browser warranty defect Issue";
+    }
 
     await useRole(page, "OWN");
     await workspace.getByRole("tab", { name: /warranty/i }).click();
@@ -949,7 +957,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await create.getByLabel(/^system$/i).fill("SYS-BROWSER");
     await chooseRef(create, /warranty period/i, fixture.warrantyPeriodRef);
     await chooseRef(create, /handover/i, { objectType: "WorkItem", objectId: handoverId, version: partial.record.version });
-    await chooseRef(create, /issue/i, fixture.reservationIssueRef);
+    await chooseRef(create, /issue/i, warrantyIssueRef);
     await create.getByLabel(/observed at/i).fill(await localDateTime(page, fixture.warrantyStartAt));
     await create.getByLabel(/defect description/i).fill("Seal leakage observed at the accepted flange");
     await create.getByLabel(/cause description/i).fill("Seal failed during operation");
@@ -966,6 +974,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     expect(claimResponse.status(), JSON.stringify(claimBody)).toBe(201);
     expect(new Date(claimBody.record.data.defectObservedAt).toISOString())
       .toBe(new Date(fixture.warrantyStartAt).toISOString());
+    expect(claimBody.record.data.issueRef).toEqual(warrantyIssueRef);
     const claimId = claimBody.record.id as string;
     await expect(workspace.getByRole("button", { name: /Browser warranty defect claim/ })).toBeVisible();
     await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
@@ -1009,9 +1018,9 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     const remedyActionTitle = "F-07 browser warranty corrective action";
     await actionAuthoring.getByLabel(/action title/i).fill(remedyActionTitle);
     const relatedIssue = actionAuthoring.getByLabel(/related issue/i);
-    const issueOption = relatedIssue.locator("option").filter({ hasText: fixture.reservationIssueRef.objectId });
+    const issueOption = relatedIssue.locator("option").filter({ hasText: warrantyIssueRef.objectId });
     await expect(issueOption, "select the exact current warranty Issue reference").toHaveCount(1);
-    await relatedIssue.selectOption(fixture.reservationIssueRef.objectId);
+    await relatedIssue.selectOption(warrantyIssueRef.objectId);
     await actionAuthoring.getByLabel(/assignee/i).selectOption(fixture.actors.CON);
     await actionAuthoring.getByLabel(/due date/i).fill(await localDateTime(page, fixture.tomorrow));
     const actionCreatedPromise = page.waitForResponse((response) => response.request().method() === "POST" && /\/actions$/.test(new URL(response.url()).pathname));
@@ -1067,21 +1076,20 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     // visible to the server instead of being silently rewritten in the test.
     await useRole(page, "SUP");
     await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
-    const reservationPunchTitle = "F-07 browser reservation Punch";
-    await runWorkbenchCommand(page, "issues", reservationPunchTitle, /assign|담당자 배정/i, {
+    await runWorkbenchCommand(page, "issues", warrantyIssueTitle, /assign|담당자 배정/i, {
       responsiblePartyId: fixture.actors.CON,
       responsibleOrganizationId: fixture.responsibleOrganizationId,
       dueAt: fixture.tomorrow,
-      actionIds: [fixture.reservationActionRef.objectId, remedyActionId],
+      actionIds: [remedyActionId],
     });
     await useRole(page, "CON");
     await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
-    await runWorkbenchCommand(page, "issues", reservationPunchTitle, /start correction|시정 시작/i);
+    await runWorkbenchCommand(page, "issues", warrantyIssueTitle, /start correction|시정 시작/i);
     await page.goto("/#/parallel-test");
     await page.getByRole("tab", { name: /work inbox|작업함/i }).click();
     const warrantyCasePanel = page.getByTestId("inspection-case-flow");
     await warrantyCasePanel.getByLabel(/source inspection|root inspection|원 검측 선택/i).selectOption(fixture.inspectionRef.objectId);
-    const warrantyIssueCard = warrantyCasePanel.locator(".inspection-case-issue").filter({ hasText: reservationPunchTitle });
+    const warrantyIssueCard = warrantyCasePanel.locator(".inspection-case-issue").filter({ hasText: warrantyIssueTitle });
     await expect(warrantyIssueCard).toBeVisible();
     const warrantyReinspectionForm = warrantyIssueCard.getByRole("form", { name: /request linked reinspection|연결된 재검측 요청/i });
     const warrantyReinspectionName = "F-07 browser warranty reinspection";
@@ -1101,7 +1109,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
 
     await useRole(page, "SUP");
     await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
-    await runWorkbenchCommand(page, "issues", reservationPunchTitle, /start reinspection|재검측 시작/i);
+    await runWorkbenchCommand(page, "issues", warrantyIssueTitle, /start reinspection|재검측 시작/i);
     await page.getByRole("navigation").getByRole("button", { name: /inspection.*acceptance/i }).click();
     await runWorkbenchCommand(page, "inspections", warrantyReinspectionName, /receive|접수/i, { "접수 시각": new Date().toISOString() });
     await runWorkbenchCommand(page, "inspections", warrantyReinspectionName, /schedule|일정 배정/i, { "검측 예정시각": new Date(Date.now() + 3600000).toISOString() });
@@ -1123,11 +1131,11 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     expect(reworkRequired.status).toBe("rework_required");
 
     await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
-    await runWorkbenchCommand(page, "issues", "F-07 browser reservation Punch", /reject reinspection|재검측 반려/i, {}, [fixture.evidenceId]);
+    await runWorkbenchCommand(page, "issues", warrantyIssueTitle, /reject reinspection|재검측 반려/i, {}, [fixture.evidenceId]);
     await useRole(page, "CON");
     await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
-    await runWorkbenchCommand(page, "issues", "F-07 browser reservation Punch", /restart correction|시정 재개/i);
-    const issueAtReplacementCycle = latestWorkspace.items.find((item: any) => item.record.id === fixture.reservationIssueRef.objectId);
+    await runWorkbenchCommand(page, "issues", warrantyIssueTitle, /restart correction|시정 재개/i);
+    const issueAtReplacementCycle = latestWorkspace.items.find((item: any) => item.record.id === warrantyIssueRef.objectId);
     expect(issueAtReplacementCycle.record.correctionCycle).toBe(1);
 
     const replacementActionTitle = "F-07 browser warranty replacement corrective action";
@@ -1136,7 +1144,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await expect(replacementAuthoring).toBeVisible();
     await replacementAuthoring.getByLabel(/action title/i).fill(replacementActionTitle);
     const replacementRelatedIssue = replacementAuthoring.getByLabel(/related issue/i);
-    await replacementRelatedIssue.selectOption(fixture.reservationIssueRef.objectId);
+    await replacementRelatedIssue.selectOption(warrantyIssueRef.objectId);
     await replacementAuthoring.getByLabel(/assignee/i).selectOption(fixture.actors.CON);
     await replacementAuthoring.getByLabel(/due date/i).fill(await localDateTime(page, fixture.tomorrow));
     const replacementActionPost = page.waitForResponse((response) => response.request().method() === "POST" && /\/actions$/.test(new URL(response.url()).pathname));
@@ -1155,11 +1163,11 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await page.getByRole("navigation").getByRole("button", { name: /corrective actions/i }).click();
     await runWorkbenchCommand(page, "actions", replacementActionTitle, /start/i);
     await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
-    const issueBeforeLink = latestWorkspace.items.find((item: any) => item.record.id === fixture.reservationIssueRef.objectId);
-    await runWorkbenchCommand(page, "issues", "F-07 browser reservation Punch", /link corrective actions|link actions|조치 연결/i, {
+    const issueBeforeLink = latestWorkspace.items.find((item: any) => item.record.id === warrantyIssueRef.objectId);
+    await runWorkbenchCommand(page, "issues", warrantyIssueTitle, /link corrective actions|link actions|조치 연결/i, {
       actionIds: [...issueBeforeLink.record.actionIds, replacementActionId],
     });
-    const linkedIssue = latestWorkspace.items.find((item: any) => item.record.id === fixture.reservationIssueRef.objectId);
+    const linkedIssue = latestWorkspace.items.find((item: any) => item.record.id === warrantyIssueRef.objectId);
     expect(linkedIssue.record.correctionCycle).toBe(1);
     expect(linkedIssue.record.actionIds).toContain(replacementActionId);
 
@@ -1168,10 +1176,10 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await workspace.getByRole("tab", { name: /warranty/i }).click();
     await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
     const currentRemedyIssueRef = latestWorkspace.context.referenceCatalog.issues
-      .find((entry: any) => entry.ref.objectId === fixture.reservationIssueRef.objectId)?.ref as Ref | undefined;
+      .find((entry: any) => entry.ref.objectId === warrantyIssueRef.objectId)?.ref as Ref | undefined;
     const replacementActionRef = latestWorkspace.context.referenceCatalog.actions
       .find((entry: any) => entry.ref.objectId === replacementActionId)?.ref as Ref | undefined;
-    expect(currentRemedyIssueRef).toMatchObject({ objectId: fixture.reservationIssueRef.objectId, version: linkedIssue.record.version });
+    expect(currentRemedyIssueRef).toMatchObject({ objectId: warrantyIssueRef.objectId, version: linkedIssue.record.version });
     expect(replacementActionRef).toBeDefined();
     const originalRemedyIssueRef = latestWorkspace.items.find((item: any) => item.record.id === claimId).record.data.issueRef;
     const originalRemedyActionRefs = latestWorkspace.items.find((item: any) => item.record.id === claimId).record.data.actionRefs;
@@ -1224,7 +1232,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await page.getByRole("tab", { name: /work inbox|작업함/i }).click();
     const replacementCasePanel = page.getByTestId("inspection-case-flow");
     await replacementCasePanel.getByLabel(/source inspection|root inspection|원 검측 선택/i).selectOption(fixture.inspectionRef.objectId);
-    const replacementIssueCard = replacementCasePanel.locator(".inspection-case-issue").filter({ hasText: "F-07 browser reservation Punch" });
+    const replacementIssueCard = replacementCasePanel.locator(".inspection-case-issue").filter({ hasText: warrantyIssueTitle });
     const replacementReinspectionForm = replacementIssueCard.getByRole("form", { name: /request linked reinspection|연결된 재검측 요청/i });
     const warrantyReplacementReinspectionName = "F-07 browser warranty replacement reinspection";
     await replacementReinspectionForm.getByLabel(/work name|작업명/i).fill(warrantyReplacementReinspectionName);
@@ -1241,7 +1249,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
 
     await useRole(page, "SUP");
     await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
-    await runWorkbenchCommand(page, "issues", "F-07 browser reservation Punch", /start reinspection|재검측 시작/i);
+    await runWorkbenchCommand(page, "issues", warrantyIssueTitle, /start reinspection|재검측 시작/i);
     await page.getByRole("navigation").getByRole("button", { name: /inspection.*acceptance/i }).click();
     await runWorkbenchCommand(page, "inspections", warrantyReplacementReinspectionName, /receive|접수/i, { "접수 시각": new Date().toISOString() });
     await runWorkbenchCommand(page, "inspections", warrantyReplacementReinspectionName, /schedule|일정 배정/i, { "검측 예정시각": new Date(Date.now() + 3600000).toISOString() });
@@ -1299,43 +1307,20 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
 
     await useRole(page, "SUP");
     await page.getByRole("navigation").getByRole("button", { name: /inspection.*acceptance/i }).click();
-    await runWorkbenchCommand(page, "inspections", warrantyReinspectionName, /release next work|후속공정 허용/i, {}, [fixture.evidenceId]);
+    await runWorkbenchCommand(page, "inspections", warrantyReplacementReinspectionName, /release next work|후속공정 허용/i, {}, [fixture.evidenceId]);
     expect(latestWorkspace.items.find((item: any) => item.record.id === warrantyReinspectionId)?.record.nextWorkAllowed).toBe(true);
     await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
-    await runWorkbenchCommand(page, "issues", reservationPunchTitle, /review closure|close/i, {
+    await runWorkbenchCommand(page, "issues", warrantyIssueTitle, /review closure|close/i, {
       closureEvidenceIds: [fixture.evidenceId, fixture.retestEvidenceId],
     }, [fixture.evidenceId, fixture.retestEvidenceId]);
 
     await useRole(page, "SUP");
     await page.getByRole("navigation").getByRole("button", { name: /commissioning.*handover.*warranty/i }).click();
-    await workspace.getByRole("tab", { name: /handover/i }).click();
-    await workspace.getByRole("button", { name: /Browser closed loop partial handover/ }).click();
-    const handoverBeforeRefresh = latestWorkspace.items.find((item: any) => item.record.id === handoverId).record;
-    const currentReservedIssueRef = latestWorkspace.context.referenceCatalog.issues
-      .find((entry: any) => entry.ref.objectId === fixture.reservationIssueRef.objectId)?.ref as Ref | undefined;
-    expect(currentReservedIssueRef).toBeDefined();
-    const originalOwnerAcceptanceRef = handoverBeforeRefresh.data.ownerAcceptanceRef;
-    const originalReservations = handoverBeforeRefresh.data.reservations;
-    const originalOpenIssueRefs = handoverBeforeRefresh.data.openIssueRefs;
-    expect(originalOpenIssueRefs[0].version).toBeLessThan(currentReservedIssueRef!.version);
-    const refreshedHandover = await runCompletionCommand(page, /refresh current issue references/i, {
-      currentIssueRefs: [currentReservedIssueRef!],
-    });
-    expect(refreshedHandover.status).toBe("partial_handover");
-    expect(refreshedHandover.version).toBeGreaterThan(handoverBeforeRefresh.version);
-    expect(refreshedHandover.data.openIssueRefs).toEqual(originalOpenIssueRefs);
-    expect(refreshedHandover.data.currentIssueRefs).toEqual([currentReservedIssueRef]);
-    expect(refreshedHandover.data.currentOpenIssueRefs).toEqual([]);
-    expect(refreshedHandover.data.ownerAcceptanceRef).toEqual(originalOwnerAcceptanceRef);
-    expect(refreshedHandover.data.reservations).toEqual(originalReservations);
-    expect(refreshedHandover.data.issueReferenceRefreshHistory).toHaveLength(1);
-    await runCompletionCommand(page, /close handover package/i);
-
     await workspace.getByRole("tab", { name: /warranty/i }).click();
     await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
     const claimAfterReinspection = latestWorkspace.items.find((item: any) => item.record.id === claimId);
-    const reservationIssue = latestWorkspace.items.find((item: any) => item.record.id === fixture.reservationIssueRef.objectId);
-    expect(claimAfterReinspection.record.data.issueRef.version).toBeLessThan(reservationIssue.record.version);
+    const warrantyIssue = latestWorkspace.items.find((item: any) => item.record.id === warrantyIssueRef.objectId);
+    expect(claimAfterReinspection.record.data.issueRef.version).toBeLessThan(warrantyIssue.record.version);
     const acceptRemedy = claimAfterReinspection.actions.find((action: any) => action.command === "accept_remedy");
     expect(acceptRemedy?.fields).toContain("reinspectionRef");
     expect(acceptRemedy?.fields).toContain("issueRef");
@@ -1343,14 +1328,16 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     const currentReinspectionRef = latestWorkspace.context.referenceCatalog.inspections
       .find((entry: any) => entry.ref.objectId === warrantyReinspectionId)?.ref as Ref | undefined;
     const currentIssueRef = latestWorkspace.context.referenceCatalog.issues
-      .find((entry: any) => entry.ref.objectId === fixture.reservationIssueRef.objectId)?.ref as Ref | undefined;
-    const currentActionRefs = reservationIssue.record.actionIds
-      .filter((id: string) => latestWorkspace.items.find((item: any) => item.record.id === id)?.record.correctionCycle === reservationIssue.record.correctionCycle)
+      .find((entry: any) => entry.ref.objectId === warrantyIssueRef.objectId)?.ref as Ref | undefined;
+    const currentActionRefs = warrantyIssue.record.actionIds
+      .filter((id: string) => latestWorkspace.items.find((item: any) => item.record.id === id)?.record.correctionCycle === warrantyIssue.record.correctionCycle)
       .map((id: string) => latestWorkspace.context.referenceCatalog.actions.find((entry: any) => entry.ref.objectId === id)?.ref)
       .filter(Boolean) as Ref[];
     expect(currentReinspectionRef).toBeDefined();
-    expect(currentIssueRef).toMatchObject({ objectId: fixture.reservationIssueRef.objectId, version: reservationIssue.record.version });
-    expect(currentActionRefs).toHaveLength(2);
+    expect(currentIssueRef).toMatchObject({ objectId: warrantyIssueRef.objectId, version: warrantyIssue.record.version });
+    expect(currentActionRefs).toHaveLength(1);
+    expect(currentActionRefs[0]).toMatchObject({ objectType: "Action", objectId: replacementActionId, version: replacementActionRef.version });
+    expect(latestWorkspace.items.find((item: any) => item.record.id === replacementActionId)?.record.correctionCycle).toBe(1);
     const originalWarrantyIssueRef = claimAfterReinspection.record.data.issueRef;
     const originalWarrantyActionRefs = claimAfterReinspection.record.data.actionRefs;
     const acceptedRemedy = await runCompletionCommand(page, /accept remedy/i, {
@@ -1359,6 +1346,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     expect(acceptedRemedy.status).toBe("accepted");
     expect(acceptedRemedy.version).toBeGreaterThan(claimAfterReinspection.record.version);
     expect(acceptedRemedy.data.issueRef).toEqual(originalWarrantyIssueRef);
+    expect(originalWarrantyIssueRef).toMatchObject({ objectType: "Issue", objectId: warrantyIssueRef.objectId });
     expect(acceptedRemedy.data.actionRefs).toEqual(originalWarrantyActionRefs);
     expect(acceptedRemedy.data.currentIssueRef).toEqual(currentIssueRef);
     expect(acceptedRemedy.data.currentActionRefs).toHaveLength(currentActionRefs.length);
