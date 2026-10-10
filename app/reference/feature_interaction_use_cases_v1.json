@@ -1,0 +1,2869 @@
+{
+  "schemaVersion": "1.0",
+  "date": "2026-10-11",
+  "status": "functional_test_design_only",
+  "roleCatalogRef": "app/reference/role_field_use_cases_v1.json",
+  "sourceRefs": [
+    "app/reference/role_field_use_cases_v1.json",
+    "app/schema/implementation_acceptance_catalog_v1.json",
+    "app/forms/form_catalog.json",
+    "app/forms/rendering_contract.json",
+    "app/forms/legal_form_registry.json",
+    "apps/web/src/pages/DocumentPage.tsx",
+    "apps/web/src/pages/DocumentSigningPanel.tsx",
+    "apps/web/src/pages/parallel/PdfViewerPanel.tsx",
+    "apps/web/src/pages/parallel/DrawingComparePanel.tsx",
+    "tests_browser/pdf-compare.spec.ts",
+    "tests_browser/pdf-viewer-browser.spec.ts"
+  ],
+  "featureGroups": [
+    {
+      "code": "NAV",
+      "label": "공통 화면·프로젝트 전환",
+      "scenarioCount": 5
+    },
+    {
+      "code": "DWG",
+      "label": "도면 조회·개정·비교·마킹",
+      "scenarioCount": 14
+    },
+    {
+      "code": "EVD",
+      "label": "사진·동영상·원본 증빙",
+      "scenarioCount": 5
+    },
+    {
+      "code": "INS",
+      "label": "검측·검수",
+      "scenarioCount": 5
+    },
+    {
+      "code": "NCR",
+      "label": "부적합·시정조치",
+      "scenarioCount": 4
+    },
+    {
+      "code": "SAF",
+      "label": "안전·작업허가",
+      "scenarioCount": 4
+    },
+    {
+      "code": "SCH",
+      "label": "공정·지연·회복",
+      "scenarioCount": 4
+    },
+    {
+      "code": "PAY",
+      "label": "물량·기성·지급",
+      "scenarioCount": 4
+    },
+    {
+      "code": "OWN",
+      "label": "발주처 보고·의사결정",
+      "scenarioCount": 4
+    },
+    {
+      "code": "HDO",
+      "label": "준공·인수·하자",
+      "scenarioCount": 4
+    },
+    {
+      "code": "DOC",
+      "label": "문서작성·서명·출력",
+      "scenarioCount": 19
+    },
+    {
+      "code": "ADM",
+      "label": "관리·사용자·운영",
+      "scenarioCount": 5
+    }
+  ],
+  "categories": [
+    {
+      "id": "single",
+      "label": "단일 기능"
+    },
+    {
+      "id": "combined",
+      "label": "기능 조합·연속 조작"
+    },
+    {
+      "id": "error",
+      "label": "오류·충돌·복구"
+    },
+    {
+      "id": "role",
+      "label": "권한·승인 경계"
+    },
+    {
+      "id": "responsive",
+      "label": "화면크기·접근성"
+    },
+    {
+      "id": "performance",
+      "label": "반복조작·응답성"
+    }
+  ],
+  "implementationSurfaceMeanings": {
+    "existing_surface_to_verify": "관련 UI/코드 또는 테스트가 존재하나 새 시나리오의 실행 통과가 확인된 상태는 아님",
+    "known_gap": "현재 소스에 명시적 미지원 상태 또는 사용자 신고 접근성 결함 존재",
+    "contract_target": "계약/업무 요구·추가 구현 여부를 검토할 목표이며 작동 가정 금지"
+  },
+  "counts": {
+    "total": 77,
+    "groups": {
+      "NAV": 5,
+      "DWG": 14,
+      "EVD": 5,
+      "INS": 5,
+      "NCR": 4,
+      "SAF": 4,
+      "SCH": 4,
+      "PAY": 4,
+      "OWN": 4,
+      "HDO": 4,
+      "DOC": 19,
+      "ADM": 5
+    },
+    "multiFunctionJourneys": 12
+  },
+  "fixturePolicy": {
+    "syntheticFirst": true,
+    "realSourceForPilot": true,
+    "requiredMetadata": [
+      "projectId",
+      "roleAssignmentId",
+      "inputIdsAndVersions",
+      "PDFFileHash/page/revision",
+      "PhotoCaptureTime/location/fileHash",
+      "BOQLine/unit/currency",
+      "ScheduleActivityId/dataDate",
+      "DocumentFormId/templateHash/language"
+    ],
+    "noFakeRealSiteEvents": true
+  },
+  "commonAssertions": [
+    "입력값·화면 표시·서버 저장원본 및 버전이 일치해야 한다",
+    "역할·자격·프로젝트 범위는 API에서도 재검증해야 한다",
+    "오류 또는 통신중단 후 원본과 이전판은 보존해야 한다",
+    "업무 단계마다 사람의 확인·승인·수령·재검증을 구분한다",
+    "UI 통과와 업무 통합·실제 현장 검증은 별도 단계로 기록한다",
+    "기존 다국어 인프라와 한국어 현장용어 의미를 유지하고 vi/en 전문검수는 보류한다"
+  ],
+  "scenarios": [
+    {
+      "id": "FC-NAV-01",
+      "featureGroup": "NAV",
+      "kind": "single",
+      "title": "역할별 기본 메뉴 진입·명칭 확인",
+      "actors": [
+        "SUP",
+        "CON",
+        "OWN",
+        "ADM"
+      ],
+      "steps": [
+        "역할로 로그인",
+        "허용 메뉴 목록 확인",
+        "같은 업무 진입",
+        "뒤로가기"
+      ],
+      "expected": "사용자가 업무명으로 화면을 찾으며 현재 역할에서 허용된 기능만 표현",
+      "negative": "개발용 내부 객체명 노출 또는 메뉴 눌러도 잘못된 화면",
+      "fixtureIds": [
+        "role-users",
+        "project-A"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-01",
+        "UC-CON-04",
+        "UC-OWN-01",
+        "UC-ADM-09"
+      ],
+      "acceptanceRefs": [
+        "AC-AUTH-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-NAV-02",
+      "featureGroup": "NAV",
+      "kind": "responsive",
+      "title": "좌측 메뉴 스크롤·좁은 화면 접근",
+      "actors": [
+        "SUP",
+        "CON",
+        "OWN",
+        "ADM"
+      ],
+      "steps": [
+        "작은 높이 화면으로 접속",
+        "메뉴 끝까지 스크롤",
+        "도면·문서 화면 열기",
+        "원래 위치 복귀"
+      ],
+      "expected": "모든 메뉴 항목을 키보드·터치·휠로 접근 가능하고 내용 겹침 없음",
+      "negative": "고정 사이드바 아래 메뉴 접근 불가 또는 포커스 가림",
+      "fixtureIds": [
+        "short-screen",
+        "desktop",
+        "mobile"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14",
+        "UC-ADM-10"
+      ],
+      "acceptanceRefs": [
+        "AC-AUTH-01"
+      ],
+      "implementationSurface": "known_gap",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-NAV-03",
+      "featureGroup": "NAV",
+      "kind": "combined",
+      "title": "프로젝트 전환 후 화면·데이터 범위 일치",
+      "actors": [
+        "SUP",
+        "CON",
+        "OWN",
+        "ADM"
+      ],
+      "steps": [
+        "프로젝트 A 선택",
+        "도면·검측 조회",
+        "프로젝트 B 선택",
+        "각 화면 새로고침",
+        "브라우저 뒤로가기"
+      ],
+      "expected": "프로젝트·역할 컨텍스트가 모든 기능에서 함께 바뀌며 이전 현장 데이터 노출 없음",
+      "negative": "프로젝트 제목만 바뀌고 도면·사진·권한·이슈 캐시는 기존 현장 유지",
+      "fixtureIds": [
+        "two-projects",
+        "role-users"
+      ],
+      "roleCaseRefs": [
+        "UC-ADM-10",
+        "UC-OWN-01"
+      ],
+      "acceptanceRefs": [
+        "AC-AUTH-01",
+        "AC-OFFLINE-01"
+      ],
+      "implementationSurface": "known_gap",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-NAV-04",
+      "featureGroup": "NAV",
+      "kind": "error",
+      "title": "타 프로젝트 주소 직접 접근 차단",
+      "actors": [
+        "SUP",
+        "CON",
+        "OWN",
+        "ADM"
+      ],
+      "steps": [
+        "허용 프로젝트 로그인",
+        "다른 프로젝트 객체 주소 입력",
+        "API 응답·상태 확인"
+      ],
+      "expected": "열람·다운로드·수정 모두 서버에서 접근 거부되고 원본 정보 유출 없음",
+      "negative": "UI 숨김만으로 보안 구현 또는 응답 캐시에서 정보 누출",
+      "fixtureIds": [
+        "two-projects",
+        "role-users"
+      ],
+      "roleCaseRefs": [
+        "UC-ADM-10"
+      ],
+      "acceptanceRefs": [
+        "AC-AUTH-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-NAV-05",
+      "featureGroup": "NAV",
+      "kind": "combined",
+      "title": "화면 이동·역할변경 후 작성 상태 보호",
+      "actors": [
+        "SUP",
+        "CON",
+        "OWN"
+      ],
+      "steps": [
+        "긴 입력화면 작성",
+        "다른 메뉴 이동 또는 역할 전환",
+        "되돌아옴",
+        "저장하지 않은 변경 확인"
+      ],
+      "expected": "미저장 내용은 명시적 경고·복구절차가 제공되고 다른 역할로 누출되지 않음",
+      "negative": "입력 유실·다른 역할 사용자 데이터 혼재·오류 없이 전환",
+      "fixtureIds": [
+        "draft-inputs",
+        "role-users"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-13",
+        "UC-CON-07"
+      ],
+      "acceptanceRefs": [
+        "AC-OFFLINE-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-01",
+      "featureGroup": "DWG",
+      "kind": "single",
+      "title": "도면 PDF 원본 조회·페이지 이동",
+      "actors": [
+        "SUP",
+        "CON",
+        "OWN",
+        "DES"
+      ],
+      "steps": [
+        "도면 목록 조회",
+        "PDF 원본 선택",
+        "페이지 1 로드",
+        "다음/이전 페이지 이동",
+        "원본 식별 확인"
+      ],
+      "expected": "올바른 도면번호·개정·원본 해시 및 페이지가 보이고 이전판을 덮어쓰지 않음",
+      "negative": "메타데이터만 있고 원본이 없는데 도면 열기 성공 표시",
+      "fixtureIds": [
+        "drawing-r1-pdf",
+        "drawing-r2-pdf"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14",
+        "UC-CON-01"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-02",
+      "featureGroup": "DWG",
+      "kind": "combined",
+      "title": "확대·스크롤·회전·페이지 전환을 연속 조작",
+      "actors": [
+        "SUP",
+        "CON",
+        "DES"
+      ],
+      "steps": [
+        "도면 열기",
+        "200퍼센트 확대",
+        "위치 스크롤",
+        "90도 회전",
+        "다음 페이지",
+        "축소",
+        "원래 페이지 복귀"
+      ],
+      "expected": "페이지·회전·확대 상태가 일관되며 잘못된 좌표에 마킹하지 않음",
+      "negative": "화면은 전환됐으나 오래된 페이지 캔버스 또는 다른 위치에 좌표 저장",
+      "fixtureIds": [
+        "drawing-r1-pdf",
+        "large-pdf"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-03",
+      "featureGroup": "DWG",
+      "kind": "single",
+      "title": "PDF 텍스트 검색·일치 페이지 이동",
+      "actors": [
+        "SUP",
+        "CON",
+        "DES"
+      ],
+      "steps": [
+        "텍스트 포함 도면 열기",
+        "도면 기호·문구 검색",
+        "결과 클릭",
+        "해당 페이지 확인"
+      ],
+      "expected": "검색 결과와 페이지가 맞고 스캔본은 검색 불가 여부 명시",
+      "negative": "검색 미지원 스캔본을 일치 결과로 오인 또는 잘못된 페이지 이동",
+      "fixtureIds": [
+        "searchable-pdf",
+        "scanned-pdf"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-04",
+      "featureGroup": "DWG",
+      "kind": "single",
+      "title": "PDF 원본 업로드·도면번호·개정 및 연결",
+      "actors": [
+        "ADM",
+        "DES",
+        "SUP"
+      ],
+      "steps": [
+        "PDF 원본 올리기",
+        "도면 등록",
+        "도면 개정 입력",
+        "원본 증빙과 도면 연결",
+        "등록내역 재조회"
+      ],
+      "expected": "도면 기록과 원본 파일이 정확한 개정으로 연결되고 해시·프로젝트 보존",
+      "negative": "파일 업로드만으로 도면 승인·현장배포 처리하거나 다른 프로젝트로 연결",
+      "fixtureIds": [
+        "drawing-r1-pdf",
+        "project-A"
+      ],
+      "roleCaseRefs": [
+        "UC-ADM-04",
+        "UC-DES-02"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01",
+        "AC-AUTH-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-05",
+      "featureGroup": "DWG",
+      "kind": "combined",
+      "title": "도면 두 판 좌우 비교·독립 페이지 이동",
+      "actors": [
+        "SUP",
+        "CON",
+        "DES"
+      ],
+      "steps": [
+        "개정 1·2 PDF 연결",
+        "비교 화면 선택",
+        "왼쪽 페이지 이동",
+        "오른쪽 확대·회전",
+        "좌우 원본 상태 확인"
+      ],
+      "expected": "양쪽 문서 조작이 독립적이고 비교 화면에서 공식 도면 상태를 변경하지 않음",
+      "negative": "두 화면이 엉뚱한 페이지를 보여주거나 비교 과정에서 개정본 자동 대체",
+      "fixtureIds": [
+        "drawing-r1-pdf",
+        "drawing-r2-pdf"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14",
+        "UC-DES-02"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-06",
+      "featureGroup": "DWG",
+      "kind": "combined",
+      "title": "도면 비교 후 마킹 및 이슈 연결 상태 유지",
+      "actors": [
+        "SUP"
+      ],
+      "steps": [
+        "두 도면 비교",
+        "최신판 선택",
+        "위치 메모 작성",
+        "저장",
+        "지적사항 연결",
+        "비교 화면 재진입"
+      ],
+      "expected": "저장 주석은 지정한 PDF 원본 개정·페이지·좌표와 묶여 있으며 지적사항 별도 승인",
+      "negative": "구개정 마킹이 최신판으로 자동 이동하거나 중복 지적사항 생성",
+      "fixtureIds": [
+        "drawing-r1-pdf",
+        "drawing-r2-pdf",
+        "inspection-fail"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14",
+        "UC-SUP-15"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01",
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-07",
+      "featureGroup": "DWG",
+      "kind": "combined",
+      "title": "확대·회전 후 주석 위치 정확도",
+      "actors": [
+        "SUP",
+        "DES"
+      ],
+      "steps": [
+        "원본 도면 페이지 마킹",
+        "확대",
+        "회전",
+        "다른 페이지 이동",
+        "복귀",
+        "주석 위치 비교"
+      ],
+      "expected": "저장된 PDF 좌표가 확대율·회전·화면크기에 무관하게 같은 위치에 표시",
+      "negative": "캔버스 CSS좌표를 그대로 저장해 마킹이 원본 위치에서 이탈",
+      "fixtureIds": [
+        "drawing-r1-pdf",
+        "markup-positions"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-08",
+      "featureGroup": "DWG",
+      "kind": "single",
+      "title": "주석 수정·삭제 사유와 과거 이력 보존",
+      "actors": [
+        "SUP"
+      ],
+      "steps": [
+        "주석 만들기",
+        "내용 수정",
+        "변경 이력 보기",
+        "사유를 적고 삭제",
+        "기존 지적사항 연결 확인"
+      ],
+      "expected": "주석 수정·삭제 후에도 원본 이력과 과거 공식지적 연결 보존",
+      "negative": "삭제가 과거 지적사항을 소멸시키거나 변경사유 없이 역사 제거",
+      "fixtureIds": [
+        "drawing-r1-pdf",
+        "markup-positions"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14",
+        "UC-SUP-15"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-09",
+      "featureGroup": "DWG",
+      "kind": "error",
+      "title": "동시 주석 수정의 작성차수 충돌",
+      "actors": [
+        "SUP"
+      ],
+      "steps": [
+        "감리자 A·B 같은 주석 열기",
+        "A 수정 저장",
+        "B 과거 버전으로 저장 시도",
+        "충돌 확인"
+      ],
+      "expected": "낡은 버전 갱신은 거부되고 B는 최신판을 확인한 뒤 다시 수정",
+      "negative": "나중 저장한 값이 처음 수정 내용을 조용히 덮어쓰기",
+      "fixtureIds": [
+        "markup-two-editors"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-10",
+      "featureGroup": "DWG",
+      "kind": "error",
+      "title": "PDF 미등록·손상·암호·중단 후 복구",
+      "actors": [
+        "SUP",
+        "CON",
+        "DES"
+      ],
+      "steps": [
+        "원본 없는 도면 선택",
+        "손상 PDF 선택",
+        "암호 PDF 선택",
+        "정상 PDF 재선택"
+      ],
+      "expected": "오류 이유와 재시도 방법을 명확히 알리고 다음 정상 원본 로드가 가능",
+      "negative": "빈 흰 화면·무한 로딩·이전 PDF를 새 원본처럼 표시",
+      "fixtureIds": [
+        "missing-pdf",
+        "corrupt-pdf",
+        "protected-pdf",
+        "drawing-r1-pdf"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14",
+        "UC-CON-01"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-11",
+      "featureGroup": "DWG",
+      "kind": "performance",
+      "title": "대용량 다페이지 도면 반복 조작 성능",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "다페이지 도면 로드",
+        "50회 페이지·확대·회전 반복",
+        "10회 도면 전환",
+        "응답시간 측정"
+      ],
+      "expected": "조작 후 최종 요청과 캔버스 일치·브라우저 오류 및 메모리 누수 여부를 계측",
+      "negative": "과거 렌더 작업 경합으로 빈 캔버스 또는 앱 중단",
+      "fixtureIds": [
+        "large-pdf",
+        "multi-page-pdf"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-12",
+      "featureGroup": "DWG",
+      "kind": "role",
+      "title": "승인되지 않은 도면 사용·회수판 접근 경고",
+      "actors": [
+        "SUP",
+        "CON",
+        "ADM"
+      ],
+      "steps": [
+        "도면 수령",
+        "이전판 회수 등록",
+        "시공사가 회수판 보기",
+        "공식 검측에 연결 시도"
+      ],
+      "expected": "과거 원본은 이력 열람 가능하되 현장 사용가능판은 명확히 구분",
+      "negative": "회수판 표시가 새 개정과 같거나 기존 서명을 현재판 승인으로 간주",
+      "fixtureIds": [
+        "drawing-r1-pdf",
+        "drawing-r2-pdf"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-01",
+        "UC-SUP-01",
+        "UC-ADM-04"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-13",
+      "featureGroup": "DWG",
+      "kind": "single",
+      "title": "도면 위치 핀·구역/공종 연계",
+      "actors": [
+        "ADM",
+        "SUP"
+      ],
+      "steps": [
+        "도면 원본/개정 선택",
+        "구역 위치 편집",
+        "핀 저장",
+        "다른 화면에서 위치 재조회"
+      ],
+      "expected": "핀은 원본 PDF 개정·페이지·공간 ID와 연결되고 누가 저장했는지 확인",
+      "negative": "PDF 연결 누락 또는 권한 없는 사용자의 핀 공식 등록",
+      "fixtureIds": [
+        "drawing-r1-pdf",
+        "location-tree"
+      ],
+      "roleCaseRefs": [
+        "UC-ADM-04",
+        "UC-SUP-14"
+      ],
+      "acceptanceRefs": [
+        "AC-AUTH-01",
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DWG-14",
+      "featureGroup": "DWG",
+      "kind": "responsive",
+      "title": "도면 패널 좁은 화면과 분할 비교 가독성",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "좁은 브라우저에서 도면 보기",
+        "툴바 조작",
+        "마킹 선택",
+        "도면 비교 패널 이동"
+      ],
+      "expected": "화면 크기에 따른 도구 가림·수평 잘림이 없거나 명확한 대체 내비게이션 제공",
+      "negative": "도면 내용이 패널 밖으로 잘리거나 필수 버튼 접근 불가",
+      "fixtureIds": [
+        "viewport-390",
+        "viewport-1440",
+        "drawing-r1-pdf"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-EVD-01",
+      "featureGroup": "EVD",
+      "kind": "single",
+      "title": "현장사진 원본 촬영·메타데이터 기록",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "현장 위치 선택",
+        "사진 업로드",
+        "촬영일시·원본 해시·촬영자·공종 저장",
+        "다시 보기"
+      ],
+      "expected": "가공 이미지와 원본을 구별하고 출처를 설명할 수 있음",
+      "negative": "사진 이름만 남기고 원본 파일 및 촬영시각 분실",
+      "fixtureIds": [
+        "photo-original",
+        "project-A"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-13",
+        "UC-CON-07"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-EVD-02",
+      "featureGroup": "EVD",
+      "kind": "combined",
+      "title": "도면 마킹·검측·현장사진 상호 이동",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "검측 조회",
+        "첨부사진 열기",
+        "도면 위치 확인",
+        "지적사항으로 이동",
+        "다시 검측 복귀"
+      ],
+      "expected": "원본과 동일 사건·버전·위치를 유지하면서 화면 간 연결 가능",
+      "negative": "화면 전환 때 다른 검측/위치 사진 노출 또는 연결유실",
+      "fixtureIds": [
+        "photo-original",
+        "drawing-r1-pdf",
+        "inspection-fail"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14",
+        "UC-SUP-15",
+        "UC-CON-04"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-EVD-03",
+      "featureGroup": "EVD",
+      "kind": "error",
+      "title": "불안정 네트워크 업로드 중단·재시도",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "사진 업로드 시작",
+        "연결 중단",
+        "재연결 후 안전 재시도",
+        "저장본 조회"
+      ],
+      "expected": "중복 원본이 불필요하게 생기지 않고 부분파일은 공식 완료로 표시하지 않음",
+      "negative": "실패한 첨부를 완료한 것처럼 표시하거나 원본 기록은 성공인데 파일은 없음",
+      "fixtureIds": [
+        "photo-original",
+        "offline-network"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-07",
+        "UC-ADM-13"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01",
+        "AC-IDEMP-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-EVD-04",
+      "featureGroup": "EVD",
+      "kind": "error",
+      "title": "동영상 분석 누락구간 및 오탐 후보 관리",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "현장영상 업로드",
+        "프레임/전사 분석",
+        "누락구간 확인",
+        "후보 검토",
+        "확인/기각"
+      ],
+      "expected": "AI 제안은 공식 기술판정 전 별도 확인·기각되고 결측구간을 숨기지 않음",
+      "negative": "no-findings를 검측 합격처리하거나 음성만으로 공식 부적합 자동발행",
+      "fixtureIds": [
+        "video-synthetic",
+        "analysis-with-gaps"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-07",
+        "UC-SUP-15"
+      ],
+      "acceptanceRefs": [
+        "AC-MEDIA-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-EVD-05",
+      "featureGroup": "EVD",
+      "kind": "role",
+      "title": "증빙 프로젝트별 열람·다운로드 차단",
+      "actors": [
+        "SUP",
+        "CON",
+        "OWN"
+      ],
+      "steps": [
+        "자기 프로젝트 원본 열람",
+        "타 프로젝트 파일 ID 지정",
+        "응답 확인"
+      ],
+      "expected": "원본 다운로드·파생썸네일 등 모든 파일 접근이 프로젝트·역할에 맞게 제한",
+      "negative": "객체 화면만 숨기고 원본 URL에서 다운로드 가능",
+      "fixtureIds": [
+        "two-projects",
+        "photo-original"
+      ],
+      "roleCaseRefs": [
+        "UC-ADM-10"
+      ],
+      "acceptanceRefs": [
+        "AC-AUTH-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-INS-01",
+      "featureGroup": "INS",
+      "kind": "single",
+      "title": "시공사 자체검측 후 공식 검측 요청",
+      "actors": [
+        "CON"
+      ],
+      "steps": [
+        "시공위치·공종 선택",
+        "자체검측 입력",
+        "승인도면·증빙 첨부",
+        "검측 신청"
+      ],
+      "expected": "검측 요청이 감리 접수함에 보이고 자체검측과 감리판정 별도",
+      "negative": "자체검측을 곧바로 감리 적합 처리하거나 승인 전 다음공정 허용",
+      "fixtureIds": [
+        "inspection-ready",
+        "drawing-r1-pdf"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-04"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-INS-02",
+      "featureGroup": "INS",
+      "kind": "combined",
+      "title": "검측 신청·접수·일정배정·결과 연속 흐름",
+      "actors": [
+        "CON",
+        "SUP"
+      ],
+      "steps": [
+        "시공사 검측 신청",
+        "감리 접수",
+        "일정 배정",
+        "현장검측",
+        "부적합 또는 적합 판정"
+      ],
+      "expected": "모든 단계의 담당자·시각·판정 및 증빙이 연결되고 전 단계 생략 불가",
+      "negative": "시공사 감리판정 또는 접수 없이 검측완료 처리",
+      "fixtureIds": [
+        "inspection-ready",
+        "inspection-fail"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-04",
+        "UC-SUP-01"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-INS-03",
+      "featureGroup": "INS",
+      "kind": "error",
+      "title": "검측 변경·취소와 이미 판정된 기록 보존",
+      "actors": [
+        "CON",
+        "SUP"
+      ],
+      "steps": [
+        "검측 요청",
+        "일정 변경 신청",
+        "감리 확인",
+        "판정완료 검측 취소 시도"
+      ],
+      "expected": "요청 변경기록과 감리 판정원본 보존·보완/반려 사유 표시",
+      "negative": "취소로 부적합과 판정 원본이 삭제되거나 재검측을 신규 공식검측으로 중복생성",
+      "fixtureIds": [
+        "inspection-ready",
+        "inspection-fail"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-14",
+        "UC-SUP-01"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01",
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-INS-04",
+      "featureGroup": "INS",
+      "kind": "role",
+      "title": "적합판정과 후속공정 진행확인 구분",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "현장검측 적합 처리",
+        "후속공정 미충족 조건 확인",
+        "진행 요청",
+        "권한자 확인"
+      ],
+      "expected": "기술 적합과 다음공정 허용이 다른 상태로 사용자에게 보임",
+      "negative": "합격 메시지만으로 작업 가능 처리 또는 시공사 자체 해제",
+      "fixtureIds": [
+        "inspection-ready",
+        "missing-signature"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-01",
+        "UC-CON-04"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-INS-05",
+      "featureGroup": "INS",
+      "kind": "error",
+      "title": "동일 검측 동시 판정·중복 제출 방지",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "두 화면 같은 요청 열기",
+        "A 판정",
+        "B 오래된 내용 판정",
+        "재시도"
+      ],
+      "expected": "서버 버전 충돌 및 중복요청에 관한 사용자 안내 제공",
+      "negative": "마지막 제출이 기존 판정 덮어쓰기 또는 판정 2건 발생",
+      "fixtureIds": [
+        "inspection-two-editors"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-01"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01",
+        "AC-IDEMP-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-NCR-01",
+      "featureGroup": "NCR",
+      "kind": "single",
+      "title": "현장 발견 지적사항 직접 등록",
+      "actors": [
+        "SUP"
+      ],
+      "steps": [
+        "현장 발견",
+        "위치·원본사진·도면기준 입력",
+        "담당 시공사 지정",
+        "지적 발행"
+      ],
+      "expected": "현장관찰·공식 부적합·현장지시가 구분되고 수신대상 명확",
+      "negative": "메모만으로 자동 공식지적 발행 또는 타 현장 시공사 노출",
+      "fixtureIds": [
+        "observation-direct",
+        "photo-original"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-15"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01",
+        "AC-AUTH-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-NCR-02",
+      "featureGroup": "NCR",
+      "kind": "combined",
+      "title": "지적·시정·재검측·종결 전체 흐름",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "부적합 통보",
+        "시공사 시정전후 사진",
+        "재검측요청",
+        "감리 현장검증",
+        "권한자 부적합 종결"
+      ],
+      "expected": "현 시정주기 증빙·재검측 판정 및 별도 발주처 후속이력 보존",
+      "negative": "시공사 자체 종결·이전 시정주기 사진으로 자동 종결",
+      "fixtureIds": [
+        "issue-cycle",
+        "photo-before-after"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-05",
+        "UC-SUP-04"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01",
+        "AC-REPORT-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-NCR-03",
+      "featureGroup": "NCR",
+      "kind": "combined",
+      "title": "도면 주석에서 부적합 생성 후 원본으로 복귀",
+      "actors": [
+        "SUP"
+      ],
+      "steps": [
+        "도면 메모 저장",
+        "지적 유형·담당·기한 선택",
+        "확인 후 발행",
+        "이슈 조회",
+        "마킹으로 돌아가기"
+      ],
+      "expected": "원본 PDF 개정·페이지·주석 버전·지적사항과 조치가 연결됨",
+      "negative": "이미 연결된 메모에서 중복 지적 생성 또는 권한 없이 발행",
+      "fixtureIds": [
+        "drawing-r1-pdf",
+        "inspection-fail",
+        "markup-positions"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-14",
+        "UC-SUP-15"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01",
+        "AC-IDEMP-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-NCR-04",
+      "featureGroup": "NCR",
+      "kind": "error",
+      "title": "시정사진 누락·만료·재검측 실패 분기",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "시정자료 일부 제출",
+        "감리 보완 요구",
+        "재제출",
+        "재검측 실패",
+        "추가 시정"
+      ],
+      "expected": "실패주기와 이전 원본 유지·현재 시정주기만 완료근거 적용",
+      "negative": "재제출 때 옛 사진이 유효 새 증빙으로 자동승계",
+      "fixtureIds": [
+        "issue-multi-cycle",
+        "photo-before-after"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-05",
+        "UC-SUP-04"
+      ],
+      "acceptanceRefs": [
+        "AC-Q-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-SAF-01",
+      "featureGroup": "SAF",
+      "kind": "combined",
+      "title": "작업계획·허가 검토·착수 조건 연계",
+      "actors": [
+        "CON",
+        "SUP"
+      ],
+      "steps": [
+        "작업계획 제출",
+        "고위험 허가 신청",
+        "장비·자격 검토",
+        "허가 심사",
+        "착수 조건 판단"
+      ],
+      "expected": "작업계획·허가·작업가능 상태가 별도이고 현장 위치·시각 일관",
+      "negative": "작업계획 또는 허가 한 번 승인으로 모든 작업가능 조건 생략",
+      "fixtureIds": [
+        "safety-permit",
+        "personnel-valid"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-15",
+        "UC-CON-06",
+        "UC-SUP-05"
+      ],
+      "acceptanceRefs": [
+        "AC-S-01",
+        "AC-QUAL-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-SAF-02",
+      "featureGroup": "SAF",
+      "kind": "combined",
+      "title": "중대 위험 최초보고·작업중지·시정·명시적 해제",
+      "actors": [
+        "CON",
+        "SUP",
+        "OWN"
+      ],
+      "steps": [
+        "시공사 위험 보고",
+        "감리 작업중지",
+        "시공사 시정",
+        "감리 검증",
+        "명시적 중지해제",
+        "별도 작업재개 확인"
+      ],
+      "expected": "중지·해제·재개가 독립된 승인과 이력으로 남음",
+      "negative": "시공사 자체 작업재개 또는 지적 종결 자동 재개",
+      "fixtureIds": [
+        "incident-safety",
+        "safety-stop"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-16",
+        "UC-SUP-16",
+        "UC-SUP-17"
+      ],
+      "acceptanceRefs": [
+        "AC-S-01",
+        "AC-REPORT-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-SAF-03",
+      "featureGroup": "SAF",
+      "kind": "error",
+      "title": "유효기간 만료 장비·인력에 대한 작업허가 차단",
+      "actors": [
+        "SUP",
+        "CON",
+        "ADM"
+      ],
+      "steps": [
+        "장비 검사증 만료",
+        "허가 신청",
+        "권한자 검토",
+        "재검증 자료 제출"
+      ],
+      "expected": "기간 만료 또는 자격 미비 상태에서 작업 진행/재개 차단",
+      "negative": "장비 갱신 기록을 소급해 과거 사고·서명을 무효처리",
+      "fixtureIds": [
+        "safety-expired-equipment"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-05",
+        "UC-CON-06",
+        "UC-ADM-03"
+      ],
+      "acceptanceRefs": [
+        "AC-QUAL-01",
+        "AC-S-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-SAF-04",
+      "featureGroup": "SAF",
+      "kind": "role",
+      "title": "작업중지 발행과 해제 권한 분리",
+      "actors": [
+        "SUP",
+        "CON",
+        "ADM"
+      ],
+      "steps": [
+        "시공사 작업중지해제 시도",
+        "관리자 해제 시도",
+        "감리 권한자 해제",
+        "허가 재개 별도 요청"
+      ],
+      "expected": "서버 권한과 UI 버튼이 일치하며 관리자 관리권으로 기술판정 대체 불가",
+      "negative": "관리자 또는 시공사 자체 중지해제 가능",
+      "fixtureIds": [
+        "safety-stop",
+        "role-users"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-16",
+        "UC-SUP-17",
+        "UC-ADM-09"
+      ],
+      "acceptanceRefs": [
+        "AC-S-01",
+        "AC-ADM-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-SCH-01",
+      "featureGroup": "SCH",
+      "kind": "single",
+      "title": "정기 공정실적 입력·원본 기준공정 비교",
+      "actors": [
+        "CON",
+        "SUP"
+      ],
+      "steps": [
+        "기준공정 등록",
+        "실적 기준일 입력",
+        "보고",
+        "감리 대조"
+      ],
+      "expected": "계획·실적·전망 차이와 Data Date가 분리되어 표시",
+      "negative": "예측치를 기준공정에 덮어쓰거나 이력 소실",
+      "fixtureIds": [
+        "schedule-baseline",
+        "progress-update"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-08",
+        "UC-SUP-07"
+      ],
+      "acceptanceRefs": [
+        "AC-SCH-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-SCH-02",
+      "featureGroup": "SCH",
+      "kind": "combined",
+      "title": "지연 통보·회복계획·공기연장 결정 연계",
+      "actors": [
+        "CON",
+        "SUP",
+        "OWN"
+      ],
+      "steps": [
+        "지연보고",
+        "감리 영향 검토",
+        "회복계획 제출",
+        "계약통지",
+        "공기연장 요청",
+        "발주처 결정"
+      ],
+      "expected": "단순 지연·회복계획·계약권리·승인기준공정을 구분",
+      "negative": "지연 자동 EOT 인정 또는 회복계획이 계약승인 대체",
+      "fixtureIds": [
+        "delay-event",
+        "recovery-plan",
+        "eot-notice"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-17",
+        "UC-CON-18",
+        "UC-OWN-05"
+      ],
+      "acceptanceRefs": [
+        "AC-SCH-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-SCH-03",
+      "featureGroup": "SCH",
+      "kind": "error",
+      "title": "실적 구버전 제출·충돌·수정이력 보호",
+      "actors": [
+        "CON",
+        "SUP"
+      ],
+      "steps": [
+        "동일 기준일 실적 두 사용자 수정",
+        "뒤늦은 제출",
+        "수정 내역 비교"
+      ],
+      "expected": "낡은 버전 재제출 차단되고 기존 실적은 정정이력으로 보존",
+      "negative": "마지막 저장값으로 묵시적 정정",
+      "fixtureIds": [
+        "schedule-concurrent"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-08",
+        "UC-SUP-07"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01",
+        "AC-SCH-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-SCH-04",
+      "featureGroup": "SCH",
+      "kind": "combined",
+      "title": "공정표 원본파일·활동 ID와 보고서 연결",
+      "actors": [
+        "CON",
+        "SUP",
+        "OWN"
+      ],
+      "steps": [
+        "공정표 업로드",
+        "활동별 실적 입력",
+        "지연 사건 확인",
+        "발주처 보고 작성"
+      ],
+      "expected": "원본 공정표 버전·데이터 기준일·지연 활동 ID·보고서 스냅샷 연결",
+      "negative": "원본 없이 화면상 진행률만 변경 또는 발주처 보고 출처 소실",
+      "fixtureIds": [
+        "schedule-baseline",
+        "source-spreadsheet"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-08",
+        "UC-SUP-09"
+      ],
+      "acceptanceRefs": [
+        "AC-SCH-01",
+        "AC-REPORT-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-PAY-01",
+      "featureGroup": "PAY",
+      "kind": "single",
+      "title": "BOQ 기준 기성청구 물량 입력",
+      "actors": [
+        "CON"
+      ],
+      "steps": [
+        "계약 BOQ 선택",
+        "항목별 수량·단위 입력",
+        "증빙 첨부",
+        "기성청구"
+      ],
+      "expected": "청구·기존누계·금액·계약단위가 구분되고 근거 링크 보존",
+      "negative": "검증 미수행을 지급대상 확정으로 표시 또는 단위변경 오류",
+      "fixtureIds": [
+        "boq-standard",
+        "payment-claim"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-10"
+      ],
+      "acceptanceRefs": [
+        "AC-PAY-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-PAY-02",
+      "featureGroup": "PAY",
+      "kind": "combined",
+      "title": "청구·검증·추천·승인·지급 연속 전환",
+      "actors": [
+        "CON",
+        "SUP",
+        "OWN"
+      ],
+      "steps": [
+        "시공사 청구",
+        "감리 검증수량",
+        "추천금액 작성",
+        "발주처 승인·조정",
+        "실제 지급 기록"
+      ],
+      "expected": "5개 금액·시점·권한이 분리되어 원본 근거로 대조 가능",
+      "negative": "감리 추천을 지급승인 또는 승인금액을 실지급 자동처리",
+      "fixtureIds": [
+        "boq-standard",
+        "payment-claim",
+        "payment-record"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-10",
+        "UC-SUP-08",
+        "UC-OWN-04"
+      ],
+      "acceptanceRefs": [
+        "AC-PAY-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-PAY-03",
+      "featureGroup": "PAY",
+      "kind": "error",
+      "title": "중복 청구·대량 물량표·소수자리·통화 검증",
+      "actors": [
+        "CON",
+        "SUP"
+      ],
+      "steps": [
+        "대량 BOQ 붙여넣기",
+        "수량 소수자리 입력",
+        "중복 항목 청구",
+        "오류 확인"
+      ],
+      "expected": "행 식별·수량정밀도·단위·통화·중복 검증을 설명 가능",
+      "negative": "반올림으로 금액 오류 또는 중복내역이 승인까지 전파",
+      "fixtureIds": [
+        "boq-large-decimal",
+        "duplicate-claim"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-10",
+        "UC-SUP-08"
+      ],
+      "acceptanceRefs": [
+        "AC-PAY-01",
+        "AC-IDEMP-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-PAY-04",
+      "featureGroup": "PAY",
+      "kind": "role",
+      "title": "발주처 지급결정 시 감리 의견 원본 보존",
+      "actors": [
+        "SUP",
+        "OWN",
+        "ADM"
+      ],
+      "steps": [
+        "감리 추천",
+        "발주처 일부조정",
+        "관리자 지급확인 접근",
+        "재조회"
+      ],
+      "expected": "원 추천액·승인액·실지급액·조정사유·권한자 보존",
+      "negative": "관리자가 기술검토·지급결정 수치 임의변경",
+      "fixtureIds": [
+        "payment-claim",
+        "payment-adjustment"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-08",
+        "UC-OWN-04",
+        "UC-ADM-09"
+      ],
+      "acceptanceRefs": [
+        "AC-ADM-01",
+        "AC-PAY-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-OWN-01",
+      "featureGroup": "OWN",
+      "kind": "single",
+      "title": "정기 감리보고서 수령·결정대기 목록",
+      "actors": [
+        "OWN"
+      ],
+      "steps": [
+        "발주처 로그인",
+        "보고 수령함 확인",
+        "정기보고 열기",
+        "미결 의사결정 목록으로 이동"
+      ],
+      "expected": "수령·검토중·결정완료·후속조치의 상태가 별도 표시됨",
+      "negative": "보고 읽기만으로 기술/계약 승인 완료 또는 이슈 자동 종결",
+      "fixtureIds": [
+        "owner-weekly-report"
+      ],
+      "roleCaseRefs": [
+        "UC-OWN-02",
+        "UC-OWN-01"
+      ],
+      "acceptanceRefs": [
+        "AC-REPORT-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-OWN-02",
+      "featureGroup": "OWN",
+      "kind": "combined",
+      "title": "즉시보고·기한초과 재요청·결정 연결",
+      "actors": [
+        "SUP",
+        "OWN",
+        "ADM"
+      ],
+      "steps": [
+        "감리 즉시보고",
+        "관리자 수신알림",
+        "발주처 수령",
+        "기한 초과",
+        "재요청",
+        "결정",
+        "감리 후속검증"
+      ],
+      "expected": "기존 요청의 원본 버전·수신·미회신 이력과 최종 결정/종결 독립",
+      "negative": "재요청으로 미회신 과거기록 지움 또는 수령으로 결정 처리",
+      "fixtureIds": [
+        "owner-urgent-report",
+        "overdue-decision"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-18",
+        "UC-OWN-10",
+        "UC-OWN-11",
+        "UC-OWN-12"
+      ],
+      "acceptanceRefs": [
+        "AC-REPORT-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-OWN-03",
+      "featureGroup": "OWN",
+      "kind": "role",
+      "title": "결정권한·기술판정·관리자 권한 분리",
+      "actors": [
+        "SUP",
+        "OWN",
+        "ADM"
+      ],
+      "steps": [
+        "감리 보고제출",
+        "관리자 보고 접수",
+        "발주처 결정",
+        "다른 사용자 결정 시도"
+      ],
+      "expected": "각 역할의 결재권한과 유효 자격·프로젝트 범위를 서버와 UI가 일치시킴",
+      "negative": "ADM의 기술승인 또는 SUP의 발주처 계약결정 실행",
+      "fixtureIds": [
+        "role-users",
+        "owner-decision"
+      ],
+      "roleCaseRefs": [
+        "UC-OWN-11",
+        "UC-ADM-09"
+      ],
+      "acceptanceRefs": [
+        "AC-ADM-01",
+        "AC-AUTH-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-OWN-04",
+      "featureGroup": "OWN",
+      "kind": "combined",
+      "title": "원본 보고서·결정 근거·후속조치 재조회",
+      "actors": [
+        "SUP",
+        "OWN"
+      ],
+      "steps": [
+        "완료된 발주처 결정 선택",
+        "당시 보고서 원본 열기",
+        "후속조치 증빙 확인",
+        "원본변경 여부 검사"
+      ],
+      "expected": "수령·결정 시 참조한 정확한 버전과 최종 후속조치가 남음",
+      "negative": "새 보고서 생성으로 과거 결정 근거 자동 변경",
+      "fixtureIds": [
+        "owner-decision",
+        "report-new-version"
+      ],
+      "roleCaseRefs": [
+        "UC-OWN-11",
+        "UC-OWN-12"
+      ],
+      "acceptanceRefs": [
+        "AC-REPORT-01",
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-HDO-01",
+      "featureGroup": "HDO",
+      "kind": "single",
+      "title": "시운전 기록·설비별 적합 판단",
+      "actors": [
+        "CON",
+        "SUP"
+      ],
+      "steps": [
+        "시운전자료 제출",
+        "감리 시험 기준 대조",
+        "결과 확인",
+        "미결 지적 연결"
+      ],
+      "expected": "시험 항목별 성공·실패와 준공검사 및 발주처 인수를 분리",
+      "negative": "시험 적합을 자동 인수 완료로 표시",
+      "fixtureIds": [
+        "commissioning-results"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-11",
+        "UC-CON-11"
+      ],
+      "acceptanceRefs": [
+        "AC-HO-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-HDO-02",
+      "featureGroup": "HDO",
+      "kind": "combined",
+      "title": "미결사항 재검사·조건부 인수·하자 이력",
+      "actors": [
+        "CON",
+        "SUP",
+        "OWN"
+      ],
+      "steps": [
+        "Punch 목록 검토",
+        "시정 확인",
+        "재검사",
+        "인수조건 결정",
+        "보증기 하자 접수",
+        "재검사"
+      ],
+      "expected": "Issue ID 및 현재 수정주기·잔여 미결·계약조건이 독립 추적",
+      "negative": "미결 Punch 임의 제거 또는 시공사 하자 자체종결",
+      "fixtureIds": [
+        "punch-issues",
+        "asbuilt-package"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-19",
+        "UC-SUP-20",
+        "UC-OWN-07"
+      ],
+      "acceptanceRefs": [
+        "AC-HO-01",
+        "AC-REF-01",
+        "AC-REF-02"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-HDO-03",
+      "featureGroup": "HDO",
+      "kind": "error",
+      "title": "원본 Issue 판본 교체·취소 시 준공검사 보호",
+      "actors": [
+        "SUP",
+        "OWN"
+      ],
+      "steps": [
+        "준공검사 스냅샷 저장",
+        "Issue 버전 수정",
+        "새 버전 참조 갱신",
+        "인수 여부 확인"
+      ],
+      "expected": "변경된 버전이라도 원본 지적 집합과 독립 발주처 인수 조건 유지",
+      "negative": "미결 지적의 대체 ID로 우회해 조건 없이 인수",
+      "fixtureIds": [
+        "punch-version-change"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-19",
+        "UC-SUP-20"
+      ],
+      "acceptanceRefs": [
+        "AC-REF-01",
+        "AC-REF-02"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-HDO-04",
+      "featureGroup": "HDO",
+      "kind": "role",
+      "title": "인수·하자종결의 시공사 자체 승인 거부",
+      "actors": [
+        "CON",
+        "SUP",
+        "OWN"
+      ],
+      "steps": [
+        "시공사 하자보수 완료 제출",
+        "자체 하자종결 시도",
+        "감리 재검사",
+        "발주처 인수후속 확인"
+      ],
+      "expected": "보수완료 요청과 하자종결/인수확인은 서로 다른 승인권한",
+      "negative": "시공사 완료 버튼이 공식 종결 또는 인수로 처리",
+      "fixtureIds": [
+        "warranty-defect"
+      ],
+      "roleCaseRefs": [
+        "UC-CON-13",
+        "UC-SUP-19",
+        "UC-OWN-08"
+      ],
+      "acceptanceRefs": [
+        "AC-HO-01",
+        "AC-REF-03"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-01",
+      "featureGroup": "DOC",
+      "kind": "single",
+      "title": "업무 유형에 맞는 표준 양식 선택·목록 검색",
+      "actors": [
+        "SUP",
+        "CON",
+        "OWN",
+        "ADM"
+      ],
+      "steps": [
+        "문서작성 화면 열기",
+        "업무 유형 선택",
+        "적절한 양식 찾기",
+        "법정/내부 양식 구분 확인"
+      ],
+      "expected": "36개 양식 카탈로그와 현재 화면의 지원 5개 차이를 명시하고 미지원은 사용불가 안내",
+      "negative": "양식목록 표시만으로 작성·공식발행 가능하다고 표시",
+      "fixtureIds": [
+        "form-36-catalog",
+        "form-ui-5"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-09",
+        "UC-ADM-05"
+      ],
+      "acceptanceRefs": [
+        "AC-REPORT-01"
+      ],
+      "implementationSurface": "known_gap",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-02",
+      "featureGroup": "DOC",
+      "kind": "single",
+      "title": "문서 원본 업무 선택과 정확한 자료연결",
+      "actors": [
+        "SUP",
+        "CON",
+        "OWN"
+      ],
+      "steps": [
+        "검측/부적합/보고 원본 선택",
+        "양식 선택",
+        "자동 연결 항목 확인",
+        "출처 열기"
+      ],
+      "expected": "공식 문서에는 정확한 1개 주요 원본과 보조근거만 지정되고 원본 버전 유지",
+      "negative": "선택한 부적합 원본 대신 다른 사건 자동 연결",
+      "fixtureIds": [
+        "form-fm09",
+        "form-fm12",
+        "source-revisions"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-01",
+        "UC-SUP-04"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-03",
+      "featureGroup": "DOC",
+      "kind": "single",
+      "title": "입력 필수값·날짜·불리언·숫자 검증",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "필수 필드 비운 채 최종 발행",
+        "유효한 값 입력",
+        "잘못된 날짜 입력",
+        "오류 메시지 확인"
+      ],
+      "expected": "누락 필드와 값 검증의 오류 위치·사유가 명확하고 최종 작성 차단",
+      "negative": "NaN 날짜 조용히 전송·잘못된 단위·필수값 누락 최종 발행",
+      "fixtureIds": [
+        "form-fm09-invalid",
+        "form-fm20-invalid"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-18",
+        "UC-CON-04"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-04",
+      "featureGroup": "DOC",
+      "kind": "combined",
+      "title": "원본 업무자료 자동입력·수동 정정의 출처 표기",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "원본 검측 선택",
+        "도면/위치/일시 자동입력 여부 확인",
+        "수동 수정",
+        "출처와 차이 표시"
+      ],
+      "expected": "자동입력된 필드 출처·수정자·최종 제출값이 명시되고 확인 없는 임의덮어쓰기 없음",
+      "negative": "사용자 수동 입력을 원본 자동입력으로 표시 또는 재선택 시 자료 무단변경",
+      "fixtureIds": [
+        "form-fm09",
+        "source-revisions"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-01",
+        "UC-ADM-05"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-05",
+      "featureGroup": "DOC",
+      "kind": "combined",
+      "title": "보고서 작성·A4 HTML 미리보기·재편집 반복",
+      "actors": [
+        "SUP"
+      ],
+      "steps": [
+        "보고서 양식 선택",
+        "현장 사진·내용 입력",
+        "초안 HTML 생성",
+        "미리보기 확인",
+        "필드수정",
+        "재렌더"
+      ],
+      "expected": "현재 입력과 미리보기가 같은 문서 버전 기준이고 직전 출력 스냅샷 구분",
+      "negative": "첫 미리보기 뒤 편집내용을 반영하지 않거나 미리보기를 공식발행으로 오인",
+      "fixtureIds": [
+        "form-fm19",
+        "form-fm20",
+        "photo-original"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-09",
+        "UC-SUP-18"
+      ],
+      "acceptanceRefs": [
+        "AC-REPORT-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-06",
+      "featureGroup": "DOC",
+      "kind": "single",
+      "title": "임시저장·재접속·초안 이어쓰기",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "일부 필드 입력",
+        "임시저장",
+        "브라우저 재접속",
+        "같은 초안 복원",
+        "이어쓰기"
+      ],
+      "expected": "저장 확정된 초안 입력값과 첨부자료·작성자는 보존되고 최종 발행 전 변경 가능",
+      "negative": "페이지 이동으로 작성내용 유실 또는 확정 기록을 초안으로 자동변환",
+      "fixtureIds": [
+        "document-draft-reopen"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-13",
+        "UC-SUP-18"
+      ],
+      "acceptanceRefs": [
+        "AC-OFFLINE-01"
+      ],
+      "implementationSurface": "known_gap",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-07",
+      "featureGroup": "DOC",
+      "kind": "combined",
+      "title": "결재·서명 전 필수검증 및 최종판 스냅샷 생성",
+      "actors": [
+        "SUP",
+        "CON",
+        "OWN"
+      ],
+      "steps": [
+        "초안 작성",
+        "최종선택",
+        "필수 입력 충족",
+        "서명 역할과 원본 버전 검증",
+        "최종판 생성"
+      ],
+      "expected": "최종 스냅샷의 내용·원본 참조·템플릿 버전·렌더 해시 고정",
+      "negative": "필수서명 미충족을 법적 확정으로 표시하거나 최종판을 수정가능하게 둠",
+      "fixtureIds": [
+        "form-fm09",
+        "signature-roles"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-01",
+        "UC-ADM-05"
+      ],
+      "acceptanceRefs": [
+        "AC-QUAL-01",
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-08",
+      "featureGroup": "DOC",
+      "kind": "role",
+      "title": "원본 서명권한·서명검증 실패 처리",
+      "actors": [
+        "SUP",
+        "CON",
+        "OWN",
+        "ADM"
+      ],
+      "steps": [
+        "최종 문서 선택",
+        "서명 역할 선택",
+        "서명검증 요청",
+        "권한 없는 사용자 요청",
+        "결과 확인"
+      ],
+      "expected": "신뢰된 서명검증이 성공한 경우에만 서명 완료되며 실패와 서명권한 부족 구별",
+      "negative": "서명 검증기 미연결을 성공으로 표시하거나 관리자 임의 기술서명",
+      "fixtureIds": [
+        "form-fm09",
+        "signature-authority"
+      ],
+      "roleCaseRefs": [
+        "UC-ADM-05",
+        "UC-ADM-09"
+      ],
+      "acceptanceRefs": [
+        "AC-ADM-01",
+        "AC-QUAL-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-09",
+      "featureGroup": "DOC",
+      "kind": "single",
+      "title": "다중 페이지 표·긴 한국어·사진의 A4 인쇄 레이아웃",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "긴 표와 사진을 포함한 양식 선택",
+        "HTML A4 보기",
+        "페이지 분할·반복 표제·쪽번호·서명 영역 점검"
+      ],
+      "expected": "표가 잘리지 않고 각 페이지 서식·머리말·바닥글·사진 크기와 서명위치가 일정",
+      "negative": "문서출력 때 행 누락·표 겹침·불규칙 페이지 나눔",
+      "fixtureIds": [
+        "form-long-table",
+        "form-image-heavy"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-09",
+        "UC-ADM-05"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-10",
+      "featureGroup": "DOC",
+      "kind": "single",
+      "title": "운영용 PDF 출력 및 재열람 검증",
+      "actors": [
+        "SUP",
+        "OWN",
+        "ADM"
+      ],
+      "steps": [
+        "최종 스냅샷 선택",
+        "PDF 내려받기",
+        "파일 열기",
+        "원본 HTML과 텍스트·서명·쪽수 비교"
+      ],
+      "expected": "공식 PDF 출력 기능이 준비된 경우 렌더 해시·동일 원본 기준과 가독성 검증",
+      "negative": "UI PDF 내보내기가 미지원인데 다운로드 완료 또는 공식 PDF로 표시",
+      "fixtureIds": [
+        "form-fm09",
+        "form-fm19"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-09",
+        "UC-ADM-05"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01"
+      ],
+      "implementationSurface": "known_gap",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-11",
+      "featureGroup": "DOC",
+      "kind": "single",
+      "title": "DOCX 출력·문서 형상 및 편집 가능성 검증",
+      "actors": [
+        "SUP",
+        "ADM"
+      ],
+      "steps": [
+        "업무 문서 생성",
+        "DOCX 내보내기",
+        "Office에서 열기",
+        "표·글꼴·쪽나눔 확인"
+      ],
+      "expected": "지원 여부를 명확히 표시하고 지원 시 템플릿 기준·서명 무결성 경계가 유지됨",
+      "negative": "출력 미구현인데 유효 DOCX 생성 또는 법정원본 대체로 주장",
+      "fixtureIds": [
+        "form-fm19",
+        "form-fm21"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-09",
+        "UC-ADM-05"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01"
+      ],
+      "implementationSurface": "known_gap",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-12",
+      "featureGroup": "DOC",
+      "kind": "combined",
+      "title": "UI 언어변경과 문서 출력언어 독립 동작",
+      "actors": [
+        "SUP",
+        "CON",
+        "OWN"
+      ],
+      "steps": [
+        "한국어 UI에서 필드 입력",
+        "베트남어 UI 전환",
+        "문서 출력언어 한국어 유지",
+        "값과 원본 확인"
+      ],
+      "expected": "UI 언어변경은 입력값·원본·출력 언어·공식 서명조건을 자동 변경하지 않음",
+      "negative": "사용자 선택 UI 언어가 문서의 법정 언어와 해시를 몰래 변경",
+      "fixtureIds": [
+        "form-fm09",
+        "multilingual-values"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-09",
+        "UC-ADM-05"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-13",
+      "featureGroup": "DOC",
+      "kind": "error",
+      "title": "베트남 법정 고정서식이 없을 때 공식발행 차단",
+      "actors": [
+        "SUP",
+        "ADM"
+      ],
+      "steps": [
+        "베트남 법정 양식 요청",
+        "공식 템플릿·효력일·원본 확인",
+        "미설치 상태 출력 요청"
+      ],
+      "expected": "법정 고정서식 미설치인 경우 공식발행 불가 이유가 명확하며 DOUL 내부 A4가 이를 대체하지 않음",
+      "negative": "DOUL A4 초안을 법정 원본 완료로 표시",
+      "fixtureIds": [
+        "legal-fixed-missing",
+        "form-fm09"
+      ],
+      "roleCaseRefs": [
+        "UC-ADM-05",
+        "UC-SUP-06"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-14",
+      "featureGroup": "DOC",
+      "kind": "error",
+      "title": "원본 개정 후 과거 문서 재열람·정정판 생성",
+      "actors": [
+        "SUP",
+        "OWN"
+      ],
+      "steps": [
+        "원본 업데이트",
+        "기존 발행 문서 열기",
+        "당시 입력값 확인",
+        "정정판 별도 생성"
+      ],
+      "expected": "과거 문서 내용·템플릿·렌더해시가 보존되고 정정판에는 이전 문서 참조 존재",
+      "negative": "기존 발행문서를 새 원본으로 다시 써서 과거 결재증빙 훼손",
+      "fixtureIds": [
+        "report-new-version",
+        "form-fm20"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-18",
+        "UC-OWN-11"
+      ],
+      "acceptanceRefs": [
+        "AC-VERSION-01",
+        "AC-REPORT-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-15",
+      "featureGroup": "DOC",
+      "kind": "error",
+      "title": "중복 발행 요청·불안정 네트워크 재시도",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "최종 발행 클릭",
+        "타임아웃",
+        "재시도",
+        "문서목록·해시 조회"
+      ],
+      "expected": "동일 발행 요청은 멱등성을 유지해 중복 공식문서가 생성되지 않음",
+      "negative": "사용자 두 번 클릭으로 서로 다른 공식 서명 문서가 생성",
+      "fixtureIds": [
+        "form-fm20",
+        "network-timeout"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-18"
+      ],
+      "acceptanceRefs": [
+        "AC-IDEMP-01",
+        "AC-STORE-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-16",
+      "featureGroup": "DOC",
+      "kind": "responsive",
+      "title": "좁은 화면의 문서 필드·미리보기 가독성",
+      "actors": [
+        "SUP",
+        "CON",
+        "OWN"
+      ],
+      "steps": [
+        "390px 폭에서 문서 작성",
+        "오류 확인",
+        "미리보기 확인",
+        "1440px에서 같은 기록 열기"
+      ],
+      "expected": "필수 입력·오류 메시지·확인/서명 버튼이 접근 가능하고 입력값은 유지",
+      "negative": "수평 잘림·서명버튼 가림·입력값 소실",
+      "fixtureIds": [
+        "viewport-390",
+        "viewport-1440",
+        "form-fm20"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-18",
+        "UC-ADM-05"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01"
+      ],
+      "implementationSurface": "existing_surface_to_verify",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-17",
+      "featureGroup": "DOC",
+      "kind": "combined",
+      "title": "복수 첨부사진·도면·표의 문서 근거 연결",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "현장보고서 작성",
+        "증빙사진 다건 선택",
+        "도면 원본 첨부",
+        "근거 표 입력",
+        "문서 재조회"
+      ],
+      "expected": "각 첨부의 원본·버전·권한과 본문 참조를 재확인 가능",
+      "negative": "인쇄본 사진 누락 또는 문서만 있고 원본 링크 해제",
+      "fixtureIds": [
+        "photo-original",
+        "drawing-r1-pdf",
+        "form-fm20"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-13",
+        "UC-SUP-18"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-18",
+      "featureGroup": "DOC",
+      "kind": "performance",
+      "title": "장시간 양식 작성·대량 항목 전환시 응답성",
+      "actors": [
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "긴 필드·표 200행 입력",
+        "양식 변경",
+        "미리보기 재생성 10회",
+        "응답시간·데이터 일치 측정"
+      ],
+      "expected": "입력 지연·브라우저 멈춤·오래된 미리보기 잔존 여부 계측하고 중단 가능",
+      "negative": "렌더 대기 중 화면 고착·새 문서에 이전 양식 입력값 섞임",
+      "fixtureIds": [
+        "form-long-table",
+        "form-fm19"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-09",
+        "UC-ADM-05"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-DOC-19",
+      "featureGroup": "DOC",
+      "kind": "role",
+      "title": "보고서 서명 완료 뒤 발주처 수령·결정·후속조치",
+      "actors": [
+        "SUP",
+        "OWN",
+        "ADM"
+      ],
+      "steps": [
+        "감리 보고 최종생성",
+        "필요서명 검증",
+        "발주처 발송",
+        "수령",
+        "결정요청",
+        "후속조치 확인"
+      ],
+      "expected": "문서 발행·서명·수령·결정·보고종결 각각 독립적으로 조회 가능",
+      "negative": "보고서 미리보기만으로 수령·공식 서명·계약결정 자동진행",
+      "fixtureIds": [
+        "form-fm19",
+        "form-fm21",
+        "owner-decision"
+      ],
+      "roleCaseRefs": [
+        "UC-SUP-09",
+        "UC-OWN-02",
+        "UC-OWN-11",
+        "UC-OWN-12"
+      ],
+      "acceptanceRefs": [
+        "AC-REPORT-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-ADM-01",
+      "featureGroup": "ADM",
+      "kind": "single",
+      "title": "프로젝트 개설·역할 및 자격 등록",
+      "actors": [
+        "ADM"
+      ],
+      "steps": [
+        "프로젝트 만들기",
+        "회사·사용자 등록",
+        "담당 역할·유효기간 설정",
+        "감리계정 로그인"
+      ],
+      "expected": "프로젝트·공종·구역·유효기간 별 실제 허용 업무만 동작",
+      "negative": "관리자 자체 기술승인·다른 프로젝트 권한 자동 승계",
+      "fixtureIds": [
+        "project-A",
+        "role-users"
+      ],
+      "roleCaseRefs": [
+        "UC-ADM-01",
+        "UC-ADM-02",
+        "UC-ADM-03"
+      ],
+      "acceptanceRefs": [
+        "AC-AUTH-01",
+        "AC-QUAL-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-ADM-02",
+      "featureGroup": "ADM",
+      "kind": "combined",
+      "title": "프로젝트 전환 중 도면·검측·문서 상태 분리",
+      "actors": [
+        "ADM",
+        "SUP"
+      ],
+      "steps": [
+        "프로젝트 A로 도면 등록",
+        "프로젝트 B 전환",
+        "검측·문서조회",
+        "프로젝트 A 복귀"
+      ],
+      "expected": "모든 화면은 현재 프로젝트에 소속된 원본만 보여줌",
+      "negative": "이전 프로젝트 데이터 자동복사·캐시잔존·버전 ID 충돌",
+      "fixtureIds": [
+        "two-projects",
+        "drawing-r1-pdf"
+      ],
+      "roleCaseRefs": [
+        "UC-ADM-10"
+      ],
+      "acceptanceRefs": [
+        "AC-AUTH-01"
+      ],
+      "implementationSurface": "known_gap",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-ADM-03",
+      "featureGroup": "ADM",
+      "kind": "role",
+      "title": "사용자 계정 생성·비밀번호 초기화·비활성화",
+      "actors": [
+        "ADM"
+      ],
+      "steps": [
+        "직원 추가",
+        "비밀번호 초기화",
+        "로그인 시험",
+        "계정 비활성화",
+        "기존 세션 재요청"
+      ],
+      "expected": "비밀번호 민감값 저장/로그노출 없이 사용자 접근권한 전 주기 관리",
+      "negative": "비활성화 후 유효 세션으로 업무 접속·관리자 자동 기술권한 허용",
+      "fixtureIds": [
+        "role-users",
+        "password-reset"
+      ],
+      "roleCaseRefs": [
+        "UC-ADM-11",
+        "UC-ADM-09"
+      ],
+      "acceptanceRefs": [
+        "AC-AUTH-01",
+        "AC-ADM-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-ADM-04",
+      "featureGroup": "ADM",
+      "kind": "error",
+      "title": "파일 저장 중단·복원·해시 검증",
+      "actors": [
+        "ADM"
+      ],
+      "steps": [
+        "대용량 파일 업로드 중단",
+        "실패 식별",
+        "재시도",
+        "저장 해시 검증",
+        "원본 다시 내려받기"
+      ],
+      "expected": "필요한 원본 파일이 정확히 복구되기 전 업무 최종완료 금지",
+      "negative": "이름이 같지만 해시 다른 파일로 증빙 대체",
+      "fixtureIds": [
+        "photo-original",
+        "corrupt-pdf"
+      ],
+      "roleCaseRefs": [
+        "UC-ADM-13"
+      ],
+      "acceptanceRefs": [
+        "AC-STORE-01",
+        "AC-IDEMP-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P0",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "FC-ADM-05",
+      "featureGroup": "ADM",
+      "kind": "combined",
+      "title": "오프라인 충돌·중복요청·원본백업 복원",
+      "actors": [
+        "ADM",
+        "SUP",
+        "CON"
+      ],
+      "steps": [
+        "오프라인 현장 기록 작성",
+        "동일 ID 다른 사용자 변경",
+        "재연결",
+        "충돌대응",
+        "백업 무결성 조회"
+      ],
+      "expected": "사용자 승인 없이 마지막 입력으로 기존 공식기록을 대체하지 않음",
+      "negative": "자동 덮어쓰기·중복공식 기록·복원 자료 무결성 누락",
+      "fixtureIds": [
+        "offline-network",
+        "two-editor-change"
+      ],
+      "roleCaseRefs": [
+        "UC-ADM-12",
+        "UC-ADM-08"
+      ],
+      "acceptanceRefs": [
+        "AC-OFFLINE-01",
+        "AC-VERSION-01"
+      ],
+      "implementationSurface": "contract_target",
+      "priority": "P1",
+      "executionStatus": "unverified"
+    }
+  ],
+  "journeys": [
+    {
+      "id": "J-DWG-01",
+      "title": "PDF 반복조작 → 마킹 → 이슈 연결 → 복귀",
+      "scenarioIds": [
+        "FC-DWG-01",
+        "FC-DWG-02",
+        "FC-DWG-07",
+        "FC-DWG-06",
+        "FC-NCR-03"
+      ],
+      "passCriterion": "좌표·개정·지적 버전 보존",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "J-DWG-02",
+      "title": "PDF 원본 등록 → 개정 연결 → 비교 → 회수판 표시",
+      "scenarioIds": [
+        "FC-DWG-04",
+        "FC-DWG-05",
+        "FC-DWG-11",
+        "FC-DWG-12"
+      ],
+      "passCriterion": "원본 해시·현장 유효판·송수신 상태 일치",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "J-DWG-03",
+      "title": "화면 비교 중 급격한 도구 조작·오류 복구",
+      "scenarioIds": [
+        "FC-DWG-02",
+        "FC-DWG-05",
+        "FC-DWG-09",
+        "FC-DWG-10"
+      ],
+      "passCriterion": "렌더 취소 경합 및 정상 복구",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "J-DWG-04",
+      "title": "현장 사진 → 도면 마킹 → 검측 부적합 시정",
+      "scenarioIds": [
+        "FC-EVD-02",
+        "FC-DWG-06",
+        "FC-INS-02",
+        "FC-NCR-02"
+      ],
+      "passCriterion": "원본사진·도면 위치·지적사항 추적",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "J-DOC-01",
+      "title": "검측 원본 → FM-09 작성 → 미리보기 → 최종판 → 서명",
+      "scenarioIds": [
+        "FC-DOC-02",
+        "FC-DOC-03",
+        "FC-DOC-05",
+        "FC-DOC-07",
+        "FC-DOC-08"
+      ],
+      "passCriterion": "필수값·원본·최종판·서명권한 경계",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "J-DOC-02",
+      "title": "긴 A4 보고서 → 반복 미리보기 → PDF/DOCX 가용성",
+      "scenarioIds": [
+        "FC-DOC-05",
+        "FC-DOC-09",
+        "FC-DOC-10",
+        "FC-DOC-11"
+      ],
+      "passCriterion": "A4 표·사진·페이지 및 미지원 다운로드 확인",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "J-DOC-03",
+      "title": "문서 임시저장 → 재접속 → 자동입력/수정 → 발행",
+      "scenarioIds": [
+        "FC-DOC-06",
+        "FC-DOC-04",
+        "FC-DOC-07",
+        "FC-DOC-14"
+      ],
+      "passCriterion": "미저장 경고·원본 작성차수와 발행이력",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "J-DOC-04",
+      "title": "UI 언어변경 → 법정출력 언어 → 원본서식 차단",
+      "scenarioIds": [
+        "FC-DOC-12",
+        "FC-DOC-13",
+        "FC-DOC-08"
+      ],
+      "passCriterion": "언어 설정 독립·법정 원본 템플릿 경계",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "J-DOC-05",
+      "title": "즉시보고 → 발주처 수령·결정·후속검증",
+      "scenarioIds": [
+        "FC-DOC-17",
+        "FC-OWN-02",
+        "FC-OWN-04",
+        "FC-DOC-14"
+      ],
+      "passCriterion": "서명·수령·결정·종결을 서로 다른 사건으로 구별",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "J-X-01",
+      "title": "프로젝트 변경 중 도면/문서/검측 재진입",
+      "scenarioIds": [
+        "FC-NAV-03",
+        "FC-ADM-02",
+        "FC-EVD-05",
+        "FC-NAV-04"
+      ],
+      "passCriterion": "프로젝트·역할·권한·캐시 격리",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "J-X-02",
+      "title": "업로드 장애 → 문서발행 재시도 → 충돌",
+      "scenarioIds": [
+        "FC-EVD-03",
+        "FC-DOC-15",
+        "FC-ADM-04",
+        "FC-ADM-05"
+      ],
+      "passCriterion": "원본해시·멱등성·버전충돌 보존",
+      "executionStatus": "unverified"
+    },
+    {
+      "id": "J-X-03",
+      "title": "시공사 사고보고 → 감리 작업중지 → 발주처",
+      "scenarioIds": [
+        "FC-SAF-02",
+        "FC-OWN-02",
+        "FC-SAF-04",
+        "FC-DOC-17"
+      ],
+      "passCriterion": "작업중지·재개·보고수령 별도 단계",
+      "executionStatus": "unverified"
+    }
+  ]
+}
