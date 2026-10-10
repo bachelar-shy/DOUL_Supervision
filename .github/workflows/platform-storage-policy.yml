@@ -30,8 +30,8 @@ permissions:
 
 jobs:
   storage-policy:
-    # Dedicated Linux VM on the Mac mini; one runner serializes jobs.
-    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
+    # Isolated, ephemeral GitHub-hosted Linux x64 runner (no Mac mini).
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
