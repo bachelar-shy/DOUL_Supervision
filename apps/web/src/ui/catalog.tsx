@@ -92,6 +92,7 @@ export interface MobileNavigationProps {
   activeId?: string | null;
   onNavigate: (id: string) => void;
   onMore: () => void;
+  moreControls?: string;
   moreOpen?: boolean;
   moreActive?: boolean;
   moreIcon?: ReactNode;
@@ -104,6 +105,7 @@ export function MobileNavigation({
   activeId,
   onNavigate,
   onMore,
+  moreControls,
   moreOpen = false,
   moreActive = false,
   moreIcon,
@@ -136,6 +138,7 @@ export function MobileNavigation({
         type="button"
         className={moreActive ? "active" : ""}
         aria-expanded={moreOpen}
+        aria-controls={moreControls}
         onClick={onMore}
       >
         {moreIcon}
