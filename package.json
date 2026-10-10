@@ -18,6 +18,8 @@
     "test:api": "python3 scripts/dependency_environment.py --suite api",
     "check:ui-boundary": "python3 scripts/check_ui_boundary.py",
     "check:dependencies": "python3 scripts/dependency_environment.py --node",
+    "postinstall": "node scripts/apply_node_forge_backport.cjs",
+    "test:node-forge-backport": "node scripts/test_node_forge_backport.cjs",
     "pretypecheck": "python3 scripts/dependency_environment.py --node-only",
     "preweb:build": "python3 scripts/dependency_environment.py --node-only"
   },
