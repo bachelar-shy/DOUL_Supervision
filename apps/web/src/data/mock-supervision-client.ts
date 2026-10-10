@@ -2,6 +2,10 @@ import type {
   DomainRef,
   Fields,
   HumanRole,
+  IssuePackageInput,
+  IssuePackageResult,
+  MediaAnalysisRequestInput,
+  MediaAnalysisReview,
   RecordDTO,
   RegisterProjectionRow,
   Session,
@@ -14,7 +18,7 @@ import { registerProjectionCatalog } from "./register-projection-catalog.generat
 
 const previewOnly = () =>
   Promise.reject(
-    new Error("UI Mock Preview입니다. 실제 업무 명령은 실행하지 않습니다."),
+    new Error("화면 미리보기입니다. 실제 업무는 처리하지 않습니다."),
   );
 
 export class MockSupervisionClient implements SupervisionClient {
@@ -69,6 +73,22 @@ export class MockSupervisionClient implements SupervisionClient {
     return previewOnly();
   }
 
+  requestMediaAnalysis(_input: MediaAnalysisRequestInput, _key?: string): Promise<RecordDTO> {
+    return previewOnly();
+  }
+
+  mediaAnalysisReview(_runId: string): Promise<MediaAnalysisReview> {
+    return previewOnly();
+  }
+
+  createMediaIssuePackage(
+    _runId: string,
+    _input: IssuePackageInput,
+    _key?: string,
+  ): Promise<IssuePackageResult> {
+    return previewOnly();
+  }
+
   importScheduleSource(
     _input: ScheduleSourceImportInput,
     _key?: string,
@@ -94,9 +114,13 @@ export class MockSupervisionClient implements SupervisionClient {
     return previewOnly();
   }
 
+  async drawingPdfContent(_bindingId: string): Promise<Blob> {
+    throw new Error("화면 미리보기에서는 도면 PDF 원본 연결을 제공하지 않습니다.");
+  }
+
   async evidenceContent(evidenceId: string): Promise<Blob> {
     if (!evidenceId.startsWith("EVD-UI-")) {
-      throw new Error("UI Mock Preview에서 찾을 수 없는 증빙입니다.");
+      throw new Error("화면 미리보기에서 찾을 수 없는 증빙입니다.");
     }
     const svg = `
       <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
@@ -152,6 +176,6 @@ export class MockSupervisionClient implements SupervisionClient {
       ];
       return rows as T;
     }
-    throw new Error("UI Mock Preview에서 지원하지 않는 조회입니다.");
+    throw new Error("화면 미리보기에서 지원하지 않는 조회입니다.");
   }
 }

@@ -10,6 +10,7 @@ on:
       - "services/**"
       - "apps/web/**"
       - "packages/client/**"
+      - "packages/localization/**"
       - "tests_mvp/test_*postgres*.py"
       - "tests_mvp/test_schedule_source_import*.py"
       - "package.json"
@@ -24,6 +25,7 @@ on:
       - "services/**"
       - "apps/web/**"
       - "packages/client/**"
+      - "packages/localization/**"
       - "tests_mvp/test_*postgres*.py"
       - "tests_mvp/test_schedule_source_import*.py"
       - "package.json"
@@ -34,7 +36,8 @@ permissions:
 
 jobs:
   compose-smoke:
-    runs-on: ubuntu-latest
+    # Dedicated Linux VM on the Mac mini; one runner serializes jobs.
+    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -133,7 +136,7 @@ jobs:
             echo "DOUL_TEST_POSTGRES_DSN=$test_database_url"
           } >> "$GITHUB_ENV"
 
-      - name: Run live PostgreSQL persistence and Schedule import integration tests
+      - name: Run live PostgreSQL persistence, Schedule import and Handover integration tests
         if: steps.postgres_adapter.outputs.available == 'true'
         run: |
           set -o pipefail
@@ -168,6 +171,10 @@ jobs:
           run_postgres_suite \
             /tmp/schedule-source-import-postgres-tests.txt \
             tests_mvp.test_schedule_source_import_postgres
+
+          run_postgres_suite \
+            /tmp/handover-postgres-tests.txt \
+            tests_mvp.test_handover_postgres.HandoverPostgresTests
 
       - name: Start development stack
         run: |

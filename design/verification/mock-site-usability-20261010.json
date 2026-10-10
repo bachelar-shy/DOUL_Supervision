@@ -1,0 +1,55 @@
+{
+  "classification": "synthetic_development_usability",
+  "actualFieldAcceptance": false,
+  "asset": {
+    "path": "design/development/mock-site/assets/SYNTHETIC_WWT_contact_sheet_P01-P12.png",
+    "sha256": "fd076def070979564bbf17c1e5ae31c63d20eb81a8e9c16b09c4ce1bfd19d5c8",
+    "size": 3331740,
+    "panels": 12,
+    "originalFiles": 1,
+    "generatedWith": "image_gen",
+    "visibleLabel": "SYNTHETIC TEST / NOT SITE EVIDENCE"
+  },
+  "localVerification": {
+    "projectAndAPIUnitTests": {
+      "passed": 4,
+      "photoAssertions": 17,
+      "evidence": "design/verification/mock-site-photo-api-20261010.json"
+    },
+    "browser": {
+      "passed": 2,
+      "durationSeconds": 12.5,
+      "project": "same-project synthetic seeded workflows with CON/SUP/OWN/DES/ADM",
+      "sizes": [
+        1440,
+        390
+      ],
+      "language": "ko",
+      "transport": "actual local Uvicorn HTTP API, labeled generatedPNG, manual completion retry after committed ACKloss",
+      "checks": [
+        "exact uploaded/downloaded hash",
+        "capture intake time and project location",
+        "same capture/upload/completion idempotency key",
+        "Asia/Ho_Chi_Minh date display",
+        "mobile bounds and original evidence detail"
+      ]
+    },
+    "context7": "/microsoft/playwright/v1.63.0 official file upload/response body/route cleanup docs",
+    "mediaClosedLoop": {
+      "passed": 1,
+      "durationSeconds": 12.7,
+      "scope": "Generated labeled3.33MBPNG through real Capture upload → analysis queue → controlled synthetic worker outputs → human confirm/reject → server-eligible Issue and Action; ko/vi/en mobile displays retain official record, and ACK/retry authority checks unchanged",
+      "notModelPerformanceProof": true
+    }
+  },
+  "macCI": {
+    "status": "pending"
+  },
+  "limitations": [
+    "Not actual site pilot or production provider certification",
+    "Rank/read-only negative identities tested directly through real authorization engine; secondary dev login not added",
+    "Project pack is schema-valid; not every deadline/form/qualification-kind/authority-binding value is runtime-enforced",
+    "Twenty private original-source proposed cases retained, not all claimed executed by real users",
+    "Vietnamese/English human review and security release review are deferred"
+  ]
+}

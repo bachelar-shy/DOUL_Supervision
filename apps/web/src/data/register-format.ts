@@ -1,95 +1,23 @@
 import type { RegisterProjectionRow } from "./ui-contract";
-import { states } from "../labels";
-
-export const registerObjectLabels: Record<string, string> = {
-  Requirement: "요구사항",
-  InformationItem: "문서·정보",
-  WorkItem: "업무항목",
-  Party: "관계자",
-  RoleAssignment: "역할배정",
-  Qualification: "자격",
-  Approval: "승인",
-  Asset: "자재·자산",
-  Inspection: "검측·검수",
-  Evidence: "증빙",
-  Issue: "부적합·이슈",
-  Action: "시정·후속조치",
-  Decision: "의사결정",
-  DocumentSnapshot: "문서 스냅샷",
-  Notification: "통지",
-};
-
-export const registerFieldLabels: Record<string, string> = {
-  applicability: "적용여부",
-  permit_status: "인허가 상태",
-  scope: "업무범위",
-  contract_period: "계약기간",
-  qualification_valid: "자격 유효",
-  deployed: "배치 유효",
-  current_revision: "최신 개정",
-  approval_status: "승인 상태",
-  sent_at: "발송 시각",
-  received_at: "수신 시각",
-  response_due: "회신 기한",
-  status: "상태",
-  due_at: "처리 기한",
-  drawing_revision: "도면 개정",
-  clash_status: "간섭 상태",
-  approved_revision: "승인 개정",
-  conditions: "승인 조건",
-  lot_accepted: "반입 수락",
-  approval_match: "승인자료 일치",
-  test_result: "시험 결과",
-  retest_due: "재시험 기한",
-  result_status: "판정 결과",
-  next_work_allowed: "후속공정 허용",
-  response_elapsed: "처리 경과",
-  correction_cycle: "시정 차수",
-  closure_verified: "종결 검증",
-  change_required: "설계변경 필요",
-  approved_version: "승인 버전",
-  impact: "변경 영향",
-  instruction_due: "지시 이행기한",
-  execution_status: "이행 상태",
-  planned_actual: "계획·실적",
-  delay_days: "지연 일수",
-  verified_quantity: "검증 물량",
-  approved_variation: "승인 변경량",
-  permit_valid: "작업허가 유효",
-  stop_resume_status: "중지·재개 상태",
-  certificate_expiry: "인증서 만료",
-  equipment_available: "장비 사용가능",
-  pc18_signed: "PC18 서명",
-  integrated_test: "통합시험",
-  condition_compliance: "조건 준수",
-  incident_status: "사고·이슈 상태",
-  receipt: "수령 상태",
-  decision_due: "결정 기한",
-  followup_status: "후속조치 상태",
-  capture_date: "촬영 일시",
-  daily_completeness: "일일기록 완성도",
-  dossier_completeness: "준공서류 완성도",
-  handover_status: "인수인계 상태",
-  warranty_due: "하자 처리기한",
-  residual_risk: "잔여 위험",
-  notice_due: "통지 기한",
-  claim_status: "클레임 상태",
-  expiry: "만료일",
-  renewal_due: "갱신 기한",
-  finding_status: "지적사항 상태",
-  independence: "독립성",
-  standard_revision_needed: "기준 개정 필요",
-};
+import { states, fields, recordTypeLabel, recordVersionLabel } from "../labels";
+import { formatDateTime, formatNumber } from "../i18n/format";
+import i18n from "../i18n/config";
+import {
+  koreanRegisterFieldLabels,
+  koreanRegisterObjectLabels,
+} from "@doul/localization";
 
 const dateLike = /(?:^|_)(?:at|due|expiry|date)$/i;
 
 export function registerFieldLabel(key: string) {
-  return registerFieldLabels[key] || key.replaceAll("_", " ");
+  const fallback = koreanRegisterFieldLabels[key] || fields[key] || i18n.t("register.detail.calculatedFields");
+  return i18n.t(`register.field.${key}`, { defaultValue: fallback });
 }
 
 export function registerSourceLabel(objectType?: string) {
-  if (!objectType) return "원본 미확인";
-  return registerObjectLabels[objectType] || objectType;
+  if (!objectType) return i18n.t("register.value.sourceUnknown");
+  const fallback = koreanRegisterObjectLabels[objectType] || objectType;
+  return i18n.t(`register.object.${objectType}`, { defaultValue: fallback });
 }
 
 export function registerRowTitle(row: RegisterProjectionRow) {
@@ -110,38 +38,35 @@ export function registerRowTitle(row: RegisterProjectionRow) {
 }
 
 export function formatRegisterValue(value: unknown, fieldKey = ""): string {
-  if (value === null || value === undefined || value === "") return "미확인";
-  if (typeof value === "boolean") return value ? "예" : "아니오";
-  if (typeof value === "number") return value.toLocaleString("ko-KR");
+  if (value === null || value === undefined || value === "") {
+    return i18n.t("common.unknown");
+  }
+  if (typeof value === "boolean") {
+    return value ? i18n.t("common.yes") : i18n.t("common.no");
+  }
+  if (typeof value === "number") return formatNumber(value);
   if (Array.isArray(value)) {
-    if (!value.length) return "없음";
+    if (!value.length) return i18n.t("common.none");
     if (
       value.every((item) =>
         ["string", "number", "boolean"].includes(typeof item),
       )
     ) {
-      return value.map((item) => String(item)).join(", ");
+      return value.map((item) => formatRegisterValue(item, fieldKey)).join(", ");
     }
-    return `${value.length}건`;
+    return i18n.t("register.value.count", { count: value.length });
   }
-  if (typeof value === "object") return JSON.stringify(value);
+  if (typeof value === "object") {
+    const row = value as Record<string, unknown>;
+    if (typeof row.objectId === "string") return `${recordTypeLabel(row.objectType)} · ${row.objectId} · ${recordVersionLabel(row.version)}`;
+    return Object.entries(row).map(([key, item]) => `${registerFieldLabel(key)}: ${formatRegisterValue(item, key)}`).join(" · ");
+  }
 
   const text = String(value);
   if (states[text]) return states[text];
-  if (
-    dateLike.test(fieldKey) ||
-    /^\d{4}-\d{2}-\d{2}T/.test(text)
-  ) {
+  if (dateLike.test(fieldKey) || /^\d{4}-\d{2}-\d{2}T/.test(text)) {
     const date = new Date(text);
-    if (!Number.isNaN(date.getTime())) {
-      return new Intl.DateTimeFormat("ko-KR", {
-        year: "2-digit",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(date);
-    }
+    if (!Number.isNaN(date.getTime())) return formatDateTime(date);
   }
   return text;
 }

@@ -1,20 +1,90 @@
+import { koreanMachineLabels } from "@doul/localization";
 import type { HumanRole, UiRoute } from "../data/ui-contract";
+import i18n from "../i18n/config";
 
 export const routes: readonly UiRoute[] = [
-  { id: "today", label: "오늘", icon: "home" },
-  { id: "inspections", label: "검측·검수", icon: "check" },
-  { id: "capture", label: "현장·증빙", icon: "camera" },
-  { id: "observations", label: "관찰 후보", icon: "eye" },
-  { id: "issues", label: "부적합·이슈", icon: "flag" },
-  { id: "actions", label: "시정조치", icon: "tool" },
-  { id: "schedule", label: "공정·지연·회복", icon: "layers" },
-  { id: "contract", label: "계약통지·클레임·EOT", icon: "report" },
-  { id: "safety", label: "안전·작업허가", icon: "shield" },
-  { id: "owner", label: "발주처 보고·결정", icon: "report" },
-  { id: "documents", label: "문서 작성", icon: "document" },
-  { id: "registers", label: "관리대장", icon: "table" },
-  { id: "rfis", label: "설계질의", icon: "layers" },
-  { id: "admin", label: "배치·권한", icon: "users" },
+  { id: "today", label: "Today", labelKey: "navigation.today", icon: "home" },
+  {
+    id: "inspections",
+    label: "Inspections",
+    labelKey: "navigation.inspections",
+    icon: "check",
+  },
+  {
+    id: "capture",
+    label: "Field evidence",
+    labelKey: "navigation.capture",
+    icon: "camera",
+  },
+  {
+    id: "observations",
+    label: "Observations",
+    labelKey: "navigation.observations",
+    icon: "eye",
+  },
+  {
+    id: "issues",
+    label: "Issues",
+    labelKey: "navigation.issues",
+    icon: "flag",
+  },
+  {
+    id: "actions",
+    label: "Corrective actions",
+    labelKey: "navigation.actions",
+    icon: "tool",
+  },
+  {
+    id: "schedule",
+    label: "Schedule",
+    labelKey: "navigation.schedule",
+    icon: "layers",
+  },
+  {
+    id: "contract",
+    label: "Contract",
+    labelKey: "navigation.contract",
+    icon: "report",
+  },
+  {
+    id: "payment",
+    label: "Payment",
+    labelKey: "payment.title",
+    icon: "table",
+  },
+  {
+    id: "completion",
+    label: "Completion and handover",
+    labelKey: "completion.title",
+    icon: "check",
+  },
+  {
+    id: "safety",
+    label: "Safety",
+    labelKey: "navigation.safety",
+    icon: "shield",
+  },
+  {
+    id: "owner",
+    label: "Owner reporting",
+    labelKey: "navigation.owner",
+    icon: "report",
+  },
+  {
+    id: "documents",
+    label: "Documents",
+    labelKey: "navigation.documents",
+    icon: "document",
+  },
+  {
+    id: "registers",
+    label: "Registers",
+    labelKey: "navigation.registers",
+    icon: "table",
+  },
+  { id: "rfis", label: "RFI", labelKey: "navigation.rfis", icon: "layers" },
+  { id: "admin", label: "Admin", labelKey: "navigation.admin", icon: "users" },
+  { id: "parallel-test", label: "Parallel feature tests", labelKey: "navigation.parallelTest", icon: "layers" },
 ];
 
 const allRouteIds = routes.map((route) => route.id);
@@ -22,39 +92,70 @@ const allRouteIds = routes.map((route) => route.id);
 export interface MobileRouteSpec {
   id: string;
   label: string;
+  labelKey?: string;
   icon: string;
 }
 
 export const mobileRoutes: Record<HumanRole, readonly MobileRouteSpec[]> = {
   SUP: [
-    { id: "today", label: "오늘", icon: "home" },
-    { id: "inspections", label: "검측", icon: "check" },
-    { id: "capture", label: "촬영", icon: "camera" },
-    { id: "safety", label: "안전", icon: "shield" },
+    { id: "today", label: "Today", labelKey: "navigation.today", icon: "home" },
+    {
+      id: "inspections",
+      label: "Inspection",
+      labelKey: "mobile.inspections",
+      icon: "check",
+    },
+    { id: "capture", label: "Capture", labelKey: "mobile.capture", icon: "camera" },
+    { id: "safety", label: "Safety", labelKey: "mobile.safety", icon: "shield" },
   ],
   CON: [
-    { id: "today", label: "오늘", icon: "home" },
-    { id: "inspections", label: "검측", icon: "check" },
-    { id: "capture", label: "촬영", icon: "camera" },
-    { id: "safety", label: "안전", icon: "shield" },
+    { id: "today", label: "Today", labelKey: "navigation.today", icon: "home" },
+    {
+      id: "inspections",
+      label: "Inspection",
+      labelKey: "mobile.inspections",
+      icon: "check",
+    },
+    { id: "capture", label: "Capture", labelKey: "mobile.capture", icon: "camera" },
+    { id: "safety", label: "Safety", labelKey: "mobile.safety", icon: "shield" },
   ],
   OWN: [
-    { id: "today", label: "오늘", icon: "home" },
-    { id: "owner", label: "결정", icon: "report" },
-    { id: "issues", label: "이슈", icon: "flag" },
-    { id: "documents", label: "문서", icon: "document" },
+    { id: "today", label: "Today", labelKey: "navigation.today", icon: "home" },
+    { id: "owner", label: "Decision", labelKey: "mobile.owner", icon: "report" },
+    { id: "issues", label: "Issues", labelKey: "mobile.issues", icon: "flag" },
+    {
+      id: "documents",
+      label: "Documents",
+      labelKey: "mobile.documents",
+      icon: "document",
+    },
   ],
   DES: [
-    { id: "today", label: "오늘", icon: "home" },
-    { id: "rfis", label: "설계질의", icon: "layers" },
-    { id: "capture", label: "촬영", icon: "camera" },
-    { id: "documents", label: "문서", icon: "document" },
+    { id: "today", label: "Today", labelKey: "navigation.today", icon: "home" },
+    { id: "rfis", label: "RFI", labelKey: "mobile.rfis", icon: "layers" },
+    { id: "capture", label: "Capture", labelKey: "mobile.capture", icon: "camera" },
+    {
+      id: "documents",
+      label: "Documents",
+      labelKey: "mobile.documents",
+      icon: "document",
+    },
   ],
   ADM: [
-    { id: "today", label: "오늘", icon: "home" },
-    { id: "registers", label: "대장", icon: "table" },
-    { id: "documents", label: "문서", icon: "document" },
-    { id: "admin", label: "권한", icon: "users" },
+    { id: "today", label: "Today", labelKey: "navigation.today", icon: "home" },
+    {
+      id: "registers",
+      label: "Registers",
+      labelKey: "mobile.registers",
+      icon: "table",
+    },
+    {
+      id: "documents",
+      label: "Documents",
+      labelKey: "mobile.documents",
+      icon: "document",
+    },
+    { id: "admin", label: "Admin", labelKey: "mobile.admin", icon: "users" },
   ],
 };
 
@@ -69,36 +170,31 @@ export const roleRoutes: Record<HumanRole, readonly string[]> = {
     "safety",
     "schedule",
     "contract",
+    "payment",
+    "completion",
     "rfis",
     "documents",
     "registers",
   ],
-  OWN: ["today", "schedule", "contract", "owner", "issues", "documents", "registers"],
+  OWN: ["today", "schedule", "contract", "payment", "completion", "owner", "issues", "documents", "registers"],
   DES: ["today", "rfis", "capture", "documents", "registers"],
   ADM: allRouteIds,
 };
 
-export const machineLabels: Record<string, string> = {
-  schedule_baseline: "기준공정",
-  schedule_progress: "진도기록",
-  delay_event: "지연사건",
-  recovery_plan: "회복계획",
-  contract_notice: "계약통지",
-  claim: "클레임",
-  eot_request: "공기연장(EOT)",
-  inspection: "검측",
-  observation: "관찰",
-  issue: "이슈",
-  action: "시정조치",
-  safety_permit: "작업허가",
-  safety_stop_order: "작업중지",
-  safety_equipment_inspection: "장비 안전검사",
-  report: "보고",
-  decision: "의사결정",
-  rfi: "설계질의",
-  document: "문서",
-  evidence: "증빙",
-};
+export const machineLabels: Record<string, string> = new Proxy(
+  koreanMachineLabels,
+  {
+    get(target, property, receiver) {
+      if (typeof property !== "string") {
+        return Reflect.get(target, property, receiver);
+      }
+      if (!(property in target)) return undefined;
+      return i18n.t(`machine.${property}`, {
+        defaultValue: target[property],
+      });
+    },
+  },
+);
 
 export const machineForRoute: Record<string, readonly string[]> = {
   inspections: ["inspection"],
@@ -106,6 +202,10 @@ export const machineForRoute: Record<string, readonly string[]> = {
   issues: ["issue"],
   actions: ["action"],
   contract: ["contract_notice", "claim", "eot_request"],
+  payment: ["contract_boq", "quantity_measurement", "payment_claim"],
+  completion: ["commissioning_package", "handover_package", "warranty_claim"],
+  safety: ["safety_permit", "safety_stop_order", "safety_equipment_inspection"],
+  schedule: ["schedule_baseline", "schedule_progress", "delay_event", "recovery_plan"],
   owner: ["report", "decision"],
   rfis: ["rfi"],
 };

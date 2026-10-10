@@ -4,6 +4,7 @@ import type {
   ReactNode,
 } from "react";
 
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -94,6 +95,7 @@ export function StatusBadge({
   children,
   className,
 }: StatusBadgeProps) {
+  const { t } = useTranslation();
   return (
     <Badge
       variant="outline"
@@ -104,7 +106,7 @@ export function StatusBadge({
         className,
       )}
     >
-      {children ?? status ?? "원본 보존"}
+      {children ?? status ?? t("ui.status.originalPreserved")}
     </Badge>
   );
 }
@@ -120,12 +122,14 @@ export interface KpiCardProps
 export function KpiCard({
   label,
   value,
-  unit = "건",
+  unit,
   meta,
   className,
   type = "button",
   ...props
 }: KpiCardProps) {
+  const { t } = useTranslation();
+  const resolvedUnit = unit === undefined ? t("ui.kpi.unit") : unit;
   return (
     <button
       type={type}
@@ -135,7 +139,7 @@ export function KpiCard({
       <span>{label}</span>
       <b>
         {value}
-        {unit ? <small>{unit}</small> : null}
+        {resolvedUnit ? <small>{resolvedUnit}</small> : null}
       </b>
       {meta ? <em>{meta}</em> : null}
     </button>

@@ -1,0 +1,71 @@
+{
+  "scope": "Projection-only; cheap synthetic guards/preflight, shared immutable nested source payload",
+  "excludes": [
+    "source engine construction",
+    "real authorization/dependency reads",
+    "command-preview clone",
+    "API/store transaction",
+    "persistence IO",
+    "process RSS/native memory"
+  ],
+  "measurements": [
+    {
+      "records": 3500,
+      "limit": 1,
+      "rounds": 3,
+      "samples": [
+        {
+          "wall_ms": 5.086541001219302,
+          "cpu_ms": 5.088000000000002,
+          "record_gets": 1,
+          "preflights": 1
+        },
+        {
+          "wall_ms": 5.071208004665095,
+          "cpu_ms": 5.073000000000001,
+          "record_gets": 1,
+          "preflights": 1
+        },
+        {
+          "wall_ms": 5.085459000838455,
+          "cpu_ms": 5.0870000000000015,
+          "record_gets": 1,
+          "preflights": 1
+        }
+      ],
+      "median_wall_ms": 5.085459000838455,
+      "median_cpu_ms": 5.0870000000000015,
+      "projection_peak_python_bytes": 11742,
+      "projection_retained_python_bytes": 4870
+    },
+    {
+      "records": 50000,
+      "limit": 1,
+      "rounds": 3,
+      "samples": [
+        {
+          "wall_ms": 72.07975000346778,
+          "cpu_ms": 72.08200000000001,
+          "record_gets": 1,
+          "preflights": 1
+        },
+        {
+          "wall_ms": 72.51208299567224,
+          "cpu_ms": 72.51599999999999,
+          "record_gets": 1,
+          "preflights": 1
+        },
+        {
+          "wall_ms": 71.82795900007477,
+          "cpu_ms": 71.817,
+          "record_gets": 1,
+          "preflights": 1
+        }
+      ],
+      "median_wall_ms": 72.07975000346778,
+      "median_cpu_ms": 72.08200000000001,
+      "projection_peak_python_bytes": 11862,
+      "projection_retained_python_bytes": 4990
+    }
+  ]
+}

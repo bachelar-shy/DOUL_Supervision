@@ -1,0 +1,31 @@
+{
+  "task": "AC-STORE failure atomicity and retry acceptance",
+  "branch": "goal/ac-store-failure-atomicity-v1",
+  "base": "dfcd763",
+  "ownedFiles": [
+    "tests_mvp/test_ac_store_failure_atomicity_http.py",
+    "design/development/agents/ac-store-failure-atomicity-handoff.json"
+  ],
+  "implementation": {
+    "test": "Authenticated create_app HTTP flow uploads into the demo quarantine, injects a put_blob failure after a write, and retries quarantine registration using the same idempotency key and unchanged body.",
+    "failureAssertions": [
+      "API does not return success when canonical blob persistence fails",
+      "SQLite transaction restores the exact persisted state payload and blob count",
+      "No canonical Evidence, registration request cache, or evidence:create audit event survives the failed attempt",
+      "An evidence-required Observation confirmation returns EVIDENCE_REQUIRED and changes neither record version nor persisted state when evidenceIds is empty"
+    ],
+    "recoveryAssertions": [
+      "Same-key retry creates one canonical Evidence with exact uploaded hash and bytes",
+      "Same-key replay returns the same Evidence record",
+      "Existing SUP evidence guard permits confirmation only with the recovered Evidence ID",
+      "Demo normalized worker API and official SUP/Inspection/media-Issue APIs create a linked Observation, Issue, and Corrective Action through normal HTTP gates",
+      "Evidence, Observation, and linked Issue remain readable with the original blob after reopening the SQLite database"
+    ],
+    "fixtureBoundary": "This is development acceptance using demo SQLite persistence, local filesystem quarantine, synthetic image bytes, and the explicitly demo-only normalized media worker ingress. It does not prove production object-store transaction guarantees, real worker/provider behavior, or a field pilot. No product source, gate, schema, or business semantics were changed."
+  },
+  "verification": {
+    "command": "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests_mvp.test_ac_store_failure_atomicity_http -v",
+    "result": "PASS; 1 test"
+  },
+  "commit": "23263645c878146cc5cb9aefffa9e6ef9620fd5b"
+}

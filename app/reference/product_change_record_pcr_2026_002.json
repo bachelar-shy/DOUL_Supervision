@@ -1,0 +1,36 @@
+{
+  "changeId": "PCR-2026-002",
+  "baselineFrom": "1.0",
+  "baselineTo": "1.1",
+  "changeClass": "C2",
+  "reason": "Exact Issue and Action references can become stale through legitimate correction and reinspection cycles. Add explicit, audited reference reconciliation so approved commissioning, handover and warranty workflows can complete while preserving submitted snapshots, current-version checks, exact identity and all existing gates.",
+  "requestedBy": "Product/Functional Owner",
+  "decidedBy": "Product/Functional Owner",
+  "impactedContracts": [
+    "34_Commissioning_Handover_Warranty_Functional_Contract.md",
+    "app/schema/state_machines_v1.json"
+  ],
+  "impactedRegisters": [
+    "24"
+  ],
+  "impactedForms": [],
+  "impactedApiSurfaces": [
+    "commissioning_package:mark_ready_for_handover",
+    "handover_package:refresh_issue_references",
+    "warranty_claim:refresh_remedy_references",
+    "warranty_claim:accept_remedy"
+  ],
+  "compatibility": "backward_compatible",
+  "migrationRequired": false,
+  "effectiveFrom": "2026-10-10T00:00:00+07:00",
+  "acceptanceScenarioIds": [
+    "AC-REF-01",
+    "AC-REF-02",
+    "AC-REF-03",
+    "AC-VERSION-01",
+    "AC-IDEMP-01",
+    "AC-AUTH-01"
+  ],
+  "decision": "approved",
+  "notes": "Explicit Product/Functional Owner approval: “제안대로 v1.1에 채택.” Intended effective date is 2026-10-10 00:00 +07:00; effectiveness is gated on adoption by a verified release. No automatic refresh, Issue addition/removal/substitution, cancellation-as-closure, reservation or approval rewrite, or closure-gate relaxation."
+}

@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 1,
+  "package": {
+    "name": "braces",
+    "version": "3.0.3",
+    "lockPath": "node_modules/braces",
+    "registry": "https://registry.npmjs.org/braces/-/braces-3.0.3.tgz",
+    "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA=="
+  },
+  "advisory": {
+    "id": "GHSA-vfj7-8cjw-p6xm",
+    "url": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+    "cve": "CVE-2026-93687",
+    "affectedRange": "<=3.0.3",
+    "status": "dependency remains on published 3.0.3; local backport mitigates reported recursive-depth path, advisory remains visible"
+  },
+  "upstream": {
+    "repository": "https://github.com/micromatch/braces",
+    "pullRequest": 72,
+    "headCommit": "28d440b5dd449dbf1fe6f3506cf94ecca4d02660",
+    "statusAtBackport": "Closed unmerged; no published fixed release observed on 2026-10-10",
+    "baseRelease": "3.0.3",
+    "securityCommits": [
+      "d0d575e55e74a4e0218e5248fafb79efc3e54ebb",
+      "2569eada352a032decd189db906c3c7d87be0ad0",
+      "e072fe408812dbcb428cf85fde4cfb12ec4021f0",
+      "f7ba960d37ddb452b0ad304812635b7259abb173"
+    ],
+    "sourceFiles": [
+      "lib/compile.js",
+      "lib/constants.js",
+      "lib/expand.js",
+      "lib/parse.js",
+      "lib/stringify.js"
+    ],
+    "scope": "Only PR #72 parser depth guard, traversal limits, nested-brace stringify correction, and expand parent-cycle guard. No quote-parser change or unrelated release changes.",
+    "headTree": "0ffbc33a63a6f2365865e69b4217683268067847",
+    "headCommitDate": "2026-10-03T13:49:47+02:00"
+  },
+  "compatibility": {
+    "defaultMaxDepth": 100,
+    "note": "Patterns exceeding 100 nested parentheses or brace levels now throw deterministically; this is an intentional behavior change from 3.0.3."
+  },
+  "license": {
+    "expression": "MIT",
+    "notice": "Copyright (c) 2014-present, Jon Schlinkert. Original braces LICENSE remains in installed package; this local backport preserves it."
+  },
+  "files": [
+    {
+      "path": "lib/compile.js",
+      "originalSha256": "dc98f22eee3d511785d92a00758d5f0d48efed5f5813bdecc2de430c529b5c9f",
+      "patchedSha256": "b651f7715e6db8942ce61d3394357b4d81c8ece88240aa31a458ea1165edd195",
+      "hunks": [
+        {
+          "offset": 85,
+          "before": "",
+          "after": "const { MAX_DEPTH } = require('./constants');\n"
+        },
+        {
+          "offset": 127,
+          "before": "  const walk = (node, parent = {}) => {\n",
+          "after": "  const maxDepth = Number.isFinite(options.maxDepth) ? Math.min(MAX_DEPTH, options.maxDepth) : MAX_DEPTH;\n\n  const walk = (node, parent = {}, depth = 0) => {\n    if (node.nodes && depth > maxDepth) {\n      throw new RangeError(`AST depth (${depth}), exceeds max depth (${maxDepth})`);\n    }\n"
+        },
+        {
+          "offset": 1374,
+          "before": "        output += walk(child, node);\n",
+          "after": "        output += walk(child, node, child.nodes ? depth + 1 : depth);\n"
+        },
+        {
+          "offset": 1451,
+          "before": "  return walk(ast);\n",
+          "after": "  return walk(ast, {}, ast.type === 'root' ? 0 : 1);\n"
+        }
+      ]
+    },
+    {
+      "path": "lib/constants.js",
+      "originalSha256": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
+      "patchedSha256": "f9fb688959232eee3e6ad7906a5b0e3234815db49ee857ef86983d65b917dc7c",
+      "hunks": [
+        {
+          "offset": 34,
+          "before": "",
+          "after": "  MAX_DEPTH: 100,\n"
+        }
+      ]
+    },
+    {
+      "path": "lib/expand.js",
+      "originalSha256": "41ccc196ebfa7b7781a634e721eb744e4e7bcb54cba427a7e3d6806a1b9e58f7",
+      "patchedSha256": "7ea3e14c2b2b256ef244fd3d83b8fcaa20aa2232b4e6d768c3bb6ab567f66cf5",
+      "hunks": [
+        {
+          "offset": 127,
+          "before": "",
+          "after": "const { MAX_DEPTH } = require('./constants');\n"
+        },
+        {
+          "offset": 817,
+          "before": "",
+          "after": "const queueOwner = node => {\n  if (node.type === 'brace' || node.type === 'root' || !node.parent) return node;\n\n  const seen = new Set();\n  while (node.type !== 'brace' && node.type !== 'root' && node.parent) {\n    if (seen.has(node)) {\n      throw new RangeError('AST parent chain contains a cycle');\n    }\n    seen.add(node);\n    node = node.parent;\n  }\n  return node;\n};\n\n"
+        },
+        {
+          "offset": 940,
+          "before": "",
+          "after": "  const maxDepth = Number.isFinite(options.maxDepth) ? Math.min(MAX_DEPTH, options.maxDepth) : MAX_DEPTH;\n"
+        },
+        {
+          "offset": 941,
+          "before": "  const walk = (node, parent = {}) => {\n",
+          "after": "  const walk = (node, parent = {}, depth = 0) => {\n    if (node.nodes && depth > maxDepth) {\n      throw new RangeError(`AST depth (${depth}), exceeds max depth (${maxDepth})`);\n    }\n"
+        },
+        {
+          "offset": 1003,
+          "before": "    let p = parent;\n    let q = parent.queue;\n\n    while (p.type !== 'brace' && p.type !== 'root' && p.parent) {\n      p = p.parent;\n      q = p.queue;\n    }\n",
+          "after": "    const q = queueOwner(parent).queue;\n"
+        },
+        {
+          "offset": 1973,
+          "before": "    let queue = node.queue;\n    let block = node;\n\n    while (block.type !== 'brace' && block.type !== 'root' && block.parent) {\n      block = block.parent;\n      queue = block.queue;\n    }\n",
+          "after": "    const queue = queueOwner(node).queue;\n"
+        },
+        {
+          "offset": 2667,
+          "before": "        walk(child, node);\n",
+          "after": "        walk(child, node, child.nodes ? depth + 1 : depth);\n"
+        },
+        {
+          "offset": 2733,
+          "before": "  return utils.flatten(walk(ast));\n",
+          "after": "  return utils.flatten(walk(ast, {}, ast.type === 'root' ? 0 : 1));\n"
+        }
+      ]
+    },
+    {
+      "path": "lib/parse.js",
+      "originalSha256": "e572166565f15fa6ad9865ae49d678218e32aabfd1b3720f6d0d43d39800d310",
+      "patchedSha256": "72aabaadaa555cdfbd07fbd7c7f743373e4dc8eec04a97550cc57bbeec30eb6c",
+      "hunks": [
+        {
+          "offset": 88,
+          "before": "",
+          "after": "  MAX_DEPTH,\n"
+        },
+        {
+          "offset": 821,
+          "before": "",
+          "after": "  const maxDepth = Number.isFinite(opts.maxDepth) ? Math.min(MAX_DEPTH, opts.maxDepth) : MAX_DEPTH;\n"
+        },
+        {
+          "offset": 1143,
+          "before": "",
+          "after": "  let nesting = 0;\n"
+        },
+        {
+          "offset": 2895,
+          "before": "",
+          "after": "      if (nesting + 1 > maxDepth) {\n        throw new SyntaxError(`Input depth (${nesting + 1}), exceeds max depth (${maxDepth})`);\n      }\n      nesting++;\n"
+        },
+        {
+          "offset": 3239,
+          "before": "",
+          "after": "      nesting--;\n"
+        },
+        {
+          "offset": 4005,
+          "before": "",
+          "after": "      if (nesting + 1 > maxDepth) {\n        throw new SyntaxError(`Input depth (${nesting + 1}), exceeds max depth (${maxDepth})`);\n      }\n      nesting++;\n"
+        },
+        {
+          "offset": 4726,
+          "before": "",
+          "after": "      nesting--;\n"
+        }
+      ]
+    },
+    {
+      "path": "lib/stringify.js",
+      "originalSha256": "379f22d77bfa1478341ccd49c5e4267464aabcbba03558bab332aac23fc6f23a",
+      "patchedSha256": "49dc2d8bafa74f34715a18a845bcb82ce66caaf3bab4cf117998e06b1f9a50a9",
+      "hunks": [
+        {
+          "offset": 49,
+          "before": "",
+          "after": "const { MAX_DEPTH } = require('./constants');\n"
+        },
+        {
+          "offset": 92,
+          "before": "  const stringify = (node, parent = {}) => {\n",
+          "after": "  const maxDepth = Number.isFinite(options.maxDepth) ? Math.min(MAX_DEPTH, options.maxDepth) : MAX_DEPTH;\n\n  const stringify = (node, parent = {}, depth = 0) => {\n    if (node.nodes && depth > maxDepth) {\n      throw new RangeError(`AST depth (${depth}), exceeds max depth (${maxDepth})`);\n    }\n"
+        },
+        {
+          "offset": 604,
+          "before": "        output += stringify(child);\n",
+          "after": "        output += stringify(child, undefined, child.nodes ? depth + 1 : depth);\n"
+        },
+        {
+          "offset": 679,
+          "before": "  return stringify(ast);\n",
+          "after": "  return stringify(ast, {}, ast.type === 'root' ? 0 : 1);\n"
+        },
+        {
+          "offset": 707,
+          "before": "\n",
+          "after": ""
+        }
+      ]
+    }
+  ]
+}

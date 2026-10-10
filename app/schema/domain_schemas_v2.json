@@ -464,7 +464,26 @@
                 "payment.claim.decide",
                 "payment.claim.record",
                 "payment.claim.close",
-                "payment.claim.withdraw"
+                "payment.claim.withdraw",
+                "completion.commissioning.create",
+                "completion.commissioning.review",
+                "completion.commissioning.start_test",
+                "completion.commissioning.submit_result",
+                "completion.commissioning.verify",
+                "completion.commissioning.retest",
+                "completion.handover.create",
+                "completion.handover.submit",
+                "completion.handover.review",
+                "completion.handover.owner_review",
+                "completion.handover.owner_decide",
+                "completion.handover.partial",
+                "completion.handover.close",
+                "completion.warranty.report",
+                "completion.warranty.acknowledge",
+                "completion.warranty.assess",
+                "completion.warranty.remedy",
+                "completion.warranty.verify",
+                "completion.warranty.close"
               ]
             }
           },
@@ -887,7 +906,17 @@
           },
           "applicability": {
             "type": "object",
-            "properties": {},
+            "properties": {
+              "commissioningProfile": {
+                "$ref": "#/components/schemas/CommissioningProfileRule"
+              },
+              "handoverProfile": {
+                "$ref": "#/components/schemas/HandoverProfileRule"
+              },
+              "warrantyPeriod": {
+                "$ref": "#/components/schemas/WarrantyPeriodRule"
+              }
+            },
             "required": [],
             "additionalProperties": true
           },
@@ -1983,6 +2012,13 @@
             "type": "string",
             "format": "uuid"
           },
+          "correctiveActionRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainRef"
+            },
+            "uniqueItems": true
+          },
           "previousInspectionId": {
             "type": "string",
             "format": "uuid"
@@ -2546,6 +2582,106 @@
               "properties": {
                 "data": {
                   "$ref": "#/components/schemas/PaymentClaimData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "CommissioningPackage"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "planned",
+                    "prerequisite_review",
+                    "precommissioning",
+                    "test_ready",
+                    "testing",
+                    "result_review",
+                    "passed",
+                    "failed",
+                    "punch_resolution",
+                    "ready_for_handover",
+                    "closed"
+                  ]
+                },
+                "data": {
+                  "$ref": "#/components/schemas/CommissioningPackageData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "HandoverPackage"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "draft",
+                    "completeness_review",
+                    "returned",
+                    "technical_readiness",
+                    "owner_review",
+                    "accepted_with_reservations",
+                    "accepted",
+                    "partial_handover",
+                    "final_handover",
+                    "closed"
+                  ]
+                },
+                "data": {
+                  "$ref": "#/components/schemas/HandoverPackageData"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subtype": {
+                  "const": "WarrantyClaim"
+                }
+              },
+              "required": [
+                "subtype"
+              ]
+            },
+            "then": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "draft",
+                    "reported",
+                    "acknowledged",
+                    "assessment",
+                    "action_required",
+                    "remedy_in_progress",
+                    "reinspection",
+                    "accepted",
+                    "rework_required",
+                    "closed"
+                  ]
+                },
+                "data": {
+                  "$ref": "#/components/schemas/WarrantyClaimData"
                 }
               }
             }
@@ -6427,6 +6563,2133 @@
           "evidenceIds",
           "recordedBy",
           "recordedAt"
+        ],
+        "additionalProperties": false
+      },
+      "CommissioningChecklistItem": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "requirementRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Requirement"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "itemId",
+          "completed",
+          "evidenceIds"
+        ],
+        "additionalProperties": false
+      },
+      "CommissioningTestResultSnapshot": {
+        "type": "object",
+        "properties": {
+          "testResultRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Evidence"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "testCycle": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "outcome": {
+            "enum": [
+              "pass",
+              "fail"
+            ]
+          },
+          "acceptanceCriteriaMet": {
+            "type": "boolean"
+          },
+          "failureReason": {
+            "type": "string"
+          },
+          "submittedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "testResultRef",
+          "testCycle",
+          "outcome",
+          "acceptanceCriteriaMet",
+          "submittedBy",
+          "submittedAt"
+        ],
+        "additionalProperties": false
+      },
+      "HandoverScope": {
+        "type": "object",
+        "properties": {
+          "scopeId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "system": {
+            "type": "string",
+            "minLength": 1
+          },
+          "locationIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "assetRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Asset"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "scopeId",
+          "system",
+          "locationIds",
+          "assetRefs"
+        ],
+        "additionalProperties": false
+      },
+      "HandoverReservation": {
+        "type": "object",
+        "properties": {
+          "issueRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Issue"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "ownerPartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "closureRequirement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "approvedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "approvedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "issueRef",
+          "ownerPartyId",
+          "dueAt",
+          "closureRequirement",
+          "approvedBy",
+          "approvedAt"
+        ],
+        "additionalProperties": false
+      },
+      "CommissioningPackageData": {
+        "type": "object",
+        "properties": {
+          "commissioningNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "system": {
+            "type": "string",
+            "minLength": 1
+          },
+          "commissioningProfileRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Requirement"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "prerequisiteInspectionRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Inspection"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "precommissioningChecklist": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommissioningChecklistItem"
+            }
+          },
+          "testProcedureRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "InformationItem"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "testResultRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Evidence"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "testResultHistory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommissioningTestResultSnapshot"
+            },
+            "readOnly": true
+          },
+          "integratedTestRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "enum": [
+                    "Evidence",
+                    "InformationItem"
+                  ]
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "materialReadinessRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "enum": [
+                    "WorkItem",
+                    "InformationItem"
+                  ]
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "equipmentReadinessRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "enum": [
+                    "WorkItem",
+                    "InformationItem"
+                  ]
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "calibrationRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "enum": [
+                    "InformationItem",
+                    "Requirement"
+                  ]
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "utilityReadinessRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "enum": [
+                    "Evidence",
+                    "InformationItem"
+                  ]
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "safetyPermitRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "WorkItem"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "testWitnessPartyIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "punchIssueRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Issue"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "testResultRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Evidence"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "outcome": {
+            "enum": [
+              "pass",
+              "fail"
+            ]
+          },
+          "acceptanceCriteriaMet": {
+            "type": "boolean"
+          },
+          "failureReason": {
+            "type": "string"
+          },
+          "correctionActionRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Action"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "readinessStatus": {
+            "enum": [
+              "pending",
+              "blocked",
+              "ready"
+            ],
+            "readOnly": true
+          },
+          "readyAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "lastTestResultAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "lastTestOutcome": {
+            "enum": [
+              "pass",
+              "fail"
+            ],
+            "readOnly": true
+          },
+          "retestBasisRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Action"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "currentPunchIssueRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Issue"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "currentCorrectionActionRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Action"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "punchReferenceRefreshHistory": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "priorPunchIssueRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "priorCorrectionActionRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Action"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "currentPunchIssueRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "currentCorrectionActionRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Action"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "recordedBy": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "recordedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "priorPunchIssueRefs",
+                "priorCorrectionActionRefs",
+                "currentPunchIssueRefs",
+                "currentCorrectionActionRefs",
+                "recordedBy",
+                "recordedAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "commissioningNo",
+          "system",
+          "commissioningProfileRef",
+          "prerequisiteInspectionRefs",
+          "precommissioningChecklist",
+          "testProcedureRefs",
+          "integratedTestRefs",
+          "materialReadinessRefs",
+          "equipmentReadinessRefs",
+          "calibrationRefs",
+          "utilityReadinessRefs",
+          "safetyPermitRefs",
+          "testWitnessPartyIds",
+          "punchIssueRefs",
+          "correctionActionRefs"
+        ],
+        "additionalProperties": false
+      },
+      "HandoverPackageData": {
+        "type": "object",
+        "properties": {
+          "handoverNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "handoverScope": {
+            "$ref": "#/components/schemas/HandoverScope"
+          },
+          "handoverProfileRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Requirement"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "commissioningPackageRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "WorkItem"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "asBuiltRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "enum": [
+                    "InformationItem",
+                    "DocumentSnapshot"
+                  ]
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "omManualRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "enum": [
+                    "InformationItem",
+                    "DocumentSnapshot"
+                  ]
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "trainingRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "enum": [
+                    "InformationItem",
+                    "DocumentSnapshot"
+                  ]
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "sparePartsRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "enum": [
+                    "InformationItem",
+                    "DocumentSnapshot"
+                  ]
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "certificateRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "enum": [
+                    "InformationItem",
+                    "DocumentSnapshot"
+                  ]
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "statutoryAcceptanceRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "enum": [
+                    "InformationItem",
+                    "DocumentSnapshot"
+                  ]
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "openIssueRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Issue"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "ownerDecisionRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Decision"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "ownerAcceptanceRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Decision"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false,
+            "readOnly": true
+          },
+          "returnReason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "missingItems": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "reservationProposals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HandoverReservationInput"
+            }
+          },
+          "reservations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HandoverReservation"
+            }
+          },
+          "ownerReservationInputs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HandoverReservationInput"
+            }
+          },
+          "handoverReady": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "readinessStatus": {
+            "enum": [
+              "pending",
+              "blocked",
+              "ready"
+            ],
+            "readOnly": true
+          },
+          "readinessBlockers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "readOnly": true
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "handoverDate": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "acceptedScope": {
+            "$ref": "#/components/schemas/HandoverScope"
+          },
+          "warrantyTrigger": {
+            "type": "boolean"
+          },
+          "warrantyStartAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "acceptedDocumentRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "enum": [
+                    "InformationItem",
+                    "DocumentSnapshot"
+                  ]
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "currentIssueRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Issue"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "currentOpenIssueRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Issue"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "issueReferenceRefreshHistory": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "priorCurrentIssueRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "currentIssueRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Issue"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "recordedBy": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "recordedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "priorCurrentIssueRefs",
+                "currentIssueRefs",
+                "recordedBy",
+                "recordedAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "handoverNo",
+          "handoverScope",
+          "handoverProfileRef",
+          "commissioningPackageRefs",
+          "asBuiltRefs",
+          "omManualRefs",
+          "trainingRefs",
+          "sparePartsRefs",
+          "certificateRefs",
+          "statutoryAcceptanceRefs",
+          "openIssueRefs",
+          "reservationProposals"
+        ],
+        "additionalProperties": false
+      },
+      "WarrantyClaimData": {
+        "type": "object",
+        "properties": {
+          "claimNo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "handoverRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "WorkItem"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "warrantyPeriodRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Requirement"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "defectObservedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "defectScope": {
+            "$ref": "#/components/schemas/HandoverScope"
+          },
+          "defectDescription": {
+            "type": "string",
+            "minLength": 1
+          },
+          "causeDescription": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operationalImpact": {
+            "type": "string",
+            "minLength": 1
+          },
+          "issueRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Issue"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "actionRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Action"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "responseDueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "remedySummary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reworkReason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ownerDecisionRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Decision"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "remedyEvidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "readOnly": true
+          },
+          "reinspectionRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Inspection"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "reinspectionHistoryRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Inspection"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "closureRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "enum": [
+                  "Decision",
+                  "Issue"
+                ]
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "closureEvidenceRefs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "readOnly": true
+          },
+          "assessedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "acknowledgedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "reportedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "remedyStartedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "remedySubmittedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "acceptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "recordedBy": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "currentIssueRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Issue"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false,
+            "readOnly": true
+          },
+          "currentActionRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "Action"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true,
+            "readOnly": true
+          },
+          "remedyReferenceRefreshHistory": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "priorIssueRef": {
+                  "type": "object",
+                  "properties": {
+                    "objectType": {
+                      "const": "Issue"
+                    },
+                    "objectId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "objectType",
+                    "objectId",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                },
+                "priorActionRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Action"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "currentIssueRef": {
+                  "type": "object",
+                  "properties": {
+                    "objectType": {
+                      "const": "Issue"
+                    },
+                    "objectId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "objectType",
+                    "objectId",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                },
+                "currentActionRefs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "objectType": {
+                        "const": "Action"
+                      },
+                      "objectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "objectType",
+                      "objectId",
+                      "version"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "uniqueItems": true
+                },
+                "recordedBy": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "recordedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "priorIssueRef",
+                "priorActionRefs",
+                "currentIssueRef",
+                "currentActionRefs",
+                "recordedBy",
+                "recordedAt"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "claimNo",
+          "handoverRef",
+          "warrantyPeriodRef",
+          "defectObservedAt",
+          "defectScope",
+          "defectDescription",
+          "causeDescription",
+          "operationalImpact",
+          "issueRef"
+        ],
+        "additionalProperties": false
+      },
+      "HandoverReservationInput": {
+        "type": "object",
+        "properties": {
+          "issueRef": {
+            "type": "object",
+            "properties": {
+              "objectType": {
+                "const": "Issue"
+              },
+              "objectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "objectType",
+              "objectId",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "ownerPartyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "closureRequirement": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "issueRef",
+          "ownerPartyId",
+          "dueAt",
+          "closureRequirement"
+        ],
+        "additionalProperties": false
+      },
+      "CommissioningProfileRule": {
+        "type": "object",
+        "properties": {
+          "requiredPrecommissioningItemIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "requiredTestProcedureRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "InformationItem"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "requiredIntegratedTestRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "enum": [
+                    "Evidence",
+                    "InformationItem"
+                  ]
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "requiresMaterialReadiness": {
+            "type": "boolean"
+          },
+          "requiresEquipmentReadiness": {
+            "type": "boolean"
+          },
+          "requiresCalibration": {
+            "type": "boolean"
+          },
+          "requiresUtilities": {
+            "type": "boolean"
+          },
+          "requiresSafetyPermit": {
+            "type": "boolean"
+          },
+          "requiresTestWitness": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "requiredPrecommissioningItemIds",
+          "requiredTestProcedureRefs",
+          "requiredIntegratedTestRefs",
+          "requiresMaterialReadiness",
+          "requiresEquipmentReadiness",
+          "requiresCalibration",
+          "requiresUtilities",
+          "requiresSafetyPermit",
+          "requiresTestWitness"
+        ],
+        "additionalProperties": false
+      },
+      "HandoverProfileRule": {
+        "type": "object",
+        "properties": {
+          "requiredDocumentSets": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "asBuilt",
+                "omManual",
+                "training",
+                "spareParts",
+                "certificates",
+                "statutoryAcceptance"
+              ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "requiredCommissioningPackageRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "objectType": {
+                  "const": "WorkItem"
+                },
+                "objectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "objectType",
+                "objectId",
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "uniqueItems": true
+          },
+          "warrantyTriggerOnPartialHandover": {
+            "type": "boolean"
+          },
+          "warrantyTriggerOnFinalHandover": {
+            "type": "boolean"
+          },
+          "warrantyPeriodStartAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "requiredDocumentSets",
+          "requiredCommissioningPackageRefs",
+          "warrantyTriggerOnPartialHandover",
+          "warrantyTriggerOnFinalHandover"
+        ],
+        "additionalProperties": false
+      },
+      "WarrantyPeriodRule": {
+        "type": "object",
+        "properties": {
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "responseDueHours": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "closeAuthorityActorGroup": {
+            "enum": [
+              "SUP",
+              "OWN"
+            ]
+          }
+        },
+        "required": [
+          "startsAt",
+          "endsAt",
+          "responseDueHours",
+          "closeAuthorityActorGroup"
         ],
         "additionalProperties": false
       }

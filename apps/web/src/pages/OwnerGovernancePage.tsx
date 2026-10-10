@@ -1,4 +1,7 @@
-import type { CommandDescriptor, WorkItem, Workspace } from "../data/ui-contract";
+import { recordVersionLabel } from "../labels";
+import type { CommandDescriptor, RecordDTO, WorkItem, Workspace } from "../data/ui-contract";
+import type { SupervisionClient } from "../data/supervision-client";
+import { OwnerDecisionAuthoringPanel } from "./OwnerDecisionAuthoringPanel";
 import { describeCommandAvailability } from "../data/ui-presentation";
 import { commands, states } from "../labels";
 import { EmptyState, StatusBadge } from "../ui";
@@ -7,36 +10,43 @@ import { OwnerReportTemplate } from "../ui/templates";
 import { PageBoundary } from "./PageBoundary";
 import { RecordList } from "./shared";
 import { recordTitle } from "./record-utils";
+import { formatDateTime, formatNumber } from "../i18n/format";
+import i18n from "../i18n/config";
+
+function tr(
+  key: string,
+  values: Record<string, string | number | boolean> = {},
+) {
+  return i18n.t(key, values);
+}
 
 function formatDate(value: unknown) {
-  if (typeof value !== "string" || !value) return "정보 없음";
+  if (typeof value !== "string" || !value) return tr("owner.value.noInfo");
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  return formatDateTime(date);
 }
 
 function impactRows(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return [];
   return Object.entries(value as Record<string, unknown>).map(([key, item]) => ({
-    label:
-      key === "quality"
-        ? "품질"
-        : key === "schedule"
-          ? "공정"
-          : key === "cost"
-            ? "비용"
-            : key,
-    value: item === null || item === undefined || item === "" ? "정보 없음" : String(item),
+    label: tr(`owner.impact.${key}`, { defaultValue: key }),
+    value:
+      item === null || item === undefined || item === ""
+        ? tr("owner.value.noInfo")
+        : typeof item === "number"
+          ? formatNumber(item)
+          : typeof item === "boolean"
+            ? tr(item ? "common.yes" : "common.no")
+            : typeof item === "string" && /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(item)
+              ? formatDate(item)
+              : String(item),
   }));
 }
 
 export interface OwnerGovernancePageProps {
+  client: SupervisionClient;
+  onCreated: (record: RecordDTO) => Promise<void>;
   workspace: Workspace;
   selected: string | null;
   current: WorkItem | null;
@@ -46,6 +56,8 @@ export interface OwnerGovernancePageProps {
 }
 
 export function OwnerGovernancePage({
+  client,
+  onCreated,
   workspace,
   selected,
   current,
@@ -90,35 +102,36 @@ export function OwnerGovernancePage({
 
   return (
     <PageBoundary name="owner" data-owner-governance="true">
+      <OwnerDecisionAuthoringPanel client={client} workspace={workspace} online={online} onCreated={onCreated} />
       <div
         className="grid gap-3 md:grid-cols-3"
         data-ui-component="owner-governance-summary"
       >
         <div className="panel rounded-sm border-t-2 border-t-slate-300 p-4">
-          <span className="eyebrow">수령 확인 가능</span>
+          <span className="eyebrow">{tr("owner.summary.receipt.label")}</span>
           <strong className="mt-2 block text-2xl font-semibold text-slate-900">
             {receiptReady}
           </strong>
           <small className="mt-1 block text-slate-500">
-            서버가 수령확인 명령을 허용한 항목
+            {tr("owner.summary.receipt.description")}
           </small>
         </div>
         <div className="panel rounded-sm border-t-2 border-t-primary p-4">
-          <span className="eyebrow">결정 가능</span>
+          <span className="eyebrow">{tr("owner.summary.decision.label")}</span>
           <strong className="mt-2 block text-2xl font-semibold text-slate-900">
             {decisionReady}
           </strong>
           <small className="mt-1 block text-slate-500">
-            서버가 결정 명령을 허용한 항목
+            {tr("owner.summary.decision.description")}
           </small>
         </div>
         <div className="panel rounded-sm border-t-2 border-t-slate-700 p-4">
-          <span className="eyebrow">검증·종결 가능</span>
+          <span className="eyebrow">{tr("owner.summary.verify.label")}</span>
           <strong className="mt-2 block text-2xl font-semibold text-slate-900">
             {verifyReady}
           </strong>
           <small className="mt-1 block text-slate-500">
-            서버가 검증 또는 종결을 허용한 항목
+            {tr("owner.summary.verify.description")}
           </small>
         </div>
       </div>
@@ -127,18 +140,20 @@ export function OwnerGovernancePage({
         className="mt-3 rounded-sm border border-border bg-card px-4 py-3 text-[10px] leading-5 text-slate-500"
         data-ui-component="owner-governance-flow"
       >
-        <strong className="mr-2 text-slate-700">발주처 업무 흐름</strong>
-        보고 발행 → 수령 확인 → 결정·조치 → 이행 검증 → 종결
+        <strong className="mr-2 text-slate-700">
+          {tr("owner.flow.title")}
+        </strong>
+        {tr("owner.flow.steps")}
         <span className="ml-2 text-slate-400">
-          수령 확인은 승인과 다르며, 기한 초과도 자동승인으로 처리하지 않습니다.
+          {tr("owner.flow.warning")}
         </span>
       </div>
 
       <OwnerReportTemplate hasDetail={!!ownerCurrent} className="mt-3">
         <section className="panel list-pane">
           <div className="section-heading">
-            <h2>보고·결정 대기열</h2>
-            <span>{items.length}건</span>
+            <h2>{tr("owner.queue.title")}</h2>
+            <span>{tr("common.count", { count: items.length })}</span>
           </div>
           <RecordList
             items={items}
@@ -154,16 +169,20 @@ export function OwnerGovernancePage({
                 className="mobile-back text-button"
                 onClick={() => onSelect(null)}
               >
-                ← 목록
+                {tr("owner.back")}
               </button>
 
               <div className="detail-head">
                 <span className="eyebrow">
-                  {ownerCurrent.machine === "report" ? "발주처 보고" : "의사결정"} ·{" "}
+                  {ownerCurrent.machine === "report"
+                    ? tr("owner.type.report")
+                    : tr("owner.type.decision")} ·{" "}
                   {detail?.id.slice(0, 8)}
                 </span>
                 <StatusBadge status={detail?.status}>
-                  {states[detail?.status || ""] || detail?.status || "상태 없음"}
+                  {states[detail?.status || ""] ||
+                    detail?.status ||
+                    tr("owner.value.noStatus")}
                 </StatusBadge>
               </div>
 
@@ -171,18 +190,26 @@ export function OwnerGovernancePage({
 
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-sm border border-border bg-slate-50 p-3">
-                  <small className="block text-slate-400">원본 버전</small>
-                  <b className="mt-1 block text-sm text-slate-700">v{detail?.version}</b>
+                  <small className="block text-slate-400">
+                    {tr("owner.meta.sourceVersion")}
+                  </small>
+                  <b className="mt-1 block text-sm text-slate-700">{recordVersionLabel(detail?.version)}</b>
                 </div>
                 <div className="rounded-sm border border-border bg-slate-50 p-3">
-                  <small className="block text-slate-400">관련 증빙</small>
+                  <small className="block text-slate-400">
+                    {tr("owner.meta.evidence")}
+                  </small>
                   <b className="mt-1 block text-sm text-slate-700">
-                    {detail?.evidenceIds?.length || 0}건
+                    {tr("common.count", {
+                      count: detail?.evidenceIds?.length || 0,
+                    })}
                   </b>
                 </div>
                 <div className="rounded-sm border border-border bg-slate-50 p-3">
                   <small className="block text-slate-400">
-                    {ownerCurrent.machine === "report" ? "수령 기한" : "결정 기한"}
+                    {ownerCurrent.machine === "report"
+                      ? tr("owner.meta.receiptDue")
+                      : tr("owner.meta.decisionDue")}
                   </small>
                   <b className="mt-1 block text-[11px] text-slate-700">
                     {formatDate(
@@ -193,34 +220,40 @@ export function OwnerGovernancePage({
                   </b>
                 </div>
                 <div className="rounded-sm border border-border bg-slate-50 p-3">
-                  <small className="block text-slate-400">현재 실행 가능</small>
+                  <small className="block text-slate-400">
+                    {tr("owner.meta.readyActions")}
+                  </small>
                   <b className="mt-1 block text-sm text-slate-700">
-                    {ownerCurrent.actions.filter((action) => action.ready).length}건
+                    {tr("common.count", {
+                      count: ownerCurrent.actions.filter((action) => action.ready)
+                        .length,
+                    })}
                   </b>
                 </div>
               </div>
 
               <StatusBoundaryGroup
                 className="mt-3"
-                title="수령·결정 상태 경계"
-                description="수령 확인은 승인이나 결정이 아닙니다. 현재 객체 상태와 서버가 허용한 다음 명령을 별도로 표시합니다."
+                title={tr("owner.boundary.title")}
+                description={tr("owner.boundary.description")}
                 items={[
                   {
                     id: "owner-object-state",
-                    label: "현재 객체 상태",
+                    label: tr("owner.boundary.objectState.label"),
                     value:
                       states[detail?.status || ""] ||
                       detail?.status ||
-                      "상태 없음",
+                      tr("owner.value.noStatus"),
                     detail:
                       ownerCurrent.machine === "report"
-                        ? "보고 객체 상태"
-                        : "결정 객체 상태",
+                        ? tr("owner.boundary.objectState.report")
+                        : tr("owner.boundary.objectState.decision"),
                   },
                   {
                     id: "owner-receipt",
-                    label: "수령 확인",
-                    value: receiptPresentation?.label || "현재 명령 없음",
+                    label: tr("owner.boundary.receipt.label"),
+                    value:
+                      receiptPresentation?.label || tr("owner.value.noCommand"),
                     tone:
                       receiptPresentation?.availability === "ready"
                         ? "positive"
@@ -229,12 +262,13 @@ export function OwnerGovernancePage({
                           : receiptPresentation?.availability === "blocked"
                             ? "warning"
                             : "neutral",
-                    detail: "승인·결정과 별도",
+                    detail: tr("owner.boundary.receipt.detail"),
                   },
                   {
                     id: "owner-decision",
-                    label: "결정 제출",
-                    value: decisionPresentation?.label || "현재 명령 없음",
+                    label: tr("owner.boundary.decision.label"),
+                    value:
+                      decisionPresentation?.label || tr("owner.value.noCommand"),
                     tone:
                       decisionPresentation?.availability === "ready"
                         ? "positive"
@@ -243,23 +277,25 @@ export function OwnerGovernancePage({
                           : decisionPresentation?.availability === "blocked"
                             ? "warning"
                             : "neutral",
-                    detail: "수령 확인과 별도",
+                    detail: tr("owner.boundary.decision.detail"),
                   },
                 ]}
               />
 
               {ownerCurrent.machine === "report" ? (
                 <div className="report-body mt-5">
-                  <h3>현황</h3>
-                  <p>{report?.facts || "정보 없음/확인 필요"}</p>
-                  <h3>원인</h3>
-                  <p>{report?.cause || "정보 없음/확인 필요"}</p>
-                  <h3>감리 권고</h3>
-                  <p>{report?.recommendation || "정보 없음/확인 필요"}</p>
+                  <h3>{tr("owner.report.facts")}</h3>
+                  <p>{report?.facts || tr("owner.value.noInfoCheck")}</p>
+                  <h3>{tr("owner.report.cause")}</h3>
+                  <p>{report?.cause || tr("owner.value.noInfoCheck")}</p>
+                  <h3>{tr("owner.report.recommendation")}</h3>
+                  <p>
+                    {report?.recommendation || tr("owner.value.noInfoCheck")}
+                  </p>
                 </div>
               ) : (
                 <div className="mt-5">
-                  <h3 className="subheading">결정 대안</h3>
+                  <h3 className="subheading">{tr("owner.decision.options")}</h3>
                   {options.length ? (
                     <div className="grid gap-2">
                       {options.map((option, index) => {
@@ -276,18 +312,23 @@ export function OwnerGovernancePage({
                               {String(value.id ?? index + 1)}
                             </strong>
                             <span className="text-slate-500">
-                              {String(value.description ?? "설명 없음")}
+                              {String(
+                                value.description ??
+                                  tr("owner.value.noDescription"),
+                              )}
                             </span>
                           </div>
                         );
                       })}
                     </div>
                   ) : (
-                    <p className="muted">서버에 등록된 결정 대안이 없습니다.</p>
+                    <p className="muted">
+                      {tr("owner.decision.noOptions")}
+                    </p>
                   )}
                   {detail?.recommendation ? (
                     <div className="notice mt-3">
-                      <strong>권고안</strong>
+                      <strong>{tr("owner.decision.recommendation")}</strong>
                       <p>{String(detail.recommendation)}</p>
                     </div>
                   ) : null}
@@ -296,7 +337,7 @@ export function OwnerGovernancePage({
 
               {impactRows(impact).length ? (
                 <div className="mt-5">
-                  <h3 className="subheading">영향</h3>
+                  <h3 className="subheading">{tr("owner.impact.title")}</h3>
                   <div className="grid gap-2 sm:grid-cols-3">
                     {impactRows(impact).map((row) => (
                       <div
@@ -314,14 +355,11 @@ export function OwnerGovernancePage({
               ) : null}
 
               <div className="notice mt-5">
-                <strong>결정 경계</strong>
-                <p>
-                  수령 확인은 승인이나 결정이 아닙니다. 후속조치가 연결된 경우에는
-                  이행 검증 후에만 종결할 수 있습니다.
-                </p>
+                <strong>{tr("owner.decisionBoundary.title")}</strong>
+                <p>{tr("owner.decisionBoundary.description")}</p>
               </div>
 
-              <h3 className="subheading">현재 가능한 업무</h3>
+              <h3 className="subheading">{tr("owner.actions.title")}</h3>
               <ActionGate
                 actions={ownerCurrent.actions.map((action) => {
                   const presentation = describeCommandAvailability(action, online);
@@ -340,20 +378,18 @@ export function OwnerGovernancePage({
                 })}
               />
               {!ownerCurrent.actions.length ? (
-                <p className="muted">
-                  현재 역할에서 서버가 허용한 업무가 없습니다.
-                </p>
+                <p className="muted">{tr("owner.actions.none")}</p>
               ) : null}
 
               <details className="technical">
-                <summary>연결 원본 · 버전 확인</summary>
+                <summary>{tr("owner.technical.summary")}</summary>
                 <pre>{JSON.stringify(detail, null, 2)}</pre>
               </details>
             </>
           ) : (
             <EmptyState
-              title="확인할 보고 또는 결정요청을 선택하십시오."
-              description="수령, 결정, 후속조치, 검증, 종결을 같은 흐름에서 확인합니다."
+              title={tr("owner.empty.title")}
+              description={tr("owner.empty.description")}
             />
           )}
         </OwnerDecisionPanel>

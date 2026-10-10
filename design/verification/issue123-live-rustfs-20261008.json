@@ -1,0 +1,23 @@
+{
+  "service": "RustFS",
+  "serviceVersion": "1.0.1",
+  "endpoint": "http://127.0.0.1:19000",
+  "payloadBytes": 92160,
+  "payloadSha256": "989fe4edff14fbe8b8998ade376903dd2e480ea0325c6f720b5d21776ccea0cf",
+  "checks": {
+    "versioningEnabled": true,
+    "versionIdReturned": true,
+    "idempotentRetryReusedVersion": true,
+    "retryCreatedSingleVersion": true,
+    "privateAnonymousReadDenied": true,
+    "changedContentConflicts": true,
+    "wrongDigestRejectedBeforeWrite": true,
+    "exactVersionReadbackHashMatches": true,
+    "exactVersionReadbackBytesMatch": true,
+    "quarantineMetadataPresent": true,
+    "stagingDirectoryEmptyAfterReadback": true
+  },
+  "bucketDeleted": true,
+  "status": "passed",
+  "scopeLimit": "Disposable local RustFS integration test; not production-provider certification."
+}

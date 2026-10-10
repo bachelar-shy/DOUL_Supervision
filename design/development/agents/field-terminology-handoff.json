@@ -1,0 +1,27 @@
+{
+  "branch": "goal/field-terminology-20261010",
+  "baseCommit": "0a4dd540cc8c31df4ce4b26756ed238fbe046071",
+  "checkpointCommit": "Resolve with git log -1 --format=%H -- design/development/agents/field-terminology-handoff.json",
+  "scope": "Korean field terminology in menus, screens, inputs, states, registers, forms, notifications and shared mobile display labels",
+  "excluded": [
+    "training materials",
+    "Vietnamese/English human review",
+    "security release review"
+  ],
+  "completed": [
+    "Manual terminology sources extracted with PDF page and SHA256 evidence",
+    "Presentation labels consolidated; API identifiers, permissions, stored history and workflow stages retained",
+    "Structured record details replace raw storage JSON output",
+    "Drawing location editor uses existing canonical references and numeric PDF positions",
+    "Notification delivery states receive distinct human labels"
+  ],
+  "evidence": "design/development/field-terminology-review-v1.json",
+  "verification": "Native development checks passed; exact PR-head and main CI results are available in GitHub checks. Refer to field-terminology-review-v1.json for full/focused scope and environment skips. Whole MVP field acceptance is not claimed.",
+  "restart": [
+    "Inspect Git status and pending exact-head CI before integration",
+    "Preserve Mac test-server .local/mock-usability.sqlite3 and stored photos",
+    "Mac test server uses HTTPS Tailscale Serve port 10003 forwarding to owned web5196/API8796",
+    "Do not restart completed development from scratch or delete other worktrees",
+    "Education materials remain excluded unless separately authorized"
+  ]
+}

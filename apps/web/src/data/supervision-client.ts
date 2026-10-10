@@ -3,6 +3,10 @@ import type {
   DomainRef,
   Fields,
   HumanRole,
+  IssuePackageInput,
+  IssuePackageResult,
+  MediaAnalysisRequestInput,
+  MediaAnalysisReview,
   RecordDTO,
   Scope,
   Session,
@@ -24,6 +28,12 @@ const workflowCollections: Record<string, string> = {
   contract_notice: "contract-notices",
   claim: "claims",
   eot_request: "eot-requests",
+  contract_boq: "contract-boqs",
+  quantity_measurement: "quantity-measurements",
+  payment_claim: "payment-claims",
+  commissioning_package: "commissioning-packages",
+  handover_package: "handover-packages",
+  warranty_claim: "warranty-claims",
 };
 
 export interface UploadOptions {
@@ -96,6 +106,13 @@ export interface SupervisionClient {
     options: UploadOptions,
     progress?: (offset: number, total: number) => void,
   ): Promise<RecordDTO>;
+  requestMediaAnalysis(input: MediaAnalysisRequestInput, key?: string): Promise<RecordDTO>;
+  mediaAnalysisReview(runId: string): Promise<MediaAnalysisReview>;
+  createMediaIssuePackage(
+    runId: string,
+    input: IssuePackageInput,
+    key?: string,
+  ): Promise<IssuePackageResult>;
   importScheduleSource(
     input: ScheduleSourceImportInput,
     key?: string,
@@ -107,9 +124,11 @@ export interface SupervisionClient {
     data: object,
     final?: boolean,
     language?: string,
+    key?: string,
   ): Promise<RecordDTO>;
   documentHtml(documentId: string): Promise<string>;
   evidenceContent(evidenceId: string): Promise<Blob>;
+  drawingPdfContent(bindingId: string): Promise<Blob>;
   path(suffix: string): string;
   request<T>(path: string, init?: RequestInit): Promise<T>;
 }
@@ -187,6 +206,22 @@ class HttpSupervisionClient implements SupervisionClient {
     return this.client.upload(bytes, options, progress);
   }
 
+  requestMediaAnalysis(input: MediaAnalysisRequestInput, key?: string) {
+    return this.client.requestMediaAnalysis(input, key);
+  }
+
+  mediaAnalysisReview(runId: string) {
+    return this.client.mediaAnalysisReview(runId);
+  }
+
+  createMediaIssuePackage(
+    runId: string,
+    input: IssuePackageInput,
+    key?: string,
+  ) {
+    return this.client.createMediaIssuePackage(runId, input, key);
+  }
+
   importScheduleSource(input: ScheduleSourceImportInput, key?: string) {
     const session = this.client.session;
     if (!session) throw new Error("로그인이 필요합니다.");
@@ -215,8 +250,9 @@ class HttpSupervisionClient implements SupervisionClient {
     data: object,
     final = false,
     language = "ko",
+    key?: string,
   ) {
-    return this.client.render(formId, sourceDomainRefs, data, final, language);
+    return this.client.render(formId, sourceDomainRefs, data, final, language, key);
   }
 
   documentHtml(documentId: string) {
@@ -239,6 +275,27 @@ class HttpSupervisionClient implements SupervisionClient {
       throw new Error(`증빙 원본을 불러오지 못했습니다. (${response.status})`);
     }
     return response.blob();
+  }
+
+  async drawingPdfContent(bindingId: string): Promise<Blob> {
+    const session = this.client.session;
+    if (!session) throw new Error("로그인이 필요합니다.");
+    const response = await fetch(
+      this.baseUrl + this.client.path(`/parallel/drawing-pdf-bindings/${encodeURIComponent(bindingId)}/content`),
+      {
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+          "X-RoleAssignment-Id": session.actor.roleAssignmentId,
+        },
+        signal: AbortSignal.timeout(30000),
+      },
+    );
+    if (!response.ok) throw new Error(`연결된 PDF 원본을 불러오지 못했습니다. (${response.status})`);
+    const blob = await response.blob();
+    if (blob.size > 20 * 1024 * 1024 || blob.type !== "application/pdf") {
+      throw new Error("연결된 원본의 PDF 형식 또는 20 MiB 제한을 확인하십시오.");
+    }
+    return blob;
   }
 
   path(suffix: string) {

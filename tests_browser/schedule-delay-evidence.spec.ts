@@ -362,7 +362,7 @@ async function createEffectiveBaseline(
 
 async function ensureSupervisor(page: Page) {
   await page.goto("/");
-  const selector = page.getByRole("combobox", { name: "개발 역할 선택" });
+  const selector = page.getByRole("combobox", { name: "시험 사용자 역할 선택" });
   if ((await selector.inputValue()) !== "SUP") {
     const refreshed = page.waitForResponse(
       (response) => response.url().endsWith("/workspace") && response.ok(),
@@ -417,7 +417,7 @@ test("Delay creation requires preserved Evidence and reaches the real Backend", 
 
   await expect(evidenceSelect).toBeVisible();
   await expect(dialog).toContainText(
-    "지연사건은 서버에 보존된 근거 증빙을 선택해야 등록할 수 있습니다.",
+    "지연사건은 업무 시스템에 보존된 근거 증빙을 선택해야 등록할 수 있습니다.",
   );
   await expect(submit).toBeDisabled();
 

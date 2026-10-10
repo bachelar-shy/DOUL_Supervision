@@ -1,0 +1,22 @@
+{
+  "branch": "goal/warranty-close-ref-select",
+  "baseCommit": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+  "sourceCheckpoint": "bf43587",
+  "scope": "Present Warranty close closureRef as a blank explicit selector for the claim's current original-defect Issue or an approved exact-target Owner Decision.",
+  "implementation": [
+    "CommandModal maps only warranty_claim:close_warranty_claim.closureRef to an exact single-reference select. Issue choices use the server workspace reference catalog for the latest version and filter by the immutable original claim data.issueRef objectId. Decision choices reuse completionDecisionReferenceOptions and additionally require an approved decision whose WorkItem target matches the current claim ID and version.",
+    "The selector opens blank even if any preexisting closureRef value is projected. The browser helper asserts the only nonempty option is an Issue with the claim's original Issue identity and exact current version, then selects that option through the UI and closes the actual Warranty claim.",
+    "The existing server closure gates remain authoritative. No schema, API, backend guard, common dependency, or authorization behavior changed; unapproved and nonmatching Decisions are not offered. Existing backend wrong/missing/unrelated closure proofs remain unchanged."
+  ],
+  "validation": {
+    "browserCommand": "node_modules/.bin/playwright test --config .local/warranty-close-ref-playwright.config.ts -g 'real warranty UI accepts a remedy with current references after reinspection and closes the claim'",
+    "browserResult": "1 passed in 2.3m on the isolated branch, Chromium, HTTP-backed fixture, port 5194; current Issue option remained the sole eligible choice and the claim closed through the UI.",
+    "typecheck": "node_modules/.bin/tsc -b apps/web/tsconfig.json --pretty false passed with isolated npm 12.2 dependencies.",
+    "uiBoundary": "python3 scripts/check_ui_boundary.py passed.",
+    "lint": "npm run lint --workspace @doul/web exited 0; only inherited repository warnings were reported."
+  },
+  "limits": [
+    "The focused browser scenario proves successful selection and closure for the exact current same-defect Issue. Wrong/missing-reference rejection remains a backend API concern and was not changed by this UI-only patch.",
+    "The fixture uses a test-only trusted verifier; this is not production signature-provider or pilot evidence."
+  ]
+}

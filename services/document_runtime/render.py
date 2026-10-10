@@ -82,7 +82,7 @@ class FrozenHTML(HTMLParser):
 
 
 def validate_source(snapshot, html):
-    if snapshot.get('rendererVersion') != 'reference-html/1' or not re.fullmatch(r'FM-[0-9]{2}', snapshot.get('formId','')):
+    if snapshot.get('rendererVersion') not in {'reference-html/1', 'reference-html/2'} or not re.fullmatch(r'FM-[0-9]{2}', snapshot.get('formId','')):
         raise ValueError('Only reviewed internal-form snapshot HTML is supported')
     if not isinstance(html, bytes) or len(html) > 16 * 1024**2:
         raise ValueError('Invalid preserved document bytes')
@@ -90,6 +90,13 @@ def validate_source(snapshot, html):
         raise ValueError('Preserved HTML hash mismatch')
     if sha256(canonical(snapshot['sourcePayload'])).hexdigest() != snapshot.get('sourcePayloadHash'):
         raise ValueError('Frozen source payload hash mismatch')
+    if snapshot['rendererVersion'] == 'reference-html/2':
+        catalog=snapshot['sourcePayload'].get('localization')
+        if not isinstance(catalog,dict) or catalog.get('formId') != snapshot['formId'] or catalog.get('language') != snapshot['sourcePayload'].get('language'):
+            raise ValueError('Localized renderer requires its exact frozen display catalog')
+        catalog_body={key:value for key,value in catalog.items() if key != 'sha256'}
+        if sha256(canonical(catalog_body)).hexdigest() != catalog.get('sha256'):
+            raise ValueError('Frozen localization catalog hash mismatch')
     refs = [source['ref'] for source in snapshot['sourcePayload']['sources']]
     if refs != snapshot.get('sourceDomainRefs') or snapshot.get('primarySourceRef') not in refs:
         raise ValueError('Exact source references are inconsistent')
@@ -212,7 +219,7 @@ def make_docx(snapshot, html):
     page=OxmlElement('w:fldSimple'); page.set(qn('w:instr'),'PAGE'); footer._p.append(page)
     paragraph=document.add_paragraph()
     paragraph.paragraph_format.space_before=Pt(5)
-    note={'ko':'DOUL 내부 출력본. 원본 스냅샷에 대한 서명은 이 파생 파일의 전자서명을 의미하지 않습니다.',
+    note={'ko':'DOUL 내부 출력본. 보존된 원본 기록에 대한 서명은 이 파생 파일의 전자서명을 의미하지 않습니다.',
           'vi':'Bản xuất nội bộ DOUL. Chữ ký của bản chụp nguồn không phải chữ ký điện tử của tệp xuất này.',
           'en':'DOUL internal export. A source snapshot signature does not digitally sign this derivative file.'}[language]
     _fonts(paragraph.add_run(note),8)

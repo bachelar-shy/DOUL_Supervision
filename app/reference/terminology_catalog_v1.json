@@ -1,0 +1,205 @@
+{
+  "schemaVersion": "1.0",
+  "masterReviewLanguage": "ko",
+  "translationPolicy": "Each locale translates the Term ID meaning directly; translations are not chained through another locale.",
+  "terms": [
+    {
+      "termId": "ROLE-SUP-001",
+      "domain": "role",
+      "systemRefs": ["SUP"],
+      "meaning": "Person or organization performing construction supervision duties within assigned authority.",
+      "labels": {
+        "ko": {"text": "감리", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "ROLE-CON-001",
+      "domain": "role",
+      "systemRefs": ["CON"],
+      "meaning": "Contractor responsible for construction execution and submissions.",
+      "labels": {
+        "ko": {"text": "시공사", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "ROLE-OWN-001",
+      "domain": "role",
+      "systemRefs": ["OWN"],
+      "meaning": "Project owner or authorized owner representative with decision authority.",
+      "labels": {
+        "ko": {"text": "발주처", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "QA-INSP-REQ-001",
+      "domain": "quality",
+      "systemRefs": ["inspection.request"],
+      "meaning": "Contractor request asking supervision to inspect completed or ready work.",
+      "labels": {
+        "ko": {"text": "검측요청", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "QA-FIELD-INSP-001",
+      "domain": "quality",
+      "systemRefs": ["inspection.start"],
+      "meaning": "Supervision field inspection against approved drawings, materials, tests and requirements.",
+      "labels": {
+        "ko": {"text": "현장검측", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "QA-NCR-001",
+      "domain": "quality",
+      "systemRefs": ["issue.NCR"],
+      "meaning": "Formal record of nonconforming work or requirement breach that requires correction and verification.",
+      "labels": {
+        "ko": {"text": "부적합", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "QA-CORR-001",
+      "domain": "quality",
+      "systemRefs": ["action.corrective_action"],
+      "meaning": "Contractor action correcting a confirmed nonconformity or instructed defect.",
+      "labels": {
+        "ko": {"text": "시정조치", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "QA-REINSP-001",
+      "domain": "quality",
+      "systemRefs": ["inspection.reinspection"],
+      "meaning": "Supervision inspection performed again after corrective work.",
+      "labels": {
+        "ko": {"text": "재검측", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "QA-NEXTWORK-001",
+      "domain": "quality",
+      "systemRefs": ["inspection.release_next_work"],
+      "meaning": "Explicit confirmation that downstream work may proceed; distinct from inspection pass.",
+      "labels": {
+        "ko": {"text": "후속공정 진행확인", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "SCH-BASE-001",
+      "domain": "schedule",
+      "systemRefs": ["schedule_baseline"],
+      "meaning": "Approved schedule baseline used as the comparison reference for progress and delay.",
+      "labels": {
+        "ko": {"text": "기준공정", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "SCH-DELAY-001",
+      "domain": "schedule",
+      "systemRefs": ["delay_event"],
+      "meaning": "Recorded schedule delay event requiring impact assessment and follow-up.",
+      "labels": {
+        "ko": {"text": "지연사건", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "PAY-CLAIM-001",
+      "domain": "payment",
+      "systemRefs": ["payment_claim"],
+      "meaning": "Contractor submission requesting payment for measured and otherwise eligible work.",
+      "labels": {
+        "ko": {"text": "기성청구", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "PAY-MEAS-001",
+      "domain": "payment",
+      "systemRefs": ["quantity_measurement"],
+      "meaning": "Quantity measurement and supervision verification used as a payment basis.",
+      "labels": {
+        "ko": {"text": "물량검측", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "PAY-REC-001",
+      "domain": "payment",
+      "systemRefs": ["payment_claim.recommended"],
+      "meaning": "Supervision recommendation amount after quantity, eligibility and valuation review; distinct from owner approval.",
+      "labels": {
+        "ko": {"text": "지급추천", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "OWN-DEC-001",
+      "domain": "owner_reporting",
+      "systemRefs": ["decision"],
+      "meaning": "Formal owner decision responding to a decision request; distinct from receipt acknowledgement.",
+      "labels": {
+        "ko": {"text": "발주처 결정", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "SAF-STOP-001",
+      "domain": "safety",
+      "systemRefs": ["safety_stop_order"],
+      "meaning": "Formal instruction stopping affected work until defined resume conditions are verified.",
+      "labels": {
+        "ko": {"text": "작업중지", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "CON-NOTICE-001",
+      "domain": "contract",
+      "systemRefs": ["contract_notice"],
+      "meaning": "Formal contractual notice preserving or communicating rights and obligations under the contract.",
+      "labels": {
+        "ko": {"text": "계약통지", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    },
+    {
+      "termId": "CON-EOT-001",
+      "domain": "contract",
+      "systemRefs": ["eot_request"],
+      "meaning": "Request for extension of time supported by notice, delay and time-impact evidence.",
+      "labels": {
+        "ko": {"text": "공기연장", "status": "approved"},
+        "vi": {"text": null, "status": "pending_field_review"},
+        "en": {"text": null, "status": "pending_field_review"}
+      }
+    }
+  ]
+}

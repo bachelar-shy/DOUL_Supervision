@@ -290,6 +290,42 @@ class ApplicationServiceHTTPTests(unittest.TestCase):
         self.assertIn(report['id'],[item['record']['id'] for item in payload['ownerReports']])
         self.assertIn(report['id'],{event['objectRef']['objectId'] for event in payload['timeline']})
 
+    def test_parallel_closeout_revisions_block_case_until_every_report_closes(self):
+        from services.api.application import build_inspection_case
+        root, issue = self.bootstrap_closed_case()
+        path = f'/projects/{self.project}/inspection-cases/{root["id"]}/issues/{issue["id"]}/owner-reports'
+        reports = []
+        for revision in ['1', '2']:
+            body = self.owner_report_body()
+            body['revision'] = revision
+            response = self.client.post(path, headers={**self.headers, 'Idempotency-Key': uid()}, json=body)
+            self.assertEqual(response.status_code, 201, response.text)
+            reports.append(response.json()['report'])
+
+        # Preserve two actual API-created revisions. The fixture isolates the
+        # read-model contract from the independently tested report lifecycle.
+        store = self.app.state.store
+        with store.transaction(True):
+            store.engine._records[('InformationItem', reports[0]['id'])]['status'] = 'closed'
+        for remaining_status in ['draft', 'review', 'issued', 'acknowledged', 'followup', 'verified', 'closed', 'cancelled']:
+            with self.subTest(remaining_status=remaining_status):
+                with store.transaction(True):
+                    store.engine._records[('InformationItem', reports[1]['id'])]['status'] = remaining_status
+                domain_case = build_inspection_case(store.engine, root['id'])
+                response = self.client.get(f'/projects/{self.project}/inspection-cases/{root["id"]}', headers=self.headers)
+                self.assertEqual(response.status_code, 200, response.text)
+                for case in [domain_case, response.json()]:
+                    ready = case['issues'][0]['readiness']['ownerReportingComplete']
+                    self.assertEqual(ready, remaining_status in ['closed', 'cancelled'])
+                    self.assertEqual(issue['id'] in case['readiness']['ownerReportingPendingIssueIds'], not ready)
+                    self.assertEqual(case['readiness']['complete'], ready)
+        with store.transaction(True):
+            store.engine._records[('InformationItem', reports[0]['id'])]['status'] = 'cancelled'
+        response = self.client.get(f'/projects/{self.project}/inspection-cases/{root["id"]}', headers=self.headers)
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertFalse(response.json()['issues'][0]['readiness']['ownerReportingComplete'])
+        self.assertFalse(response.json()['readiness']['complete'])
+
     def test_closeout_owner_report_requires_closed_issue_and_does_not_expand_contractor_authority(self):
         workspace=self.workspace()
         open_issue=next(x['record'] for x in workspace['items'] if x['machine']=='issue' and x['record']['status']=='in_progress')
@@ -392,6 +428,30 @@ class ApplicationServiceHTTPTests(unittest.TestCase):
         )
         self.assertEqual(missing_issue.status_code,404,missing_issue.text)
         self.assertEqual(missing_issue.json()['code'],'OBJECT_NOT_FOUND')
+
+        # The service captures the submitted Action version in the immutable
+        # Inspection snapshot. Advancing the Action afterwards must not rewrite
+        # that snapshot; Warranty acceptance resolves it as identity evidence.
+        captured_ref={
+            'objectType':'Action',
+            'objectId':submitted.json()['record']['id'],
+            'version':submitted.json()['record']['version'],
+        }
+        self.assertEqual(result['reinspection']['correctiveActionRefs'],[captured_ref])
+        self.login('SUP')
+        latest_action=next(
+            x['record'] for x in self.workspace()['items']
+            if x['machine']=='action' and x['record']['id']==captured_ref['objectId']
+        )
+        verified=self.command('actions',latest_action,'verify')
+        self.assertEqual(verified.status_code,200,verified.text)
+        latest_inspection=self.client.get(
+            f'/projects/{self.project}/inspections/{body["reinspectionObjectId"]}',
+            headers=self.headers,
+        )
+        self.assertEqual(latest_inspection.status_code,200,latest_inspection.text)
+        self.assertEqual(latest_inspection.json()['correctiveActionRefs'],[captured_ref])
+        self.assertGreater(verified.json()['record']['version'],captured_ref['version'])
 
     def test_reinspection_service_rolls_back_when_corrective_action_not_submitted(self):
         self.login('CON')

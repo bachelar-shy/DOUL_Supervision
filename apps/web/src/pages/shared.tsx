@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
   Camera,
@@ -57,6 +58,7 @@ export function RecordList({
   onSelect: (x: WorkItem) => void;
   selected?: string | null;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="record-list">
       {items.length ? (
@@ -88,12 +90,12 @@ export function RecordList({
                 <StatusBadge status={x.record.status}>
                   {statusLabel?.(x) || states[x.record.status || ""] ||
                     x.record.status ||
-                    "원본 보존"}
+                    t("record.status.preserved")}
                 </StatusBadge>
               </div>
               <strong>{recordTitle(x.record)}</strong>
               <span>
-                {contextLabel ? contextLabel(x) : "A동 2층 / C-5"} <i>·</i> 원본 v{x.record.version}
+                {contextLabel ? contextLabel(x) : t("record.context.sample")} <i>·</i> {t("record.version", { version: x.record.version })}
               </span>
             </div>
             <Icon name="arrow" />
@@ -101,19 +103,20 @@ export function RecordList({
         ))
       ) : (
         <div className="empty compact">
-          현재 권한에서 조회할 항목이 없습니다.
+          {t("record.empty")}
         </div>
       )}
     </div>
   );
 }
 export function FloorPlan() {
+  const { t } = useTranslation();
   return (
     <div className="floorplan">
       <span>
-        도면 예시 · A-201 Rev.03 <small>실제 위치 정합 전</small>
+        {t("floorPlan.sample")} <small>{t("floorPlan.notAligned")}</small>
       </span>
-      <svg viewBox="0 0 620 170" aria-label="샘플 도면">
+      <svg viewBox="0 0 620 170" aria-label={t("floorPlan.aria")}>
         <g fill="none" stroke="#c5ccd4" strokeWidth="1">
           <path d="M30 20H590V150H30Z M150 20v130 M290 20v130 M440 20v130 M30 80h560" />
           <path

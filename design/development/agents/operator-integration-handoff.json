@@ -1,0 +1,90 @@
+{
+  "branch": "goal/operator-completion-v1",
+  "baseCommit": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
+  "sourceCheckpoint": "97695744d65b788530e2568debdea63259acb524",
+  "completed": [
+    "Media real API UI with authoritative creation capability gate and immutable source/version refs",
+    "Payment append-only partial/correction/cancellation/final closure acceptance",
+    "Warranty current original-Issue reference selector",
+    "GET-only fixture ECONNRESET retry with real socket-reset proof; POST attempted only once",
+    "Remove delayed mount default selection that can overwrite explicit Inspection choice",
+    "Media run selection locked throughout mutation acknowledgement and refresh, then restored",
+    "Warranty closure preserves approved exact-current-claim Owner Decisions alongside original Issue refs",
+    "Acceptance inventory reconciles bounded connected Media browser proof with synthetic worker limits"
+  ],
+  "verification": {
+    "integratedMediaPaymentBrowser": "2 passed",
+    "finalMediaBrowser": "1 passed, including ADM/CON restrictions and localized errors",
+    "warrantySelectorBrowser": "1 passed",
+    "web": "boundary/types/lint passed; strict npm12 dependency guard and responsive build passed",
+    "mac": "PR140 head9769574 and merged-main4abc0a5 each passed all7 Mac jobs;115 browser,7 isolated mock locales,320 reference and412 API tests (46 environment-specific skips).",
+    "finalFocusedBrowser": {
+      "mediaFlow": "passed14.4s",
+      "handover": "passed1.2m after distinct output isolation",
+      "transport": "passed2.5s; GET two attempts, POST one",
+      "mediaMutationSelection": "passed8.5s; API contains both runs, explicit refreshed UI, delayed acknowledgement lock/unlock"
+    },
+    "performance": {
+      "evidence": "design/verification/issue124-live-http-50k-30round-72c8934.json",
+      "correctness": "exact total, project/scope isolation and cursor disjointness passed",
+      "p95Ms": [
+        2092.879,
+        2114.625
+      ],
+      "sampledPeakRssBytes": 3420848128,
+      "acceptance": "descriptive only; workload/budget and concurrent production validation remain required"
+    },
+    "responsiveFix": {
+      "firstMacHead": "924b5f060225a7bbd215dd1bbb18a2bf6d382e1e",
+      "firstMacResult": "6 workflows passed;109 browser passed and3 mobile overflow tests failed",
+      "cause": "Media native selects and auto-sized grid children expanded to long option intrinsic widths",
+      "change": "Scoped min-width0/width100% controls, wrapped long references and mobile heading",
+      "local": "9 responsive cases390/768/1440 passed44.6s; full real Media flow with390px ko/vi/en source/hash checks passed18.4s; boundary/types/lint/build passed"
+    },
+    "localizedLayout": {
+      "scope": "15 connected workflow screens ×ko/vi/en ×390/768/1440 (135 screen states), rendered surface awaited; viewport and control bounds, title/action overlap;390px Contract draft modal plus full Media review sources",
+      "findings": [
+        "Media select intrinsic widths fixed in43d89f7",
+        "Action authoring Issue references overflowed390px controls, corrected scoped sizing",
+        "Screenshot review found mobile More/menu aria falling back to Korean; added vi/en translations"
+      ],
+      "screenshots": "Local390px ko/vi/en Capture/Payment/Completion retained in isolated Playwright output; no supplied private originals used",
+      "limits": "Synthetic development users and seeded data; no actual field usability or native device claim",
+      "localResult": "7 cases passed29.7s covering135 screen states, existing capture/document locales and390px Contract dialog; real full Payment chain passed1.1m with9 populated-history display combinations and unchanged persisted official record",
+      "populatedPayment": "Five historical payment rows across ko/vi/en ×390/768/1440 remain inside viewport; final API record equals pre-display-change snapshot exactly"
+    },
+    "fixtureLifecycle": "Mac first final attempt114 browser passed/1 pending inspection-case GET teardown failure; controlled old ordering reproduces ECONNREFUSED, tracked drain+finally cleanup passes3.6s. Updated specs tsc passed. Evidence design/verification/operator-retry-fixture-lifecycle-20261010.json"
+  },
+  "next": [
+    "Continue actual field/operating acceptance133 when qualified users, adopted configuration, approved mappings/photos and operating/provider access are available",
+    "Adopt workload/budgets and complete concurrent production/operating validation; Vietnamese/English human review and #134 security release review are deferred, not current Goal blockers.",
+    "Preserve verified implementation; read checkpoint branch, actual Git status and handoffs on platform resume"
+  ],
+  "preservation": "Original /workspace checkout and metadata untouched; use isolated /tmp worktree and own npm12 dependencies. No reset or shared node_modules mutation.",
+  "actualFieldPilot": false,
+  "productionProviderCertification": false,
+  "mainVerificationEvidence": "design/verification/operator-completion-main-mac-20261010.json",
+  "localVerificationNotes": [
+    "Initial build used default npm11 and correctly refused invalid override graph; npm12 rerun passed without weakening guard.",
+    "Concurrent local Playwright runs initially shared trace output and collided; output directories and JSON reports were separated and affected tests passed.",
+    "Media run-selection fixture initially inspected an old UI workspace; it now verifies both records in real API and reloads before assertions."
+  ],
+  "performanceArchitectureReview": "Full snapshot reload is required for cross-adapter freshness; exact role-visible total scans candidates. Page heap already bounded. Material production improvement requires normalized/indexed transactional records, not weakening authorization or totals.",
+  "mergeCommit": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
+  "status": "development_verified_external_acceptance_pending",
+  "deferredFollowups": [
+    {
+      "kind": "vietnamese_english_human_review",
+      "status": "deferred_by_product_owner",
+      "requiredForCurrentGoalCompletion": false,
+      "scope": "Native terminology, translation and field usability review of Vietnamese/English; tri-language implementation and automated layout/errors/formats/report validation remain mandatory."
+    },
+    {
+      "kind": "security_release_review",
+      "issue": 134,
+      "status": "deferred_by_product_owner",
+      "requiredForCurrentGoalCompletion": false,
+      "scope": "Upstream advisory resolution and formal security release review; retain existing controls, regression tests, visible advisories and formal release gate. Deferral does not constitute production release approval."
+    }
+  ]
+}

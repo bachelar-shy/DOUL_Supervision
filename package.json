@@ -5,7 +5,8 @@
   "workspaces": [
     "apps/web",
     "apps/mobile",
-    "packages/client"
+    "packages/client",
+    "packages/localization"
   ],
   "scripts": {
     "web": "npm run dev --workspace apps/web",
@@ -13,15 +14,29 @@
     "web:build": "npm run build --workspace apps/web",
     "mobile": "npm run start --workspace apps/mobile",
     "typecheck": "npm run typecheck --workspace apps/web && npm run typecheck --workspace apps/mobile",
-    "test:contracts": "python3 scripts/validate_contracts.py && python3 -m unittest discover -s tests -q",
-    "test:api": ".venv/bin/python -m unittest discover -s tests_mvp -v",
-    "check:ui-boundary": "python3 scripts/check_ui_boundary.py"
+    "test:contracts": "python3 scripts/dependency_environment.py --suite contracts",
+    "test:api": "python3 scripts/dependency_environment.py --suite api",
+    "check:ui-boundary": "python3 scripts/check_ui_boundary.py",
+    "check:dependencies": "python3 scripts/dependency_environment.py --node",
+    "postinstall": "node scripts/apply_braces_backport.cjs && node scripts/apply_node_forge_backport.cjs",
+    "test:braces-backport": "node scripts/test_braces_backport.cjs",
+    "test:node-forge-backport": "node scripts/test_node_forge_backport.cjs",
+    "pretypecheck": "python3 scripts/dependency_environment.py --node-only",
+    "preweb:build": "python3 scripts/dependency_environment.py --node-only"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0"
   },
   "overrides": {
     "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.3"
+    "@types/react-dom": "19.2.3",
+    "xcode": {
+      "uuid": "11.1.1"
+    }
+  },
+  "packageManager": "npm@12.2.0",
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0",
+    "npm": "12.2.0"
   }
 }

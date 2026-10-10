@@ -1,0 +1,90 @@
+{
+  "issue": 124,
+  "sourceCommit": "01da66421f13baae7d8e51e4c2f715e3466ab26c",
+  "status": "measured-with-significant-latency-limit",
+  "comparisonToPreviousCleanRun": {
+    "comparisonSourceCommit": "b85c9280253abc2eff27b88d8b9bea5c8f42ae04",
+    "optimizedSourceCommit": "01da66421f13baae7d8e51e4c2f715e3466ab26c",
+    "sameFixture": "50,000 persisted synthetic Issue rows; 45,000 demo project / 5,000 other project; live FastAPI TCP over PostgreSQLSnapshotAdapter; 3 rounds, page size 1; project-filtered total and two non-overlapping pages checked",
+    "measurements": {
+      "medianLatencyMs": {
+        "before": 7747.128,
+        "after": 6613.292,
+        "improvementPercent": 14.6
+      },
+      "nearestRankP95Ms": {
+        "before": 7826.356,
+        "after": 6628.291,
+        "improvementPercent": 15.3
+      },
+      "secondPageLatencyMs": {
+        "before": 9297.059,
+        "after": 6669.589,
+        "improvementPercent": 28.3
+      },
+      "apiProcessCpuMs": {
+        "before": 22690.0,
+        "after": 19520.0,
+        "improvementPercent": 14.0
+      },
+      "apiPeakRssBytes": {
+        "before": 543535104,
+        "after": 543797248,
+        "improvementPercent": -0.0
+      },
+      "postgresCgroupCpuUsec": {
+        "before": 677080,
+        "after": 520888,
+        "improvementPercent": 23.1
+      }
+    },
+    "scopeNote": "Short three-request observation on shared development hardware. Values are not a formal SLO or performance acceptance."
+  },
+  "pageSizeOneRun": {
+    "scope": "Live TCP HTTP requests to FastAPI, PostgreSQL 16 snapshot adapter, persisted synthetic records",
+    "datasetRows": 50000,
+    "visibleProjectRows": 45000,
+    "filteredOtherProjectRows": 5000,
+    "baselineDemoRowsEligible": 5,
+    "pageSize": 1,
+    "rounds": 3,
+    "latencyMs": {
+      "samples": [
+        6613.292,
+        6568.64,
+        6628.291
+      ],
+      "median": 6613.292,
+      "p95NearestRank": 6628.291,
+      "secondPage": 6669.589
+    },
+    "process": {
+      "pid": 74389,
+      "cpuTicksDelta": 1952,
+      "clockTicksPerSecond": 100,
+      "cpuMsDelta": 19520.0,
+      "rssBeforeBytes": 399024128,
+      "rssAfterBytes": 389922816,
+      "rssPeakBytes": 543797248
+    },
+    "database": {
+      "container": "doul-goal-ops-inbox-postgres",
+      "adapter": "PostgresSnapshotAdapter",
+      "cpuUsageUsecBefore": 1722395,
+      "cpuUsageUsecAfter": 2243283,
+      "cpuUsageUsecDelta": 520888
+    },
+    "paginationAndProjectFiltering": "passed; total and two non-overlapping 1-row pages verified over HTTP",
+    "contractLatencyBudget": null,
+    "status": "measured-with-significant-latency-limit",
+    "limitations": [
+      "Synthetic duplicate issue records only; one local API process and PostgreSQL snapshot development persistence",
+      "API process CPU and PostgreSQL cgroup CPU are separate; PostgreSQL stores one JSON snapshot, not normalized work rows",
+      "Exact total scans matching project membership for each request, so this path remains linear in snapshot size",
+      "No API latency SLO or p95 budget was found in the inspected storage/performance contracts",
+      "Authorization uses the real demo role and scope checks; no browser rendering or concurrent clients"
+    ],
+    "sourceCommit": "01da66421f13baae7d8e51e4c2f715e3466ab26c",
+    "sourceCheckout": "clean detached worktree; exact commit 01da66421f13baae7d8e51e4c2f715e3466ab26c"
+  }
+}

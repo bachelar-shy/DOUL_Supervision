@@ -130,6 +130,31 @@ def fake_pool_class(backend, connection_class=FakeConnection):
 
 
 class PostgresSnapshotAdapterUnitTests(unittest.TestCase):
+    def test_successful_read_reuses_loaded_payload_for_rollback_without_export_copy(self):
+        backend = FakePostgresBackend()
+        FakePool = fake_pool_class(backend)
+
+        with patch("services.api.postgres_store.ConnectionPool", FakePool):
+            adapter = PostgresSnapshotAdapter("postgresql://unit-test", demo=True)
+            try:
+                with adapter.transaction(True):
+                    adapter.requests["committed"] = {
+                        "hash": "stable",
+                        "result": {"visible": True},
+                    }
+
+                with patch.object(
+                    adapter,
+                    "export_state",
+                    side_effect=AssertionError("read exported a second snapshot"),
+                ):
+                    with adapter.transaction():
+                        self.assertTrue(
+                            adapter.requests["committed"]["result"]["visible"]
+                        )
+            finally:
+                adapter.close()
+
     def test_adapter_uses_pool_persists_and_rolls_back(self):
         backend = FakePostgresBackend()
         FakePool = fake_pool_class(backend)

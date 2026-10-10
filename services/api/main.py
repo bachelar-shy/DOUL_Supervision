@@ -13,6 +13,8 @@ import os
 import re
 from pathlib import Path
 import secrets
+import tempfile
+from typing import Optional
 from threading import RLock
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -27,6 +29,7 @@ from .application import (
     add_derived_frame,
     analysis_review_package,
     build_inspection_case,
+    closeout_reporting_complete,
     complete_media_analysis,
     create_case_owner_report,
     create_issue_package,
@@ -37,6 +40,13 @@ from .application import (
     start_media_analysis,
 )
 from .persistence import PersistencePort, create_local_persistence
+from .modules.drawing_revisions import list_drawing_revision_records, build_drawing_revision_context
+from .modules.work_inbox import build_work_inbox, InboxCursorError
+from .modules.notification_inbox import project_notification_inbox, NotificationProjectionError
+from .modules.business_traceability import build_safety_stop_traceability
+from .modules.location.query import query_location_tree
+from .creation_capabilities import build_creation_capabilities
+from .reference_catalog import build_reference_catalog
 
 ROOT=Path(__file__).resolve().parents[2]
 SPEC=json.loads((ROOT/'app/api/openapi.yaml').read_text())
@@ -101,6 +111,9 @@ def valid_id(value):
 
 
 def sniff(data):
+    if data.startswith(b'PK\x03\x04'):
+        from .spreadsheet_mime import spreadsheet_mime
+        return spreadsheet_mime(data)
     if data.startswith(b'\x89PNG\r\n\x1a\n'):return 'image/png'
     if data.startswith(b'\xff\xd8\xff'):return 'image/jpeg'
     if data[:6] in [b'GIF87a',b'GIF89a']:return 'image/gif'
@@ -114,10 +127,10 @@ def sniff(data):
         parsed=json.loads(data)
         if isinstance(parsed,(dict,list)):return 'application/json'
     except (ValueError,UnicodeError):pass
-    raise ContractError('MIME_INVALID','Supported development formats: JSON/ PNG/JPEG/GIF/WebP/MP4/WebM/WAV/MP3/PDF')
+    raise ContractError('MIME_INVALID','Supported development formats: JSON/PNG/JPEG/GIF/WebP/MP4/WebM/WAV/MP3/PDF/XLSX')
 
 
-def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=None, document_runtime=None, authentication=None):
+def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=None, document_runtime=None, authentication=None, signature_verifier=None):
     from services.runtime_config import environment
     stage=environment()
     if demo and stage!='development':raise RuntimeError('Demonstration mode is forbidden outside development')
@@ -136,6 +149,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     store=persistence if persistence is not None else create_local_persistence(db_path,demo=True)
     app=FastAPI(title='DOUL Supervision API',version='0.1.0',docs_url='/api-docs' if demo else None,openapi_url='/openapi.json' if demo else None,redoc_url=None)
     app.state.document_runtime=document_runtime
+    app.state.signature_verifier=signature_verifier
     if document_runtime is None and os.getenv('DOUL_DOCUMENT_RUNTIME') == 'local':
         from services.document_runtime.render import LocalDocumentRuntime
         app.state.document_runtime=LocalDocumentRuntime(os.environ['DOUL_DOCUMENT_CACHE'])
@@ -242,19 +256,75 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         require(session['actorGroup']=='ADM','NOT_AUTHORIZED','Local media worker ingress requires the demo administrator')
         return session
 
-    def preflight(machine,record,session,role,payload=None):
+    def has_command_candidates(machine,record,session,role):
+        for transition in store.engine.machines[machine]['transitions']:
+            if transition['from'] != record['status']:
+                continue
+            try:
+                store.engine.authorize(record,transition['authority'],session['partyId'],role['id'])
+            except ContractError:
+                continue
+            return True
+        return False
+
+    from services.api.modules.command_preview import clone_for_preview
+
+    def preflight(machine,record,session,role,payload=None,*,borrow_runtime=False):
         results=[]
         for transition in store.engine.machines[machine]['transitions']:
             if transition['from']!=record['status']:continue
             try:store.engine.authorize(record,transition['authority'],session['partyId'],role['id'])
             except ContractError:continue
-            preview=deepcopy(store.engine)
+            preview=clone_for_preview(store.engine,borrow_runtime=True) if borrow_runtime else clone_for_preview(store.engine)
             failure=None
             try:preview.execute(machine,record['id'],transition['command'],record['version'],payload or {},[],session['partyId'],role['id'],uid())
             except ContractError as exc:failure=error_body(exc)
             fields=transition['payload_fields']
             results.append(dict(command=transition['command'],to=transition['to'],authority=transition['authority'],fields=fields,requiresEvidence=transition['required_evidence'],ready=failure is None,requiresInput=bool(fields) or bool(transition['required_evidence'] and failure and failure['code']=='EVIDENCE_REQUIRED'),blockedReason=failure,expectedVersion=record['version']))
         return results
+
+    # Local evidence quarantine is demo-only and uses isolated per-database roots.
+    if demo:
+        if db_path == ':memory:':
+            app.state.evidence_demo_root = tempfile.mkdtemp(prefix='doul-evidence-demo-')
+            evidence_root = Path(app.state.evidence_demo_root)
+        else:
+            evidence_root = Path(db_path).resolve().parent
+        from services.api.modules.evidence.test_routes import install_evidence_quarantine_routes
+        install_evidence_quarantine_routes(
+            app,
+            get_actor=identity,
+            get_role=lambda project_id, request, actor: role_for(
+                actor, project_id, request.headers.get('x-roleassignment-id')
+            ),
+            quarantine_root=evidence_root / 'evidence-quarantine',
+            staging_root=evidence_root / 'evidence-staging',
+        )
+        from services.api.modules.evidence.registration_routes import install_evidence_registration_routes
+        install_evidence_registration_routes(app, store=store, get_actor=identity,
+            get_role=lambda project_id, request, actor: role_for(actor, project_id, request.headers.get('x-roleassignment-id')),
+            key_for=key_for, quarantine_root=evidence_root / 'evidence-quarantine', sniff=sniff)
+        from services.api.modules.location.edit_routes import register_location_edit_routes
+        register_location_edit_routes(app, store=store, identity=identity, role_for=role_for, demo_enabled=demo)
+
+    from services.api.modules.drawing_pdf_bindings import install_drawing_pdf_binding_routes
+    install_drawing_pdf_binding_routes(app, store, identity=identity, role_for=role_for, key_for=key_for, demo_enabled=demo)
+    from services.api.modules.drawing_markups import install_drawing_markup_routes
+    install_drawing_markup_routes(app, store, identity=identity, role_for=role_for, key_for=key_for, demo_enabled=demo)
+    from services.api.modules.drawing_source_registration import install_drawing_source_routes
+    install_drawing_source_routes(app, store, identity=identity, role_for=role_for, key_for=key_for, demo_enabled=demo)
+    from services.api.modules.drawing_field_control import install_drawing_field_routes
+    install_drawing_field_routes(app, store, identity=identity, role_for=role_for, key_for=key_for, demo_enabled=demo)
+
+    from services.api.modules.inspection_authoring import install_inspection_authoring_routes
+    install_inspection_authoring_routes(app, store, identity=identity, role_for=role_for, key_for=key_for)
+
+    from services.api.modules.drawing_impacts import install_drawing_impact_routes, reconcile_drawing_impacts_in_transaction
+    install_drawing_impact_routes(app, store, identity=identity, role_for=role_for)
+
+    from services.api.modules.notification_events import reconcile_notification_events, read_receipts_for_projection
+    from services.api.modules.notification_routes import install_notification_read_route
+    install_notification_read_route(app, store, identity=identity, role_for=role_for)
 
     @app.get('/ready')
     def ready():
@@ -285,6 +355,119 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         with session_lock:sessions[token]=dict(a,expires=datetime.now(timezone.utc)+timedelta(hours=8))
         return dict(accessToken=token,projectId=project,actor=a,mode='LOCAL_DEMO_NOT_PRODUCTION')
 
+    # Read-only parallel workspace projections use the same identity, active
+    # project role, and engine authorization checks as existing project routes.
+    @app.get('/projects/{project_id}/parallel/drawings')
+    def parallel_drawings(project_id:str,request:Request,object_id:Optional[str]=None,version:Optional[int]=None):
+        session=identity(request)
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            if object_id is None and version is None:
+                return {'projectId':project_id,'items':list_drawing_revision_records(store.engine,project_id,session['partyId'],role['id'])}
+            require(object_id is not None and version is not None,'REFERENCE_INVALID','object_id and version must be supplied together')
+            return build_drawing_revision_context(store.engine,project_id,{'objectType':'InformationItem','objectId':object_id,'version':version},session['partyId'],role['id'])
+
+    @app.get('/projects/{project_id}/parallel/locations')
+    def parallel_locations(project_id:str,request:Request):
+        session=identity(request)
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            class LocationTreeReadAdapter:
+                """Apply role location scope to Location, whose schema has no work scope."""
+                def __getattr__(self, name):
+                    return getattr(store.engine, name)
+
+                def authorize_read(self, record, party_id, role_id):
+                    location_id = record.get('id')
+                    if ('Location', location_id) not in store.engine._records:
+                        return store.engine.authorize_read(record, party_id, role_id)
+                    require(party_id == session['partyId'] and role_id == role['id'], 'NOT_AUTHORIZED', 'Role does not belong to this session')
+                    require(record.get('projectId') == project_id, 'PROJECT_MISMATCH', 'Project unavailable')
+                    # Location has no discipline/package fields, so preserve the
+                    # policy's actor, authority, and role-code checks directly;
+                    # apply its existing location scope below without inventing
+                    # missing schema values.
+                    policy = store.engine.policies['render_document']
+                    require(role.get('actorGroup') in policy['actor_groups'], 'NOT_AUTHORIZED', 'render_document')
+                    require('render_document' in role.get('authorityCodes', []), 'NOT_AUTHORIZED', 'render_document')
+                    require(not policy['role_codes'] or role.get('roleCode') in policy['role_codes'], 'NOT_AUTHORIZED', 'Role code cannot perform this duty')
+                    require(store.engine._scope(role.get('locationIds', []), location_id, True), 'SCOPE_MISMATCH', 'locationId')
+                    return role
+
+            return query_location_tree(
+                LocationTreeReadAdapter(), project_id,
+                party_id=session['partyId'], role_id=role['id']
+            )
+
+    @app.get('/projects/{project_id}/parallel/work-inbox')
+    def parallel_work_inbox(project_id:str,request:Request,limit:int=50,cursor:Optional[str]=None):
+        session=identity(request)
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            from services.api.modules.read_authorization import ReadAuthorizationView
+            read_auth=ReadAuthorizationView(store.engine)
+
+            def inbox_readable(record,actor,assignment):
+                require(record['projectId']==assignment['projectId'],'PROJECT_MISMATCH','Project unavailable')
+                read_auth.authorize_read(record,actor['partyId'],assignment['id'])
+
+            def inbox_has_candidates(machine,record,actor,assignment):
+                for transition in store.engine.machines[machine]['transitions']:
+                    if transition['from']!=record['status']:continue
+                    try:read_auth.authorize(record,transition['authority'],actor['partyId'],assignment['id'])
+                    except ContractError:continue
+                    return True
+                return False
+
+            def inbox_preflight(machine,record,actor,assignment):
+                return preflight(machine,record,actor,assignment,borrow_runtime=True)
+
+            try:return build_work_inbox(store.engine,project_id,session,role,readable=inbox_readable,preflight=inbox_preflight,has_candidates=inbox_has_candidates,limit=limit,cursor=cursor)
+            except InboxCursorError as exc:raise ContractError('INVALID_REQUEST',str(exc))
+            except ValueError as exc:raise ContractError('INVALID_REQUEST',str(exc))
+
+    @app.get('/projects/{project_id}/parallel/notifications')
+    def parallel_notifications(project_id:str,request:Request):
+        session=identity(request)
+        with store.transaction():
+            role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+        # Reconciliation writes only actor-addressed event notices, never SLA deadlines.
+        reconcile_notification_events(store)
+        with store.transaction(True):
+            reconcile_drawing_impacts_in_transaction(store, project_id)
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            notifications=[]
+            for (kind,_),record in store.engine._records.items():
+                if kind!='Notification' or record.get('projectId')!=project_id or record.get('recipientPartyId')!=session['partyId']: continue
+                try:
+                    source=store.engine.resolve(record['sourceRef'],project_id)
+                    readable(source,session,role)
+                except ContractError: continue
+                notifications.append(deepcopy(record))
+            receipts=read_receipts_for_projection(store)
+            try:
+                inbox = project_notification_inbox(notifications,recipient_party_id=session['partyId'],accessible_project_ids=[project_id],read_receipts=receipts)
+                for item in inbox['items']:
+                    notice = store.meta.get('drawingImpactNotices', {}).get(item['notification']['id'])
+                    if notice:
+                        try: readable(store.engine.resolve(notice['drawingRef'], project_id), session, role)
+                        except ContractError: continue
+                        item['drawingImpact'] = deepcopy(notice)
+                return inbox
+            except NotificationProjectionError as exc:raise ContractError('INVALID_REQUEST',str(exc))
+
+    @app.get('/projects/{project_id}/parallel/safety-traceability')
+    def parallel_safety_traceability(project_id:str,request:Request,object_id:str,version:int):
+        session=identity(request)
+        with store.transaction():
+            role=role_for(session,project_id,request.headers.get('x-roleassignment-id'))
+            valid_id(object_id)
+            ref={'objectType':'WorkItem','objectId':object_id,'version':version}
+            root=store.engine.resolve(ref,project_id)
+            require(root['projectId']==project_id,'PROJECT_MISMATCH','Project unavailable')
+            return build_safety_stop_traceability(store.engine,ref,session['partyId'],role['id'])
+
     @app.get('/projects/{project_id}/workspace')
     def workspace(project_id:str,request:Request):
         session=identity(request)
@@ -300,7 +483,15 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                 items.append(dict(machine=machine or supporting or ('evidence' if kind=='Evidence' else 'document'),record=deepcopy(r),actions=preflight(machine,r,session,role) if machine else []))
             visible_ids={x['record']['id'] for x in items}
             audits=[x for x in store.engine.audit_events if x['projectId']==project_id and x['objectRef']['objectId'] in visible_ids][-50:]
-            return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context=({k:v for k,v in store.meta.items() if k in (['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId','demoProfile','wwtZoneIds','dataClassification'] if demo else ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId'])} if store.meta.get('projectId')==project_id else {'projectId':project_id}),participants=[dict(partyId=r['partyId'],name=store.engine.get('Party',r['partyId'])['name'],actorGroup=r['actorGroup']) for (kind,_),r in store.engine._records.items() if kind=='RoleAssignment' and r['projectId']==project_id and r['active'] and r['actorGroup'] in ['SUP','CON','OWN','DES','ADM']],formSchemas=store.documents.schemas,demo=demo)
+
+            context=({k:deepcopy(v) for k,v in store.meta.items() if k in (['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId','demoProfile','wwtZoneIds','dataClassification'] if demo else ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId'])} if store.meta.get('projectId')==project_id else {'projectId':project_id})
+            context['creationCapabilities']=build_creation_capabilities(
+                store.engine,project_id,session['partyId'],role,context.get('scope'),
+                queue_enabled=app.state.queue_enabled,
+            )
+            context['referenceCatalog']=build_reference_catalog(store.engine,project_id,session['partyId'],role['id'])
+            return dict(project=store.engine.get('Project',project_id),role=role,items=items,audit=audits,context=context,participants=[dict(partyId=r['partyId'],name=store.engine.get('Party',r['partyId'])['name'],actorGroup=r['actorGroup']) for (kind,_),r in store.engine._records.items() if kind=='RoleAssignment' and r['projectId']==project_id and r['active'] and r['actorGroup'] in ['SUP','CON','OWN','DES','ADM']],formSchemas=store.documents.schemas,demo=demo)
+
 
     @app.get('/projects/{project_id}/roles')
     def roles(project_id:str,request:Request):
@@ -611,8 +802,9 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                         report.get('status') in ['acknowledged','followup','verified','closed']
                         for report in closeout_reports
                     ),
-                    ownerReportingComplete=any(
-                        report.get('status')=='closed' for report in closeout_reports
+                    ownerReportingComplete=(
+                        group['readiness']['ownerReportingComplete']
+                        and closeout_reporting_complete(closeout_reports)
                     ),
                 )
                 groups.append(dict(
@@ -926,10 +1118,23 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
 
     @app.post('/projects/{project_id}/documents/{document_id}/sign')
     async def sign(project_id:str,document_id:str,request:Request):
-        session=identity(request);body=await body_json(request);key_for(request);validate(body,SCHEMAS['SignRequest'],SCHEMAS)
-        with store.transaction():
+        session=identity(request);body=await body_json(request);key=key_for(request);validate(body,SCHEMAS['SignRequest'],SCHEMAS)
+        with store.transaction(True):
             role=role_for(session,project_id,body['roleAssignmentId']);d=store.documents.get(document_id);readable(d,session,role)
-            raise ContractError('ADAPTER_NOT_CONFIGURED','A trusted legal-signature verifier is required. Client assertions are never accepted as verified signatures.')
+            require(app.state.signature_verifier is not None,'ADAPTER_NOT_CONFIGURED','A trusted legal-signature verifier is required. Client assertions are never accepted as verified signatures.')
+            from .signature_verification import authorize_signing_request, load_verified_original_file, verify_and_sign
+            signing=dict(project_id=project_id,document_id=document_id,party_id=session['partyId'],
+                         role_assignment=role,signer_role=body['roleCode'],method=body['method'],document_hash=body['documentHash'])
+            authorize_signing_request(store.documents,**signing)
+            cached,request_key,fingerprint=application_replay('document-sign:'+document_id,key,project_id,session,body)
+            if cached is not None:return cached
+            result=verify_and_sign(app.state.signature_verifier,store.documents,**signing,
+                idempotency_key=key,original_file_id=body.get('originalFileId'),
+                original_file_loader=lambda file_id:load_verified_original_file(store.engine,
+                    project_id=project_id,party_id=session['partyId'],role_assignment=role,
+                    original_file_id=file_id,blob_loader=store.blob))
+            store.requests[request_key]={'hash':fingerprint,'result':deepcopy(result)}
+            return result
 
     @app.get('/projects/{project_id}/{collection}/{object_id}/available-actions')
     def available(project_id:str,collection:str,object_id:str,request:Request):

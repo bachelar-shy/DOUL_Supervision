@@ -1,0 +1,93 @@
+{
+  "task": "Isolated UUID advisory remediation validation",
+  "branch": "goal/security-followup-v2",
+  "baseCommit": "119c01f6f10aec072199bc26cea13a3c880ead4f",
+  "candidate": {
+    "override": "xcode -> uuid 11.1.1",
+    "expo": "57.0.26 (unchanged)",
+    "npm": "12.2.0",
+    "status": "merged PR136; exact PR head and main merge each passed all four triggered Mac workflows"
+  },
+  "provenance": {
+    "uuidVersion": "11.1.1",
+    "registryTarball": "https://registry.npmjs.org/uuid/-/uuid-11.1.1.tgz",
+    "registryIntegrity": "sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==",
+    "lockChange": "single node_modules/uuid lock entry changed from 7.0.3 to 11.1.1; no full-resolution lock churn",
+    "runtimeCompatibility": "uuid 11.1.1 exports a CommonJS require entry; xcode 3.0.1 uses require()"
+  },
+  "checks": [
+    {
+      "command": "npm 12.2.0 ci --cache /tmp/doul-npm12-security-uuid-agent-cache --no-audit --no-fund",
+      "result": "passed; added 805 packages in the isolated worktree"
+    },
+    {
+      "command": "PATH=/tmp/doul-npm12-tool/node_modules/.bin:$PATH python3 scripts/dependency_environment.py --node-only",
+      "result": "passed with errors=[] and ok=true; npm 12.2.0 and Node v24.19.0 recorded in report"
+    },
+    {
+      "command": "npm 12.2.0 ls uuid --all",
+      "result": "passed; tree reports uuid@11.1.1 overridden under xcode@3.0.1"
+    },
+    {
+      "command": "EXPO_NO_TELEMETRY=1 CI=1 expo prebuild --platform ios --no-install (copied app in /tmp; isolated installed node_modules symlink)",
+      "result": "passed with Expo 57.0.26; generated a real iOS project without changing the candidate checkout"
+    },
+    {
+      "command": "node scripts/check_xcode_compatibility.cjs <generated project.pbxproj>",
+      "result": "passed; required xcode via CommonJS, generated unique 24-character uppercase hex UUID 034C027D39BF45079815EC4D, wrote and reparsed PBX project, 32 UUIDs and 17,771-byte round trip"
+    },
+    {
+      "command": "npm 12.2.0 audit --json",
+      "result": "uuid absent; 21 high and 0 moderate advisories in this isolated run. braces and node-forge remain affected. Counts vary with registry/advisory snapshot and should be rerun at integration."
+    },
+    {
+      "command": "root npm12 audit, web/mobile typecheck, web build, UI boundary and web lint",
+      "result": "passed all build checks; root audit reports 33 high/0 moderate with two root advisories; UUID absent; raw totals vary across npm/audit runs"
+    },
+    {
+      "command": "Mac CI disposable Expo iOS prebuild plus xcode PBX group mutation/roundtrip",
+      "result": "passed on final PR head; preserves original32 IDs and addedgroup, reparse33 objects"
+    }
+  ],
+  "files": {
+    "compatibilitySmoke": "scripts/check_xcode_compatibility.cjs",
+    "temporaryAudit": "/tmp/doul-security-xcode-agent-audit.json",
+    "temporaryPrebuild": "/tmp/doul-security-xcode-native-uuid-agent-prebuild",
+    "temporaryDependencyReport": "/tmp/doul-agent-security-dependency-environment.json",
+    "isolatedWorktree": "/tmp/doul-security-xcode-native-uuid-v1"
+  },
+  "important": [
+    "The failed npm 11.9.0 workspace inventory is corrected by npm 12.2.0; dependency guard code is unchanged.",
+    "The Expo 57.0.26 dependency graph remains unchanged.",
+    "Do not vendor the proposed xcode fork; npm 12.2.0 makes the existing uuid override valid under npm ls and the dependency guard.",
+    "braces <=3.0.3 and node-forge <=1.4.0 remain advisory affected and need independent compatible remediation or upstream releases."
+  ],
+  "toolchainAdoption": [
+    "packageManager npm@12.2.0 and engines declaration",
+    "Mac mvp workflow Node24.19.0/npm12.2.0",
+    "both web Docker builders Node24.19.0/npm12.2.0",
+    "README bootstrap instruction; dependency guard unchanged"
+  ],
+  "residualEvidence": {
+    "braces": {
+      "publishedVersion": "3.0.3",
+      "patchedRegistryVersion": null,
+      "candidate": "https://github.com/micromatch/braces/pull/72",
+      "candidateStatus": "closed unmerged; nontrivial fork not adopted"
+    },
+    "node-forge": {
+      "publishedVersion": "1.4.0",
+      "patchedRegistryVersion": null,
+      "candidate": "https://github.com/digitalbazaar/forge/pull/1152",
+      "candidateStatus": "open unmerged; no1.4.1 release"
+    }
+  },
+  "integration": {
+    "prHead": "15bbc158863a86518c4d6e9fb05f5a1a5e422f2a",
+    "mainMerge": "7a3485e3ab71207a84cee2ec9ca3cf92d5816909",
+    "triggeredWorkflowsPerCommit": 4,
+    "bothCommits": "all four passed on doul-macmini-m4-linux",
+    "prProof": "/Users/automation/work/DOUL-ci-runtime/pr136-15bbc15-checks.json",
+    "mainProof": "/Users/automation/work/DOUL-ci-runtime/pr136-7a3485e-checks.json"
+  }
+}

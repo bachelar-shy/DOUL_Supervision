@@ -1,0 +1,32 @@
+{
+  "task": "AC-OFFLINE-01 versioned device intent and explicit reconnect resolution",
+  "branch": "goal/offline-reconnect-v1",
+  "baseCommit": "dfcd763",
+  "agentInterrupted": "Luna/high agent exhausted workspace credits after two untracked scaffold files; root preserved scaffold in f86a3bc and completed the connected implementation without deleting it",
+  "worktree": {
+    "real": "/tmp/offline-reconnect-v1",
+    "workspaceAlias": "/workspace/work/doul-goal/offline-reconnect-v1"
+  },
+  "scope": [
+    "One device-local unsent command draft per project/party/current RoleAssignment, with exact captured version, payload, evidence IDs and stable request key; no token stored",
+    "No server command runs offline or automatically on reconnect; reconnect only reads current authorized workspace",
+    "Captured/current versions and proposed input are shown; stale/unavailable command blocks submission; cancel or explicit current-version review is required",
+    "Submission uses existing SupervisionClient execute boundary and current server descriptor; server authority, version, evidence and signature gates remain unchanged",
+    "Korean/Vietnamese/English panel labels and optional CommandModal local-save label; no offline approval or final state is simulated"
+  ],
+  "verification": {
+    "browser": "PASS 2 actual Chromium mobile-viewport UI/API cases; /tmp/doul-offline-root-browser-20261009-final.log",
+    "cases": [
+      "Offline draft retained across reload; distinct online authenticated writer changes Inspection v4 to v5; automatic reconnect displays conflict and forbids replay/overwrite; explicit cancel leaves one writer audit and server version intact",
+      "Unchanged offline draft creates no command on capture/reconnect; explicit user submit sends original expectedVersion once, server returns real in_progress record and one audit event"
+    ],
+    "static": "Web TypeScript, UI boundary, lint(exit0 with existing warnings plus network-effect warning), responsive Vite build passed",
+    "fixture": "Disposable ASGI demo API/SQLite, real authenticated sessions, synthetic existing seed records; no mocked approval/final record"
+  },
+  "limits": [
+    "Responsive web/device-local draft only; no native React Native offline-command acceptance claimed",
+    "One pending intent per project/party/RoleAssignment; official mutation still requires an online current-authorized API",
+    "Explicit rebase path only appears if the same command remains available in current server state; submitted payload/evidence remain subject to server validation",
+    "Actual field PDFs/BOQ/schedule/photos, adopted config/qualified users, native terminology review and pilot acceptance remain outstanding"
+  ]
+}

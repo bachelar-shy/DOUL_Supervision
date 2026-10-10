@@ -1,0 +1,200 @@
+{
+  "date": "2026-10-09",
+  "status": "native_supplemental_validation_complete_goal_blocked",
+  "host": {
+    "platform": "macOS",
+    "version": "26.6.2",
+    "architecture": "arm64",
+    "processor": "Mac mini M4",
+    "cpuCount": 10,
+    "memoryGiB": 16,
+    "nativeTimezoneOffset": "+07:00"
+  },
+  "source": {
+    "baseCommit": "4145523f53db8fe9d9ff835464fc1d14d1900087",
+    "macBranch": "goal/mvp-m4-validation-v1",
+    "macCommit": "44aed590b904cc68334c1fc646fd406a0e2ecbd0",
+    "rootIntegrationCommit": "740d3a4edae0c6423e53dce79c985e045a4e68d5",
+    "testedTree": "b3f1a5f9cca025e07671ccb59b2c2fb890953d86",
+    "rootAndMacTreesIdentical": true,
+    "subsequentDocumentationChangesDoNotReplaceExactHeadCI": true
+  },
+  "changes": [
+    "Browser-local datetime input helper preserves the intended instant when browser and Node timezones differ; no UTC timezone override hides the original defect.",
+    "Handover/Action/Quality/payment/drawing browser fixtures use that helper. Exact reservation dueAt equality remains; Warranty defectObservedAt equality is added.",
+    "Remove an unsafe Scope cast and use supported Playwright beforeAll test.setTimeout rather than an invalid positional timeout. Runtime authority/state/version guards and assertions remain."
+  ],
+  "verification": {
+    "contracts": {
+      "passed": 319
+    },
+    "api": {
+      "discovered": 394,
+      "passed": 350,
+      "skipped": 44,
+      "postgresSkipped": 39,
+      "documentSkipped": 5,
+      "log": "work/m4-validation/api.log"
+    },
+    "documentRuntime": {
+      "passed": 5,
+      "scope": "OOXML/A4 and frozen source validation, 36 forms; separate union-lock environment; no native LibreOffice/PDF conversion claim"
+    },
+    "normalBrowser": {
+      "passed": 95,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 421964.30799999996,
+      "scope": "Canonical normal suite includes real HTTP/UI plus explicitly mocked presentation/fixture cases; synthetic upstream prerequisites and MockTrustedVerifier are not pilot/provider acceptance."
+    },
+    "isolatedMock": {
+      "passed": 7,
+      "officialAcceptance": false
+    },
+    "timezones": {
+      "initial": {
+        "passed": 3,
+        "failed": 1,
+        "zones": [
+          "UTC",
+          "Asia/Seoul"
+        ],
+        "failure": "route.fetch ECONNRESET during live role/session transition"
+      },
+      "unchangedSourceUtcRetest": {
+        "passed": 1,
+        "failed": 0
+      },
+      "transportFailureResolved": false,
+      "note": "Initial UTC/Seoul matrix: 3 passed, 1 ECONNRESET failure. Unchanged-source bounded UTC retest: 1 passed. Preserve failed attempt; do not label the original matrix 4/4 or claim transport flakiness resolved."
+    },
+    "static": {
+      "dependencies": "PASS",
+      "contractAndApiGenerators": "PASS",
+      "uiBoundary": "PASS",
+      "localeCoverage": "PASS: 348 keys per ko/vi/en, native review pending",
+      "webAndMobileTypecheck": "PASS",
+      "connectedBrowserStandaloneTypecheck": "PASS",
+      "webLint": "PASS with existing warnings",
+      "webBuild": "PASS with existing chunk-size warning"
+    },
+    "mobile": {
+      "iosAndAndroidJsExports": "PASS",
+      "signedNativeBuildsAndDeviceAcceptance": false
+    },
+    "originalBrowserAttempt": {
+      "passed": 88,
+      "failed": 7,
+      "scope": "3 datetime fixture errors corrected; 4 API origin refusals corrected only in owned verification configuration; failed logs/traces retained."
+    }
+  },
+  "limitations": {
+    "actualFieldPilotPerformed": false,
+    "actualSiteFilesSupplied": false,
+    "requiredGitHubChecksReplaced": false,
+    "linuxDockerPostgresOperationsVerifiedOnMac": false,
+    "nativeLargeDataPerformanceMemoryBackupAcceptance": false,
+    "warrantyAcceptanceOrClosureProven": false,
+    "productC2Decision": "pending; existing current-ref lifecycle draft remains unadopted",
+    "languageNativeReview": "pending",
+    "productionLegalSignatureProvider": "not configured",
+    "security": {
+      "totalPropagatedAdvisories": 28,
+      "high": 21,
+      "moderate": 7,
+      "uniqueAffectedPackages": [
+        "braces",
+        "node-forge",
+        "uuid"
+      ],
+      "releaseApproval": "blocked"
+    }
+  },
+  "runtimeSetup": {
+    "python": "3.12.13",
+    "node": "24.13.1",
+    "productionPythonLock": "services/api/requirements.lock",
+    "documentUnionLocks": [
+      "services/api/requirements.lock",
+      "services/document_runtime/requirements.lock"
+    ],
+    "npm": "fresh physical npm ci; canonical manifests/lock unchanged",
+    "node24HomebrewFailure": "missing libsimdjson.33.dylib; shared Homebrew install untouched; task-owned official ARM64 Node archive used",
+    "nodeArchiveSha256": "8c039d59f2fec6195e4281ad5b0d02b9a940897b4df7b849c6fb48be6787bba6",
+    "officialArchiveHashMatched": true,
+    "ownedPorts": {
+      "web": 5289,
+      "api": 8889,
+      "mock": 5292
+    },
+    "reuseExistingServer": false,
+    "allowedOrigins": [
+      "http://127.0.0.1:5289",
+      "http://127.0.0.1:5181"
+    ],
+    "browserInstallationSideEffects": "Playwright installer automatically removed unused shared chromium-1223 and chromium_headless_shell-1223 caches. Subsequent installs must use PLAYWRIGHT_SKIP_BROWSER_GC=1 and/or an owned PLAYWRIGHT_BROWSERS_PATH."
+  },
+  "repositoryStatus": {
+    "pr128": "merged",
+    "pr129": "open draft; no merge",
+    "issues106and112": "open",
+    "pr120": "open; integrated work represented in PR129, not standalone merged",
+    "nativeGoalUi": "No Goal read/create tool is exposed; this record does not claim UI restoration or deletion."
+  },
+  "preservation": {
+    "macOriginalBranch": "ui/stitch-frontend-sync-v2",
+    "preexistingModifiedPaths": [
+      "design/stitch/frontend-page-sync.json",
+      "design/stitch/screens.json",
+      "scripts/stitch_sync_frontend_pages.py"
+    ],
+    "originalCheckoutWasNotWritten": true,
+    "ownedWorktree": "/Users/automation/work/DOUL_Supervision-goal-m4-20261009",
+    "ownedEvidence": "work/m4-validation/handoff.json and logs on Mac; config/DB/trace files remain under owned .local"
+  },
+  "logSha256": {
+    "work/m4-validation/browser.log": "7c3d0025ae3ce32466b0cfa85d62622fa958497657d2a57a111c651ff20a7faa",
+    "work/m4-validation/api.log": "d6a30bc901e0dac57a2751bb6f14c58358ad536e4013524d344e9ba8507dcea7",
+    "work/m4-validation/dependencies.log": "19e4203f1946dc5642aab2a01e783708e8686dfac6e683c77de314ba19d5a4ab",
+    "work/m4-validation/generated-schedule.log": "49ca73ac2b39a4ca2e3672e50c46d6d4779be812a1e43617d28cbbf9d268df89",
+    "work/m4-validation/document-install.log": "f07ed56cb4091d76a21056bf3bcc20d971e7d9eed5760721e64b6e58307c43d3",
+    "work/m4-validation/browser-initial.log": "7c3d0025ae3ce32466b0cfa85d62622fa958497657d2a57a111c651ff20a7faa",
+    "work/m4-validation/contracts.log": "f5e3e15befbf05f8ed7b139503dd8e61f7b953614e82face71eef80c69acca01",
+    "work/m4-validation/timezones-initial.log": "8d286d844c0c00b2ae54e5570a4a4e91da3f5b8dd62543babc42e6c911d6d727",
+    "work/m4-validation/lint.log": "2b011238f77aa61fa5d168fa180d8fb957129f26cacfcbb6eed30d6fa60073ba",
+    "work/m4-validation/timezones.log": "8d286d844c0c00b2ae54e5570a4a4e91da3f5b8dd62543babc42e6c911d6d727",
+    "work/m4-validation/browser-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "work/m4-validation/generated-command.log": "bef290cfc495a593a3d13b5c0916d124558dd6474fa4c626a4aa37f19e75fd53",
+    "work/m4-validation/typecheck.log": "c3002e753bf215450d73f0d529a2763a07e92e99df6342cc586643f9bdae7446",
+    "work/m4-validation/mock.log": "385abb3578b82f4f7d2110737e3f5f4ed1472f49876883e2dd29c55c85e81c08",
+    "work/m4-validation/mobile-export.log": "3e826574870527ad875073fc147e4b06f25556bcdf3fd36e45ba6f54748fc306",
+    "work/m4-validation/generated-types.log": "d1bd96005e839537910533bdf9b4e4c8e66a4d0cdf1e05520efb0f6d4e0869a8",
+    "work/m4-validation/browser-install.log": "ed6e5e23e69629375c5b3db274c7ceb367819a9f8912e52f2d382604ef933464",
+    "work/m4-validation/browser-final.log": "351e6658dc0666f859dd880e84cae2f6f9f79f66c918c1a238dc4c56d5cfd7b0",
+    "work/m4-validation/boundary.log": "9497ed62d050289a9fa94804d718aa5d4c9dc4131eb64a63825bd870ae6a2575",
+    "work/m4-validation/generated-api.log": "afc8ca5c4edc1d276a55cb4359360cf781f97ab552a0e5ea48328bdd878e783a",
+    "work/m4-validation/unit.log": "1c63902508541443d53a1e66ecf171f8943c13ce8a184744db7243b899433901",
+    "work/m4-validation/locales.log": "a48451e23a91a6564eb36d67c7e66f23983dffe894fc28cdd0ac181dd0c3b25d",
+    "work/m4-validation/timezone-utc-retest.log": "c14f6996b5566480e837878d9ae4fdb63a3d32022f55ded3f5454881b434a9ec",
+    "work/m4-validation/document.log": "dd3d6c1421a24ae412af30af9efafcab46504e456835e6fbad6a75462efff280",
+    "work/m4-validation/python-install.log": "f16f00742c659c800f0848507184fe9e9828761690d5aa8bb98a1811e9170488",
+    "work/m4-validation/npm-install.log": "bb2f526b959dbd68596d396b90d29d57e54dd74723b4479f252fd160947fc712",
+    "work/m4-validation/build.log": "ebbd4b7a2a8ae4aeab497f352a0415810dcfb58edc0de37f93a0cfe5ba8edcff"
+  },
+  "configurationSha256": {
+    ".local/playwright.m4-mock.config.ts": "95ddc8c55168ff060479e44227c8dfefde5c229432f8ce777ba3feaf11d6d07d",
+    ".local/playwright.m4.config.ts": "98d0c99b3718728127917ea95c8c8f9341df0108f2a720f9c918e3450fe01b63",
+    ".local/playwright.m4-timezones.config.ts": "7e2804deb80cc552dc69abb5d96fbaccdda4a1891124bb24077e4e799d3eebf1"
+  },
+  "restart": [
+    "Review root verification record and last integration head",
+    "Resolve GitHub required-check account restrictions; native proof does not replace Ubuntu checks",
+    "Obtain Product reference lifecycle decision and actual site files/users/provider/adopted policies",
+    "For new tests use owned ports and database plus allowed loopback origins; preserve work/ proof logs",
+    "Use existing private Node24 archive runtime and .venv; skip browser GC or install into owned cache"
+  ],
+  "officialDocumentation": [
+    "https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/emulation.md",
+    "https://github.com/microsoft/playwright/blob/v1.63.0/docs/src/test-api/class-testoptions.md"
+  ]
+}

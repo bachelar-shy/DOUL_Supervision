@@ -1,3 +1,6 @@
+import { formatRegisterValue } from "../data/register-format";
+import { recordTypeLabel } from "../labels";
+import { recordVersionLabel } from "../labels";
 import { useEffect, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CommandDescriptor, WorkItem, Workspace } from "../data/ui-contract";
@@ -17,15 +20,48 @@ import { WorkbenchTemplate } from "../ui/templates";
 import { PageBoundary } from "./PageBoundary";
 import { recordTitle } from "./record-utils";
 import { RecordList } from "./shared";
+import i18n from "../i18n/config";
+import { formatNumber } from "../i18n/format";
 
 const SOURCE_TAB = "schedule_imports";
 const tabs = [
-  { id: "schedule_baseline", label: "기준공정", description: "승인된 비교 기준입니다. 진도·예측 변경으로 덮어쓰지 않습니다." },
-  { id: "schedule_progress", label: "진도기록", description: "기준일별 실적·예측 기록입니다. 확정 후 정정은 새 기록과 사유로 남깁니다." },
-  { id: "delay_event", label: "지연사건", description: "지연 사실과 영향평가를 관리합니다. 지연 확인은 공기연장 승인이 아닙니다." },
-  { id: "recovery_plan", label: "회복계획", description: "회복계획 수락·실행·효과를 관리합니다. 기준공정과 계약 결정은 별도입니다." },
-  { id: SOURCE_TAB, label: "원본입력", description: "정규화 JSON 원본과 생성된 Activity 스냅샷을 보존·조회합니다. 원본 입력 자체는 승인·활성화·공기연장 결정이 아닙니다." },
+  {
+    id: "schedule_baseline",
+    labelKey: "schedule.tab.baseline.label",
+    descriptionKey: "schedule.tab.baseline.description",
+  },
+  {
+    id: "schedule_progress",
+    labelKey: "schedule.tab.progress.label",
+    descriptionKey: "schedule.tab.progress.description",
+  },
+  {
+    id: "delay_event",
+    labelKey: "schedule.tab.delay.label",
+    descriptionKey: "schedule.tab.delay.description",
+  },
+  {
+    id: "recovery_plan",
+    labelKey: "schedule.tab.recovery.label",
+    descriptionKey: "schedule.tab.recovery.description",
+  },
+  {
+    id: SOURCE_TAB,
+    labelKey: "schedule.tab.source.label",
+    descriptionKey: "schedule.tab.source.description",
+  },
 ];
+
+class ScheduleInputError extends Error {}
+
+function tr(key: string, values: Record<string, string | number> = {}) {
+  return i18n.t(key, values);
+}
+
+function tabLabel(id: string) {
+  const tab = tabs.find((item) => item.id === id);
+  return tab ? tr(tab.labelKey) : id;
+}
 
 function object(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -34,24 +70,38 @@ function object(value: unknown): Record<string, unknown> {
 }
 
 function display(value: unknown): string {
-  if (value === undefined || value === null || value === "") return "기록 없음";
-  if (typeof value === "boolean") return value ? "예" : "아니오";
-  if (Array.isArray(value)) return value.length ? value.map(display).join(" · ") : "연결 없음";
+  if (value === undefined || value === null || value === "") {
+    return tr("schedule.display.none");
+  }
+  if (typeof value === "boolean") {
+    return value ? i18n.t("common.yes") : i18n.t("common.no");
+  }
+  if (Array.isArray(value)) {
+    return value.length ? value.map(display).join(" · ") : tr("schedule.display.noLinks");
+  }
   if (typeof value === "object") {
     const ref = object(value);
-    if (ref.objectId) return `${ref.objectType} · ${ref.objectId} · v${ref.version}`;
-    return JSON.stringify(value);
+    if (ref.objectId) return `${recordTypeLabel(ref.objectType)} · ${ref.objectId} · ${recordVersionLabel(ref.version)}`;
+    return formatRegisterValue(value);
   }
-  return String(value);
+  return value === scheduleSourceImport.inputMode ? tr("schedule.import.fieldFormat") : String(value);
 }
 
 function scheduleState(item: WorkItem) {
   const state = item.record.status || "";
-  if (item.machine === "schedule_source") return "원본 스냅샷";
-  if (state === "active" && item.machine === "recovery_plan") return "회복계획 실행 중";
-  if (state === "effective" && item.machine === "recovery_plan") return "회복효과 확인";
-  if (state === "completed" && item.machine === "recovery_plan") return "회복계획 완료";
-  if (state === "verification" && item.machine === "schedule_progress") return "진도 검증";
+  if (item.machine === "schedule_source") return tr("schedule.state.sourceSnapshot");
+  if (state === "active" && item.machine === "recovery_plan") {
+    return tr("schedule.state.recoveryActive");
+  }
+  if (state === "effective" && item.machine === "recovery_plan") {
+    return tr("schedule.state.recoveryEffective");
+  }
+  if (state === "completed" && item.machine === "recovery_plan") {
+    return tr("schedule.state.recoveryCompleted");
+  }
+  if (state === "verification" && item.machine === "schedule_progress") {
+    return tr("schedule.state.progressVerification");
+  }
   return states[state] || state;
 }
 
@@ -69,10 +119,12 @@ function isImportedSchedule(item: WorkItem | null | undefined) {
 
 function sourceKindLabel(value: unknown) {
   return ({
-    baseline: "기준공정 원본",
-    progress_update: "진도 원본",
-    recovery: "회복공정 지원 원본",
-  } as Record<string, string>)[String(value)] || String(value || "원본 종류 미기록");
+    baseline: tr("schedule.sourceKind.baseline"),
+    progress_update: tr("schedule.sourceKind.progress"),
+    recovery: tr("schedule.sourceKind.recovery"),
+  } as Record<string, string>)[String(value)] || String(
+    value || tr("schedule.sourceKind.unknown"),
+  );
 }
 
 function ScheduleDetail({ item, workspace }: { item: WorkItem; workspace: Workspace }) {
@@ -88,34 +140,42 @@ function ScheduleDetail({ item, workspace }: { item: WorkItem; workspace: Worksp
       : {};
   return <>
     <StatusBoundaryGroup
-      title="공정 기준 · 예측 · 기준일"
-      description="각 값은 저장된 원본을 표시합니다. 기록이 없으면 공정 상태를 추정하지 않습니다."
+      title={tr("schedule.detail.boundary.title")}
+      description={tr("schedule.detail.boundary.description")}
       items={[
         {
           id: "baseline",
-          label: "기준공정 완료일",
+          label: tr("schedule.detail.baselineFinish"),
           value: display(baselineData.contractualCompletionAt),
           detail: baseline
-            ? `${recordTitle(baseline.record)} · v${baseline.record.version}`
-            : "해당 원본의 계약 완료일",
+            ? `${recordTitle(baseline.record)} · ${recordVersionLabel(baseline.record.version)}`
+            : tr("schedule.detail.baselineFinishFallback"),
         },
         {
           id: "forecast",
-          label: "예측 완료일",
+          label: tr("schedule.detail.forecastFinish"),
           value: display(data.forecastCompletionAt ?? data.currentForecastCompletionAt),
-          detail: "현재 원본에 기록된 예측",
+          detail: tr("schedule.detail.forecastDetail"),
         },
-        { id: "data-date", label: "기준일", value: display(data.dataDate), detail: "진도 판단의 기준일 보존" },
+        {
+          id: "data-date",
+          label: tr("schedule.detail.dataDate"),
+          value: display(data.dataDate),
+          detail: tr("schedule.detail.dataDateDetail"),
+        },
       ]}
     />
     <div className="meta-grid mt-3">
-      <div><span>원본 ID</span><strong className="break-all">{item.record.id}</strong></div>
-      <div><span>원본 버전</span><strong>v{item.record.version}</strong></div>
-      <div><span>원본 파일 해시</span><strong className="break-all">{display(data.sourceFileHash)}</strong></div>
-      <div><span>공정 원본 파일 버전</span><strong>{display(data.sourceFileVersion)}</strong></div>
+      <div><span>{tr("schedule.detail.originalId")}</span><strong className="break-all">{item.record.id}</strong></div>
+      <div><span>{tr("schedule.detail.originalVersion")}</span><strong>{recordVersionLabel(item.record.version)}</strong></div>
+      <div><span>{tr("schedule.detail.fileHash")}</span><strong className="break-all">{display(data.sourceFileHash)}</strong></div>
+      <div><span>{tr("schedule.detail.sourceFileVersion")}</span><strong>{display(data.sourceFileVersion)}</strong></div>
     </div>
-    <section className="detail-section" aria-label="공정 원본 상세">
-      <SectionHeader title="공정 원본 상세" meta="서버 저장값" />
+    <section className="detail-section" aria-label={tr("schedule.detail.sourceAria")}>
+      <SectionHeader
+        title={tr("schedule.detail.sourceTitle")}
+        meta={tr("schedule.detail.serverValue")}
+      />
       <dl className="grid gap-3 sm:grid-cols-2">
         {Object.entries(data).map(([key, value]) => (
           <div key={key} className="min-w-0 border-b border-border pb-2">
@@ -125,9 +185,9 @@ function ScheduleDetail({ item, workspace }: { item: WorkItem; workspace: Worksp
         ))}
       </dl>
     </section>
-    <section className="detail-section" aria-label="보고 및 계약 연결">
-      <SectionHeader title="발주처 보고 · 계약 연결" />
-      <p className="muted">업무 종결과 발주처 후속조치 종결은 각각 확인합니다. 공기연장 결정 기능은 별도 구현 단계입니다.</p>
+    <section className="detail-section" aria-label={tr("schedule.detail.ownerLinkAria")}>
+      <SectionHeader title={tr("schedule.detail.ownerLinkTitle")} />
+      <p className="muted">{tr("schedule.detail.ownerLinkDescription")}</p>
       <dl className="grid gap-3 sm:grid-cols-2 mt-3">
         {["ownerReportRefs", "decisionRefs", "ownerDecisionRef", "contractNoticeRefs", "claimRefs", "eotDecisionRef", "contractTrackRefs"].map((key) => (
           <div key={key}>
@@ -159,7 +219,7 @@ function ImportedSourceDetail({
       })
       .catch((e) => {
         if (!alive) return;
-        setError(e instanceof ApiError ? `${reasonLabel(e.detail.code)} ${e.message}` : String(e));
+        setError(e instanceof ApiError ? reasonLabel(e.detail.code) : e instanceof ScheduleInputError ? e.message : reasonLabel());
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -176,31 +236,51 @@ function ImportedSourceDetail({
 
   return <>
     <StatusBoundaryGroup
-      title="원본 입력 · 업무 상태 경계"
-      description="원본 보존과 업무 승인·활성화는 별도입니다. 회복공정 원본은 Recovery Plan을 자동 생성하거나 기준공정을 변경하지 않습니다."
+      title={tr("schedule.imported.boundary.title")}
+      description={tr("schedule.imported.boundary.description")}
       items={[
-        { id: "source-kind", label: "원본 종류", value: sourceKindLabel(kind), detail: "업로드 원본의 scheduleKind" },
-        { id: "workflow-state", label: "현재 업무 상태", value: scheduleState(item), detail: "서버의 현재 Schedule 상태" },
-        { id: "original-version", label: "보존 원본", value: detail ? `v${detail.record.version}` : "조회 중", detail: "원본 Schedule은 v1 스냅샷으로 조회" },
+        {
+          id: "source-kind",
+          label: tr("schedule.imported.sourceKind"),
+          value: sourceKindLabel(kind),
+          detail: tr("schedule.imported.sourceKindDetail"),
+        },
+        {
+          id: "workflow-state",
+          label: tr("schedule.imported.workflowState"),
+          value: scheduleState(item),
+          detail: tr("schedule.imported.workflowStateDetail"),
+        },
+        {
+          id: "original-version",
+          label: tr("schedule.imported.originalVersion"),
+          value: detail ? recordVersionLabel(detail.record.version) : tr("schedule.imported.loading"),
+          detail: tr("schedule.imported.originalVersionDetail"),
+        },
       ]}
     />
     <div className="meta-grid mt-3">
-      <div><span>입력 방식</span><strong>{display(metadata.inputMode)}</strong></div>
-      <div><span>파서 버전</span><strong>{display(metadata.parserVersion)}</strong></div>
-      <div><span>원본 증빙</span><strong className="break-all">{display(metadata.sourceEvidenceRef)}</strong></div>
-      <div><span>Activity 수</span><strong>{display(currentData.activityCount ?? detail?.activities.length)}</strong></div>
+      <div><span>{tr("schedule.imported.inputMode")}</span><strong>{metadata.inputMode === scheduleSourceImport.inputMode ? tr("schedule.import.fieldFormat") : tr("common.unknown")}</strong></div>
+      <div><span>{tr("schedule.imported.parserVersion")}</span><strong>{metadata.parserVersion === scheduleSourceImport.parserVersion ? tr("schedule.import.fieldFormat") : tr("common.unknown")}</strong></div>
+      <div><span>{tr("schedule.imported.sourceEvidence")}</span><strong className="break-all">{display(metadata.sourceEvidenceRef)}</strong></div>
+      <div><span>{tr("schedule.imported.activityCount")}</span><strong>{display(currentData.activityCount ?? detail?.activities.length)}</strong></div>
     </div>
     {kind === "recovery" && (
       <div className="schedule-source-note" role="note">
-        <strong>회복공정 지원 원본</strong>
-        <span>이 기록은 Recovery Plan 수락·실행 상태가 아니며 Baseline 활성화 명령도 제공하지 않습니다.</span>
+        <strong>{tr("schedule.imported.recoveryTitle")}</strong>
+        <span>{tr("schedule.imported.recoveryDescription")}</span>
       </div>
     )}
-    {loading && <div className="empty compact">원본 Schedule v1과 Activity 스냅샷을 조회하고 있습니다.</div>}
+    {loading && (
+      <div className="empty compact">{tr("schedule.imported.loadingDetail")}</div>
+    )}
     {error && <div role="alert" className="error-box">{error}</div>}
     {detail && <>
-      <section className="detail-section" aria-label="보존 원본 Schedule">
-        <SectionHeader title="보존 원본 Schedule v1" meta={sourceKindLabel(originalData.scheduleKind)} />
+      <section className="detail-section" aria-label={tr("schedule.imported.originalAria")}>
+        <SectionHeader
+          title={tr("schedule.imported.originalTitle")}
+          meta={sourceKindLabel(originalData.scheduleKind)}
+        />
         <dl className="grid gap-3 sm:grid-cols-2">
           {Object.entries(originalData).map(([key, value]) => (
             <div key={key} className="min-w-0 border-b border-border pb-2">
@@ -210,8 +290,11 @@ function ImportedSourceDetail({
           ))}
         </dl>
       </section>
-      <section className="detail-section" aria-label="원본 Activity 스냅샷">
-        <SectionHeader title="Activity 스냅샷" meta={`${detail.activities.length}건 · read-only`} />
+      <section className="detail-section" aria-label={tr("schedule.imported.activityAria")}>
+        <SectionHeader
+          title={tr("schedule.imported.activityTitle")}
+          meta={`${tr("schedule.count", { count: detail.activities.length })} · ${tr("admin.meta")}`}
+        />
         <div className="schedule-activity-list">
           {detail.activities.map((activity) => {
             const data = object(activity.data);
@@ -222,15 +305,15 @@ function ImportedSourceDetail({
                   <span className="eyebrow">{display(data.wbsPath)}</span>
                   <strong>{display(data.activityId)} · {display(data.activityName)}</strong>
                 </div>
-                {isCritical && <span className="schedule-critical">CRITICAL</span>}
+                {isCritical && <span className="schedule-critical">{tr("schedule.activity.critical")}</span>}
               </div>
               <dl>
-                <div><dt>계획</dt><dd>{display(data.plannedStartAt)} → {display(data.plannedFinishAt)}</dd></div>
-                <div><dt>실적</dt><dd>{display(data.actualStartAt)} → {display(data.actualFinishAt)}</dd></div>
-                <div><dt>예측</dt><dd>{display(data.forecastStartAt)} → {display(data.forecastFinishAt)}</dd></div>
-                <div><dt>진도 / Float</dt><dd>{display(data.percentComplete)} / {display(data.totalFloat)}</dd></div>
-                <div><dt>선행</dt><dd>{display(data.predecessorRefs)}</dd></div>
-                <div><dt>후행</dt><dd>{display(data.successorRefs)}</dd></div>
+                <div><dt>{tr("schedule.activity.plan")}</dt><dd>{display(data.plannedStartAt)} → {display(data.plannedFinishAt)}</dd></div>
+                <div><dt>{tr("schedule.activity.actual")}</dt><dd>{display(data.actualStartAt)} → {display(data.actualFinishAt)}</dd></div>
+                <div><dt>{tr("schedule.activity.forecast")}</dt><dd>{display(data.forecastStartAt)} → {display(data.forecastFinishAt)}</dd></div>
+                <div><dt>{tr("schedule.activity.progressFloat")}</dt><dd>{display(data.percentComplete)} / {display(data.totalFloat)}</dd></div>
+                <div><dt>{tr("schedule.activity.predecessor")}</dt><dd>{display(data.predecessorRefs)}</dd></div>
+                <div><dt>{tr("schedule.activity.successor")}</dt><dd>{display(data.successorRefs)}</dd></div>
               </dl>
             </article>;
           })}
@@ -238,8 +321,8 @@ function ImportedSourceDetail({
       </section>
     </>}
     <section className="detail-section">
-      <SectionHeader title="업무 명령" />
-      <p className="muted">승인·활성화·검증·동결 명령은 기준공정 또는 진도기록 탭에서 현재 업무 버전에 대해 수행합니다.</p>
+      <SectionHeader title={tr("schedule.imported.commandsTitle")} />
+      <p className="muted">{tr("schedule.imported.commandsDescription")}</p>
     </section>
   </>;
 }
@@ -274,9 +357,11 @@ function CreateSchedule({
     setError("");
     setBusy(true);
     try {
-      if (!online) throw new Error("연결 복구 후 다시 제출하십시오.");
-      if (!title.trim()) throw new Error("제목을 입력하십시오.");
-      if (requiresEvidence && !selectedEvidenceId) throw new Error("지연사건의 근거 증빙을 선택하십시오.");
+      if (!online) throw new ScheduleInputError(tr("schedule.error.offline"));
+      if (!title.trim()) throw new ScheduleInputError(tr("schedule.error.titleRequired"));
+      if (requiresEvidence && !selectedEvidenceId) {
+        throw new ScheduleInputError(tr("schedule.error.evidenceRequired"));
+      }
       const data: Record<string, unknown> = {};
       for (const [key, spec] of Object.entries(schema.fields)) {
         const text = values[key]?.trim();
@@ -284,7 +369,11 @@ function CreateSchedule({
         if (spec.type === "number" || spec.type === "integer") {
           const n = Number(text);
           if (!Number.isFinite(n) || (spec.type === "integer" && !Number.isInteger(n))) {
-            throw new Error(`${fields[key] || key}: 숫자를 입력하십시오.`);
+            throw new ScheduleInputError(
+              tr("schedule.error.numberRequired", {
+                field: fields[key] || key,
+              }),
+            );
           }
           data[key] = n;
         } else if (spec.type === "boolean") {
@@ -297,7 +386,11 @@ function CreateSchedule({
       }
       for (const key of schema.required) {
         if (key !== "scheduleKind" && data[key] === undefined) {
-          throw new Error(`${fields[key] || key}: 필수 입력입니다.`);
+          throw new ScheduleInputError(
+            tr("schedule.error.fieldRequired", {
+              field: fields[key] || key,
+            }),
+          );
         }
       }
       if (isSchedule) {
@@ -323,7 +416,7 @@ function CreateSchedule({
       const result = await client.create(machine, payload, identity.current.id, identity.current.key);
       await onCreated(result.record.id);
     } catch (e) {
-      setError(e instanceof ApiError ? `${reasonLabel(e.detail.code)} ${e.message}` : String(e));
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : e instanceof ScheduleInputError ? e.message : reasonLabel());
     } finally {
       setBusy(false);
     }
@@ -334,10 +427,14 @@ function CreateSchedule({
     return <label key={key}>{fields[key] || key}{schema.required.includes(key) ? " *" : ""}
       {spec.type === "boolean" || spec.enum ? (
         <select value={values[key] || ""} onChange={(e) => setValues({ ...values, [key]: e.target.value })}>
-          <option value="">선택</option>
+          <option value="">{tr("schedule.select")}</option>
           {(spec.enum || ["false", "true"]).map((value) => (
             <option value={value} key={value}>
-              {value === "true" ? "예" : value === "false" ? "아니오" : value}
+              {value === "true"
+                ? i18n.t("common.yes")
+                : value === "false"
+                  ? i18n.t("common.no")
+                  : value}
             </option>
           ))}
         </select>
@@ -348,9 +445,9 @@ function CreateSchedule({
           onChange={(e) => setValues({ ...values, [key]: e.target.value })}
           placeholder={
             spec.type === "object" || spec.type === "array"
-              ? "JSON · 원본 ID와 버전 참조"
+              ? tr("schedule.placeholder.jsonRef")
               : key.endsWith("At") || key === "dataDate"
-                ? "RFC3339 · 시간대 포함"
+                ? tr("schedule.placeholder.time")
                 : fields[key] || key
           }
         />
@@ -359,31 +456,40 @@ function CreateSchedule({
   }
 
   return <div className="modal-backdrop">
-    <section className="modal" role="dialog" aria-modal="true" aria-label="공정 기록 추가">
+    <section
+      className="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label={tr("schedule.create.dialogAria")}
+    >
       <div className="section-heading">
-        <h2>{tabs.find((x) => x.id === machine)?.label} 기록 추가</h2>
-        <button aria-label="대화상자 닫기" onClick={onClose} disabled={busy}>×</button>
+        <h2>{tr("schedule.create.title", { tab: tabLabel(machine) })}</h2>
+        <button aria-label={tr("schedule.closeAria")} onClick={onClose} disabled={busy}>×</button>
       </div>
-      <p className="muted">원본 파일과 정확한 버전 참조를 입력하십시오. 권한·공정 연계·필수자료는 제출 시 서버가 검증합니다.</p>
+      <p className="muted">{tr("schedule.create.description")}</p>
       <div className="modal-fields">
-        <label>제목 *<input value={title} onChange={(e) => setTitle(e.target.value)} /></label>
-        {requiresEvidence && <label>근거 증빙 *<select aria-label="근거 증빙" value={selectedEvidenceId} onChange={(e) => setSelectedEvidenceId(e.target.value)}>
-          <option value="">증빙 선택</option>
+        <label>{tr("schedule.create.titleField")}<input value={title} onChange={(e) => setTitle(e.target.value)} /></label>
+        {requiresEvidence && <label>{tr("schedule.create.evidenceField")}<select aria-label={tr("schedule.create.evidenceAria")} value={selectedEvidenceId} onChange={(e) => setSelectedEvidenceId(e.target.value)}>
+          <option value="">{tr("schedule.create.evidenceSelect")}</option>
           {evidenceItems.map((item) => <option key={item.record.id} value={item.record.id}>{recordTitle(item.record)} · {item.record.id}</option>)}
-        </select><small className="muted">{evidenceItems.length ? "지연사건은 서버에 보존된 근거 증빙을 선택해야 등록할 수 있습니다." : "현재 프로젝트에 연결 가능한 서버 증빙이 없어 지연사건을 등록할 수 없습니다."}</small></label>}
+        </select><small className="muted">{evidenceItems.length
+          ? tr("schedule.create.evidenceAvailable")
+          : tr("schedule.create.evidenceUnavailable")}</small></label>}
         {schema.required.filter((key) => key !== "scheduleKind").map(input)}
       </div>
       <details>
-        <summary>추가 공정자료 · 참조 · 정정 사유</summary>
+        <summary>{tr("schedule.create.additional")}</summary>
         <div className="modal-fields">
           {Object.keys(schema.fields).filter((key) => !schema.required.includes(key)).map(input)}
         </div>
       </details>
       {error && <div role="alert" className="error-box">{error}</div>}
       <div className="modal-actions">
-        <button className="secondary" disabled={busy} onClick={onClose}>취소</button>
+        <button className="secondary" disabled={busy} onClick={onClose}>
+          {tr("schedule.cancel")}
+        </button>
         <button className="primary" disabled={busy || !online || (requiresEvidence && !selectedEvidenceId)} onClick={() => void submit()}>
-          {busy ? "검증 중…" : "기록 추가"}
+          {busy ? tr("schedule.validating") : tr("schedule.create.submit")}
         </button>
       </div>
     </section>
@@ -395,32 +501,40 @@ function parseNormalizedSource(bytes: Uint8Array): NormalizedScheduleSource {
   try {
     parsed = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
   } catch {
-    throw new Error("UTF-8 형식의 유효한 JSON 파일을 선택하십시오.");
+    throw new ScheduleInputError(tr("schedule.parser.invalidJson"));
   }
   const document = object(parsed);
   const keys = Object.keys(document).sort();
   const expected = [...scheduleSourceImport.documentProperties].sort();
   if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index])) {
-    throw new Error("원본 JSON은 schedule, activities, criticalActivityId 세 항목만 포함해야 합니다.");
+    throw new ScheduleInputError(tr("schedule.parser.documentShape"));
   }
   const schedule = object(document.schedule);
-  if (!Object.keys(schedule).length) throw new Error("schedule 객체가 필요합니다.");
+  if (!Object.keys(schedule).length) {
+    throw new ScheduleInputError(tr("schedule.parser.scheduleRequired"));
+  }
   for (const key of scheduleSourceImport.scheduleExcludes) {
-    if (key in schedule) throw new Error(`${key}는 원본 JSON에 넣지 않습니다. 업로드 후 서버 요청에서 연결됩니다.`);
+    if (key in schedule) {
+      throw new ScheduleInputError(tr("schedule.parser.excluded", { key: fields[key] || tr("schedule.create.additional") }));
+    }
   }
   for (const key of ["scheduleNo", "scheduleKind", "revision", "sourceFormat", "sourceFileVersion"]) {
     if (typeof schedule[key] !== "string" || !String(schedule[key]).trim()) {
-      throw new Error(`schedule.${key} 값이 필요합니다.`);
+      throw new ScheduleInputError(tr("schedule.parser.scheduleValueRequired", { key: fields[key] || tr("schedule.create.additional") }));
     }
   }
   if (!(schedule.scheduleKind as string in scheduleSourceImport.kinds)) {
-    throw new Error("scheduleKind는 baseline, progress_update, recovery 중 하나여야 합니다.");
+    throw new ScheduleInputError(tr("schedule.parser.kindInvalid"));
   }
   if (schedule.sourceFormat !== scheduleSourceImport.inputMode) {
-    throw new Error(`sourceFormat은 현재 ${scheduleSourceImport.inputMode}만 지원합니다.`);
+    throw new ScheduleInputError(
+      tr("schedule.parser.formatInvalid", {
+        format: tr("schedule.import.fieldFormat"),
+      }),
+    );
   }
   if (!Array.isArray(document.activities) || document.activities.length === 0) {
-    throw new Error("activities에는 최소 1개의 Activity가 필요합니다.");
+    throw new ScheduleInputError(tr("schedule.parser.activitiesRequired"));
   }
   const activities = document.activities.map((raw, index) => {
     const activity = object(raw);
@@ -429,17 +543,34 @@ function parseNormalizedSource(bytes: Uint8Array): NormalizedScheduleSource {
         key as typeof scheduleSourceImport.activityProperties[number],
       ),
     );
-    if (invalid.length) throw new Error(`activities[${index}]에 요청용 메타데이터가 포함되어 있습니다: ${invalid.join(", ")}`);
+    if (invalid.length) {
+      throw new ScheduleInputError(
+        tr("schedule.parser.activityMetadata", {
+          index: index + 1,
+          fields: invalid.map(key => fields[key] || tr("schedule.create.additional")).join(", "),
+        }),
+      );
+    }
     const data = object(activity.data);
     for (const key of ["activityId", "wbsPath", "activityName"]) {
       if (typeof data[key] !== "string" || !String(data[key]).trim()) {
-        throw new Error(`activities[${index}].data.${key} 값이 필요합니다.`);
+        throw new ScheduleInputError(
+          tr("schedule.parser.activityDataRequired", {
+            index: index + 1,
+            key: fields[key] || tr("schedule.create.additional"),
+          }),
+        );
       }
     }
     for (const key of ["predecessorActivityIds", "successorActivityIds"] as const) {
       const value = activity[key];
       if (value !== undefined && (!Array.isArray(value) || value.some((id) => typeof id !== "string"))) {
-        throw new Error(`activities[${index}].${key}는 문자열 배열이어야 합니다.`);
+        throw new ScheduleInputError(
+          tr("schedule.parser.activityArrayRequired", {
+            index: index + 1,
+            key: fields[key] || tr("schedule.create.additional"),
+          }),
+        );
       }
     }
     return {
@@ -453,11 +584,11 @@ function parseNormalizedSource(bytes: Uint8Array): NormalizedScheduleSource {
     };
   });
   if (typeof document.criticalActivityId !== "string" || !document.criticalActivityId) {
-    throw new Error("criticalActivityId 값이 필요합니다.");
+    throw new ScheduleInputError(tr("schedule.parser.criticalRequired"));
   }
   const critical = activities.find((activity) => activity.data.activityId === document.criticalActivityId);
   if (!critical || critical.data.critical !== true) {
-    throw new Error("criticalActivityId는 activities에 존재하고 critical=true여야 합니다.");
+    throw new ScheduleInputError(tr("schedule.parser.criticalMismatch"));
   }
   return {
     schedule,
@@ -491,7 +622,7 @@ function ImportScheduleSource({
   const [preview, setPreview] = useState<NormalizedScheduleSource | null>(null);
   const [fileError, setFileError] = useState("");
   const [error, setError] = useState("");
-  const [stage, setStage] = useState("원본 JSON 선택");
+  const [stage, setStage] = useState(() => tr("schedule.import.stage.select"));
   const [progress, setProgress] = useState(0);
   const [busy, setBusy] = useState(false);
   const identity = useRef<{
@@ -508,16 +639,20 @@ function ImportScheduleSource({
     setFileError("");
     setError("");
     setProgress(0);
-    setStage(next ? "원본 JSON 검증" : "원본 JSON 선택");
+    setStage(
+      next
+        ? tr("schedule.import.stage.validate")
+        : tr("schedule.import.stage.select"),
+    );
     identity.current = null;
     if (!next) return;
     try {
       const bytes = new Uint8Array(await next.arrayBuffer());
       setPreview(parseNormalizedSource(bytes));
-      setStage("입력 준비");
+      setStage(tr("schedule.import.stage.ready"));
     } catch (e) {
-      setFileError(e instanceof Error ? e.message : String(e));
-      setStage("원본 JSON 확인 필요");
+      setFileError(e instanceof ScheduleInputError ? e.message : reasonLabel());
+      setStage(tr("schedule.import.stage.check"));
     }
   }
 
@@ -525,11 +660,17 @@ function ImportScheduleSource({
     setError("");
     setBusy(true);
     try {
-      if (!online) throw new Error("연결 복구 후 다시 제출하십시오.");
-      if (client.kind === "mock") throw new Error("UI Mock Preview에서는 원본 입력을 실행하지 않습니다.");
-      if (!title.trim()) throw new Error("제목을 입력하십시오.");
-      if (!file || !preview) throw new Error("검증된 정규화 JSON 파일을 선택하십시오.");
-      if (!client.session) throw new Error("로그인이 필요합니다.");
+      if (!online) throw new ScheduleInputError(tr("schedule.error.offline"));
+      if (client.kind === "mock") {
+        throw new ScheduleInputError(tr("schedule.import.error.mock"));
+      }
+      if (!title.trim()) throw new ScheduleInputError(tr("schedule.error.titleRequired"));
+      if (!file || !preview) {
+        throw new ScheduleInputError(tr("schedule.import.error.fileRequired"));
+      }
+      if (!client.session) {
+        throw new ScheduleInputError(tr("schedule.import.error.loginRequired"));
+      }
 
       const bytes = new Uint8Array(await file.arrayBuffer());
       const parsed = parseNormalizedSource(bytes);
@@ -545,7 +686,7 @@ function ImportScheduleSource({
         };
       }
 
-      setStage("원본 파일 보존");
+      setStage(tr("schedule.import.stage.preserve"));
       let evidence = identity.current.evidence;
       if (!evidence) {
         const uploaded = await client.upload(
@@ -560,7 +701,7 @@ function ImportScheduleSource({
           (offset, total) => setProgress(total ? Math.round((offset / total) * 100) : 0),
         );
         if (!uploaded.fileId || !uploaded.fileHash) {
-          throw new Error("원본 업로드 결과에서 파일 참조를 확인할 수 없습니다.");
+          throw new ScheduleInputError(tr("schedule.import.error.uploadRef"));
         }
         evidence = {
           id: uploaded.id,
@@ -592,7 +733,7 @@ function ImportScheduleSource({
       }));
 
       setProgress(100);
-      setStage("Schedule · Activity 생성");
+      setStage(tr("schedule.import.stage.generate"));
       const result = await client.importScheduleSource(
         {
           clientObjectId: identity.current.scheduleId,
@@ -611,32 +752,37 @@ function ImportScheduleSource({
         },
         identity.current.key,
       );
-      setStage("원본 입력 완료");
+      setStage(tr("schedule.import.stage.complete"));
       await onImported(result.record.id);
     } catch (e) {
-      setError(e instanceof ApiError ? `${reasonLabel(e.detail.code)} ${e.message}` : e instanceof Error ? e.message : String(e));
-      setStage("입력 확인 필요");
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : e instanceof ScheduleInputError ? e.message : reasonLabel());
+      setStage(tr("schedule.import.stage.review"));
     } finally {
       setBusy(false);
     }
   }
 
   return <div className="modal-backdrop">
-    <section className="modal schedule-source-modal" role="dialog" aria-modal="true" aria-label="공정 원본 입력">
+    <section
+      className="modal schedule-source-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label={tr("schedule.import.dialogAria")}
+    >
       <div className="section-heading">
-        <h2>정규화 JSON 원본 입력</h2>
-        <button aria-label="대화상자 닫기" onClick={onClose} disabled={busy}>×</button>
+        <h2>{tr("schedule.import.title")}</h2>
+        <button aria-label={tr("schedule.closeAria")} onClick={onClose} disabled={busy}>×</button>
       </div>
       <div className="schedule-source-contract" role="note">
-        <strong>현재 지원 범위</strong>
-        <span>{scheduleSourceImport.inputMode} · {scheduleSourceImport.parserVersion}</span>
-        <small>XER / MSP / CSV 직접 파서는 아직 지원하지 않습니다.</small>
+        <strong>{tr("schedule.import.supportTitle")}</strong>
+        <span>{tr("schedule.import.fieldFormat")}</span>
+        <small>{tr("schedule.import.parserUnsupported")}</small>
       </div>
       <div className="modal-fields">
-        <label>제목 *<input value={title} onChange={(e) => setTitle(e.target.value)} disabled={busy} /></label>
-        <label>원본 JSON *
+        <label>{tr("schedule.create.titleField")}<input value={title} onChange={(e) => setTitle(e.target.value)} disabled={busy} /></label>
+        <label>{tr("schedule.import.jsonField")}
           <input
-            aria-label="공정 원본 JSON"
+            aria-label={tr("schedule.import.jsonAria")}
             type="file"
             accept=".json,application/json"
             disabled={busy}
@@ -646,15 +792,15 @@ function ImportScheduleSource({
       </div>
       {file && <div className="schedule-source-file">
         <strong>{file.name}</strong>
-        <span>{file.size.toLocaleString()} bytes</span>
+        <span>{formatNumber(file.size)} bytes</span>
       </div>}
       {preview && <div className="meta-grid schedule-source-preview" data-ui-component="schedule-source-preview">
-        <div><span>원본 종류</span><strong>{sourceKindLabel(preview.schedule.scheduleKind)}</strong></div>
-        <div><span>공정번호</span><strong>{display(preview.schedule.scheduleNo)}</strong></div>
-        <div><span>리비전</span><strong>{display(preview.schedule.revision)}</strong></div>
-        <div><span>Activity</span><strong>{preview.activities.length}건</strong></div>
-        <div><span>Critical Activity</span><strong>{preview.criticalActivityId}</strong></div>
-        <div><span>원본 포맷</span><strong>{display(preview.schedule.sourceFormat)}</strong></div>
+        <div><span>{tr("schedule.import.preview.sourceKind")}</span><strong>{sourceKindLabel(preview.schedule.scheduleKind)}</strong></div>
+        <div><span>{tr("schedule.import.preview.scheduleNo")}</span><strong>{display(preview.schedule.scheduleNo)}</strong></div>
+        <div><span>{tr("schedule.import.preview.revision")}</span><strong>{display(preview.schedule.revision)}</strong></div>
+        <div><span>{tr("schedule.import.preview.activity")}</span><strong>{tr("schedule.count", { count: preview.activities.length })}</strong></div>
+        <div><span>{tr("schedule.activity.critical")}</span><strong>{preview.criticalActivityId}</strong></div>
+        <div><span>{tr("schedule.import.preview.sourceFormat")}</span><strong>{tr("schedule.import.fieldFormat")}</strong></div>
       </div>}
       {(busy || progress > 0) && <div className="schedule-source-progress" aria-live="polite">
         <div><strong>{stage}</strong><span>{progress}%</span></div>
@@ -662,14 +808,11 @@ function ImportScheduleSource({
       </div>}
       {fileError && <div role="alert" className="error-box">{fileError}</div>}
       {error && <div role="alert" className="error-box">{error}</div>}
-      <p className="muted">
-        업로드한 원본 바이트와 SHA-256을 보존한 뒤 Schedule과 Activity를 하나의 원본 입력 단위로 생성합니다.
-        승인·활성화·진도 동결은 각 업무 탭에서 별도로 수행합니다.
-      </p>
+      <p className="muted">{tr("schedule.import.description")}</p>
       <div className="modal-actions">
-        <button className="secondary" disabled={busy} onClick={onClose}>취소</button>
+        <button className="secondary" disabled={busy} onClick={onClose}>{tr("schedule.cancel")}</button>
         <button className="primary" disabled={busy || !online || !preview || client.kind === "mock"} onClick={() => void submit()}>
-          {busy ? stage : "원본 입력"}
+          {busy ? stage : tr("schedule.import.submit")}
         </button>
       </div>
     </section>
@@ -726,39 +869,52 @@ export function SchedulePage({
         className="mb-4 gap-0 overflow-hidden rounded-sm border border-border bg-white"
       >
         <TabsList variant="line" className="w-full justify-start flex-wrap h-auto border-b border-border px-3">
-          {tabs.map((t) => (
-            <TabsTrigger key={t.id} value={t.id} className="min-h-11 flex-none px-3 text-xs">{t.label}</TabsTrigger>
+          {tabs.map((tabItem) => (
+            <TabsTrigger
+              key={tabItem.id}
+              value={tabItem.id}
+              className="min-h-11 flex-none px-3 text-xs"
+            >
+              {tr(tabItem.labelKey)}
+            </TabsTrigger>
           ))}
         </TabsList>
-        <p className="px-4 py-3 text-xs text-slate-500">{tab.description}</p>
+        <p className="px-4 py-3 text-xs text-slate-500">
+          {tr(tab.descriptionKey)}
+        </p>
       </Tabs>
       <WorkbenchTemplate hasDetail={Boolean(item)}>
         <Panel className="list-pane">
-          <SectionHeader title={tab.label} meta={`${items.length}건`} />
+          <SectionHeader
+            title={tr(tab.labelKey)}
+            meta={tr("schedule.count", { count: items.length })}
+          />
           <div className="schedule-list-actions">
             <ActionButton
               disabled={!online || client.kind === "mock"}
               onClick={() => setImporting(true)}
             >
-              정규화 JSON 원본 입력
+              {tr("schedule.page.importAction")}
             </ActionButton>
             {active !== SOURCE_TAB && (
               <ActionButton
                 disabled={!online || client.kind === "mock"}
                 onClick={() => setCreating(true)}
               >
-                공정 기록 추가
+                {tr("schedule.page.createAction")}
               </ActionButton>
             )}
           </div>
           {client.kind === "mock" && active === SOURCE_TAB && (
-            <p className="muted">UI Mock Preview에서는 원본 업로드·생성을 실행하지 않습니다.</p>
+            <p className="muted">{tr("schedule.page.mockNoImport")}</p>
           )}
           <RecordList
             statusLabel={active === SOURCE_TAB
               ? (x) => sourceKindLabel(sourceData(x).scheduleKind)
               : scheduleState}
-            contextLabel={(x) => `${x.record.packageId || "범위 미기록"} · ${x.record.discipline || "분야 미기록"}`}
+            contextLabel={(x) =>
+              `${x.record.packageId || tr("schedule.page.scopeUnknown")} · ${x.record.discipline || tr("schedule.page.disciplineUnknown")}`
+            }
             items={items}
             selected={selected}
             onSelect={(x) => onSelect(x.record.id)}
@@ -767,18 +923,20 @@ export function SchedulePage({
         <DetailPane>
           {!item ? (
             <div className="empty compact">
-              <h2>{tab.label} 상세</h2>
+              <h2>{tr("schedule.page.detailTitle", { tab: tr(tab.labelKey) })}</h2>
               <p>
                 {active === SOURCE_TAB
-                  ? "원본을 선택해 보존 Schedule v1과 생성된 Activity 스냅샷을 확인하십시오."
-                  : "원본을 선택해 날짜·버전·연결 기록과 가능한 명령을 확인하십시오."}
+                  ? tr("schedule.page.emptySource")
+                  : tr("schedule.page.emptyRecord")}
               </p>
             </div>
           ) : <>
-            <button className="mobile-back" onClick={() => onSelect(null)}>← 목록</button>
+            <button className="mobile-back" onClick={() => onSelect(null)}>
+              {tr("schedule.page.back")}
+            </button>
             <div className="detail-head">
               <div>
-                <span className="eyebrow">{tab.label}</span>
+                <span className="eyebrow">{tr(tab.labelKey)}</span>
                 <h2>{recordTitle(item.record)}</h2>
               </div>
               <StatusBadge status={item.record.status}>
@@ -790,7 +948,10 @@ export function SchedulePage({
             ) : <>
               <ScheduleDetail item={item} workspace={workspace} />
               <div className="detail-section">
-                <SectionHeader title="가능한 업무 명령" meta="서버 권한 · 선행조건" />
+                <SectionHeader
+                  title={tr("schedule.page.actionsTitle")}
+                  meta={tr("schedule.page.actionsMeta")}
+                />
                 {item.actions.length ? (
                   <ActionGate actions={item.actions.map((action) => {
                     const presentation = describeCommandAvailability(action, online);
@@ -806,7 +967,9 @@ export function SchedulePage({
                     };
                   })} />
                 ) : (
-                  <div className="empty compact">현재 역할과 상태에서 가능한 명령이 없습니다.</div>
+                  <div className="empty compact">
+                    {tr("schedule.page.noActions")}
+                  </div>
                 )}
               </div>
             </>}

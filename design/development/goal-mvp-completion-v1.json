@@ -1,0 +1,187 @@
+{
+  "goal": "DOUL Supervision Korean, Vietnamese and English field MVP",
+  "status": "mock_development_verification_in_progress_actual_field_acceptance_separate",
+  "integrationBase": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
+  "mergedPrerequisites": [
+    {
+      "pr": 128,
+      "validation": "Eight CI checks passed at e429b46 before merge"
+    },
+    {
+      "pr": 130,
+      "validation": "All 11 exact-head CI workflows passed on doul-macmini-m4-linux before merge; main f6002aa all 11 passed afterwards."
+    },
+    {
+      "pr": 139,
+      "head": "f5947172f1b9688f5e59c8f5a6b49450608edd20",
+      "merge": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
+      "validation": "All11 exact-head PR and all11 merged-main Mac workflows passed;109 browser,7 mock locales,320 reference,412 API and6 live PG Handover tests; synthetic trust providers, no actual pilot.",
+      "evidence": "design/verification/reference-v1-1-mac-20261010.json"
+    },
+    {
+      "pr": 140,
+      "head": "97695744d65b788530e2568debdea63259acb524",
+      "merge": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
+      "validation": "All7 exact-head PR and all7 merged-main Mac workflows passed",
+      "evidence": "design/verification/operator-completion-pr140-mac-20261010.json"
+    }
+  ],
+  "coordination": {
+    "model": "gpt-6-luna",
+    "reasoning": "high",
+    "sharedFilesOwner": "root",
+    "workers": {
+      "payment-api": "goal/payment-api-v1",
+      "payment-ui": "goal/f05-payment-acceptance",
+      "i18n": "goal/i18n-integration-v1",
+      "create-capabilities": "goal/create-capabilities-v1",
+      "operations": "goal/operational-validation-v1",
+      "acceptance-audit": "goal/acceptance-audit-v1",
+      "reference-api": "goal/f03-combined-safety",
+      "reference-ui": "goal/warranty-close-ref-select",
+      "media-analysis": "goal/media-analysis-browser-v1",
+      "performance": "goal/issue124-live-http-benchmark-v1"
+    },
+    "interruption": "Offline Luna agent exhausted workspace credits; root preserved scaffold and completed verified responsive-web slice."
+  },
+  "requiredEvidence": [
+    "quality closed loop and separate owner report closure",
+    "safety permit, equipment, stop, remedy, verification, explicit lift and resume",
+    "baseline, progress, delay, recovery, Notice/EOT, owner decision and approved baseline revision",
+    "verified quantity, recommendation, owner approval, individual payment and append-only correction history",
+    "project-scoped exact-version files, drawings, location, inbox, notifications and durable idempotency",
+    "Korean, Vietnamese and English mandatory UI, errors, formats and reports",
+    "automated regression, actual storage, large-data performance, memory and backup restore",
+    "actual field pilot acceptance with consistent ledger and evidence"
+  ],
+  "additionalMandatoryScenario": "AC-HO-01 commissioning, handover and warranty appears in the existing mandatory pilot catalog; audit implementation gaps before claiming overall acceptance",
+  "completionRules": {
+    "developmentVerificationIsPilot": false,
+    "actualPilotPerformed": false,
+    "quotaRecoveryAloneGuaranteesExecution": false,
+    "resume": "When the platform resumes execution, inspect handoffs, Git/worktrees, running tasks and worker changes; continue from the last verified checkpoint without deleting uncommitted work.",
+    "vietnameseEnglishHumanReviewRequired": false,
+    "securityReleaseReviewRequired": false,
+    "triLanguageImplementationAndAutomatedLayoutChecksRequired": true
+  },
+  "realFileUsabilityEvaluation": {
+    "status": "awaiting_actual_site_inputs",
+    "requiredInputs": [
+      "Current architecture, structure, mechanical and electrical PDFs with drawing number/revision/discipline/location mapping",
+      "Current BOQ with units, quantities, currency and approved baseline",
+      "Current schedule with activity IDs, calendars, dependencies and approved baseline",
+      "Actual site photos with capture date/location and authorized project access",
+      "Qualified pilot users and adopted Configuration Pack, forms and language policy"
+    ],
+    "procedure": [
+      "Inventory each supplied original, preserve checksum and exact revision; report unreadable or missing mappings",
+      "Register original files through the real authorized upload UI and verify durable download/version/project access",
+      "Derive plausible register-specific cases from inspected actual contents; record source page, row, activity or photo reference and distinguish proposed case from an actual event",
+      "Execute quality, safety, schedule/contract, quantity/payment and handover cases with qualified roles; preserve exact versions, evidence and rejection paths",
+      "Execute required field acceptance with qualified users; retain Korean acceptance and ko/vi/en technical implementation/layout verification. Defer Vietnamese/English human terminology and usability review to a follow-up."
+    ],
+    "acceptance": "No actual-file upload or usability pass is claimed until supplied files and qualified users have been exercised; synthetic browser fixtures remain separate.",
+    "suppliedFileDevelopmentEvidence": "Three uploaded PDF/BOQ/schedule originals exercised through real authorized UI in three languages on two screens (18 download/reopen hash checks) by PR135. Tender BOQ and graphical schedule are not approved imported baselines; actual pilot actors/photos/configuration and mappings remain required."
+  },
+  "blockedDependencies": [
+    {
+      "kind": "actual_field_and_operations_acceptance",
+      "requiredInput": "Actual discipline PDFs, BOQ, schedule/photos, qualified users/project configuration, production legal signature provider, adopted forms/language policy and real pilot access.",
+      "plan": "53_Field_Pilot_Acceptance_Plan_v1.md#8"
+    }
+  ],
+  "restartAfterUnblocking": [
+    "Inspect latest Git status, handoffs, PR and main exact-head checks; preserve uncommitted and original checkout data.",
+    "PR139/C2 and PR140/operator workflows are merged. Do not redo their implementations or request recorded132 approval.",
+    "PR140 main4abc0a5 all7 Mac workflows are verified. Continue from verified checkpoint; do not repeat implementation or CI provisioning.",
+    "Continue actual field and operating acceptance when #133 inputs are available. Vietnamese/English human review and #134 security release review are deferred follow-ups, not current Goal blockers."
+  ],
+  "supplementalVerificationEvidence": [
+    "design/verification/goal-m4-native-20261009.json"
+  ],
+  "integrationVerification": {
+    "candidateBranch": "goal/reference-integration-v1-1",
+    "status": "merged_and_PR_and_main_11_Mac_workflows_passed",
+    "mergeCommit": "72c8934d1ad2cb6dea0d939f4b74abd4fd055dbb",
+    "c2Policy": "Explicit qualified SUP current-reference refresh only; Product-approved PCR-2026-002; no automatic rewrite or gate relaxation.",
+    "evidence": "design/verification/reference-v1-1-main-mac-20261010.json"
+  },
+  "remainingIndependentDevelopment": [
+    "Verify and integrate Mock photo/project development milestone on Mac GitHub Actions"
+  ],
+  "productApproval": {
+    "record": "app/reference/product_change_record_pcr_2026_002.json",
+    "issue": 132,
+    "decision": "approved",
+    "statement": "제안대로 v1.1에 채택",
+    "releaseEffect": "C2 implementation integrated and main validated; actual pilot remains dependent on #133. Formal release review remains a separate deferred #134 follow-up."
+  },
+  "latestCheckpoint": "97695744d65b788530e2568debdea63259acb524",
+  "operatorCandidate": {
+    "branch": "goal/operator-completion-v1",
+    "sourceCheckpoint": "0d77c71",
+    "scope": [
+      "real media upload/analysis/review/eligible Issue UI, canonical server Issue authority and tri-language errors",
+      "same-defect current Warranty closure selector",
+      "full partial-payment/correction/cancellation/final-payment UI acceptance",
+      "135 localized screen states and9 populated payment-history display combinations; mobile Action bounds and vi/en navigation labels"
+    ],
+    "verification": "All7 exact-head PR and all7 merged-main Mac workflows passed;115 browser and7 isolated mock locales,320 reference tests and412 API tests (46 environment-specific skips); no actual field pilot or provider certification claim.",
+    "actualPilotPerformed": false,
+    "status": "merged_PR_and_main_Mac_CI_verified",
+    "head": "97695744d65b788530e2568debdea63259acb524",
+    "merge": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
+    "evidence": "design/verification/operator-completion-pr140-mac-20261010.json",
+    "mainEvidence": "design/verification/operator-completion-main-mac-20261010.json"
+  },
+  "mergedMainVerification": {
+    "status": "passed",
+    "head": "4abc0a5d3337ee157c28d3f53419c1cbd7717019",
+    "workflowCount": 7,
+    "evidence": "design/verification/operator-completion-main-mac-20261010.json",
+    "mvpBrowserPassed": 115,
+    "mockLocalizationPassed": 7,
+    "attempts": 1
+  },
+  "performanceVerification": {
+    "evidence": "design/verification/issue124-live-http-50k-30round-72c8934.json",
+    "status": "descriptive_actual_HTTP_PostgreSQL_measurement_completed",
+    "p95Ms": [
+      2092.879,
+      2114.625
+    ],
+    "sampledPeakRssBytes": 3420848128,
+    "limitation": "Synthetic single client, development snapshot adapter; no agreed production workload/SLO or field acceptance."
+  },
+  "blockedStatusEvidence": "design/verification/goal-external-acceptance-blocked-20261010.json",
+  "scopeRevision": {
+    "date": "2026-10-10",
+    "authorization": "베트남어/ 영어 검토는 나중에 해도 된다. 보안릴리스도 나중에 해도 된다. goal을 수정하자.",
+    "effect": "Defer these two reviews from current Goal completion; retain actual field and operating acceptance."
+  },
+  "deferredFollowups": [
+    {
+      "kind": "vietnamese_english_human_review",
+      "status": "deferred_by_product_owner",
+      "requiredForCurrentGoalCompletion": false,
+      "scope": "Native terminology, translation and field usability review of Vietnamese/English; tri-language implementation and automated layout/errors/formats/report validation remain mandatory."
+    },
+    {
+      "kind": "security_release_review",
+      "issue": 134,
+      "status": "deferred_by_product_owner",
+      "requiredForCurrentGoalCompletion": false,
+      "scope": "Upstream advisory resolution and formal security release review; retain existing controls, regression tests, visible advisories and formal release gate. Deferral does not constitute production release approval."
+    }
+  ],
+  "mockDevelopmentMilestone": {
+    "authorization": "User updated the supplied Mock data prompt; create synthetic site photos, users and project config, then validate actual API/UI independently of real field actors.",
+    "status": "local_verified_Mac_CI_pending",
+    "branch": "goal/mock-usability-20261010",
+    "photoAsset": "design/development/mock-site/assets/SYNTHETIC_WWT_contact_sheet_P01-P12.png",
+    "photoDescription": "One generated PNG with12 labeled panels; no actual site evidence",
+    "fixture": "scripts/mock_project_setup.py",
+    "verification": "design/verification/mock-site-usability-20261010.json",
+    "actualFieldAcceptance": false
+  }
+}

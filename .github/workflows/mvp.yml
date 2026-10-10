@@ -7,42 +7,69 @@ permissions:
   contents: read
 jobs:
   local-adapter-and-ui:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Dedicated Linux VM on the Mac mini; one runner serializes jobs.
+    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '24'
+          node-version: '24.19.0'
           cache: npm
+      - name: Install pinned npm with workspace override support
+        run: npm install --global npm@12.2.0
       - name: Install locked development dependencies
         run: |
           python -m venv .venv
           .venv/bin/pip install -r services/api/requirements.lock
           npm ci
+      - name: Verify installed dependencies against locks
+        run: .venv/bin/python scripts/dependency_environment.py --node --report .local/dependency-environment-ci.json
+      - name: Verify pinned node-forge backport and Expo signing compatibility
+        run: npm run test:node-forge-backport
+      - name: Verify pinned braces nesting backport
+        run: npm run test:braces-backport
       - name: Reference contracts and adapter tests
         run: |
-          python scripts/validate_contracts.py
-          python scripts/generate_api.py --check
-          python scripts/generate_types.py --check
-          python -m unittest discover -s tests -q
+          .venv/bin/python scripts/validate_contracts.py
+          .venv/bin/python scripts/generate_api.py --check
+          .venv/bin/python scripts/generate_types.py --check
+          .venv/bin/python -m unittest discover -s tests -q
           .venv/bin/python -m unittest discover -s tests_mvp -v
+      - name: Xcode dependency compatibility
+        run: python scripts/check_expo_ios_compatibility.py
       - name: UI and function boundary
         run: |
           npm run check:ui-boundary
-          python3 scripts/generate_schedule_ui.py --check
+          node scripts/check_mandatory_workflow_locales.mjs
+          .venv/bin/python scripts/generate_schedule_ui.py --check
+          .venv/bin/python scripts/generate_command_ui.py --check
       - name: Typecheck and responsive web build
         run: |
           npm run typecheck
           npm run lint --workspace apps/web
           npm run web:build
       - name: Browser integration tests
+        env:
+          DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
         run: |
           npx playwright install --with-deps chromium
           npx playwright test
+      - name: Isolated mock localization tests
+        run: npx playwright test --config playwright.localization.config.ts
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: browser-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-results/
+            .local/browser-results.json
+          if-no-files-found: warn
+          retention-days: 7
       - name: Android and iOS JavaScript bundles (not signed native builds)
         working-directory: apps/mobile
         run: npx expo export --platform ios --platform android --output-dir ../../.local/mobile-export

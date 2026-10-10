@@ -1,0 +1,24 @@
+{
+  "task": "#106 server-derived creation capabilities",
+  "branch": "goal/create-capabilities-v1",
+  "base": "943d1dd",
+  "done": [
+    "Added services/api/creation_capabilities.py with build_creation_capabilities(engine, project_id, party_id, role, project_scope, *, queue_enabled=True, connected=True, machine_bindings=None)",
+    "Capability rows cover every state-machine machine and derive create authority, role, trusted project scope, qualification, and analysis queue availability from engine contracts.",
+    "Statuses distinguish available, unauthorized, prerequisites_missing, and unavailable; canCreate means draft creation may be attempted and payload-specific engine gates still apply.",
+    "ContractPage gates its create button and dialog using workspace.context.creationCapabilities and shows a reason when creation is unavailable.",
+    "Added domain and focused browser tests."
+  ],
+  "tests": [
+    "/workspace/DOUL_Supervision/work/priority-venv/bin/python -m unittest tests.test_creation_capabilities -v",
+    "npm run typecheck --workspace @doul/web",
+    "npm run check:ui-boundary",
+    "npx playwright test tests_browser/contract.spec.ts -g 'Contract create affordance follows the server capability' --config work/playwright-system-chromium.config.mjs"
+  ],
+  "todo": [
+    "Root must import helper in services/api/main.py and inject its returned map as context.creationCapabilities into workspace responses, using store.meta.scope only when store.meta.projectId matches project_id and passing app.state.queue_enabled.",
+    "Root should add HTTP workspace exposure coverage. The helper/domain and browser consumer tests do not verify main.py wiring.",
+    "Merge after the i18n branch's ContractPage changes or replay this focused create-gating diff after i18n; i18n agent reports commit e51b1e2 and requested preserving translation calls in this region."
+  ],
+  "restart": "After main.py exposes capabilities and i18n integrates ContractPage, run the capability HTTP test plus full UI/browser regression from the integration branch."
+}

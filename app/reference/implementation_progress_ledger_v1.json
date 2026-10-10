@@ -11,12 +11,17 @@
   "functions": [
     {
       "functionId": "F-01",
-      "currentStage": "contract_confirmed",
+      "currentStage": "ui_connected",
       "stageStatus": "accepted",
       "evidenceRefs": [
-        "46_Product_Functional_Baseline_v1_Validation.md"
+        "46_Product_Functional_Baseline_v1_Validation.md",
+        "tests_mvp/test_quality_closed_loop_http.py",
+        "design/verification/goal-mvp-checkpoint-20261008.json",
+        "tests_browser/quality-closed-loop.spec.ts",
+        "tests_browser/support/quality_api_fixture.py",
+        "design/verification/reference-v1-1-mac-20261010.json"
       ],
-      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+      "note": "Connected real API/browser quality closeout and separate Owner Report workflow passed in the 109-test PR139 Mac suite. Promote UI connection only: upstream project configuration and final FM09 signatures use disclosed development fixtures/test verifier. Production trust-provider and actual field pilot remain unverified. Hosted billing is not a current CI blocker; Mac runner evidence is recorded."
     },
     {
       "functionId": "F-02",
@@ -29,19 +34,31 @@
     },
     {
       "functionId": "F-03",
-      "currentStage": "contract_confirmed",
+      "currentStage": "ui_connected",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "46_Product_Functional_Baseline_v1_Validation.md",
         "30_Safety_Permit_Stop_Resume_Functional_Contract.md",
         "app/schema/state_machines_v1.json",
-        "app/schema/authority_matrix_v1.json"
+        "app/schema/authority_matrix_v1.json",
+        "app/schema/safety_execution_contract_v1.json",
+        "tests_mvp/test_safety_http.py",
+        "services/api/main.py",
+        "services/api/store.py",
+        "services/api/persistence.py",
+        "app/reference/engine.py",
+        "design/verification/priority-issues-validation.json",
+        "tests_browser/safety-equipment-closed-loop.spec.ts",
+        "tests_browser/zz-safety-closed-loop.spec.ts",
+        "design/verification/goal-mvp-checkpoint-20261008.json",
+        "design/verification/reference-v1-1-mac-20261010.json",
+        "design/development/agents/safety-combined-equipment-stop-handoff.json"
       ],
-      "note": "Product execution contract is machine-backed; remain contract_confirmed until Backend API implementation acceptance evidence exists."
+      "note": "Connected equipment failure/reinspection, Permit activation, Stop, UI-authored separate corrective Action, Stop verification/lift and separate Permit-resume request/approval passed in PR139 Mac browser regression. Trusted Equipment/certificates/plans, demo actors and a preexisting passed Inspection are disclosed. Actual adopted project/equipment/field acceptance is unverified."
     },
     {
       "functionId": "F-04",
-      "currentStage": "backend_api_implemented",
+      "currentStage": "integration_passed",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "46_Product_Functional_Baseline_v1_Validation.md",
@@ -53,21 +70,35 @@
         "tests_mvp/test_postgres_persistence.py",
         "services/api/README.md",
         "services/api/persistence.py",
-        "services/api/postgres_store.py"
+        "services/api/postgres_store.py",
+        "tests_browser/schedule.spec.ts",
+        "tests_browser/schedule-delay-evidence.spec.ts",
+        "tests_browser/workspace.spec.ts",
+        "tests_browser/zz-schedule-contract-closed-loop.spec.ts",
+        "tests_mvp/test_schedule_source_import_http.py",
+        "tests_mvp/test_schedule_source_import_postgres.py",
+        "design/verification/priority-issues-validation.json"
       ],
-      "note": "B-P3 HTTP/persistence acceptance completed for Schedule Baseline, Progress, DelayEvent and RecoveryPlan. UI connection, cross-workstream integration and pilot verification remain."
+      "note": "AC-SCH-01 passed through real source imports, approvals, UI commands, Owner decisions and effective baseline revision. All browser tests, contract/API tests including PostgreSQL, and source-commit GitHub CI passed. Synthetic staging validation only; pilot acceptance remains unverified."
     },
     {
       "functionId": "F-05",
-      "currentStage": "contract_confirmed",
+      "currentStage": "ui_connected",
       "stageStatus": "accepted",
       "evidenceRefs": [
         "32_Progress_Measurement_Payment_Functional_Contract.md",
         "46_Product_Functional_Baseline_v1_Validation.md",
         "app/schema/measurement_payment_execution_contract_v1.json",
-        "tests/test_measurement_payment_execution_contract.py"
+        "tests/test_measurement_payment_execution_contract.py",
+        "tests_mvp/test_measurement_payment_http.py",
+        "tests_mvp/test_measurement_payment_postgres.py",
+        "tests_browser/payment-workspace.spec.ts",
+        "design/development/agents/payment-api-handoff.json",
+        "design/verification/goal-mvp-checkpoint-20261008.json",
+        "tests_browser/payment-closed-loop.spec.ts",
+        "design/development/agents/f05-payment-acceptance-handoff.json"
       ],
-      "note": "B-P4 Product execution contract structured and validated for ContractBOQ exact-version history, QuantityMeasurement verification/payment-eligibility separation, PaymentClaim claimed/verified/recommended/ownerApproved/paid amount boundaries, decimal strings, duplicate-claim guards, unapproved Variation exclusion, cumulative reconciliation and partial-payment tracking. Backend HTTP/database acceptance is still required before promotion."
+      "note": "Complete connected UI/API acceptance now includes BOQ/quantity verification, exact Owner recommendation/adjustment/approval, two partial payments, append-only correction and cancellation, final balance payment, claim closure and exact cumulative values; five historical payment entries remain unchanged. Agent isolated run52.5s and root integrated payment run34.0s pass. Final operator candidate Mac integration pending. Upstream calculation Requirement and accepted Inspection are synthetic; real BOQ/rates, bank/ERP evidence and field actors remain unverified."
     },
     {
       "functionId": "F-06",
@@ -80,12 +111,29 @@
     },
     {
       "functionId": "F-07",
-      "currentStage": "contract_confirmed",
+      "currentStage": "ui_connected",
       "stageStatus": "accepted",
       "evidenceRefs": [
-        "46_Product_Functional_Baseline_v1_Validation.md"
+        "46_Product_Functional_Baseline_v1_Validation.md",
+        "app/reference/handover.py",
+        "tests_contracts/test_handover_contract.py",
+        "tests_mvp/test_handover_http.py",
+        "tests_mvp/test_handover_postgres.py",
+        "design/development/agents/payment-api-handoff.json",
+        "design/verification/goal-mvp-checkpoint-20261008.json",
+        "design/development/product-change-reference-lifecycle-proposal.json",
+        "tests_browser/handover-closed-loop.spec.ts",
+        "tests_browser/action-authoring.spec.ts",
+        "design/development/agents/handover-closed-loop-handoff.json",
+        "design/verification/goal-m4-native-20261009.json",
+        "app/reference/product_change_record_pcr_2026_002.json",
+        "tests_mvp/test_completion_reference_refusals_http.py",
+        "design/development/agents/reference-integration-handoff.json",
+        "design/verification/reference-v1-1-mac-20261010.json",
+        "design/development/agents/reference-ui-v1-1-resume-handoff.json",
+        "design/development/agents/warranty-close-reference-selector-handoff.json"
       ],
-      "note": "Conservative initialization. Promote only with implementation acceptance evidence."
+      "note": "Approved C2 Baseline v1.1 (PCR-2026-002) source implemented and merged in PR139 at72c8934. All11 PR-head Mac workflows,109 browser cases,320 reference tests,412 API tests (366passed46environment-specificskips), and6 live PostgreSQL Handover tests pass. Same Issue identities/current complete Action cycles reconcile only through explicit qualified SUP inputs; original snapshots, Owner decisions/reservations and audit history remain immutable. Main verification is running. Next operator candidate adds an explicit blank single-select for current same-defect Warranty closureRef; its isolated browser run passes2.7min. Production legal provider, adopted project and actual field pilot remain unverified."
     },
     {
       "functionId": "F-08",
@@ -103,9 +151,13 @@
         "apps/web/src/app/routes.ts",
         "packages/client/src/index.ts",
         "services/api/main.py",
-        "services/api/persistence.py"
+        "services/api/persistence.py",
+        "tests_browser/zz-schedule-contract-closed-loop.spec.ts",
+        "tests_mvp/test_schedule_source_import_http.py",
+        "tests_mvp/test_schedule_source_import_postgres.py",
+        "design/verification/priority-issues-validation.json"
       ],
-      "note": "F-08 Contract Notice / Claim / EOT is integrated through the Web workspace and real API. Browser E2E verifies Notice creation/due-date calculation/evidence-backed submission, Claim/EOT collection routing, Owner authority denial, responsive layouts, and cross-workstream regressions; Backend HTTP/SQLite acceptance still verifies time-bar risk, exact Owner Decision targeting, idempotency/version conflict, restart persistence and F-04 Baseline revision handoff. Pilot/field validation remains."
+      "note": "AC-SCH-01 passed through real source imports, approvals, UI commands, Owner decisions and effective baseline revision. All browser tests, contract/API tests including PostgreSQL, and source-commit GitHub CI passed. Synthetic staging validation only; pilot acceptance remains unverified."
     },
     {
       "functionId": "F-09",

@@ -1,0 +1,58 @@
+{
+  "status": "in_progress_not_release_verified",
+  "branch": "goal/reference-integration-v1-1",
+  "baseCommit": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
+  "productApproval": {
+    "issue": 132,
+    "decision": "approved",
+    "baselineFrom": "1.0",
+    "baselineTo": "1.1",
+    "changeClass": "C2",
+    "sourceAnswer": "제안대로 v1.1에 채택",
+    "limits": [
+      "explicit qualified SUP command only",
+      "same linked Issue identities and applicable current Action cycle",
+      "preserve original references, Owner approval, reservation and audit snapshots",
+      "no automatic refresh, identity add/remove/substitute or closure gate relaxation"
+    ]
+  },
+  "sourceCheckpoints": [
+    "553e030",
+    "ca3f531",
+    "4a5e555",
+    "0995c34",
+    "aeee482",
+    "d1f2328",
+    "39ba94e",
+    "6a313a9",
+    "579921b",
+    "7628657",
+    "86aadde",
+    "0585b96",
+    "d31941e",
+    "2ae3a0e",
+    "133840a"
+  ],
+  "verification": {
+    "referenceSuite": "After failed-cycle fix:320 passed in9.283s, locked priority-venv; /tmp/doul-reference-contract-post-cycle.log",
+    "existingHandoverHTTP": "Six real Handover HTTP tests and five root refusal/restart/idempotency tests pass after failed-cycle snapshot regression fix.",
+    "newAcceptance": "Final Handover browser passed; Warranty retry pending final assertion verification. Safety joined equipment/Permit/Stop/Action/lift/separate-Permit-resume: two browser tests passed.",
+    "types": "web and mobile typecheck passed",
+    "locales": "350 mandatory keys across ko/vi/en passed",
+    "MacCI": "C2 pending; PR136, PR137 and PR138 each four PR and four merged-main Mac Actions passed",
+    "fullIntegratedAPI": "After failed-cycle fix d4307f1: 412 tests run in116.168s, 366 passed,46 environment-specific skips; locked priority-venv; /tmp/doul-reference-full-api-post-cycle.log",
+    "uiChecks": "UI boundary, web lint, responsive web build, web/mobile typecheck and generated API/types/command data checks passed",
+    "dependencyGuard": "Both pinned node-forge and braces appliers and regression probes passed; strict installed graph/source guard passed after security138 merge",
+    "livePostgres": "Container workflow now executes six inherited Handover tests against real PostgreSQL with no-skip guard; actual final Mac run pending."
+  },
+  "restart": [
+    "Remote goal/reference-integration-v1-1 preserves checkpoint. Active /tmp worktrees use /tmp/doul-preserved-mirror.git; original /workspace repository metadata is untouched. /workspace full; do not create sequencer there or prune old work.",
+    "Read latest branch commits and API/UI agent handoffs; do not reset original worktrees",
+    "Use root isolated npm12 install or clean locked install, never mutate shared node_modules",
+    "Finish new HTTP and actual connected browser acceptance, codegen and required Mac CI before integration",
+    "Actual field pilot remains unperformed; supplied files and development fixtures are not field acceptance"
+  ],
+  "environmentInterruption": "Source and checkpoints committed and pushed; temporary /tmp worktrees must be recovered from remote if execution environment changes.",
+  "integrationCheckpoint": "bd22724",
+  "failedCycleRegression": "Failed reinspection derives complete current-cycle Action identities from its immutable snapshot, verifies all projected remedy identities are included, and preserves the claim original/current projection. Acceptance and replacement refresh retain exact complete-cycle checks."
+}

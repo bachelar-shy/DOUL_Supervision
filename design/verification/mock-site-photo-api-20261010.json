@@ -1,0 +1,32 @@
+{
+  "classification": "synthetic_asset_real_API_SQLite",
+  "actualFieldAcceptance": false,
+  "assetName": "SYNTHETIC_WWT_contact_sheet_P01-P12.png",
+  "sha256": "fd076def070979564bbf17c1e5ae31c63d20eb81a8e9c16b09c4ce1bfd19d5c8",
+  "byteCount": 3331740,
+  "checks": [
+    "setup_rerun_no_duplicates",
+    "fixture_project_selected",
+    "upload_start_201",
+    "upload_start_same_key_same_id",
+    "changed_body_same_key_rejected",
+    "chunk_uploaded",
+    "chunk_retry_no_duplicate_bytes",
+    "completion_201",
+    "completion_retry_same_evidence_version",
+    "synthetic_name_preserved",
+    "exact_hash_preserved",
+    "scope_and_capture_time_preserved",
+    "download_exact_original",
+    "foreign_project_rejected",
+    "unauthenticated_download_rejected",
+    "cleanup_refuses_later_upload_without_deleting_original",
+    "restart_preserves_original_hash"
+  ],
+  "passed": 17,
+  "syntheticScenarioCapturedAt": "2026-10-10T08:00:00+07:00",
+  "limitations": [
+    "FastAPI TestClient and local SQLite, not production HTTP/storage/provider acceptance",
+    "One generated contact sheet with twelve panels, not twelve independently captured photos"
+  ]
+}

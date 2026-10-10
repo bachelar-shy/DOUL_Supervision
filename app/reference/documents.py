@@ -142,8 +142,10 @@ class Documents:
             old=self.get(supersedes_id)
             require(old['projectId']==project and old['formId']==form,'SNAPSHOT_SUPERSESSION_INVALID','Supersession must remain in the same project/form')
         payload={'data':frozen,'sources':[{'ref':ref,'record':r} for ref,r in zip(source_refs,records)],'language':language,'requiredSignatureRoles':self._roles(form,frozen)}
+        from .document_localization import document_localization
+        payload['localization']=document_localization(form,language)
         output=self._html(template,payload)
-        snapshot=dict(id=uid(),projectId=project,version=1,formId=form,templateVersion=template['version'],templateHash=digest(template),rendererVersion='reference-html/1',primarySourceRef=deepcopy(source_refs[subject]),sourceDomainRefs=deepcopy(source_refs),sourcePayload=payload,sourcePayloadHash=digest(payload),renderHash=hashlib.sha256(output).hexdigest(),renderedAt=self.engine.at(),status='final' if final else 'draft',signatureIds=[])
+        snapshot=dict(id=uid(),projectId=project,version=1,formId=form,templateVersion=template['version'],templateHash=digest(template),rendererVersion='reference-html/2',primarySourceRef=deepcopy(source_refs[subject]),sourceDomainRefs=deepcopy(source_refs),sourcePayload=payload,sourcePayloadHash=digest(payload),renderHash=hashlib.sha256(output).hexdigest(),renderedAt=self.engine.at(),status='final' if final else 'draft',signatureIds=[])
         if supersedes_id:snapshot['supersedesId']=supersedes_id
         validate(snapshot,self.engine.schemas['DocumentSnapshot'],self.engine.schemas)
         self.engine._save('DocumentSnapshot',snapshot)
@@ -154,17 +156,26 @@ class Documents:
 
     def _html(self,template,payload):
         data=payload['data'];parts=[]
-        for field in self.schemas[template['id']]['scalar_fields']:
+        from .document_localization import format_document_value
+        localization=payload.get('localization',{})
+        labels=localization.get('fields',{})
+        def display(value,path,field_type=None):
+            if value is None:return ''
+            parent=path.rpartition('.')[0]
+            currency=get_path(data,parent+'.currency') or get_path(data,'payment.currency')
+            return format_document_value(value,payload['language'],field_type,path,currency)
+        for field,rule in self.schemas[template['id']]['scalar_fields'].items():
             value=get_path(data,field)
-            parts.append('<p><b>'+escape(field)+'</b>: '+escape(str(value if value is not None else ''))+'</p>')
+            parts.append('<p data-field="'+escape(field)+'"><b>'+escape(labels.get(field,field))+'</b>: '+escape(display(value,field,rule['type']))+'</p>')
         for table in self.schemas[template['id']]['tables']:
             rows=get_path(data,table['path']);cols=table['columns']
             if isinstance(rows,dict):rows=[{c:rows[c] for c in cols}]
-            head='<thead><tr>'+''.join('<th>'+escape(c)+'</th>' for c in cols)+'</tr></thead>'
-            body=''.join('<tr>'+''.join('<td>'+escape(str(row[c]))+'</td>' for c in cols)+'</tr>' for row in rows)
+            head='<thead><tr>'+''.join('<th>'+escape(labels.get(table['path']+'.'+c,c))+'</th>' for c in cols)+'</tr></thead>'
+            body=''.join('<tr>'+''.join('<td>'+escape(display(row[c],table['path']+'.'+c))+'</td>' for c in cols)+'</tr>' for row in rows)
             parts.append('<table>'+head+'<tbody>'+body+'</tbody></table>')
         style='@page{size:A4;margin:17mm}body{font-family:"Noto Sans KR","Noto Sans",sans-serif;font-size:10pt}p,td{overflow-wrap:anywhere;white-space:pre-wrap}table{width:100%;border-collapse:collapse}thead{display:table-header-group}th,td{border:1px solid #bbb;padding:4px}tr{break-inside:avoid}.footer{position:fixed;bottom:0;font-size:8pt}'
-        return ('<!doctype html><html lang="'+payload['language']+'"><meta charset="utf-8"><style>'+style+'</style><body><h1>'+escape(template['title'])+'</h1>'+''.join(parts)+'<div class="footer">DOUL INTERNATIONAL · '+escape(template['id'])+' · '+escape(template['version'])+'</div></body></html>').encode()
+        review_note={'ko':'','vi':'Thuật ngữ bản dịch cần được rà soát tại công trường.','en':'Translation terminology requires field review.'}[payload['language']] if localization.get('reviewStatus')=='draft_pending_local_review' else ''
+        return ('<!doctype html><html lang="'+payload['language']+'"><meta charset="utf-8"><style>'+style+'</style><body><h1>'+escape(localization.get('title',template['title']))+'</h1>'+('<p>'+escape(review_note)+'</p>' if review_note else '')+''.join(parts)+'<div class="footer">DOUL INTERNATIONAL · '+escape(template['id'])+' · '+escape(template['version'])+'</div></body></html>').encode()
 
     def get(self,doc_id):
         require(doc_id in self._snapshots,'DOCUMENT_NOT_FOUND',doc_id)

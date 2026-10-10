@@ -1,0 +1,75 @@
+{
+  "asOf": "2026-10-09",
+  "integrationBranch": "goal/mvp-completion-v1",
+  "integrationHeadAtCheckpoint": "3e54705",
+  "agentModel": "gpt-6-luna",
+  "reasoning": "high",
+  "completed": {
+    "quality": {
+      "branch": "goal/quality-connected-browser-v1",
+      "workerCommit": "71f74db",
+      "integratedCommits": [
+        "6b5ff07",
+        "b31990a",
+        "b5962a9"
+      ],
+      "verification": "Full real UI/API closed loop PASS; terminal Issue readiness display regression PASS; explicit test-only trusted verifier, synthetic upstream demo project, no field acceptance."
+    },
+    "equipment": {
+      "branch": "goal/safety-equipment-closed-loop-v1",
+      "workerCommit": "e72a7b5",
+      "integratedCommits": [
+        "eb3ee27",
+        "2d59a99"
+      ],
+      "verification": "Real UI/API Inspection fail/unavailable -> passing reinspection -> Permit activation PASS. Exact Asset/current upstream certificate/approved plan fixture boundary retained."
+    },
+    "f07ReferenceMetadata": {
+      "branch": "goal/command-refs-f07",
+      "workerCommit": "e2520af",
+      "integratedCommit": "6e0ffb8",
+      "verification": "Canonical narrowed Issue/Action DomainRef arrays classified multiple, custom BOQItemRef preserved. Generator checks and root web/mobile typecheck PASS."
+    },
+    "inspectionResults": {
+      "integratedCommit": "283091f",
+      "workerCommit": "b9f2164",
+      "verification": "Root actual UI/API focused PASS1; overlapping synthetic trusted baseline, no signature provider; no field pilot claim."
+    },
+    "authoringLocales": {
+      "verification": "Root actualAPI1PASS plus isolatedmock7PASS; final official renderer missingprovider501 localized, no fake signature approval."
+    },
+    "uuidAssessment": {
+      "integratedCommit": "3e54705",
+      "result": "Evidence-only; candidate rejected due invalid npm workspace graph, production dependencies unchanged."
+    },
+    "safetyCombined": {
+      "workerCommit": "a2f4395",
+      "integratedCommit": "224c559",
+      "verification": "Root combinedactualHTTP/UI2casesPASS; demoAction/Inspection prerequisites disclosed; explicitLift leavesPermit suspended until separateCONrequest+SUPapproval."
+    },
+    "paymentOwnerUI": {
+      "workerCommit": "0d84c6a",
+      "integratedCommit": "9c29b28",
+      "verification": "ActualOwnercreate/report/acknowledge/decideUI; rootPASS. DirectDecisionfixtureendpointremoved. Rule/releasedInspectionandissuedReport remainupstreamfixtures."
+    }
+  },
+  "inProgress": {
+    "handover": "/root/capabilities: isolated F07 complete UI lifecycle, active Punch Issue correction/reinspection/closure prerequisites must remain honest. No HTTP mutation may be described as UI evidence."
+  },
+  "runningRootChecks": [
+    "Complete89normalbrowserPASS:work/goal-integrated-browser-62aefec.log",
+    "Full394API389PASS5optional skips; full319contractsPASS andseparate7F07contractsPASS",
+    "AdditionalF07fullloopworker stillpending; nofullHO01/pilotclaim"
+  ],
+  "externalBlocker": {
+    "githubBilling": "User supplied annotation run37860451176: recent account payments failed or spending limit needs increase. Account owner resolves Billing & plans. No automatic spend changes. All latest exact-head required checks must PASS before merge.",
+    "pilot": "Actual project configuration, production signature provider, adopted forms/language policy, qualified field users/equipment/data and site acceptance not supplied.",
+    "productDecision": "Reference lifecycle C2 proposal awaits Product/Functional Owner decision per48; no approvedreleaseadoption."
+  },
+  "resume": [
+    "Inspect Git status/worktrees and active agents before edits; never delete pending work.",
+    "Read latest root/worker handoffs and logs; do not rerun completed scenarios without changed code or unresolved concern.",
+    "Root physical exact-lock npm workspace dependencies must remain intact; workers must not write through shared node_modules symlinks.",
+    "Usage recovery does not itself guarantee scheduling; continue when platform resumes execution."
+  ]
+}

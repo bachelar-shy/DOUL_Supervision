@@ -121,7 +121,7 @@ export async function submitCapture(
     api.session.projectId !== c.projectId ||
     api.session.actor.partyId !== c.partyId
   )
-    throw new Error("원본 작성자의 프로젝트 세션으로 다시 로그인하십시오.");
+    throw new Error("원본 작성자의 현장 세션으로 다시 로그인하십시오.");
   const result = await api.upload(
     await new File(c.uri).bytes(),
     {

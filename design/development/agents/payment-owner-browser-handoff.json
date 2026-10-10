@@ -1,0 +1,62 @@
+{
+  "task": "AC-PAY Owner Decision authoring and payment correction browser acceptance",
+  "branch": "goal/payment-owner-ui-approval-v1",
+  "verified_commit": "0d84c6ace4e6efc57bbb4823b8473344f0280a7a",
+  "files_in_verified_commit": [
+    "tests_browser/payment-closed-loop.spec.ts",
+    "tests_browser/support/payment_api_fixture.py"
+  ],
+  "verification": {
+    "command": "PAYMENT_TEST_WEB_ORIGIN=http://127.0.0.1:5193 PAYMENT_TEST_PYTHON=/workspace/DOUL_Supervision/work/priority-venv/bin/python ./node_modules/.bin/playwright test --config=work/payment-owner-ui-approval/playwright.config.ts",
+    "result": "PASS: 1 test passed; Owner decision and payment closed-loop test passed in 28.4 seconds (32.8 seconds total).",
+    "scope": "Real Chromium browser and real isolated Uvicorn HTTP API. Owner Decision creation and decision are performed through the Owner Governance UI. No Decision fixture-seeding endpoint is used."
+  },
+  "verified_flow": {
+    "owner_ui": [
+      "As SUP, create an exact-version Owner Decision request in the Owner Governance UI targeting the current Contract BOQ, select a readable issued Report, and report the request.",
+      "As OWN, acknowledge and decide the request through the Owner Governance UI.",
+      "Use the resulting exact-version Decision reference in the payment UI to approve the BOQ and adjust the Payment Claim."
+    ],
+    "payment_ui_api": "The passing chain also creates and commands the BOQ, Quantity Measurement, and Payment Claim through the UI and real API; verifies quantity; prepares the server recommendation; records a partial payment; appends a correction; and verifies persisted payment history, exact target/version references, and authority boundaries.",
+    "result": "PASS 1. This is focused browser acceptance with named upstream fixtures, not a real project pilot or proof that production configuration and project inputs are ready."
+  },
+  "trusted_upstream_fixture_boundary": {
+    "seeded": [
+      "One scoped active Requirement with paymentCalculationRule applicability, used as the payment calculation configuration prerequisite.",
+      "One distinct accepted and released Inspection. The demo's passed Inspection is still a hold point, so this fixture begins after the separately covered inspection-release boundary."
+    ],
+    "read_from_demo_project": [
+      "A readable issued Report selected in the Owner Decision authoring UI.",
+      "Demo Evidence and Drawing references used by the payment workflow."
+    ],
+    "created_and_commanded_through_real_http_ui": [
+      "Contract BOQ",
+      "Quantity Measurement",
+      "Payment Claim",
+      "Owner Decision requests and their SUP report / OWN acknowledge / OWN decide transitions",
+      "BOQ approval, claim recommendation and adjustment, payment, and append-only correction"
+    ],
+    "fixture_limits": "Only the payment calculation Requirement and released Inspection are directly bootstrapped trusted upstream records. Owner Decisions are not seeded. The issued Report is read from the demo project, not created or seeded by this test."
+  },
+  "origin_and_isolation": {
+    "api": "The Playwright test starts its own Uvicorn API on an available loopback port, creates a unique temporary SQLite database, and removes the database files and child process after the run.",
+    "browser_api_bridge": "The page's /api requests are forwarded with route.fetch to that live test API; API results are not mocked.",
+    "cors_origin": "The fixture derives DOUL_API_ALLOWED_ORIGINS from PAYMENT_TEST_WEB_ORIGIN when supplied, otherwise from the active Playwright project's baseURL (fallback http://127.0.0.1:5181). Use the exact web origin when running with a scratch baseURL, such as http://127.0.0.1:5193; do not hardcode the scratch origin for canonical config runs.",
+    "other_environment": "PAYMENT_TEST_PYTHON selects the interpreter; PAYMENT_TEST_CHROMIUM may select the Chromium executable."
+  },
+  "remaining_real_pilot_inputs": [
+    "The pilot project's actual active, scoped paymentCalculationRule Requirement and its supported calculation configuration.",
+    "Actual approved BOQ contract revision, line items, quantities, rates, currency, and applicable measurement rules.",
+    "Actual readable drawing and evidence references, plus an Inspection that has completed its real acceptance and release workflow for the relevant scope.",
+    "An actually issued and readable Report suitable for Owner Decision review, with project access for SUP and OWN.",
+    "Real role assignments and scopes for SUP, OWN, payment recording, and correction actors.",
+    "Pilot payment amounts, dates, references, evidence, and any approved commercial adjustment supplied by the project participants."
+  ],
+  "restart": {
+    "checkout": "Use worktree /workspace/work/doul-goal/payment-owner-ui-approval at goal/payment-owner-ui-approval-v1, commit 0d84c6ace4e6efc57bbb4823b8473344f0280a7a, or a descendant containing it.",
+    "dependencies": "Use the repository's lock-matched installed Node dependencies and the configured Python environment with the API requirements; do not change the shared dependency installation for this focused run.",
+    "run": "From /workspace/work/doul-goal/payment-owner-ui-approval, run the verification command above. The test configuration starts the web server; the test starts and cleans up its own API process and database.",
+    "canonical_base_url": "With the normal Playwright project baseURL at http://127.0.0.1:5181, omit PAYMENT_TEST_WEB_ORIGIN; the test derives the CORS allowlist from the project configuration.",
+    "scratch_base_url": "For a scratch web server on 5193, set PAYMENT_TEST_WEB_ORIGIN=http://127.0.0.1:5193 as in the recorded passing command."
+  }
+}

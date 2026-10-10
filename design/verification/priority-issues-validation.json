@@ -1,0 +1,147 @@
+{
+  "date": "2026-10-08",
+  "branch": "integration/parallel-test-v1",
+  "sourceCommit": "29009c9650c73e4c196019d8fd0639e7c2cd5666",
+  "mode": "disposable_synthetic_development_and_staging",
+  "issues": [
+    104,
+    108,
+    109,
+    125,
+    126,
+    127
+  ],
+  "sourceSha256": {
+    "services/api/application.py": "ced1142937febbed7adbd7dc215ba6066c1601c23e7b4174d812a8b6beeb52ef",
+    "services/api/main.py": "046b4c4abe473d14c9673fc0a50f43d5790cf524f3f38f4730bf0b9aa02edbc4",
+    "services/api/schedule_import.py": "e0802c1395b9b4de6d10c76e117a6efd54040380ffe862abcd366ec9a39095c0",
+    "apps/web/src/pages/parallel/PdfViewerPanel.tsx": "2c46ee611bd816c59f1af35ed4dfd981591da84c8b60600826954f2637617fdd",
+    "tests_mvp/test_application_service_http.py": "317961d2066845c62cdaac999ee85854867bb081f5288022145ce5f1e9984a44",
+    "tests_mvp/test_schedule_source_import_http.py": "c01bcba01bb3f4a168d5b9ac608bdcdea28a187a7035df5d9055c68e695ce7ea",
+    "tests_mvp/test_schedule_source_import_postgres.py": "7792107d8898debe47ddb5fa47930f1ebcb58066ddf4b1b8776a2eab183724d1",
+    "tests_browser/zz-schedule-contract-closed-loop.spec.ts": "2cc2600bbc10897f05d98cd3c97d7cd53873f78f641379c54b7609fae4ed468e"
+  },
+  "checks": {
+    "contracts": {
+      "discovered": 294,
+      "status": "passed"
+    },
+    "api": {
+      "discovered": 341,
+      "skipped": 4,
+      "status": "passed",
+      "skipReason": "Document runtime dependencies are outside the locked production-api profile; validated separately by platform-document-runtime CI.",
+      "postgresIntegration": "executed against disposable PostgreSQL, not skipped"
+    },
+    "browser": {
+      "discovered": 68,
+      "status": "passed",
+      "earlierRun": {
+        "passed": 67,
+        "failed": 1,
+        "failure": "Transient Vite dynamic module load in parallel-lazy-load; isolated rerun passed."
+      },
+      "passed": 68,
+      "fullConfirmation": "All 68 passed in a fresh disposable database run; no retries."
+    },
+    "ui": {
+      "boundary": "passed",
+      "typecheck": "passed",
+      "lint": "passed_with_existing_warnings",
+      "webBuild": "passed"
+    },
+    "stagingTLS": {
+      "actualPilotDeployed": false,
+      "certificateVerified": true,
+      "devEndpointsAbsent": true,
+      "result": "staging-tls-nondemo-ok",
+      "safetyOperationalE2E": {
+        "contractorSelfResumeRejected": true,
+        "idempotentStopReplay": true,
+        "restartPersistence": true,
+        "result": "safety-operational-e2e-ok",
+        "staleStopRollback": true,
+        "staleVersionRejected": true,
+        "stopLiftSeparatedFromPermitResume": true,
+        "supervisorResumeAuthorized": true
+      },
+      "serverRolePreserved": true,
+      "unapprovedPilotRefused": true,
+      "unverifiedTokenRejected": true
+    },
+    "ci": {
+      "status": "passed",
+      "sourceCommit": "29009c9650c73e4c196019d8fd0639e7c2cd5666",
+      "workflows": [
+        {
+          "name": "backend-worker-integration",
+          "result": "success",
+          "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/37809787116"
+        },
+        {
+          "name": "platform-operational-environments",
+          "result": "success",
+          "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/37809787020"
+        },
+        {
+          "name": "mvp-development",
+          "result": "success",
+          "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/37809786985"
+        },
+        {
+          "name": "platform-container-baseline",
+          "result": "success",
+          "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/37809786955"
+        },
+        {
+          "name": "platform-worker-runtime",
+          "result": "success",
+          "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/37809786930"
+        },
+        {
+          "name": "platform-observability",
+          "result": "success",
+          "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/37809786862"
+        },
+        {
+          "name": "contracts",
+          "result": "success",
+          "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/37809786855"
+        },
+        {
+          "name": "platform-document-runtime",
+          "result": "success",
+          "url": "https://github.com/bachelar-shy/DOUL_Supervision/actions/runs/37809786853"
+        }
+      ]
+    }
+  },
+  "acceptance": {
+    "AC-SCH-01": {
+      "test": "tests_browser/zz-schedule-contract-closed-loop.spec.ts",
+      "passed": true,
+      "boundaries": [
+        "source upload and atomic schedule import",
+        "technical approval and effective baseline",
+        "verified frozen progress",
+        "evidence-linked delay and recovery",
+        "contract Notice before EOT",
+        "rejected, partial and approved Owner decisions",
+        "exact historical approved revision basis",
+        "idempotency and stale-version rejection",
+        "baseline activation, EOT closure and reload"
+      ],
+      "fixtures": "Real HTTP source uploads and approvals; no direct database writes, bootstrap approvals or mocked responses."
+    },
+    "closeout": "Every non-cancelled revision must close; hidden unfinished reports block completion; all-cancelled reports cannot complete."
+  },
+  "limitations": [
+    "Synthetic development/staging validation only; actual pilot deployment and site acceptance have not been performed.",
+    "This record does not authorize main merge or issue closure."
+  ],
+  "localRuntimeAdaptations": [
+    "System Chromium used because Playwright browser CDN is blocked.",
+    "Disposable Docker builds used an ephemeral proxy CA secret.",
+    "Git-style source file modes normalized for local container context; fixture ownership set through managed Docker instead of unavailable sudo."
+  ]
+}

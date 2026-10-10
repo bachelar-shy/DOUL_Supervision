@@ -1,10 +1,12 @@
+import { useTranslation } from "react-i18next";
 import type { HumanRole, WorkItem, Workspace } from "../data/ui-contract";
-import { commands, states } from "../labels";
+import { auditCommandLabel, states } from "../labels";
 import { KpiCard, Panel, SectionHeader } from "../ui";
 import { AuditTimeline, DecisionPanel } from "../ui/catalog";
 import { DashboardTemplate } from "../ui/templates";
 import { PageBoundary } from "./PageBoundary";
 import { Icon, RecordList } from "./shared";
+import { formatTime } from "../i18n/format";
 
 export interface TodayPageProps {
   role: HumanRole;
@@ -21,10 +23,11 @@ export function TodayPage({
   onNavigate,
   onOpenItem,
 }: TodayPageProps) {
+  const { t } = useTranslation();
   const items = workspace.items;
   const kpis: Array<[string, number, string]> = [
     [
-      "검측 대기",
+      t("today.kpi.inspectionPending"),
       items.filter(
         (x) =>
           x.machine === "inspection" &&
@@ -33,21 +36,21 @@ export function TodayPage({
       "inspections",
     ],
     [
-      "미종결 이슈",
+      t("today.kpi.openIssues"),
       items.filter(
         (x) => x.machine === "issue" && x.record.status !== "closed",
       ).length,
       "issues",
     ],
     [
-      "시정조치",
+      t("today.kpi.correctiveActions"),
       items.filter(
         (x) => x.machine === "action" && x.record.status !== "closed",
       ).length,
       "actions",
     ],
     [
-      "발주처 수령·결정",
+      t("today.kpi.ownerReceiptDecision"),
       items.filter(
         (x) =>
           ["report", "decision"].includes(x.machine) &&
@@ -80,7 +83,7 @@ export function TodayPage({
               }
               meta={
                 <>
-                  현재 조회 권한 기준 <Icon name="arrow" />
+                  {t("today.meta.currentAccess")} <Icon name="arrow" />
                 </>
               }
             />
@@ -91,26 +94,26 @@ export function TodayPage({
             <SectionHeader
               title={
                 role === "OWN"
-                  ? "보고·결정 대기"
+                  ? t("today.priority.owner")
                   : role === "DES"
-                    ? "설계질의 대기"
-                    : "우선 확인할 업무"
+                    ? t("today.priority.designer")
+                    : t("today.priority.default")
               }
-              meta="현재 상태"
+              meta={t("today.meta.currentState")}
             />
             <RecordList items={priorityItems} onSelect={onOpenItem} />
           </Panel>
           <div className="right-stack">
             <DecisionPanel
-              eyebrow="진행 전 확인"
+              eyebrow={t("today.guard.eyebrow")}
               title={
                 <>
-                  적합 판정과
+                  {t("today.guard.line1")}
                   <br />
-                  후속공정 승인은 다릅니다.
+                  {t("today.guard.line2")}
                 </>
               }
-              description="필수서명과 해당 Hold 승인이 완료되어야 다음 작업을 허용합니다."
+              description={t("today.guard.description")}
               action={
                 <button
                   className="text-button"
@@ -118,23 +121,26 @@ export function TodayPage({
                     onNavigate(role === "OWN" ? "owner" : "inspections")
                   }
                 >
-                  선행조건 확인 <Icon name="arrow" />
+                  {t("today.guard.action")} <Icon name="arrow" />
                 </button>
               }
             />
             <Panel>
-              <SectionHeader title="최근 처리 이력" meta="서버 기록" />
+              <SectionHeader
+                title={t("today.audit.title")}
+                meta={t("today.audit.meta")}
+              />
               <AuditTimeline
                 entries={workspace.audit
                   .slice(-5)
                   .reverse()
                   .map((x) => ({
                     id: x.id,
-                    title: commands[x.command.split(":")[1]] || x.command,
+                    title: auditCommandLabel(x.command),
                     meta: (
                       <>
-                        {new Date(x.at).toLocaleTimeString("ko-KR")} ·{" "}
-                        {states[x.afterState] || x.afterState}
+                        {formatTime(x.at)} ·{" "}
+                        {states[x.afterState] || t("audit.stateUnknown")}
                       </>
                     ),
                   }))}
