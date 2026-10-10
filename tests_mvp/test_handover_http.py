@@ -794,10 +794,25 @@ class HandoverHttpTests(unittest.TestCase):
         self.assertEqual(unrelated.status_code, 409, unrelated.text)
         self.assertEqual(unrelated.json()["code"], "WARRANTY_REINSPECTION_SCOPE_MISMATCH")
         self.assertEqual(self.engine.get("WorkItem", claim["id"])["version"], claim["version"])
+        current_issue = self.engine.get("Issue", issue_ref["objectId"])
+        with self.store.transaction(True):
+            self.engine._record_machines[("Issue", current_issue["id"])] = "issue"
+        current_issue = self.expect("issues", current_issue, "assign", {
+            "responsiblePartyId": current_issue["responsiblePartyId"],
+            "responsibleOrganizationId": current_issue["responsibleOrganizationId"],
+            "dueAt": self.tomorrow,
+            "actionIds": current_issue["actionIds"],
+        }, actor="SUP", evidence=[])
+        current_issue_ref = self.ref("Issue", current_issue["id"])
         claim = self.expect(
             "warranty-claims", claim, "accept_remedy",
-            {"reinspectionRef": self.ref("Inspection", reinspection_id)}, actor="SUP", evidence=[self.evidence_id],
+            {"reinspectionRef": self.ref("Inspection", reinspection_id),
+             "issueRef": current_issue_ref, "actionRefs": [action_ref]},
+            actor="SUP", evidence=[self.evidence_id],
         )
+        self.assertEqual(claim["data"]["issueRef"], issue_ref)
+        self.assertEqual(claim["data"]["currentIssueRef"], current_issue_ref)
+        self.assertEqual(len(claim["data"]["remedyReferenceRefreshHistory"]), 1)
         unrelated_closure = self.ref("InformationItem", self.document_ids["closure"])
         denied = self.command("warranty-claims", claim, "close_warranty_claim", {"closureRef": unrelated_closure}, actor="SUP", evidence=[self.evidence_id])
         self.assertEqual(denied.status_code, 422, denied.text)

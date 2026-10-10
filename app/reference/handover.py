@@ -523,7 +523,6 @@ def _warranty(engine, guard, record, role, payload=None):
         require(data.get("remedySubmittedAt"), "WARRANTY_REINSPECTION_REQUIRED", "Remedy must be submitted before reinspection")
         inspected_at = inspection.get("inspectedAt") or inspection.get("updatedAt")
         require(inspected_at and instant(inspected_at) >= instant(data["remedySubmittedAt"]) and instant(inspected_at) <= instant(engine.at()), "WARRANTY_REINSPECTION_CHRONOLOGY_INVALID", "Inspection must be dated after the submitted remedy and no later than the current time")
-        issue_ref = data.get("currentIssueRef", data["issueRef"])
         defect_issue = _ref(engine, issue_ref, project, "Issue", current=True, code="WARRANTY_ISSUE_REQUIRED")
         require(inspection.get("correctionCycle") == defect_issue.get("correctionCycle"), "WARRANTY_REINSPECTION_CYCLE_INVALID", "Reinspection must belong to the current defect correction cycle")
         correction_refs = inspection.get("correctiveActionRefs")
