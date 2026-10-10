@@ -6,6 +6,7 @@ for its three WorkItem machines.
 """
 from copy import deepcopy
 from datetime import timedelta
+from uuid import UUID
 
 from .validation import ContractError, instant, require
 
@@ -81,7 +82,7 @@ def _data(record):
 
 
 def _ref(engine, reference, project_id, object_type=None, subtypes=None, statuses=None, *, current=True, code="REFERENCE_INVALID"):
-    require(isinstance(reference, dict), code, "An exact typed reference is required")
+    _validate_reference_shape(reference, code)
     if object_type:
         allowed = {object_type} if isinstance(object_type, str) else set(object_type)
         require(reference.get("objectType") in allowed, code, "Reference has the wrong object type")
@@ -106,7 +107,8 @@ def _refs(engine, references, project_id, object_type=None, subtypes=None, statu
     records = []
     seen = set()
     for reference in references:
-        identity = (reference.get("objectType"), reference.get("objectId")) if isinstance(reference, dict) else None
+        _validate_reference_shape(reference, code)
+        identity = (reference["objectType"], reference["objectId"])
         require(identity not in seen, "REFERENCE_DUPLICATE", "Duplicate exact references are not allowed")
         seen.add(identity)
         records.append(_ref(engine, reference, project_id, object_type, subtypes, statuses, current=current, code=code))
@@ -720,8 +722,22 @@ def _ref_key(reference):
 
 
 def _identity_key(reference):
-    require(isinstance(reference, dict), "REFERENCE_INVALID", "An exact typed reference is required")
-    return (reference.get("objectType"), reference.get("objectId"))
+    _validate_reference_shape(reference, "REFERENCE_INVALID")
+    return (reference["objectType"], reference["objectId"])
+
+
+def _validate_reference_shape(reference, code):
+    require(isinstance(reference, dict) and set(reference) == {"objectType", "objectId", "version"},
+            code, "An exact typed reference is required")
+    require(isinstance(reference["objectType"], str) and bool(reference["objectType"]),
+            code, "Reference objectType must be a non-empty string")
+    require(isinstance(reference["objectId"], str), code, "Reference objectId must be a UUID string")
+    try:
+        UUID(reference["objectId"])
+    except (ValueError, TypeError, AttributeError):
+        require(False, code, "Reference objectId must be a UUID string")
+    require(type(reference["version"]) is int and reference["version"] >= 1,
+            code, "Reference version must be a positive integer")
 
 
 def _identity_set(references):
