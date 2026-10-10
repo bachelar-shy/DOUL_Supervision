@@ -47,7 +47,7 @@ export const fieldCoreMode =
   import.meta.env.VITE_DOUL_UI_SCOPE === "field-core" ||
   (import.meta.env.PROD && import.meta.env.VITE_DOUL_UI_SCOPE !== "full");
 
-const PdfViewerPanel = lazy(() => import("../pages/parallel/PdfViewerPanel").then((module) => ({ default: module.PdfViewerPanel })));
+const DrawingReviewPage = lazy(() => import("../pages/DrawingReviewPage").then((module) => ({ default: module.DrawingReviewPage })));
 
 function millisecondsUntilNextLocalDay(now: Date) {
   const next = new Date(now);
@@ -495,7 +495,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
               {safeRoute === "drawings" && (
                 <div data-ui-page="field-drawings">
                   <Suspense fallback={<div className="loading-panel">{t("app.loading.workspace")}</div>}>
-                    <PdfViewerPanel client={client} workspace={workspace} readOnly />
+                    <DrawingReviewPage client={client} workspace={workspace} onNavigate={nav} onChanged={() => void refresh()} />
                   </Suspense>
                 </div>
               )}
