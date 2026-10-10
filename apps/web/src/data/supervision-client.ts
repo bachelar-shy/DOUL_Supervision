@@ -87,6 +87,8 @@ export interface SupervisionClient {
   readonly kind: "http" | "mock";
   readonly session: Session | null;
   login(role: HumanRole): Promise<Session>;
+  loginPassword(username: string, password: string): Promise<Session>;
+  logout(): Promise<void>;
   workspace(): Promise<Workspace>;
   execute(
     item: WorkItem,
@@ -151,6 +153,10 @@ class HttpSupervisionClient implements SupervisionClient {
     return this.client.login(role);
   }
 
+  loginPassword(username: string, password: string) {
+    return this.client.loginPassword(username, password);
+  }
+  logout() { return this.client.logout(); }
   workspace() {
     return this.client.workspace();
   }

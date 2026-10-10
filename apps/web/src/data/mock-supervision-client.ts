@@ -42,6 +42,11 @@ export class MockSupervisionClient implements SupervisionClient {
     return this.session;
   }
 
+  async loginPassword(_username: string, _password: string): Promise<Session> {
+    throw new Error("비밀번호 로그인은 실제 운영 API에서만 지원합니다.");
+  }
+  async logout(): Promise<void> { this.session = null; }
+
   async workspace(): Promise<Workspace> {
     return createMockWorkspace(this.role);
   }

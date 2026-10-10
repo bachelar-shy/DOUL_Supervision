@@ -156,6 +156,10 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     app.state.store=store
     app.state.queue_enabled = (os.getenv('DOUL_QUEUE_ENABLED', '').lower() == 'true') if queue_enabled is None else bool(queue_enabled)
     app.state.allowed_origins=origins
+    password_accounts = None
+    if not demo and os.getenv('DOUL_AUTH_MODE') == 'local-password':
+        from services.deployment.password_auth import PasswordAccounts
+        password_accounts = PasswordAccounts(store, authentication)
 
     async def system_request_log(request, call_next):
         import time
@@ -189,7 +193,11 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     def identity(request):
         auth=request.headers.get('authorization','')
         token=auth[7:] if auth.startswith('Bearer ') else ''
-        if not demo:return authentication.session(token,store)
+        if not demo:
+            session=authentication.session(token,store)
+            if password_accounts is not None and password_accounts.is_revoked(token):
+                raise ContractError('UNAUTHENTICATED','Session revoked')
+            return session
         with session_lock:session=sessions.get(token)
         require(session is not None and session['expires']>datetime.now(timezone.utc),'UNAUTHENTICATED','Development session missing or expired')
         return session
@@ -338,7 +346,33 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             return JSONResponse({'status': 'error', 'errorType': type(exc).__name__}, status_code=503)
 
     @app.get('/health')
-    def health():return dict(status='ok',mode='local-demo' if demo else stage,baseCommit=(os.getenv('DOUL_RELEASE_SHA', '') if re.fullmatch(r'[a-f0-9]{40}', os.getenv('DOUL_RELEASE_SHA', '')) else 'unversioned-development'),adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo' if demo else 'pinned-rs256-access-token','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
+    def health():return dict(status='ok',mode='local-demo' if demo else stage,baseCommit=(os.getenv('DOUL_RELEASE_SHA', '') if re.fullmatch(r'[a-f0-9]{40}', os.getenv('DOUL_RELEASE_SHA', '')) else 'unversioned-development'),adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo' if demo else 'local-password-pinned-rs256' if password_accounts is not None else 'pinned-rs256-access-token','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
+
+    if password_accounts is not None:
+        @app.post('/auth/login')
+        async def password_login(request:Request):
+            require(request.headers.get('origin') in origins, 'ORIGIN_DENIED', 'Approved browser origin required')
+            body=await body_json(request)
+            require(set(body)=={'username','password'}, 'INVALID_REQUEST', 'Unexpected login fields')
+            return password_accounts.login(body['username'],body['password'])
+
+        @app.post('/auth/logout')
+        async def password_logout(request:Request):
+            identity(request)
+            password_accounts.revoke(request.headers.get('authorization','')[7:])
+            return {'status':'ok'}
+
+        @app.post('/auth/accounts')
+        async def password_create_account(request:Request):
+            require(request.headers.get('origin') in origins, 'ORIGIN_DENIED', 'Approved browser origin required')
+            actor=identity(request)
+            with store.transaction():
+                admin_role=store.engine.get('RoleAssignment',actor['roleAssignmentId'])
+                require(admin_role['actorGroup']=='ADM' and admin_role['active'] and instant(admin_role['validFrom'])<=instant(store.engine.at())<instant(admin_role['validTo']), 'NOT_AUTHORIZED', 'Current administrator role required')
+                project_id=admin_role['projectId']
+            body=await body_json(request)
+            require(set(body)=={'username','password','partyId','roleAssignmentId'}, 'INVALID_REQUEST', 'Unexpected account fields')
+            return password_accounts.create(dict(actorGroup='ADM',projectId=project_id), body['username'],body['password'],body['partyId'],body['roleAssignmentId'])
 
     @app.get('/dev/actors')
     def actors():

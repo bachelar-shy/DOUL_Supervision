@@ -329,6 +329,19 @@ export class ApiClient {
     if (generation === this.loginGeneration) this.session = session;
     return session;
   }
+  async loginPassword(username: string, password: string): Promise<Session> {
+    const generation = ++this.loginGeneration;
+    const session = await this.request<Session>("/auth/login", {
+      method: "POST", body: JSON.stringify({ username, password }),
+    });
+    if (generation === this.loginGeneration) this.session = session;
+    return session;
+  }
+  async logout(): Promise<void> {
+    ++this.loginGeneration;
+    try { if (this.session?.mode === "PASSWORD") await this.request("/auth/logout", { method:"POST" }); }
+    finally { this.session = null; }
+  }
   path(suffix: string): string {
     if (!this.session) throw new Error("로그인이 필요합니다.");
     return `/projects/${this.session.projectId}${suffix}`;

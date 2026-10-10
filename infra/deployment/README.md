@@ -20,6 +20,8 @@ image digests, public origin, storage capacity budgets and alert receiver.
 
 ## Identity and provisioning
 
+For administrator-issued username/password authentication, set `DOUL_AUTH_MODE=local-password` and supply the matching signing private key as an operator-controlled secret. This optional login flow uses the existing pinned RS256 verification and server-side Party/RoleAssignment authorization. See [`services/deployment/PASSWORD_LOGIN.md`](../../services/deployment/PASSWORD_LOGIN.md) for first-administrator bootstrap, credential creation, operational limits, and field acceptance blockers. The general external IdP guidance below remains applicable when local-password mode is not chosen.
+
 Non-demo API startup requires an approved, explicitly provisioned DB and an
 RSA public key, fixed key ID, issuer and audience. Access tokens must use RS256,
 have required bounded timestamps and an explicit subject. Token-provided roles,

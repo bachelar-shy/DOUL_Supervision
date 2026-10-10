@@ -25,6 +25,8 @@ services:
       DATABASE_URL_FILE: /run/secrets/api-database-url
       REDIS_URL_FILE: /run/secrets/api-redis-url
       DOUL_AUTH_PUBLIC_KEY_FILE: /run/secrets/auth-public-key
+      DOUL_AUTH_MODE: local-password
+      DOUL_AUTH_PRIVATE_KEY_FILE: /run/secrets/auth-private-key
       DOUL_AUTH_ISSUER: ${DOUL_AUTH_ISSUER:?}
       DOUL_AUTH_AUDIENCE: ${DOUL_AUTH_AUDIENCE:?}
       DOUL_AUTH_KEY_ID: ${DOUL_AUTH_KEY_ID:?}
@@ -37,7 +39,7 @@ services:
       SSL_CERT_FILE: /run/secrets/service-ca-bundle
       AWS_CA_BUNDLE: /run/secrets/service-ca-bundle
       TZ: UTC
-    secrets: [api-database-url, api-redis-url, auth-public-key, api-alert-token, service-ca-bundle]
+    secrets: [api-database-url, api-redis-url, auth-public-key, auth-private-key, api-alert-token, service-ca-bundle]
     volumes: [api-artifacts:/data]
     healthcheck:
       test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8791/ready',timeout=5)"]
@@ -125,6 +127,7 @@ secrets:
   api-database-url: {file: "${DOUL_SECRETS_DIR:?}/api-database-url"}
   api-redis-url: {file: "${DOUL_SECRETS_DIR:?}/api-redis-url"}
   auth-public-key: {file: "${DOUL_SECRETS_DIR:?}/auth-public-key"}
+  auth-private-key: {file: "${DOUL_SECRETS_DIR:?}/auth-private-key"}
   api-alert-token: {file: "${DOUL_SECRETS_DIR:?}/api-alert-token"}
   worker-database-url: {file: "${DOUL_SECRETS_DIR:?}/worker-database-url"}
   worker-redis-url: {file: "${DOUL_SECRETS_DIR:?}/worker-redis-url"}

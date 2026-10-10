@@ -47,7 +47,7 @@ function millisecondsUntilNextLocalDay(now: Date) {
   return Math.max(1000, next.getTime() - now.getTime());
 }
 
-export function AppShell({ client }: { client: SupervisionClient }) {
+export function AppShell({ client, passwordMode = false, onLogout }: { client: SupervisionClient; passwordMode?: boolean; onLogout?: () => void }) {
   const { t, i18n } = useTranslation();
   const roleLabel = (value: HumanRole) =>
     t(`roles.${value}`, { defaultValue: roles[value] });
@@ -55,7 +55,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
     value
       ? t(value.labelKey ?? "", { defaultValue: value.label })
       : "";
-  const [role, setRole] = useState<HumanRole>("SUP");
+  const [role, setRole] = useState<HumanRole>(passwordMode ? client.session?.actor.actorGroup ?? "SUP" : "SUP");
   const [todayDate, setTodayDate] = useState(() => formatLongDate(new Date()));
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [route, setRoute] = useState(location.hash.slice(2) || "today");
@@ -91,8 +91,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
   }, [client, t]);
   useEffect(() => {
     const n = ++sequence.current;
-    client
-      .login(role)
+    (passwordMode ? Promise.resolve(client.session) : client.login(role))
       .then(() => n === sequence.current ? client.workspace() : undefined)
       .then((w) => {
         if (w && n === sequence.current) { setWorkspace(w); setError(""); }
@@ -104,7 +103,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
         if (n === sequence.current) setLoading(false);
       });
     return () => { ++sequence.current; };
-  }, [client, role]);
+  }, [client, role, passwordMode]);
   useEffect(() => {
     let timer = 0;
     setTodayDate(formatLongDate(new Date()));
@@ -262,7 +261,7 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                 ))}
               </select>
             </label>
-            <label className="role-picker">
+            {!passwordMode && <label className="role-picker">
               {t("app.rolePicker")}{" "}
               <select
                 aria-label={t("app.rolePickerAria")}
@@ -286,7 +285,8 @@ export function AppShell({ client }: { client: SupervisionClient }) {
                   </option>
                 ))}
               </select>
-            </label>
+            </label>}
+            {passwordMode && <button className="secondary" onClick={() => {void client.logout().finally(() => onLogout?.());}}>로그아웃</button>}
             <span className="avatar">{roleLabel(role)[0]}</span>
           </div>
         </header>
