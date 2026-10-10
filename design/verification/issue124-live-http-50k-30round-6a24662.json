@@ -1,0 +1,21 @@
+{
+  "status": "blocked-before-measurement",
+  "requestedBenchmark": {
+    "sourceCommit": "6a24662bd6c63d82d8c890a8f02044e77cd84b12",
+    "syntheticIssueRows": 50000,
+    "timedRoundsPerPageSize": 30,
+    "pageSizes": [1, 100],
+    "transport": "Loopback HTTP to FastAPI and disposable local PostgreSQL"
+  },
+  "setup": {
+    "result": "failed",
+    "operation": "Create randomized disposable PostgreSQL Docker container",
+    "error": "docker: Error response from daemon: no space left on device",
+    "apiStarted": false,
+    "httpRequestsMade": 0,
+    "fixtureContainerLeftBehind": false,
+    "cleanup": "Read-only docker ps -a filter found no doul-inbox-bench-* container; no existing Docker images or containers were removed."
+  },
+  "measurements": null,
+  "interpretation": "No latency, CPU, RSS, response-size, pagination, or authorization result can be inferred from this attempt. Re-run only after Docker has sufficient free storage; benchmark then remains descriptive and does not claim an SLO or field acceptance."
+}
