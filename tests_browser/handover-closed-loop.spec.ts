@@ -1189,7 +1189,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     expect(replacementActionRef).toBeDefined();
     const originalRemedyIssueRef = latestWorkspace.items.find((item: any) => item.record.id === claimId).record.data.issueRef;
     const originalRemedyActionRefs = latestWorkspace.items.find((item: any) => item.record.id === claimId).record.data.actionRefs;
-    const refreshedRemedy = await runCompletionCommand(page, /refresh remedy references/i, {
+    const refreshedRemedy = await runCompletionCommand(page, /refresh current remedy references/i, {
       issueRef: currentRemedyIssueRef!, actionRefs: [replacementActionRef!],
     });
     expect(refreshedRemedy.status).toBe("rework_required");
