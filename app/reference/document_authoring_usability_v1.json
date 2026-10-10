@@ -1,0 +1,1523 @@
+{
+  "schemaVersion": "1.0",
+  "date": "2026-10-11",
+  "status": "usability_test_plan_not_executed",
+  "references": [
+    "app/forms/form_catalog.json",
+    "app/forms/form_data_schemas_v1.json",
+    "app/forms/form_templates_v1.json",
+    "app/forms/rendering_contract.json",
+    "app/forms/legal_form_registry.json",
+    "apps/web/src/pages/DocumentPage.tsx",
+    "apps/web/src/pages/DocumentSigningPanel.tsx",
+    "app/reference/feature_interaction_use_cases_v1.json"
+  ],
+  "formCoverage": {
+    "catalogCount": 36,
+    "schemaCount": 36,
+    "templateCount": 36,
+    "documentPageSelectableCount": 5,
+    "documentPageSelectableFormIds": [
+      "FM-09",
+      "FM-12",
+      "FM-19",
+      "FM-20",
+      "FM-21"
+    ],
+    "legalFixedCount": 11,
+    "legalFixedRenderDisabledCount": 11,
+    "pdfDocxProductionAdaptersPending": true
+  },
+  "supportCaveats": [
+    "36종 표준양식은 카탈로그/스키마/템플릿이 존재하지만 일반 문서작성 화면에 36종 전부 노출된 것은 아니다",
+    "문서작성 화면에서 선택 가능한 5종만 '화면이 존재함'으로 표시하고, 해당 5종도 이번 과업 실행 통과로 표시하지 않는다",
+    "HTML A4 렌더는 기준 구현이 있으나 운영용 PDF/DOCX 출력은 대기 중이다",
+    "법정 고정서식은 원본서식·검증·효력일 설치 전 공식 출력 불가. 베트남 법정언어는 UI 개인 언어 설정으로 우회 불가",
+    "서명검증은 신뢰된 검증기의 확인 후에만 성공 처리하며, 서명요청 성공 응답을 곧바로 법적 유효성 판정으로 사용하지 않는다",
+    "실제 문서 작성자 사용자 시험 및 실제 현장 자료 검증은 아직 수행되지 않았다"
+  ],
+  "forms": [
+    {
+      "formId": "FM-01",
+      "title": "시공사 제출자료 표지",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "05",
+        "06"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": [
+        "DT-CON-01"
+      ]
+    },
+    {
+      "formId": "FM-02",
+      "title": "시공계획 검토서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "06",
+        "18"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-03",
+      "title": "시공상세도 검토서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "04",
+        "07",
+        "14"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-04",
+      "title": "자재승인 요청·검토서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "08"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-05",
+      "title": "자재반입 검사서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "09"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-06",
+      "title": "시험·검사 요청서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "10"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-07",
+      "title": "검수요청서",
+      "legalMode": "legal_support",
+      "registerRefs": [
+        "11"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": [
+        "DT-CON-02"
+      ]
+    },
+    {
+      "formId": "FM-08",
+      "title": "시공사 자체검측표",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "11"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": [
+        "DT-CON-03"
+      ]
+    },
+    {
+      "formId": "FM-09",
+      "title": "시공작업 검수기록",
+      "legalMode": "legal_required_fields",
+      "registerRefs": [
+        "11"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": true,
+      "creationValidationStatus": "existing_screen_unverified",
+      "documentTaskRefs": [
+        "DT-SUP-02",
+        "DT-ALL-01",
+        "DT-ALL-02",
+        "DT-ALL-03",
+        "DT-ALL-05",
+        "DT-ALL-06",
+        "DT-ALL-07",
+        "DT-ALL-08"
+      ]
+    },
+    {
+      "formId": "FM-10",
+      "title": "단계·부분 검수기록",
+      "legalMode": "legal_required_fields",
+      "registerRefs": [
+        "11"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-11",
+      "title": "완료검수기록",
+      "legalMode": "legal_required_fields",
+      "registerRefs": [
+        "24"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": [
+        "DT-ALL-08"
+      ]
+    },
+    {
+      "formId": "FM-12",
+      "title": "부적합 보고서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "12"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": true,
+      "creationValidationStatus": "existing_screen_unverified",
+      "documentTaskRefs": [
+        "DT-SUP-03",
+        "DT-ALL-01"
+      ]
+    },
+    {
+      "formId": "FM-13",
+      "title": "시정조치서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "12"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": [
+        "DT-CON-04"
+      ]
+    },
+    {
+      "formId": "FM-14",
+      "title": "현장지시서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "15"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-15",
+      "title": "기술질의서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "13"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": [
+        "DT-CON-05"
+      ]
+    },
+    {
+      "formId": "FM-16",
+      "title": "설계변경 검토서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "14",
+        "22"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-17",
+      "title": "고위험작업 안전확인서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "18",
+        "19"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-18",
+      "title": "일일 감리기록",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "23"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": [
+        "DT-SUP-01"
+      ]
+    },
+    {
+      "formId": "FM-19",
+      "title": "주간 감리보고",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "16",
+        "22"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": true,
+      "creationValidationStatus": "existing_screen_unverified",
+      "documentTaskRefs": [
+        "DT-SUP-04",
+        "DT-OWN-01",
+        "DT-ALL-01",
+        "DT-ALL-02",
+        "DT-ALL-03",
+        "DT-ALL-04",
+        "DT-ALL-05",
+        "DT-ALL-06",
+        "DT-ALL-07"
+      ]
+    },
+    {
+      "formId": "FM-20",
+      "title": "발주처 즉시보고",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "22",
+        "25"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": true,
+      "creationValidationStatus": "existing_screen_unverified",
+      "documentTaskRefs": [
+        "DT-SUP-05",
+        "DT-ALL-01",
+        "DT-ALL-03",
+        "DT-ALL-04",
+        "DT-ALL-07"
+      ]
+    },
+    {
+      "formId": "FM-21",
+      "title": "발주처 의사결정 요청서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "22"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": true,
+      "creationValidationStatus": "existing_screen_unverified",
+      "documentTaskRefs": [
+        "DT-SUP-06",
+        "DT-OWN-02",
+        "DT-ALL-01"
+      ]
+    },
+    {
+      "formId": "FM-22",
+      "title": "미결사항 목록",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "V-01"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-23",
+      "title": "준공서류 완성도표",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "24",
+        "V-03"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-24",
+      "title": "인수인계 확인서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "24"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": [
+        "DT-CON-06"
+      ]
+    },
+    {
+      "formId": "FM-25",
+      "title": "미완료·하자 추적표",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "24"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-26",
+      "title": "물량·기성 검토·추천서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "17"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": [
+        "DT-OWN-03"
+      ]
+    },
+    {
+      "formId": "FM-27",
+      "title": "소방 적합성·시험·수용 검토서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "20"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-28",
+      "title": "환경 준수·측정 검토서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "21"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-29",
+      "title": "계약통지·Claim·EOT 검토서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "26"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-30",
+      "title": "인허가 적용성·상태 검토서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "01"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-31",
+      "title": "Risk·Assurance·Audit 검토서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "25",
+        "28"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-32",
+      "title": "보험·보증 적합성 검토서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "27"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-33",
+      "title": "경험·교훈 검토서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "29"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": []
+    },
+    {
+      "formId": "FM-34",
+      "title": "문서송수신표지",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "05"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": [
+        "DT-ADM-01"
+      ]
+    },
+    {
+      "formId": "FM-35",
+      "title": "인력·자격 배치 검토서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "03"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": [
+        "DT-ADM-02"
+      ]
+    },
+    {
+      "formId": "FM-36",
+      "title": "도면 Revision·현장배포 확인서",
+      "legalMode": "doul_internal",
+      "registerRefs": [
+        "04"
+      ],
+      "templateVersion": "2.0",
+      "schemaPresent": true,
+      "templatePresent": true,
+      "selectableInDocumentPage": false,
+      "creationValidationStatus": "catalog_only_not_full_screen",
+      "documentTaskRefs": [
+        "DT-ADM-03"
+      ]
+    }
+  ],
+  "legalFixedForms": [
+    {
+      "id": "VN-ND207-IVa",
+      "name": "Báo cáo định kỳ về công tác giám sát(정기 감리보고)",
+      "templateStatus": "not_installed",
+      "renderEnabled": false
+    },
+    {
+      "id": "VN-ND207-IVb",
+      "name": "Báo cáo hoàn thành công tác giám sát(감리완료보고)",
+      "templateStatus": "not_installed",
+      "renderEnabled": false
+    },
+    {
+      "id": "VN-ND207-V",
+      "name": "Thông báo khởi công(착공통보)",
+      "templateStatus": "not_installed",
+      "renderEnabled": false
+    },
+    {
+      "id": "VN-ND207-VI",
+      "name": "Báo cáo hoàn thành thi công xây dựng(공사완료보고)",
+      "templateStatus": "not_installed",
+      "renderEnabled": false
+    },
+    {
+      "id": "VN-ND207-VIII",
+      "name": "Thông báo kết quả kiểm tra công tác nghiệm thu(완료검수 검사결과 통보)",
+      "templateStatus": "not_installed",
+      "renderEnabled": false
+    },
+    {
+      "id": "VN-PCCC-PC11",
+      "name": "PC11 PCCC 설계심사 신청",
+      "templateStatus": "not_installed",
+      "renderEnabled": false
+    },
+    {
+      "id": "VN-PCCC-PC12",
+      "name": "PC12 PCCC 설계심사 문서",
+      "templateStatus": "not_installed",
+      "renderEnabled": false
+    },
+    {
+      "id": "VN-PCCC-PC13",
+      "name": "PC13 PCCC 설계심사 문서",
+      "templateStatus": "not_installed",
+      "renderEnabled": false
+    },
+    {
+      "id": "VN-PCCC-PC14",
+      "name": "PC14 설계심사 확인도장",
+      "templateStatus": "not_installed",
+      "renderEnabled": false
+    },
+    {
+      "id": "VN-PCCC-PC18",
+      "name": "PC18 PCCC 자체검수 문서",
+      "templateStatus": "not_installed",
+      "renderEnabled": false
+    },
+    {
+      "id": "VN-ND207-IIb",
+      "name": "Bản vẽ hoàn công(준공도면) 확인도장",
+      "templateStatus": "not_installed",
+      "renderEnabled": false
+    }
+  ],
+  "tasks": [
+    {
+      "id": "DT-SUP-01",
+      "actorGroup": "SUP",
+      "formIds": [
+        "FM-18"
+      ],
+      "title": "일일 감리기록 작성·확정",
+      "trigger": "당일 현장순회·사진·위치가 등록됨",
+      "steps": [
+        "일일기록 원본 선택",
+        "공종/위치/도면 자동연계 확인",
+        "감리일지 보완",
+        "검토·서명 전 출력 미리보기"
+      ],
+      "expected": "일일 감리기록의 공종·위치·원본사진·서명과 확정판 버전이 정확히 보존됨",
+      "negative": "원본 누락·촬영시각 오류·기록 확정 후 무단 변경 거부",
+      "featureRefs": [
+        "FC-DOC-01",
+        "FC-DOC-05"
+      ],
+      "roleRefs": [
+        "UC-SUP-13"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-SUP-02",
+      "actorGroup": "SUP",
+      "formIds": [
+        "FM-09"
+      ],
+      "title": "검측 결과 서식 작성 및 필수서명",
+      "trigger": "검측이 기술판정을 받음",
+      "steps": [
+        "FM-09 선택",
+        "검측 원본/버전 지정",
+        "필수 필드 작성",
+        "HTML A4 생성",
+        "최종 판과 서명 역할 확인"
+      ],
+      "expected": "검측 결과·후속공정 조건·필수 서명역할이 정확히 반영됨",
+      "negative": "검측 원본 오류·필수 서명 누락·임의 승인으로 최종 완료 금지",
+      "featureRefs": [
+        "FC-DOC-02",
+        "FC-DOC-03",
+        "FC-DOC-07",
+        "FC-DOC-08"
+      ],
+      "roleRefs": [
+        "UC-SUP-01"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-SUP-03",
+      "actorGroup": "SUP",
+      "formIds": [
+        "FM-12"
+      ],
+      "title": "부적합 보고서와 증빙 첨부",
+      "trigger": "현장 부적합이 공식 등록됨",
+      "steps": [
+        "부적합 원본 지정",
+        "원인·위치·시정 요청입력",
+        "사진·도면참조 확인",
+        "검토용 HTML 생성"
+      ],
+      "expected": "부적합 발행시점과 현 시정주기·원본 출처가 일치함",
+      "negative": "오래된 사진을 현 주기 조치증빙으로 자동 포함하지 않음",
+      "featureRefs": [
+        "FC-DOC-02",
+        "FC-DOC-05",
+        "FC-DOC-17"
+      ],
+      "roleRefs": [
+        "UC-SUP-04"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-SUP-04",
+      "actorGroup": "SUP",
+      "formIds": [
+        "FM-19"
+      ],
+      "title": "주간 감리보고서 자료취합·발행",
+      "trigger": "해당 보고주간의 공정·품질 실적이 준비됨",
+      "steps": [
+        "FM-19 선택",
+        "보고기간·주요 품질·공정자료 연결",
+        "표/사진 확인",
+        "초안·최종판 미리보기"
+      ],
+      "expected": "주간 범위와 미결 지적·공정계획이 정확하고 발주처 수령과 별도",
+      "negative": "보고 발행만으로 미결 보고 후속조치 자동 종결 금지",
+      "featureRefs": [
+        "FC-DOC-05",
+        "FC-DOC-09",
+        "FC-DOC-19"
+      ],
+      "roleRefs": [
+        "UC-SUP-09"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-SUP-05",
+      "actorGroup": "SUP",
+      "formIds": [
+        "FM-20"
+      ],
+      "title": "중대사항 즉시보고 초안·발행",
+      "trigger": "사고·품질 중대사항이 발생함",
+      "steps": [
+        "FM-20 선택",
+        "발생시각·원본사진·즉시조치 기록",
+        "수신자·보고 사유 확인",
+        "발행·수신증빙 연결"
+      ],
+      "expected": "정기보고와 구분된 즉시보고 번호·기한·수신내역 보존",
+      "negative": "긴급 보고가 일반문서 마감까지 지연되거나 수령으로 위험해결 처리되면 실패",
+      "featureRefs": [
+        "FC-DOC-05",
+        "FC-DOC-14",
+        "FC-DOC-19"
+      ],
+      "roleRefs": [
+        "UC-SUP-18",
+        "UC-CON-16"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-SUP-06",
+      "actorGroup": "SUP",
+      "formIds": [
+        "FM-21"
+      ],
+      "title": "발주처 의사결정 요청서 작성",
+      "trigger": "설계변경·공기·금액 관련 결정필요 발생",
+      "steps": [
+        "원본 보고·결정 대상 지정",
+        "대안/권고/기한 작성",
+        "FM-21 생성",
+        "발주처 수령함과 연결"
+      ],
+      "expected": "요청번호·검토안·시각·원본버전이 수령 및 결정과 분리됨",
+      "negative": "감리 의견이 발주처 계약승인으로 자동 간주되지 않음",
+      "featureRefs": [
+        "FC-DOC-02",
+        "FC-DOC-19"
+      ],
+      "roleRefs": [
+        "UC-SUP-09",
+        "UC-OWN-11"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-CON-01",
+      "actorGroup": "CON",
+      "formIds": [
+        "FM-01"
+      ],
+      "title": "시공사 제출자료 표지 작성 및 전송",
+      "trigger": "시공상세도·자재등 제출 서류 준비",
+      "steps": [
+        "서류 유형 선택",
+        "제출항목·대상 공종·도면개정 입력",
+        "문서 표지 생성",
+        "감리에게 송부"
+      ],
+      "expected": "제출 문서와 첨부자료·문서번호·송부시점이 일치함",
+      "negative": "표지작성으로 기술검토·승인이 자동 완료되면 실패",
+      "featureRefs": [
+        "FC-DOC-01",
+        "FC-DOC-02",
+        "FC-DOC-17"
+      ],
+      "roleRefs": [
+        "UC-CON-02",
+        "UC-ADM-04"
+      ],
+      "priority": "P1",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-CON-02",
+      "actorGroup": "CON",
+      "formIds": [
+        "FM-07"
+      ],
+      "title": "검측요청서 작성·감리 송부",
+      "trigger": "자체검측과 후속공정 사전조건 충족",
+      "steps": [
+        "검측일시·위치/공종·도면개정 입력",
+        "FM-07 생성",
+        "자체검측증빙 첨부",
+        "감리 접수 확인"
+      ],
+      "expected": "작성자가 시공사이며 검측 신청과 감리판정 별도 기록",
+      "negative": "검측요청 양식 생성으로 현장 검측 적합 처리하면 실패",
+      "featureRefs": [
+        "FC-DOC-01",
+        "FC-DOC-02"
+      ],
+      "roleRefs": [
+        "UC-CON-04"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-CON-03",
+      "actorGroup": "CON",
+      "formIds": [
+        "FM-08"
+      ],
+      "title": "자체검측표 반복 항목 작성",
+      "trigger": "해당 공종별 자체점검표가 준비됨",
+      "steps": [
+        "반복검측 항목 입력",
+        "합격기준·결과·비고 검토",
+        "불합격 항목 보완",
+        "FM-08 출력"
+      ],
+      "expected": "각 항목·단위·순서와 공종 자체검측 결과를 재조회 가능",
+      "negative": "빈 행 삭제 시 다른 측정 결과 순서가 뒤섞이면 실패",
+      "featureRefs": [
+        "FC-DOC-03",
+        "FC-DOC-09"
+      ],
+      "roleRefs": [
+        "UC-CON-04"
+      ],
+      "priority": "P1",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-CON-04",
+      "actorGroup": "CON",
+      "formIds": [
+        "FM-13"
+      ],
+      "title": "시정조치서와 재검측 요청 연결",
+      "trigger": "감리 부적합 통보와 시정 완료",
+      "steps": [
+        "조치 원인/내용 입력",
+        "시정 전후사진 연결",
+        "재검측 신청",
+        "FM-13 작성·제출"
+      ],
+      "expected": "원 부적합·현재 조치주기·서명·시정사진 정확히 연결",
+      "negative": "시정조치서 제출을 부적합 자체 종결로 표시하면 실패",
+      "featureRefs": [
+        "FC-DOC-02",
+        "FC-DOC-17"
+      ],
+      "roleRefs": [
+        "UC-CON-05"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-CON-05",
+      "actorGroup": "CON",
+      "formIds": [
+        "FM-15"
+      ],
+      "title": "시공 중 기술질의서 작성",
+      "trigger": "도면간섭·시공조건 상이 발견",
+      "steps": [
+        "도면번호·개정·위치·문제 기록",
+        "사진 첨부",
+        "기술질의서 작성",
+        "감리·설계 회신 대기"
+      ],
+      "expected": "질의와 설계 기술회신·현장시공지시·계약승인을 구분",
+      "negative": "기술 답변을 설계변경 승인으로 자동표시하면 실패",
+      "featureRefs": [
+        "FC-DOC-02",
+        "FC-DOC-17"
+      ],
+      "roleRefs": [
+        "UC-CON-12",
+        "UC-DES-01"
+      ],
+      "priority": "P1",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-CON-06",
+      "actorGroup": "CON",
+      "formIds": [
+        "FM-24"
+      ],
+      "title": "인계자료 목록·누락항목 보완",
+      "trigger": "준공자료 목록이 준비됨",
+      "steps": [
+        "인계대상 목록 점검",
+        "준공도면/인증서 연결",
+        "미완료 표시",
+        "FM-24 생성"
+      ],
+      "expected": "시공사의 문서제출과 감리 준공검사·발주처 인수를 분리",
+      "negative": "제출 목록 완료로 인수완료 처리하면 실패",
+      "featureRefs": [
+        "FC-DOC-01",
+        "FC-DOC-09"
+      ],
+      "roleRefs": [
+        "UC-CON-11",
+        "UC-OWN-07"
+      ],
+      "priority": "P1",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-OWN-01",
+      "actorGroup": "OWN",
+      "formIds": [
+        "FM-19"
+      ],
+      "title": "주간 감리보고서 열람·수령",
+      "trigger": "감리 보고서 발행 수신",
+      "steps": [
+        "수신함에서 보고서 열기",
+        "원본·기간·서명 확인",
+        "수령확인",
+        "미결결정 분류"
+      ],
+      "expected": "수령확인은 계약결정이나 기술판정과 구분됨",
+      "negative": "보고 열람만으로 공식 결정·부적합 종결되면 실패",
+      "featureRefs": [
+        "FC-DOC-19",
+        "FC-DOC-14"
+      ],
+      "roleRefs": [
+        "UC-OWN-02"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-OWN-02",
+      "actorGroup": "OWN",
+      "formIds": [
+        "FM-21"
+      ],
+      "title": "발주처 의사결정서 원본과 대안 검토",
+      "trigger": "감리가 FM-21 결정 요청",
+      "steps": [
+        "원본 문서와 대안 검토",
+        "수령확인",
+        "결정조건 입력",
+        "권한자 결정 기록"
+      ],
+      "expected": "보고 수령·의사결정·후속확인을 독립 상태로 표시",
+      "negative": "발주처가 원본버전 확인 없이 낡은 보고에 대해 새 결정하는 경우 실패",
+      "featureRefs": [
+        "FC-DOC-14",
+        "FC-DOC-19"
+      ],
+      "roleRefs": [
+        "UC-OWN-11",
+        "UC-OWN-12"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-OWN-03",
+      "actorGroup": "OWN",
+      "formIds": [
+        "FM-26"
+      ],
+      "title": "물량·기성 검토추천서 열람과 지급결정 구분",
+      "trigger": "감리 FM-26 검토의견 완료",
+      "steps": [
+        "검토추천 원본 열기",
+        "BOQ 물량과 추천액 확인",
+        "발주처 지급승인 별도 수행",
+        "실지급 확인"
+      ],
+      "expected": "감리 지급추천과 발주처 승인·지급이 독립된 계약 사건임",
+      "negative": "검토추천서 자체를 지급결정서로 대체하면 실패",
+      "featureRefs": [
+        "FC-DOC-02",
+        "FC-DOC-19"
+      ],
+      "roleRefs": [
+        "UC-OWN-04",
+        "UC-SUP-08"
+      ],
+      "priority": "P1",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-ADM-01",
+      "actorGroup": "ADM",
+      "formIds": [
+        "FM-34"
+      ],
+      "title": "문서송수신 표지·수령이력 작성",
+      "trigger": "수신·발신 공문이 도착함",
+      "steps": [
+        "발신자·수신자·문서번호·원본 파일 등록",
+        "배포",
+        "수령확인",
+        "송수신표 조회"
+      ],
+      "expected": "문서수신·기술승인·의사결정은 서로 다른 사건",
+      "negative": "관리자 수령기록으로 기술승인 처리 금지",
+      "featureRefs": [
+        "FC-DOC-01",
+        "FC-DOC-17"
+      ],
+      "roleRefs": [
+        "UC-ADM-04"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-ADM-02",
+      "actorGroup": "ADM",
+      "formIds": [
+        "FM-35"
+      ],
+      "title": "인력 자격·배치 검토서 작성",
+      "trigger": "감리인력 신규 배치·자격만료 예정",
+      "steps": [
+        "인력정보·자격증 유효기간 입력",
+        "배치정보·권한 확인",
+        "FM-35 생성"
+      ],
+      "expected": "문서발행과 인력배치 권한부여를 구분하고 이력 보존",
+      "negative": "만료 자격의 감리 기술판정 허용 또는 서류만으로 권한 자동부여 실패",
+      "featureRefs": [
+        "FC-DOC-01",
+        "FC-DOC-03"
+      ],
+      "roleRefs": [
+        "UC-ADM-03"
+      ],
+      "priority": "P1",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-ADM-03",
+      "actorGroup": "ADM",
+      "formIds": [
+        "FM-36"
+      ],
+      "title": "도면 개정·현장배포 확인서 작성",
+      "trigger": "유효 개정도면 공식 배포 필요",
+      "steps": [
+        "도면번호·구개정·신개정 선택",
+        "배포대상 확인",
+        "FM-36 생성",
+        "수령이력 대사"
+      ],
+      "expected": "공식 배포·확인과 기술승인판정을 분리하며 최신판 식별",
+      "negative": "구개정 배포를 최신판으로 오인하거나 관리자의 기술승인 처리 실패",
+      "featureRefs": [
+        "FC-DOC-01",
+        "FC-DOC-02"
+      ],
+      "roleRefs": [
+        "UC-ADM-04",
+        "UC-CON-01"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-ALL-01",
+      "actorGroup": "ALL",
+      "formIds": [
+        "FM-09",
+        "FM-12",
+        "FM-19",
+        "FM-20",
+        "FM-21"
+      ],
+      "title": "기본 5개 UI 양식 입력·미리보기 비교",
+      "trigger": "프로젝트에 검측·부적합·보고원본 등록",
+      "steps": [
+        "각 양식 선택",
+        "필수값 입력",
+        "문서 언어 선택",
+        "HTML A4 미리보기",
+        "새로고침",
+        "내용 비교"
+      ],
+      "expected": "현재 UI가 제공하는 5개 양식을 역할·원본에 따라 사용 가능하며 유실과 오연결 없음",
+      "negative": "언어전환만으로 출력언어·원본내용 변경 또는 새 문서 자동발행 금지",
+      "featureRefs": [
+        "FC-DOC-02",
+        "FC-DOC-05",
+        "FC-DOC-12"
+      ],
+      "roleRefs": [
+        "UC-SUP-09",
+        "UC-ADM-05"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-ALL-02",
+      "actorGroup": "ALL",
+      "formIds": [
+        "FM-09",
+        "FM-19"
+      ],
+      "title": "초안저장·브라우저 재접속 이어쓰기 검증",
+      "trigger": "긴 내용을 작성하던 중 브라우저가 닫힘",
+      "steps": [
+        "필드 작성",
+        "명시적 저장/미저장 확인",
+        "브라우저 재접속",
+        "초안 이어쓰기",
+        "최종발행"
+      ],
+      "expected": "명시적 저장된 내용은 보존하고 미저장 내용은 사용자에게 경고",
+      "negative": "임시저장 미구현인데 저장됨 표시하거나 원본 덮어쓰기 실패",
+      "featureRefs": [
+        "FC-DOC-06",
+        "FC-DOC-14"
+      ],
+      "roleRefs": [
+        "UC-SUP-09",
+        "UC-SUP-13"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-ALL-03",
+      "actorGroup": "ALL",
+      "formIds": [
+        "FM-09",
+        "FM-19",
+        "FM-20"
+      ],
+      "title": "문서 최종본 승인·서명검증·스냅샷 보존",
+      "trigger": "문서 원본자료·역할 권한 확보",
+      "steps": [
+        "초안 생성",
+        "최종판 생성",
+        "신뢰서명 검증",
+        "다른 사용자 열람",
+        "과거판 보존 확인"
+      ],
+      "expected": "문서 내용·템플릿·렌더 해시와 서명역할이 보존됨",
+      "negative": "신뢰서명 검증기 부재로 서명이 실패했는데 성공 표시 금지",
+      "featureRefs": [
+        "FC-DOC-07",
+        "FC-DOC-08",
+        "FC-DOC-14"
+      ],
+      "roleRefs": [
+        "UC-SUP-01",
+        "UC-ADM-05"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-ALL-04",
+      "actorGroup": "ALL",
+      "formIds": [
+        "FM-19",
+        "FM-20"
+      ],
+      "title": "긴 표·사진과 한국어/베트남어 A4 인쇄 형태 점검",
+      "trigger": "다페이지 문서와 다양한 길이의 문장이 준비됨",
+      "steps": [
+        "표 200행·사진 삽입",
+        "한글/베트남어 출력 언어 변경",
+        "페이지 나눔·서명위치·바닥글 확인"
+      ],
+      "expected": "각 페이지 표 제목 반복·글자 깨짐·서명 및 페이지 정보를 정확히 표시",
+      "negative": "페이지 끊김·머리말 겹침·사진 누락이 발생하면 실패",
+      "featureRefs": [
+        "FC-DOC-09",
+        "FC-DOC-12",
+        "FC-DOC-18"
+      ],
+      "roleRefs": [
+        "UC-SUP-09",
+        "UC-ADM-05"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-ALL-05",
+      "actorGroup": "ALL",
+      "formIds": [
+        "FM-09",
+        "FM-19"
+      ],
+      "title": "PDF/DOCX 운영 출력 가용성 점검",
+      "trigger": "HTML 스냅샷은 존재하나 운영 출력 어댑터는 보류",
+      "steps": [
+        "PDF 출력 메뉴 상태 확인",
+        "DOCX 출력 메뉴 상태 확인",
+        "공식 인쇄물 필요 시 대체 안내 확인"
+      ],
+      "expected": "미구현 출력 기능은 사용불가 이유와 후속계획 명시·성공오인 방지",
+      "negative": "미지원 기능을 사용 가능으로 제시하거나 법정 원본으로 표시 금지",
+      "featureRefs": [
+        "FC-DOC-10",
+        "FC-DOC-11"
+      ],
+      "roleRefs": [
+        "UC-SUP-09",
+        "UC-ADM-05"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-ALL-06",
+      "actorGroup": "ALL",
+      "formIds": [
+        "FM-09",
+        "FM-19"
+      ],
+      "title": "버전충돌·중복발행·저장 실패 복구 사용성",
+      "trigger": "한 원본 문서를 두 사람이 수정하거나 네트워크 중단",
+      "steps": [
+        "동시편집",
+        "구버전 제출",
+        "오류 확인",
+        "재검토",
+        "동일 발행버튼 재시도"
+      ],
+      "expected": "기존 스냅샷·수정이력과 원본해시가 보존되고 오류 원인 및 안전 재시도 제시",
+      "negative": "마지막 저장값으로 자동 덮어쓰기·중복 공식문서 생성 실패",
+      "featureRefs": [
+        "FC-DOC-14",
+        "FC-DOC-15"
+      ],
+      "roleRefs": [
+        "UC-SUP-09",
+        "UC-ADM-12"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-ALL-07",
+      "actorGroup": "ALL",
+      "formIds": [
+        "FM-09",
+        "FM-19",
+        "FM-20"
+      ],
+      "title": "모바일·데스크톱 문서작성 UI 가독성",
+      "trigger": "390픽셀 모바일과 1440픽셀 데스크톱 접속",
+      "steps": [
+        "긴 필드 값 입력",
+        "필수오류·미리보기 확인",
+        "서명영역 스크롤",
+        "화면 크기 전환"
+      ],
+      "expected": "필수기능과 오류문구를 화면을 가리지 않고 찾을 수 있고 값이 보존됨",
+      "negative": "수평 잘림·키보드에 버튼가림·포커스 유실·입력내용 손실 실패",
+      "featureRefs": [
+        "FC-DOC-16",
+        "FC-NAV-02"
+      ],
+      "roleRefs": [
+        "UC-SUP-18",
+        "UC-ADM-05"
+      ],
+      "priority": "P1",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    },
+    {
+      "id": "DT-ALL-08",
+      "actorGroup": "ALL",
+      "formIds": [
+        "FM-09",
+        "FM-11"
+      ],
+      "title": "법정 서식과 DOUL 내부 A4 출력 경계 검증",
+      "trigger": "법정 양식의 공식 템플릿이 아직 미설치",
+      "steps": [
+        "법정 고정양식 식별",
+        "원본 템플릿 설치여부 확인",
+        "공식발행 시도",
+        "차단사유 확인"
+      ],
+      "expected": "법정 공식 고정양식은 검증된 원본서식·적용시점 없으면 발행 차단",
+      "negative": "DOUL 내부 A4 미리보기를 법적 고정원본으로 발급하면 실패",
+      "featureRefs": [
+        "FC-DOC-13",
+        "FC-DOC-07"
+      ],
+      "roleRefs": [
+        "UC-SUP-06",
+        "UC-ADM-05"
+      ],
+      "priority": "P0",
+      "executionStatus": "unverified",
+      "linkedOriginalEvidenceRequired": true
+    }
+  ],
+  "usabilityCriteria": [
+    {
+      "id": "UX-COMPLETE",
+      "label": "역할별 과업 성공률",
+      "measure": "업무 목적 달성 및 실제 기록 재조회 성공 건수 / 전체 시도",
+      "proposedTarget": "핵심 P0 현장 Pilot에서는 각 역할 >=90%, 권한/데이터 손실 사례는 100% 안전 준수",
+      "critical": true
+    },
+    {
+      "id": "UX-CLARITY",
+      "label": "현장 용어 이해도",
+      "measure": "사용자가 도움 없이 메뉴·버튼·상태 뜻과 다음 작업을 말할 수 있는지 1~5점 평가",
+      "proposedTarget": "각 기본 역할 평균 4/5점 이상; 3점 이하 표현은 재검토",
+      "critical": false
+    },
+    {
+      "id": "UX-STEPS",
+      "label": "과업 단계와 클릭 낭비",
+      "measure": "최소 유효 단계 대비 실제 클릭/화면 전환 수; 뒤로가기·재입력 횟수",
+      "proposedTarget": "측정 후 기준선 수립; 반복되는 무의미한 재입력 0건 목표",
+      "critical": false
+    },
+    {
+      "id": "UX-TIME",
+      "label": "문서 작성 소요시간",
+      "measure": "양식 선택부터 미리보기/저장/제출까지 역할별 중앙값·P90 시간",
+      "proposedTarget": "초기 현장 Pilot 실측으로 업무별 목표시간 확정(현재 미측정)",
+      "critical": false
+    },
+    {
+      "id": "UX-ERROR",
+      "label": "오입력·복구가능성",
+      "measure": "입력오류 발생률·복구 시간·원본손실·잘못된 권한 승인건수",
+      "proposedTarget": "원본 손실 0건, 무권한 공식결정 0건, 조용한 데이터 덮어쓰기 0건",
+      "critical": true
+    },
+    {
+      "id": "UX-A4",
+      "label": "A4 출력 판독성",
+      "measure": "표 잘림·중복 머리말·사진 겹침·서명위치·페이지 누락·문자깨짐 건수",
+      "proposedTarget": "핵심 양식 시험자료에서 내용누락·페이지 잘림 0건(목업 HTML 및 운영 출력은 각각 판단)",
+      "critical": true
+    },
+    {
+      "id": "UX-SOURCE",
+      "label": "원본·버전·첨부 정확성",
+      "measure": "최종 스냅샷의 문서 ID·템플릿/원본해시·원본 사건 버전·첨부파일 재조회 일치도",
+      "proposedTarget": "서식·원본·증빙 매칭 100%; 타 프로젝트 노출 0건",
+      "critical": true
+    },
+    {
+      "id": "UX-DEVICE",
+      "label": "기기/화면 접근성",
+      "measure": "390/768/1440px 필드 접근·터치·스크롤·포커스·키보드·오류표시",
+      "proposedTarget": "필수 작업 막힘 0건; 키보드/터치로 모든 필수 항목 접근 가능",
+      "critical": true
+    }
+  ],
+  "sessionPlan": {
+    "roles": [
+      "SUP",
+      "CON",
+      "OWN",
+      "ADM"
+    ],
+    "supplementaryRole": "DES",
+    "participantsRecommendation": "기본 역할별 현장 실제 사용자 1명 이상으로 1차 평가; 사용자의 직무·공종별 대표성이 부족하면 확대",
+    "evaluationModes": [
+      "synthetic_connected_browser",
+      "real_document_pilot",
+      "human_observation"
+    ],
+    "fixtureTypes": [
+      "실제와 유사한 합성 원본 PDF/사진/BOQ/공정표/검측 사건",
+      "실제 현장 문서는 법적 승인 및 권한 확인 후 별도 등록"
+    ],
+    "outputEvidenceFields": [
+      "taskId",
+      "actor",
+      "projectId",
+      "sourceIdsAndVersions",
+      "formId",
+      "templateVersionAndHash",
+      "renderHash",
+      "documentOutputLocale",
+      "actualClickSequence",
+      "elapsedSeconds",
+      "inputErrors",
+      "layoutScreenshots",
+      "expectedVsActual",
+      "failureReason",
+      "termFeedback",
+      "userRating",
+      "defectRef",
+      "retestEvidence"
+    ]
+  },
+  "criteriaStatus": "targets_proposed_not_approved",
+  "executionStatus": "unverified"
+}
