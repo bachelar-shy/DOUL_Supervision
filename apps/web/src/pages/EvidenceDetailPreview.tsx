@@ -254,6 +254,17 @@ export function EvidenceDetailPreview({
       preview={<EvidenceMediaPreview record={evidence} preview={preview} />}
       summary={
         <div className="space-y-4">
+          {metadata.demoClassification === "SYNTHETIC_NOT_SITE_EVIDENCE" && (
+            <div className="notice" role="note" data-testid="synthetic-evidence-notice">
+              <strong>{tr("evidence.demo.syntheticTitle")}</strong>
+              <p>{tr("evidence.demo.syntheticDescription")}</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                <EvidenceField label={tr("evidence.demo.case")} value={textValue(metadata.demoCaseId) || tr("evidence.value.noInfoCheck")} />
+                <EvidenceField label={tr("evidence.demo.stage")} value={textValue(metadata.demoStage) || tr("evidence.value.noInfoCheck")} />
+                <EvidenceField label={tr("evidence.demo.zone")} value={textValue(metadata.demoZone) || tr("evidence.value.noInfoCheck")} />
+              </div>
+            </div>
+          )}
           <div className="grid gap-2 sm:grid-cols-2">
             <EvidenceField
               label={tr("evidence.summary.sourceType")}
