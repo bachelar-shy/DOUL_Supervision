@@ -126,9 +126,19 @@ function referenceOptions(
   if (command === "close_warranty_claim" && field === "closureRef") {
     const originalIssueRef = current.record.data?.issueRef as DomainRef | undefined;
     if (!originalIssueRef || originalIssueRef.objectType !== "Issue") return [];
-    return completionReferenceOptions(workspace).filter(option =>
+    const issueOptions = completionReferenceOptions(workspace).filter(option =>
       option.ref.objectType === "Issue" && option.ref.objectId === originalIssueRef.objectId,
     );
+    const decisions = new Map<string, Record<string, unknown>>();
+    for (const entry of workspace.context.referenceCatalog?.decisions ?? []) decisions.set(entry.ref.objectId, entry.record);
+    for (const item of workspace.items) if (item.machine === "decision") decisions.set(item.record.id, item.record);
+    const decisionOptions = completionDecisionReferenceOptions(workspace, current).filter(option => {
+      const decision = decisions.get(option.ref.objectId);
+      const targetRef = decision?.targetRef as DomainRef | undefined;
+      return decision?.decision === "approved" && targetRef?.objectType === "WorkItem"
+        && targetRef.objectId === current.record.id && targetRef.version === current.record.version;
+    });
+    return [...issueOptions, ...decisionOptions];
   }
   if (["actionRef", "remedyActionRefs", "correctiveActionRefs", "correctionActionRefs", "retestBasisRefs", "actionRefs"].includes(field)) {
     let allowedIds: Set<string> | undefined;
