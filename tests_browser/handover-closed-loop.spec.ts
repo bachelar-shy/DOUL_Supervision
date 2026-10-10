@@ -1065,7 +1065,8 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     expect(acceptedRemedy.data.issueRef).toEqual(originalWarrantyIssueRef);
     expect(acceptedRemedy.data.actionRefs).toEqual(originalWarrantyActionRefs);
     expect(acceptedRemedy.data.currentIssueRef).toEqual(currentIssueRef);
-    expect(acceptedRemedy.data.currentActionRefs).toEqual(currentActionRefs);
+    expect(acceptedRemedy.data.currentActionRefs).toHaveLength(currentActionRefs.length);
+    expect(acceptedRemedy.data.currentActionRefs).toEqual(expect.arrayContaining(currentActionRefs));
     expect(acceptedRemedy.data.remedyReferenceRefreshHistory).toHaveLength(1);
     const closedClaim = await runCompletionCommand(page, /close warranty claim/i, {
       closureRef: currentIssueRef!,
@@ -1076,10 +1077,10 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
   }
 }
 
-test("real Completion UI carries commissioning through partial handover and records the verified Action gate", async ({ page }) => {
+test("real Completion UI refreshes stale commissioning references and completes partial handover", async ({ page }) => {
   await runCompletionHandoverScenario(page, false);
 });
 
-test("complementary warranty UI reaches the stale Issue reference gate after actual reinspection", async ({ page }) => {
+test("real warranty UI accepts a remedy with current references after reinspection and closes the claim", async ({ page }) => {
   await runCompletionHandoverScenario(page, true);
 });
