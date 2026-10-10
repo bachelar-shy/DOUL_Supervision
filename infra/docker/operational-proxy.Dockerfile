@@ -12,6 +12,10 @@ COPY packages/localization/package.json ./packages/localization/package.json
 COPY scripts/apply_braces_backport.cjs ./scripts/apply_braces_backport.cjs
 COPY security/backports/braces-3.0.3.json ./security/backports/braces-3.0.3.json
 COPY security/backports/braces-3.0.3.md ./security/backports/braces-3.0.3.md
+COPY scripts/apply_node_forge_backport.cjs ./scripts/apply_node_forge_backport.cjs
+COPY security/backports/node-forge-1.4.0.json ./security/backports/node-forge-1.4.0.json
+COPY security/backports/LICENSE.BSD-3-Clause ./security/backports/LICENSE.BSD-3-Clause
+COPY security/backports/node-forge-1.4.0.md ./security/backports/node-forge-1.4.0.md
 RUN for attempt in 1 2; do \
       npm ci --include=optional && node -e "import('rolldown')" && exit 0; \
     done; exit 1

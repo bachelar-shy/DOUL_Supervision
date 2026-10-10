@@ -28,6 +28,10 @@ jobs:
           npm ci
       - name: Verify installed dependencies against locks
         run: .venv/bin/python scripts/dependency_environment.py --node --report .local/dependency-environment-ci.json
+      - name: Verify pinned node-forge backport and Expo signing compatibility
+        run: npm run test:node-forge-backport
+      - name: Verify pinned braces nesting backport
+        run: npm run test:braces-backport
       - name: Reference contracts and adapter tests
         run: |
           .venv/bin/python scripts/validate_contracts.py
