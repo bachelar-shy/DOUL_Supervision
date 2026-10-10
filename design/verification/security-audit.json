@@ -1,13 +1,13 @@
 {
-  "date": "2026-10-08",
+  "date": "2026-10-10",
   "scope": "npm dependency tree including development tools",
   "totals": {
     "info": 0,
     "low": 0,
-    "moderate": 7,
-    "high": 21,
+    "moderate": 0,
+    "high": 33,
     "critical": 0,
-    "total": 28
+    "total": 33
   },
   "rootAdvisories": {
     "braces": {
@@ -31,19 +31,21 @@
           "range": "<=1.4.0"
         }
       ]
-    },
-    "uuid": {
-      "severity": "moderate",
-      "range": "<11.1.1",
-      "advisories": [
-        {
-          "title": "uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided",
-          "url": "https://github.com/advisories/GHSA-w5hq-g745-h8pq",
-          "range": "<11.1.1"
-        }
-      ]
     }
   },
   "releaseStatus": "BLOCKED_PENDING_REMEDIATION",
-  "note": "Counts include transitive propagation, not 28 distinct vulnerabilities. Actual clean locked root audit found braces, node-forge and uuid advisories. Latest available braces 3.0.3 and node-forge 1.4.0 remain affected; suggested forced Expo/shadcn SDK downgrades were not performed. Dependency release approval remains blocked; browser/development tests do not waive remediation."
+  "note": "Counts include transitive propagation, not distinct vulnerabilities. npm 12.2.0 reports 33 high, zero moderate and two root advisories after the UUID fix. Earlier npm 11.9 reported 21 high/7 moderate; raw propagation counts across tool versions are not comparable. braces 3.0.3 and node-forge 1.4.0 remain affected. No advisory filter, forced Expo downgrade, graph-validation waiver or release approval was applied.",
+  "remediatedAdvisories": [
+    {
+      "package": "uuid",
+      "version": "11.1.1",
+      "advisory": "GHSA-w5hq-g745-h8pq",
+      "method": "root xcode override; npm 12.2.0 supports workspace graph inventory",
+      "status": "candidate_verified_locally_pending_mac_ci"
+    }
+  ],
+  "toolchain": {
+    "node": "24.19.0",
+    "npm": "12.2.0"
+  }
 }

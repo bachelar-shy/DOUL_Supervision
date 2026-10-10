@@ -9,6 +9,12 @@ PR #2 병합 커밋 `d13e744`의 계약·검증 엔진을 재사용한 반응형
 - [Stitch 실제 화면 연결](./design/stitch/screens.json)
 - [실행 검증 결과](./design/verification/mvp-results.json)
 
+## JavaScript 개발 도구 버전
+
+Node.js 24.19.0과 npm 12.2.0을 CI 및 웹 이미지 빌드에서 사용합니다. 로컬에서도 `npm install --global npm@12.2.0` 후 `npm ci`를 실행하십시오. `packageManager`는 선언이며 npm을 자동 설치하지 않습니다.
+
+`xcode`의 `uuid`는 보안 수정 버전 11.1.1로 제한합니다. npm 11.9는 이 workspace override를 설치하고도 `npm ls`에서 잘못된 범위로 보고하므로 npm 12.2.0이 필요합니다. 기존 lock·설치 그래프 검사는 유지합니다. 이 조치는 `braces`와 `node-forge`의 남은 보안 이슈를 해결하거나 출시를 승인하지 않습니다.
+
 ## 문서목록
 
 1. [한·베 감리 법령 요구사항 매트릭스](./01_Regulatory_Requirement_Matrix.md)
