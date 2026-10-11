@@ -12,11 +12,14 @@ on:
       - "apps/web/src/pages/document-authoring-source.ts"
       - ".github/workflows/ux-200-full-journeys.yml"
   workflow_dispatch:
+concurrency:
+  group: ux-200-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   ux-200:
-    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
