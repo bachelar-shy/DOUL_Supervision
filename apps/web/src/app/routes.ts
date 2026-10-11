@@ -4,7 +4,7 @@ import i18n from "../i18n/config";
 
 export const routes: readonly UiRoute[] = [
   { id: "today", label: "Today", labelKey: "navigation.today", icon: "home" },
-  { id: "drawings", label: "Drawings", labelKey: "launch.drawings", icon: "layers" },
+  { id: "drawings", label: "Drawings", labelKey: "navigation.drawings", icon: "layers" },
   { id: "corrections", label: "Corrective actions", labelKey: "launch.corrections", icon: "flag" },
   {
     id: "inspections",
@@ -184,6 +184,7 @@ export const roleRoutes: Record<HumanRole, readonly string[]> = {
     "today",
     "inspections",
     "capture",
+    "drawings",
     "issues",
     "actions",
     "safety",
@@ -195,8 +196,8 @@ export const roleRoutes: Record<HumanRole, readonly string[]> = {
     "documents",
     "registers",
   ],
-  OWN: ["today", "schedule", "contract", "payment", "completion", "owner", "issues", "documents", "registers"],
-  DES: ["today", "rfis", "capture", "documents", "registers"],
+  OWN: ["today", "drawings", "schedule", "contract", "payment", "completion", "owner", "issues", "documents", "registers"],
+  DES: ["today", "rfis", "drawings", "capture", "documents", "registers"],
   ADM: allRouteIds,
 };
 

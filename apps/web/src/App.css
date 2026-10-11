@@ -102,6 +102,9 @@ strong {
 .sidebar-close {
   display: none;
 }
+.sidebar-backdrop {
+  display: none;
+}
 .brand {
   display: flex;
   align-items: baseline;
@@ -187,10 +190,11 @@ strong {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
+  scrollbar-gutter: stable;
 }
 .sidebar nav button {
-  flex: 0 0 43px;
-  height: 43px;
+  flex: 0 0 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1210,13 +1214,24 @@ strong {
 }
 @media (max-width: 620px) {
   .sidebar {
+    visibility: hidden;
     transform: translateX(-100%);
     transition: transform 0.18s ease;
     width: 235px;
     box-shadow: 8px 0 40px #192a411f;
   }
   .sidebar.open {
+    visibility: visible;
     transform: translateX(0);
+  }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 29;
+    background: rgb(17 26 40 / 34%);
   }
   .sidebar-close {
     display: block;
@@ -1224,6 +1239,8 @@ strong {
     top: 7px;
     right: 11px;
     padding: 4px 9px;
+    min-width: 44px;
+    min-height: 44px;
     z-index: 1;
     font-size: 23px;
     color: #485567;

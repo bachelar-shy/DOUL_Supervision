@@ -29,6 +29,7 @@ import {
   WorkbenchPage,
 } from "../pages";
 import { Icon } from "../pages/shared";
+import { DrawingReviewPage } from "../pages/DrawingReviewPage";
 import { OfflineCommandIntentPanel } from "../pages/OfflineCommandIntentPanel";
 import { offlineIntentTitle } from "../data/offline-command-labels";
 import { fieldCoreRouteFor, fieldCoreRoutes, machineForRoute, mobileRoutes, roleRoutes, routes, type CorrectionSection } from "./routes";
@@ -62,6 +63,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
   const routeLabel = (value: (typeof routes)[number] | undefined) => {
     if (!value) return "";
     if (fieldCoreMode && value.id === "owner") return t("launch.reports");
+    if (fieldCoreMode && value.id === "drawings") return t("launch.drawings");
     if (fieldCoreMode && value.id === "capture") return t("launch.notes");
     return t(value.labelKey ?? "", { defaultValue: value.label });
   };
@@ -179,6 +181,14 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
       return () => clearTimeout(t);
     }
   }, [toast]);
+  useEffect(() => {
+    if (!menu) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenu(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [menu]);
   const allowed = fieldCoreMode
     ? fieldCoreRoutes[role]
     : workspace?.demo
@@ -208,6 +218,13 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     setRoute(target);
     setSelected(null);
   }, [route, role]);
+  useEffect(() => {
+    if (fieldCoreMode || !workspace || allowed.includes(route)) return;
+    history.replaceState(null, "", "#/today");
+    setRoute("today");
+    setSelected(null);
+    setMenu(false);
+  }, [allowed, route, workspace]);
   const mobileChoices = fieldCoreMode
     ? routes.filter((item) => allowed.includes(item.id) && ["today", "capture", "inspections", "corrections"].includes(item.id))
     : mobileRoutes[role];
@@ -252,8 +269,8 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
   }
   return (
     <div className="app-shell">
-      <aside className={"sidebar " + (menu ? "open" : "")}>
-        <button type="button" className="sidebar-close" aria-label="사이드바 닫기"
+      <aside id="side-navigation" className={"sidebar " + (menu ? "open" : "")}>
+        <button type="button" className="sidebar-close" aria-label={t("app.menuClose")}
           onClick={() => setMenu(false)}>×</button>
         <div className="brand">
           <b>
@@ -300,7 +317,6 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
             ? fieldCoreRoutes[role].map((id) => routes.find((entry) => entry.id === id)).filter((entry): entry is (typeof routes)[number] => Boolean(entry))
             : routes.filter((entry) =>
                 allowed.includes(entry.id) &&
-                entry.id !== "drawings" &&
                 entry.id !== "corrections"))
             .map(({ id, label, labelKey, icon }) => ({
               id,
@@ -321,11 +337,14 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
           <small>{t("app.footer.tagline")}</small>
         </div>
       </aside>
+      {menu && <button type="button" className="sidebar-backdrop" aria-label={t("app.menuClose")} onClick={() => setMenu(false)} />}
       <div className="main-shell">
         <header className="topbar">
           <button
             className="icon-button menu-toggle"
             aria-label={t("app.menuOpen")}
+            aria-controls="side-navigation"
+            aria-expanded={menu}
             onClick={() => setMenu(!menu)}
           >
             <Icon name="layers" />
@@ -550,12 +569,23 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                   onOpenCommand={(item, action) => setDialog({ item, action })}
                 />
               )}
-              {safeRoute === "drawings" && (
+              {safeRoute === "drawings" && fieldCoreMode && (
                 <div data-ui-page="field-drawings">
                   <Suspense fallback={<div className="loading-panel">{t("app.loading.workspace")}</div>}>
                     <PdfViewerPanel client={client} workspace={workspace} readOnly />
                   </Suspense>
                 </div>
+              )}
+              {safeRoute === "drawings" && !fieldCoreMode && (
+                <DrawingReviewPage
+                  key={`${workspace.project.id}:${workspace.role.id}:drawings`}
+                  client={client}
+                  workspace={workspace}
+                  onChanged={refresh}
+                  onSelect={setSelected}
+                  onNavigate={nav}
+                  onOpenCommand={(item, action) => setDialog({ item, action })}
+                />
               )}
               {safeRoute === "corrections" && (
                 <div data-ui-page="field-corrections">
@@ -640,6 +670,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
         }))}
         onNavigate={nav}
         onMore={() => setMenu(!menu)}
+        moreControls="side-navigation"
         moreOpen={menu}
         moreActive={!mobileItems.some((item) => item.id === safeRoute)}
         moreIcon={<Icon name="layers" />}

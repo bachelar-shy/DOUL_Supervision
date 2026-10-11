@@ -63,6 +63,7 @@ export function NavigationList({
         <button
           key={item.id}
           type="button"
+          data-route={item.id}
           className={activeId === item.id ? "active" : ""}
           aria-current={activeId === item.id ? "page" : undefined}
           disabled={item.disabled}
@@ -92,6 +93,7 @@ export interface MobileNavigationProps {
   activeId?: string | null;
   onNavigate: (id: string) => void;
   onMore: () => void;
+  moreControls?: string;
   moreOpen?: boolean;
   moreActive?: boolean;
   moreIcon?: ReactNode;
@@ -104,6 +106,7 @@ export function MobileNavigation({
   activeId,
   onNavigate,
   onMore,
+  moreControls,
   moreOpen = false,
   moreActive = false,
   moreIcon,
@@ -123,6 +126,7 @@ export function MobileNavigation({
         <button
           key={item.id}
           type="button"
+          data-route={item.id}
           className={activeId === item.id ? "active" : ""}
           aria-current={activeId === item.id ? "page" : undefined}
           disabled={item.disabled}
@@ -136,6 +140,7 @@ export function MobileNavigation({
         type="button"
         className={moreActive ? "active" : ""}
         aria-expanded={moreOpen}
+        aria-controls={moreControls}
         onClick={onMore}
       >
         {moreIcon}
