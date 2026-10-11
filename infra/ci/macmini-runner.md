@@ -1,9 +1,9 @@
 # Mac mini CI runner
 
-The repository's eleven workflows keep their job names and verification steps.
+The repository's fifteen workflows keep their job names and verification steps.
 They select `[self-hosted, Linux, ARM64, doul-macmini]`. One runner executes
 jobs serially on the connected M4 Mac mini, using a dedicated Colima Linux VM
-(profile `doul-ci`, 4 CPUs, 6 GiB RAM, 16 GiB Docker data disk).
+(profile `doul-ci`, 4 CPUs, 6 GiB RAM, 24 GiB Docker data disk).
 
 The listener runs with `--once`: each job closes its GitHub session, then the
 container restart policy starts the listener for the next job. Registration is
@@ -25,7 +25,7 @@ On the Mac, with `gh` authenticated as a repository administrator:
 ```bash
 HOMEBREW_NO_AUTO_UPDATE=1 brew install colima docker docker-compose
 colima start doul-ci --vm-type vz --arch aarch64 --cpu 4 --memory 6 \
-  --disk 16 --runtime docker --activate=false
+  --disk 24 --runtime docker --activate=false
 docker --context colima-doul-ci build -t doul-macmini-runner:2.338.0 \
   -f infra/ci/macmini-runner.Dockerfile infra/ci
 docker --context colima-doul-ci run -d --name doul-ci-runner \

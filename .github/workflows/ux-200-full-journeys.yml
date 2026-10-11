@@ -3,8 +3,10 @@ on:
   pull_request:
     paths:
       - "tests_browser/ux-200-full-journey.spec.ts"
+      - "tests_browser/ux200-evidence.ts"
       - "tests_browser/pr178-*.spec.ts"
       - "playwright.pr178-review.config.ts"
+      - "playwright.ux200.config.ts"
       - "apps/web/src/pages/DocumentPage.tsx"
       - "apps/web/src/pages/InspectionAuthoringPanel.tsx"
       - "apps/web/src/pages/document-authoring-source.ts"
@@ -44,7 +46,7 @@ jobs:
           DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
         run: |
           mkdir -p .local
-          npx playwright test tests_browser/ux-200-full-journey.spec.ts --reporter=list
+          npx playwright test --config playwright.ux200.config.ts
       - name: Upload full case-by-case results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -54,6 +56,7 @@ jobs:
             .local/ux200-full-results.json
             .local/ux200-full-results.csv
             .local/ux200-full-results.md
+            .local/ux200-playwright-results.json
             .local/pr178-review-results.json
             test-results/
           if-no-files-found: warn
