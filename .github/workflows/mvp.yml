@@ -81,7 +81,7 @@ jobs:
           npm audit --json > .local/npm-audit-ci.json || true
           echo 'Local skeleton only. See design/verification/security-audit.json for release blockers.'
 
-  # Keep every browser case; run disjoint file shards instead of a 30-minute serial suite.
+  # Deterministic non-empty file shards keep every browser case and its afterAll assertions.
   browser-integration-shard:
     name: Browser integration shard ${{ matrix.shard }}/6
     runs-on: ubuntu-24.04
@@ -111,7 +111,7 @@ jobs:
       - name: Run entire browser suite (one of six disjoint file shards)
         env:
           DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
-        run: npx playwright test --shard=${{ matrix.shard }}/6
+        run: node scripts/run_mvp_browser_shard.mjs ${{ matrix.shard }} 6
       - name: Preserve shard failures and trace evidence
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
