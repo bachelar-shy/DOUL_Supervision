@@ -14,6 +14,7 @@ import { DocumentSigningPanel } from "./DocumentSigningPanel";
 import { DocumentTableEditor, serializeDocumentTables, type DocumentTableValues } from "./DocumentTableEditor";
 import { documentAuthoringForms, eligibleDocumentSources, sourceSelectionForForm } from "./document-authoring-source";
 import "./document-authoring.css";
+import { documentAuthoringCopy, documentFormNames } from "./document-authoring-copy";
 
 function putPath(
   target: Record<string, unknown>,
@@ -74,16 +75,8 @@ export function DocumentPage({
   const sources = eligibleDocumentSources(workspace, form);
   const language = documentLocale(i18n.resolvedLanguage ?? i18n.language);
   const availableForms = documentAuthoringForms.filter((id) => Boolean(workspace.formSchemas[id]));
-  const additionalFormNames: Record<string, Record<string, string>> = {
-    "FM-02": { ko: "시공계획 검토서", vi: "Phiếu kiểm tra biện pháp thi công", en: "Construction method review" },
-    "FM-13": { ko: "시정조치서", vi: "Phiếu khắc phục", en: "Corrective action form" },
-    "FM-15": { ko: "기술질의서", vi: "Phiếu yêu cầu thông tin kỹ thuật", en: "Technical inquiry form" },
-  };
-  const sourceDescription = language === "ko"
-    ? "이 양식의 원본 기록이 없습니다. 해당 업무에서 기록을 먼저 작성하거나 접근 권한을 확인하십시오."
-    : language === "vi"
-      ? "Chưa có hồ sơ nguồn phù hợp. Hãy tạo hồ sơ liên quan hoặc kiểm tra quyền truy cập."
-      : "No eligible source record. Create the related record first or check your access.";
+  const uxCopy = documentAuthoringCopy[language];
+  const sourceDescription = uxCopy.noSource;
   async function preview(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
     const item = sourceSelectionForForm(sources, source);
@@ -144,11 +137,7 @@ export function DocumentPage({
     } catch (e) {
       const code = e instanceof Error ? e.message : "";
       const unavailable = code === "DOCUMENT_EXPORT_NOT_CONFIGURED";
-      setExportError(language === "ko"
-        ? unavailable ? "PDF/DOCX 출력 엔진이 설치되지 않았습니다. 관리자에게 운영 환경 설정을 요청하십시오." : "문서를 다운로드하지 못했습니다. 접근 권한과 연결 상태를 확인하십시오."
-        : language === "vi"
-          ? unavailable ? "Chưa cài đặt bộ xuất PDF/DOCX. Vui lòng liên hệ quản trị viên." : "Không tải được tài liệu. Kiểm tra quyền truy cập và kết nối."
-          : unavailable ? "The PDF/DOCX export runtime is not installed. Ask an administrator to configure it." : "Document download failed. Check your access and connection.");
+      setExportError(unavailable ? uxCopy.exportUnavailable : uxCopy.exportFailed);
     } finally {
       setExporting(null);
     }
@@ -176,7 +165,7 @@ export function DocumentPage({
           >
             {availableForms.map((id) => (
               <option key={id} value={id}>
-                {id} · {additionalFormNames[id]?.[language] ?? t("document.form." + id)}
+                {id} · {documentFormNames[id]?.[language] ?? t("document.form." + id)}
               </option>
             ))}
           </select>
@@ -196,7 +185,7 @@ export function DocumentPage({
             ))}
           </select>
           {!sources.length && <span className="muted" role="status">{sourceDescription}</span>}
-          {sources.length > 1 && !source && <span className="muted">{language === "ko" ? "원본 기록을 직접 선택하십시오. 자동 선택하지 않습니다." : language === "vi" ? "Chọn hồ sơ nguồn; không chọn tự động." : "Select a source record explicitly."}</span>}
+          {sources.length > 1 && !source && <span className="muted">{uxCopy.chooseSource}</span>}
         </label>
         <label>
           {copy.language}
@@ -273,17 +262,15 @@ export function DocumentPage({
         <div className="two-buttons">
           <button type="button" className="secondary" disabled={!snapshot || !!exporting || client.kind !== "http"}
             onClick={() => void download("docx")}>
-            {exporting === "docx" ? (language === "ko" ? "다운로드 중…" : "Downloading…") : "DOCX " + (language === "ko" ? "다운로드" : "Download")}
+            {exporting === "docx" ? uxCopy.downloading : "DOCX " + uxCopy.download}
           </button>
           <button type="button" className="secondary" disabled={!snapshot || !!exporting || client.kind !== "http"}
             onClick={() => void download("pdf")}>
-            {exporting === "pdf" ? (language === "ko" ? "다운로드 중…" : "Downloading…") : "PDF " + (language === "ko" ? "다운로드" : "Download")}
+            {exporting === "pdf" ? uxCopy.downloading : "PDF " + uxCopy.download}
           </button>
         </div>
         {snapshot && <p className="muted" style={{ fontSize: 12 }}>
-          {language === "ko" ? "다운로드 파일은 보존된 문서의 출력 사본이며 원본 서명·법정 인증이 이전되지는 않습니다." :
-            language === "vi" ? "Bản tải về là bản sao của hồ sơ đã lưu; chữ ký và hiệu lực pháp lý không tự chuyển sang bản này." :
-              "The downloaded file is a derivative. Legal signatures are not transferred."}
+          {uxCopy.signatureNote}
         </p>}
         {(err || exportError) && (
           <div role="alert" className="error-box">
