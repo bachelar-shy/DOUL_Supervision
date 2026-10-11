@@ -1,0 +1,53 @@
+name: translation-cloud-ci
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/translation-cloud-ci.yml"
+      - "services/api/modules/translation_preview.py"
+      - "services/api/main.py"
+      - "apps/web/src/pages/TranslationPreviewPanel.tsx"
+      - "apps/web/src/pages/DocumentPage.tsx"
+      - "tests/test_translation_preview.py"
+      - "tests_browser/translation-preview.spec.ts"
+permissions:
+  contents: read
+jobs:
+  translation-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Prepare ephemeral GitHub runner disk
+        run: bash infra/ci/prepare_github_runner.sh
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          cache: npm
+      - name: Install pinned dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install -r services/api/requirements.lock
+          npm install -g npm@12.2.0
+          npm ci
+      - name: Translation adapter and guards
+        run: .venv/bin/python -m unittest tests.test_translation_preview -v
+      - name: Web build and typecheck
+        run: |
+          npm run typecheck --workspace apps/web
+          npm run web:build
+      - name: Chromium browser
+        run: npx playwright install --with-deps chromium
+      - name: Translation stale response and document-layout regression
+        env:
+          DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
+        run: npx playwright test --config playwright.config.ts tests_browser/translation-preview.spec.ts
+      - name: Save failing browser traces
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: translation-browser-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/
+          retention-days: 7

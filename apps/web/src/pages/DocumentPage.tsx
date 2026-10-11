@@ -1,3 +1,4 @@
+import { TranslationPreviewPanel } from "./TranslationPreviewPanel";
 import { recordVersionLabel } from "../labels";
 import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -187,6 +188,8 @@ export function DocumentPage({
         <div className="notice">
           {renderMode === "draft" ? t("document.notice.draft") : copy.finalStatus}
         </div>
+        {/* Keep document authoring and preview as exactly two layout panes. */}
+        <TranslationPreviewPanel client={client} workspace={workspace} />
         <details open>
           <summary>{t("document.section.draftFields")}</summary>
           <div className="document-fields">

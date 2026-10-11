@@ -333,6 +333,8 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     from services.api.modules.notification_events import reconcile_notification_events, read_receipts_for_projection
     from services.api.modules.notification_routes import install_notification_read_route
     install_notification_read_route(app, store, identity=identity, role_for=role_for)
+    from services.api.modules.translation_preview import install_translation_routes
+    install_translation_routes(app, store, identity=identity, role_for=role_for)
 
     @app.get('/ready')
     def ready():
