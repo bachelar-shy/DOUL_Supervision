@@ -8,13 +8,15 @@ import { createInspectionDraft, inspectionSources } from "../data/inspection-aut
 import type { InspectionSources } from "../data/inspection-authoring-client";
 import { reasonLabel } from "../labels";
 import { formatNumber } from "../i18n/format";
+import { useSessionFormDraft } from "../data/session-form-draft";
 
 type Locale = "en" | "ko" | "vi";
 type LabelKey =
   | "title" | "description" | "workName" | "drawing" | "selectDrawing" | "revision" | "location" | "selectLocation"
   | "requirements" | "evidence" | "noRequirementsOrEvidence" | "fieldChecks" | "selfComplete" | "drawingCheck"
   | "materialCheck" | "testCheck" | "previousCheck" | "changeCheck" | "holdPoint" | "loadingSources"
-  | "noDrawings" | "saveDraft" | "saving" | "saved" | "genericError";
+  | "noDrawings" | "saveDraft" | "saving" | "saved" | "genericError"
+  | "sessionSaved" | "sessionRestored" | "sessionDiscard";
 
 const copy: Record<Locale, Record<LabelKey, string>> = {
   ko: {
@@ -28,6 +30,9 @@ const copy: Record<Locale, Record<LabelKey, string>> = {
     noDrawings: "현재 사용할 수 있는 도면이 없습니다. 기술 승인과 현장 배포·수령 상태를 확인하십시오.",
     saveDraft: "자체검측 초안 저장", saving: "저장 중…", saved: "자체검측 초안을 저장했습니다.",
     genericError: "검측 자료 요청을 완료할 수 없습니다. 연결을 확인한 뒤 다시 시도하세요.",
+    sessionSaved: "작성 중인 내용은 이 브라우저 탭에만 임시 보관되며, 정식 검측 제출이 아닙니다.",
+    sessionRestored: "이전 작성 내용을 복원했습니다. 도면 개정과 검측 기준을 다시 확인하십시오.",
+    sessionDiscard: "임시 작성 내용 삭제",
   },
   vi: {
     title: "Lập phiếu tự nghiệm thu",
@@ -40,6 +45,9 @@ const copy: Record<Locale, Record<LabelKey, string>> = {
     noDrawings: "Hiện không có bản vẽ sử dụng được. Hãy kiểm tra trạng thái phê duyệt kỹ thuật, phân phối và xác nhận nhận tại hiện trường.",
     saveDraft: "Lưu bản nháp tự nghiệm thu", saving: "Đang lưu…", saved: "Đã lưu bản nháp tự nghiệm thu.",
     genericError: "Không thể tải hoặc lưu hồ sơ nghiệm thu. Hãy kiểm tra kết nối rồi thử lại.",
+    sessionSaved: "Nội dung đang soạn chỉ được lưu tạm trong tab này; chưa nộp hồ sơ nghiệm thu.",
+    sessionRestored: "Đã khôi phục nội dung đang soạn. Hãy kiểm tra phiên bản bản vẽ và tiêu chí nghiệm thu.",
+    sessionDiscard: "Xóa nội dung tạm",
   },
   en: {
     title: "Prepare self inspection",
@@ -52,6 +60,9 @@ const copy: Record<Locale, Record<LabelKey, string>> = {
     noDrawings: "There are no drawings available. Check technical approval and site distribution and receipt status.",
     saveDraft: "Save self inspection draft", saving: "Saving…", saved: "Self inspection draft saved.",
     genericError: "The inspection records request could not be completed. Check the connection and try again.",
+    sessionSaved: "Unsubmitted work is saved only in this browser tab and has not been formally submitted.",
+    sessionRestored: "Previous input was restored. Recheck drawing revisions and inspection requirements.",
+    sessionDiscard: "Discard temporary input",
   },
 };
 
@@ -68,30 +79,53 @@ const empty: InspectionSources = { drawings: [], requirements: [], evidence: [] 
 const precheckLabels = ["drawingCheck", "materialCheck", "testCheck", "previousCheck", "changeCheck"] as const;
 const precheckKeys = ["drawing", "material", "test", "previous", "change"] as const;
 
+const emptyInspectionInput = {
+  drawingId: "", locationId: "", requirementIds: [] as string[], evidenceIds: [] as string[],
+  workName: "", selfComplete: false, hold: false,
+  precheck: { drawing: false, material: false, test: false, previous: false, change: false },
+};
+
 export function InspectionAuthoringPanel({ client, workspace, online, onCreated }: { client: SupervisionClient; workspace: Workspace; online: boolean; onCreated: (record: RecordDTO) => Promise<void> }) {
   const { i18n } = useTranslation();
   const t = copy[localeFor(i18n.resolvedLanguage ?? i18n.language)];
   const copyRef = useRef(t);
-  const [sources, setSources] = useState(empty); const [drawingId, setDrawingId] = useState(""); const [locationId, setLocationId] = useState("");
-  const [requirementIds, setRequirementIds] = useState<string[]>([]); const [evidenceIds, setEvidenceIds] = useState<string[]>([]);
-  const [workName, setWorkName] = useState(""); const [selfComplete, setSelfComplete] = useState(false); const [hold, setHold] = useState(false);
-  const [precheck, setPrecheck] = useState<Record<string, boolean>>({ drawing: false, material: false, test: false, previous: false, change: false });
+  const [sources, setSources] = useState(empty);
+  const { value: draft, change: changeDraft, discard: discardDraft, restored } = useSessionFormDraft(
+    "inspection",
+    { projectId: workspace.project.id, partyId: client.session?.actor.partyId ?? "anonymous", roleId: workspace.role.id },
+    emptyInspectionInput,
+  );
+  const { drawingId, locationId, requirementIds, evidenceIds, workName, selfComplete, hold, precheck } = draft;
   const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [saved, setSaved] = useState("");
   const attempt = useRef<{ body: string; key: string; objectId: string } | null>(null);
   useEffect(() => { copyRef.current = t; }, [t]);
   const drawing = sources.drawings.find(d => d.domainRef.objectId === drawingId);
   const drawingVersion = drawing?.domainRef.version;
   useEffect(() => {
-    let ignore = false; setLoading(true); setError(""); setRequirementIds([]); setEvidenceIds([]);
+    let ignore = false; setLoading(true); setError("");
     inspectionSources(client, drawingId && drawingVersion ? { objectType: "InformationItem", objectId: drawingId, version: drawingVersion } : undefined, locationId || undefined).then(value => {
       if (ignore) return;
       setSources(value);
-      if (drawingId && !value.drawings.some(d => d.domainRef.objectId === drawingId)) { setDrawingId(""); setLocationId(""); }
-    }).catch(cause => { if (!ignore) { setError(localizedApiError(cause, copyRef.current.genericError)); setSources(empty); setDrawingId(""); setLocationId(""); } })
+      if (drawingId && !value.drawings.some(d => d.domainRef.objectId === drawingId)) {
+        changeDraft({ drawingId: "", locationId: "", requirementIds: [], evidenceIds: [] });
+      } else {
+        const validRequirements = new Set(value.requirements.map(item => item.domainRef.objectId));
+        const validEvidence = new Set(value.evidence.map(item => item.domainRef.objectId));
+        if (requirementIds.some(id => !validRequirements.has(id)) || evidenceIds.some(id => !validEvidence.has(id))) {
+          changeDraft({
+            requirementIds: requirementIds.filter(id => validRequirements.has(id)),
+            evidenceIds: evidenceIds.filter(id => validEvidence.has(id)),
+          });
+        }
+      }
+    }).catch(cause => { if (!ignore) { setError(localizedApiError(cause, copyRef.current.genericError)); setSources(empty); changeDraft({ drawingId: "", locationId: "", requirementIds: [], evidenceIds: [] }); } })
       .finally(() => { if (!ignore) setLoading(false); });
     return () => { ignore = true; };
   }, [client, workspace.items, drawingId, drawingVersion, locationId]);
-  const toggle = (id: string, ids: string[], setter: (ids: string[]) => void) => setter(ids.includes(id) ? ids.filter(value => value !== id) : [...ids, id]);
+  const toggle = (id: string, field: "requirementIds" | "evidenceIds") => {
+    const ids = draft[field];
+    changeDraft({ [field]: ids.includes(id) ? ids.filter(value => value !== id) : [...ids, id] });
+  };
   async function save() {
     if (!drawing || !locationId || busy) return;
     setBusy(true); setError(""); setSaved("");
@@ -102,19 +136,24 @@ export function InspectionAuthoringPanel({ client, workspace, online, onCreated 
     if (attempt.current?.body !== body) attempt.current = { body, key: crypto.randomUUID(), objectId: crypto.randomUUID() };
     try {
       const result = await createInspectionDraft(client, { ...input, objectId: attempt.current.objectId }, attempt.current.key);
-      setSaved(`${t.saved} ${result.record.id}`); attempt.current = null; setWorkName(""); setSelfComplete(false); setHold(false); setPrecheck({ drawing: false, material: false, test: false, previous: false, change: false });
+      setSaved(`${t.saved} ${result.record.id}`); attempt.current = null; discardDraft();
       await onCreated(result.record);
     } catch (cause) { setError(localizedApiError(cause, t.genericError)); } finally { setBusy(false); }
   }
   return <form aria-label={t.title} className="grid gap-3 p-3" onSubmit={event => { event.preventDefault(); void save(); }}>
     <h3>{t.title}</h3><p>{t.description}</p>
-    <label>{t.workName}<input value={workName} maxLength={300} required disabled={busy} onChange={event => setWorkName(event.target.value)} /></label>
-    <label>{t.drawing}<select value={drawingId} disabled={loading || busy} onChange={event => { setDrawingId(event.target.value); setLocationId(""); setRequirementIds([]); setEvidenceIds([]); }}><option value="">{t.selectDrawing}</option>{sources.drawings.map(d => <option key={d.domainRef.objectId} value={d.domainRef.objectId}>{d.title} · {t.revision} {d.revision} · {recordVersionLabel(formatNumber(d.domainRef.version))}</option>)}</select></label>
-    <label>{t.location}<select value={locationId} disabled={!drawing || loading || busy} onChange={event => { setLocationId(event.target.value); setRequirementIds([]); setEvidenceIds([]); }}><option value="">{t.selectLocation}</option>{drawing?.locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
-    <fieldset disabled={loading || busy}><legend>{t.requirements}</legend>{sources.requirements.map(r => <label className="block" key={r.domainRef.objectId}><input type="checkbox" checked={requirementIds.includes(r.domainRef.objectId)} onChange={() => toggle(r.domainRef.objectId, requirementIds, setRequirementIds)} /> {r.title} · {recordVersionLabel(formatNumber(r.domainRef.version))}</label>)}</fieldset>
-    <fieldset disabled={loading || busy}><legend>{t.evidence}</legend>{sources.evidence.map(e => <label className="block" key={e.domainRef.objectId}><input type="checkbox" checked={evidenceIds.includes(e.domainRef.objectId)} onChange={() => toggle(e.domainRef.objectId, evidenceIds, setEvidenceIds)} /> {e.title} · {e.mediaType} · {recordVersionLabel(formatNumber(e.domainRef.version))}</label>)}</fieldset>
+    <div className="flex flex-wrap items-center gap-2">
+      <p className="text-xs text-slate-700" role="status">{restored ? t.sessionRestored : t.sessionSaved}</p>
+      <button type="button" className="secondary" onClick={() => { discardDraft(); setSaved(""); }}
+        disabled={busy}>{t.sessionDiscard}</button>
+    </div>
+    <label>{t.workName}<input value={workName} maxLength={300} required disabled={busy} onChange={event => changeDraft({ workName: event.target.value })} /></label>
+    <label>{t.drawing}<select value={drawingId} disabled={loading || busy} onChange={event => changeDraft({ drawingId: event.target.value, locationId: "", requirementIds: [], evidenceIds: [] })}><option value="">{t.selectDrawing}</option>{sources.drawings.map(d => <option key={d.domainRef.objectId} value={d.domainRef.objectId}>{d.title} · {t.revision} {d.revision} · {recordVersionLabel(formatNumber(d.domainRef.version))}</option>)}</select></label>
+    <label>{t.location}<select value={locationId} disabled={!drawing || loading || busy} onChange={event => changeDraft({ locationId: event.target.value, requirementIds: [], evidenceIds: [] })}><option value="">{t.selectLocation}</option>{drawing?.locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
+    <fieldset disabled={loading || busy}><legend>{t.requirements}</legend>{sources.requirements.map(r => <label className="block" key={r.domainRef.objectId}><input type="checkbox" checked={requirementIds.includes(r.domainRef.objectId)} onChange={() => toggle(r.domainRef.objectId, "requirementIds")} /> {r.title} · {recordVersionLabel(formatNumber(r.domainRef.version))}</label>)}</fieldset>
+    <fieldset disabled={loading || busy}><legend>{t.evidence}</legend>{sources.evidence.map(e => <label className="block" key={e.domainRef.objectId}><input type="checkbox" checked={evidenceIds.includes(e.domainRef.objectId)} onChange={() => toggle(e.domainRef.objectId, "evidenceIds")} /> {e.title} · {e.mediaType} · {recordVersionLabel(formatNumber(e.domainRef.version))}</label>)}</fieldset>
     {locationId && !loading && (!sources.requirements.length || !sources.evidence.length) && <p>{t.noRequirementsOrEvidence}</p>}
-    <fieldset disabled={busy}><legend>{t.fieldChecks}</legend><label className="block"><input type="checkbox" checked={selfComplete} onChange={event => setSelfComplete(event.target.checked)} /> {t.selfComplete}</label>{precheckKeys.map((key, index) => <label className="block" key={key}><input type="checkbox" checked={precheck[key]} onChange={event => setPrecheck({ ...precheck, [key]: event.target.checked })} /> {t[precheckLabels[index]]}</label>)}<label className="block"><input type="checkbox" checked={hold} onChange={event => setHold(event.target.checked)} /> {t.holdPoint}</label></fieldset>
+    <fieldset disabled={busy}><legend>{t.fieldChecks}</legend><label className="block"><input type="checkbox" checked={selfComplete} onChange={event => changeDraft({ selfComplete: event.target.checked })} /> {t.selfComplete}</label>{precheckKeys.map((key, index) => <label className="block" key={key}><input type="checkbox" checked={precheck[key]} onChange={event => changeDraft({ precheck: { ...precheck, [key]: event.target.checked } })} /> {t[precheckLabels[index]]}</label>)}<label className="block"><input type="checkbox" checked={hold} onChange={event => changeDraft({ hold: event.target.checked })} /> {t.holdPoint}</label></fieldset>
     {loading && <p role="status">{t.loadingSources}</p>}{!loading && !sources.drawings.length && <p>{t.noDrawings}</p>}{error && <p role="alert">{error}</p>}{saved && <p role="status">{saved}</p>}
     <button type="submit" className="secondary wide" disabled={!online || busy || loading || !drawing || !locationId || !workName.trim() || !requirementIds.length || !evidenceIds.length}>{busy ? t.saving : t.saveDraft}</button>
   </form>;
