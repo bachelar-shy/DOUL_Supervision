@@ -25,15 +25,16 @@ function onePagePdf(): Buffer {
 
 test('designer registers an immutable PDF revision and explicitly requests technical review', async ({ page }) => {
   const suffix = randomUUID().slice(0,8); const title = `Synthetic authored drawing ${suffix}`;
-  await page.goto('/#/parallel-test');
+  // Designers use the official drawing workspace, not the SUP/ADM diagnostic.
+  await page.goto('/#/drawings');
   await page.getByLabel('시험 사용자 역할 선택').selectOption('DES');
-  await page.goto('/#/parallel-test');
-  await page.getByRole('tab', { name: '도면 작성 차수', exact: true }).click();
+  await page.goto('/#/drawings');
   const viewer = page.getByLabel('PDF 도면 보기');
   const upload = page.waitForResponse(r => r.url().includes('/uploads/') && r.url().endsWith('/complete') && r.request().method() === 'POST');
   await viewer.getByTestId('pdf-upload').setInputFiles({ name: `authored-${suffix}.pdf`, mimeType:'application/pdf', buffer:onePagePdf() });
   const completed = await upload; expect(completed.ok(), await completed.text()).toBeTruthy();
   const evidence = await completed.json() as {id:string;version:number};
+  await page.getByRole('tab', { name: '도면 등록·배포', exact: true }).click();
   const panel = page.getByRole('region', {name:'도면 개정 등록'});
   await panel.getByLabel('새 도면 제목').fill(title);
   await panel.getByLabel('새 개정 번호').fill('01');
@@ -50,5 +51,7 @@ test('designer registers an immutable PDF revision and explicitly requests techn
   expect(result.drawing.status).toBe('draft'); expect(result.approval.status).toBe('pending');
   expect(result.approval.targetRef.objectId).toBe(result.drawing.id); expect(result.binding.drawingRef.objectId).toBe(result.drawing.id);
   expect(writes).toHaveLength(1); await expect(panel.getByText(new RegExp(`등록 완료: ${title}`))).toBeVisible();
-  await page.reload(); await expect(page.getByLabel('도면 작성 차수 기록').getByRole('button', {name: new RegExp(title)})).toBeVisible();
+  await page.reload();
+  await page.getByRole('tab', { name: '도면 등록·배포', exact: true }).click();
+  await expect(page.getByLabel('도면 작성 차수 기록').getByRole('button', {name: new RegExp(title)})).toBeVisible();
 });
