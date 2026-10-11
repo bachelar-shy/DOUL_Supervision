@@ -35,6 +35,7 @@ import {
 import { creationEn, creationKo, creationVi } from "./creation-translations";
 import { mandatoryWorkflowEn, mandatoryWorkflowKo, mandatoryWorkflowVi } from "./mandatory-workflow-translations";
 export { actionAuthoringTranslations } from "./action-authoring-translations";
+import { authLoginKo, authLoginVi, authLoginEn } from "./auth-login-translations";
 
 export {
   commands as koreanCommands,
@@ -114,6 +115,7 @@ export function languageDirection(value?: string | null): "ltr" | "rtl" {
 }
 
 const ko = {
+  ...authLoginKo,
   "audit.created": "{{type}} 작성",
   "audit.record": "업무 기록",
   "audit.processed": "업무 처리 기록",
@@ -226,6 +228,15 @@ const ko = {
   "roles.DES": "설계자",
   "roles.ADM": "관리자",
   "navigation.today": "오늘",
+  "launch.drawings": "도면조회",
+  "launch.corrections": "지적·시정조치",
+  "launch.reports": "감리보고",
+  "launch.notes": "현장기록",
+  "launch.observations": "현장 확인",
+  "launch.issues": "지적사항",
+  "launch.actions": "시정조치",
+  "launch.ownerReports": "보고·회신",
+  "launch.reportForms": "감리 양식",
   "navigation.inspections": "검측·검수",
   "navigation.capture": "현장·증빙",
   "navigation.observations": "현장 확인 대기",
@@ -675,6 +686,11 @@ const ko = {
   "evidence.summary.uploadedAt": "업무 시스템 등록 시각",
   "evidence.summary.fileSize": "파일 크기",
   "evidence.summary.locationDiscipline": "위치 / 공종",
+  "evidence.demo.syntheticTitle": "합성 시험자료 · 실제 현장 증빙 아님",
+  "evidence.demo.syntheticDescription": "이 자료는 화면·업무 절차 시험용입니다. 검측 판정, 조치 완료 또는 발주처 승인의 근거로 사용할 수 없습니다.",
+  "evidence.demo.case": "시험 사례번호",
+  "evidence.demo.stage": "시험 단계",
+  "evidence.demo.zone": "시험 구역",
   "evidence.boundary.title": "판정 경계",
   "evidence.boundary.description": "증빙 등록 또는 분석 결과의 존재만으로 검측 합격, 승인, 지적사항 종결이 결정되지 않습니다. 공식 판정은 별도의 권한 있는 업무 절차를 따릅니다.",
   "evidence.provenance.id": "증빙 번호",
@@ -714,6 +730,7 @@ export type TranslationKey = keyof typeof ko;
 type DraftTranslationDictionary = Partial<Record<TranslationKey, string>>;
 
 const vi: DraftTranslationDictionary = {
+  ...authLoginVi,
   "audit.created": "Tạo {{type}}",
   "audit.record": "Hồ sơ công việc",
   "audit.processed": "Lịch sử xử lý",
@@ -826,6 +843,15 @@ const vi: DraftTranslationDictionary = {
   "roles.DES": "Tư vấn thiết kế",
   "roles.ADM": "Quản trị",
   "navigation.today": "Hôm nay",
+  "launch.drawings": "Xem bản vẽ",
+  "launch.corrections": "Vấn đề · Khắc phục",
+  "launch.reports": "Báo cáo giám sát",
+  "launch.notes": "Ghi nhận hiện trường",
+  "launch.observations": "Ghi nhận",
+  "launch.issues": "Vấn đề",
+  "launch.actions": "Khắc phục",
+  "launch.ownerReports": "Báo cáo · Phản hồi",
+  "launch.reportForms": "Biểu mẫu giám sát",
   "navigation.inspections": "Nghiệm thu · Kiểm tra",
   "navigation.capture": "Hiện trường · Minh chứng",
   "navigation.observations": "Ghi nhận hiện trường",
@@ -986,6 +1012,7 @@ const vi: DraftTranslationDictionary = {
 };
 
 const en: DraftTranslationDictionary = {
+  ...authLoginEn,
   "audit.created": "Created {{type}}",
   "audit.record": "Work record",
   "audit.processed": "Work processing record",
@@ -1098,6 +1125,15 @@ const en: DraftTranslationDictionary = {
   "roles.DES": "Designer",
   "roles.ADM": "Administrator",
   "navigation.today": "Today",
+  "launch.drawings": "Drawings",
+  "launch.corrections": "Issues · Corrections",
+  "launch.reports": "Supervision reports",
+  "launch.notes": "Field records",
+  "launch.observations": "Observations",
+  "launch.issues": "Issues",
+  "launch.actions": "Corrections",
+  "launch.ownerReports": "Reports · Replies",
+  "launch.reportForms": "Supervision forms",
   "navigation.inspections": "Inspection · Acceptance",
   "navigation.capture": "Field · Evidence",
   "navigation.observations": "Field observations",

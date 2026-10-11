@@ -17,6 +17,7 @@
     "test:contracts": "python3 scripts/dependency_environment.py --suite contracts",
     "test:api": "python3 scripts/dependency_environment.py --suite api",
     "test:sample-browser": "playwright test -c playwright.sample.config.ts",
+    "test:field-core": "playwright test -c playwright.field-core.config.ts",
     "check:ui-boundary": "python3 scripts/check_ui_boundary.py",
     "check:dependencies": "python3 scripts/dependency_environment.py --node",
     "postinstall": "node scripts/apply_braces_backport.cjs && node scripts/apply_node_forge_backport.cjs",
