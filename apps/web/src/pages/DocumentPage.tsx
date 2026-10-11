@@ -1,5 +1,5 @@
 import { recordVersionLabel } from "../labels";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { documentRenderCopy, documentOutputLanguageLabels, formFieldLabel } from "@doul/localization";
 import type { RecordDTO, Workspace } from "../data/ui-contract";
@@ -9,7 +9,7 @@ import { reasonLabel } from "../labels";
 import { DocumentWorkspaceTemplate } from "../ui/templates";
 import { PageBoundary } from "./PageBoundary";
 import { Icon } from "./shared";
-import { recordTitle, recordRef } from "./record-utils";
+import { recordTitle } from "./record-utils";
 import { DocumentSigningPanel } from "./DocumentSigningPanel";
 import { DocumentTableEditor, buildDocumentData, type DocumentTableValues } from "./DocumentTableEditor";
 import { documentAuthoringForms, eligibleDocumentSources, sourceSelectionForForm } from "./document-authoring-source";
@@ -29,19 +29,21 @@ const emptyDocumentDraft = {
 function documentLocale(language: string) {
   return language.startsWith("ko") ? "ko" : language.startsWith("vi") ? "vi" : "en";
 }
-export function DocumentPage({
-  client,
-  workspace,
-  online,
-  refresh,
-}: {
+interface DocumentPageProps {
   client: SupervisionClient;
   workspace: Workspace;
   online: boolean;
   refresh: () => Promise<void>;
-}) {
+}
+
+export function DocumentPage(props: DocumentPageProps) {
+  const identity = JSON.stringify([props.workspace.project.id, props.workspace.role.id, props.client.session?.actor.partyId]);
+  return <DocumentEditor key={identity} {...props} />;
+}
+
+function DocumentEditor({ client, workspace, online, refresh }: DocumentPageProps) {
   const { t, i18n } = useTranslation();
-  const { value: draft, change: changeDraft, discard: discardDraft, restored } = useSessionFormDraft(
+  const { value: draft, change: changeDraft, discard: discardDraft, restored, persistenceFailed } = useSessionFormDraft(
     "document",
     { projectId: workspace.project.id, partyId: client.session?.actor.partyId ?? "anonymous", roleId: workspace.role.id },
     emptyDocumentDraft,
@@ -54,6 +56,16 @@ export function DocumentPage({
   const [err, setErr] = useState("");
   const [snapshot, setSnapshot] = useState<RecordDTO | null>(null);
   const renderAttempt = useRef<{ fingerprint: string; key: ReturnType<typeof crypto.randomUUID> } | null>(null);
+  const mounted = useRef(false);
+  const currentDraft = useRef(draft);
+  const editRevision = useRef(0);
+  useLayoutEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+  useEffect(() => {
+    currentDraft.current = draft;
+  }, [draft]);
   const schema = workspace.formSchemas[form];
   const copy = documentRenderCopy[documentLocale(i18n.resolvedLanguage ?? i18n.language)];
   const sources = eligibleDocumentSources(workspace, form);
@@ -61,8 +73,18 @@ export function DocumentPage({
   const availableForms = documentAuthoringForms.filter((id) => Boolean(workspace.formSchemas[id]));
   const uxCopy = documentAuthoringCopy[language];
   const sourceDescription = uxCopy.noSource;
+  function editDraft(patch: Partial<typeof draft>) {
+    editRevision.current += 1;
+    currentDraft.current = { ...currentDraft.current, ...patch };
+    changeDraft(patch);
+    setSnapshot(null);
+    setHtml("");
+    setErr("");
+    setExportError("");
+  }
   async function preview(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
+    if (busy) return;
     const item = sourceSelectionForForm(sources, source);
     if (!item) {
       setErr(sourceDescription);
@@ -77,8 +99,16 @@ export function DocumentPage({
     }
     setBusy(true);
     setErr("");
+    setSnapshot(null);
+    setHtml("");
+    setExportError("");
+    const submittedSession = client.session;
+    const submittedDraft = JSON.stringify(draft);
+    const submittedRevision = editRevision.current;
+    const active = () => mounted.current && client.session === submittedSession;
+    const unchanged = () => editRevision.current === submittedRevision && JSON.stringify(currentDraft.current) === submittedDraft;
     try {
-      const sourceRefs = [recordRef(item)];
+      const sourceRefs = [item.ref];
       const data = buildDocumentData(schema, values, tableValues);
       const final = renderMode === "final";
       const fingerprint = JSON.stringify({ form, sourceRefs, data, final, documentLanguage });
@@ -94,23 +124,35 @@ export function DocumentPage({
         documentLanguage,
         attempt.key,
       );
-      setSnapshot(doc);
-      setHtml(await client.documentHtml(doc.id));
+      if (!active()) return;
+      const renderedHtml = await client.documentHtml(doc.id);
+      if (!active()) return;
       await refresh();
-      renderAttempt.current = null;
-      if (final) discardDraft();
+      if (!active()) return;
+      if (renderAttempt.current === attempt) renderAttempt.current = null;
+      // Final generation clears only the input that was actually submitted. A
+      // later edit, a remounted editor or another role must keep its own draft.
+      if (unchanged()) {
+        setSnapshot(doc);
+        setHtml(renderedHtml);
+        if (final) discardDraft();
+      }
     } catch (e) {
-      setErr(e instanceof ApiError ? reasonLabel(e.detail.code) : copy.genericError);
+      if (active() && unchanged()) setErr(e instanceof ApiError ? reasonLabel(e.detail.code) : copy.genericError);
     } finally {
-      setBusy(false);
+      if (active()) setBusy(false);
     }
   }
   async function download(format: "pdf" | "docx") {
     if (!snapshot || client.kind !== "http") return;
     setExporting(format);
     setExportError("");
+    const exportSession = client.session;
+    const exportRevision = editRevision.current;
+    const active = () => mounted.current && client.session === exportSession && editRevision.current === exportRevision;
     try {
       const blob = await client.documentExport(snapshot.id, format);
+      if (!active()) return;
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
@@ -122,9 +164,9 @@ export function DocumentPage({
     } catch (e) {
       const code = e instanceof Error ? e.message : "";
       const unavailable = code === "DOCUMENT_EXPORT_NOT_CONFIGURED";
-      setExportError(unavailable ? uxCopy.exportUnavailable : uxCopy.exportFailed);
+      if (active()) setExportError(unavailable ? uxCopy.exportUnavailable : uxCopy.exportFailed);
     } finally {
-      setExporting(null);
+      if (mounted.current && client.session === exportSession) setExporting(null);
     }
   }
   return (
@@ -133,8 +175,11 @@ export function DocumentPage({
       <form className="panel editor-pane" onSubmit={(event) => void preview(event)}>
         <h2>{t("document.editor.title")}</h2>
         <div className="document-session-draft-notice">
-          <p role="status">{restored ? uxCopy.sessionRestored : uxCopy.sessionSaved}</p>
+          {persistenceFailed
+            ? <p role="alert">{uxCopy.sessionSaveFailed}</p>
+            : <p role="status">{restored ? uxCopy.sessionRestored : uxCopy.sessionSaved}</p>}
           <button type="button" className="secondary" disabled={busy} onClick={() => {
+            editRevision.current += 1;
             discardDraft();
             setSnapshot(null);
             setHtml("");
@@ -148,11 +193,7 @@ export function DocumentPage({
             aria-label={t("document.form.aria")}
             value={form}
             onChange={(e) => {
-              changeDraft({ form: e.target.value, source: "", values: {}, tableValues: {} });
-              setHtml("");
-              setSnapshot(null);
-              setErr("");
-              setExportError("");
+              editDraft({ form: e.target.value, source: "", values: {}, tableValues: {} });
             }}
           >
             {availableForms.map((id) => (
@@ -166,7 +207,7 @@ export function DocumentPage({
           {t("document.source.label")}
           <select
             value={source}
-            onChange={(e) => changeDraft({ source: e.target.value })}
+            onChange={(e) => editDraft({ source: e.target.value })}
             aria-label={t("document.source.aria")}
           >
             <option value="">{sources.length === 1 ? t("document.source.auto") : t("document.source.label")}</option>
@@ -184,7 +225,7 @@ export function DocumentPage({
           <select
             aria-label={copy.language}
             value={documentLanguage}
-            onChange={(event) => changeDraft({ documentLanguage: event.target.value as typeof documentLanguage })}
+            onChange={(event) => editDraft({ documentLanguage: event.target.value as typeof documentLanguage })}
           >
             <option value="ko">{documentOutputLanguageLabels.ko}</option>
             <option value="vi">{documentOutputLanguageLabels.vi}</option>
@@ -196,7 +237,7 @@ export function DocumentPage({
           <select
             aria-label={copy.mode}
             value={renderMode}
-            onChange={(event) => changeDraft({ renderMode: event.target.value as typeof renderMode })}
+            onChange={(event) => editDraft({ renderMode: event.target.value as typeof renderMode })}
           >
             <option value="draft">{copy.draft}</option>
             <option value="final">{copy.final}</option>
@@ -217,7 +258,7 @@ export function DocumentPage({
                     name={f}
                     required={renderMode === "final" && r.required}
                     value={values[f] || ""}
-                    onChange={(e) => changeDraft({ values: { ...values, [f]: e.target.value } })}
+                    onChange={(e) => editDraft({ values: { ...values, [f]: e.target.value } })}
                   >
                     <option value="">{t("document.placeholder.manual")}</option>
                     <option value="true">{copy.yes}</option>
@@ -232,14 +273,14 @@ export function DocumentPage({
                     t("document.placeholder.manual")
                   }
                   onChange={(e) =>
-                    changeDraft({ values: { ...values, [f]: e.target.value } })
+                    editDraft({ values: { ...values, [f]: e.target.value } })
                   }
                 />}
               </label>
             ))}
           </div>
         </details>
-        {schema.tables.length > 0 && <DocumentTableEditor schema={schema} values={tableValues} onChange={(next) => changeDraft({ tableValues: next })} />}
+        {schema.tables.length > 0 && <DocumentTableEditor schema={schema} values={tableValues} onChange={(next) => editDraft({ tableValues: next })} />}
         <button
           type="submit"
           className="primary wide"
@@ -252,11 +293,11 @@ export function DocumentPage({
               : copy.finalButton}
         </button>
         <div className="two-buttons">
-          <button type="button" className="secondary" disabled={!snapshot || !!exporting || client.kind !== "http"}
+          <button type="button" className="secondary" disabled={!snapshot || busy || !!exporting || client.kind !== "http"}
             onClick={() => void download("docx")}>
             {exporting === "docx" ? uxCopy.downloading : "DOCX " + uxCopy.download}
           </button>
-          <button type="button" className="secondary" disabled={!snapshot || !!exporting || client.kind !== "http"}
+          <button type="button" className="secondary" disabled={!snapshot || busy || !!exporting || client.kind !== "http"}
             onClick={() => void download("pdf")}>
             {exporting === "pdf" ? uxCopy.downloading : "PDF " + uxCopy.download}
           </button>

@@ -12,8 +12,14 @@ async function openSampleAsAdministrator(page: import("@playwright/test").Page) 
   await projects.selectOption({ label: "DOUL SAMPLE · WWT 공장 (합성 시험자료)" });
   await expect(page.locator("aside.sidebar .project-chip strong"))
     .toHaveText("DOUL SAMPLE · WWT 공장 (합성 시험자료)", { timeout: 30_000 });
-  if (narrow && await page.locator(".sidebar.open").count())
-    await page.getByRole("button", { name: "사이드바 닫기" }).click();
+  if (narrow && await page.locator(".sidebar.open").count()) {
+    const close = page.locator("aside.sidebar .sidebar-close");
+    await expect(close).toBeVisible();
+    // Name is translated per locale: test its accessibility rather than an old Korean literal.
+    await expect(close).toHaveAttribute("aria-label", /\S+/);
+    await close.click();
+    await expect(page.locator("aside.sidebar")).not.toHaveClass(/\bopen\b/);
+  }
   await page.locator("header.topbar .role-picker select").last().selectOption("ADM");
   await page.goto("/#/admin");
   await expect(page.getByTestId("sample-usecase-panel")).toBeVisible({ timeout: 20_000 });
@@ -75,5 +81,24 @@ test("샘플 검증 패널은 모바일·태블릿·데스크톱에서 가로 �
     }));
     expect(geometry.overflow, "document overflows at width " + width).toBeLessThanOrEqual(geometry.viewport + 2);
     expect(geometry.panelWidth).toBeLessThanOrEqual(width);
+  }
+});
+
+test("모바일 드로어는 한·베·영에서 접근성 레이블로 닫을 수 있다", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto("/#/today");
+  const picker = page.locator("header.topbar .role-picker select").first();
+  await expect(picker).toBeVisible();
+  for (const lang of ["ko", "vi", "en"] as const) {
+    await picker.selectOption(lang);
+    await expect(picker).toHaveValue(lang);
+    await page.locator(".menu-toggle").click();
+    const sidebar = page.locator("aside.sidebar");
+    await expect(sidebar).toHaveClass(/\bopen\b/);
+    const close = sidebar.locator(".sidebar-close");
+    await expect(close).toBeVisible();
+    await expect(close).toHaveAttribute("aria-label", /\S+/);
+    await close.click();
+    await expect(sidebar).not.toHaveClass(/\bopen\b/);
   }
 });

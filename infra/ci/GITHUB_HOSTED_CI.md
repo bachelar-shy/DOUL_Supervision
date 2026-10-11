@@ -1,22 +1,25 @@
-# DOUL Supervision — GitHub-hosted CI
+# DOUL Supervision - GitHub-hosted CI policy
 
-## Execution contract
+## Official execution target
 
-All Actions jobs run on GitHub-hosted `ubuntu-24.04` (Linux x64, ephemeral VM). Jobs do not use the Mac mini, Colima, Tailscale, or persistent test disk. This public repository uses standard GitHub-hosted Actions subject to GitHub platform limits. Workflow permissions remain `contents: read`.
+All 15 GitHub Actions workflows select `ubuntu-24.04` (ephemeral hosted Linux x64). No pull-request workflow may execute on the Mac mini or another self-hosted machine. This repository is public, so PR code must not execute in a persistent private runner.
 
-The `ci-runner-policy` workflow rejects any new runner label other than `ubuntu-24.04`. The migration preserves API contract, Playwright, Docker/Compose, security scan, backup/restore and document rendering checks; it does not skip tests.
+`infra/ci/verify_github_runner_workflows.py` checks every workflow `runs-on`. The policy check itself runs on hosted infrastructure.
 
 ## Disk and isolation
 
-Heavy builds run `bash infra/ci/prepare_github_runner.sh`, removing unused preinstalled Android/.NET/PowerShell/Haskell SDKs on the disposable hosted VM only. No repository source or permanent Docker volumes are deleted. It fails early when disk available is below 10 GiB. Existing Compose jobs tear down temporary volumes in `always()` steps.
+`prepare_github_runner.sh` refuses self-hosted runners. On ephemeral GitHub jobs only, it removes unused Android/.NET/PowerShell/Haskell toolchains, preserves Python/Node caches, and checks at least 10 GiB free before heavy jobs. Standard GitHub runner capacity is platform-controlled: **this change does not allocate 50 GiB**. Any larger runner needs explicit procurement and billing approval.
 
-Jobs never rely on host disk persistence, Tailscale, Mac mini hardware, fixed IPs or cross-job Docker cache. Dependency lockfiles and SHA-pinned actions remain required; no pilot/staging secrets should be exposed to pull_request jobs.
+Playwright, Docker/Compose and PostgreSQL tests run in isolated jobs. Keep SHA-pinned actions, package lockfiles and `contents: read` minimum permissions. Never share deployment keys, pilot data, or customer documents with public PR tests.
 
-## Merge verification
+## Merge and acceptance gates
 
-1. Confirm all affected GitHub Actions workflow checks are green at the PR HEAD.
-2. Confirm job runner metadata indicates GitHub-hosted `ubuntu-24.04`, not `doul-macmini`.
-3. Require Docker/PostgreSQL and Playwright integration checks, not just syntax checks.
-4. Fix hosted-runner disk or AMD64 issues without reverting to self-hosted CI.
+1. Confirm all affected GitHub workflow jobs at the **current PR head**, including mobile sample, contracts and 200-case UX suite.
+2. Confirm runner type is GitHub-hosted ubuntu-24.04; a queued CI is not a pass.
+3. Preserve 200-case PASS, PARTIAL, BLOCKED, INVALID and FAIL counts. PARTIAL/BLOCKED are not field acceptance.
+4. Verify 390/768/1440px and ko/vi/en navigation, and actual role-authorized persistence/retrieval of the five release workflows.
+5. Do not merge draft or chained PRs without conflict resolution and explicit acceptance.
 
-This migration does not certify a production deployment or real-site acceptance.
+## Historical Mac mini runner
+
+See `infra/ci/macmini-runner.md` for historical documentation only. This commit does **not** stop, delete, prune, or modify an existing Mac mini VM, runner or unrelated worktree.

@@ -8,7 +8,7 @@ import { createInspectionDraft, inspectionSources } from "../data/inspection-aut
 import type { InspectionSources } from "../data/inspection-authoring-client";
 import { reasonLabel } from "../labels";
 import { formatNumber } from "../i18n/format";
-import { useSessionFormDraft } from "../data/session-form-draft";
+import { sessionFormDraftKey, useSessionFormDraft } from "../data/session-form-draft";
 
 type Locale = "en" | "ko" | "vi";
 type LabelKey =
@@ -16,7 +16,7 @@ type LabelKey =
   | "requirements" | "evidence" | "noRequirementsOrEvidence" | "fieldChecks" | "selfComplete" | "drawingCheck"
   | "materialCheck" | "testCheck" | "previousCheck" | "changeCheck" | "holdPoint" | "loadingSources"
   | "noDrawings" | "saveDraft" | "saving" | "saved" | "genericError"
-  | "sessionSaved" | "sessionRestored" | "sessionDiscard";
+  | "sessionSaved" | "sessionSaveFailed" | "sessionRestored" | "sessionDiscard";
 
 const copy: Record<Locale, Record<LabelKey, string>> = {
   ko: {
@@ -31,6 +31,7 @@ const copy: Record<Locale, Record<LabelKey, string>> = {
     saveDraft: "자체검측 초안 저장", saving: "저장 중…", saved: "자체검측 초안을 저장했습니다.",
     genericError: "검측 자료 요청을 완료할 수 없습니다. 연결을 확인한 뒤 다시 시도하세요.",
     sessionSaved: "작성 중인 내용은 이 브라우저 탭에만 임시 보관되며, 정식 검측 제출이 아닙니다.",
+    sessionSaveFailed: "이 브라우저에서 임시저장하지 못했습니다. 화면 이동이나 새로고침 시 입력이 사라질 수 있으니 중요한 내용을 따로 기록하십시오.",
     sessionRestored: "이전 작성 내용을 복원했습니다. 도면 개정과 검측 기준을 다시 확인하십시오.",
     sessionDiscard: "임시 작성 내용 삭제",
   },
@@ -46,6 +47,7 @@ const copy: Record<Locale, Record<LabelKey, string>> = {
     saveDraft: "Lưu bản nháp tự nghiệm thu", saving: "Đang lưu…", saved: "Đã lưu bản nháp tự nghiệm thu.",
     genericError: "Không thể tải hoặc lưu hồ sơ nghiệm thu. Hãy kiểm tra kết nối rồi thử lại.",
     sessionSaved: "Nội dung đang soạn chỉ được lưu tạm trong tab này; chưa nộp hồ sơ nghiệm thu.",
+    sessionSaveFailed: "Không thể lưu bản nháp trên trình duyệt. Dữ liệu có thể mất khi chuyển trang hoặc tải lại. Hãy ghi lại nội dung quan trọng.",
     sessionRestored: "Đã khôi phục nội dung đang soạn. Hãy kiểm tra phiên bản bản vẽ và tiêu chí nghiệm thu.",
     sessionDiscard: "Xóa nội dung tạm",
   },
@@ -61,6 +63,7 @@ const copy: Record<Locale, Record<LabelKey, string>> = {
     saveDraft: "Save self inspection draft", saving: "Saving…", saved: "Self inspection draft saved.",
     genericError: "The inspection records request could not be completed. Check the connection and try again.",
     sessionSaved: "Unsubmitted work is saved only in this browser tab and has not been formally submitted.",
+    sessionSaveFailed: "Browser draft storage failed. You may lose this input after navigation or reload. Save important content elsewhere.",
     sessionRestored: "Previous input was restored. Recheck drawing revisions and inspection requirements.",
     sessionDiscard: "Discard temporary input",
   },
@@ -85,46 +88,73 @@ const emptyInspectionInput = {
   precheck: { drawing: false, material: false, test: false, previous: false, change: false },
 };
 
-export function InspectionAuthoringPanel({ client, workspace, online, onCreated }: { client: SupervisionClient; workspace: Workspace; online: boolean; onCreated: (record: RecordDTO) => Promise<void> }) {
+type InspectionAuthoringProps = { client: SupervisionClient; workspace: Workspace; online: boolean; onCreated: (record: RecordDTO) => Promise<void> };
+
+export function InspectionAuthoringPanel(props: InspectionAuthoringProps) {
+  const identity = { projectId: props.workspace.project.id, partyId: props.client.session?.actor.partyId ?? "anonymous", roleId: props.workspace.role.id };
+  return <InspectionAuthoringForm key={sessionFormDraftKey("inspection", identity)} {...props} />;
+}
+
+function InspectionAuthoringForm({ client, workspace, online, onCreated }: InspectionAuthoringProps) {
   const { i18n } = useTranslation();
   const t = copy[localeFor(i18n.resolvedLanguage ?? i18n.language)];
   const copyRef = useRef(t);
   const [sources, setSources] = useState(empty);
-  const { value: draft, change: changeDraft, discard: discardDraft, restored } = useSessionFormDraft(
+  const { value: draft, change: changeDraft, discard: discardDraft, restored, persistenceFailed } = useSessionFormDraft(
     "inspection",
     { projectId: workspace.project.id, partyId: client.session?.actor.partyId ?? "anonymous", roleId: workspace.role.id },
     emptyInspectionInput,
   );
   const { drawingId, locationId, requirementIds, evidenceIds, workName, selfComplete, hold, precheck } = draft;
+  const draftRef = useRef({ value: draft, change: changeDraft });
+  useEffect(() => { draftRef.current = { value: draft, change: changeDraft }; }, [draft, changeDraft]);
   const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [saved, setSaved] = useState("");
   const attempt = useRef<{ body: string; key: string; objectId: string } | null>(null);
+  const mounted = useRef(false);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => { copyRef.current = t; }, [t]);
   const drawing = sources.drawings.find(d => d.domainRef.objectId === drawingId);
-  const drawingVersion = drawing?.domainRef.version;
   useEffect(() => {
     let ignore = false; setLoading(true); setError("");
-    inspectionSources(client, drawingId && drawingVersion ? { objectType: "InformationItem", objectId: drawingId, version: drawingVersion } : undefined, locationId || undefined).then(value => {
+    async function loadSources() {
+      const catalog = await inspectionSources(client);
+      if (ignore) return;
+      setSources(catalog);
+      if (!drawingId) return;
+      const selectedDrawing = catalog.drawings.find(item => item.domainRef.objectId === drawingId);
+      if (!selectedDrawing) {
+        draftRef.current.change({ drawingId: "", locationId: "", requirementIds: [], evidenceIds: [] });
+        return;
+      }
+      if (!locationId) return;
+      if (!selectedDrawing.locations.some(location => location.id === locationId)) {
+        draftRef.current.change({ locationId: "", requirementIds: [], evidenceIds: [] });
+        return;
+      }
+      // The catalog intentionally has no requirements/evidence. Only a fully
+      // scoped response can establish that a restored selection is unavailable.
+      const value = await inspectionSources(client, selectedDrawing.domainRef, locationId);
       if (ignore) return;
       setSources(value);
-      if (drawingId && !value.drawings.some(d => d.domainRef.objectId === drawingId)) {
-        changeDraft({ drawingId: "", locationId: "", requirementIds: [], evidenceIds: [] });
-      } else {
-        const validRequirements = new Set(value.requirements.map(item => item.domainRef.objectId));
-        const validEvidence = new Set(value.evidence.map(item => item.domainRef.objectId));
-        if (requirementIds.some(id => !validRequirements.has(id)) || evidenceIds.some(id => !validEvidence.has(id))) {
-          changeDraft({
-            requirementIds: requirementIds.filter(id => validRequirements.has(id)),
-            evidenceIds: evidenceIds.filter(id => validEvidence.has(id)),
-          });
-        }
+      const { requirementIds: selectedRequirements, evidenceIds: selectedEvidence } = draftRef.current.value;
+      const validRequirements = new Set(value.requirements.map(item => item.domainRef.objectId));
+      const validEvidence = new Set(value.evidence.map(item => item.domainRef.objectId));
+      if (selectedRequirements.some(id => !validRequirements.has(id)) || selectedEvidence.some(id => !validEvidence.has(id))) {
+        draftRef.current.change({
+          requirementIds: selectedRequirements.filter(id => validRequirements.has(id)),
+          evidenceIds: selectedEvidence.filter(id => validEvidence.has(id)),
+        });
       }
-    }).catch(cause => { if (!ignore) { setError(localizedApiError(cause, copyRef.current.genericError)); setSources(empty);
-        if (drawingId || locationId || requirementIds.length || evidenceIds.length) {
-          changeDraft({ drawingId: "", locationId: "", requirementIds: [], evidenceIds: [] });
-        } } })
+    }
+    void loadSources().catch(cause => { if (!ignore) {
+      setError(localizedApiError(cause, copyRef.current.genericError));
+      // Failed retrieval is not evidence that the saved references are invalid.
+      // Hide unverified sources so they cannot be submitted until a retry succeeds.
+      setSources(empty);
+    } })
       .finally(() => { if (!ignore) setLoading(false); });
     return () => { ignore = true; };
-  }, [client, workspace.items, drawingId, drawingVersion, locationId]);
+  }, [client, workspace.items, drawingId, locationId]);
   const toggle = (id: string, field: "requirementIds" | "evidenceIds") => {
     const ids = draft[field];
     changeDraft({ [field]: ids.includes(id) ? ids.filter(value => value !== id) : [...ids, id] });
@@ -139,14 +169,17 @@ export function InspectionAuthoringPanel({ client, workspace, online, onCreated 
     if (attempt.current?.body !== body) attempt.current = { body, key: crypto.randomUUID(), objectId: crypto.randomUUID() };
     try {
       const result = await createInspectionDraft(client, { ...input, objectId: attempt.current.objectId }, attempt.current.key);
+      if (!mounted.current) return;
       setSaved(`${t.saved} ${result.record.id}`); attempt.current = null; discardDraft();
       await onCreated(result.record);
-    } catch (cause) { setError(localizedApiError(cause, t.genericError)); } finally { setBusy(false); }
+    } catch (cause) { if (mounted.current) setError(localizedApiError(cause, t.genericError)); } finally { if (mounted.current) setBusy(false); }
   }
   return <form aria-label={t.title} className="grid gap-3 p-3" onSubmit={event => { event.preventDefault(); void save(); }}>
     <h3>{t.title}</h3><p>{t.description}</p>
     <div className="flex flex-wrap items-center gap-2">
-      <p className="text-xs text-slate-700" role="status">{restored ? t.sessionRestored : t.sessionSaved}</p>
+      {persistenceFailed
+        ? <p className="text-xs text-red-800" role="alert">{t.sessionSaveFailed}</p>
+        : <p className="text-xs text-slate-700" role="status">{restored ? t.sessionRestored : t.sessionSaved}</p>}
       <button type="button" className="secondary" onClick={() => { discardDraft(); setSaved(""); }}
         disabled={busy}>{t.sessionDiscard}</button>
     </div>
