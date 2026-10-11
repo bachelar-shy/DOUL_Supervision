@@ -1,0 +1,4 @@
+DOUL Supervision PR #169-173 integrated UI demonstration.
+Synthetic UI-MOCK data only. No authenticated API, photo upload,
+real project documents, official issuance or real user accounts.
+No branch has been merged into main for this preview.
