@@ -11,6 +11,8 @@ import type {
   Session,
   WorkItem,
   Workspace,
+  ProjectSettings,
+  AccessibleProjects,
 } from "./ui-contract";
 import type { DemoProjectDirectory, ScheduleSourceImportDetail, ScheduleSourceImportInput, ScheduleSourceImportResult, SupervisionClient, UploadOptions } from "./supervision-client";
 import { createMockWorkspace } from "./mock-workspace";
@@ -56,6 +58,16 @@ export class MockSupervisionClient implements SupervisionClient {
   async workspace(): Promise<Workspace> {
     return createMockWorkspace(this.role);
   }
+
+  async projectSettings(): Promise<ProjectSettings> {
+    const workspace = createMockWorkspace(this.role);
+    return { project: {id:workspace.project.id, version:1, name:workspace.project.name, country:"VN", timezone:"Asia/Ho_Chi_Minh"},
+      currentRoleId:"ROLE-ADM", availableCommands:[], organizations:[], participants:[], assignments:[], locations:[], workPackages:[],
+      disciplines:[], roleProfiles:[{actorGroup:"ADM",name:"관리자"},{actorGroup:"SUP",name:"감리자"},{actorGroup:"OWN",name:"발주처"},{actorGroup:"CON",name:"시공사"}], scope:null, history:[] };
+  }
+  saveProjectSettings(_command: string, _body: object, _key?: string): Promise<ProjectSettings> { return previewOnly(); }
+  accessibleProjects(): Promise<AccessibleProjects> { return previewOnly(); }
+  selectProject(_projectId: string): Promise<Session> { return previewOnly(); }
 
   execute(
     _item: WorkItem,

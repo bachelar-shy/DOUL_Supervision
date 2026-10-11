@@ -293,6 +293,7 @@ export class ApiClient {
   }
   async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const headers = new Headers(init.headers);
+    const requestToken = this.session?.accessToken;
     if (this.session) {
       headers.set("Authorization", `Bearer ${this.session.accessToken}`);
       headers.set("X-RoleAssignment-Id", this.session.actor.roleAssignmentId);
@@ -308,7 +309,7 @@ export class ApiClient {
         signal: init.signal || controller.signal,
       });
       if (!response.ok) {
-        if (response.status === 401 && this.session?.mode === "PASSWORD") {
+        if (response.status === 401 && this.session?.mode === "PASSWORD" && this.session.accessToken === requestToken) {
           this.session = null;
           this.onUnauthorized?.();
         }
@@ -347,6 +348,14 @@ export class ApiClient {
     ++this.loginGeneration;
     try { if (this.session?.mode === "PASSWORD") await this.request("/auth/logout", { method:"POST" }); }
     finally { this.session = null; }
+  }
+  async selectProject(projectId: string): Promise<Session> {
+    const generation = ++this.loginGeneration;
+    const session = await this.request<Session>("/auth/project-session", {
+      method: "POST", body: JSON.stringify({ projectId }),
+    });
+    if (generation === this.loginGeneration) this.session = session;
+    return session;
   }
   path(suffix: string): string {
     if (!this.session) throw new Error("로그인이 필요합니다.");

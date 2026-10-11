@@ -327,6 +327,9 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     from services.api.modules.inspection_authoring import install_inspection_authoring_routes
     install_inspection_authoring_routes(app, store, identity=identity, role_for=role_for, key_for=key_for)
 
+    from services.api.modules.project_settings import install_project_settings_routes
+    install_project_settings_routes(app, store, identity=identity, role_for=role_for, key_for=key_for, body_json=body_json)
+
     from services.api.modules.drawing_impacts import install_drawing_impact_routes, reconcile_drawing_impacts_in_transaction
     install_drawing_impact_routes(app, store, identity=identity, role_for=role_for)
 
@@ -613,6 +616,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                             context[key] = deepcopy(store.meta[key])
             else:
                 context=({k:deepcopy(v) for k,v in store.meta.items() if k in ['projectId','scope','analysisProfile','requirementRef','drawingRef','evidenceId']} if store.meta.get('projectId')==project_id else {'projectId':project_id})
+                context.update(deepcopy(store.meta.get('projectContexts', {}).get(project_id, {})))
             context['creationCapabilities']=build_creation_capabilities(
                 store.engine,project_id,session['partyId'],role,context.get('scope'),
                 queue_enabled=app.state.queue_enabled,
