@@ -143,7 +143,7 @@ jobs:
       - name: Attach actual screenshots to standalone static demo
         run: |
           mkdir -p _site/screenshots
-          find _screenshots -type f -name '*.png' -exec cp '{}' _site/screenshots/ \\;
+          find _screenshots -type f -name '*.png' -exec cp '{}' _site/screenshots/ \;
           test -f _site/screenshots/06-quiet-graphite-1440.png
           test -f _site/screenshots/08-quiet-graphite-390.png
       - name: Publish only static files (never merge PRs into main)
