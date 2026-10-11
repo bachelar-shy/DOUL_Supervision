@@ -58,7 +58,10 @@ class MenuUsabilityContractTests(unittest.TestCase):
             self.assertTrue({task["routeId"] for task in detail["mainTasks"]} <= set(visible))
             if role != "ADM":
                 self.assertNotIn("admin", visible)
-            self.assertEqual(detail["visibleRouteIds"][-1], "parallel-test")
+            if role in {"SUP", "ADM"}:
+                self.assertEqual(detail["visibleRouteIds"][-1], "parallel-test")
+            else:
+                self.assertNotIn("parallel-test", detail["visibleRouteIds"])
         # The full-development menu intentionally omits the grouped release-only
         # "corrections" route; the release uses fieldCoreRoutes.
         self.assertEqual(set(roles["ADM"]["visibleRouteIds"]), set(ids) - {"corrections"})

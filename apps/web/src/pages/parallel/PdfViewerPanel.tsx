@@ -23,7 +23,7 @@ import { createPdfDrawingMarkup, deletePdfDrawingMarkup, editPdfDrawingMarkup, f
 
 GlobalWorkerOptions.workerSrc = workerSrc;
 
-interface Props { client: SupervisionClient; workspace: Workspace; onChanged?: () => void; onSelectMarkup?: (id: string | null) => void; readOnly?: boolean }
+interface Props { client: SupervisionClient; workspace: Workspace; onChanged?: () => void; onSelectMarkup?: (id: string | null) => void; readOnly?: boolean; selectedReviewSource?: { evidenceId: string; bindingId?: string } }
 type Status = { kind: "idle" | "loading" | "ready" | "error"; message?: string };
 interface CommittedViewport { page: number; viewport: PdfViewport; sequence: number }
 interface PinView { locationName: string; point: CssPoint; anchor: PdfDrawingAnchor }
@@ -89,7 +89,7 @@ function validAnchor(value: unknown): value is PdfDrawingAnchor {
     && anchor.coordinateSystem === "pdf_points";
 }
 
-export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup, readOnly = false }: Props) {
+export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup, readOnly = false, selectedReviewSource }: Props) {
   const { i18n, t } = useTranslation();
   const language: Locale = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language);
   const tx = (key: string, values?: Record<string, string | number>) => {
@@ -98,14 +98,17 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup, r
     return result;
   };
   const sources = useMemo(() => listPdfEvidenceSources(workspace), [workspace]);
-  const [selectedId, setSelectedId] = useState("");
-  const [selectedBindingId, setSelectedBindingId] = useState("");
+  const [selectedId, setSelectedId] = useState(selectedReviewSource?.evidenceId ?? "");
+  const [selectedBindingId, setSelectedBindingId] = useState(selectedReviewSource?.bindingId ?? "");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [uploading, setUploading] = useState(false);
   const [savingPin, setSavingPin] = useState(false);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const [panMode, setPanMode] = useState(false);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const panOrigin = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
   const [rotation, setRotation] = useState(0);
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<number[]>([]);
@@ -156,6 +159,12 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup, r
   const markupAttemptRef = useRef<{ fingerprint: string; key: string } | null>(null);
   const markupMutationAttempt = useRef<{ fingerprint: string; key: string } | null>(null);
   onSelectMarkupRef.current = onSelectMarkup;
+
+  useEffect(() => {
+    if (!selectedReviewSource) return;
+    setSelectedId(selectedReviewSource.evidenceId);
+    setSelectedBindingId(selectedReviewSource.bindingId ?? "");
+  }, [selectedReviewSource?.evidenceId, selectedReviewSource?.bindingId]);
 
   const selectedSource = sources.find((source) => source.id === selectedId);
   const matchingBindings = useMemo(() => {
@@ -740,7 +749,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup, r
     }
   }
 
-  return <section aria-label={tx("panel")} className="pdf-viewer-panel">
+  return <section aria-label={tx("panel")} className="pdf-viewer-panel template template-drawing" data-ui-template="drawing">
     <header className="pdf-viewer-header">
       <div><h2>{tx("title")}</h2><p>{tx("description")}</p>{readOnly && <p className="text-sm text-slate-500">{tx("officialWarning")}</p>}</div>
       {!readOnly && <label className="pdf-upload-button">{tx("upload")}<input data-testid="pdf-upload" type="file" accept="application/pdf,.pdf" disabled={uploading} onChange={(event) => { void chooseFile(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} /></label>}
@@ -815,11 +824,16 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup, r
         <button type="button" aria-label={tx("nextPage")} disabled={page >= pageCount || savingPin} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>›</button>
         <button type="button" aria-label={tx("zoomOut")} disabled={savingPin} onClick={() => setZoom((value) => Math.max(.5, +(value - .1).toFixed(1)))}>−</button><span>{Math.round(zoom * 100)}%</span>
         <button type="button" aria-label={tx("zoomIn")} disabled={savingPin} onClick={() => setZoom((value) => Math.min(2.5, +(value + .1).toFixed(1)))}>＋</button>
+        <button type="button" aria-label={language === "ko" ? "도면 이동" : language === "vi" ? "Di chuyển bản vẽ" : "Pan drawing"} aria-pressed={panMode} onClick={() => setPanMode((value) => !value)}>{language === "ko" ? "이동" : "Pan"}</button>
+        <button type="button" aria-label={language === "ko" ? "화면 맞춤" : language === "vi" ? "Vừa khung" : "Fit to screen"} onClick={() => { setZoom(1); const viewport = viewportRef.current; if (viewport) { viewport.scrollLeft = 0; viewport.scrollTop = 0; } }}>{language === "ko" ? "화면 맞춤" : "Fit"}</button>
         <button type="button" aria-label={tx("rotate")} disabled={savingPin} onClick={() => setRotation((value) => (value + 90) % 360)}>{tx("rotate")}</button>
         {matches.map((match) => <button type="button" key={match} onClick={() => setPage(match)}>{tx("searchResult", { page: match })}</button>)}
       </div>
-      <div className="pdf-canvas-viewport">
-        <div className="pdf-canvas-stack" onClick={stagePin} aria-disabled={!isDemoAdmin || !activeBinding || !selectedLocation || rendering}>
+      <div className={"pdf-canvas-viewport" + (panMode ? " is-panning" : "")} ref={viewportRef}
+        onPointerDown={(event) => { if (!panMode || event.button !== 0) return; const view = viewportRef.current; if (!view) return; panOrigin.current = { x: event.clientX, y: event.clientY, left: view.scrollLeft, top: view.scrollTop }; event.currentTarget.setPointerCapture(event.pointerId); }}
+        onPointerMove={(event) => { if (!panOrigin.current) return; const view = viewportRef.current; if (!view) return; view.scrollLeft = panOrigin.current.left - (event.clientX - panOrigin.current.x); view.scrollTop = panOrigin.current.top - (event.clientY - panOrigin.current.y); }}
+        onPointerUp={() => { panOrigin.current = null; }} onPointerCancel={() => { panOrigin.current = null; }}>
+        <div className="pdf-canvas-stack" onClick={panMode ? undefined : stagePin} aria-disabled={!isDemoAdmin || !activeBinding || !selectedLocation || rendering}>
           <canvas ref={canvasRef} aria-label={tx("canvasPage", { page, count: pageCount })} />
           <svg className={"pdf-markup-layer" + (markupMode ? " is-drawing" : "")} aria-label={tx("markupArea")} style={{ visibility: showMarkupLayer ? "visible" : "hidden" }}
             viewBox={`0 0 ${Math.max(1, canvasSize.width)} ${Math.max(1, canvasSize.height)}`} preserveAspectRatio="none"

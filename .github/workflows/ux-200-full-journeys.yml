@@ -1,0 +1,66 @@
+name: ux-200-full-journeys
+on:
+  pull_request:
+    paths:
+      - "tests_browser/ux-200-full-journey.spec.ts"
+      - "tests_browser/ux200-evidence.ts"
+      - "tests_browser/pr178-*.spec.ts"
+      - "playwright.pr178-review.config.ts"
+      - "playwright.ux200.config.ts"
+      - "apps/web/src/pages/DocumentPage.tsx"
+      - "apps/web/src/pages/InspectionAuthoringPanel.tsx"
+      - "apps/web/src/pages/document-authoring-source.ts"
+      - ".github/workflows/ux-200-full-journeys.yml"
+  workflow_dispatch:
+concurrency:
+  group: ux-200-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  ux-200:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Prepare runner disk
+        run: bash infra/ci/prepare_github_runner.sh
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          cache: npm
+      - name: Install dependencies
+        run: |
+          npm install --global npm@12.2.0
+          python -m venv .venv
+          .venv/bin/pip install -r services/api/requirements.lock
+          npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify PR 178 source and draft regressions
+        env:
+          DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
+        run: npx playwright test --config playwright.pr178-review.config.ts
+      - name: Execute all 200 scenarios on browser and live synthetic API
+        env:
+          DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
+        run: |
+          mkdir -p .local
+          npx playwright test --config playwright.ux200.config.ts
+      - name: Upload full case-by-case results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ux200-full-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .local/ux200-full-results.json
+            .local/ux200-full-results.csv
+            .local/ux200-full-results.md
+            .local/ux200-playwright-results.json
+            .local/pr178-review-results.json
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14

@@ -1,0 +1,42 @@
+name: quiet-graphite-a-design-cloud-ci
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/quiet-graphite-a-design-cloud-ci.yml"
+      - "apps/web/src/design/**"
+      - "apps/web/src/app/AppShell.tsx"
+      - "apps/web/src/main.tsx"
+      - "apps/web/src/ui/catalog.tsx"
+      - "apps/web/src/pages/parallel/PdfViewerPanel.tsx"
+      - "tests_browser_launch/quiet-graphite-design.spec.ts"
+permissions:
+  contents: read
+jobs:
+  quiet-graphite:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          cache: npm
+      - name: Install and verify shared components
+        run: |
+          npm install -g npm@12.2.0
+          npm ci
+          npm run check:ui-boundary
+          npm run web:build
+      - name: Verify 1440/1024/768/390px design and navigation
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test -c playwright.field-core.config.ts quiet-graphite-design.spec.ts
+      - name: Attach screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: quiet-graphite-design-screenshots
+          path: preview/screenshots/
+          if-no-files-found: warn
+          retention-days: 14

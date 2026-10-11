@@ -30,7 +30,7 @@ permissions:
 
 jobs:
   worker-runtime-smoke:
-    # Isolated, ephemeral GitHub-hosted Linux x64 runner (no Mac mini).
+    # Ephemeral GitHub-hosted runner; no Mac mini dependency.
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:

@@ -1,0 +1,46 @@
+name: drawing-review-cloud-ci
+
+on:
+  pull_request:
+    branches:
+      - feat/field-core-launch-20261011
+      - main
+    paths:
+      - ".github/workflows/drawing-review-cloud-ci.yml"
+      - "apps/web/**"
+      - "packages/**"
+      - "tests_browser_launch/**"
+      - "playwright.field-core.config.ts"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+jobs:
+  cloud-web-review:
+    if: github.event.pull_request.number == 153
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          cache: npm
+      - name: Install pinned npm
+        run: npm install --global npm@12.2.0
+      - name: Install dependencies
+        run: npm ci
+      - name: Check UI boundaries
+        run: npm run check:ui-boundary
+      - name: Typecheck and build Web
+        run: npm run web:build
+      - name: Lint Web
+        run: npm run lint --workspace apps/web
+      - name: Install headless Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run main-menu and drawing review tests
+        run: npm run test:field-core

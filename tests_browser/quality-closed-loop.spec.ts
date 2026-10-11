@@ -140,7 +140,7 @@ async function selectRole(page: Page, role: string) {
   await picker.selectOption(role);
   await expect(picker).toHaveValue(role);
   await page.goto("/#/inspections");
-  await expect(page.getByRole("button", { name: "새로고침", exact: true })).toBeEnabled({ timeout: 30_000 });
+  await expect(page.getByRole("button", { name: "새로고침", exact: true }).first()).toBeEnabled({ timeout: 30_000 });
 }
 
 async function runCommand(

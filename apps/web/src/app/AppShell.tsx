@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {
   CommandDescriptor,
@@ -29,7 +29,6 @@ import {
   WorkbenchPage,
 } from "../pages";
 import { Icon } from "../pages/shared";
-import { DrawingReviewPage } from "../pages/DrawingReviewPage";
 import { OfflineCommandIntentPanel } from "../pages/OfflineCommandIntentPanel";
 import { offlineIntentTitle } from "../data/offline-command-labels";
 import { fieldCoreRouteFor, fieldCoreRoutes, machineForRoute, mobileRoutes, roleRoutes, routes, type CorrectionSection } from "./routes";
@@ -41,6 +40,7 @@ import {
   type AppLanguage,
 } from "../i18n/config";
 import { formatLongDate } from "../i18n/format";
+import { quietGraphiteLanguage, quietGraphiteNavigationCopy } from "../design/quiet-graphite-copy";
 
 // Production UI defaults to the agreed five field workflows; development keeps
 // full module coverage. Operators can explicitly override with VITE_DOUL_UI_SCOPE.
@@ -48,7 +48,7 @@ export const fieldCoreMode =
   import.meta.env.VITE_DOUL_UI_SCOPE === "field-core" ||
   (import.meta.env.PROD && import.meta.env.VITE_DOUL_UI_SCOPE !== "full");
 
-const PdfViewerPanel = lazy(() => import("../pages/parallel/PdfViewerPanel").then((module) => ({ default: module.PdfViewerPanel })));
+const DrawingReviewPage = lazy(() => import("../pages/DrawingReviewPage").then((module) => ({ default: module.DrawingReviewPage })));
 
 function millisecondsUntilNextLocalDay(now: Date) {
   const next = new Date(now);
@@ -82,10 +82,19 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
   const [toast, setToast] = useState("");
   const [online, setOnline] = useState(navigator.onLine);
   const [menu, setMenu] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return window.localStorage.getItem("doul.ui.sidebar.collapsed.v1") === "true"; }
+    catch { return false; }
+  });
+  const navigationCopy = quietGraphiteNavigationCopy[quietGraphiteLanguage(i18n.resolvedLanguage ?? i18n.language)];
   const [dialog, setDialog] = useState<{
     item: WorkItem;
     action: CommandDescriptor;
   } | null>(null);
+  useEffect(() => {
+    try { window.localStorage.setItem("doul.ui.sidebar.collapsed.v1", String(sidebarCollapsed)); }
+    catch { /* The optional navigation preference does not block work. */ }
+  }, [sidebarCollapsed]);
   const sequence = useRef(0);
   const refreshSequence = useRef(0);
   const activeRole = useRef(role);
@@ -189,11 +198,15 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [menu]);
-  const allowed = fieldCoreMode
-    ? fieldCoreRoutes[role]
-    : workspace?.demo
-      ? Array.from(new Set([...roleRoutes[role], "parallel-test"]))
-      : roleRoutes[role];
+  // Development-only diagnostics belong to the SUP/ADM route definitions.
+  // Never append them to contractor, owner, or designer navigation based on
+  // whether a synthetic project's workspace has finished loading.
+  const allowed = fieldCoreMode ? fieldCoreRoutes[role] : roleRoutes[role];
+  // Only synthetic, unauthenticated development sessions may deep-link to
+  // integration diagnostics. Never add diagnostics to CON/OWN/DES navigation,
+  // stage-one field routes, or a real password-authenticated session.
+  const demoDiagnosticDeepLink = !fieldCoreMode && !passwordMode
+    && client.kind === "http" && workspace?.demo === true && route === "parallel-test";
   const nav = (to: string) => {
     const resolved = fieldCoreMode ? fieldCoreRouteFor(to) : { route: to };
     const target = allowed.includes(resolved.route) ? resolved.route : "today";
@@ -206,7 +219,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     setDialog(null);
     setMenu(false);
   };
-  const safeRoute = allowed.includes(route) ? route : "today";
+  const safeRoute = allowed.includes(route) || demoDiagnosticDeepLink ? route : "today";
   useEffect(() => {
     if (!fieldCoreMode) return;
     const mapped = fieldCoreRouteFor(route);
@@ -219,12 +232,12 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     setSelected(null);
   }, [route, role]);
   useEffect(() => {
-    if (fieldCoreMode || !workspace || allowed.includes(route)) return;
+    if (fieldCoreMode || !workspace || allowed.includes(route) || demoDiagnosticDeepLink) return;
     history.replaceState(null, "", "#/today");
     setRoute("today");
     setSelected(null);
     setMenu(false);
-  }, [allowed, route, workspace]);
+  }, [allowed, route, workspace, demoDiagnosticDeepLink]);
   const mobileChoices = fieldCoreMode
     ? routes.filter((item) => allowed.includes(item.id) && ["today", "capture", "inspections", "corrections"].includes(item.id))
     : mobileRoutes[role];
@@ -268,15 +281,24 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     }
   }
   return (
-    <div className="app-shell">
-      <aside id="side-navigation" className={"sidebar " + (menu ? "open" : "")}>
+    <div className={"app-shell" + (sidebarCollapsed ? " sidebar-collapsed" : "")} data-design-system="quiet-graphite-a">
+      <aside id="side-navigation" className={"sidebar " + (menu ? "open" : "")} data-navigation-collapsed={String(sidebarCollapsed)}>
         <button type="button" className="sidebar-close" aria-label={t("app.menuClose")}
           onClick={() => setMenu(false)}>×</button>
-        <div className="brand">
-          <b>
-            DOUL<span> / </span>
-          </b>
-          <small>SUPERVISION</small>
+        <div className="sidebar-identity">
+          <div className="brand">
+            <b>
+              DOUL<span> / </span>
+            </b>
+            <small>SUPERVISION</small>
+          </div>
+          <button type="button" className="sidebar-collapse-toggle"
+            aria-label={sidebarCollapsed ? navigationCopy.expand : navigationCopy.collapse}
+            title={sidebarCollapsed ? navigationCopy.expand : navigationCopy.collapse}
+            aria-pressed={sidebarCollapsed}
+            onClick={() => setSidebarCollapsed((current) => !current)}>
+            {sidebarCollapsed ? <PanelLeftOpen size={17} aria-hidden="true" /> : <PanelLeftClose size={17} aria-hidden="true" />}
+          </button>
         </div>
         <div className="workspace-label">{t("app.workspace")}</div>
         <div className="project-chip">
@@ -572,7 +594,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               {safeRoute === "drawings" && fieldCoreMode && (
                 <div data-ui-page="field-drawings">
                   <Suspense fallback={<div className="loading-panel">{t("app.loading.workspace")}</div>}>
-                    <PdfViewerPanel client={client} workspace={workspace} readOnly />
+                    <DrawingReviewPage client={client} workspace={workspace} onNavigate={nav} onChanged={refresh} onSelect={setSelected} onOpenCommand={(item, action) => setDialog({ item, action })} />
                   </Suspense>
                 </div>
               )}
@@ -603,6 +625,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                     selected={selected} current={current} online={online} onSelect={setSelected}
                     onOpenCommand={(item, action) => setDialog({ item, action })}
                     client={client}
+                    onChanged={refresh}
                     onInspectionCreated={async (record) => { await refresh(); setSelected(record.id); }}
                     onActionCreated={async (record) => { await refresh(); setSelected(record.id); }}
                     onCreateIssue={createIssue}
@@ -623,6 +646,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                   onSelect={setSelected}
                   onOpenCommand={(item, action) => setDialog({ item, action })}
                   client={client}
+                  onChanged={refresh}
                   onInspectionCreated={async record => { await refresh(); setSelected(record.id); }}
                   onActionCreated={async record => { await refresh(); setSelected(record.id); }}
                   onCreateIssue={createIssue}
