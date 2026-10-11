@@ -6,6 +6,10 @@ on:
       - preview/pr169-173-field-ui-20261011
   workflow_dispatch:
 
+concurrency:
+  group: doul-pr169-173-design-preview
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -131,6 +135,17 @@ jobs:
         with:
           name: doul-pr169-173-static-ui-preview
           path: ./_site
+      - name: Download verified screenshot set
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: doul-pr169-173-ui-screenshots
+          path: ./_screenshots
+      - name: Attach actual screenshots to standalone static demo
+        run: |
+          mkdir -p _site/screenshots
+          find _screenshots -type f -name '*.png' -exec cp '{}' _site/screenshots/ \\;
+          test -f _site/screenshots/06-quiet-graphite-1440.png
+          test -f _site/screenshots/08-quiet-graphite-390.png
       - name: Publish only static files (never merge PRs into main)
         env:
           GH_TOKEN: ${{ github.token }}
