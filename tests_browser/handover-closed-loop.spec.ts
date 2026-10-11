@@ -623,8 +623,8 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
     await runWorkbenchCommand(page, "issues", punchTitle, /start correction|시정 시작/i);
 
-    await page.goto("/#/parallel-test");
-    await page.getByRole("tab", { name: /work inbox|작업함/i }).click();
+    await page.goto("/#/inspections");
+    await expect(page.getByTestId("inspection-case-flow")).toBeVisible();
     const casePanel = page.getByTestId("inspection-case-flow");
     const inspectionPicker = casePanel.getByLabel(/source inspection|root inspection|원 검측 선택/i);
     await inspectionPicker.selectOption(fixture.inspectionRef.objectId);
@@ -873,8 +873,8 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
       await useRole(page, "CON");
       await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
       await runWorkbenchCommand(page, "issues", "F-07 browser reservation Punch", /start correction|시정 시작/i);
-      await page.goto("/#/parallel-test");
-      await page.getByRole("tab", { name: /work inbox|작업함/i }).click();
+      await page.goto("/#/inspections");
+      await expect(page.getByTestId("inspection-case-flow")).toBeVisible();
       const casePanel = page.getByTestId("inspection-case-flow");
       const inspectionPicker = casePanel.getByLabel(/source inspection|root inspection|원 검측 선택/i);
       await inspectionPicker.selectOption(fixture.inspectionRef.objectId);
@@ -1168,8 +1168,8 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await useRole(page, "CON");
     await page.getByRole("navigation").getByRole("button", { name: /issues/i }).click();
     await runWorkbenchCommand(page, "issues", warrantyIssueTitle, /start correction|시정 시작/i);
-    await page.goto("/#/parallel-test");
-    await page.getByRole("tab", { name: /work inbox|작업함/i }).click();
+    await page.goto("/#/inspections");
+    await expect(page.getByTestId("inspection-case-flow")).toBeVisible();
     const warrantyCasePanel = page.getByTestId("inspection-case-flow");
     await warrantyCasePanel.getByLabel(/source inspection|root inspection|원 검측 선택/i).selectOption(fixture.inspectionRef.objectId);
     const warrantyIssueCard = warrantyCasePanel.locator(".inspection-case-issue").filter({ hasText: warrantyIssueTitle });
@@ -1317,8 +1317,8 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await workspace.getByRole("button", { name: /Browser warranty defect claim/ }).click();
     await runCompletionCommand(page, /submit remedy/i, { remedySummary: "Replaced the seal in correction cycle 1" }, [fixture.evidenceId]);
 
-    await page.goto("/#/parallel-test");
-    await page.getByRole("tab", { name: /work inbox|작업함/i }).click();
+    await page.goto("/#/inspections");
+    await expect(page.getByTestId("inspection-case-flow")).toBeVisible();
     const replacementCasePanel = page.getByTestId("inspection-case-flow");
     await replacementCasePanel.getByLabel(/source inspection|root inspection|원 검측 선택/i).selectOption(fixture.inspectionRef.objectId);
     const replacementIssueCard = replacementCasePanel.locator(".inspection-case-issue").filter({ hasText: warrantyIssueTitle });
