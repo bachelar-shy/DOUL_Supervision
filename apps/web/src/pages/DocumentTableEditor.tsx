@@ -21,6 +21,45 @@ export function serializeDocumentTables(schema: FormSchema, values: DocumentTabl
   return output;
 }
 
+function setDocumentPath(target: Record<string, unknown>, path: string, value: unknown) {
+  const parts = path.split(".");
+  let cursor = target;
+  for (const part of parts.slice(0, -1)) {
+    const existing = cursor[part];
+    if (!existing || typeof existing !== "object" || Array.isArray(existing)) cursor[part] = {};
+    cursor = cursor[part] as Record<string, unknown>;
+  }
+  cursor[parts[parts.length - 1]] = value;
+}
+
+/** Build a complete form DTO without erasing scalar siblings of a table.
+ * Example: review.conclusion and review.design must both survive.
+ */
+export function buildDocumentData(schema: FormSchema, values: Record<string, string>, tables: DocumentTableValues) {
+  const data: Record<string, unknown> = {};
+  for (const [path, rule] of Object.entries(schema.scalar_fields)) {
+    const raw = values[path] ?? "";
+    if (raw === "") continue;
+    const value = rule.type === "date-time" ? new Date(raw).toISOString() :
+      rule.type === "boolean" ? raw === "true" : raw;
+    setDocumentPath(data, path, value);
+  }
+  const serialized = serializeDocumentTables(schema, tables);
+  for (const table of schema.tables) {
+    const value = serialized[table.path];
+    if (table.type === "review_table" || table.type === "check_table") {
+      // A table can share its parent path with scalar fields such as
+      // review.conclusion. Replacing the entire review object would lose facts.
+      for (const [column, text] of Object.entries(value as Record<string, string>)) {
+        setDocumentPath(data, table.path + "." + column, text);
+      }
+    } else {
+      setDocumentPath(data, table.path, value);
+    }
+  }
+  return data;
+}
+
 export function DocumentTableEditor({ schema, values, onChange }: {
   schema: FormSchema;
   values: DocumentTableValues;
