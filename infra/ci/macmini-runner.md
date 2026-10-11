@@ -1,3 +1,9 @@
+# Historical runner guide - NOT ACTIVE CI
+
+This is historical documentation for a previous opt-in Mac mini runner. Current GitHub Actions use **GitHub-hosted ubuntu-24.04** for all 15 workflows. Do not execute the following administration steps for routine CI, and do not remove or prune other projects or Docker contexts.
+
+---
+
 # Mac mini CI runner
 
 The repository's fifteen workflows keep their job names and verification steps.

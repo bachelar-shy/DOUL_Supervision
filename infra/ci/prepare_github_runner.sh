@@ -1,16 +1,9 @@
 #!/usr/bin/env bash
-# Persistent Mac mini runners must not run disposable-host SDK cleanup.
+# Remove only unused preinstalled SDKs from disposable GitHub-hosted runners.
 set -euo pipefail
 
-if [[ "${RUNNER_ENVIRONMENT:-}" == "self-hosted" && "${RUNNER_OS:-}" == "Linux" && "${RUNNER_ARCH:-}" == "ARM64" ]]; then
-  echo "Dedicated Mac mini Linux ARM64 runner: preserve persistent tools and Docker caches."
-  df -h / /opt/doul-ci
-  docker info --format 'Docker server: {{.ServerVersion}}'
-  exit 0
-fi
-
 if [[ "${RUNNER_ENVIRONMENT:-}" != "github-hosted" || "${RUNNER_OS:-}" != "Linux" || "${RUNNER_ARCH:-}" != "X64" ]]; then
-  echo "::error::Unsupported CI runner; expected dedicated Mac mini Linux ARM64."
+  echo "::error::DOUL CI requires GitHub-hosted ubuntu-24.04 x64, not a self-hosted runner."
   exit 1
 fi
 
