@@ -1,4 +1,5 @@
 import { recordVersionLabel } from "../labels";
+import { ResizableWorkspace } from "../ui/ResizableWorkspace";
 import { RecordDetails } from "./RecordDetails";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -215,14 +216,14 @@ export function ParallelTestPage({ client, workspace, online, onNavigate, onChan
     {!state.loading && state.error && <div role="alert" className="error-box"><strong>{activeLabel} {tx("queryFailed")}</strong><p>{errorText(state.error, tx)}</p><ActionButton onClick={() => void (active === "safety-traceability" ? loadSafetyRecord() : refresh(active))}>{tx("retry")}</ActionButton></div>}
     {active === "safety-traceability" && !selectedSafetyId && <div className="empty-state"><strong>{tx("safetyEmptyTitle")}</strong><p>{tx("safetyEmptyDescription")}</p>{safetyItems.length === 0 && <p>{tx("noSafetyRecords")}</p>}</div>}
     {!state.loading && !state.error && active !== "safety-traceability" && active !== "evidence-quarantine" && rows.length === 0 && <div className="empty-state"><strong>{tx("noServerRecords")}</strong><p>{tx("responseMetadata")}</p><RecordDetails value={root} /></div>}
-    {!state.loading && !state.error && active !== "safety-traceability" && active !== "evidence-quarantine" && rows.length > 0 && <div className="parallel-test-grid">
+    {!state.loading && !state.error && active !== "safety-traceability" && active !== "evidence-quarantine" && rows.length > 0 && <ResizableWorkspace kind="diagnostic" layoutId={"parallel-" + active} className="parallel-test-grid">
       <div className="parallel-test-list" aria-label={`${activeLabel} ${tx("records")}`}>{rows.map((row, index) => <button type="button" key={String(asObject(row).id ?? asObject(row).recordId ?? index)} className={index === selectedIndex ? "selected" : ""} onClick={() => active === "drawings" ? void loadDrawingDetail(row, index) : setSelectedIndex(index)} style={active === "locations" ? { paddingLeft: `${12 + Number(asObject(row).depth ?? 0) * 12}px` } : undefined}><strong>{displayLabel(row, index, tx("recordFallback"))}</strong><small>{[stateLabels[String(asObject(row).sourceStatus ?? asObject(row).status ?? asObject(asObject(row).record).status)] || tx("statusUnavailable"), asObject(row).revision ? `${tx("revision")} ${asObject(row).revision}` : asObject(row).version ? recordVersionLabel(asObject(row).version) : undefined, asObject(row).discipline, asObject(row).locationId].filter(Boolean).join(" · ")}</small></button>)}</div>
       <div className="parallel-test-detail"><SectionHeader title={tx("selectedRecord")} meta={`${rows.length} ${tx("records")}`} />
         {active === "drawings" && <><p className="muted">{tx("drawingDescription")}</p>{drawingLoading && <div role="status">{tx("exactDrawingVersion")}</div>}{drawingError && <div role="alert" className="error-box">{errorText(drawingError, tx)}</div>}</>}
         {active === "locations" && <p className="muted">{tx("locationDescription")}</p>}
         <RecordDetails value={active === "drawings" ? drawingDetail ?? selected : selected} />
       </div>
-    </div>}
+    </ResizableWorkspace>}
     {active === "evidence-quarantine" && !state.loading && !state.error && state.data !== null && <div className="parallel-test-detail"><SectionHeader title={tx("isolatedFiles")} meta={`${rows.length} ${tx("records")}`} /><RecordDetails value={state.data} /></div>}
     {active === "safety-traceability" && selectedSafetyId && !state.loading && !state.error && state.data !== null && <div className="parallel-test-detail"><SectionHeader title={tx("selectedSafetyResponse")} /><p className="muted">{tx("safetyResponseDescription")}</p><RecordDetails value={state.data} /><ActionButton onClick={() => onNavigate("capture")}>{tx("openEvidence")}</ActionButton></div>}
     </>}

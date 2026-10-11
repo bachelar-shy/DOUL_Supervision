@@ -1,0 +1,298 @@
+/*
+ * Workspace layout v1 — presentation only.
+ * One independent vertical scroll surface per visible pane on wide screens.
+ * On narrow containers the panes return to normal document flow.
+ */
+.doul-resizable-workspace {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.doul-resizable-workspace .doul-layout-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 39px;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--doul-color-slate-700);
+}
+
+.doul-layout-choices {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  gap: 2px;
+  border: 1px solid var(--doul-color-line);
+  background: var(--doul-color-surface);
+  padding: 3px;
+  border-radius: var(--doul-radius-md);
+}
+
+.doul-layout-choices button,
+.doul-layout-reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 6px 9px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  border: 0;
+  border-radius: var(--doul-radius-sm);
+  color: var(--doul-color-slate-700);
+  background: transparent;
+  white-space: nowrap;
+}
+
+.doul-layout-choices button:hover,
+.doul-layout-reset:hover {
+  background: var(--doul-ui-row-hover);
+}
+
+.doul-layout-choices button[aria-pressed="true"] {
+  background: var(--doul-ui-selected);
+  color: var(--doul-color-primary);
+}
+
+.doul-layout-reset {
+  flex: none;
+  border: 1px solid var(--doul-color-line);
+  background: var(--doul-color-surface);
+}
+
+.doul-resizable-workspace .doul-resizable-body {
+  display: grid;
+  grid-template-columns: minmax(0, var(--doul-split-first, 34%)) 14px minmax(0, 1fr);
+  gap: 0;
+  width: 100%;
+  height: clamp(420px, calc(100dvh - 235px), 850px);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+.doul-resizable-workspace .doul-resizable-pane {
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.doul-resizable-workspace .doul-resizable-pane > * {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.doul-resizable-workspace .doul-resizable-pane > .right-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* Form authors and PDF reviewers must not compete with another inner form scroll. */
+.doul-resizable-workspace .editor-pane .document-fields {
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+}
+
+.doul-resizable-workspace .doul-resizable-divider {
+  position: relative;
+  width: 14px;
+  min-width: 14px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+  background: transparent;
+}
+
+.doul-resizable-divider::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 6px;
+  width: 2px;
+  background: var(--doul-color-line);
+}
+
+.doul-resizable-divider::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - 25px);
+  left: 3px;
+  width: 8px;
+  height: 50px;
+  background: var(--doul-color-slate-300);
+  border-radius: 10px;
+}
+
+.doul-resizable-divider:hover::after,
+.doul-resizable-divider:focus-visible::after {
+  background: var(--doul-color-primary);
+}
+
+.doul-resizable-divider:focus-visible {
+  outline: 2px solid var(--doul-color-primary);
+  outline-offset: -2px;
+}
+
+.doul-resizable-workspace[data-view="first"] .doul-resizable-body,
+.doul-resizable-workspace[data-view="second"] .doul-resizable-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.doul-resizable-workspace:not([data-view="split"]) .doul-resizable-divider,
+.doul-resizable-workspace[data-view="first"] .doul-resizable-second,
+.doul-resizable-workspace[data-view="second"] .doul-resizable-first {
+  display: none;
+}
+
+.doul-resizable-workspace[data-view="first"] .doul-resizable-first,
+.doul-resizable-workspace[data-view="second"] .doul-resizable-second {
+  grid-column: 1;
+}
+
+/* Register detail is an overlay; keep its table as the only table scroll port. */
+.template-register .register-content,
+.template-register .register-content > * {
+  min-width: 0;
+}
+
+.template-register .table-scroll {
+  max-width: 100%;
+  max-height: clamp(280px, calc(100dvh - 390px), 710px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+/* Let the same component decide based on its actual available content width. */
+.doul-resizable-workspace[data-compact="true"] .doul-resizable-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+.doul-resizable-workspace[data-compact="true"] .doul-resizable-pane {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.doul-resizable-workspace[data-compact="true"] .doul-resizable-pane > * {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  scrollbar-gutter: auto;
+}
+
+.doul-resizable-workspace[data-compact="true"] .doul-resizable-divider {
+  display: none;
+}
+
+.doul-resizable-workspace[data-compact="true"] .doul-layout-controls {
+  min-width: 0;
+}
+
+.doul-resizable-workspace[data-compact="true"] .doul-layout-choices {
+  overflow-x: auto;
+}
+
+.doul-resizable-workspace[data-compact="true"] .doul-layout-choices button,
+.doul-resizable-workspace[data-compact="true"] .doul-layout-reset {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+@media (max-width: 620px) {
+  .doul-resizable-workspace .doul-layout-choices button span {
+    display: none;
+  }
+
+  .doul-resizable-workspace .doul-layout-choices button {
+    padding-inline: 12px;
+  }
+
+  .template-register .table-scroll {
+    max-height: min(50dvh, 520px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doul-resizable-workspace * {
+    scroll-behavior: auto;
+  }
+}
+
+/* The legacy 620px workbench rules must not hide the content of a focused pane.
+   Hide the pane slot, never its child: the same record remains mounted. */
+.doul-resizable-workspace.workbench .doul-resizable-pane > .list-pane,
+.doul-resizable-workspace.workbench .doul-resizable-pane > .detail-pane {
+  display: block;
+}
+
+/* Diagnostic records use a grid list and one outer scrollport per panel. */
+.doul-resizable-workspace[data-kind="diagnostic"] .doul-resizable-pane > .parallel-test-list {
+  display: grid;
+  align-content: start;
+  gap: .4rem;
+  max-height: none;
+}
+.doul-resizable-workspace[data-kind="diagnostic"] .parallel-test-detail pre {
+  max-height: none;
+}
+
+
+/* Localized command labels must fit the available detail-pane width.
+   The former intrinsic min-content width could push a Vietnamese payment
+   command past the 768px viewport despite a correctly sized outer pane. */
+.doul-resizable-workspace [data-ui-component="action-gate"],
+.doul-resizable-workspace [data-ui-component="action-gate"] .command-option,
+.doul-resizable-workspace [data-ui-component="action-gate"] .command-option > * {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.doul-resizable-workspace .payment-commands,
+.doul-resizable-workspace .completion-commands {
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+
+/* Each payment/hand-over ActionGate has one command: allocate a full column,
+   rather than squeezing the long localized action into half a narrow pane. */
+.doul-resizable-workspace :is(.payment-commands, .completion-commands)
+[data-ui-component="action-gate"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+
+/* A flex button still needs an explicit wrapping override: shared button
+   styles may request nowrap, causing long English labels to paint outside
+   its grid cell even when the cell itself has min-width: 0. */
+.doul-resizable-workspace [data-ui-component="action-gate"] .command-option button {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  height: auto;
+}

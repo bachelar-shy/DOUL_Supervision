@@ -4,6 +4,7 @@ import { auditCommandLabel, states } from "../labels";
 import { KpiCard, Panel, SectionHeader } from "../ui";
 import { AuditTimeline, DecisionPanel } from "../ui/catalog";
 import { DashboardTemplate } from "../ui/templates";
+import { ResizableWorkspace } from "../ui/ResizableWorkspace";
 import { PageBoundary } from "./PageBoundary";
 import { Icon, RecordList } from "./shared";
 import { formatTime } from "../i18n/format";
@@ -89,7 +90,7 @@ export function TodayPage({
             />
           ))}
         </div>
-        <div className="work-grid">
+        <ResizableWorkspace kind="dashboard" layoutId="today" className="work-grid">
           <Panel>
             <SectionHeader
               title={
@@ -150,7 +151,7 @@ export function TodayPage({
               />
             </Panel>
           </div>
-        </div>
+        </ResizableWorkspace>
       </DashboardTemplate>
     </PageBoundary>
   );

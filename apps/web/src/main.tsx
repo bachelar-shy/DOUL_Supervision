@@ -7,6 +7,7 @@ import "./i18n/config";
 import "./index.css";
 import App from "./App.tsx";
 import "./design-system.css";
+import "./ui/resizable-workspace.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

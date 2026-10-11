@@ -3,6 +3,7 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 import { Panel } from "./index";
+import { ResizableWorkspace } from "./ResizableWorkspace";
 
 export interface DashboardTemplateProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -27,51 +28,34 @@ export function DashboardTemplate({
 export interface WorkbenchTemplateProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   hasDetail?: boolean;
+  layoutId?: string;
 }
 
 export function WorkbenchTemplate({
-  children,
-  hasDetail = false,
-  className,
-  ...props
+  children, hasDetail = false, layoutId, className, ...props
 }: WorkbenchTemplateProps) {
   return (
-    <div
-      className={cn(
-        "template",
-        "template-workbench",
-        "workbench",
-        hasDetail && "has-detail",
-        className,
-      )}
-      data-ui-template="workbench"
-      {...props}
+    <ResizableWorkspace
+      kind="workbench" layoutId={layoutId} hasDetail={hasDetail}
+      className={cn("template", "template-workbench", "workbench", className)}
+      data-ui-template="workbench" {...props}
     >
       {children}
-    </div>
+    </ResizableWorkspace>
   );
 }
 
 export function OwnerReportTemplate({
-  children,
-  hasDetail = false,
-  className,
-  ...props
+  children, hasDetail = false, layoutId, className, ...props
 }: WorkbenchTemplateProps) {
   return (
-    <div
-      className={cn(
-        "template",
-        "template-owner-report",
-        "workbench",
-        hasDetail && "has-detail",
-        className,
-      )}
-      data-ui-template="owner-report"
-      {...props}
+    <ResizableWorkspace
+      kind="owner" layoutId={layoutId} hasDetail={hasDetail}
+      className={cn("template", "template-owner-report", "workbench", className)}
+      data-ui-template="owner-report" {...props}
     >
       {children}
-    </div>
+    </ResizableWorkspace>
   );
 }
 
@@ -123,25 +107,19 @@ export function CaptureTemplate({
 export interface DocumentWorkspaceTemplateProps
   extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
+  layoutId?: string;
 }
 
 export function DocumentWorkspaceTemplate({
-  children,
-  className,
-  ...props
+  children, layoutId, className, ...props
 }: DocumentWorkspaceTemplateProps) {
   return (
-    <div
-      className={cn(
-        "template",
-        "template-document",
-        "document-workbench",
-        className,
-      )}
-      data-ui-template="document"
-      {...props}
+    <ResizableWorkspace
+      kind="document" layoutId={layoutId}
+      className={cn("template", "template-document", "document-workbench", className)}
+      data-ui-template="document" {...props}
     >
       {children}
-    </div>
+    </ResizableWorkspace>
   );
 }

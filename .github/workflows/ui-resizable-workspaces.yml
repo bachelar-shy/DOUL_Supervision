@@ -1,0 +1,61 @@
+name: ui-resizable-workspaces
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/src/**"
+      - "tests_browser_layout/**"
+      - "playwright.workspace-layout.config.ts"
+      - ".github/workflows/ui-resizable-workspaces.yml"
+      - "design/ui/**"
+      - "package.json"
+      - "package-lock.json"
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/src/**"
+      - "tests_browser_layout/**"
+      - "playwright.workspace-layout.config.ts"
+      - ".github/workflows/ui-resizable-workspaces.yml"
+      - "design/ui/**"
+
+permissions:
+  contents: read
+
+jobs:
+  layout-and-scroll:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Prepare GitHub runner disk
+        run: bash infra/ci/prepare_github_runner.sh
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          cache: npm
+      - name: Install pinned npm and dependencies
+        run: |
+          npm install --global npm@12.2.0
+          npm ci
+      - name: Verify UI boundary, lint and web compilation
+        run: |
+          python scripts/check_ui_boundary.py
+          npm run typecheck --workspace apps/web
+          npm run lint --workspace apps/web
+          npm run web:build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Responsive pane and scroll regression
+        run: npx playwright test --config playwright.workspace-layout.config.ts
+      - name: Upload failing layout traces
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: layout-failure
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 7
