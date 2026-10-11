@@ -318,10 +318,7 @@ class HttpSupervisionClient implements SupervisionClient {
       }, signal: AbortSignal.timeout(120000) },
     );
     if (!response.ok) {
-      if (response.status === 401 && session.mode === "PASSWORD") {
-        this.client.session = null;
-        this.client.onUnauthorized?.();
-      }
+      if (response.status === 401) this.client.expireSession(session.accessToken);
       throw new Error(response.status === 501 ? "DOCUMENT_EXPORT_NOT_CONFIGURED" :
         response.status === 401 ? "DOCUMENT_EXPORT_UNAUTHENTICATED" :
         response.status === 403 || response.status === 404 ? "DOCUMENT_EXPORT_ACCESS_DENIED" :

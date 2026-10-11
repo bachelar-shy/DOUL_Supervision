@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
-async function login(page: Page, username="operator",password="Synthetic-Password-12") {
-  await page.goto("/#/admin");
+async function login(page: Page, username="operator",password="Synthetic-Password-12",navigate=true) {
+  if(navigate)await page.goto("/#/admin");
   await page.getByRole("textbox",{name:"아이디"}).fill(username);
   await page.getByLabel("비밀번호",{exact:true}).fill(password);
   await page.getByRole("button",{name:"로그인",exact:true}).click();
@@ -75,7 +75,7 @@ test("registered account authenticates as the assigned supervisor and cannot adm
   await tab.getByRole("button",{name:"계정 생성",exact:true}).click();
   await expect(page.getByRole("status").filter({hasText:"로그인 계정을 등록했습니다"})).toBeVisible();
   await expect(tab.getByLabel("초기 비밀번호",{exact:true})).toHaveValue("");
-  await page.getByRole("button",{name:"로그아웃",exact:true}).click();await login(page,username,"Synthetic-Password-34");
+  await page.getByRole("button",{name:"로그아웃",exact:true}).click();await expect(page.getByRole("textbox",{name:"아이디"})).toBeVisible();await login(page,username,"Synthetic-Password-34",false);
   await expect(page.locator("aside.sidebar").getByText("프로젝트 설정",{exact:true})).toHaveCount(0);
   const auth=await context.request.post("/api/auth/login",{headers:{Origin:"https://127.0.0.1:5210"},data:{username,password:"Synthetic-Password-34"}});
   const session=await auth.json();expect(session.actor.actorGroup).toBe("SUP");

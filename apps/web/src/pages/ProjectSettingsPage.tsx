@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import type { ProjectRole, ProjectSettings, Workspace } from "../data/ui-contract";
 import { ApiError, type SupervisionClient } from "../data/supervision-client";
 import { Panel, SectionHeader } from "../ui";
@@ -19,13 +19,13 @@ export function ProjectSettingsPage({client,workspace,online,onChanged}:{client:
   const [personGroup,setPersonGroup]=useState<ProjectRole>("SUP");const [edit,setEdit]=useState<Assignment|null>(null);
   const attempt=useRef<{body:string;key:string}|null>(null);const mounted=useRef(true);
   useEffect(()=>{mounted.current=true;return ()=>{mounted.current=false;};},[]);
-  async function load() {
+  const load=useCallback(async()=>{
     setBusy(true);setError("");
     try {const next=await client.projectSettings();if(mounted.current){setData(next);setEdit(null);setRevision(n=>n+1);}}
     catch {if(mounted.current)setError("프로젝트 설정을 불러오지 못했습니다. 관리자 배정과 연결 상태를 확인하십시오.");}
     finally {if(mounted.current)setBusy(false);}
-  }
-  useEffect(()=>{void load();},[client,workspace.project.id]);
+  },[client]);
+  useEffect(()=>{void load();},[load]);
   const locked=!online||busy||!data?.availableCommands.length;
   const person=(id:string)=>data?.participants.find(p=>p.id===id)?.name||"담당자";
   const company=(id:string)=>data?.organizations.find(o=>o.id===id)?.name||"소속 미등록";

@@ -46,3 +46,11 @@
 - 다음: 맥미니 HEAD `43d0e6d` 타입/lint/build 통과 (lint 91 warnings, 0 errors, 기존 경고 포함). 새 실제 API 연결 HTTPS 브라우저 fixture/desktop·phone 시험을 커밋했다. 다음은 이 시험 실행, private DB 백업과 실제 서버 반영. 아직 운영 서버에 적용되지 않았다.
 
 최종 확인 전까지 프로젝트 설정 구현 및 실제 현장 인수를 완료로 표시하지 않는다.
+
+## 브라우저 시험 보정과 다음 체크포인트
+
+- `40c14da`, `69eb348`: 실제 HTTPS 브라우저 시험 추가 및 선택 항목 조회 보정. 맥미니 15 API 시험 통과. 브라우저 12개 중 10개 통과, 로그아웃 직후 다른 사용자 로그인 2개는 재시험 중. 미통과를 완료로 기록하지 않는다.
+- 선택 항목은 접근성 combobox로 찾고, 멱등 키는 ASCII UUID를 사용하며 PDF는 실제 원본을 선택한 뒤 렌더링을 검증한다.
+- 이전 요청의 401 및 늦은 로그아웃 응답이 새 프로젝트/로그인 세션을 지우지 않도록 클라이언트를 보강했다. 네 가지 세션 응답 순서 시험 추가.
+- 신규 프로젝트 설정 CI도 `[self-hosted, Linux, ARM64, doul-macmini]`에서 수행하도록 추가했고 전체 25개 workflow 정책 검사 통과.
+- 다음 실행: `VITE_DOUL_AUTH_MODE=password npm run web:build`; `npx playwright test -c playwright.project-settings.config.ts`; 비밀번호/field-core 회귀, private DB 백업 후 운영준비 서버 적용. 실제 배포는 아직 하지 않았다.

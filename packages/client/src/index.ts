@@ -287,10 +287,16 @@ export class ApiError extends Error {
 export class ApiClient {
   session: Session | null = null;
   private loginGeneration = 0;
+  private selectingToken: string | null = null;
   onUnauthorized: (() => void) | null = null;
   baseUrl: string;
   constructor(baseUrl = "/api") {
     this.baseUrl = baseUrl;
+  }
+  expireSession(token: string | undefined): void {
+    if (this.session?.mode !== "PASSWORD" || this.session.accessToken !== token || token === this.selectingToken) return;
+    this.session = null;
+    this.onUnauthorized?.();
   }
   async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const headers = new Headers(init.headers);
@@ -310,10 +316,7 @@ export class ApiClient {
         signal: init.signal || controller.signal,
       });
       if (!response.ok) {
-        if (response.status === 401 && this.session?.mode === "PASSWORD" && this.session.accessToken === requestToken) {
-          this.session = null;
-          this.onUnauthorized?.();
-        }
+        if (response.status === 401) this.expireSession(requestToken);
         const detail = await response
           .json()
           .catch(() => ({
@@ -346,17 +349,28 @@ export class ApiClient {
     return session;
   }
   async logout(): Promise<void> {
-    ++this.loginGeneration;
+    const generation = ++this.loginGeneration;
+    const token = this.session?.accessToken;
     try { if (this.session?.mode === "PASSWORD") await this.request("/auth/logout", { method:"POST" }); }
-    finally { this.session = null; }
+    finally { if (generation === this.loginGeneration && this.session?.accessToken === token) this.session = null; }
   }
   async selectProject(projectId: string): Promise<Session> {
     const generation = ++this.loginGeneration;
-    const session = await this.request<Session>("/auth/project-session", {
-      method: "POST", body: JSON.stringify({ projectId }),
-    });
-    if (generation === this.loginGeneration) this.session = session;
-    return session;
+    const token = this.session?.accessToken;
+    this.selectingToken = token ?? null;
+    try {
+      const session = await this.request<Session>("/auth/project-session", {
+        method: "POST", body: JSON.stringify({ projectId }),
+      });
+      if (generation === this.loginGeneration) this.session = session;
+      return session;
+    } catch (error) {
+      if (generation === this.loginGeneration) {
+        this.selectingToken = null;
+        if (error instanceof ApiError && error.status === 401) this.expireSession(token);
+      }
+      throw error;
+    } finally { if (generation === this.loginGeneration) this.selectingToken = null; }
   }
   path(suffix: string): string {
     if (!this.session) throw new Error("로그인이 필요합니다.");
