@@ -5,6 +5,9 @@ on:
     branches: [main]
 permissions:
   contents: read
+concurrency:
+  group: mvp-development-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   local-adapter-and-ui:
     # Ephemeral GitHub-hosted runner; no Mac mini dependency.
@@ -54,12 +57,6 @@ jobs:
           npm run typecheck
           npm run lint --workspace apps/web
           npm run web:build
-      - name: Browser integration tests
-        env:
-          DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
-        run: |
-          npx playwright install --with-deps chromium
-          npx playwright test
       - name: Password authentication UI boundary and session expiry tests
         run: npx playwright test --config playwright.auth.config.ts
       - name: Isolated mock localization tests
@@ -83,3 +80,45 @@ jobs:
           mkdir -p .local
           npm audit --json > .local/npm-audit-ci.json || true
           echo 'Local skeleton only. See design/verification/security-audit.json for release blockers.'
+
+  # Keep every browser case; run disjoint file shards instead of a 30-minute serial suite.
+  browser-integration-shard:
+    name: Browser integration shard ${{ matrix.shard }}/6
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Prepare ephemeral runner disk for CI
+        run: bash infra/ci/prepare_github_runner.sh
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - name: Install locked browser dependencies
+        run: |
+          npm install --global npm@12.2.0
+          python -m venv .venv
+          .venv/bin/pip install -r services/api/requirements.lock
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Run entire browser suite (one of six disjoint file shards)
+        env:
+          DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
+        run: npx playwright test --shard=${{ matrix.shard }}/6
+      - name: Preserve shard failures and trace evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: mvp-browser-shard-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-results/
+            .local/browser-results.json
+          if-no-files-found: warn
+          retention-days: 7
