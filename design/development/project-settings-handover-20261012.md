@@ -64,3 +64,10 @@
 - C1 계약과 PCR-2026-003을 기록했다. 사용자 지시 범위의 구현 승인과 전체 Product Baseline v1.2 후보 릴리스 채택/현장 인수는 별개다.
 - 실제 PostgreSQL 백업 `.../DOUL-operational-runtime/20261012/backups/pre-project-settings-20261012.dump` 생성 완료 (private, 0600).
 - 다음: 현재 커밋 맥미니 동기화, operator staging 설치(--enable-project-settings, 승인 참조), 새 source/API 및 정적 UI 적용, 실제 Tailscale 로그인/저장/전환/재시작 검증. **아직 서버 적용 전이다.**
+
+## 실제 서버 적용 및 후속 UI 체크포인트
+
+- `43b4aec`를 실제 서버에 반영했다. Source는 새 맥미니 worktree이고 API health의 baseCommit도 일치한다. 기존 프로젝트 기본정보는 변경하지 않았다.
+- 실제 Tailscale HTTPS API: 두 승인 프로젝트, 프로젝트 전환/기존 토큰401/교차 프로젝트404, 설정 저장·멱등 재시도·409 충돌·로그아웃401 확인. 기존 admin에 기술 자격은 없으며 authority는 manage_project_roles/render_document만 유지한다.
+- 실제 브라우저는 설정·네 역할·테스트 PDF 렌더링까지 확인했지만 기존 프로젝트로 돌아올 때 비동기 전환을 기다리는 절차를 보정하여 재확인 중이다. 아직 최종 브라우저 PASS로 기록하지 않는다.
+- 계정 생성 화면에도 네 역할을 먼저 고르는 선택란을 추가하고 해당 역할의 등록된 담당자만 표시한다. 실제 프로젝트에 ADM 한 명만 있어도 네 역할 선택은 보이며 나머지 담당자는 먼저 등록한다. 이 후속 UI 변경은 아직 검증/배포 전이다.

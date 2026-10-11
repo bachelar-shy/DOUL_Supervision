@@ -34,7 +34,11 @@ test("four field roles and account choices show names without internal identifie
   await page.getByRole("tab",{name:"로그인계정",exact:true}).click();
   const options=await panel(page,"로그인계정").getByLabel("담당자·역할").locator("option").allTextContents();
   expect(options.join(" ")).not.toMatch(/project_admin|chief_supervisor|[a-f0-9]{8}-[a-f0-9]{4}-/);
-  for(const label of ["관리자","감리자","발주처","시공사"])expect(options.some(o=>o.startsWith(label+" · "))).toBeTruthy();
+  const accountRole=panel(page,"로그인계정").getByRole("combobox",{name:"계정 역할",exact:true});
+  expect(await accountRole.locator("option").allTextContents()).toEqual(["관리자","감리자","발주처","시공사"]);
+  for(const [code,label] of [["ADM","관리자"],["SUP","감리자"],["OWN","발주처"],["CON","시공사"]]){
+    await accountRole.selectOption(code);await expect(panel(page,"로그인계정").getByRole("combobox",{name:"담당자·역할",exact:true})).toContainText(label+" · ");
+  }
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
 });
 
@@ -47,6 +51,7 @@ test("company and participant are saved through the API and become an account ch
   await tab.getByRole("combobox",{name:"역할",exact:true}).selectOption("CON");await tab.getByRole("combobox",{name:"소속 회사",exact:true}).selectOption({label:company});
   await tab.getByLabel("담당자 이름",{exact:true}).fill(person);await tab.getByRole("button",{name:"담당자 등록",exact:true}).click();
   await page.getByRole("tab",{name:"로그인계정",exact:true}).click();
+  await panel(page,"로그인계정").getByRole("combobox",{name:"계정 역할",exact:true}).selectOption("CON");
   await expect(panel(page,"로그인계정").getByLabel("담당자·역할").locator("option").filter({hasText:person})).toHaveCount(1);
 });
 
@@ -69,6 +74,7 @@ test("conflict keeps entered text and offline blocks saving",async({page,context
 test("registered account authenticates as the assigned supervisor and cannot administer the project",async({page,context})=>{
   await login(page);await settings(page);await page.getByRole("tab",{name:"로그인계정",exact:true}).click();
   const tab=panel(page,"로그인계정");const username="sup"+Date.now();
+  await tab.getByRole("combobox",{name:"계정 역할",exact:true}).selectOption("SUP");
   await tab.getByRole("combobox",{name:"담당자·역할",exact:true}).selectOption({label:"감리자 · 가상 감리책임자 · 기존 감리 회사"});
   await tab.getByLabel("로그인 아이디",{exact:true}).fill(username);
   await tab.getByLabel("초기 비밀번호",{exact:true}).fill("Synthetic-Password-34");

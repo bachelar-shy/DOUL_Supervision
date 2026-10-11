@@ -16,7 +16,7 @@ function dateInZone(zone:string,offset=0) {
 export function ProjectSettingsPage({client,workspace,online,onChanged}:{client:SupervisionClient;workspace:Workspace;online:boolean;onChanged:()=>Promise<void>}) {
   const [revision,setRevision]=useState(0);const [data,setData]=useState<ProjectSettings|null>(null);const [tab,setTab]=useState(0);
   const [busy,setBusy]=useState(false);const [error,setError]=useState("");const [notice,setNotice]=useState("");
-  const [personGroup,setPersonGroup]=useState<ProjectRole>("SUP");const [edit,setEdit]=useState<Assignment|null>(null);
+  const [accountGroup,setAccountGroup]=useState<ProjectRole>("ADM");const [personGroup,setPersonGroup]=useState<ProjectRole>("SUP");const [edit,setEdit]=useState<Assignment|null>(null);
   const attempt=useRef<{body:string;key:string}|null>(null);const mounted=useRef(true);
   useEffect(()=>{mounted.current=true;return ()=>{mounted.current=false;};},[]);
   const load=useCallback(async()=>{
@@ -89,7 +89,7 @@ export function ProjectSettingsPage({client,workspace,online,onChanged}:{client:
             .then(()=>{if(mounted.current){setNotice("로그인 계정을 등록했습니다.");target.reset();}})
             .catch(()=>{if(mounted.current)setError("계정을 등록하지 못했습니다. 아이디 중복, 비밀번호 길이와 담당자 배정을 확인하십시오.");})
             .finally(()=>{const passwordInput=target.elements.namedItem("password") as HTMLInputElement|null;if(passwordInput)passwordInput.value="";if(mounted.current)setBusy(false);});
-        }}><fieldset disabled={locked||client.session?.mode!=="PASSWORD"} className="settings-form"><legend>사용자 계정 생성</legend>{client.session?.mode!=="PASSWORD"&&<p>로그인 계정은 실제 비밀번호 로그인 서버에서 등록할 수 있습니다.</p>}{select("담당자·역할","role",data.assignments.filter(a=>a.active).map(a=>({id:a.id,name:roleLabel(a)})))}<label>로그인 아이디<input name="username" required pattern="[a-z][a-z0-9._-]{2,63}" maxLength={64} autoComplete="off"/></label><p>영문 소문자로 시작하는 3~64자 아이디를 입력하십시오.</p><label>초기 비밀번호<input name="password" required type="password" minLength={12} maxLength={128} autoComplete="new-password"/></label><p>12자 이상으로 입력하십시오. 저장한 비밀번호는 다시 표시하지 않습니다.</p><button className="primary" type="submit">계정 생성</button></fieldset></form>
+        }}><fieldset disabled={locked||client.session?.mode!=="PASSWORD"} className="settings-form"><legend>사용자 계정 생성</legend>{client.session?.mode!=="PASSWORD"&&<p>로그인 계정은 실제 비밀번호 로그인 서버에서 등록할 수 있습니다.</p>}<label>계정 역할<select value={accountGroup} onChange={e=>setAccountGroup(e.target.value as ProjectRole)}>{groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label><div key={accountGroup}>{select("담당자·역할","role",data.assignments.filter(a=>a.active&&a.actorGroup===accountGroup).map(a=>({id:a.id,name:roleLabel(a)})))}</div>{!data.assignments.some(a=>a.active&&a.actorGroup===accountGroup)&&<p>선택한 역할의 담당자가 없습니다. 참여회사·담당자에서 먼저 등록하십시오.</p>}<label>로그인 아이디<input name="username" required pattern="[a-z][a-z0-9._-]{2,63}" maxLength={64} autoComplete="off"/></label><p>영문 소문자로 시작하는 3~64자 아이디를 입력하십시오.</p><label>초기 비밀번호<input name="password" required type="password" minLength={12} maxLength={128} autoComplete="new-password"/></label><p>12자 이상으로 입력하십시오. 저장한 비밀번호는 다시 표시하지 않습니다.</p><button className="primary" type="submit">계정 생성</button></fieldset></form>
       </div>
     </div>}
   </Panel></PageBoundary>;
