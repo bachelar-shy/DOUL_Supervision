@@ -43,7 +43,7 @@ export function DocumentPage(props: DocumentPageProps) {
 
 function DocumentEditor({ client, workspace, online, refresh }: DocumentPageProps) {
   const { t, i18n } = useTranslation();
-  const { value: draft, change: changeDraft, discard: discardDraft, restored } = useSessionFormDraft(
+  const { value: draft, change: changeDraft, discard: discardDraft, restored, persistenceFailed } = useSessionFormDraft(
     "document",
     { projectId: workspace.project.id, partyId: client.session?.actor.partyId ?? "anonymous", roleId: workspace.role.id },
     emptyDocumentDraft,
@@ -175,7 +175,9 @@ function DocumentEditor({ client, workspace, online, refresh }: DocumentPageProp
       <form className="panel editor-pane" onSubmit={(event) => void preview(event)}>
         <h2>{t("document.editor.title")}</h2>
         <div className="document-session-draft-notice">
-          <p role="status">{restored ? uxCopy.sessionRestored : uxCopy.sessionSaved}</p>
+          {persistenceFailed
+            ? <p role="alert">{uxCopy.sessionSaveFailed}</p>
+            : <p role="status">{restored ? uxCopy.sessionRestored : uxCopy.sessionSaved}</p>}
           <button type="button" className="secondary" disabled={busy} onClick={() => {
             editRevision.current += 1;
             discardDraft();

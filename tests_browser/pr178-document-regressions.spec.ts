@@ -225,3 +225,21 @@ test("FM-02 renders an actual readable MethodStatement at its exact catalog vers
   entries.push({ ...method, ref: { ...method.ref, version: method.ref.version + 1 } });
   expect(eligibleDocumentSources(unsafeCatalog, "FM-02")).toEqual([method]);
 });
+
+test("a denied sessionStorage write warns document authors and never reports a saved draft", async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(key: string, value: string) {
+      if (key.startsWith("doul:session-form-draft:v1:"))
+        throw new DOMException("Storage quota exceeded", "QuotaExceededError");
+      return original.call(this, key, value);
+    };
+  });
+  await openEditor(page);
+  await page.locator('input[name="urgent.next_action"]').fill("작성 중인 내용이 저장되지 않을 수 있음");
+  await expect(page.locator(".document-session-draft-notice [role=alert]"))
+    .toContainText("브라우저 임시저장이 실패했습니다");
+  await expect(page.locator('input[name="urgent.next_action"]'))
+    .toHaveValue("작성 중인 내용이 저장되지 않을 수 있음");
+  await expect(page.locator(".document-session-draft-notice [role=status]")).toHaveCount(0);
+});
