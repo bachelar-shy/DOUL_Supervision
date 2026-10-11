@@ -169,7 +169,7 @@ test("temporary source failure preserves the full draft and disables save until 
   await expect(form.getByRole("button", { name: "자체검측 초안 저장", exact: true })).toBeDisabled();
   expect((await storedInput(page)).payload).toEqual(original.payload);
   fail = false;
-  await page.getByRole("button", { name: "새로고침", exact: true }).click();
+  await page.getByTestId("inspection-case-flow").getByRole("button", { name: "새로고침", exact: true }).click();
   await expectRestored(form, original.payload);
   expect((await storedInput(page)).payload).toEqual(original.payload);
 });
