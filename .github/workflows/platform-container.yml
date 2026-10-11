@@ -36,8 +36,8 @@ permissions:
 
 jobs:
   compose-smoke:
-    # Dedicated Mac mini Linux ARM64 runner; preserve persistent tools.
-    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
+    # Ephemeral GitHub-hosted runner; no Mac mini dependency.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
