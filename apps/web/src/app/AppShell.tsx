@@ -600,6 +600,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                     selected={selected} current={current} online={online} onSelect={setSelected}
                     onOpenCommand={(item, action) => setDialog({ item, action })}
                     client={client}
+                    onChanged={refresh}
                     onInspectionCreated={async (record) => { await refresh(); setSelected(record.id); }}
                     onActionCreated={async (record) => { await refresh(); setSelected(record.id); }}
                     onCreateIssue={createIssue}
@@ -620,6 +621,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                   onSelect={setSelected}
                   onOpenCommand={(item, action) => setDialog({ item, action })}
                   client={client}
+                  onChanged={refresh}
                   onInspectionCreated={async record => { await refresh(); setSelected(record.id); }}
                   onActionCreated={async record => { await refresh(); setSelected(record.id); }}
                   onCreateIssue={createIssue}
