@@ -211,3 +211,20 @@ test("late scoped response after a role switch cannot alter the saved contractor
   await expectRestored(page.getByRole("form", { name: "자체검측 작성" }), original.payload);
   expect((await storedInput(page)).payload).toEqual(original.payload);
 });
+
+test("a failed sessionStorage write is disclosed during inspection authoring", async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(key: string, value: string) {
+      if (key.startsWith("doul:session-form-draft:v1:"))
+        throw new DOMException("Storage quota exceeded", "QuotaExceededError");
+      return original.call(this, key, value);
+    };
+  });
+  const form = await openContractor(page);
+  await form.getByRole("textbox", { name: "공종·작업명" }).fill("입력 유지하되 임시저장 불가 경고");
+  await expect(form.getByRole("alert")).toContainText("임시저장하지 못했습니다");
+  await expect(form.getByRole("textbox", { name: "공종·작업명" }))
+    .toHaveValue("입력 유지하되 임시저장 불가 경고");
+  await expect(form.getByRole("status")).toHaveCount(0);
+});

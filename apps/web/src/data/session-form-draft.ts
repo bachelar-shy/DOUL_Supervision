@@ -81,6 +81,9 @@ export function useSessionFormDraft<T extends Record<string, unknown>>(
   });
   const active = entry.key === key;
   const value = active ? entry.value : empty;
+  // Storage can be denied (private mode, quota, policy). Never claim that
+  // unsubmitted field work was saved when setItem() failed.
+  const [persisted, setPersisted] = useState({ key, available: true });
 
   useEffect(() => {
     if (entry.key !== key) {
@@ -91,11 +94,14 @@ export function useSessionFormDraft<T extends Record<string, unknown>>(
 
   useEffect(() => {
     if (!active) return;
+    let available = true;
     if (JSON.stringify(entry.value) === JSON.stringify(empty)) {
       clearSessionFormDraft(key);
     } else {
-      saveSessionFormDraft(key, entry.value);
+      available = saveSessionFormDraft(key, entry.value);
     }
+    setPersisted(previous => previous.key === key && previous.available === available
+      ? previous : { key, available });
   }, [key, active, entry.value, empty]);
 
   const change = (patch: Partial<T>) => {
@@ -108,5 +114,8 @@ export function useSessionFormDraft<T extends Record<string, unknown>>(
     clearSessionFormDraft(key);
     setEntry({ key, value: empty, restored: false });
   };
-  return { value, change, discard, restored: active && entry.restored };
+  return {
+    value, change, discard, restored: active && entry.restored,
+    persistenceFailed: active && persisted.key === key && !persisted.available,
+  };
 }

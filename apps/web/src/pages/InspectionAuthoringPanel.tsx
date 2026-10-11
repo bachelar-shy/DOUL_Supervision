@@ -16,7 +16,7 @@ type LabelKey =
   | "requirements" | "evidence" | "noRequirementsOrEvidence" | "fieldChecks" | "selfComplete" | "drawingCheck"
   | "materialCheck" | "testCheck" | "previousCheck" | "changeCheck" | "holdPoint" | "loadingSources"
   | "noDrawings" | "saveDraft" | "saving" | "saved" | "genericError"
-  | "sessionSaved" | "sessionRestored" | "sessionDiscard";
+  | "sessionSaved" | "sessionSaveFailed" | "sessionRestored" | "sessionDiscard";
 
 const copy: Record<Locale, Record<LabelKey, string>> = {
   ko: {
@@ -31,6 +31,7 @@ const copy: Record<Locale, Record<LabelKey, string>> = {
     saveDraft: "자체검측 초안 저장", saving: "저장 중…", saved: "자체검측 초안을 저장했습니다.",
     genericError: "검측 자료 요청을 완료할 수 없습니다. 연결을 확인한 뒤 다시 시도하세요.",
     sessionSaved: "작성 중인 내용은 이 브라우저 탭에만 임시 보관되며, 정식 검측 제출이 아닙니다.",
+    sessionSaveFailed: "이 브라우저에서 임시저장하지 못했습니다. 화면 이동이나 새로고침 시 입력이 사라질 수 있으니 중요한 내용을 따로 기록하십시오.",
     sessionRestored: "이전 작성 내용을 복원했습니다. 도면 개정과 검측 기준을 다시 확인하십시오.",
     sessionDiscard: "임시 작성 내용 삭제",
   },
@@ -46,6 +47,7 @@ const copy: Record<Locale, Record<LabelKey, string>> = {
     saveDraft: "Lưu bản nháp tự nghiệm thu", saving: "Đang lưu…", saved: "Đã lưu bản nháp tự nghiệm thu.",
     genericError: "Không thể tải hoặc lưu hồ sơ nghiệm thu. Hãy kiểm tra kết nối rồi thử lại.",
     sessionSaved: "Nội dung đang soạn chỉ được lưu tạm trong tab này; chưa nộp hồ sơ nghiệm thu.",
+    sessionSaveFailed: "Không thể lưu bản nháp trên trình duyệt. Dữ liệu có thể mất khi chuyển trang hoặc tải lại. Hãy ghi lại nội dung quan trọng.",
     sessionRestored: "Đã khôi phục nội dung đang soạn. Hãy kiểm tra phiên bản bản vẽ và tiêu chí nghiệm thu.",
     sessionDiscard: "Xóa nội dung tạm",
   },
@@ -61,6 +63,7 @@ const copy: Record<Locale, Record<LabelKey, string>> = {
     saveDraft: "Save self inspection draft", saving: "Saving…", saved: "Self inspection draft saved.",
     genericError: "The inspection records request could not be completed. Check the connection and try again.",
     sessionSaved: "Unsubmitted work is saved only in this browser tab and has not been formally submitted.",
+    sessionSaveFailed: "Browser draft storage failed. You may lose this input after navigation or reload. Save important content elsewhere.",
     sessionRestored: "Previous input was restored. Recheck drawing revisions and inspection requirements.",
     sessionDiscard: "Discard temporary input",
   },
@@ -97,7 +100,7 @@ function InspectionAuthoringForm({ client, workspace, online, onCreated }: Inspe
   const t = copy[localeFor(i18n.resolvedLanguage ?? i18n.language)];
   const copyRef = useRef(t);
   const [sources, setSources] = useState(empty);
-  const { value: draft, change: changeDraft, discard: discardDraft, restored } = useSessionFormDraft(
+  const { value: draft, change: changeDraft, discard: discardDraft, restored, persistenceFailed } = useSessionFormDraft(
     "inspection",
     { projectId: workspace.project.id, partyId: client.session?.actor.partyId ?? "anonymous", roleId: workspace.role.id },
     emptyInspectionInput,
@@ -174,7 +177,9 @@ function InspectionAuthoringForm({ client, workspace, online, onCreated }: Inspe
   return <form aria-label={t.title} className="grid gap-3 p-3" onSubmit={event => { event.preventDefault(); void save(); }}>
     <h3>{t.title}</h3><p>{t.description}</p>
     <div className="flex flex-wrap items-center gap-2">
-      <p className="text-xs text-slate-700" role="status">{restored ? t.sessionRestored : t.sessionSaved}</p>
+      {persistenceFailed
+        ? <p className="text-xs text-red-800" role="alert">{t.sessionSaveFailed}</p>
+        : <p className="text-xs text-slate-700" role="status">{restored ? t.sessionRestored : t.sessionSaved}</p>}
       <button type="button" className="secondary" onClick={() => { discardDraft(); setSaved(""); }}
         disabled={busy}>{t.sessionDiscard}</button>
     </div>
