@@ -185,9 +185,18 @@ async function runCommand(
     }
   }
   if (evidenceIds.length) {
-    const evidence = dialog.getByLabel("처리 근거 증빙번호");
-    await expect(evidence).toBeVisible();
-    await evidence.fill(evidenceIds.join("\n"));
+    // Prefer readable evidence choices; support older retained records through
+    // the explicit advanced ID field when the current picker lacks a source.
+    const missing: string[] = [];
+    for (const id of evidenceIds) {
+      const option = dialog.locator(".command-evidence-option").filter({ hasText: id.slice(0, 12) });
+      if (await option.count() === 1) await option.getByRole("checkbox").check();
+      else missing.push(id);
+    }
+    if (missing.length) {
+      await dialog.getByText("목록에 없는 증빙번호 직접 입력 (고급)").click();
+      await dialog.getByRole("textbox", { name: "증빙번호" }).fill(missing.join("\n"));
+    }
   }
   const post = page.waitForResponse((response) => response.url().includes("/api/projects/")
     && response.request().method() === "POST"
