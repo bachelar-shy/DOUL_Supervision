@@ -233,6 +233,7 @@ export interface Workspace {
   audit: { id: string; command: string; at: string; afterState: string }[];
   context: {
     projectId: string;
+    dataClassification?: string;
     scope: Scope;
     requirementRef: DomainRef;
     drawingRef: DomainRef;

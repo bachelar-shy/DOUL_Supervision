@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { CalendarDays, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {
+  AccessibleProjects,
   CommandDescriptor,
   Fields,
   HumanRole,
@@ -68,6 +69,8 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     return t(value.labelKey ?? "", { defaultValue: value.label });
   };
   const [role, setRole] = useState<HumanRole>(passwordMode ? client.session?.actor.actorGroup ?? "SUP" : "SUP");
+  const [approvedProjects,setApprovedProjects]=useState<AccessibleProjects["items"]>([]);
+  const [projectSwitching,setProjectSwitching]=useState(false);
   const [demoProjects, setDemoProjects] = useState<DemoProject[]>([]);
   const [projectChoice, setProjectChoice] = useState("");
   const [projectDirectoryReady, setProjectDirectoryReady] = useState(client.kind !== "http" || passwordMode);
@@ -115,6 +118,29 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
       if (current()) setLoading(false);
     }
   }, [client, t]);
+  useEffect(() => {
+    if (!passwordMode || client.kind !== "http") return;
+    let current = true;
+    void client.accessibleProjects().then(directory => {
+      if (current) setApprovedProjects(directory.items);
+    }).catch(() => { if (current) setApprovedProjects([]); });
+    return () => { current = false; };
+  }, [client, passwordMode, workspace?.project.id, workspace?.project.name]);
+  async function switchProject(projectId: string) {
+    if (projectSwitching || !online || projectId === client.session?.projectId) return;
+    // Retain the current workspace until the server has approved the new session.
+    ++sequence.current; ++refreshSequence.current;
+    setProjectSwitching(true); setDialog(null); setSelected(null); setError("");
+    try {
+      const session = await client.selectProject(projectId);
+      activeRole.current = session.actor.actorGroup;
+      setRole(session.actor.actorGroup); setWorkspace(null); setLoading(true);
+      setProjectChoice(session.projectId); nav("today"); setMenu(false);
+    } catch (e) {
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : t("app.error.connection"));
+      setLoading(false);
+    } finally { setProjectSwitching(false); }
+  }
   useEffect(() => {
     if (client.kind !== "http" || passwordMode) {
       setProjectDirectoryReady(true);
@@ -306,6 +332,13 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
           <div>
             <strong>{workspace?.project.name ?? t("app.sampleSite")}</strong>
             {workspace?.demo && <small>{t("app.sampleData")}</small>}
+            {passwordMode && approvedProjects.length > 1 && <label className="project-switch">
+              프로젝트 선택
+              <select aria-label="프로젝트 선택" value={client.session?.projectId ?? ""}
+                disabled={projectSwitching || !online} onChange={e=>void switchProject(e.target.value)}>
+                {approvedProjects.map(project=><option key={project.projectId} value={project.projectId}>{project.name}</option>)}
+              </select>
+            </label>}
                 {!passwordMode && demoProjects.length > 1 && (
                   <label className="project-switch">
                     시험 프로젝트{" "}
@@ -430,7 +463,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               <span>{t("app.demo.mockDetail")}</span>
             </>
           ) : (
-            <>{t("app.demo.live")}</>
+            <>{workspace?.context.dataClassification === "SYNTHETIC_TEST_NOT_SITE_EVIDENCE" ? "합성 테스트 자료 · 실제 현장 증빙 아님" : t("app.demo.live")}</>
           )}
         </div>
         {!online && (

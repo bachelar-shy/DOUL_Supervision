@@ -1,6 +1,7 @@
 """Administrative project foundation commands; workflow/qualification gates stay unchanged."""
 from copy import deepcopy
 from datetime import date, datetime, time, timedelta
+from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import Request
@@ -26,6 +27,15 @@ def _text(value, maximum=200):
     return value.strip()
 
 
+def _id(value):
+    require(isinstance(value, str), 'INVALID_REQUEST', '현재 프로젝트의 등록 항목을 선택하십시오.')
+    try:
+        UUID(value)
+    except (ValueError, TypeError):
+        raise ContractError('INVALID_REQUEST', '등록 항목을 확인하십시오.')
+    return value
+
+
 def _fields(body, fields):
     require(set(body) == set(fields), 'INVALID_REQUEST', '필수 입력을 확인하십시오. 허용되지 않은 항목은 저장할 수 없습니다.')
 
@@ -37,7 +47,7 @@ def _dates(start, end, timezone):
         zone = ZoneInfo(timezone)
         return (datetime.combine(first, time.min, zone).isoformat(),
                 datetime.combine(last + timedelta(days=1), time.min, zone).isoformat())
-    except (TypeError, ValueError, ZoneInfoNotFoundError):
+    except (TypeError, ValueError, OverflowError, ZoneInfoNotFoundError):
         raise ContractError('INVALID_REQUEST', '배정 기간과 현장 시간대를 확인하십시오.')
 
 
@@ -76,7 +86,7 @@ def install_project_settings_routes(app, store, *, identity, role_for, key_for, 
         for assignment in assignments:
             for package in assignment['packageIds']:
                 if package != '*' and package not in known:
-                    packages.append(dict(id=package, name='기존 공사범위 · ' + package[:8])); known.add(package)
+                    packages.append(dict(id=package, name='기존 공사범위 ' + str(len(packages) + 1))); known.add(package)
         return dict(project=project, availableCommands=sorted(COMMANDS),
                     organizations=[dict(r, actorGroup=groups.get(r['id'])) for r in records('Party', project_id) if r['kind'] == 'ORGANIZATION'],
                     participants=[r for r in records('Party', project_id) if r['kind'] == 'PERSON'],
@@ -140,10 +150,11 @@ def install_project_settings_routes(app, store, *, identity, role_for, key_for, 
             if command == 'update_project':
                 _fields(body, ['expectedVersion', 'name', 'country', 'timezone', 'classification'])
                 require(isinstance(body['country'], str) and body['country'] in {'VN', 'KR'}, 'INVALID_REQUEST', '현장 국가를 확인하십시오.')
-                try: ZoneInfo(_text(body['timezone'], 80))
+                timezone = _text(body['timezone'], 80)
+                try: ZoneInfo(timezone)
                 except (ZoneInfoNotFoundError, ValueError): raise ContractError('INVALID_REQUEST', '현장 시간대를 확인하십시오.')
                 require(isinstance(body['classification'], str) and len(body['classification']) <= 200, 'INVALID_REQUEST', '공사 종류를 확인하십시오.')
-                proposed.update(name=_text(body['name']), country=body['country'], timezone=body['timezone'], classification=body['classification'].strip())
+                proposed.update(name=_text(body['name']), country=body['country'], timezone=timezone, classification=body['classification'].strip())
             elif command == 'add_organization':
                 _fields(body, ['expectedVersion', 'name', 'actorGroup'])
                 require(isinstance(body['actorGroup'], str) and body['actorGroup'] in PROFILES, 'INVALID_REQUEST', '참여회사 구분을 확인하십시오.')
@@ -161,7 +172,7 @@ def install_project_settings_routes(app, store, *, identity, role_for, key_for, 
                 _fields(body, ['expectedVersion', 'discipline', 'packageId', 'locationId', 'responsibleOrganizationId', 'minimumQualificationRank'])
                 choices = scoped_values(dict(disciplines=[body['discipline']], packageIds=[body['packageId']], locationIds=[body['locationId']]), project_id, 'SUP')
                 require(all(choices.values()), 'INVALID_REQUEST', '현장의 기본 담당 범위를 모두 선택하십시오.')
-                contractor = store.engine.get('Party', body['responsibleOrganizationId'])
+                contractor = store.engine.get('Party', _id(body['responsibleOrganizationId']))
                 groups = {r['organizationId']: r['actorGroup'] for r in records('RoleAssignment', project_id)}
                 groups.update(data.get('organizationGroups', {}))
                 require(contractor['projectId'] == project_id and contractor['kind'] == 'ORGANIZATION' and groups.get(contractor['id']) == 'CON',
@@ -179,7 +190,7 @@ def install_project_settings_routes(app, store, *, identity, role_for, key_for, 
                 _fields(body, ['expectedVersion', 'name', 'organizationId', 'actorGroup', 'startDate', 'endDate', 'disciplines', 'packageIds', 'locationIds'])
                 group = body['actorGroup']
                 require(isinstance(group, str) and group in PROFILES, 'INVALID_REQUEST', '담당 업무를 확인하십시오.')
-                organization = store.engine.get('Party', body['organizationId'])
+                organization = store.engine.get('Party', _id(body['organizationId']))
                 groups = {r['organizationId']: r['actorGroup'] for r in records('RoleAssignment', project_id)}
                 groups.update(data.get('organizationGroups', {}))
                 require(organization['projectId'] == project_id and organization['kind'] == 'ORGANIZATION' and groups.get(organization['id']) == group,
@@ -195,7 +206,7 @@ def install_project_settings_routes(app, store, *, identity, role_for, key_for, 
                 save('RoleAssignment', assignment, None, command, actor, role, key, body)
             elif command == 'update_assignment':
                 _fields(body, ['expectedVersion', 'roleId', 'expectedRoleVersion', 'active', 'startDate', 'endDate', 'disciplines', 'packageIds', 'locationIds'])
-                current = store.engine.get('RoleAssignment', body['roleId'])
+                current = store.engine.get('RoleAssignment', _id(body['roleId']))
                 require(current['projectId'] == project_id, 'PROJECT_MISMATCH', '다른 프로젝트의 배정은 변경할 수 없습니다.')
                 require(type(body['expectedRoleVersion']) is int and current['version'] == body['expectedRoleVersion'], 'REFERENCE_STALE', '담당자 배정이 변경되었습니다.')
                 require(current['id'] != role['id'], 'NOT_AUTHORIZED', '접속 중인 본인의 관리자 배정은 변경할 수 없습니다.')
