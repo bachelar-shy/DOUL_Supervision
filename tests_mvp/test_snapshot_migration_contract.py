@@ -26,7 +26,9 @@ def snap(*, current=None, history=None):
         [["Project", "SITE-A", 1], project],
         [["Issue", "ISSUE-002", 1], other],
     ]
-    return {"format": 1, "engine": {"_records": current, "_history": history}}
+    # Encode independent snapshot maps: changing the current record must not
+    # silently mutate its immutable historical counterpart through aliasing.
+    return {"format": 1, "engine": {"_records": deepcopy(current), "_history": deepcopy(history)}}
 
 
 class SnapshotNormalizationPreflightTests(unittest.TestCase):
