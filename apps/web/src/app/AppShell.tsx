@@ -42,11 +42,10 @@ import {
 import { formatLongDate } from "../i18n/format";
 import { quietGraphiteLanguage, quietGraphiteNavigationCopy } from "../design/quiet-graphite-copy";
 
-// Production UI defaults to the agreed five field workflows; development keeps
-// full module coverage. Operators can explicitly override with VITE_DOUL_UI_SCOPE.
-export const fieldCoreMode =
-  import.meta.env.VITE_DOUL_UI_SCOPE === "field-core" ||
-  (import.meta.env.PROD && import.meta.env.VITE_DOUL_UI_SCOPE !== "full");
+// The user-facing app always defaults to the agreed five field workflows,
+// including the development server used for site trials. Internal verification
+// must explicitly opt into all modules with VITE_DOUL_UI_SCOPE=full.
+export const fieldCoreMode = import.meta.env.VITE_DOUL_UI_SCOPE !== "full";
 
 const DrawingReviewPage = lazy(() => import("../pages/DrawingReviewPage").then((module) => ({ default: module.DrawingReviewPage })));
 

@@ -19,5 +19,6 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 30_000,
     cwd: resolve(process.cwd(), "apps/web"),
+    env: { VITE_DOUL_UI_SCOPE: "full" },
   },
 });

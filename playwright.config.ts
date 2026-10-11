@@ -20,6 +20,7 @@ export default defineConfig({
     },
     {
       command: "npm run web",
+      env: { VITE_DOUL_UI_SCOPE: "full" },
       url: "http://127.0.0.1:5181",
       reuseExistingServer: true,
     },
