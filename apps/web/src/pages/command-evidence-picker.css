@@ -1,0 +1,14 @@
+.command-evidence-picker { display:grid; gap:12px; margin-top:12px; border:1px solid #cbd5e1; border-radius:6px; padding:14px; min-width:0; }
+.command-evidence-picker legend { padding:0 6px; font-size:13px; font-weight:600; color:#364554; }
+.command-evidence-search { display:grid !important; gap:7px; font-size:12px !important; margin:0 !important; }
+.command-evidence-search input { width:100%; min-height:40px; border:1px solid #cbd5e1; border-radius:4px; padding:8px 10px; background:#fff; color:#202a35; font-size:14px; }
+.command-evidence-options { display:grid; gap:4px; max-height:245px; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
+.command-evidence-option { display:flex !important; gap:10px; margin:0 !important; padding:9px 7px; border:1px solid transparent; border-radius:5px; align-items:start; font-size:13px !important; color:#202a35 !important; }
+.command-evidence-option:hover,.command-evidence-option:focus-within { background:#f7f8f8; border-color:#e4e7eb; }
+.command-evidence-option input[type=checkbox] { margin-top:4px; flex-shrink:0; width:18px; height:18px; }
+.command-evidence-option>span { display:grid; gap:5px; min-width:0; overflow-wrap:anywhere; }
+.command-evidence-option strong { font-size:13px; font-weight:600; }
+.command-evidence-option small { font-size:11px; color:#475569; }
+.command-evidence-picker summary { font-size:12px; cursor:pointer; color:#364554; }
+.command-evidence-picker details label { margin-top:10px; }
+.command-evidence-picker .muted { font-size:12px; line-height:1.5; }
