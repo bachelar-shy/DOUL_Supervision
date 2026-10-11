@@ -11,6 +11,8 @@ import { PageBoundary } from "./PageBoundary";
 import { Icon } from "./shared";
 import { recordTitle, recordRef } from "./record-utils";
 import { DocumentSigningPanel } from "./DocumentSigningPanel";
+import { DocumentTableEditor, serializeDocumentTables, type DocumentTableValues } from "./DocumentTableEditor";
+import { documentAuthoringForms, eligibleDocumentSources, sourceSelectionForForm } from "./document-authoring-source";
 
 function putPath(
   target: Record<string, unknown>,
@@ -25,7 +27,7 @@ function putPath(
   }
   node[keys.at(-1)!] = value;
 }
-function formData(schema: FormSchema, values: Record<string, string>) {
+function formData(schema: FormSchema, values: Record<string, string>, tables: DocumentTableValues) {
   const data: Record<string, unknown> = {};
   for (const [f, r] of Object.entries(schema.scalar_fields)) {
     let v = values[f] || "";
@@ -33,14 +35,8 @@ function formData(schema: FormSchema, values: Record<string, string>) {
     if (r.type === "date-time") v = new Date(v).toISOString();
     putPath(data, f, r.type === "boolean" ? v === "true" : v);
   }
-  for (const t of schema.tables)
-    putPath(
-      data,
-      t.path,
-      ["review_table", "check_table"].includes(t.type)
-        ? Object.fromEntries(t.columns.map((c) => [c, ""]))
-        : [],
-    );
+  const sourceTables = serializeDocumentTables(schema, tables);
+  for (const table of schema.tables) putPath(data, table.path, sourceTables[table.path]);
   return data;
 }
 
@@ -62,6 +58,9 @@ export function DocumentPage({
   const [form, setForm] = useState("FM-20");
   const [source, setSource] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
+  const [tableValues, setTableValues] = useState<DocumentTableValues>({});
+  const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
+  const [exportError, setExportError] = useState("");
   const [documentLanguage, setDocumentLanguage] = useState<"ko" | "vi" | "en">("ko");
   const [renderMode, setRenderMode] = useState<"draft" | "final">("draft");
   const [html, setHtml] = useState("");
@@ -71,22 +70,19 @@ export function DocumentPage({
   const renderAttempt = useRef<{ fingerprint: string; key: ReturnType<typeof crypto.randomUUID> } | null>(null);
   const schema = workspace.formSchemas[form];
   const copy = documentRenderCopy[documentLocale(i18n.resolvedLanguage ?? i18n.language)];
-  const sources = workspace.items.filter((x) =>
-    ["report", "issue", "inspection"].includes(x.machine),
-  );
+  const sources = eligibleDocumentSources(workspace, form);
+  const language = documentLocale(i18n.resolvedLanguage ?? i18n.language);
+  const availableForms = documentAuthoringForms.filter((id) => Boolean(workspace.formSchemas[id]));
+  const sourceDescription = language === "ko"
+    ? "이 양식의 원본 기록이 없습니다. 해당 업무에서 기록을 먼저 작성하거나 접근 권한을 확인하십시오."
+    : language === "vi"
+      ? "Chưa có hồ sơ nguồn phù hợp. Hãy tạo hồ sơ liên quan hoặc kiểm tra quyền truy cập."
+      : "No eligible source record. Create the related record first or check your access.";
   async function preview(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
-    const item =
-      sources.find((x) => x.record.id === source) ||
-      sources.find((x) =>
-        form === "FM-09"
-          ? x.machine === "inspection"
-          : form === "FM-12"
-            ? x.machine === "issue"
-            : x.machine === "report",
-      );
+    const item = sourceSelectionForForm(sources, source);
     if (!item) {
-      setErr(t("document.error.noSource"));
+      setErr(sourceDescription);
       return;
     }
     if (renderMode === "final") {
@@ -100,7 +96,7 @@ export function DocumentPage({
     setErr("");
     try {
       const sourceRefs = [recordRef(item)];
-      const data = formData(schema, values);
+      const data = formData(schema, values, tableValues);
       const final = renderMode === "final";
       const fingerprint = JSON.stringify({ form, sourceRefs, data, final, documentLanguage });
       if (renderAttempt.current?.fingerprint !== fingerprint) {
@@ -125,6 +121,32 @@ export function DocumentPage({
       setBusy(false);
     }
   }
+  async function download(format: "pdf" | "docx") {
+    if (!snapshot || client.kind !== "http") return;
+    setExporting(format);
+    setExportError("");
+    try {
+      const blob = await client.documentExport(snapshot.id, format);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = snapshot.formId + "-" + snapshot.id + "." + format;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch (e) {
+      const code = e instanceof Error ? e.message : "";
+      const unavailable = code === "DOCUMENT_EXPORT_NOT_CONFIGURED";
+      setExportError(language === "ko"
+        ? unavailable ? "PDF/DOCX 출력 엔진이 설치되지 않았습니다. 관리자에게 운영 환경 설정을 요청하십시오." : "문서를 다운로드하지 못했습니다. 접근 권한과 연결 상태를 확인하십시오."
+        : language === "vi"
+          ? unavailable ? "Chưa cài đặt bộ xuất PDF/DOCX. Vui lòng liên hệ quản trị viên." : "Không tải được tài liệu. Kiểm tra quyền truy cập và kết nối."
+          : unavailable ? "The PDF/DOCX export runtime is not installed. Ask an administrator to configure it." : "Document download failed. Check your access and connection.");
+    } finally {
+      setExporting(null);
+    }
+  }
   return (
     <PageBoundary name="documents">
       <DocumentWorkspaceTemplate>
@@ -137,12 +159,16 @@ export function DocumentPage({
             value={form}
             onChange={(e) => {
               setForm(e.target.value);
+              setSource("");
               setHtml("");
               setValues({});
+              setTableValues({});
               setSnapshot(null);
+              setErr("");
+              setExportError("");
             }}
           >
-            {(["FM-20", "FM-19", "FM-21", "FM-12", "FM-09"] as const).map((id) => (
+            {availableForms.map((id) => (
               <option key={id} value={id}>
                 {id} · {t("document.form." + id)}
               </option>
@@ -156,13 +182,15 @@ export function DocumentPage({
             onChange={(e) => setSource(e.target.value)}
             aria-label={t("document.source.aria")}
           >
-            <option value="">{t("document.source.auto")}</option>
+            <option value="">{sources.length === 1 ? t("document.source.auto") : t("document.source.label")}</option>
             {sources.map((x) => (
               <option value={x.record.id} key={x.record.id}>
                 {recordTitle(x.record)} · {recordVersionLabel(x.record.version)}
               </option>
             ))}
           </select>
+          {!sources.length && <span className="muted" role="status">{sourceDescription}</span>}
+          {sources.length > 1 && !source && <span className="muted">{language === "ko" ? "원본 기록을 직접 선택하십시오. 자동 선택하지 않습니다." : language === "vi" ? "Chọn hồ sơ nguồn; không chọn tự động." : "Select a source record explicitly."}</span>}
         </label>
         <label>
           {copy.language}
@@ -224,6 +252,7 @@ export function DocumentPage({
             ))}
           </div>
         </details>
+        {schema.tables.length > 0 && <DocumentTableEditor schema={schema} values={tableValues} onChange={setTableValues} />}
         <button
           type="submit"
           className="primary wide"
@@ -236,16 +265,23 @@ export function DocumentPage({
               : copy.finalButton}
         </button>
         <div className="two-buttons">
-          <button type="button" className="secondary" disabled>
-            {t("document.action.docxPending")}
+          <button type="button" className="secondary" disabled={!snapshot || !!exporting || client.kind !== "http"}
+            onClick={() => void download("docx")}>
+            {exporting === "docx" ? (language === "ko" ? "다운로드 중…" : "Downloading…") : "DOCX " + (language === "ko" ? "다운로드" : "Download")}
           </button>
-          <button type="button" className="secondary" disabled>
-            {t("document.action.pdfPending")}
+          <button type="button" className="secondary" disabled={!snapshot || !!exporting || client.kind !== "http"}
+            onClick={() => void download("pdf")}>
+            {exporting === "pdf" ? (language === "ko" ? "다운로드 중…" : "Downloading…") : "PDF " + (language === "ko" ? "다운로드" : "Download")}
           </button>
         </div>
-        {err && (
+        {snapshot && <p className="muted" style={{ fontSize: 12 }}>
+          {language === "ko" ? "다운로드 파일은 보존된 문서의 출력 사본이며 원본 서명·법정 인증이 이전되지는 않습니다." :
+            language === "vi" ? "Bản tải về là bản sao của hồ sơ đã lưu; chữ ký và hiệu lực pháp lý không tự chuyển sang bản này." :
+              "The downloaded file is a derivative. Legal signatures are not transferred."}
+        </p>}
+        {(err || exportError) && (
           <div role="alert" className="error-box">
-            {err}
+            {err || exportError}
           </div>
         )}
       </form>
