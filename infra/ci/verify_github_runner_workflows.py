@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prevent DOUL Actions from silently reverting to a self-hosted runner."""
+"""Keep DOUL Actions on the user's dedicated Mac mini Linux runner."""
 from pathlib import Path
 import re
 import sys
@@ -27,11 +27,11 @@ for path in workflows:
         errors.append(f"{path.name}: no runs-on declaration")
     for actual in runners:
         value = actual.split(" #", 1)[0].strip()
-        if value != "ubuntu-24.04":
-            errors.append(f"{path.name}: expected ubuntu-24.04, got {value}")
+        if re.sub(r"\s+", "", value) != "[self-hosted,Linux,ARM64,doul-macmini]":
+            errors.append(f"{path.name}: expected dedicated Mac mini labels, got {value}")
 
 if errors:
     for error in errors:
         print(f"CI runner policy FAIL: {error}", file=sys.stderr)
     sys.exit(1)
-print(f"CI runner policy PASS: {len(workflows)} workflows on GitHub-hosted ubuntu-24.04")
+print(f"CI runner policy PASS: {len(workflows)} workflows on dedicated Mac mini Linux ARM64")

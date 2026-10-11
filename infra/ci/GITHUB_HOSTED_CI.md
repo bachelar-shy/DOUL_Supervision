@@ -1,3 +1,7 @@
+# Historical GitHub-hosted CI policy
+
+The user requires CI to run on the Mac mini. The current policy selects `[self-hosted, Linux, ARM64, doul-macmini]` for all 24 workflows. See [macmini-runner.md](macmini-runner.md). The text below describes a superseded hosted-runner proposal.
+
 # DOUL Supervision - GitHub-hosted CI policy
 
 ## Official execution target
