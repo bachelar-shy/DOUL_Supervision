@@ -72,8 +72,7 @@
         "safety",
         "documents",
         "registers",
-        "rfis",
-        "parallel-test"
+        "rfis"
       ],
       "mainTasks": [
         {
@@ -109,8 +108,7 @@
         "completion",
         "owner",
         "documents",
-        "registers",
-        "parallel-test"
+        "registers"
       ],
       "mainTasks": [
         {
@@ -186,8 +184,7 @@
         "capture",
         "documents",
         "registers",
-        "rfis",
-        "parallel-test"
+        "rfis"
       ],
       "mainTasks": [
         {
@@ -1003,8 +1000,7 @@
           "safety",
           "documents",
           "registers",
-          "rfis",
-          "parallel-test"
+          "rfis"
         ],
         "OWN": [
           "today",
@@ -1016,8 +1012,7 @@
           "completion",
           "owner",
           "documents",
-          "registers",
-          "parallel-test"
+          "registers"
         ],
         "ADM": [
           "today",
@@ -1045,8 +1040,7 @@
           "capture",
           "documents",
           "registers",
-          "rfis",
-          "parallel-test"
+          "rfis"
         ]
       }
     },
