@@ -56,7 +56,7 @@ export function DocumentTableEditor({ schema, values, onChange }: {
       const review = table.type === "review_table" || table.type === "check_table";
       const current = values[table.path];
       const rows = Array.isArray(current) ? current : [];
-      const cols = review && current && !Array.isArray(current) ? current : {};
+      const cols: Record<string, string> = review && current && !Array.isArray(current) ? current : {};
       return <fieldset key={table.path} className="document-editable-table">
         <legend>{ko ? "표 입력" : vi ? "Nhập bảng" : "Table"} · {label(table.path)}</legend>
         {review ? table.columns.map((column) => (
