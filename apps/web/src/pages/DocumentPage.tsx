@@ -15,6 +15,16 @@ import { DocumentTableEditor, buildDocumentData, type DocumentTableValues } from
 import { documentAuthoringForms, eligibleDocumentSources, sourceSelectionForForm } from "./document-authoring-source";
 import "./document-authoring.css";
 import { documentAuthoringCopy, documentFormNames } from "./document-authoring-copy";
+import { useSessionFormDraft } from "../data/session-form-draft";
+
+const emptyDocumentDraft = {
+  form: "FM-20",
+  source: "",
+  values: {} as Record<string, string>,
+  tableValues: {} as DocumentTableValues,
+  documentLanguage: "ko" as "ko" | "vi" | "en",
+  renderMode: "draft" as "draft" | "final",
+};
 
 function documentLocale(language: string) {
   return language.startsWith("ko") ? "ko" : language.startsWith("vi") ? "vi" : "en";
@@ -31,14 +41,14 @@ export function DocumentPage({
   refresh: () => Promise<void>;
 }) {
   const { t, i18n } = useTranslation();
-  const [form, setForm] = useState("FM-20");
-  const [source, setSource] = useState("");
-  const [values, setValues] = useState<Record<string, string>>({});
-  const [tableValues, setTableValues] = useState<DocumentTableValues>({});
+  const { value: draft, change: changeDraft, discard: discardDraft, restored } = useSessionFormDraft(
+    "document",
+    { projectId: workspace.project.id, partyId: client.session?.actor.partyId ?? "anonymous", roleId: workspace.role.id },
+    emptyDocumentDraft,
+  );
+  const { form, source, values, tableValues, documentLanguage, renderMode } = draft;
   const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
   const [exportError, setExportError] = useState("");
-  const [documentLanguage, setDocumentLanguage] = useState<"ko" | "vi" | "en">("ko");
-  const [renderMode, setRenderMode] = useState<"draft" | "final">("draft");
   const [html, setHtml] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -88,6 +98,7 @@ export function DocumentPage({
       setHtml(await client.documentHtml(doc.id));
       await refresh();
       renderAttempt.current = null;
+      if (final) discardDraft();
     } catch (e) {
       setErr(e instanceof ApiError ? reasonLabel(e.detail.code) : copy.genericError);
     } finally {
@@ -121,17 +132,24 @@ export function DocumentPage({
       <DocumentWorkspaceTemplate>
       <form className="panel editor-pane" onSubmit={(event) => void preview(event)}>
         <h2>{t("document.editor.title")}</h2>
+        <div className="document-session-draft-notice">
+          <p role="status">{restored ? uxCopy.sessionRestored : uxCopy.sessionSaved}</p>
+          <button type="button" className="secondary" disabled={busy} onClick={() => {
+            discardDraft();
+            setSnapshot(null);
+            setHtml("");
+            setErr("");
+            setExportError("");
+          }}>{uxCopy.sessionDiscard}</button>
+        </div>
         <label>
           {t("document.form.label")}
           <select
             aria-label={t("document.form.aria")}
             value={form}
             onChange={(e) => {
-              setForm(e.target.value);
-              setSource("");
+              changeDraft({ form: e.target.value, source: "", values: {}, tableValues: {} });
               setHtml("");
-              setValues({});
-              setTableValues({});
               setSnapshot(null);
               setErr("");
               setExportError("");
@@ -148,7 +166,7 @@ export function DocumentPage({
           {t("document.source.label")}
           <select
             value={source}
-            onChange={(e) => setSource(e.target.value)}
+            onChange={(e) => changeDraft({ source: e.target.value })}
             aria-label={t("document.source.aria")}
           >
             <option value="">{sources.length === 1 ? t("document.source.auto") : t("document.source.label")}</option>
@@ -166,7 +184,7 @@ export function DocumentPage({
           <select
             aria-label={copy.language}
             value={documentLanguage}
-            onChange={(event) => setDocumentLanguage(event.target.value as typeof documentLanguage)}
+            onChange={(event) => changeDraft({ documentLanguage: event.target.value as typeof documentLanguage })}
           >
             <option value="ko">{documentOutputLanguageLabels.ko}</option>
             <option value="vi">{documentOutputLanguageLabels.vi}</option>
@@ -178,7 +196,7 @@ export function DocumentPage({
           <select
             aria-label={copy.mode}
             value={renderMode}
-            onChange={(event) => setRenderMode(event.target.value as typeof renderMode)}
+            onChange={(event) => changeDraft({ renderMode: event.target.value as typeof renderMode })}
           >
             <option value="draft">{copy.draft}</option>
             <option value="final">{copy.final}</option>
@@ -199,7 +217,7 @@ export function DocumentPage({
                     name={f}
                     required={renderMode === "final" && r.required}
                     value={values[f] || ""}
-                    onChange={(e) => setValues({ ...values, [f]: e.target.value })}
+                    onChange={(e) => changeDraft({ values: { ...values, [f]: e.target.value } })}
                   >
                     <option value="">{t("document.placeholder.manual")}</option>
                     <option value="true">{copy.yes}</option>
@@ -214,14 +232,14 @@ export function DocumentPage({
                     t("document.placeholder.manual")
                   }
                   onChange={(e) =>
-                    setValues({ ...values, [f]: e.target.value })
+                    changeDraft({ values: { ...values, [f]: e.target.value } })
                   }
                 />}
               </label>
             ))}
           </div>
         </details>
-        {schema.tables.length > 0 && <DocumentTableEditor schema={schema} values={tableValues} onChange={setTableValues} />}
+        {schema.tables.length > 0 && <DocumentTableEditor schema={schema} values={tableValues} onChange={(next) => changeDraft({ tableValues: next })} />}
         <button
           type="submit"
           className="primary wide"
