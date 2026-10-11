@@ -54,3 +54,13 @@
 - 이전 요청의 401 및 늦은 로그아웃 응답이 새 프로젝트/로그인 세션을 지우지 않도록 클라이언트를 보강했다. 네 가지 세션 응답 순서 시험 추가.
 - 신규 프로젝트 설정 CI도 `[self-hosted, Linux, ARM64, doul-macmini]`에서 수행하도록 추가했고 전체 25개 workflow 정책 검사 통과.
 - 다음 실행: `VITE_DOUL_AUTH_MODE=password npm run web:build`; `npx playwright test -c playwright.project-settings.config.ts`; 비밀번호/field-core 회귀, private DB 백업 후 운영준비 서버 적용. 실제 배포는 아직 하지 않았다.
+
+## 검증 완료 · 배포 직전 체크포인트
+
+- PR: https://github.com/bachelar-shy/DOUL_Supervision/pull/188 (draft, base PR #187의 브랜치).
+- GitHub push: `75e2b29`까지 완료. 맥미니 작업 worktree `/Users/automation/work/doul-project-settings-20261012`. 새 worktree의 사용자/다른 작업자 `preview/`는 삭제하지 않는다.
+- 실제 HTTPS·API 연결 브라우저 desktop/phone 12개 **전부 통과**. 계정 등록→감리자 로그인→관리자 설정 403, 기본정보 유지, 네 역할, 회사·담당자, 충돌 입력 보존, 오프라인 차단, 프로젝트 전환 및 PDF 렌더링을 확인했다.
+- 기존 비밀번호 화면 5개, field-core 29개 통과. 설정/비밀번호 API 15개, 세션 응답 순서 4개 통과. 맥미니 타입·빌드·UI 경계 검사 통과. lint 기존 90 warnings / 0 errors. 신규 CI 포함 전체 25 workflow 러너 정책 통과.
+- C1 계약과 PCR-2026-003을 기록했다. 사용자 지시 범위의 구현 승인과 전체 Product Baseline v1.2 후보 릴리스 채택/현장 인수는 별개다.
+- 실제 PostgreSQL 백업 `.../DOUL-operational-runtime/20261012/backups/pre-project-settings-20261012.dump` 생성 완료 (private, 0600).
+- 다음: 현재 커밋 맥미니 동기화, operator staging 설치(--enable-project-settings, 승인 참조), 새 source/API 및 정적 UI 적용, 실제 Tailscale 로그인/저장/전환/재시작 검증. **아직 서버 적용 전이다.**

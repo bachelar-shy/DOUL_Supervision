@@ -1,0 +1,20 @@
+{
+  "changeId": "PCR-2026-003",
+  "baselineFrom": "1.1",
+  "baselineTo": "1.2",
+  "changeClass": "C1",
+  "reason": "Implement the explicitly requested project settings and four-role UI using existing project-administration authority, plus an isolated synthetic staging project and server-approved project session selection. Existing technical decision rights, qualification gates, official versions and closure criteria are preserved.",
+  "requestedBy": "Product Owner (user request in current chat)",
+  "decidedBy": "Product Owner (explicit implementation instruction in current chat)",
+  "impactedContracts": ["design/development/project-settings-contract-20261012.md", "48_Product_Baseline_Change_Control_v1.md"],
+  "impactedRegisters": [],
+  "impactedForms": [],
+  "impactedApiSurfaces": ["GET /projects/{projectId}/settings", "POST /projects/{projectId}/settings/commands/{command}", "GET /auth/projects", "POST /auth/project-session"],
+  "compatibility": "backward_compatible",
+  "migrationRequired": true,
+  "migrationPlanRef": "scripts/install_site_test_project.py: explicit --enable-project-settings after private database backup, with versioned RoleAssignment and operator audit",
+  "effectiveFrom": "2026-10-12T02:30:00+07:00",
+  "acceptanceScenarioIds": ["AC-SET-01", "AC-SET-02", "AC-SET-03", "AC-SET-04", "AC-SET-05", "AC-SET-06"],
+  "decision": "approved",
+  "notes": "Implementation authorization is the user's direct requests: project settings, a mock-data test project, and exactly four visible roles (administrator/supervisor/owner/contractor). Existing DES records and referenced history remain intact. No new technical authority or qualifications are conferred by account creation. This is a v1.2 candidate change record, not a declaration that the full Product Baseline has been adopted or real-field acceptance completed; intended effectiveness requires a verified adopting release. Synthetic installation is staging-only."
+}
