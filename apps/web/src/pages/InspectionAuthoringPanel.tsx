@@ -118,7 +118,10 @@ export function InspectionAuthoringPanel({ client, workspace, online, onCreated 
           });
         }
       }
-    }).catch(cause => { if (!ignore) { setError(localizedApiError(cause, copyRef.current.genericError)); setSources(empty); changeDraft({ drawingId: "", locationId: "", requirementIds: [], evidenceIds: [] }); } })
+    }).catch(cause => { if (!ignore) { setError(localizedApiError(cause, copyRef.current.genericError)); setSources(empty);
+        if (drawingId || locationId || requirementIds.length || evidenceIds.length) {
+          changeDraft({ drawingId: "", locationId: "", requirementIds: [], evidenceIds: [] });
+        } } })
       .finally(() => { if (!ignore) setLoading(false); });
     return () => { ignore = true; };
   }, [client, workspace.items, drawingId, drawingVersion, locationId]);
