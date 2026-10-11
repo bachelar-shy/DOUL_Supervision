@@ -1,7 +1,9 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page, type Request } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { execFileSync } from "node:child_process";
+import { aggregateCaseResults, assertAcceptanceGate, persistCaseResult, type Domain, type Outcome, type Result, type Role } from "./ux200-evidence";
 
 /**
  * Scenario-by-scenario browser + real demo-API execution, NOT a navigation-only smoke test.
@@ -10,21 +12,13 @@ import { resolve } from "node:path";
  * are explicitly retained as PARTIAL, BLOCKED, INVALID or FAIL, never PASS.
  * Human-only observations remain awaiting real participants.
  */
-type Role = "SUP" | "CON" | "OWN" | "ADM" | "DES";
-type Domain = "role" | "feature" | "document" | "menu";
 type Scenario = { domain: Domain; id: string; title: string; row: any };
-type Outcome = "PASS" | "PARTIAL" | "BLOCKED" | "INVALID" | "FAIL";
-type Result = {
-  id: string; domain: Domain; title: string; actor: Role; route: string;
-  outcome: Outcome; workflowSteps: string[]; checked: string[];
-  findings: string[]; elapsedMs: number; executionKind: string;
-  evidenceIds: string[]; humanValidation: "PENDING";
-};
 const read = (name: string) => JSON.parse(readFileSync(resolve("app/reference/" + name + ".json"), "utf8"));
 const R = read("role_field_use_cases_v1");
 const F = read("feature_interaction_use_cases_v1");
 const D = read("document_authoring_usability_v1");
 const M = read("menu_usability_v1");
+const formBindings=JSON.parse(readFileSync(resolve("app/forms/form_domain_bindings_v2.json"),"utf8")).forms;
 const scenarios: Scenario[] = [
   ...R.cases.map((row: any) => ({ domain: "role" as const, id: row.id, title: row.title, row })),
   ...F.scenarios.map((row: any) => ({ domain: "feature" as const, id: row.id, title: row.title, row })),
@@ -34,7 +28,6 @@ const scenarios: Scenario[] = [
 if (scenarios.length !== 200 || new Set(scenarios.map(x => x.id)).size !== 200)
   throw Error("Source catalogue must contain 200 distinct case IDs.");
 const fullMenu = M.roleMenus as Record<Role, {visibleRouteIds:string[]}>;
-const availableForms = new Set(D.formCoverage.documentPageSelectableFormIds as string[]);
 const featureRoutes: Record<string,string> = {
   NAV:"today", DWG:"drawings", EVD:"capture", INS:"inspections", NCR:"actions",
   SAF:"safety", SCH:"schedule", PAY:"payment", OWN:"owner", HDO:"completion",
@@ -51,7 +44,6 @@ const liveInspectionIds = new Set([
 const liveDocumentFeatureIds = new Set(["FC-DOC-02","FC-DOC-03","FC-DOC-05","FC-DOC-12","FC-DOC-14"]);
 const automatedMenuIds = new Set(["MC-01","MC-06","MC-07","MC-08","MC-09","MC-11","MC-13","MC-14","MC-15","MC-16","MC-17","MC-18","MC-25","MC-27","MC-30"]);
 const automatedNavIds = new Set(["FC-NAV-01","FC-NAV-02","FC-NAV-04"]);
-const results = new Map<string,Result>();
 const navSelector = 'aside.sidebar [data-ui-component="navigation"]';
 
 function getRoute(c:Scenario): string {
@@ -93,19 +85,46 @@ async function step(x:Result, name:string, action:()=>Promise<void>):Promise<voi
   x.checked.push(name);
 }
 async function switchRole(page:Page,role:Role):Promise<void> {
-  if (role==="SUP") return;
   const picker=page.getByLabel("시험 사용자 역할 선택");
-  await picker.selectOption(role);
+  if(await picker.inputValue()!==role)await picker.selectOption(role);
   await expect(picker).toHaveValue(role);
-  await expect(page.locator("main h1")).toBeVisible();
+  // The header changes before the new role's workspace arrives. A visible h1
+  // alone lets absence assertions pass against the intervening loading screen.
+  await expect(page.locator("main .page-heading .heading-actions button").filter({hasText:"새로고침"})).toBeEnabled();
+  await expect(page.locator("main .loading-panel")).toHaveCount(0);
+}
+async function checkRoute(page:Page,route:string):Promise<void> {
+  const button=page.locator(navSelector+' button[data-route="'+route+'"]');
+  await expect(page).toHaveURL(new RegExp("#/"+route+"$"));
+  await expect(button).toHaveAttribute("aria-current","page");
+  await expect(page.locator(navSelector+' button[aria-current="page"]')).toHaveCount(1);
+  // Mobile navigation closes the sidebar after a selection. textContent keeps
+  // the route label available for comparison even while the drawer is hidden.
+  const title=(await button.locator("span").textContent())?.trim();
+  expect(title,"업무 메뉴의 제목").toBeTruthy();
+  await expect(page.locator("main h1")).toHaveText(title!);
+  await expect(page.locator("main .page-heading .heading-actions button").filter({hasText:"새로고침"})).toBeEnabled();
+  await expect(page.locator("main .loading-panel")).toHaveCount(0);
 }
 async function moveTo(page:Page,route:string):Promise<void> {
   const button=page.locator(navSelector+' button[data-route="'+route+'"]');
   await expect(button).toHaveCount(1);
   await button.click();
-  await expect(page).toHaveURL(new RegExp("#/"+route+"$"));
-  await expect(button).toHaveAttribute("aria-current","page");
-  await expect(page.locator("main h1")).toBeVisible();
+  await checkRoute(page,route);
+}
+async function keyboardCycleLength(page:Page):Promise<number> {
+  return page.locator("body").evaluate(body=>Array.from(body.querySelectorAll<HTMLElement>(
+    'button,input,select,textarea,a[href],[tabindex]')).filter(element=>
+    element.tabIndex>=0 && !element.matches(":disabled") && element.getClientRects().length>0 &&
+    getComputedStyle(element).visibility!=="hidden").length+2);
+}
+async function focusWithTab(page:Page,selector:string):Promise<void> {
+  const limit=await keyboardCycleLength(page);
+  for(let i=0;i<limit;i++){
+    await page.keyboard.press("Tab");
+    if(await page.locator(selector).evaluate(element=>element===document.activeElement))return;
+  }
+  throw Error("키보드 Tab 순서에서 목표 항목에 도달하지 못함: "+selector);
 }
 type Session={accessToken:string;projectId:string;actor:{roleAssignmentId:string;partyId:string}};
 type RecordType={id:string;version:number;status?:string;resultStatus?:string;nextWorkAllowed?:boolean};
@@ -182,20 +201,19 @@ async function inspectionJourney(request:APIRequestContext,x:Result):Promise<voi
   x.evidenceIds.push(record.id);
 }
 async function documentJourney(page:Page,x:Result,formIds:string[]):Promise<"PASS"|"BLOCKED">{
-  const missing:string[]=[]; // integrated preview: validate actual runtime form selection, not previous 5-form catalog
-  const select=page.locator('form.editor-pane select').first();
+  const select=page.getByLabel("문서 양식",{exact:true});
   await expect(select).toBeVisible();
   const options=await select.locator("option").evaluateAll(nodes=>
     nodes.map(node=>(node as HTMLOptionElement).value));
-  if(missing.length || formIds.some(id=>!options.includes(id))){
+  if(formIds.some(id=>!options.includes(id))){
     const absent=formIds.filter(id=>!options.includes(id));
-    x.findings.push("실제 문서작성 화면에서 원본 양식 선택 불가: "+[...new Set([...missing,...absent])].join(", "));
+    x.findings.push("실제 문서작성 화면에서 원본 양식 선택 불가: "+absent.join(", "));
     x.checked.push("표준 양식 카탈로그와 실제 선택항목 대조");
     return "BLOCKED";
   }
   for(const formId of formIds){
     await select.selectOption(formId);
-    const source=page.locator('form.editor-pane select').nth(1);
+    const source=page.getByLabel("문서 원본 선택",{exact:true});
     await expect(source).toBeVisible();
     const candidates=await source.locator("option").evaluateAll(nodes=>
       nodes.map(node=>(node as HTMLOptionElement).value).filter(Boolean));
@@ -205,22 +223,44 @@ async function documentJourney(page:Page,x:Result,formIds:string[]):Promise<"PAS
       return "BLOCKED";
     }
     await source.selectOption(candidates[0]);
+    await expect(source).toHaveValue(candidates[0]);
+    const sourceVersion=/기록 제(\d+)차\s*$/.exec((await source.locator("option:checked").textContent())||"");
+    expect(sourceVersion,"사용자가 선택한 원본의 화면 표시 버전").toBeTruthy();
     x.checked.push(formId+" 사용자가 원본자료 명시적으로 선택");
+    const mode=page.getByLabel("렌더링 종류",{exact:true});
+    await mode.selectOption("draft");
+    await expect(mode).toHaveValue("draft");
     const draftInput=page.locator('form.editor-pane .document-fields input[type="text"]').first();
     if(await draftInput.count())await draftInput.fill("UX200-"+x.id+" 검증값 "+randomUUID().slice(0,6));
     const response=page.waitForResponse(r=>
-      r.request().method()==="POST" && r.url().includes("/forms/"+formId+"/render"),{timeout:15000});
-    await page.locator('form.editor-pane button[type="submit"]').click();
-    const saved=await response;
+      r.request().method()==="POST" && new URL(r.url()).pathname.endsWith("/forms/"+formId+"/preview"),{timeout:15000});
+    const [saved]=await Promise.all([response,page.locator('form.editor-pane button[type="submit"]').click()]);
     const savedBody=await saved.text();
     expect(saved.status(),formId+" response: "+savedBody.slice(0,400)).toBe(200);
-    const rendered=JSON.parse(savedBody) as { id:string; formId:string; renderHash:string; status:string };
+    type SourceRef={objectType:string;objectId:string;version:number};
+    const sent=saved.request().postDataJSON() as {sourceDomainRefs:SourceRef[]};
+    expect(sent.sourceDomainRefs).toHaveLength(1);
+    const selectedRef={objectType:sent.sourceDomainRefs[0].objectType,objectId:candidates[0],version:Number(sourceVersion![1])};
+    expect(formBindings[formId].domain_sources.map((source:any)=>source.object_type)).toContain(selectedRef.objectType);
+    expect(sent.sourceDomainRefs,"요청에 선택한 원본 ID와 정확한 버전을 전달").toEqual([selectedRef]);
+    const rendered=JSON.parse(savedBody) as {
+      id:string;projectId:string;formId:string;renderHash:string;status:string;
+      sourceDomainRefs:SourceRef[];primarySourceRef:SourceRef;
+      sourcePayload:{sources:{ref:SourceRef;record:{id:string;version:number;projectId:string}}[]};
+    };
     expect(rendered.formId).toBe(formId);
+    expect(rendered.status).toBe("draft");
     expect(rendered.id).toBeTruthy();
     expect(rendered.renderHash).toBeTruthy();
+    expect(rendered.sourceDomainRefs,"저장된 스냅샷의 원본 참조").toEqual([selectedRef]);
+    expect(rendered.primarySourceRef).toEqual(selectedRef);
+    expect(rendered.sourcePayload.sources.map(source=>source.ref)).toEqual([selectedRef]);
+    expect(rendered.sourcePayload.sources[0].record).toMatchObject({
+      id:selectedRef.objectId,version:selectedRef.version,projectId:rendered.projectId,
+    });
     await expect(page.locator("iframe[title]")).toBeVisible({timeout:15000});
     await expect(page.locator(".snapshot-note")).toBeVisible({timeout:15000});
-    x.checked.push(formId+" 초안 서버 저장·HTML 미리보기");
+    x.checked.push(formId+" 선택한 원본 ID·유형·버전의 스냅샷 보존·초안 서버 저장·HTML 미리보기");
     x.evidenceIds.push(rendered.id+"#"+rendered.renderHash);
   }
   return "PASS";
@@ -231,12 +271,22 @@ async function menuJourney(page:Page,c:Scenario,x:Result):Promise<Outcome>{
     await page.setViewportSize({width:1024,height:340});
     const nav=page.locator(navSelector);
     await expect(nav).toHaveCSS("overflow-y","auto");
+    const before=await page.evaluate(()=>({
+      pageY:window.scrollY,mainTop:document.querySelector(".main-shell")!.getBoundingClientRect().top,
+      footerTop:document.querySelector(".side-bottom")!.getBoundingClientRect().top,
+    }));
     const last=nav.locator('button[data-route]').last();
     await last.scrollIntoViewIfNeeded({timeout:5000});
     await expect(last).toBeInViewport();
+    await expect.poll(()=>nav.evaluate(element=>element.scrollTop)).toBeGreaterThan(0);
+    const after=await page.evaluate(()=>({
+      pageY:window.scrollY,mainTop:document.querySelector(".main-shell")!.getBoundingClientRect().top,
+      footerTop:document.querySelector(".side-bottom")!.getBoundingClientRect().top,
+    }));
+    expect(after,"메뉴 스크롤은 본문과 사이드바 하단의 위치를 이동시키지 않아야 함").toEqual(before);
     await last.click();
     await expect(last).toHaveAttribute("aria-current","page");
-    x.checked.push("340px 높이 마지막 메뉴 스크롤·클릭·현재상태 확인");
+    x.checked.push("340px 높이 마지막 메뉴 스크롤·클릭·현재상태 및 본문·하단 위치 독립 확인");
     if(id!=="MC-09")x.findings.push(id==="MC-10"?
       "긴 프로젝트명·실제 프로젝트 선택 조건 별도 검증 필요":
       "200% 브라우저 확대 조건 별도 검증 필요");
@@ -247,12 +297,27 @@ async function menuJourney(page:Page,c:Scenario,x:Result):Promise<Outcome>{
     await expect(page).toHaveURL(/#\/today$/);
     await expect(page.locator('[data-ui-page="admin"]')).toHaveCount(0);
     x.checked.push("비인가 직접 URL 접근 차단");
-    return "PASS";
+    x.findings.push("직접 URL 복귀는 확인했으나 서버 명령의 권한 거부는 이 시험에서 수행하지 않음");
+    return "PARTIAL";
   }
   if(id==="MC-18"){
-    await moveTo(page,"drawings");
-    await expect(page.getByRole("tab",{name:"도면 등록·배포"})).toHaveCount(0);
-    x.checked.push("열람자 도면 등록 권한 분리");
+    for(const role of ["ADM","SUP","DES","CON","OWN"] as const){
+      await switchRole(page,role);
+      await moveTo(page,"drawings");
+      const drawing=page.locator('[data-ui-page="drawings"]');
+      await expect(drawing.getByRole("tablist")).toBeVisible();
+      await expect(drawing.getByRole("tab",{name:"PDF 도면 보기·마킹",exact:true})).toBeVisible();
+      const manage=drawing.getByRole("tab",{name:"도면 등록·배포",exact:true});
+      if(["ADM","SUP","DES"].includes(role)){
+        await expect(manage).toBeVisible();
+        await manage.click();
+        await expect(manage).toHaveAttribute("aria-selected","true");
+        x.checked.push(role+" 등록·배포 탭 표시·진입");
+      }else{
+        await expect(manage).toHaveCount(0);
+        x.checked.push(role+" 도면 조회 준비 후 등록·배포 탭 미노출");
+      }
+    }
     return "PASS";
   }
   if(id==="MC-25"){
@@ -263,32 +328,98 @@ async function menuJourney(page:Page,c:Scenario,x:Result):Promise<Outcome>{
       await expect(page).toHaveURL(/#\/drawings$/);
     }
     x.checked.push("화면 언어 전환 후 도면 경로 유지");
-    return "PASS";
+    x.findings.push("입력값·업무권한 유지와 불필요한 제출 부재까지는 이 시험에서 검증하지 않음");
+    return "PARTIAL";
   }
   if(id==="MC-07"){
-    await moveTo(page,"drawings");await moveTo(page,"today");
-    await page.goBack();await expect(page).toHaveURL(/#\/drawings$/);
-    await page.goForward();await expect(page).toHaveURL(/#\/today$/);
-    await page.reload();await expect(page).toHaveURL(/#\/today$/);
-    x.checked.push("앞·뒤 이동 및 새로고침 상태 복원");
-    return "PASS";
+    await moveTo(page,"drawings");await moveTo(page,"documents");
+    await page.goBack();await checkRoute(page,"drawings");
+    await page.goForward();await checkRoute(page,"documents");
+    await page.reload();await checkRoute(page,"documents");
+    await expect(page.getByLabel("시험 사용자 역할 선택")).toHaveValue(x.actor);
+    x.checked.push("앞·뒤 이동 및 새로고침 후 URL·활성메뉴·제목·역할 복원");
+    x.findings.push("기본 감리 역할에서만 유지 확인: 시험 역할을 전환한 뒤 재접속하는 조건은 미검증");
+    return "PARTIAL";
   }
   if(["MC-11","MC-13","MC-14"].includes(id)){
     await page.setViewportSize({width:390,height:640});
     const sidebar=page.locator("aside.sidebar");
-    await expect(sidebar).toHaveCSS("visibility","hidden");
     const toggle=page.getByRole("button",{name:"메뉴 열기"});
-    await toggle.click();await expect(sidebar).toHaveCSS("visibility","visible");
-    await page.keyboard.press("Escape");
-    await expect(sidebar).toHaveCSS("visibility","hidden");
-    x.checked.push("모바일 메뉴 열기·키보드 Escape·닫기");
+    const nav=page.locator(navSelector);
+    const navName=await nav.getAttribute("aria-label");
+    expect(navName).toBeTruthy();
+    const accessibleNav=page.getByRole("navigation",{name:navName!,exact:true});
+    async function closed(){
+      await expect(sidebar).toHaveCSS("visibility","hidden");
+      await expect(toggle).toHaveAttribute("aria-expanded","false");
+      await expect(accessibleNav).toHaveCount(0);
+      await expect(page.locator(".sidebar-backdrop")).toHaveCount(0);
+    }
+    async function open(){
+      await toggle.click();
+      await expect(sidebar).toHaveCSS("visibility","visible");
+      await expect(toggle).toHaveAttribute("aria-expanded","true");
+      await expect(accessibleNav).toBeVisible();
+    }
+    await closed();
+    if(id==="MC-11"){
+      await open();
+      const last=nav.locator("button[data-route]").last();
+      const lastRoute=await last.getAttribute("data-route");
+      expect(lastRoute).toBeTruthy();
+      expect(await nav.evaluate(element=>element.scrollHeight>element.clientHeight)).toBe(true);
+      await nav.hover();
+      await page.mouse.wheel(0,await nav.evaluate(element=>element.scrollHeight));
+      await expect.poll(()=>nav.evaluate(element=>element.scrollTop)).toBeGreaterThan(0);
+      await expect(last).toBeInViewport();
+      await last.click();await checkRoute(page,lastRoute!);await closed();
+      await open();
+      await nav.locator('button[data-route="drawings"]').click();
+      await checkRoute(page,"drawings");await closed();
+      x.checked.push("390px 모바일 메뉴 끝까지 실제 스크롤·마지막 항목 및 도면 선택·자동닫기");
+    }else if(id==="MC-13"){
+      await toggle.focus();
+      const closedCycle=await keyboardCycleLength(page);
+      for(let i=0;i<closedCycle;i++){
+        await page.keyboard.press("Tab");
+        expect(await page.evaluate(()=>Boolean(document.activeElement?.closest("aside.sidebar"))),
+          "닫힌 드로어는 Tab 순서에서 제외되어야 함").toBe(false);
+      }
+      await toggle.focus();await page.keyboard.press("Enter");
+      await expect(accessibleNav).toBeVisible();
+      const routes=await nav.locator("button[data-route]").evaluateAll(nodes=>
+        nodes.map(node=>node.getAttribute("data-route")!));
+      const reached=new Set<string>();
+      const openCycle=await keyboardCycleLength(page);
+      for(let i=0;i<openCycle;i++){
+        await page.keyboard.press("Tab");
+        const route=await page.evaluate(()=>document.activeElement?.matches("aside.sidebar nav button[data-route]")
+          ?document.activeElement.getAttribute("data-route"):null);
+        if(route){
+          reached.add(route);
+          await expect(nav.locator('button[data-route="'+route+'"]')).toBeInViewport();
+        }
+        if(reached.size===routes.length)break;
+      }
+      expect([...reached].sort(),"열린 메뉴의 모든 항목은 실제 Tab으로 도달 가능해야 함").toEqual(routes.sort());
+      await page.keyboard.press("Escape");await closed();
+      x.checked.push("닫힌 메뉴 접근성 트리·Tab 순서 제외 및 열린 메뉴 전 항목 키보드 접근");
+    }else{
+      await open();await page.keyboard.press("Escape");await closed();
+      await open();await page.locator(".sidebar-backdrop").click({position:{x:300,y:300}});await closed();
+      await open();await sidebar.locator(".sidebar-close").click();await closed();
+      await expect(page.locator("main h1")).toBeVisible();
+      x.checked.push("Escape·배경 누르기·닫기 버튼 각각 실행 후 시각·접근성·aria 상태 확인");
+    }
     return "PASS";
   }
   if(id==="MC-27"){
-    const item=page.locator(navSelector+' button[data-route="drawings"]');
-    await item.focus();await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/#\/drawings$/);
-    x.checked.push("키보드만으로 도면화면 이동");
+    await focusWithTab(page,navSelector+' button[data-route="drawings"]');
+    await page.keyboard.press("Enter");await checkRoute(page,"drawings");
+    await page.keyboard.press("Shift+Tab");
+    await expect(page.locator(navSelector+' button[data-route="today"]')).toBeFocused();
+    await page.keyboard.press("Enter");await checkRoute(page,"today");
+    x.checked.push("실제 Tab·Enter로 도면화면 진입·활성상태 확인·Shift+Tab·Enter로 오늘 화면 복귀");
     return "PASS";
   }
   if(id==="MC-16"){
@@ -299,11 +430,28 @@ async function menuJourney(page:Page,c:Scenario,x:Result):Promise<Outcome>{
     return "PARTIAL"; // The actual API authorization for actions is a separate gate.
   }
   if(id==="MC-30"){
-    const start=Date.now();
-    await moveTo(page,"drawings");await moveTo(page,"today");
-    const elapsed=Date.now()-start;
-    x.checked.push("왕복 2회 실브라우저 동작 "+elapsed+"ms");
-    if(elapsed>10000)throw Error("메뉴 두 번 이동이 10초 초과");
+    const pending=new Set<Request>(),failures:string[]=[],timings:{route:string;elapsedMs:number}[]=[];
+    const started=(request:Request)=>{if(new URL(request.url()).pathname.startsWith("/api/"))pending.add(request);};
+    const finished=(request:Request)=>{pending.delete(request);};
+    const failed=(request:Request)=>{if(pending.delete(request))failures.push(request.url()+" "+request.failure()?.errorText);};
+    page.on("request",started);page.on("requestfinished",finished);page.on("requestfailed",failed);
+    try{
+      const routes=["drawings","inspections","capture","observations","issues","actions","schedule","contract","payment","today"];
+      for(const route of routes){
+        const start=Date.now();await moveTo(page,route);
+        timings.push({route:new URL(page.url()).hash.slice(2),elapsedMs:Date.now()-start});
+      }
+      await page.goBack();await checkRoute(page,"payment");
+      await page.goForward();await checkRoute(page,"today");
+      await expect.poll(()=>pending.size,{timeout:15000,message:"이동 후 미종료 API 요청"}).toBe(0);
+      expect(failures,"연속 메뉴 이동 중 실패한 요청").toEqual([]);
+      const missingRouteEvents=routes.filter((route,index)=>timings[index]?.route!==route).length;
+      expect(missingRouteEvents).toBe(0);
+      expect(timings).toHaveLength(10);
+      x.checked.push("연속 10회 이동·뒤로가기·앞으로가기: "+JSON.stringify({timings,missingRouteEvents,pendingRequests:pending.size,failedRequests:failures.length}));
+    }finally{
+      page.off("request",started);page.off("requestfinished",finished);page.off("requestfailed",failed);
+    }
     return "PASS";
   }
   if(!automatedMenuIds.has(id)){
@@ -311,9 +459,24 @@ async function menuJourney(page:Page,c:Scenario,x:Result):Promise<Outcome>{
       "현장 사용자 관찰/인지 시험 필요":"요구된 문서·데이터 맥락의 전체 업무 수행까지 연결되지 않음");
     return "PARTIAL";
   }
+  if(id==="MC-01"){
+    await moveTo(page,"drawings");
+    const drawing=page.locator('[data-ui-page="drawings"]');
+    const view=drawing.getByRole("tab",{name:"PDF 도면 보기·마킹",exact:true});
+    await expect(view).toBeVisible();await view.click();await expect(view).toHaveAttribute("aria-selected","true");
+    const compare=drawing.getByRole("tab",{name:"도면 개정 비교",exact:true});
+    await compare.click();await expect(compare).toHaveAttribute("aria-selected","true");
+    await expect(page.getByLabel("도면 PDF 비교")).toBeVisible();
+    x.checked.push("오늘에서 독립 도면 메뉴 진입·PDF 보기 및 개정 비교 탭 실행");
+    return "PASS";
+  }
+  if(id==="MC-06"){
+    for(const route of c.row.sequence)await moveTo(page,route);
+    x.checked.push("오늘·도면·문서·오늘 이동마다 URL·단일 활성메뉴·제목 일치");
+    return "PASS";
+  }
   await moveTo(page,x.route);await moveTo(page,"today");
   x.checked.push("목적 메뉴 이동·복귀");
-  if(["MC-01","MC-06"].includes(id))return "PASS";
   x.findings.push("이동만 검증: 시나리오 고유의 접근성·사용자 발견/표시 요건은 미검증");
   return "PARTIAL";
 }
@@ -333,7 +496,6 @@ function classifyStatic(c:Scenario,x:Result):Outcome|null {
     x.findings.push("요구계약 대상(구현 완료 아님): "+c.row.implementationSurface);
   return null;
 }
-const attempts:Result[]=[];
 test.describe("UX 200 field journeys: run, verify, and isolate blockers",()=>{
   test.describe.configure({mode:"default"});
   for(const c of scenarios){
@@ -375,14 +537,26 @@ test.describe("UX 200 field journeys: run, verify, and isolate blockers",()=>{
               await field.fill("UX200 임시 작성 내용");
               await page.reload();
               await expect(field).toHaveValue("UX200 임시 작성 내용");
-              x.checked.push("작성 중 브라우저 재접속 후 원래 필드 내용 복원");
-              x.outcome="PASS";
+              x.checked.push("동일 브라우저 탭 새로고침 후 임시 필드 내용 복원");
+              x.findings.push("탭 내 임시보존만 확인: 브라우저 종료 후 재접속·명시적 서버 저장·최종발행은 미검증");
+              x.outcome="PARTIAL";
             }else if(id==="DT-ALL-05"){
-              const disabled=page.locator('form.editor-pane button[disabled]');
-              await expect(disabled).toHaveCount(2);
-              x.checked.push("PDF/DOCX 실제 출력 버튼 비활성 상태 확인");
-              x.findings.push("PDF/DOCX 운영 출력이 현재 구현되지 않아 업무 최종 종료 불가");
-              x.outcome="BLOCKED";
+              x.outcome=await documentJourney(page,x,["FM-19"]);
+              if(x.outcome==="PASS"){
+                const documentId=x.evidenceIds.at(-1)!.split("#")[0];
+                for(const format of ["pdf","docx"] as const){
+                  const button=page.getByRole("button",{name:format.toUpperCase()+" 다운로드",exact:true});
+                  await expect(button).toBeEnabled();
+                  const response=page.waitForResponse(r=>r.request().method()==="GET" &&
+                    new URL(r.url()).pathname.endsWith("/documents/"+documentId+"/exports/"+format));
+                  const [exported]=await Promise.all([response,button.click()]);
+                  expect(exported.status(),await exported.text()).toBe(501);
+                  await expect(page.getByRole("alert")).toContainText("PDF/DOCX 출력 엔진이 설치되지 않았습니다.");
+                  x.checked.push(format.toUpperCase()+" 실제 출력 요청·501 및 운영 출력 엔진 미설치 안내");
+                }
+                x.findings.push("초안 HTML은 생성되지만 실제 PDF/DOCX 출력 엔진이 없어 최종 출력은 BLOCKED");
+                x.outcome="BLOCKED";
+              }
             }else{
               x.outcome=await documentJourney(page,x,c.row.formIds);
               if(x.outcome==="PASS"){
@@ -411,8 +585,10 @@ test.describe("UX 200 field journeys: run, verify, and isolate blockers",()=>{
               await moveTo(page,"drawings");await moveTo(page,"today");
               x.checked.push("업무 이동·복귀 상태 유지");
             }
-            x.outcome=c.id==="FC-NAV-02"?"PASS":"PARTIAL";
-            if(x.outcome==="PARTIAL")x.findings.push("전체 역할·타 프로젝트 접근권한까지는 현재 테스트로 확인되지 않음");
+            x.outcome="PARTIAL";
+            x.findings.push(c.id==="FC-NAV-02"?
+              "마지막 항목 스크롤만 확인: 도면·문서 왕복 및 키보드·터치·휠 전체 조건은 미검증":
+              "전체 역할·타 프로젝트 접근권한까지는 현재 테스트로 확인되지 않음");
           }else if(c.domain==="feature" && c.row.featureGroup==="DWG"){
             const tabs=page.getByRole("tab");
             await expect(tabs.first()).toBeVisible();
@@ -433,15 +609,19 @@ test.describe("UX 200 field journeys: run, verify, and isolate blockers",()=>{
           }
         }
         if(runtimeErrors.length){
-          x.outcome="FAIL";x.findings.push("브라우저 예외: "+runtimeErrors.join(" | ").slice(0,500));
+          throw new Error("브라우저 예외: "+runtimeErrors.join(" | ").slice(0,500));
         }
       }catch(error){
         x.outcome="FAIL";
         x.findings.push("실행 예외: "+String(error).slice(0,650));
         try{await page.screenshot({path:testInfo.outputPath(c.id+".png"),fullPage:true,timeout:5000});}catch{ /* still record text evidence */ }
+        // Keep this case failed so Playwright retains its own trace. Default
+        // mode with maxFailures=0 continues the remaining cases in a new worker.
+        throw error;
       }finally{
         x.elapsedMs=Date.now()-t0;
-        attempts.push(x);
+        persistCaseResult(testInfo.project.outputDir,x);
+        await testInfo.attach("ux200-case-result",{body:Buffer.from(JSON.stringify(x,null,2)),contentType:"application/json"});
         testInfo.annotations.push({type:"ux200-outcome",description:x.outcome});
         testInfo.annotations.push({type:"ux200-evidence",description:x.checked.join(" → ").slice(0,600)});
         console.log("UX200_CASE "+JSON.stringify({
@@ -451,21 +631,17 @@ test.describe("UX 200 field journeys: run, verify, and isolate blockers",()=>{
       }
     });
   }
-  test.afterAll(()=>{
+  // An independent last test is responsible for aggregation and the gate. It
+  // must not use module memory: Playwright restarts a worker after a case FAIL.
+  test("UX200 summary and acceptance gate",async({},testInfo)=>{
     mkdirSync(".local",{recursive:true});
-    const byId=new Map(attempts.map(r=>[r.id,r]));
-    const output=scenarios.map(c=>byId.get(c.id)||{
-      ...resultFor(c),outcome:"BLOCKED" as const,findings:["테스트가 실제 실행되지 않음"],elapsedMs:0
-    });
-    const counts=Object.fromEntries(["PASS","PARTIAL","BLOCKED","INVALID","FAIL"]
-      .map(k=>[k,output.filter(x=>x.outcome===k).length]));
-    const byDomain=Object.fromEntries(["role","feature","document","menu"]
-      .map(domain=>[domain,Object.fromEntries(["PASS","PARTIAL","BLOCKED","INVALID","FAIL"].map(status=>
-        [status,output.filter(x=>x.domain===domain && x.outcome===status).length]))]));
+    const {attempted,counts,byDomain,results:output}=aggregateCaseResults(testInfo.project.outputDir,scenarios.map(resultFor));
+    const testedCommit=process.env.GITHUB_SHA || execFileSync("git",["rev-parse","HEAD"],{encoding:"utf8"}).trim();
     const summary={
-      source:"PR #158 / faa8c2b855785492fcb0cc9bfe691ba3637e3734",
-      meaning:"Each row was attempted; PASS means this test's listed checkpoints succeeded, not human UX acceptance.",
-      requested:200,attempted:attempts.length,automatedE2EPassed:counts.PASS,
+      catalogueSource:"PR #158 / faa8c2b855785492fcb0cc9bfe691ba3637e3734",
+      testedCommit,caseEvidenceDirectory:resolve(testInfo.project.outputDir,"ux200-cases"),
+      meaning:"PASS requires the case's automated conditions; PARTIAL/BLOCKED retain unverified work. Human UX acceptance is separate.",
+      requested:200,attempted,automatedE2EPassed:counts.PASS,
       humanUXAcceptance:"NOT_PERFORMED",counts,byDomain,results:output,
     };
     writeFileSync(".local/ux200-full-results.json",JSON.stringify(summary,null,2)+"\n");
@@ -476,8 +652,8 @@ test.describe("UX 200 field journeys: run, verify, and isolate blockers",()=>{
         k==="evidenceIds"?x.evidenceIds.join(";"):(x as any)[k])).join(",")).join("\n")+"\n");
     const lines=[
       "# DOUL 감리앱 200건 실행 보고", "",
-      "- 기준: PR #158 (2026-10-11)",
-      "- 총 200건 / 시도 "+attempts.length+"건",
+      "- 카탈로그 기준: PR #158 / 시험 commit: "+testedCommit,
+      "- 총 200건 / 고유 case 시도 "+attempted+"건",
       "- 평가 구분: "+JSON.stringify(counts),
       "- 현장 사용자 인지·이해도 평가는 별도 미실시",
       "- **PASS는 전체 200건 인수 합격이 아니라 해당 시험이 실제 확인한 단계의 결과임.**", "",
@@ -488,12 +664,9 @@ test.describe("UX 200 field journeys: run, verify, and isolate blockers",()=>{
         x.findings.join("; ").slice(0,150).replaceAll("|","/")+" |"),
     ];
     writeFileSync(".local/ux200-full-results.md",lines.join("\n")+"\n");
-    console.log("UX200_SUMMARY "+JSON.stringify({attempted:attempts.length,counts,byDomain,human:"PENDING"}));
-    if(attempts.length!==200||counts.FAIL>0||counts.INVALID>0) {
-      throw new Error("UX200 acceptance blocked: "+JSON.stringify({
-        attempted:attempts.length,failed:counts.FAIL,invalid:counts.INVALID,
-        incomplete:counts.PARTIAL+counts.BLOCKED
-      })+"; see preserved JSON/CSV report");
-    }
+    for(const extension of ["json","csv","md"])
+      await testInfo.attach("ux200-full-results."+extension,{path:resolve(".local/ux200-full-results."+extension)});
+    console.log("UX200_SUMMARY "+JSON.stringify({attempted,counts,byDomain,human:"PENDING"}));
+    assertAcceptanceGate(attempted,200,counts);
   });
 });
