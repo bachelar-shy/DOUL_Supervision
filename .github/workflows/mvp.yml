@@ -57,6 +57,8 @@ jobs:
           npm run typecheck
           npm run lint --workspace apps/web
           npm run web:build
+      - name: Install Chromium for standalone auth and localization tests
+        run: npx playwright install --with-deps chromium
       - name: Password authentication UI boundary and session expiry tests
         run: npx playwright test --config playwright.auth.config.ts
       - name: Isolated mock localization tests
