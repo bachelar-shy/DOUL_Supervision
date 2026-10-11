@@ -48,6 +48,7 @@ import { quietGraphiteLanguage, quietGraphiteNavigationCopy } from "../design/qu
 export const fieldCoreMode = import.meta.env.VITE_DOUL_UI_SCOPE !== "full";
 
 const DrawingReviewPage = lazy(() => import("../pages/DrawingReviewPage").then((module) => ({ default: module.DrawingReviewPage })));
+const PdfViewerPanel = lazy(() => import("../pages/parallel/PdfViewerPanel").then((module) => ({ default: module.PdfViewerPanel })));
 
 function millisecondsUntilNextLocalDay(now: Date) {
   const next = new Date(now);
@@ -593,7 +594,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               {safeRoute === "drawings" && fieldCoreMode && (
                 <div data-ui-page="field-drawings">
                   <Suspense fallback={<div className="loading-panel">{t("app.loading.workspace")}</div>}>
-                    <DrawingReviewPage client={client} workspace={workspace} onNavigate={nav} onChanged={refresh} onSelect={setSelected} onOpenCommand={(item, action) => setDialog({ item, action })} />
+                    <PdfViewerPanel client={client} workspace={workspace} readOnly />
                   </Suspense>
                 </div>
               )}
