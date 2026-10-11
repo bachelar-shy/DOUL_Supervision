@@ -30,8 +30,8 @@ permissions:
 
 jobs:
   storage-policy:
-    # Isolated, ephemeral GitHub-hosted Linux x64 runner (no Mac mini).
-    runs-on: ubuntu-24.04
+    # Dedicated Mac mini Linux ARM64 runner; preserve persistent tools.
+    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
