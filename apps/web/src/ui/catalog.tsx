@@ -65,6 +65,7 @@ export function NavigationList({
           type="button"
           className={activeId === item.id ? "active" : ""}
           aria-current={activeId === item.id ? "page" : undefined}
+          title={item.label}
           disabled={item.disabled}
           onClick={() => onNavigate(item.id)}
         >
