@@ -12,3 +12,8 @@
 .command-evidence-picker summary { font-size:12px; cursor:pointer; color:#364554; }
 .command-evidence-picker details label { margin-top:10px; }
 .command-evidence-picker .muted { font-size:12px; line-height:1.5; }
+
+/* Shared command form readability on site tablets. */
+.modal .modal-fields > label { font-size:13px; color:#344054; line-height:1.5; }
+.modal .modal-fields textarea,.modal .modal-fields select,.modal .modal-fields input { font-size:14px; color:#202a35; }
+.modal .modal-fields .muted { color:#475569; font-size:12px; }
