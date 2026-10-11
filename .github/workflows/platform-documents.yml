@@ -9,11 +9,13 @@ permissions:
   contents: read
 jobs:
   render-verify:
-    # Dedicated Linux VM on the Mac mini; one runner serializes jobs.
-    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
+    # Isolated, ephemeral GitHub-hosted Linux x64 runner (no Mac mini).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Prepare ephemeral runner disk for CI
+        run: bash infra/ci/prepare_github_runner.sh
       - name: Build pinned document runtime and verify non-root user
         run: |
           docker build -f infra/docker/document-runtime.Dockerfile -t doul-document-runtime:test .

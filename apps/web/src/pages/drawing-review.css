@@ -1,0 +1,28 @@
+.drawing-review{display:grid;grid-template-columns:minmax(205px,245px) minmax(0,1fr);gap:12px;align-items:start;min-width:0;min-height:600px}
+.drawing-review.has-details{grid-template-columns:minmax(190px,220px) minmax(0,1fr) minmax(265px,325px)}
+.drawing-review-list,.drawing-review-center,.drawing-review-details{background:#fff;border:1px solid var(--doul-color-line,#e2e8f0);border-radius:8px;min-width:0}
+.drawing-review-list,.drawing-review-details{padding:14px;max-height:calc(100vh - 235px);overflow:auto;position:sticky;top:12px}
+.drawing-review-list-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.drawing-review-list-heading strong{font-size:13px}
+.drawing-review-list-heading button,.drawing-review-context button{border:1px solid #ccd2dc;border-radius:5px;background:white;color:#344054;padding:6px 10px;font-size:12px}
+.drawing-review-search{display:flex;flex-direction:column;gap:6px;font-size:12px;color:#475467}
+.drawing-review-search input{width:100%;min-width:0;min-height:36px;padding:6px 9px;border:1px solid #ccd2dc;border-radius:5px;background:#fff}
+.drawing-review-choices{display:flex;flex-direction:column;gap:4px;margin-top:12px}
+.drawing-review-choices>p,.drawing-review-details>p{font-size:12px;line-height:1.65;color:#667085;padding:10px 3px}
+.drawing-review-choice{width:100%;min-width:0;text-align:left;display:flex;flex-direction:column;gap:5px;padding:12px 10px;border-radius:5px;border:1px solid transparent;background:transparent}
+.drawing-review-choice:hover{background:#f7f8fa}
+.drawing-review-choice[aria-current=true]{border-color:#b9c4d3;background:#f2f4f7}
+.drawing-review-choice-title{font-size:12px;font-weight:650;color:#1d2939;word-break:break-word}
+.drawing-review-choice-detail{font-size:11px;color:#667085;word-break:break-all}
+.drawing-review-center{padding:13px;overflow:hidden}
+.drawing-review-context{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.drawing-review-context>div{min-width:0;display:flex;flex-direction:column;gap:5px}
+.drawing-review-context strong{font-size:14px;color:#101828;overflow-wrap:anywhere}
+.drawing-review-context small{font-size:11px;color:#667085;overflow-wrap:anywhere}
+.drawing-review-source-note,.drawing-review-scope-note{color:#667085;font-size:11px;line-height:1.6;margin:8px 0}
+.drawing-review-viewer{min-width:0}
+.drawing-review-viewer .pdf-canvas-viewport{max-height:65vh}
+.drawing-review-empty{display:grid;place-items:center;min-height:350px;color:#667085;font-size:13px}
+.drawing-review-details .panel{padding:10px}
+@media(max-width:1200px){.drawing-review.has-details{grid-template-columns:minmax(170px,210px) minmax(0,1fr)}.drawing-review-details{grid-column:1 / -1;position:static;max-height:none}}
+@media(max-width:760px){.drawing-review,.drawing-review.has-details{grid-template-columns:minmax(0,1fr)}.drawing-review-list{position:static;max-height:235px}.drawing-review-details{grid-column:auto}.drawing-review-center{padding:10px}.drawing-review-context{flex-wrap:wrap}.drawing-review-viewer .pdf-canvas-viewport{max-height:60vh}}
