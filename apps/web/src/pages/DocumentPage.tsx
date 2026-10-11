@@ -2,7 +2,7 @@ import { recordVersionLabel } from "../labels";
 import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { documentRenderCopy, documentOutputLanguageLabels, formFieldLabel } from "@doul/localization";
-import type { FormSchema, RecordDTO, Workspace } from "../data/ui-contract";
+import type { RecordDTO, Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
 import { ApiError } from "../data/supervision-client";
 import { reasonLabel } from "../labels";
@@ -11,36 +11,10 @@ import { PageBoundary } from "./PageBoundary";
 import { Icon } from "./shared";
 import { recordTitle, recordRef } from "./record-utils";
 import { DocumentSigningPanel } from "./DocumentSigningPanel";
-import { DocumentTableEditor, serializeDocumentTables, type DocumentTableValues } from "./DocumentTableEditor";
+import { DocumentTableEditor, buildDocumentData, type DocumentTableValues } from "./DocumentTableEditor";
 import { documentAuthoringForms, eligibleDocumentSources, sourceSelectionForForm } from "./document-authoring-source";
 import "./document-authoring.css";
 import { documentAuthoringCopy, documentFormNames } from "./document-authoring-copy";
-
-function putPath(
-  target: Record<string, unknown>,
-  path: string,
-  value: unknown,
-) {
-  const keys = path.split(".");
-  let node = target;
-  for (const k of keys.slice(0, -1)) {
-    if (!node[k] || typeof node[k] !== "object") node[k] = {};
-    node = node[k] as Record<string, unknown>;
-  }
-  node[keys.at(-1)!] = value;
-}
-function formData(schema: FormSchema, values: Record<string, string>, tables: DocumentTableValues) {
-  const data: Record<string, unknown> = {};
-  for (const [f, r] of Object.entries(schema.scalar_fields)) {
-    let v = values[f] || "";
-    if (!v) continue;
-    if (r.type === "date-time") v = new Date(v).toISOString();
-    putPath(data, f, r.type === "boolean" ? v === "true" : v);
-  }
-  const sourceTables = serializeDocumentTables(schema, tables);
-  for (const table of schema.tables) putPath(data, table.path, sourceTables[table.path]);
-  return data;
-}
 
 function documentLocale(language: string) {
   return language.startsWith("ko") ? "ko" : language.startsWith("vi") ? "vi" : "en";
@@ -95,7 +69,7 @@ export function DocumentPage({
     setErr("");
     try {
       const sourceRefs = [recordRef(item)];
-      const data = formData(schema, values, tableValues);
+      const data = buildDocumentData(schema, values, tableValues);
       const final = renderMode === "final";
       const fingerprint = JSON.stringify({ form, sourceRefs, data, final, documentLanguage });
       if (renderAttempt.current?.fingerprint !== fingerprint) {
