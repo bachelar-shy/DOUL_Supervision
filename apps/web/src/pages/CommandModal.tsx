@@ -2,7 +2,7 @@ import { recordVersionLabel } from "../labels";
 import { scheduleInputs } from "../data/schedule-fields.generated";
 import { completionDecisionReferenceOptions, completionReferenceOptions } from "../data/completion-workspace";
 import { commandInputs } from "../data/command-fields.generated";
-import { useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   CommandDescriptor,
@@ -19,6 +19,7 @@ import { Icon } from "./shared";
 import { HandoverReservationFields, type ReservationInput } from "./HandoverReservationFields";
 import { BOQLineItemFields } from "./BOQLineItemFields";
 import { InspectionCheckResultFields } from "./InspectionCheckResultFields";
+import { CommandEvidencePicker } from "./CommandEvidencePicker";
 
 class CommandInputError extends Error {}
 
@@ -305,7 +306,45 @@ export function CommandModal({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [evidenceText, setEvidenceText] = useState("");
+  const [selectedEvidenceIds, setSelectedEvidenceIds] = useState<string[]>([]);
+  const modalRef = useRef<HTMLElement | null>(null);
   const title = commands[dialog.action.command] || dialog.action.command;
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    modalRef.current?.focus();
+    return () => {
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, []);
+
+  function handleDialogKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!busy) onClose();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const node = modalRef.current;
+    if (!node) return;
+    const focusable = Array.from(node.querySelectorAll<HTMLElement>(
+      'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex]:not([tabindex="-1"])'
+    )).filter((element) => element.getClientRects().length > 0);
+    if (!focusable.length) {
+      event.preventDefault();
+      node.focus();
+      return;
+    }
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === node)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || document.activeElement === node)) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   async function submit() {
     setBusy(true);
     setErr("");
@@ -356,11 +395,11 @@ export function CommandModal({
             ? (JSON.parse(v) as Json)
             : v;
       }
-      const evidenceIds = evidenceText
+      const manualEvidenceIds = evidenceText
         .split(/[\s,]+/)
         .map((value) => value.trim())
         .filter(Boolean);
-      const uniqueEvidenceIds = [...new Set(evidenceIds)];
+      const uniqueEvidenceIds = [...new Set([...selectedEvidenceIds, ...manualEvidenceIds])];
       if (dialog.action.requiresEvidence && !uniqueEvidenceIds.length) {
         throw new CommandInputError(t("commandModal.evidenceRequired"));
       }
@@ -382,6 +421,9 @@ export function CommandModal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
+        tabIndex={-1}
+        ref={modalRef}
+        onKeyDown={handleDialogKeyDown}
       >
         <div className="section-heading">
           <h2>{title}</h2>
@@ -552,21 +594,8 @@ export function CommandModal({
           ))}
         </div>
         {dialog.action.requiresEvidence ? (
-          <div className="modal-fields">
-            <label>
-              {t("commandModal.evidenceIds")}
-              <textarea
-                rows={2}
-                value={evidenceText}
-                onChange={(e) => setEvidenceText(e.target.value)}
-                placeholder={t("commandModal.evidencePlaceholder")}
-                aria-label={t("commandModal.evidenceIds")}
-              />
-              <span className="muted">
-                {t("commandModal.evidenceHelp")}
-              </span>
-            </label>
-          </div>
+          <CommandEvidencePicker workspace={workspace} selectedIds={selectedEvidenceIds}
+            onChange={setSelectedEvidenceIds} manualIds={evidenceText} onManualChange={setEvidenceText} />
         ) : null}
         {!dialog.action.fields.length && (
           <div className="notice">{t("commandModal.warning")}</div>
