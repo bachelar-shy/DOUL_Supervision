@@ -76,3 +76,14 @@ test("field-core unsupported URL returns to the permitted starting menu", async 
   await expect(page.locator('aside.sidebar [data-ui-component="navigation"] button[data-route="schedule"]'))
     .toHaveCount(0);
 });
+
+test("stage-one release rejects direct diagnostic links for every field role", async ({ page }) => {
+  for (const role of ["SUP", "CON", "OWN", "DES", "ADM"] as const) {
+    await page.goto("/#/today");
+    await page.getByLabel("시험 사용자 역할 선택").selectOption(role);
+    await page.goto("/#/parallel-test");
+    await expect(page).toHaveURL(/#\/today$/);
+    await expect(page.getByRole("heading", { name: "업무별 상세 확인" })).toHaveCount(0);
+    await expect(page.locator('aside.sidebar button[data-route="parallel-test"]')).toHaveCount(0);
+  }
+});

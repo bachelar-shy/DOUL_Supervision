@@ -13,7 +13,8 @@ required = {
     "platform-documents.yml", "platform-observability.yml",
     "platform-postgres-backup.yml", "platform-recovery.yml",
     "platform-storage-policy.yml", "platform-worker.yml",
-    "ci-runner-policy.yml",
+    "ci-runner-policy.yml", "menu-usability.yml", "sample-project.yml",
+    "ux-200-full-journeys.yml",
 }
 errors = []
 if required - {p.name for p in workflows}:

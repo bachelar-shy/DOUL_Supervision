@@ -2004,7 +2004,7 @@
     {
       "id": "UC-SUP-19",
       "role": "SUP",
-      "domain": "safety",
+      "domain": "completion",
       "title": "미결 지적사항·준공검사 결과의 독립 판정",
       "trigger": "시운전 완료 후 시공사의 준공검사 및 Punch 목록 제출",
       "operation": "준공검사 항목과 각 미결사항의 최신 시정증빙·재검사 결과를 점검하고 부분/최종 인수준비를 분리",
@@ -2038,7 +2038,7 @@
     {
       "id": "UC-SUP-20",
       "role": "SUP",
-      "domain": "safety",
+      "domain": "completion",
       "title": "발주처 인수의견 작성·인수조건 최종 확인",
       "trigger": "준공검사 판정 및 인수자료 준비 완료",
       "operation": "운영자료·준공도면·검사결과·인수유보 사유를 확인해 발주처 인수결정 요청 및 후속사항 정리",

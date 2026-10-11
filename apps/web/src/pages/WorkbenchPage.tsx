@@ -2,6 +2,7 @@ import { recordVersionLabel } from "../labels";
 import { RecordDetails } from "./RecordDetails";
 import type { SupervisionClient } from "../data/supervision-client";
 import { InspectionAuthoringPanel } from "./InspectionAuthoringPanel";
+import { InspectionCaseFlowPanel } from "./parallel/InspectionCaseFlowPanel";
 import { ActionAuthoringPanel } from "./parallel/ActionAuthoringPanel";
 import { useTranslation } from "react-i18next";
 import type {
@@ -31,6 +32,7 @@ export interface WorkbenchPageProps {
   onSelect: (id: string | null) => void;
   onOpenCommand: (item: WorkItem, action: CommandDescriptor) => void;
   client: SupervisionClient;
+  onChanged: () => Promise<void>;
   onInspectionCreated: (record: RecordDTO) => Promise<void>;
   onActionCreated: (record: RecordDTO) => Promise<void>;
   onCreateIssue: (item: WorkItem) => Promise<void>;
@@ -46,6 +48,7 @@ export function WorkbenchPage({
   onSelect,
   onOpenCommand,
   client,
+  onChanged,
   onInspectionCreated,
   onActionCreated,
   onCreateIssue,
@@ -81,6 +84,10 @@ export function WorkbenchPage({
             selected={selected}
             onSelect={(item) => onSelect(item.record.id)}
           />
+          {route === "inspections" && role === "CON" && (
+            <InspectionCaseFlowPanel client={client} workspace={workspace} online={online}
+              onChanged={onChanged} onSelect={onSelect} onOpenCommand={onOpenCommand} />
+          )}
         </section>
         <DetailPane>
           {current ? (
