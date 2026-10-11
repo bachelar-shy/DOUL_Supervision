@@ -73,6 +73,11 @@ export function DocumentPage({
   const sources = eligibleDocumentSources(workspace, form);
   const language = documentLocale(i18n.resolvedLanguage ?? i18n.language);
   const availableForms = documentAuthoringForms.filter((id) => Boolean(workspace.formSchemas[id]));
+  const additionalFormNames: Record<string, Record<string, string>> = {
+    "FM-02": { ko: "시공계획 검토서", vi: "Phiếu kiểm tra biện pháp thi công", en: "Construction method review" },
+    "FM-13": { ko: "시정조치서", vi: "Phiếu khắc phục", en: "Corrective action form" },
+    "FM-15": { ko: "기술질의서", vi: "Phiếu yêu cầu thông tin kỹ thuật", en: "Technical inquiry form" },
+  };
   const sourceDescription = language === "ko"
     ? "이 양식의 원본 기록이 없습니다. 해당 업무에서 기록을 먼저 작성하거나 접근 권한을 확인하십시오."
     : language === "vi"
@@ -170,7 +175,7 @@ export function DocumentPage({
           >
             {availableForms.map((id) => (
               <option key={id} value={id}>
-                {id} · {t("document.form." + id)}
+                {id} · {additionalFormNames[id]?.[language] ?? t("document.form." + id)}
               </option>
             ))}
           </select>
