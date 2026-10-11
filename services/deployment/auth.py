@@ -66,10 +66,18 @@ class PinnedJWT:
             require(binding is not None and binding.get('active') is True,
                     'UNAUTHENTICATED', 'Identity is not provisioned or is revoked')
             require(claims['iat'] >= binding.get('validAfter', 0), 'UNAUTHENTICATED', 'Identity credential was revoked')
-            role = store.engine.get('RoleAssignment', binding['defaultRoleAssignmentId'])
-            party = store.engine.get('Party', binding['partyId'])
+            selected_project = claims.get('projectId')
+            approved = binding
+            if selected_project is not None:
+                require(isinstance(selected_project, str), 'UNAUTHENTICATED', 'Invalid project session')
+                approved = binding.get('projectAssignments', {}).get(selected_project)
+                require(isinstance(approved, dict), 'NOT_AUTHORIZED', 'Project membership is not provisioned')
+            role = store.engine.get('RoleAssignment', approved['defaultRoleAssignmentId'])
+            party = store.engine.get('Party', approved['partyId'])
+            require(selected_project is None or role['projectId'] == selected_project, 'UNAUTHENTICATED', 'Project membership mismatch')
             require(role['partyId'] == party['id'] and role['actorGroup'] in HUMANS and
                     party.get('loginEnabled') is True and party['kind'] == 'PERSON',
                     'UNAUTHENTICATED', 'Service/source identities cannot establish a human session')
             return dict(partyId=party['id'], roleAssignmentId=role['id'], actorGroup=role['actorGroup'], name=party['name'],
-                        identityKey=key, issuedAt=claims['iat'], expires=datetime.fromtimestamp(claims['exp'], timezone.utc))
+                        identityKey=key, issuedAt=claims['iat'], selectedProjectId=selected_project,
+                        expires=datetime.fromtimestamp(claims['exp'], timezone.utc))

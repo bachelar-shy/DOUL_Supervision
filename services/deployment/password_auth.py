@@ -80,10 +80,21 @@ class PasswordAccounts:
                 result = account['subject']
         if result is None:
             raise ContractError('UNAUTHENTICATED', 'Invalid username or password')
-        claims = dict(iss=self.verifier.issuer, aud=self.verifier.audience, sub=result, iat=now, nbf=now, exp=now+900, jti=secrets.token_urlsafe(20))
+        return self._issue(result)
+
+    def _issue(self, subject, project_id=None):
+        now = int(time.time())
+        claims = dict(iss=self.verifier.issuer, aud=self.verifier.audience, sub=subject, iat=now, nbf=now, exp=now+900, jti=secrets.token_urlsafe(20))
+        if project_id is not None: claims['projectId'] = project_id
         token = jwt.encode(claims, self.private_key, algorithm='RS256', headers=dict(kid=self.verifier.key_id, typ='at+jwt'))
         session = self.verifier.session(token, self.store)
         return dict(accessToken=token, projectId=self.store.engine.get('RoleAssignment',session['roleAssignmentId'])['projectId'], actor=dict(partyId=session['partyId'], roleAssignmentId=session['roleAssignmentId'], actorGroup=session['actorGroup'], name=session['name']), mode='PASSWORD')
+
+    def select_project(self, token, project_id):
+        claims = self.verifier.verify(token)
+        result = self._issue(claims['sub'], project_id)
+        self.revoke(token)
+        return result
 
     def revoke(self, token):
         claims = self.verifier.verify(token)

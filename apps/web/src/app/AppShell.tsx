@@ -673,7 +673,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                 <RegisterPage client={client} workspace={workspace} />
               )}
               {safeRoute === "admin" && (
-                <AdminPage client={client} workspace={workspace} />
+                <AdminPage key={workspace.project.id} client={client} workspace={workspace} online={online} onChanged={refresh} />
               )}
               {safeRoute === "parallel-test" && (
                 <ParallelTestPage key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} online={online} onNavigate={nav} onChanged={refresh} onSelect={setSelected} onOpenCommand={(item, action) => setDialog({ item, action })} />

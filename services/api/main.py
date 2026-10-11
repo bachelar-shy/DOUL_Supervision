@@ -206,7 +206,8 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         valid_id(project)
         if not demo:
             binding=store.meta.get('identityBindings',{}).get(session['identityKey'],{})
-            require(binding.get('active') is True and binding.get('partyId')==session['partyId'] and session['issuedAt']>=binding.get('validAfter',0),'UNAUTHENTICATED','Identity is revoked')
+            approved=binding.get('projectAssignments',{}).get(session.get('selectedProjectId'),{}) if session.get('selectedProjectId') else binding
+            require(binding.get('active') is True and approved.get('partyId')==session['partyId'] and approved.get('defaultRoleAssignmentId')==session['roleAssignmentId'] and session['issuedAt']>=binding.get('validAfter',0),'UNAUTHENTICATED','Identity is revoked')
             party=store.engine.get('Party',session['partyId'])
             require(party.get('loginEnabled') is True,'UNAUTHENTICATED','Identity is disabled')
         rid=role_id or session['roleAssignmentId']
@@ -355,6 +356,41 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     def health():return dict(status='ok',mode='local-demo' if demo else stage,demoProfile=store.meta.get('demoProfile') if demo else None,baseCommit=(os.getenv('DOUL_RELEASE_SHA', '') if re.fullmatch(r'[a-f0-9]{40}', os.getenv('DOUL_RELEASE_SHA', '')) else 'unversioned-development'),adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo' if demo else 'local-password-pinned-rs256' if password_accounts is not None else 'pinned-rs256-access-token','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
 
     if password_accounts is not None:
+        @app.get('/auth/projects')
+        def password_projects(request:Request):
+            actor=identity(request)
+            with store.transaction():
+                current=store.engine.get('RoleAssignment',actor['roleAssignmentId'])
+                role_for(actor,current['projectId'])
+                binding=store.meta['identityBindings'][actor['identityKey']]
+                assignments=[dict(partyId=binding['partyId'],defaultRoleAssignmentId=binding['defaultRoleAssignmentId'])]+list(binding.get('projectAssignments',{}).values())
+                projects={}
+                for membership in assignments:
+                    assignment=store.engine.get('RoleAssignment',membership['defaultRoleAssignmentId'])
+                    party=store.engine.get('Party',membership['partyId'])
+                    if not (assignment['partyId']==party['id'] and party.get('loginEnabled') and assignment['active'] and instant(assignment['validFrom'])<=instant(store.engine.at())<instant(assignment['validTo'])): continue
+                    project=store.engine.get('Project',assignment['projectId'])
+                    classification=store.meta.get('projectContexts',{}).get(project['id'],{}).get('dataClassification','')
+                    projects[project['id']]=dict(projectId=project['id'],name=project['name'],synthetic=classification=='SYNTHETIC_TEST_NOT_SITE_EVIDENCE')
+                return dict(currentProjectId=current['projectId'],items=list(projects.values()))
+
+        @app.post('/auth/project-session')
+        async def password_project_session(request:Request):
+            require(request.headers.get('origin') in origins,'ORIGIN_DENIED','Approved browser origin required')
+            actor=identity(request)
+            body=await body_json(request)
+            require(set(body)=={'projectId'},'INVALID_REQUEST','Project selection only')
+            valid_id(body['projectId'])
+            with store.transaction():
+                current=store.engine.get('RoleAssignment',actor['roleAssignmentId'])
+                role_for(actor,current['projectId'])
+                binding=store.meta['identityBindings'][actor['identityKey']]
+                approved=binding.get('projectAssignments',{}).get(body['projectId'])
+                require(isinstance(approved,dict),'NOT_AUTHORIZED','Project membership is not provisioned')
+                target=store.engine.get('RoleAssignment',approved['defaultRoleAssignmentId'])
+                require(target['projectId']==body['projectId'] and target['partyId']==approved['partyId'] and target['active'] and instant(target['validFrom'])<=instant(store.engine.at())<instant(target['validTo']),'NOT_AUTHORIZED','Current project assignment required')
+            return password_accounts.select_project(request.headers.get('authorization','')[7:],body['projectId'])
+
         @app.post('/auth/login')
         async def password_login(request:Request):
             require(request.headers.get('origin') in origins, 'ORIGIN_DENIED', 'Approved browser origin required')

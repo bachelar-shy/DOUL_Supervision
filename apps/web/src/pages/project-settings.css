@@ -1,0 +1,18 @@
+.project-settings-page .settings-tabs{display:flex;gap:8px;overflow-x:auto;margin:16px 0;padding-bottom:4px}
+.project-settings-page .settings-tabs button{white-space:nowrap;min-height:44px}
+.project-settings-page .settings-tabs [aria-selected=true]{border-color:var(--primary);font-weight:700}
+.project-settings-page .settings-columns:not([hidden]){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.project-settings-page .settings-form{display:grid;gap:14px;padding:20px;border:1px solid var(--border);border-radius:8px;margin:0 0 20px;min-width:0}
+.project-settings-page .settings-form legend{font-size:16px;font-weight:650;padding:0 8px}
+.project-settings-page .settings-form label{display:grid;gap:6px;min-width:0;overflow-wrap:anywhere}
+.project-settings-page .settings-form input,.project-settings-page .settings-form select{width:100%;max-width:100%;min-width:0;min-height:44px}
+.project-settings-page .settings-form input[type=checkbox]{width:20px;min-height:20px}
+.project-settings-page .settings-form p{margin:0;overflow-wrap:anywhere}
+.project-settings-page .settings-checks{display:flex;gap:12px;flex-wrap:wrap;min-width:0}
+.project-settings-page .settings-checks label{display:flex;align-items:center;gap:8px}
+.project-settings-page .settings-table-scroll{overflow-x:auto;max-width:100%}
+.project-settings-page table{width:100%;border-collapse:collapse}
+.project-settings-page th,.project-settings-page td{padding:12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border);overflow-wrap:anywhere}
+.project-settings-page button{min-height:44px;overflow-wrap:anywhere}
+.project-settings-page .settings-error{color:var(--destructive);overflow-wrap:anywhere}
+@media(max-width:760px){.project-settings-page .settings-columns:not([hidden]){grid-template-columns:minmax(0,1fr)}.project-settings-page .settings-form{padding:14px}.project-settings-page table{min-width:580px}}

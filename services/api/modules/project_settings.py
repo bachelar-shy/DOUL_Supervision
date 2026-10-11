@@ -139,14 +139,14 @@ def install_project_settings_routes(app, store, *, identity, role_for, key_for, 
             data = store.meta.setdefault('projectAdministration', {}).setdefault(project_id, {})
             if command == 'update_project':
                 _fields(body, ['expectedVersion', 'name', 'country', 'timezone', 'classification'])
-                require(body['country'] in {'VN', 'KR'}, 'INVALID_REQUEST', '현장 국가를 확인하십시오.')
+                require(isinstance(body['country'], str) and body['country'] in {'VN', 'KR'}, 'INVALID_REQUEST', '현장 국가를 확인하십시오.')
                 try: ZoneInfo(_text(body['timezone'], 80))
                 except (ZoneInfoNotFoundError, ValueError): raise ContractError('INVALID_REQUEST', '현장 시간대를 확인하십시오.')
                 require(isinstance(body['classification'], str) and len(body['classification']) <= 200, 'INVALID_REQUEST', '공사 종류를 확인하십시오.')
                 proposed.update(name=_text(body['name']), country=body['country'], timezone=body['timezone'], classification=body['classification'].strip())
             elif command == 'add_organization':
                 _fields(body, ['expectedVersion', 'name', 'actorGroup'])
-                require(body['actorGroup'] in PROFILES, 'INVALID_REQUEST', '참여회사 구분을 확인하십시오.')
+                require(isinstance(body['actorGroup'], str) and body['actorGroup'] in PROFILES, 'INVALID_REQUEST', '참여회사 구분을 확인하십시오.')
                 company = new_record(project_id, actor, name=_text(body['name']), kind='ORGANIZATION', loginEnabled=False)
                 save('Party', company, None, command, actor, role, key, body)
                 data.setdefault('organizationGroups', {})[company['id']] = body['actorGroup']
@@ -178,7 +178,7 @@ def install_project_settings_routes(app, store, *, identity, role_for, key_for, 
             elif command == 'add_participant':
                 _fields(body, ['expectedVersion', 'name', 'organizationId', 'actorGroup', 'startDate', 'endDate', 'disciplines', 'packageIds', 'locationIds'])
                 group = body['actorGroup']
-                require(group in PROFILES, 'INVALID_REQUEST', '담당 업무를 확인하십시오.')
+                require(isinstance(group, str) and group in PROFILES, 'INVALID_REQUEST', '담당 업무를 확인하십시오.')
                 organization = store.engine.get('Party', body['organizationId'])
                 groups = {r['organizationId']: r['actorGroup'] for r in records('RoleAssignment', project_id)}
                 groups.update(data.get('organizationGroups', {}))
