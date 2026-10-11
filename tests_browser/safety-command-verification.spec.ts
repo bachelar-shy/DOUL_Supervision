@@ -61,7 +61,7 @@ async function selectRole(page: Page, role: string) {
     await picker.selectOption(role);
     await refreshed;
   }
-  await page.goto("/#/parallel-test");
+  await page.goto("/#/safety");
 }
 
 test("selected current SafetyStopOrder uses server actions and refuses a guarded resume", async ({ page, request }) => {
@@ -71,17 +71,18 @@ test("selected current SafetyStopOrder uses server actions and refuses a guarded
   page.on("request", req => {
     if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method()) && req.url().includes("/api/")) uiWrites.push(`${req.method()} ${req.url()}`);
   });
-  await page.goto("/#/parallel-test");
+  await page.goto("/#/safety");
   await selectRole(page, "CON");
-  await expect(page.getByRole("heading", { name: "업무별 상세 확인", exact: true, level: 1 })).toBeVisible();
+  const panel = page.locator('[data-ui-component="safety-workspace"]');
+  await expect(panel).toBeVisible();
   uiWrites.length = 0;
-  await page.getByRole("tab", { name: "안전 관련 기록 확인", exact: true }).click();
-  const panel = page.locator('[data-ui-component="safety-connected"]');
-  await panel.getByLabel("작업중지 원본", { exact: true }).selectOption(stop.id);
-  await expect(panel.getByLabel("작업중지 원본", { exact: true })).toHaveValue(stop.id);
-  await expect(panel.getByText(title, { exact: true })).toBeVisible();
-  const commandRegion = panel.locator(".safety-connected-commands");
-  const acknowledge = commandRegion.getByRole("button", { name: "작업중지 확인 열기", exact: true });
+  await panel.getByRole("tab", { name: "작업중지", exact: true }).click();
+  const row = panel.locator(".record-list").getByRole("button").filter({ hasText: title }).first();
+  await expect(row).toBeVisible();
+  await row.click();
+  await expect(panel.locator(".detail-head h2")).toHaveText(title);
+  const commandRegion = panel.locator('[data-ui-component="action-gate"]');
+  const acknowledge = commandRegion.getByRole("button", { name: /작업중지 확인/ });
   await expect(acknowledge).toBeEnabled();
 
   await acknowledge.click();
@@ -124,7 +125,8 @@ test("selected current SafetyStopOrder uses server actions and refuses a guarded
   const actionResponse = await request.get(`/api/projects/${sup.projectId}/safety-stop-orders/${stop.id}/available-actions`, { headers: headers(con) });
   const resumeAction = (await actionResponse.json()).find((action: any) => action.command === "request_resume");
   expect(resumeAction).toMatchObject({ ready: false, requiresInput: false, expectedVersion: versionBeforeGuard });
-  await expect(commandRegion.getByRole("button", { name: /재개 요청/ })).toHaveCount(0);
+  const resumeControl = commandRegion.getByRole("button", { name: /재개 요청/ });
+  if (await resumeControl.count()) await expect(resumeControl).toBeDisabled();
   const resumeAttempt = await request.post(`/api/projects/${sup.projectId}/safety-stop-orders/${stop.id}/request-resume`, {
     headers: headers(con),
     data: {

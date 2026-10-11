@@ -192,6 +192,11 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
   // Never append them to contractor, owner, or designer navigation based on
   // whether a synthetic project's workspace has finished loading.
   const allowed = fieldCoreMode ? fieldCoreRoutes[role] : roleRoutes[role];
+  // Only synthetic, unauthenticated development sessions may deep-link to
+  // integration diagnostics. Never add diagnostics to CON/OWN/DES navigation,
+  // stage-one field routes, or a real password-authenticated session.
+  const demoDiagnosticDeepLink = !fieldCoreMode && !passwordMode
+    && client.kind === "http" && workspace?.demo === true && route === "parallel-test";
   const nav = (to: string) => {
     const resolved = fieldCoreMode ? fieldCoreRouteFor(to) : { route: to };
     const target = allowed.includes(resolved.route) ? resolved.route : "today";
@@ -203,7 +208,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     setSelected(null);
     setMenu(false);
   };
-  const safeRoute = allowed.includes(route) ? route : "today";
+  const safeRoute = allowed.includes(route) || demoDiagnosticDeepLink ? route : "today";
   useEffect(() => {
     if (!fieldCoreMode) return;
     const mapped = fieldCoreRouteFor(route);
@@ -216,12 +221,12 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     setSelected(null);
   }, [route, role]);
   useEffect(() => {
-    if (fieldCoreMode || !workspace || allowed.includes(route)) return;
+    if (fieldCoreMode || !workspace || allowed.includes(route) || demoDiagnosticDeepLink) return;
     history.replaceState(null, "", "#/today");
     setRoute("today");
     setSelected(null);
     setMenu(false);
-  }, [allowed, route, workspace]);
+  }, [allowed, route, workspace, demoDiagnosticDeepLink]);
   const mobileChoices = fieldCoreMode
     ? routes.filter((item) => allowed.includes(item.id) && ["today", "capture", "inspections", "corrections"].includes(item.id))
     : mobileRoutes[role];
@@ -600,6 +605,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                     selected={selected} current={current} online={online} onSelect={setSelected}
                     onOpenCommand={(item, action) => setDialog({ item, action })}
                     client={client}
+                    onChanged={refresh}
                     onInspectionCreated={async (record) => { await refresh(); setSelected(record.id); }}
                     onActionCreated={async (record) => { await refresh(); setSelected(record.id); }}
                     onCreateIssue={createIssue}
@@ -620,6 +626,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                   onSelect={setSelected}
                   onOpenCommand={(item, action) => setDialog({ item, action })}
                   client={client}
+                  onChanged={refresh}
                   onInspectionCreated={async record => { await refresh(); setSelected(record.id); }}
                   onActionCreated={async record => { await refresh(); setSelected(record.id); }}
                   onCreateIssue={createIssue}

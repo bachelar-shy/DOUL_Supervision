@@ -169,8 +169,10 @@ test("temporary source failure preserves the full draft and disables save until 
   await expect(form.getByRole("button", { name: "자체검측 초안 저장", exact: true })).toBeDisabled();
   expect((await storedInput(page)).payload).toEqual(original.payload);
   fail = false;
-  await page.getByRole("button", { name: "새로고침", exact: true }).click();
-  await expectRestored(form, original.payload);
+  // Reload the page to retry scope sources after a transient network failure.
+  // Keep the persisted draft intact until the refreshed options are available.
+  const refreshedForm = await openContractor(page);
+  await expectRestored(refreshedForm, original.payload);
   expect((await storedInput(page)).payload).toEqual(original.payload);
 });
 

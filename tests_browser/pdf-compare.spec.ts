@@ -40,11 +40,11 @@ test("compares two uploaded PDFs with independent page controls and no compare w
     }
   });
 
-  await page.goto("/#/parallel-test");
+  // Designers compare revisions via the user-facing Drawings route.
+  await page.goto("/#/drawings");
   await page.getByLabel("시험 사용자 역할 선택").selectOption("DES");
   await expect.poll(() => workspace?.role.actorGroup).toBe("DES");
-  await page.goto("/#/parallel-test");
-  await page.getByRole("tab", { name: "도면 작성 차수", exact: true }).click();
+  await page.goto("/#/drawings");
   const viewer = page.getByLabel("PDF 도면 보기");
   await expect(viewer).toBeVisible();
 
@@ -96,7 +96,7 @@ test("compares two uploaded PDFs with independent page controls and no compare w
   const compareWrites: string[] = [];
   const listener = (request: import("@playwright/test").Request) => { if (request.method() === "POST") compareWrites.push(request.url()); };
   page.on("request", listener);
-  await page.getByRole("tab", { name: "도면 비교", exact: true }).click();
+  await page.getByRole("tab", { name: "도면 개정 비교", exact: true }).click();
   const compare = page.getByLabel("도면 PDF 비교");
   await expect(compare).toBeVisible();
   await compare.getByLabel("왼쪽 도면 연결").selectOption(leftBinding.id);
