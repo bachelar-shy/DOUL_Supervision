@@ -182,10 +182,21 @@ class FeatureInteractionAndDocumentUsabilityTests(unittest.TestCase):
         self.assertIn("docx", rendering["production_adapters_pending"])
         self.assertTrue(self.documents["formCoverage"]["pdfDocxProductionAdaptersPending"])
         path = (ROOT / "apps/web/src/pages/DocumentPage.tsx").read_text(encoding="utf-8")
-        for name in self.documents["formCoverage"]["documentPageSelectableFormIds"]:
-            self.assertIn('"' + name + '"', path)
-        for marker in ['document.action.docxPending', 'document.action.pdfPending']:
-            self.assertIn(marker, path)
+        source_module = ROOT / "apps/web/src/pages/document-authoring-source.ts"
+        if source_module.exists():
+            source = source_module.read_text(encoding="utf-8")
+            for name in self.documents["formCoverage"]["documentPageSelectableFormIds"]:
+                self.assertIn('"' + name + '"', source)
+            # PR #169 adds UI download actions, but the production adapter remains a
+            # separately configured backend dependency. A clickable button is not
+            # evidence of successful PDF/DOCX production.
+            self.assertIn("client.documentExport(", path)
+            self.assertIn("exportUnavailable", path)
+        else:
+            for name in self.documents["formCoverage"]["documentPageSelectableFormIds"]:
+                self.assertIn('"' + name + '"', path)
+            for marker in ['document.action.docxPending', 'document.action.pdfPending']:
+                self.assertIn(marker, path)
 
     def test_26_document_tasks_have_links_and_human_usability_metrics(self):
         tasks = self.documents["tasks"]

@@ -142,6 +142,7 @@ export interface SupervisionClient {
     key?: string,
   ): Promise<RecordDTO>;
   documentHtml(documentId: string): Promise<string>;
+  documentExport(documentId: string, format: "pdf" | "docx"): Promise<Blob>;
   evidenceContent(evidenceId: string): Promise<Blob>;
   drawingPdfContent(bindingId: string): Promise<Blob>;
   path(suffix: string): string;
@@ -289,6 +290,33 @@ class HttpSupervisionClient implements SupervisionClient {
 
   documentHtml(documentId: string) {
     return this.client.documentHtml(documentId);
+  }
+
+  async documentExport(documentId: string, format: "pdf" | "docx"): Promise<Blob> {
+    const session = this.client.session;
+    if (!session) throw new Error("DOCUMENT_EXPORT_UNAUTHENTICATED");
+    const response = await fetch(
+      this.baseUrl + this.client.path(`/documents/${encodeURIComponent(documentId)}/exports/${format}`),
+      { headers: {
+        Authorization: `Bearer ${session.accessToken}`,
+        "X-RoleAssignment-Id": session.actor.roleAssignmentId,
+      }, signal: AbortSignal.timeout(120000) },
+    );
+    if (!response.ok) {
+      if (response.status === 401 && session.mode === "PASSWORD") {
+        this.client.session = null;
+        this.client.onUnauthorized?.();
+      }
+      throw new Error(response.status === 501 ? "DOCUMENT_EXPORT_NOT_CONFIGURED" :
+        response.status === 401 ? "DOCUMENT_EXPORT_UNAUTHENTICATED" :
+        response.status === 403 || response.status === 404 ? "DOCUMENT_EXPORT_ACCESS_DENIED" :
+        "DOCUMENT_EXPORT_FAILED");
+    }
+    const mime = format === "pdf" ? "application/pdf" :
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    if (!response.headers.get("content-type")?.toLowerCase().startsWith(mime))
+      throw new Error("DOCUMENT_EXPORT_WRONG_FORMAT");
+    return response.blob();
   }
 
   async evidenceContent(evidenceId: string) {

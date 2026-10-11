@@ -979,9 +979,10 @@ test("draft document renders from versioned source", async ({ page }) => {
   await expect(
     page.frameLocator("iframe").getByRole("heading", { level: 1 }),
   ).toContainText("발주처 즉시보고");
-  await expect(
-    page.getByRole("button", { name: "DOCX 연동 전" }),
-  ).toBeDisabled();
+  // The user may request a derivative after generating a snapshot.
+  // An unconfigured renderer reports 501 when called, not via a disabled UI.
+  await expect(page.getByRole("button", { name: "DOCX 다운로드" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "PDF 다운로드" })).toBeEnabled();
   await page.screenshot({
     path: ".local/screenshots/document-web.png",
     fullPage: true,

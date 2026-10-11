@@ -125,6 +125,10 @@ export class MockSupervisionClient implements SupervisionClient {
     return previewOnly();
   }
 
+  documentExport(_documentId: string, _format: "pdf" | "docx"): Promise<Blob> {
+    return previewOnly();
+  }
+
   async drawingPdfContent(_bindingId: string): Promise<Blob> {
     throw new Error("화면 미리보기에서는 도면 PDF 원본 연결을 제공하지 않습니다.");
   }

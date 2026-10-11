@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AppShell } from "./app/AppShell";
 import { createSupervisionClient } from "./data/supervision-client";
 import { PasswordLogin } from "./pages/PasswordLogin";
+import { clearAllSessionFormDrafts } from "./data/session-form-draft";
 import "./App.css";
 
 const client = createSupervisionClient();
@@ -44,6 +45,7 @@ export default function App() {
       setAuthorized(true);
     }} />;
   return <AppShell client={client} passwordMode={passwordMode} onLogout={(revoked) => {
+    clearAllSessionFormDrafts();
     setAuthorized(false);
     setNotice(revoked ? undefined : "logoutUnverified");
   }} />;

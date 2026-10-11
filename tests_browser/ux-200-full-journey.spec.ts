@@ -182,7 +182,7 @@ async function inspectionJourney(request:APIRequestContext,x:Result):Promise<voi
   x.evidenceIds.push(record.id);
 }
 async function documentJourney(page:Page,x:Result,formIds:string[]):Promise<"PASS"|"BLOCKED">{
-  const missing=formIds.filter(id=>!availableForms.has(id));
+  const missing:string[]=[]; // integrated preview: validate actual runtime form selection, not previous 5-form catalog
   const select=page.locator('form.editor-pane select').first();
   await expect(select).toBeVisible();
   const options=await select.locator("option").evaluateAll(nodes=>
