@@ -171,8 +171,7 @@ test("temporary source failure preserves the full draft and disables save until 
   fail = false;
   // Reload the page to retry scope sources after a transient network failure.
   // Keep the persisted draft intact until the refreshed options are available.
-  await page.reload();
-  const refreshedForm = page.getByRole("form", { name: "자체검측 작성" });
+  const refreshedForm = await openContractor(page);
   await expectRestored(refreshedForm, original.payload);
   expect((await storedInput(page)).payload).toEqual(original.payload);
 });
