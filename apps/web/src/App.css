@@ -1790,3 +1790,16 @@ strong {
   max-width: 100%;
   overflow-x: auto;
 }
+
+/* A short-height desktop is still a supported field-work viewport.
+   Collapse nonessential chrome before the scrollable task menu reaches zero height. */
+@media (max-height: 480px) and (min-width: 621px) {
+  .sidebar { padding-top: 8px; padding-bottom: 8px; }
+  .sidebar .brand { margin-bottom: 6px; }
+  .sidebar .workspace-label { display: none; }
+  .sidebar .project-chip { padding: 5px 4px 7px; margin-bottom: 5px; }
+  .sidebar .project-mark { display: none; }
+  .sidebar .project-switch { margin-top: 3px; }
+  .sidebar .side-bottom { display: none; }
+  .sidebar nav { flex: 1 1 auto; min-height: 110px; }
+}

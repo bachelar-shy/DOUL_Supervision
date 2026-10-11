@@ -72,8 +72,7 @@
         "safety",
         "documents",
         "registers",
-        "rfis",
-        "parallel-test"
+        "rfis"
       ],
       "mainTasks": [
         {
@@ -109,8 +108,7 @@
         "completion",
         "owner",
         "documents",
-        "registers",
-        "parallel-test"
+        "registers"
       ],
       "mainTasks": [
         {
@@ -1003,8 +1001,7 @@
           "safety",
           "documents",
           "registers",
-          "rfis",
-          "parallel-test"
+          "rfis"
         ],
         "OWN": [
           "today",
@@ -1016,8 +1013,7 @@
           "completion",
           "owner",
           "documents",
-          "registers",
-          "parallel-test"
+          "registers"
         ],
         "ADM": [
           "today",

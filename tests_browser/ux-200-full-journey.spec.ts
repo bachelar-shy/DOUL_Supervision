@@ -196,18 +196,31 @@ async function documentJourney(page:Page,x:Result,formIds:string[]):Promise<"PAS
     await select.selectOption(formId);
     const source=page.locator('form.editor-pane select').nth(1);
     await expect(source).toBeVisible();
+    const candidates=await source.locator("option").evaluateAll(nodes=>
+      nodes.map(node=>(node as HTMLOptionElement).value).filter(Boolean));
+    if(!candidates.length){
+      x.findings.push(formId+" 해당 양식의 유효한 원본자료 없음(자동생성 금지)");
+      x.checked.push("필요 원본 후보 확인");
+      return "BLOCKED";
+    }
+    await source.selectOption(candidates[0]);
+    x.checked.push(formId+" 사용자가 원본자료 명시적으로 선택");
     const draftInput=page.locator('form.editor-pane .document-fields input[type="text"]').first();
     if(await draftInput.count())await draftInput.fill("UX200-"+x.id+" 검증값 "+randomUUID().slice(0,6));
     const response=page.waitForResponse(r=>
-      r.request().method()==="POST" && /documents/.test(r.url()),{timeout:15000});
+      r.request().method()==="POST" && r.url().includes("/forms/"+formId+"/render"),{timeout:15000});
     await page.locator('form.editor-pane button[type="submit"]').click();
     const saved=await response;
-    expect(saved.status(),await saved.text()).toBeLessThan(300);
+    const savedBody=await saved.text();
+    expect(saved.status(),formId+" response: "+savedBody.slice(0,400)).toBe(200);
+    const rendered=JSON.parse(savedBody) as { id:string; formId:string; renderHash:string; status:string };
+    expect(rendered.formId).toBe(formId);
+    expect(rendered.id).toBeTruthy();
+    expect(rendered.renderHash).toBeTruthy();
     await expect(page.locator("iframe[title]")).toBeVisible({timeout:15000});
     await expect(page.locator(".snapshot-note")).toBeVisible({timeout:15000});
     x.checked.push(formId+" 초안 서버 저장·HTML 미리보기");
-    const text=(await page.locator(".snapshot-note").innerText()).trim();
-    x.evidenceIds.push(text.slice(0,100));
+    x.evidenceIds.push(rendered.id+"#"+rendered.renderHash);
   }
   return "PASS";
 }
@@ -223,7 +236,10 @@ async function menuJourney(page:Page,c:Scenario,x:Result):Promise<Outcome>{
     await last.click();
     await expect(last).toHaveAttribute("aria-current","page");
     x.checked.push("340px 높이 마지막 메뉴 스크롤·클릭·현재상태 확인");
-    return "PASS";
+    if(id!=="MC-09")x.findings.push(id==="MC-10"?
+      "긴 프로젝트명·실제 프로젝트 선택 조건 별도 검증 필요":
+      "200% 브라우저 확대 조건 별도 검증 필요");
+    return id==="MC-09"?"PASS":"PARTIAL";
   }
   if(id==="MC-17"){
     await page.evaluate(()=>{location.hash="#/admin";});
@@ -296,15 +312,17 @@ async function menuJourney(page:Page,c:Scenario,x:Result):Promise<Outcome>{
   }
   await moveTo(page,x.route);await moveTo(page,"today");
   x.checked.push("목적 메뉴 이동·복귀");
-  return "PASS";
+  if(["MC-01","MC-06"].includes(id))return "PASS";
+  x.findings.push("이동만 검증: 시나리오 고유의 접근성·사용자 발견/표시 요건은 미검증");
+  return "PARTIAL";
 }
 async function routeAndCheck(page:Page,x:Result){
   await moveTo(page,x.route);
   x.checked.push("역할별 실제 업무 화면 도달");
 }
 function classifyStatic(c:Scenario,x:Result):Outcome|null {
-  if(["UC-SUP-19","UC-SUP-20"].includes(c.id) && c.row.domain==="safety"){
-    x.findings.push("업무 분류 오류: 준공검사·인수 준비가 safety로 기록되어 있음. completion으로 수정 필요");
+  if(["UC-SUP-19","UC-SUP-20"].includes(c.id) && c.row.domain!=="completion"){
+    x.findings.push("준공검사·인수 업무 분류가 completion이 아님");
     return "INVALID";
   }
   if(c.id==="DT-ALL-04")x.findings.push("200행 표·다국어 인쇄는 일반 사용성보다 스트레스/성능 시험으로 분리 권고");
@@ -342,7 +360,10 @@ test.describe("UX 200 field journeys: run, verify, and isolate blockers",()=>{
           await routeAndCheck(page,x);
           if(liveInspectionIds.has(c.id)){
             await step(x,"시공사 신청→감리 접수→검측→판정→근거 재조회",()=>inspectionJourney(request,x));
-            x.outcome="PASS";
+            x.outcome=["UC-SUP-01","FC-INS-05"].includes(c.id)?"PARTIAL":"PASS";
+            if(x.outcome==="PARTIAL")x.findings.push(c.id==="FC-INS-05"?
+              "동시 판정·중복제출에 대한 독립 재시도 검증이 추가로 필요":
+              "최신 승인도면 개정 대조 및 서명 인수조건이 별도 검증 필요");
           }else if(c.domain==="document"){
             const id=c.id;
             if(id==="DT-ALL-02"){
@@ -363,16 +384,16 @@ test.describe("UX 200 field journeys: run, verify, and isolate blockers",()=>{
               x.outcome="BLOCKED";
             }else{
               x.outcome=await documentJourney(page,x,c.row.formIds);
-              if(x.outcome==="PASS" && /DT-(OWN|ALL)-0[368]/.test(id)){
-                x.findings.push("초안 생성 확인만 수행: 서명·발주처 수령·법정 출력은 별도 검증 필요");
+              if(x.outcome==="PASS"){
+                x.findings.push("초안 생성·원본 선택은 검증했으나 시나리오별 공식 발행·서명·회신·출력 및 실패처리 전체는 미완료");
                 x.outcome="PARTIAL";
               }
             }
           }else if(c.domain==="feature" && liveDocumentFeatureIds.has(c.id)){
             x.outcome=await documentJourney(page,x,["FM-19"]);
-            if(x.outcome==="PASS" && c.id!=="FC-DOC-05"){
+            if(x.outcome==="PASS"){
               x.outcome="PARTIAL";
-              x.findings.push("문서 생성 확인만 완료. 이 시나리오의 다른 경계/이력 요구까지는 검증되지 않음");
+              x.findings.push("문서 원본 선택·HTML 생성은 확인했으나 해당 시나리오의 후속 승인/내보내기/버전 검증까지 종료되지 않음");
             }
           }else if(c.domain==="feature" && automatedNavIds.has(c.id)){
             if(c.id==="FC-NAV-02"){
@@ -389,7 +410,8 @@ test.describe("UX 200 field journeys: run, verify, and isolate blockers",()=>{
               await moveTo(page,"drawings");await moveTo(page,"today");
               x.checked.push("업무 이동·복귀 상태 유지");
             }
-            x.outcome="PASS";
+            x.outcome=c.id==="FC-NAV-02"?"PASS":"PARTIAL";
+            if(x.outcome==="PARTIAL")x.findings.push("전체 역할·타 프로젝트 접근권한까지는 현재 테스트로 확인되지 않음");
           }else if(c.domain==="feature" && c.row.featureGroup==="DWG"){
             const tabs=page.getByRole("tab");
             await expect(tabs.first()).toBeVisible();
@@ -466,5 +488,11 @@ test.describe("UX 200 field journeys: run, verify, and isolate blockers",()=>{
     ];
     writeFileSync(".local/ux200-full-results.md",lines.join("\n")+"\n");
     console.log("UX200_SUMMARY "+JSON.stringify({attempted:attempts.length,counts,byDomain,human:"PENDING"}));
+    if(attempts.length!==200||counts.FAIL>0||counts.INVALID>0) {
+      throw new Error("UX200 acceptance blocked: "+JSON.stringify({
+        attempted:attempts.length,failed:counts.FAIL,invalid:counts.INVALID,
+        incomplete:counts.PARTIAL+counts.BLOCKED
+      })+"; see preserved JSON/CSV report");
+    }
   });
 });
