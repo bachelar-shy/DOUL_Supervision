@@ -7,6 +7,7 @@ on:
       - "apps/web/src/pages/CapturePage.tsx"
       - "packages/localization/src/index.ts"
       - "tests_browser_launch/capture-batch.spec.ts"
+      - "tests_browser/capture-batch-connected.spec.ts"
 permissions:
   contents: read
 jobs:
@@ -18,6 +19,9 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24.19.0'
@@ -26,9 +30,15 @@ jobs:
         run: |
           npm install -g npm@12.2.0
           npm ci
+          python -m venv .venv
+          .venv/bin/pip install -r services/api/requirements.lock
           npm run check:ui-boundary
           npm run web:build
       - name: Verify batch selection and persisted originals
         run: |
           npx playwright install --with-deps chromium
           npx playwright test -c playwright.field-core.config.ts capture-batch.spec.ts
+      - name: Verify two-file upload against authorized test API
+        env:
+          DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
+        run: npx playwright test -c playwright.config.ts capture-batch-connected.spec.ts
