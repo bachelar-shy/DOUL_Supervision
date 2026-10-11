@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Workspace } from "../data/ui-contract";
 import { ApiError, type SupervisionClient } from "../data/supervision-client";
@@ -71,6 +71,7 @@ export function CapturePage({
   const [pending, setPending] = useState<LocalCapture[]>([]);
   const [progress, setProgress] = useState("");
   const [batchBusy, setBatchBusy] = useState(false);
+  const uploadingRef = useRef(false);
   const [error, setError] = useState("");
   const [selectedEvidenceId, setSelectedEvidenceId] = useState<string | null>(null);
 
@@ -176,7 +177,8 @@ export function CapturePage({
   }
 
   async function send(p: LocalCapture) {
-    if (progress || !online) return;
+    if (uploadingRef.current || !online) return;
+    uploadingRef.current = true;
     setError("");
     setProgress(t("capture.progress.start"));
     try {
@@ -187,12 +189,14 @@ export function CapturePage({
     } catch (e) {
       setError(e instanceof ApiError ? reasonLabel(e.detail.code) : reasonLabel());
     } finally {
+      uploadingRef.current = false;
       setProgress("");
     }
   }
 
   async function sendAll() {
-    if (progress || !online || !pending.length) return;
+    if (uploadingRef.current || !online || !pending.length) return;
+    uploadingRef.current = true;
     setError("");
     let completed = 0;
     setProgress(t("capture.batch.sending", { current: 1, total: pending.length }));
@@ -212,6 +216,7 @@ export function CapturePage({
     } finally {
       await load().catch(() => undefined);
       if (completed) await refresh().catch(() => undefined);
+      uploadingRef.current = false;
       setProgress("");
     }
   }
