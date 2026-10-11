@@ -1,0 +1,40 @@
+/* Field legibility baseline for small tablets and phones.
+ * These values override old 8-10px labels without modifying semantic status.
+ * Large desktop density is unchanged. */
+@media (max-width: 1023px) {
+  .record-summary > div > small,
+  .record-summary > span,
+  .record-row .muted,
+  .detail-head .eyebrow,
+  .meta-grid small,
+  .gate-grid small,
+  .floorplan small,
+  .notice,
+  .notice p,
+  .priority p,
+  .capture-drop p {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #475569;
+  }
+  .record-summary > strong { font-size: 14px; line-height: 1.4; color:#1f2937; }
+  .badge { font-size: 12px; color: #334155; }
+  .badge.danger { color:#78350f; }
+  .badge.positive { color:#14532d; }
+  .gate-grid b { font-size: 12px; color:#1f2937; }
+  .modal label,.editor-pane label { font-size: 14px; color:#334155; }
+  .modal input,.modal textarea,.modal select,.editor-pane input,.editor-pane textarea,.editor-pane select {
+    font-size: 16px; color:#1f2937; min-height:44px;
+  }
+  .primary,.secondary { font-size: 14px; min-height: 44px; }
+  .record-row { min-height: 56px; }
+}
+@media (max-width: 767px) {
+  .bottom-nav button { font-size: 12px; color:#475569; }
+  .bottom-nav button.active { color:#17365d; }
+  .meta-grid b { font-size: 13px; line-height:1.5; }
+  .record-summary > div { flex-wrap:wrap; gap:6px; }
+  .detail-pane .detail-title { line-height: 1.4; }
+  .command-grid { gap:10px; }
+  .notice { overflow-wrap:anywhere; }
+}

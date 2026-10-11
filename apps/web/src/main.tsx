@@ -8,6 +8,7 @@ import "./index.css";
 import App from "./App.tsx";
 import "./design-system.css";
 import "./ui/resizable-workspace.css";
+import "./site-mobile-readability.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
