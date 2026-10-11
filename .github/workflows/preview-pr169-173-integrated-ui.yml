@@ -1,0 +1,148 @@
+name: preview-pr169-173-integrated-ui
+
+on:
+  push:
+    branches:
+      - preview/pr169-173-field-ui-20261011
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-static-demo:
+    name: Build synthetic UI preview
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          cache: npm
+      - name: Install and verify
+        run: |
+          npm install -g npm@12.2.0
+          npm ci
+          npm run check:ui-boundary
+      - name: Build public synthetic-data demonstration
+        env:
+          VITE_SUPERVISION_ADAPTER: mock
+          VITE_DOUL_UI_SCOPE: full
+        run: npm run build --workspace apps/web -- --base /DOUL_Supervision/
+      - name: Create demonstration disclaimer
+        run: |
+          cat > apps/web/dist/DEMO-NOTICE.txt <<'EOF'
+          DOUL Supervision PR #169-173 integrated UI demonstration.
+          Synthetic UI-MOCK data only. No authenticated API, photo upload,
+          real project documents, official issuance or real user accounts.
+          No branch has been merged into main for this preview.
+          EOF
+      - name: Upload downloadable test application
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: doul-pr169-173-static-ui-preview
+          path: apps/web/dist/
+          retention-days: 14
+
+  ui-browser-showcase:
+    name: Verify UI and capture 1440px/390px screenshots
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          cache: npm
+      - run: |
+          npm install -g npm@12.2.0
+          npm ci
+          npx playwright install --with-deps chromium
+          mkdir -p preview/screenshots
+      - name: Verify original PR workflows in combined source tree
+        run: |
+          npx playwright test -c playwright.field-core.config.ts \
+            pr169-173-integrated-showcase.spec.ts \
+            document-authoring-ux.spec.ts \
+            document-session-draft.spec.ts \
+            field-session-draft-mobile.spec.ts \
+            capture-batch.spec.ts
+      - name: Upload screenshots and traces
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: doul-pr169-173-ui-screenshots
+          path: |
+            preview/screenshots/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  connected-browser:
+    name: Verify authorized API workflows on synthetic test server
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.19.0"
+          cache: npm
+      - name: Install
+        run: |
+          npm install -g npm@12.2.0
+          npm ci
+          python -m venv .venv
+          .venv/bin/pip install -r services/api/requirements.lock
+          npx playwright install --with-deps chromium
+      - name: Test document, command and actual evidence upload APIs
+        env:
+          DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
+        run: |
+          npx playwright test -c playwright.config.ts \
+            document-authoring-connected.spec.ts \
+            command-dialog-accessibility.spec.ts \
+            quality-closed-loop.spec.ts \
+            capture-batch-connected.spec.ts
+      - name: Upload browser traces on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: doul-pr169-173-connected-failures
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  publish-demo-pages:
+    name: Publish synthetic static demo if Pages is available
+    runs-on: ubuntu-24.04
+    needs: [build-static-demo, ui-browser-showcase]
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download verified static build
+        uses: actions/download-artifact@v4
+        with:
+          name: doul-pr169-173-static-ui-preview
+          path: ./_site
+      - name: Configure public Pages deployment
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Upload GitHub Pages source
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
