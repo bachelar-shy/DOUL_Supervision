@@ -28,7 +28,7 @@ jobs:
       - name: Build public synthetic-data demonstration
         env:
           VITE_SUPERVISION_ADAPTER: mock
-          VITE_DOUL_UI_SCOPE: full
+          VITE_DOUL_UI_SCOPE: field-core
         run: npm run build --workspace apps/web -- --base ./
       - name: Create demonstration disclaimer
         run: |
@@ -67,7 +67,8 @@ jobs:
             document-authoring-ux.spec.ts \
             document-session-draft.spec.ts \
             field-session-draft-mobile.spec.ts \
-            capture-batch.spec.ts
+            capture-batch.spec.ts \
+            quiet-graphite-design.spec.ts
       - name: Upload screenshots and traces
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
