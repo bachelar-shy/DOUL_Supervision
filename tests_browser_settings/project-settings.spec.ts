@@ -28,7 +28,8 @@ test("real project save persists after a new password session",async({page})=>{
 test("four field roles and account choices show names without internal identifiers",async({page})=>{
   await login(page); await settings(page);
   await page.getByRole("tab",{name:"참여회사·담당자",exact:true}).click();
-  const role=panel(page,"참여회사·담당자").getByLabel("역할",{exact:true});
+  const role=panel(page,"참여회사·담당자").getByRole("combobox",{name:"역할",exact:true});
+  await expect(role).toBeVisible();
   expect(await role.locator("option").allTextContents()).toEqual(["관리자","감리자","발주처","시공사"]);
   await page.getByRole("tab",{name:"로그인계정",exact:true}).click();
   const options=await panel(page,"로그인계정").getByLabel("담당자·역할").locator("option").allTextContents();
@@ -40,10 +41,10 @@ test("four field roles and account choices show names without internal identifie
 test("company and participant are saved through the API and become an account choice",async({page})=>{
   await login(page);await settings(page);await page.getByRole("tab",{name:"참여회사·담당자",exact:true}).click();
   const tab=panel(page,"참여회사·담당자");const company=unique(); const person=unique();
-  await tab.getByLabel("회사명",{exact:true}).fill(company);await tab.getByLabel("회사 구분",{exact:true}).selectOption("CON");
+  await tab.getByLabel("회사명",{exact:true}).fill(company);await tab.getByRole("combobox",{name:"회사 구분",exact:true}).selectOption("CON");
   await tab.getByRole("button",{name:"참여회사 등록",exact:true}).click();
   await expect(tab.getByText(company,{exact:false})).toBeVisible();
-  await tab.getByLabel("역할",{exact:true}).selectOption("CON");await tab.getByLabel("소속 회사",{exact:true}).selectOption({label:company});
+  await tab.getByRole("combobox",{name:"역할",exact:true}).selectOption("CON");await tab.getByRole("combobox",{name:"소속 회사",exact:true}).selectOption({label:company});
   await tab.getByLabel("담당자 이름",{exact:true}).fill(person);await tab.getByRole("button",{name:"담당자 등록",exact:true}).click();
   await page.getByRole("tab",{name:"로그인계정",exact:true}).click();
   await expect(panel(page,"로그인계정").getByLabel("담당자·역할").locator("option").filter({hasText:person})).toHaveCount(1);
@@ -57,12 +58,29 @@ test("conflict keeps entered text and offline blocks saving",async({page,context
   const admin=await context.request.post("/api/auth/login",{headers:{Origin:"https://127.0.0.1:5210"},data:{username:"operator",password:"Synthetic-Password-12"}});
   const session=await admin.json();const headers={Origin:"https://127.0.0.1:5210",Authorization:"Bearer "+session.accessToken};
   const response=await context.request.get(`/api/projects/${session.projectId}/settings`,{headers});const data=await response.json();
-  const updated=await context.request.post(`/api/projects/${session.projectId}/settings/commands/update_project`,{headers:{...headers,"Idempotency-Key":unique()},data:{expectedVersion:data.project.version,name:original,country:data.project.country,timezone:data.project.timezone,classification:data.project.classification??""}});
+  const updated=await context.request.post(`/api/projects/${session.projectId}/settings/commands/update_project`,{headers:{...headers,"Idempotency-Key":crypto.randomUUID()},data:{expectedVersion:data.project.version,name:original,country:data.project.country,timezone:data.project.timezone,classification:data.project.classification??""}});
   expect(updated.status()).toBe(200);const draft=await input.inputValue();
   await panel(page,"기본정보").getByRole("button",{name:"기본정보 저장",exact:true}).click();
   await expect(page.getByRole("alert").filter({hasText:"입력은 유지했습니다"})).toBeVisible();await expect(input).toHaveValue(draft);
   await context.setOffline(true);await expect(panel(page,"기본정보").getByRole("button",{name:"기본정보 저장",exact:true})).toBeDisabled();
   await context.setOffline(false);await page.getByRole("button",{name:"다시 불러오기",exact:true}).click();await expect(input).toHaveValue(original);
+});
+
+test("registered account authenticates as the assigned supervisor and cannot administer the project",async({page,context})=>{
+  await login(page);await settings(page);await page.getByRole("tab",{name:"로그인계정",exact:true}).click();
+  const tab=panel(page,"로그인계정");const username="sup"+Date.now();
+  await tab.getByRole("combobox",{name:"담당자·역할",exact:true}).selectOption({label:"감리자 · 가상 감리책임자 · 기존 감리 회사"});
+  await tab.getByLabel("로그인 아이디",{exact:true}).fill(username);
+  await tab.getByLabel("초기 비밀번호",{exact:true}).fill("Synthetic-Password-34");
+  await tab.getByRole("button",{name:"계정 생성",exact:true}).click();
+  await expect(page.getByRole("status").filter({hasText:"로그인 계정을 등록했습니다"})).toBeVisible();
+  await expect(tab.getByLabel("초기 비밀번호",{exact:true})).toHaveValue("");
+  await page.getByRole("button",{name:"로그아웃",exact:true}).click();await login(page,username,"Synthetic-Password-34");
+  await expect(page.locator("aside.sidebar").getByText("프로젝트 설정",{exact:true})).toHaveCount(0);
+  const auth=await context.request.post("/api/auth/login",{headers:{Origin:"https://127.0.0.1:5210"},data:{username,password:"Synthetic-Password-34"}});
+  const session=await auth.json();expect(session.actor.actorGroup).toBe("SUP");
+  const denied=await context.request.get(`/api/projects/${session.projectId}/settings`,{headers:{Authorization:"Bearer "+session.accessToken}});
+  expect(denied.status()).toBe(403);
 });
 
 test("approved test project switches real sessions and shows synthetic data and PDF",async({page})=>{
@@ -73,5 +91,6 @@ test("approved test project switches real sessions and shows synthetic data and 
   await expect(page.getByText("합성 테스트 자료 · 실제 현장 증빙 아님",{exact:true})).toBeVisible();
   await settings(page);await expect(panel(page,"기본정보").getByLabel("프로젝트명",{exact:true})).toHaveValue("DOUL 테스트 프로젝트 · 합성자료");
   await page.goto("/#/drawings");await expect(page.locator("[data-ui-template=drawing] select").first()).toContainText("SYNTHETIC-A201.pdf");
+  await page.getByRole("combobox",{name:"PDF 원본 선택",exact:true}).selectOption({label:"증빙 · SYNTHETIC-A201.pdf"});
   await expect(page.locator("[data-ui-template=drawing] canvas").first()).toBeVisible();
 });
