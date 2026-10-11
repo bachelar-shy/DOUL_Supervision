@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {
   CommandDescriptor,
@@ -41,6 +41,7 @@ import {
   type AppLanguage,
 } from "../i18n/config";
 import { formatLongDate } from "../i18n/format";
+import { quietGraphiteLanguage, quietGraphiteNavigationCopy } from "../design/quiet-graphite-copy";
 
 // Production UI defaults to the agreed five field workflows; development keeps
 // full module coverage. Operators can explicitly override with VITE_DOUL_UI_SCOPE.
@@ -82,10 +83,19 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
   const [toast, setToast] = useState("");
   const [online, setOnline] = useState(navigator.onLine);
   const [menu, setMenu] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return window.localStorage.getItem("doul.ui.sidebar.collapsed.v1") === "true"; }
+    catch { return false; }
+  });
+  const navigationCopy = quietGraphiteNavigationCopy[quietGraphiteLanguage(i18n.resolvedLanguage ?? i18n.language)];
   const [dialog, setDialog] = useState<{
     item: WorkItem;
     action: CommandDescriptor;
   } | null>(null);
+  useEffect(() => {
+    try { window.localStorage.setItem("doul.ui.sidebar.collapsed.v1", String(sidebarCollapsed)); }
+    catch { /* The optional navigation preference does not block work. */ }
+  }, [sidebarCollapsed]);
   const sequence = useRef(0);
   const refreshSequence = useRef(0);
   const activeRole = useRef(role);
@@ -272,15 +282,24 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     }
   }
   return (
-    <div className="app-shell">
-      <aside id="side-navigation" className={"sidebar " + (menu ? "open" : "")}>
+    <div className={"app-shell" + (sidebarCollapsed ? " sidebar-collapsed" : "")} data-design-system="quiet-graphite-a">
+      <aside id="side-navigation" className={"sidebar " + (menu ? "open" : "")} data-navigation-collapsed={String(sidebarCollapsed)}>
         <button type="button" className="sidebar-close" aria-label={t("app.menuClose")}
           onClick={() => setMenu(false)}>×</button>
-        <div className="brand">
-          <b>
-            DOUL<span> / </span>
-          </b>
-          <small>SUPERVISION</small>
+        <div className="sidebar-identity">
+          <div className="brand">
+            <b>
+              DOUL<span> / </span>
+            </b>
+            <small>SUPERVISION</small>
+          </div>
+          <button type="button" className="sidebar-collapse-toggle"
+            aria-label={sidebarCollapsed ? navigationCopy.expand : navigationCopy.collapse}
+            title={sidebarCollapsed ? navigationCopy.expand : navigationCopy.collapse}
+            aria-pressed={sidebarCollapsed}
+            onClick={() => setSidebarCollapsed((current) => !current)}>
+            {sidebarCollapsed ? <PanelLeftOpen size={17} aria-hidden="true" /> : <PanelLeftClose size={17} aria-hidden="true" />}
+          </button>
         </div>
         <div className="workspace-label">{t("app.workspace")}</div>
         <div className="project-chip">

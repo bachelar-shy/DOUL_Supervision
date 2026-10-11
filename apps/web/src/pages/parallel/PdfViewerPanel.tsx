@@ -749,7 +749,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup, r
     }
   }
 
-  return <section aria-label={tx("panel")} className="pdf-viewer-panel">
+  return <section aria-label={tx("panel")} className="pdf-viewer-panel template template-drawing" data-ui-template="drawing">
     <header className="pdf-viewer-header">
       <div><h2>{tx("title")}</h2><p>{tx("description")}</p>{readOnly && <p className="text-sm text-slate-500">{tx("officialWarning")}</p>}</div>
       {!readOnly && <label className="pdf-upload-button">{tx("upload")}<input data-testid="pdf-upload" type="file" accept="application/pdf,.pdf" disabled={uploading} onChange={(event) => { void chooseFile(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} /></label>}
