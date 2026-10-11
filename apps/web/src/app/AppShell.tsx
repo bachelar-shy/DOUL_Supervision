@@ -29,7 +29,6 @@ import {
   WorkbenchPage,
 } from "../pages";
 import { Icon } from "../pages/shared";
-import { DrawingReviewPage } from "../pages/DrawingReviewPage";
 import { OfflineCommandIntentPanel } from "../pages/OfflineCommandIntentPanel";
 import { offlineIntentTitle } from "../data/offline-command-labels";
 import { fieldCoreRouteFor, fieldCoreRoutes, machineForRoute, mobileRoutes, roleRoutes, routes, type CorrectionSection } from "./routes";
@@ -595,7 +594,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               {safeRoute === "drawings" && fieldCoreMode && (
                 <div data-ui-page="field-drawings">
                   <Suspense fallback={<div className="loading-panel">{t("app.loading.workspace")}</div>}>
-                    <DrawingReviewPage client={client} workspace={workspace} onNavigate={nav} onChanged={() => void refresh()} />
+                    <DrawingReviewPage client={client} workspace={workspace} onNavigate={nav} onChanged={refresh} onSelect={setSelected} onOpenCommand={(item, action) => setDialog({ item, action })} />
                   </Suspense>
                 </div>
               )}
