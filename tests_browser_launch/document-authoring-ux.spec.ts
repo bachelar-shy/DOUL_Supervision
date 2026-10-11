@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { serializeDocumentTables } from "../apps/web/src/pages/DocumentTableEditor";
+import { buildDocumentData, serializeDocumentTables } from "../apps/web/src/pages/DocumentTableEditor";
 
 test("form sources are scoped to the chosen form and reset on change", async ({ page }) => {
   await page.goto("/#/owner");
@@ -38,7 +38,7 @@ test("editable review-table fields are visible and retain entered values", async
 });
 
 test("serialization preserves edited table values and complete columns", () => {
-  const schema = { scalar_fields: {}, signature_roles: [], tables: [
+  const schema = { scalar_fields: { "review.conclusion": { type: "string", required: true } }, signature_roles: [], tables: [
     { path: "review", type: "review_table", columns: ["design", "quality"] },
     { path: "items", type: "repeat_table", columns: ["title", "note"] },
   ] };
@@ -47,6 +47,13 @@ test("serialization preserves edited table values and complete columns", () => {
     items: [{ title: "시험성적서", note: "첨부 2건" }],
   })).toEqual({
     review: { design: "검토 완료", quality: "보완 필요" },
+    items: [{ title: "시험성적서", note: "첨부 2건" }],
+  });
+  expect(buildDocumentData(schema, { "review.conclusion": "검토 보류" }, {
+    review: { design: "검토 완료", quality: "보완 필요" },
+    items: [{ title: "시험성적서", note: "첨부 2건" }],
+  })).toEqual({
+    review: { conclusion: "검토 보류", design: "검토 완료", quality: "보완 필요" },
     items: [{ title: "시험성적서", note: "첨부 2건" }],
   });
 });
