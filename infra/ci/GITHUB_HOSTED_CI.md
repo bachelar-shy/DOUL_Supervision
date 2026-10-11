@@ -1,26 +1,25 @@
-# DOUL Supervision — CI execution policy
+# DOUL Supervision - GitHub-hosted CI policy
 
-This filename is retained for existing references. The current execution target
-is the user's dedicated Mac mini, following the instruction to run Actions there
-while GitHub-hosted billing prevents jobs from starting.
+## Official execution target
 
-All fifteen workflows select `[self-hosted, Linux, ARM64, doul-macmini]`.
-`ci-runner-policy` rejects other runner labels and missing required workflows.
-Existing job names, locked dependencies, SHA-pinned actions and verification
-steps remain required. See [Mac mini runner operations](macmini-runner.md) for
-the dedicated Colima VM, persistent runner and restart procedure.
+All 15 GitHub Actions workflows select `ubuntu-24.04` (ephemeral hosted Linux x64). No pull-request workflow may execute on the Mac mini or another self-hosted machine. This repository is public, so PR code must not execute in a persistent private runner.
 
-`prepare_github_runner.sh` preserves SDKs and Docker caches on this persistent
-runner. Compose jobs continue to remove their own temporary volumes in their
-existing `always()` teardown steps. Maintenance must use `colima-doul-ci` and
-must preserve native development worktrees, demo services and other Docker
-contexts. Workflow permissions remain `contents: read`; pilot/staging secrets
-must not be exposed to pull-request jobs.
+`infra/ci/verify_github_runner_workflows.py` checks every workflow `runs-on`. The policy check itself runs on hosted infrastructure.
 
-Before merging, verify affected checks at the current PR commit and confirm the
-job runner is `doul-macmini-m4-linux`. A queued job, online listener, local syntax
-check or PARTIAL/BLOCKED scenario is not proof that an integration check or a
-field acceptance scenario passed. Preserve failed test evidence and complete
-the required browser, API and Docker/PostgreSQL checks.
+## Disk and isolation
 
-CI results do not certify production deployment or real-site acceptance.
+`prepare_github_runner.sh` refuses self-hosted runners. On ephemeral GitHub jobs only, it removes unused Android/.NET/PowerShell/Haskell toolchains, preserves Python/Node caches, and checks at least 10 GiB free before heavy jobs. Standard GitHub runner capacity is platform-controlled: **this change does not allocate 50 GiB**. Any larger runner needs explicit procurement and billing approval.
+
+Playwright, Docker/Compose and PostgreSQL tests run in isolated jobs. Keep SHA-pinned actions, package lockfiles and `contents: read` minimum permissions. Never share deployment keys, pilot data, or customer documents with public PR tests.
+
+## Merge and acceptance gates
+
+1. Confirm all affected GitHub workflow jobs at the **current PR head**, including mobile sample, contracts and 200-case UX suite.
+2. Confirm runner type is GitHub-hosted ubuntu-24.04; a queued CI is not a pass.
+3. Preserve 200-case PASS, PARTIAL, BLOCKED, INVALID and FAIL counts. PARTIAL/BLOCKED are not field acceptance.
+4. Verify 390/768/1440px and ko/vi/en navigation, and actual role-authorized persistence/retrieval of the five release workflows.
+5. Do not merge draft or chained PRs without conflict resolution and explicit acceptance.
+
+## Historical Mac mini runner
+
+See `infra/ci/macmini-runner.md` for historical documentation only. This commit does **not** stop, delete, prune, or modify an existing Mac mini VM, runner or unrelated worktree.
