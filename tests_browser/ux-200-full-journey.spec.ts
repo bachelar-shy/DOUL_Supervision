@@ -66,6 +66,7 @@ function getRoute(c:Scenario): string {
   if (/기성|물량|지급/.test(str)) return "payment";
   if (/공정|지연|회복/.test(str)) return "schedule";
   if (/시운전|준공|인수|하자/.test(str)) return "completion";
+  if(r.role==="OWN" && /중대안전|중대사항/.test(str)) return "owner";
   if (/작업허가|안전|위험|작업중지/.test(str)) return "safety";
   if (/계약|공기연장|클레임|보증/.test(str)) return "contract";
   if (/보고|발주처|결정/.test(str)) return "owner";
