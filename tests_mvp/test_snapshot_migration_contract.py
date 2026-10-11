@@ -94,6 +94,19 @@ class SnapshotNormalizationPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(SnapshotMigrationError, "Unsupported snapshot format"):
             snapshot_record_versions(x)
 
+    def test_real_demo_snapshot_export_is_preflighted_without_mutation(self):
+        from services.api.store import SQLiteSnapshotAdapter
+        adapter = SQLiteSnapshotAdapter(demo=True)
+        try:
+            state = adapter.export_state()
+            untouched = deepcopy(state)
+            rows = snapshot_record_versions(state)
+            self.assertGreater(len(rows), 0)
+            self.assertEqual(len(rows), len(state["engine"]["_history"]))
+            self.assertEqual(state, untouched)
+        finally:
+            adapter.close()
+
     def test_shadow_schema_is_append_only_and_project_scoped(self):
         root = Path(__file__).resolve().parents[1]
         sql = (root / "infra/db/migrations/002_shadow_record_versions.sql").read_text("utf-8")
