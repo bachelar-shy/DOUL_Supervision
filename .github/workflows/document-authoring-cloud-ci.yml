@@ -52,3 +52,5 @@ jobs:
           npx playwright test -c playwright.field-core.config.ts document-authoring-ux.spec.ts
       - name: Authorized draft and exporter not installed behaviour
         run: npx playwright test -c playwright.config.ts document-authoring-connected.spec.ts
+      - name: Existing versioned document workspace regression
+        run: npx playwright test -c playwright.config.ts workspace.spec.ts --grep "draft document renders from versioned source"

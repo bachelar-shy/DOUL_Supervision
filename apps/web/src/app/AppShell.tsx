@@ -161,6 +161,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     const hash = () => {
       setRoute(location.hash.slice(2) || "today");
       setSelected(null);
+      setDialog(null);
       setMenu(false);
     };
     window.addEventListener("online", net);
@@ -192,6 +193,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     history.pushState(null, "", "#/" + target);
     setRoute(target);
     setSelected(null);
+    setDialog(null);
     setMenu(false);
   };
   const safeRoute = allowed.includes(route) ? route : "today";
