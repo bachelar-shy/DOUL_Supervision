@@ -259,3 +259,40 @@
 .doul-resizable-workspace[data-kind="diagnostic"] .parallel-test-detail pre {
   max-height: none;
 }
+
+
+/* Localized command labels must fit the available detail-pane width.
+   The former intrinsic min-content width could push a Vietnamese payment
+   command past the 768px viewport despite a correctly sized outer pane. */
+.doul-resizable-workspace [data-ui-component="action-gate"],
+.doul-resizable-workspace [data-ui-component="action-gate"] .command-option,
+.doul-resizable-workspace [data-ui-component="action-gate"] .command-option > * {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.doul-resizable-workspace .payment-commands,
+.doul-resizable-workspace .completion-commands {
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+
+/* Each payment/hand-over ActionGate has one command: allocate a full column,
+   rather than squeezing the long localized action into half a narrow pane. */
+.doul-resizable-workspace :is(.payment-commands, .completion-commands)
+[data-ui-component="action-gate"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+
+/* A flex button still needs an explicit wrapping override: shared button
+   styles may request nowrap, causing long English labels to paint outside
+   its grid cell even when the cell itself has min-width: 0. */
+.doul-resizable-workspace [data-ui-component="action-gate"] .command-option button {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  height: auto;
+}
