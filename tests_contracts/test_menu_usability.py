@@ -58,7 +58,7 @@ class MenuUsabilityContractTests(unittest.TestCase):
             self.assertTrue({task["routeId"] for task in detail["mainTasks"]} <= set(visible))
             if role != "ADM":
                 self.assertNotIn("admin", visible)
-            if role in {"SUP", "ADM", "DES"}:
+            if role in {"SUP", "ADM"}:
                 self.assertEqual(detail["visibleRouteIds"][-1], "parallel-test")
             else:
                 self.assertNotIn("parallel-test", detail["visibleRouteIds"])

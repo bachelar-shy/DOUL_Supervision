@@ -184,8 +184,7 @@
         "capture",
         "documents",
         "registers",
-        "rfis",
-        "parallel-test"
+        "rfis"
       ],
       "mainTasks": [
         {
@@ -1041,8 +1040,7 @@
           "capture",
           "documents",
           "registers",
-          "rfis",
-          "parallel-test"
+          "rfis"
         ]
       }
     },

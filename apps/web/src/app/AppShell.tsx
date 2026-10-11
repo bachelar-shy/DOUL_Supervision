@@ -188,11 +188,10 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [menu]);
-  const allowed = fieldCoreMode
-    ? fieldCoreRoutes[role]
-    : workspace?.demo
-      ? Array.from(new Set([...roleRoutes[role], "parallel-test"]))
-      : roleRoutes[role];
+  // Development-only diagnostics belong to the SUP/ADM route definitions.
+  // Never append them to contractor, owner, or designer navigation based on
+  // whether a synthetic project's workspace has finished loading.
+  const allowed = fieldCoreMode ? fieldCoreRoutes[role] : roleRoutes[role];
   const nav = (to: string) => {
     const resolved = fieldCoreMode ? fieldCoreRouteFor(to) : { route: to };
     const target = allowed.includes(resolved.route) ? resolved.route : "today";
