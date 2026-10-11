@@ -52,6 +52,8 @@ test('designer registers an immutable PDF revision and explicitly requests techn
   expect(result.approval.targetRef.objectId).toBe(result.drawing.id); expect(result.binding.drawingRef.objectId).toBe(result.drawing.id);
   expect(writes).toHaveLength(1); await expect(panel.getByText(new RegExp(`등록 완료: ${title}`))).toBeVisible();
   await page.reload();
+  await page.getByLabel('시험 사용자 역할 선택').selectOption('DES');
+  await page.goto('/#/drawings');
   await page.getByRole('tab', { name: '도면 등록·배포', exact: true }).click();
   await expect(page.getByLabel('도면 작성 차수 기록').getByRole('button', {name: new RegExp(title)})).toBeVisible();
 });
