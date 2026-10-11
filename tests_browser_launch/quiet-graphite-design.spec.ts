@@ -21,14 +21,14 @@ test("Quiet Graphite A: 1440px tokens, 208/64 navigation and persisted collapse"
   await page.screenshot({ path: "preview/screenshots/06-quiet-graphite-1440.png", fullPage: true });
 
   await page.getByRole("button", { name: "왼쪽 메뉴 접기" }).click();
-  expect(await metric(page, ".sidebar", "width")).toBe("64px");
-  expect(await metric(page, ".main-shell", "margin-left")).toBe("64px");
+  await expect.poll(() => metric(page, ".sidebar", "width")).toBe("64px");
+  await expect.poll(() => metric(page, ".main-shell", "margin-left")).toBe("64px");
   await expect(page.locator(".sidebar nav button").first()).toHaveAttribute("title", /.+/);
   await page.screenshot({ path: "preview/screenshots/07-quiet-graphite-collapsed.png", fullPage: true });
   await page.reload();
   expect(await metric(page, ".sidebar", "width")).toBe("64px");
   await page.getByRole("button", { name: "왼쪽 메뉴 펼치기" }).click();
-  expect(await metric(page, ".sidebar", "width")).toBe("208px");
+  await expect.poll(() => metric(page, ".sidebar", "width")).toBe("208px");
 });
 
 for (const width of [1024, 768, 390]) {
