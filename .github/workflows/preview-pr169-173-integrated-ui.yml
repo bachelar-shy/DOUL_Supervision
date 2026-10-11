@@ -29,7 +29,7 @@ jobs:
         env:
           VITE_SUPERVISION_ADAPTER: mock
           VITE_DOUL_UI_SCOPE: full
-        run: npm run build --workspace apps/web -- --base /DOUL_Supervision/
+        run: npm run build --workspace apps/web -- --base ./
       - name: Create demonstration disclaimer
         run: |
           cat > apps/web/dist/DEMO-NOTICE.txt <<'EOF'
@@ -117,32 +117,31 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-  publish-demo-pages:
-    name: Publish synthetic static demo if Pages is available
+  publish-preview-branch:
+    name: Publish synthetic UI under a separate test branch
     runs-on: ubuntu-24.04
     needs: [build-static-demo, ui-browser-showcase]
-    timeout-minutes: 12
+    timeout-minutes: 10
     permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      contents: write
     steps:
-      - name: Download verified static build
-        uses: actions/download-artifact@v4
+      - name: Download screenshot-verified compiled demo
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: doul-pr169-173-static-ui-preview
           path: ./_site
-      - name: Configure public Pages deployment
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - name: Upload GitHub Pages source
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./_site
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish only static files (never merge PRs into main)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          cd _site
+          git init --initial-branch=ui-test-pr169-173-20261011
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "chore(preview): isolated synthetic UI build from ${{ github.sha }}"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin HEAD:refs/heads/ui-test-pr169-173-20261011 --force
+          echo "Static preview branch: ui-test-pr169-173-20261011" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Synthetic data only. This is not an authenticated backend." >> "${GITHUB_STEP_SUMMARY}"
