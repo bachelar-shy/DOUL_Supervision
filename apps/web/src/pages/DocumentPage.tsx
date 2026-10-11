@@ -129,7 +129,6 @@ export function DocumentPage({
   return (
     <PageBoundary name="documents">
       <DocumentWorkspaceTemplate>
-      <div style={{ gridColumn: "1 / -1" }}><TranslationPreviewPanel client={client} workspace={workspace} /></div>
       <form className="panel editor-pane" onSubmit={(event) => void preview(event)}>
         <h2>{t("document.editor.title")}</h2>
         <label>
@@ -192,6 +191,8 @@ export function DocumentPage({
         <div className="notice">
           {renderMode === "draft" ? t("document.notice.draft") : copy.finalStatus}
         </div>
+        {/* Keep document authoring and preview as exactly two layout panes. */}
+        <TranslationPreviewPanel client={client} workspace={workspace} />
         <details open>
           <summary>{t("document.section.draftFields")}</summary>
           <div className="document-fields">
