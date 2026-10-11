@@ -13,6 +13,7 @@ import { recordTitle, recordRef } from "./record-utils";
 import { DocumentSigningPanel } from "./DocumentSigningPanel";
 import { DocumentTableEditor, serializeDocumentTables, type DocumentTableValues } from "./DocumentTableEditor";
 import { documentAuthoringForms, eligibleDocumentSources, sourceSelectionForForm } from "./document-authoring-source";
+import "./document-authoring.css";
 
 function putPath(
   target: Record<string, unknown>,
