@@ -8,7 +8,7 @@ import { createInspectionDraft, inspectionSources } from "../data/inspection-aut
 import type { InspectionSources } from "../data/inspection-authoring-client";
 import { reasonLabel } from "../labels";
 import { formatNumber } from "../i18n/format";
-import { useSessionFormDraft } from "../data/session-form-draft";
+import { sessionFormDraftKey, useSessionFormDraft } from "../data/session-form-draft";
 
 type Locale = "en" | "ko" | "vi";
 type LabelKey =
@@ -85,7 +85,14 @@ const emptyInspectionInput = {
   precheck: { drawing: false, material: false, test: false, previous: false, change: false },
 };
 
-export function InspectionAuthoringPanel({ client, workspace, online, onCreated }: { client: SupervisionClient; workspace: Workspace; online: boolean; onCreated: (record: RecordDTO) => Promise<void> }) {
+type InspectionAuthoringProps = { client: SupervisionClient; workspace: Workspace; online: boolean; onCreated: (record: RecordDTO) => Promise<void> };
+
+export function InspectionAuthoringPanel(props: InspectionAuthoringProps) {
+  const identity = { projectId: props.workspace.project.id, partyId: props.client.session?.actor.partyId ?? "anonymous", roleId: props.workspace.role.id };
+  return <InspectionAuthoringForm key={sessionFormDraftKey("inspection", identity)} {...props} />;
+}
+
+function InspectionAuthoringForm({ client, workspace, online, onCreated }: InspectionAuthoringProps) {
   const { i18n } = useTranslation();
   const t = copy[localeFor(i18n.resolvedLanguage ?? i18n.language)];
   const copyRef = useRef(t);
@@ -96,35 +103,55 @@ export function InspectionAuthoringPanel({ client, workspace, online, onCreated 
     emptyInspectionInput,
   );
   const { drawingId, locationId, requirementIds, evidenceIds, workName, selfComplete, hold, precheck } = draft;
+  const draftRef = useRef({ value: draft, change: changeDraft });
+  useEffect(() => { draftRef.current = { value: draft, change: changeDraft }; }, [draft, changeDraft]);
   const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [saved, setSaved] = useState("");
   const attempt = useRef<{ body: string; key: string; objectId: string } | null>(null);
+  const mounted = useRef(false);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => { copyRef.current = t; }, [t]);
   const drawing = sources.drawings.find(d => d.domainRef.objectId === drawingId);
-  const drawingVersion = drawing?.domainRef.version;
   useEffect(() => {
     let ignore = false; setLoading(true); setError("");
-    inspectionSources(client, drawingId && drawingVersion ? { objectType: "InformationItem", objectId: drawingId, version: drawingVersion } : undefined, locationId || undefined).then(value => {
+    async function loadSources() {
+      const catalog = await inspectionSources(client);
+      if (ignore) return;
+      setSources(catalog);
+      if (!drawingId) return;
+      const selectedDrawing = catalog.drawings.find(item => item.domainRef.objectId === drawingId);
+      if (!selectedDrawing) {
+        draftRef.current.change({ drawingId: "", locationId: "", requirementIds: [], evidenceIds: [] });
+        return;
+      }
+      if (!locationId) return;
+      if (!selectedDrawing.locations.some(location => location.id === locationId)) {
+        draftRef.current.change({ locationId: "", requirementIds: [], evidenceIds: [] });
+        return;
+      }
+      // The catalog intentionally has no requirements/evidence. Only a fully
+      // scoped response can establish that a restored selection is unavailable.
+      const value = await inspectionSources(client, selectedDrawing.domainRef, locationId);
       if (ignore) return;
       setSources(value);
-      if (drawingId && !value.drawings.some(d => d.domainRef.objectId === drawingId)) {
-        changeDraft({ drawingId: "", locationId: "", requirementIds: [], evidenceIds: [] });
-      } else {
-        const validRequirements = new Set(value.requirements.map(item => item.domainRef.objectId));
-        const validEvidence = new Set(value.evidence.map(item => item.domainRef.objectId));
-        if (requirementIds.some(id => !validRequirements.has(id)) || evidenceIds.some(id => !validEvidence.has(id))) {
-          changeDraft({
-            requirementIds: requirementIds.filter(id => validRequirements.has(id)),
-            evidenceIds: evidenceIds.filter(id => validEvidence.has(id)),
-          });
-        }
+      const { requirementIds: selectedRequirements, evidenceIds: selectedEvidence } = draftRef.current.value;
+      const validRequirements = new Set(value.requirements.map(item => item.domainRef.objectId));
+      const validEvidence = new Set(value.evidence.map(item => item.domainRef.objectId));
+      if (selectedRequirements.some(id => !validRequirements.has(id)) || selectedEvidence.some(id => !validEvidence.has(id))) {
+        draftRef.current.change({
+          requirementIds: selectedRequirements.filter(id => validRequirements.has(id)),
+          evidenceIds: selectedEvidence.filter(id => validEvidence.has(id)),
+        });
       }
-    }).catch(cause => { if (!ignore) { setError(localizedApiError(cause, copyRef.current.genericError)); setSources(empty);
-        if (drawingId || locationId || requirementIds.length || evidenceIds.length) {
-          changeDraft({ drawingId: "", locationId: "", requirementIds: [], evidenceIds: [] });
-        } } })
+    }
+    void loadSources().catch(cause => { if (!ignore) {
+      setError(localizedApiError(cause, copyRef.current.genericError));
+      // Failed retrieval is not evidence that the saved references are invalid.
+      // Hide unverified sources so they cannot be submitted until a retry succeeds.
+      setSources(empty);
+    } })
       .finally(() => { if (!ignore) setLoading(false); });
     return () => { ignore = true; };
-  }, [client, workspace.items, drawingId, drawingVersion, locationId]);
+  }, [client, workspace.items, drawingId, locationId]);
   const toggle = (id: string, field: "requirementIds" | "evidenceIds") => {
     const ids = draft[field];
     changeDraft({ [field]: ids.includes(id) ? ids.filter(value => value !== id) : [...ids, id] });
@@ -139,9 +166,10 @@ export function InspectionAuthoringPanel({ client, workspace, online, onCreated 
     if (attempt.current?.body !== body) attempt.current = { body, key: crypto.randomUUID(), objectId: crypto.randomUUID() };
     try {
       const result = await createInspectionDraft(client, { ...input, objectId: attempt.current.objectId }, attempt.current.key);
+      if (!mounted.current) return;
       setSaved(`${t.saved} ${result.record.id}`); attempt.current = null; discardDraft();
       await onCreated(result.record);
-    } catch (cause) { setError(localizedApiError(cause, t.genericError)); } finally { setBusy(false); }
+    } catch (cause) { if (mounted.current) setError(localizedApiError(cause, t.genericError)); } finally { if (mounted.current) setBusy(false); }
   }
   return <form aria-label={t.title} className="grid gap-3 p-3" onSubmit={event => { event.preventDefault(); void save(); }}>
     <h3>{t.title}</h3><p>{t.description}</p>
