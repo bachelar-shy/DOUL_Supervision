@@ -12,6 +12,9 @@ import { EvidenceDetailPreview } from "./EvidenceDetailPreview";
 import { evidenceMediaLabel, evidenceSourceLabel } from "./evidence-utils";
 import { MediaAnalysisPanel } from "./MediaAnalysisPanel";
 
+const MAX_BATCH_FILES = 20;
+const MAX_CAPTURE_BYTES = 64 * 1024 * 1024;
+
 interface LocalCapture {
   id: string;
   projectId: string;
@@ -67,6 +70,7 @@ export function CapturePage({
   const { t } = useTranslation();
   const [pending, setPending] = useState<LocalCapture[]>([]);
   const [progress, setProgress] = useState("");
+  const [batchBusy, setBatchBusy] = useState(false);
   const [error, setError] = useState("");
   const [selectedEvidenceId, setSelectedEvidenceId] = useState<string | null>(null);
 
@@ -105,56 +109,109 @@ export function CapturePage({
     };
   }, [client, workspace.project.id]);
 
-  async function intake(file: File) {
-    if (file.size > 64 * 1024 * 1024) { setError(t("capture.error.maxSize")); return; }
+  async function intakeFiles(files: File[]) {
+    if (!files.length || batchBusy) return;
+    if (files.length > MAX_BATCH_FILES) {
+      setError(t("capture.batch.limit", { count: MAX_BATCH_FILES }));
+      return;
+    }
+    setBatchBusy(true);
+    setError("");
+    let saved = 0;
+    let duplicates = 0;
+    let tooLarge = 0;
     try {
-      const bytes = await file.arrayBuffer();
-      const hash = Array.from(
-        new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
-      )
-        .map((x) => x.toString(16).padStart(2, "0"))
-        .join("");
-      await captures("put", {
-        id: crypto.randomUUID(),
-        projectId: workspace.project.id,
-        partyId: client.session!.actor.partyId,
-        name: file.name,
-        mime: file.type,
-        bytes,
-        hash,
-        capturedAt: new Date().toISOString(),
-      });
+      const all = await captures("list");
+      const knownHashes = new Set(all
+        .filter(row => row.projectId === workspace.project.id && row.partyId === client.session!.actor.partyId)
+        .map(row => row.hash));
+      for (const file of files) {
+        if (file.size > MAX_CAPTURE_BYTES) {
+          tooLarge += 1;
+          continue;
+        }
+        const bytes = await file.arrayBuffer();
+        const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)))
+          .map(value => value.toString(16).padStart(2, "0")).join("");
+        if (knownHashes.has(hash)) {
+          duplicates += 1;
+          continue;
+        }
+        await captures("put", {
+          id: crypto.randomUUID(),
+          projectId: workspace.project.id,
+          partyId: client.session!.actor.partyId,
+          name: file.name,
+          mime: file.type,
+          bytes,
+          hash,
+          capturedAt: new Date().toISOString(),
+        });
+        knownHashes.add(hash);
+        saved += 1;
+      }
       await load();
-      notify(t("capture.toast.saved"));
+      if (saved) notify(t("capture.batch.saved", { count: saved }));
+      if (duplicates || tooLarge) setError(t("capture.batch.skipped", { duplicates, tooLarge }));
     } catch (e) {
-      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : reasonLabel());
+      await load().catch(() => undefined);
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : t("capture.batch.storageError"));
+    } finally {
+      setBatchBusy(false);
     }
   }
 
+  async function uploadCapture(p: LocalCapture, onProgress: (offset: number, total: number) => void) {
+    await client.upload(new Uint8Array(p.bytes), {
+      name: p.name,
+      mime: p.mime,
+      hash: p.hash,
+      captureId: p.id,
+      scope: workspace.context.scope,
+      sourcePartyId: client.session!.actor.partyId,
+      capturedAt: p.capturedAt,
+    }, onProgress);
+    // Never delete an offline original until the server confirms this upload.
+    await captures("delete", p.id);
+  }
+
   async function send(p: LocalCapture) {
+    if (progress || !online) return;
     setError("");
     setProgress(t("capture.progress.start"));
     try {
-      await client.upload(
-        new Uint8Array(p.bytes),
-        {
-          name: p.name,
-          mime: p.mime,
-          hash: p.hash,
-          captureId: p.id,
-          scope: workspace.context.scope,
-          sourcePartyId: client.session!.actor.partyId,
-          capturedAt: p.capturedAt,
-        },
-        (o, t) => setProgress(Math.round((o / t) * 100) + "%"),
-      );
-      await captures("delete", p.id);
+      await uploadCapture(p, (offset, total) => setProgress(Math.round((offset / total) * 100) + "%"));
       await load();
       await refresh();
       notify(t("capture.toast.registered"));
     } catch (e) {
       setError(e instanceof ApiError ? reasonLabel(e.detail.code) : reasonLabel());
     } finally {
+      setProgress("");
+    }
+  }
+
+  async function sendAll() {
+    if (progress || !online || !pending.length) return;
+    setError("");
+    let completed = 0;
+    setProgress(t("capture.batch.sending", { current: 1, total: pending.length }));
+    try {
+      // Process sequentially to avoid saturated mobile links. Failed and
+      // unattempted originals remain in IndexedDB for explicit retry.
+      for (const p of pending) {
+        setProgress(t("capture.batch.sending", { current: completed + 1, total: pending.length }));
+        await uploadCapture(p, (offset, total) =>
+          setProgress(t("capture.batch.progress", { current: completed + 1, total: pending.length, percent: Math.round((offset / total) * 100) })));
+        completed += 1;
+      }
+      notify(t("capture.batch.sent", { count: completed }));
+    } catch (e) {
+      setError(t("capture.batch.partial", { completed, total: pending.length }) + " " +
+        (e instanceof ApiError ? reasonLabel(e.detail.code) : reasonLabel()));
+    } finally {
+      await load().catch(() => undefined);
+      if (completed) await refresh().catch(() => undefined);
       setProgress("");
     }
   }
@@ -178,10 +235,12 @@ export function CapturePage({
               <input
                 aria-label={t("capture.intake.fileAria")}
                 type="file"
+                multiple
+                disabled={batchBusy || !!progress}
                 accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,audio/mpeg,audio/wav,application/pdf,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void intake(f);
+                  const files = Array.from(e.target.files ?? []);
+                  if (files.length) void intakeFiles(files);
                   e.target.value = "";
                 }}
               />
@@ -193,15 +252,25 @@ export function CapturePage({
                 type="file"
                 accept="image/*"
                 capture="environment"
+                disabled={batchBusy || !!progress}
                 onChange={(e) => {
                   const f = e.target.files?.[0];
-                  if (f) void intake(f);
+                  if (f) void intakeFiles([f]);
+                  e.target.value = "";
                 }}
               />
             </label>
           </div>
 
-          <h3>{t("capture.pending.heading", { count: pending.length })}</h3>
+          <div className="section-heading">
+            <h3>{t("capture.pending.heading", { count: pending.length })}</h3>
+            <button className="secondary" type="button"
+              disabled={!online || batchBusy || !!progress || !pending.length || client.kind === "mock"}
+              onClick={() => void sendAll()}>
+              {t("capture.batch.sendAll")}
+            </button>
+          </div>
+          {batchBusy && <p role="status">{t("capture.batch.preparing")}</p>}
           {pending.map((p) => (
             <div className="pending-row" key={p.id}>
               <div>
@@ -213,7 +282,7 @@ export function CapturePage({
               </div>
               <button
                 className="secondary"
-                disabled={!online || !!progress}
+                disabled={!online || batchBusy || !!progress || client.kind === "mock"}
                 onClick={() => void send(p)}
               >
                 {t("capture.pending.send")}
