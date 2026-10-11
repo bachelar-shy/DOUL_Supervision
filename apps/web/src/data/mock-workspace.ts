@@ -302,6 +302,12 @@ export function createMockWorkspace(role: HumanRole): Workspace {
       { partyId: "P-DES", name: "설계 담당자", actorGroup: "DES" },
     ],
     formSchemas: {
+      "FM-02": {
+        ...previewForm(["work.discipline", "work.location", "method.no", "method.rev", "review.conclusion"]),
+        tables: [{ path: "review", type: "review_table", columns: ["design", "method", "quality", "safety", "schedule"] }],
+      },
+      "FM-13": previewForm(["car.ncr_no", "car.no", "car.owner", "car.due", "car.root_cause", "car.corrective_action"]),
+      "FM-15": previewForm(["project.name", "rfi.no", "rfi.question", "rfi.response"]),
       "FM-09": previewForm(["inspection.no", "inspection.work_name", "work.discipline", "result.status"]),
       "FM-12": previewForm(["project.name", "ncr.no", "ncr.description", "ncr.immediate_action"]),
       "FM-19": previewForm(["project.name", "weekly.period", "weekly.progress", "weekly.open_decisions"]),

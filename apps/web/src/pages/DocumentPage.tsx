@@ -2,7 +2,7 @@ import { recordVersionLabel } from "../labels";
 import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { documentRenderCopy, documentOutputLanguageLabels, formFieldLabel } from "@doul/localization";
-import type { FormSchema, RecordDTO, Workspace } from "../data/ui-contract";
+import type { RecordDTO, Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
 import { ApiError } from "../data/supervision-client";
 import { reasonLabel } from "../labels";
@@ -11,38 +11,10 @@ import { PageBoundary } from "./PageBoundary";
 import { Icon } from "./shared";
 import { recordTitle, recordRef } from "./record-utils";
 import { DocumentSigningPanel } from "./DocumentSigningPanel";
-
-function putPath(
-  target: Record<string, unknown>,
-  path: string,
-  value: unknown,
-) {
-  const keys = path.split(".");
-  let node = target;
-  for (const k of keys.slice(0, -1)) {
-    if (!node[k] || typeof node[k] !== "object") node[k] = {};
-    node = node[k] as Record<string, unknown>;
-  }
-  node[keys.at(-1)!] = value;
-}
-function formData(schema: FormSchema, values: Record<string, string>) {
-  const data: Record<string, unknown> = {};
-  for (const [f, r] of Object.entries(schema.scalar_fields)) {
-    let v = values[f] || "";
-    if (!v) continue;
-    if (r.type === "date-time") v = new Date(v).toISOString();
-    putPath(data, f, r.type === "boolean" ? v === "true" : v);
-  }
-  for (const t of schema.tables)
-    putPath(
-      data,
-      t.path,
-      ["review_table", "check_table"].includes(t.type)
-        ? Object.fromEntries(t.columns.map((c) => [c, ""]))
-        : [],
-    );
-  return data;
-}
+import { DocumentTableEditor, buildDocumentData, type DocumentTableValues } from "./DocumentTableEditor";
+import { documentAuthoringForms, eligibleDocumentSources, sourceSelectionForForm } from "./document-authoring-source";
+import "./document-authoring.css";
+import { documentAuthoringCopy, documentFormNames } from "./document-authoring-copy";
 
 function documentLocale(language: string) {
   return language.startsWith("ko") ? "ko" : language.startsWith("vi") ? "vi" : "en";
@@ -62,6 +34,9 @@ export function DocumentPage({
   const [form, setForm] = useState("FM-20");
   const [source, setSource] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
+  const [tableValues, setTableValues] = useState<DocumentTableValues>({});
+  const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
+  const [exportError, setExportError] = useState("");
   const [documentLanguage, setDocumentLanguage] = useState<"ko" | "vi" | "en">("ko");
   const [renderMode, setRenderMode] = useState<"draft" | "final">("draft");
   const [html, setHtml] = useState("");
@@ -71,22 +46,16 @@ export function DocumentPage({
   const renderAttempt = useRef<{ fingerprint: string; key: ReturnType<typeof crypto.randomUUID> } | null>(null);
   const schema = workspace.formSchemas[form];
   const copy = documentRenderCopy[documentLocale(i18n.resolvedLanguage ?? i18n.language)];
-  const sources = workspace.items.filter((x) =>
-    ["report", "issue", "inspection"].includes(x.machine),
-  );
+  const sources = eligibleDocumentSources(workspace, form);
+  const language = documentLocale(i18n.resolvedLanguage ?? i18n.language);
+  const availableForms = documentAuthoringForms.filter((id) => Boolean(workspace.formSchemas[id]));
+  const uxCopy = documentAuthoringCopy[language];
+  const sourceDescription = uxCopy.noSource;
   async function preview(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
-    const item =
-      sources.find((x) => x.record.id === source) ||
-      sources.find((x) =>
-        form === "FM-09"
-          ? x.machine === "inspection"
-          : form === "FM-12"
-            ? x.machine === "issue"
-            : x.machine === "report",
-      );
+    const item = sourceSelectionForForm(sources, source);
     if (!item) {
-      setErr(t("document.error.noSource"));
+      setErr(sourceDescription);
       return;
     }
     if (renderMode === "final") {
@@ -100,7 +69,7 @@ export function DocumentPage({
     setErr("");
     try {
       const sourceRefs = [recordRef(item)];
-      const data = formData(schema, values);
+      const data = buildDocumentData(schema, values, tableValues);
       const final = renderMode === "final";
       const fingerprint = JSON.stringify({ form, sourceRefs, data, final, documentLanguage });
       if (renderAttempt.current?.fingerprint !== fingerprint) {
@@ -125,6 +94,28 @@ export function DocumentPage({
       setBusy(false);
     }
   }
+  async function download(format: "pdf" | "docx") {
+    if (!snapshot || client.kind !== "http") return;
+    setExporting(format);
+    setExportError("");
+    try {
+      const blob = await client.documentExport(snapshot.id, format);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = snapshot.formId + "-" + snapshot.id + "." + format;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch (e) {
+      const code = e instanceof Error ? e.message : "";
+      const unavailable = code === "DOCUMENT_EXPORT_NOT_CONFIGURED";
+      setExportError(unavailable ? uxCopy.exportUnavailable : uxCopy.exportFailed);
+    } finally {
+      setExporting(null);
+    }
+  }
   return (
     <PageBoundary name="documents">
       <DocumentWorkspaceTemplate>
@@ -137,14 +128,18 @@ export function DocumentPage({
             value={form}
             onChange={(e) => {
               setForm(e.target.value);
+              setSource("");
               setHtml("");
               setValues({});
+              setTableValues({});
               setSnapshot(null);
+              setErr("");
+              setExportError("");
             }}
           >
-            {(["FM-20", "FM-19", "FM-21", "FM-12", "FM-09"] as const).map((id) => (
+            {availableForms.map((id) => (
               <option key={id} value={id}>
-                {id} · {t("document.form." + id)}
+                {id} · {documentFormNames[id]?.[language] ?? t("document.form." + id)}
               </option>
             ))}
           </select>
@@ -156,13 +151,15 @@ export function DocumentPage({
             onChange={(e) => setSource(e.target.value)}
             aria-label={t("document.source.aria")}
           >
-            <option value="">{t("document.source.auto")}</option>
+            <option value="">{sources.length === 1 ? t("document.source.auto") : t("document.source.label")}</option>
             {sources.map((x) => (
               <option value={x.record.id} key={x.record.id}>
                 {recordTitle(x.record)} · {recordVersionLabel(x.record.version)}
               </option>
             ))}
           </select>
+          {!sources.length && <span className="muted" role="status">{sourceDescription}</span>}
+          {sources.length > 1 && !source && <span className="muted">{uxCopy.chooseSource}</span>}
         </label>
         <label>
           {copy.language}
@@ -224,6 +221,7 @@ export function DocumentPage({
             ))}
           </div>
         </details>
+        {schema.tables.length > 0 && <DocumentTableEditor schema={schema} values={tableValues} onChange={setTableValues} />}
         <button
           type="submit"
           className="primary wide"
@@ -236,16 +234,21 @@ export function DocumentPage({
               : copy.finalButton}
         </button>
         <div className="two-buttons">
-          <button type="button" className="secondary" disabled>
-            {t("document.action.docxPending")}
+          <button type="button" className="secondary" disabled={!snapshot || !!exporting || client.kind !== "http"}
+            onClick={() => void download("docx")}>
+            {exporting === "docx" ? uxCopy.downloading : "DOCX " + uxCopy.download}
           </button>
-          <button type="button" className="secondary" disabled>
-            {t("document.action.pdfPending")}
+          <button type="button" className="secondary" disabled={!snapshot || !!exporting || client.kind !== "http"}
+            onClick={() => void download("pdf")}>
+            {exporting === "pdf" ? uxCopy.downloading : "PDF " + uxCopy.download}
           </button>
         </div>
-        {err && (
+        {snapshot && <p className="muted" style={{ fontSize: 12 }}>
+          {uxCopy.signatureNote}
+        </p>}
+        {(err || exportError) && (
           <div role="alert" className="error-box">
-            {err}
+            {err || exportError}
           </div>
         )}
       </form>
