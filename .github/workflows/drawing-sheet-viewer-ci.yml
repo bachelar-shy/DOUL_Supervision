@@ -12,6 +12,9 @@ on:
       - 'playwright.drawing-sheets.config.ts'
       - 'tests_browser_sheets/**'
       - 'services/api/modules/drawing_sheets.py'
+      - 'services/api/modules/drawing_sheet_annotations.py'
+      - 'apps/web/src/pages/DrawingMarkupCanvas.tsx'
+      - 'tests_mvp/test_drawing_sheet_markups_http.py'
   push:
     branches: [main]
 permissions:
@@ -41,6 +44,8 @@ jobs:
           .venv/bin/pip install -r services/api/requirements.lock
           npm ci
           npx playwright install --with-deps chromium
+      - name: Sheet markup role, persistence and undo/redo API tests
+        run: .venv/bin/python -m unittest tests_mvp.test_drawing_sheet_markups_http -v
       - name: UI lint and build
         env:
           VITE_DOUL_AUTH_MODE: password
