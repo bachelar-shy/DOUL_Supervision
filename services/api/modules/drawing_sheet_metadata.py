@@ -25,10 +25,11 @@ def extract_sheet_candidate(page: int, extracted_text: str) -> SheetCandidate:
     title = None
     if anchor >= 0:
         candidates = []
-        for line in lines[anchor + 1:anchor + 6]:
+        for line in lines[anchor + 1:anchor + 7]:
             if any(stop in line for stop in ("Rev No", "Drawing Number", "SỐ HIỆU BẢN VẼ", "LẦN SỬA")):
                 break
-            if line and len(line) <= 110:
+            # Reject drawing references and isolated dimensions mixed into the titleblock.
+            if line and len(line) <= 95 and len(line) >= 4 and not re.match(r"^[0-9+./% -]+$", line):
                 candidates.append(line)
         if candidates:
             title = " ".join(candidates[:2])[:220]
