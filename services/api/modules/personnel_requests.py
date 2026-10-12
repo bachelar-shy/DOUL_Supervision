@@ -20,11 +20,10 @@ def _text(value, field, maximum, required=True):
 
 
 def install_personnel_request_routes(app, store, *, identity, role_for, key_for, body_json):
-    def context(project_id, request):
-        actor = identity(request)
+    def context(project_id, request, actor):
         role = role_for(actor, project_id, request.headers.get('x-roleassignment-id'))
         store.engine.get('Project', project_id)
-        return actor, role
+        return role
 
     def is_admin(actor, role, project_id):
         if role['actorGroup'] != 'ADM' or 'manage_project_roles' not in role['authorityCodes']:
@@ -42,8 +41,9 @@ def install_personnel_request_routes(app, store, *, identity, role_for, key_for,
 
     @app.get('/projects/{project_id}/personnel-requests')
     def list_requests(project_id: str, request: Request):
+        actor = identity(request)
         with store.transaction():
-            actor, role = context(project_id, request)
+            role = context(project_id, request, actor)
             admin = is_admin(actor, role, project_id)
             records = store.meta.get('personnelRequests', {}).get(project_id, {})
             items = sorted((deepcopy(record) for record in records.values()
@@ -64,8 +64,9 @@ def install_personnel_request_routes(app, store, *, identity, role_for, key_for,
         require(isinstance(body['requestedRole'], str) and body['requestedRole'] in REQUEST_ROLES, 'INVALID_REQUEST',
                 'Requests for administrator accounts are not allowed')
         key = key_for(request)
+        actor = identity(request)
         with store.transaction(write=True):
-            actor, role = context(project_id, request)
+            role = context(project_id, request, actor)
             require(role['actorGroup'] in REQUESTERS, 'NOT_AUTHORIZED',
                     'Only assigned non-administrators may request personnel')
             op = 'personnel_request:create'
@@ -102,8 +103,9 @@ def install_personnel_request_routes(app, store, *, identity, role_for, key_for,
         require(isinstance(body['status'], str) and body['status'] in DECISIONS, 'INVALID_REQUEST', 'Invalid review decision')
         note = _text(body['note'], 'note', 500, required=body['status'] == 'rejected')
         key = key_for(request)
+        actor = identity(request)
         with store.transaction(write=True):
-            actor, role = context(project_id, request)
+            role = context(project_id, request, actor)
             require(is_admin(actor, role, project_id), 'NOT_AUTHORIZED',
                     'Only this project administrator may review requests')
             operation = 'personnel_request:review:' + request_id
