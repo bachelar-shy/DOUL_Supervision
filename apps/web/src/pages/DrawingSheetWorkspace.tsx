@@ -221,16 +221,17 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   function choosePin(kind: DrawingPinKind) {
     if (!canWrite) return;
     setPinChoice(kind); setPendingPoint(null); setComment(""); setRecordRef(""); setError("");
-    setSelectedPinId(null); setRightOpen(true);
+    setSelectedPinId(null); setRightOpen(!window.matchMedia("(max-width: 767px)").matches);
   }
   function onDrawingClick(event: MouseEvent<HTMLDivElement>) {
     if (!pinChoice || !canWrite || drag.current?.moved) return;
-    if (event.target instanceof HTMLElement && event.target.closest("button[data-pin-id]")) return;
+    if (event.target instanceof Element && event.target.closest("button[data-pin-id]")) return;
     const bounds = imageFrameRef.current?.getBoundingClientRect();
     if (!bounds) return;
     const x = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
     const y = Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height));
     setPendingPoint({ x, y });
+    setRightOpen(true);
   }
   async function savePin(event: FormEvent) {
     event.preventDefault();
@@ -258,7 +259,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     } finally { setBusy(false); }
   }
   function startDrag(event: PointerEvent<HTMLDivElement>) {
-    if (event.button !== 0 || pinChoice || event.target instanceof HTMLElement && event.target.closest("button")) return;
+    if (event.button !== 0 || pinChoice || (event.target instanceof Element && event.target.closest("button"))) return;
     drag.current = { x: event.clientX, y: event.clientY, startX: pan.x, startY: pan.y, moved: false };
     event.currentTarget.setPointerCapture(event.pointerId);
   }

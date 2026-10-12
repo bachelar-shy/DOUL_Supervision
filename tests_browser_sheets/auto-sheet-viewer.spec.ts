@@ -41,15 +41,16 @@ async function login(page: Page, role: "ADM" | "CON" | "SUP" | "OWN") {
   await expect(page.locator('[data-ui-component="drawing-sheet-workspace"]')).toBeVisible();
 }
 
-test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane proportions", async ({ page }) => {
+test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane proportions", async ({ page }, testInfo) => {
   await login(page, "CON");
   const view = page.locator('[data-ui-component="drawing-sheet-workspace"]');
   await expect(view.getByRole("button", { name: "새 도면(PDF)" })).toBeVisible();
+  const uniqueFolder = testInfo.project.name + "-3장-계단상세-" + Date.now();
   await view.locator('input[type="file"]').setInputFiles({
-    name: "3장의-계단-상세도면.pdf", mimeType: "application/pdf", buffer: makePdf(3),
+    name: uniqueFolder + ".pdf", mimeType: "application/pdf", buffer: makePdf(3),
   });
   await expect(view.getByText(/PDF 3장이 분리 대상으로 등록되었습니다/)).toBeVisible();
-  const folder = view.locator(".drawing-sheet-folder").filter({ hasText: "3장의-계단-상세도면" });
+  const folder = view.locator(".drawing-sheet-folder").filter({ hasText: uniqueFolder });
   await expect(folder).toBeVisible();
   await expect(folder.locator("button.drawing-sheet-card")).toHaveCount(3);
   await expect(folder.locator("button.drawing-sheet-card").first().locator("img")).toBeVisible({ timeout: 20000 });
@@ -60,11 +61,11 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   await expect(rail).toBeVisible();
   const box = await rail.boundingBox();
   expect(box?.width).toBeGreaterThanOrEqual(268);
-  expect(box?.width).toBeLessThanOrEqual(272);
+  expect(box?.width).toBeLessThanOrEqual(testInfo.project.name === "phone" ? 282 : 272);
   const main = await view.locator(".drawing-sheet-board").boundingBox();
-  expect(main?.width).toBeGreaterThan(600);
+  expect(main?.width).toBeGreaterThan(testInfo.project.name === "phone" ? 320 : 600);
   await expect(view.getByRole("toolbar", { name: "도면 확대 및 마크업 도구" })).toBeVisible();
-  await view.getByRole("button", { name: "확대" }).click();
+  await view.getByRole("button", { name: "확대", exact: true }).click();
   await view.getByRole("button", { name: "도면 맞춤" }).click();
   await view.getByRole("button", { name: "다음 도면" }).click();
   await expect(view.locator(".drawing-board-current-label")).toContainText("Sheet-003");
@@ -91,7 +92,7 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await login(page, "CON");
   await expect(view).toHaveAttribute("data-view", "catalog");
-  await view.locator(".drawing-sheet-card").filter({ hasText: "DT-05A" }).click();
+  await view.locator(".drawing-sheet-folder").filter({ hasText: uniqueFolder }).locator(".drawing-sheet-card").filter({ hasText: "DT-05A" }).click();
   await expect(rail.locator(".drawing-issue-row")).toHaveCount(1);
   await expect(rail.getByText("보 부위 간섭 확인 필요 - 합성 테스트", { exact: false })).toBeVisible();
 });
