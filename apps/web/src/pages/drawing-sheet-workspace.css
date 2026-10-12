@@ -311,3 +311,14 @@
   .drawing-issue-dialog-main { grid-template-columns: 1fr; }
   .drawing-issue-dialog-properties { border-left: 0; border-top: 1px solid #d6dbe2; }
 }
+
+/* PDF titleblock verification is a separate audit step, not an approval badge. */
+.drawing-sheet-review-text { display:block; font-size:10px; font-weight:400; color:#637082; }
+.drawing-sheet-review-text.needs-review { color:#946526; }
+.drawing-sheet-extract-inspect { background:#f4f6f9; border:1px solid #e0e4eb;
+  padding:9px 10px; margin:8px 0; font-size:11px; }
+.drawing-sheet-extract-inspect p { margin:5px 0; overflow-wrap:anywhere; }
+.drawing-sheet-edit-dialog { max-height: min(88dvh,740px); overflow-y:auto; }
+.drawing-sheet-edit-dialog select,
+.drawing-sheet-edit-dialog textarea { width:100%; padding:7px; border:1px solid #bcc6d2;
+  border-radius:3px; font-size:12px; }
