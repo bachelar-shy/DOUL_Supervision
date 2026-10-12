@@ -1,9 +1,9 @@
-# 프로젝트 설정 개발 인계 — 2026-10-12 (Asia/Saigon)
+# 프로젝트 설정 개발 인계 — 2026-10-12 (Asia/Bangkok)
 
 ## 현재 결과
 
 - 저장소 `bachelar-shy/DOUL_Supervision`, 브랜치 `feat/project-settings-20261012`, PR https://github.com/bachelar-shy/DOUL_Supervision/pull/188 (draft). PR #187의 `fix/field-core-default-entry-20261012`를 기반으로 쌓았으며 아직 병합하지 않았다.
-- **프로젝트 설정, 네 역할과 별도 합성 테스트 프로젝트가 실제 서버에 적용되어 실제 HTTPS·PostgreSQL 검증을 통과했다.** 현재 배포 커밋은 `42f41389c02126cec40ab32092dda6506bf8279f`다. 이후 인계/검증 결과만 담은 커밋은 앱 동작을 바꾸지 않는다.
+- **프로젝트 설정, 네 역할과 별도 합성 테스트 프로젝트가 실제 서버에 적용되어 실제 HTTPS·PostgreSQL 검증을 통과했다.** 현재 배포 커밋은 `5fc446f41bb369763d0603640b54968472eb4cc2`다. 이후 인계/검증 결과만 담은 커밋은 앱 동작을 바꾸지 않는다.
 - 운영준비 주소 https://automation-macmini.tail0e9ef7.ts.net:10001/ . 기존 http://100.68.153.58:5190/ 은 여기로 연결한다. admin 계정의 기존 비밀번호를 유지한다. 비밀번호·DB 접속정보·서명 키를 소스나 인계에 기록하지 않는다.
 - 최신 GitHub Actions는 Mac mini self-hosted Linux ARM64에서 **대기 중**이다. native 검증을 GitHub 전체 CI 통과라고 기록하거나 미병합 PR을 병합된 것으로 처리하지 않는다.
 
@@ -54,3 +54,15 @@
 - 설정 화면 교체에서 빠졌던 DOUL SAMPLE 검증 패널을 full development demo에만 복구했다. 실제 비밀번호 서버에는 진단 패널을 노출하지 않는다.
 - 기존 번역 미리보기 연결을 full 문서 편집기에 복구했다. 증빙 시험은 보이는 선택 체크박스를 사용하고 미등록 검증용 번호만 명시적 고급 입력으로 처리한다. 실제 HTTP/권한/버전/누계 검증 조건은 유지했다.
 - field 용어 변경으로 오래된 메뉴·중지 수령 확인·도면 선택 기대를 갱신했고 임시저장 시험의 진행 중 route가 끝난 뒤 teardown하도록 했다. 도면 정확한 ID/표시차수, 대장의 실제 sticky header와 휴대폰44px를 계속 검증한다.
+
+## 프로젝트 추가 및 공사용 도면 후속 작업 — 2026-10-12
+
+- 프로젝트 설정 상단에 `＋ 프로젝트 추가`와 새 프로젝트 입력을 구현했다. 관리자 로그인/전체 관리 범위 확인 후 서버가 빈 프로젝트, 관리회사, 현재 계정의 담당자·ADM 배정과 승인 membership을 한 트랜잭션으로 생성한다. 기술 권한/자격 및 기존 시험자료를 복제하지 않는다. 같은 멱등 키의 재시도는 동일 Project를 반환한다. 전환 실패 시 이미 생성한 ID를 보존한다.
+- `LAYEX_For Bidding_Architecture_260911.pdf` 원본 56,274,511 bytes/145쪽을 기존 테스트 프로젝트에 영속 등록했다. 사용자가 지정한 표시 용도는 `공사용 도면`이며 원본 파일명은 유지한다. 원본은 private runtime에 보관하고 Git에 넣지 않았다. 입찰용 파일명으로 용도를 자동 결정하지 않고, 표시 용도로 승인 상태를 바꾸지 않는다. 기존 합성 도면의 exact reference에 연결하지 않았다.
+- 원본 SHA-256은 `44b4294283eb525e4e9115212a0d57f9f4a8b69a3a8e06a4583fa9ff0e3b1971`. 등록 근거와 실제 출처는 private runtime에 보존한다. 다운로드 원본과 인증 API 반환 bytes/hash 일치, 교차 프로젝트404, API 재시작 후 영속성 및 실제 HTTPS 첫/마지막 쪽 열람을 확인했다. 이는 145쪽 전체 설계 검토/승인이나 현장 인수 완료가 아니다.
+- 최종 소스 `5fc446f`: 설정 비밀번호 HTTPS 브라우저 desktop/phone 16개 통과. 기존 현장 메뉴29개 및 PDF3개는 `3382b5e`, HTTP11개는 동일 backend 구현에서 통과했다. 타입/빌드/UI 경계 통과, lint90기존 warnings/0errors. 휴대폰 긴 원본명 범위를 제한하고 설정 버튼44px가 공통 스타일에 덮이지 않게 했다.
+- 실제 서버의 프로젝트 추가 버튼·입력·오프라인 보존과 PDF 열람은 private `project-add-verification.json`, `construction-drawing-deployment.json`, `construction-drawing-api-verification.json`에 기록한다. 실제 서버에는 시험용 새 프로젝트를 추가하지 않았다. 생성·재로그인 기능 시험은 격리된 실제 비밀번호 HTTPS fixture 서버에서 수행했다.
+- 현재 PR #188은 draft/open, 기준 PR #187 위에 쌓여 있다. 마지막 조회의 GitHub 24개 검사는 QUEUED다. native 검사와 실제 서버 검증을 GitHub CI 성공/병합 완료로 바꾸어 기록하지 않는다.
+- 재개 시 실제 health의 release SHA, 위 근거 파일, Git 상태와 이 인계부터 확인한다. 원본 PDF를 재업로드하거나 새 테스트 프로젝트를 중복 생성하지 않는다. 현재 미구현 작업으로 `프로젝트 추가`를 다시 시작하지 않는다.
+- field-core 기본 포트5198은 기존 서비스가 사용 중이어서 종료하지 않았다. 후속 검증은 `work/playwright.project-add-field-core.config.ts`의 별도49271에서29개 통과했고 시험 서버는 종료됐다. 다른 기존 서비스/preview/Colima/MCP/Tailscale 설정을 보존했다.
+- private 백업은 `backups/pre-original-drawing-63059db.dump`, 원본을 포함한 `backups/pre-project-add-3382b5e.dump`, 이전 UI는 `web-before-original-drawing-63059db`, `web-before-project-add-3382b5e`, `web-before-project-add-5fc446f`에 보존한다. 클라우드 work/import_site_test_reference.draft.py는 과거 scratch이며 실행 대상은 커밋된 scripts/import_site_test_reference.py다.

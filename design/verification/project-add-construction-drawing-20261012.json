@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-12",
+  "timezone": "Asia/Bangkok",
+  "implementationSha": "5fc446f41bb369763d0603640b54968472eb4cc2",
+  "deployment": {
+    "environment": "staging",
+    "realPasswordJWT": true,
+    "persistentStore": "PostgreSQL",
+    "verifiedReleaseSha": "5fc446f41bb369763d0603640b54968472eb4cc2"
+  },
+  "projectCreation": {
+    "button": "＋ 프로젝트 추가",
+    "createdProject": "blank",
+    "approvedMembership": "server-derived",
+    "qualificationIds": [],
+    "copiedExistingData": false,
+    "liveServerExtraTestProjects": 0,
+    "functionalVerification": "isolated real password/JWT HTTPS browser: creation, switch, relogin",
+    "liveUIVerification": {
+      "widths": [
+        1365,
+        390
+      ],
+      "buttonHeightPx": 44,
+      "offlineDraftPreserved": "PASS",
+      "horizontalOverflow": "NONE",
+      "javascriptErrors": 0
+    }
+  },
+  "constructionDrawing": {
+    "originalFileName": "LAYEX_For Bidding_Architecture_260911.pdf",
+    "bytes": 56274511,
+    "pages": 145,
+    "sha256": "44b4294283eb525e4e9115212a0d57f9f4a8b69a3a8e06a4583fa9ff0e3b1971",
+    "purposeLabel": "공사용 도면",
+    "approvalStatus": "unverified",
+    "syntheticDrawingReferenceLinked": false,
+    "authenticatedDownloadHash": "PASS",
+    "afterRestart": "PASS",
+    "crossProjectDeniedStatus": 404,
+    "firstAndLastPageRender": "PASS",
+    "phoneWidth390Overflow": "NONE",
+    "originalFileCommitted": false,
+    "wholeDrawingDesignReviewPerformed": false
+  },
+  "checks": [
+    {
+      "name": "project settings, creation and original import HTTP",
+      "passed": 11,
+      "type": "isolated real HTTP/JWT SQLite",
+      "backendSourceSha": "4325a8281e8d1dd973341107cd40ea52c40aaf94"
+    },
+    {
+      "name": "project settings password HTTPS desktop/phone",
+      "passed": 16,
+      "type": "isolated real HTTPS SQLite and built UI",
+      "sourceSha": "5fc446f41bb369763d0603640b54968472eb4cc2"
+    },
+    {
+      "name": "PDF source, render, navigation and corrupt file",
+      "passed": 3,
+      "type": "2 client unit + 1 development HTTP browser",
+      "sourceSha": "3382b5ef0cc726643efe7521b956c615e989c1eb"
+    },
+    {
+      "name": "existing field menus and UI workflows",
+      "passed": 29,
+      "type": "UI mock",
+      "sourceSha": "3382b5ef0cc726643efe7521b956c615e989c1eb"
+    }
+  ],
+  "typecheck": "PASS",
+  "build": "PASS",
+  "uiBoundary": "PASS",
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 90
+  },
+  "githubChecks": {
+    "observedSha": "5fc446f41bb369763d0603640b54968472eb4cc2",
+    "count": 24,
+    "status": "QUEUED",
+    "merged": false
+  },
+  "realFieldPilotPerformed": false,
+  "goalComplete": false
+}
