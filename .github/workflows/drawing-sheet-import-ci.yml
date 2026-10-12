@@ -8,7 +8,7 @@ on:
       - 'services/api/modules/drawing_sheets.py'
       - 'services/api/modules/drawing_sheet_metadata.py'
       - 'tests_mvp/test_drawing_sheet_metadata.py'
-      - 'tests_mvp/test_drawing_sheet_evidence_import_http.py' 
+      - 'tests_mvp/test_drawing_sheet_evidence_import_http.py'
       - 'tests_mvp/test_drawing_sheet_catalog_http.py'
   push:
     branches: [main]
