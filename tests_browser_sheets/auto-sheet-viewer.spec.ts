@@ -89,12 +89,34 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   await rail.locator(".drawing-issue-row").click();
   await expect(view.locator(".drawing-sheet-marker.issue.active")).toHaveCount(1);
 
+  // On the same sheet, inspection and site-status markers must appear beside the issue.
+  for (const pinCase of [
+    { button: "검측 핀 추가", label: "합성 검측 위치 확인", marker: "inspection" },
+    { button: "현장상황 핀 추가", label: "합성 현장상황 위치 기록", marker: "site" },
+  ]) {
+    await view.getByRole("button", { name: pinCase.button }).click();
+    const coordinate = pinCase.marker === "inspection" ? { x: 145, y: 105 } : { x: 220, y: 85 };
+    await view.locator(".drawing-board-image-frame").click({ position: coordinate });
+    const pinForm = view.getByRole("form", { name: "도면 마크업 핀 작성" });
+    await expect(pinForm.getByText("도면 위치 선택 완료", { exact: false })).toBeVisible();
+    await pinForm.getByRole("textbox", { name: "내용" }).fill(pinCase.label);
+    await pinForm.getByRole("button", { name: "핀 저장" }).click();
+    await expect(view.locator(".drawing-sheet-marker." + pinCase.marker)).toHaveCount(1);
+    await expect(rail.locator(".drawing-issue-row").getByText(pinCase.label, { exact: true })).toBeVisible();
+  }
+  await expect(rail.locator(".drawing-issue-row")).toHaveCount(3);
+  await rail.getByRole("button", { name: "검측 1" }).click();
+  await expect(rail.locator(".drawing-issue-row")).toHaveCount(1);
+  await rail.getByRole("button", { name: "전체 3" }).click();
+
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await login(page, "CON");
   await expect(view).toHaveAttribute("data-view", "catalog");
   await view.locator(".drawing-sheet-folder").filter({ hasText: uniqueFolder }).locator(".drawing-sheet-card").filter({ hasText: "DT-05A" }).click();
-  await expect(rail.locator(".drawing-issue-row")).toHaveCount(1);
-  await expect(rail.getByText("보 부위 간섭 확인 필요 - 합성 테스트", { exact: false })).toBeVisible();
+  await expect(rail.locator(".drawing-issue-row")).toHaveCount(3);
+  for (const label of ["보 부위 간섭 확인 필요 - 합성 테스트", "합성 검측 위치 확인", "합성 현장상황 위치 기록"]) {
+    await expect(rail.getByText(label, { exact: false })).toBeVisible();
+  }
 });
 
 test("owner reads same sheet markers but cannot upload or create issue", async ({ page }) => {
