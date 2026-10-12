@@ -106,3 +106,27 @@ test("password login binds the five field workflows to the authenticated supervi
   await expect(page.getByRole("button", { name: "로그아웃" })).toBeVisible();
   expect(projectDirectoryRequests).toBe(0);
 });
+
+test("DOUL password login maintains compact desktop and readable phone geometry", async ({ page }) => {
+  await configurePasswordMode(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/#/today");
+  const screen = page.locator('[data-ui-component="password-login"]');
+  const card = screen.locator(".doul-auth-card");
+  await expect(card).toBeVisible();
+  await expect(card.getByRole("heading", { name: "로그인" })).toBeVisible();
+  expect((await card.boundingBox())?.width ?? 0).toBeLessThanOrEqual(405);
+  expect(await card.evaluate(node => getComputedStyle(node).borderRadius)).toBe("4px");
+  const desktopField = card.getByRole("textbox", { name: "아이디" });
+  const desktopHeight = (await desktopField.boundingBox())?.height ?? 0;
+  expect(desktopHeight).toBeGreaterThanOrEqual(36);
+  expect(desktopHeight).toBeLessThanOrEqual(39);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const phoneHeight = (await desktopField.boundingBox())?.height ?? 0;
+  const submitHeight = (await card.getByRole("button", { name: "로그인" }).boundingBox())?.height ?? 0;
+  expect(phoneHeight).toBeGreaterThanOrEqual(44);
+  expect(submitHeight).toBeGreaterThanOrEqual(44);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2)).toBe(true);
+  await page.screenshot({ path: "preview/screenshots/fieldwire-password-login-phone.png" });
+});
