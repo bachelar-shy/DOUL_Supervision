@@ -781,3 +781,13 @@
     min-height: 44px;
   }
 }
+
+
+/* Legible metadata on field phones; desktop compact density stays unchanged. */
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] .record-summary small,
+  .app-shell[data-layout-system="field-workspace"] .record-summary > span {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+}

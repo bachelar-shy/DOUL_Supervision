@@ -1,3 +1,4 @@
+import { expectNoHorizontalOverflow } from "./support/viewport-overflow";
 import { selectCommandEvidence } from "./command-evidence-helper";
 import { expect, test, type APIRequestContext, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { localDateTime } from "./support/local-datetime";
@@ -538,7 +539,7 @@ test("real UI/API payment chain authors exact-version Owner decisions and preser
       await page.locator(".topbar .role-picker select").first().selectOption(language);
       await expect(page.locator("html")).toHaveAttribute("lang", { ko: "ko-KR", vi: "vi-VN", en: "en-US" }[language]);
       await expect(page.locator(".payment-history li")).toHaveCount(5);
-      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), { message: `populated payment ${language}/${width}` }).toBeTruthy();
+      await expectNoHorizontalOverflow(page, `populated payment ${language}/${width}`);
       const historyBox = await page.locator(".payment-history").boundingBox();
       expect(historyBox).not.toBeNull();
       expect(historyBox!.x).toBeGreaterThanOrEqual(-1);

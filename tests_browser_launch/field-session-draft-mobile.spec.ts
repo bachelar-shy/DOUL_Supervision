@@ -7,6 +7,7 @@ test("contractor self-inspection input survives reload in the same tab and stays
   const picker = page.locator("header.topbar .role-picker select").last();
   await picker.selectOption("CON");
   await page.goto("/#/inspections");
+  await page.locator('[data-ui-component="new-inspection-entry"] button').click();
   const editor = page.getByRole("form", { name: "자체검측 작성" });
   await expect(editor).toBeVisible();
   await editor.getByRole("textbox", { name: "공종·작업명" }).fill("A구역 철근 검측");
@@ -15,6 +16,7 @@ test("contractor self-inspection input survives reload in the same tab and stays
   await page.reload();
   await page.locator("header.topbar .role-picker select").last().selectOption("CON");
   await page.goto("/#/inspections");
+  await page.locator('[data-ui-component="new-inspection-entry"] button').click();
   const reopened = page.getByRole("form", { name: "자체검측 작성" });
   await expect(reopened.getByRole("textbox", { name: "공종·작업명" })).toHaveValue("A구역 철근 검측");
   await expect(reopened.getByRole("checkbox", { name: "자체검측 완료" })).toBeChecked();
@@ -25,6 +27,7 @@ test("contractor self-inspection input survives reload in the same tab and stays
   await page.reload();
   await page.locator("header.topbar .role-picker select").last().selectOption("CON");
   await page.goto("/#/inspections");
+  await page.locator('[data-ui-component="new-inspection-entry"] button').click();
   await expect(page.getByRole("textbox", { name: "공종·작업명" })).toHaveValue("");
   expect(errors).toEqual([]);
 });

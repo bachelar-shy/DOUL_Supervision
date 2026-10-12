@@ -5,8 +5,9 @@ async function baseline(page: import('@playwright/test').Page) {
   const title = `공정 화면 검증 ${randomUUID().slice(0,8)}`;
   await page.goto('/#/schedule');
   await page.getByRole('combobox', {name:'시험 사용자 역할 선택'}).selectOption('CON');
-  await expect(page.getByText('시공사 업무 화면',{exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'공정·지연·회복',exact:true}).click();
+  await expect(page.getByRole('combobox', {name:'시험 사용자 역할 선택'})).toHaveValue('CON');
+  await expect(page.locator('[data-ui-component="schedule-workspace"]')).toBeVisible();
+  await page.getByRole('tab',{name:'기준공정',exact:true}).click();
   await page.getByRole('button',{name:'공정 기록 추가',exact:true}).click();
   const dialog = page.getByRole('dialog',{name:'공정 기록 추가'});
   await dialog.getByLabel('제목 *',{exact:true}).fill(title);
@@ -52,8 +53,9 @@ test('Schedule does not execute commands offline and owner has no contractor wit
   await expect(page.getByRole('button',{name:'공정 기록 추가',exact:true})).toBeDisabled();
   await context.setOffline(false);
   await page.getByRole('combobox',{name:'시험 사용자 역할 선택'}).selectOption('OWN');
-  await expect(page.getByText('발주처 업무 화면',{exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'공정·지연·회복',exact:true}).click();
+  await expect(page.getByRole('combobox', {name:'시험 사용자 역할 선택'})).toHaveValue('OWN');
+  await expect(page.locator('[data-ui-component="schedule-workspace"]')).toBeVisible();
+  await page.getByRole('tab',{name:'기준공정',exact:true}).click();
   await page.getByRole('button').filter({hasText:title}).click();
   await expect(page.locator('.detail-pane').getByRole('button',{name:'기준공정 철회',exact:true})).toHaveCount(0);
 });

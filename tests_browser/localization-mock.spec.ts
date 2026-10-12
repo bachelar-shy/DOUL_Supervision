@@ -1,3 +1,4 @@
+import { expectNoHorizontalOverflow } from "./support/viewport-overflow";
 import { expect, test, type Page } from "@playwright/test";
 import { formFieldLabels } from "@doul/localization";
 
@@ -142,14 +143,10 @@ for (const width of [390, 768, 1440]) {
     for (const language of ["vi", "en", "ko"]) {
       await locale.selectOption(language);
       await expect(page.locator('[data-ui-page="capture"]')).toBeVisible();
-      await expect.poll(() =>
-        page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
-      ).toBeTruthy();
+      await expectNoHorizontalOverflow(page, "localized "+language);
       await page.goto("/#/contract");
       await expect(page.locator('[data-ui-page="contract"]')).toBeVisible();
-      await expect.poll(() =>
-        page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
-      ).toBeTruthy();
+      await expectNoHorizontalOverflow(page, "localized "+language);
       await page.goto("/#/capture");
     }
   });

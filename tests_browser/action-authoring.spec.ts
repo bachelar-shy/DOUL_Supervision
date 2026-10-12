@@ -79,6 +79,8 @@ test("SUP creates a scoped Action draft through Workbench, preserves it across l
 
   await page.goto("/#/actions");
   await chooseRole(page, "SUP");
+  await expect(page.locator('[data-ui-component="new-action-entry"]')).toBeVisible();
+  await page.getByRole("button", { name: "＋ 신규 시정조치", exact: true }).click();
   const panel = page.locator('[data-ui-component="action-authoring-panel"]');
   await expect(panel).toBeVisible();
   const suffix = randomUUID().slice(0, 10);
