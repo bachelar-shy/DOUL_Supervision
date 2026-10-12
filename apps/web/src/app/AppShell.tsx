@@ -135,7 +135,8 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     return () => { current = false; };
   }, [client, passwordMode, workspace?.project.id, workspace?.project.name]);
   async function switchProject(projectId: string) {
-    if (projectSwitching || !online || projectId === client.session?.projectId) return;
+    if (projectId === client.session?.projectId) return true;
+    if (projectSwitching || !online) return false;
     // Retain the current workspace until the server has approved the new session.
     ++sequence.current; ++refreshSequence.current;
     setProjectSwitching(true); setDialog(null); setSelected(null); setError("");
@@ -144,9 +145,11 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
       activeRole.current = session.actor.actorGroup;
       setRole(session.actor.actorGroup); setWorkspace(null); setLoading(true);
       setProjectChoice(session.projectId); nav("today"); setMenu(false);
+      return true;
     } catch (e) {
       setError(e instanceof ApiError ? reasonLabel(e.detail.code) : t("app.error.connection"));
       setLoading(false);
+      return false;
     } finally { setProjectSwitching(false); }
   }
   useEffect(() => {
@@ -719,7 +722,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                 <RegisterPage client={client} workspace={workspace} />
               )}
               {safeRoute === "admin" && (
-                <AdminPage key={workspace.project.id} client={client} workspace={workspace} online={online} onChanged={refresh} onProjectCreated={async projectId=>{const directory=await client.accessibleProjects();setApprovedProjects(directory.items);await switchProject(projectId);nav("admin");}} />
+                <AdminPage key={workspace.project.id} client={client} workspace={workspace} online={online} onChanged={refresh} onProjectCreated={async projectId=>{const directory=await client.accessibleProjects();setApprovedProjects(directory.items);if(!await switchProject(projectId))throw new Error("Project selection did not complete");nav("admin");}} />
               )}
               {safeRoute === "parallel-test" && (
                 <ParallelTestPage key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} online={online} onNavigate={nav} onChanged={refresh} onSelect={setSelected} onOpenCommand={(item, action) => setDialog({ item, action })} />

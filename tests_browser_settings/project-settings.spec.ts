@@ -32,6 +32,7 @@ test("administrator creates a blank project with a visible add button and can re
   await page.reload();await login(page);await settings(page);
   if(test.info().project.name==="phone")await page.locator(".menu-toggle").click();
   await page.getByRole("combobox",{name:"프로젝트 선택",exact:true}).selectOption({label:name});
+  await expect(page.locator(".project-chip strong")).toHaveText(name);
   await settings(page);await expect(panel(page,"기본정보").getByLabel("프로젝트명",{exact:true})).toHaveValue(name);
 });
 
