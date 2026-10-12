@@ -10,6 +10,7 @@ on:
       - "apps/web/src/ui/catalog.tsx"
       - "apps/web/src/pages/parallel/PdfViewerPanel.tsx"
       - "tests_browser_launch/quiet-graphite-design.spec.ts"
+      - "tests_browser_launch/fieldwire-ui-parity.spec.ts"
 permissions:
   contents: read
 jobs:
@@ -32,7 +33,7 @@ jobs:
       - name: Verify 1440/1024/768/390px design and navigation
         run: |
           npx playwright install --with-deps chromium
-          npx playwright test -c playwright.field-core.config.ts quiet-graphite-design.spec.ts
+          npx playwright test -c playwright.field-core.config.ts quiet-graphite-design.spec.ts fieldwire-ui-parity.spec.ts
       - name: Attach screenshot evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
