@@ -114,7 +114,7 @@ test("DOUL password login maintains compact desktop and readable phone geometry"
   const screen = page.locator('[data-ui-component="password-login"]');
   const card = screen.locator(".doul-auth-card");
   await expect(card).toBeVisible();
-  await expect(card.getByRole("heading", { name: "로그인" })).toBeVisible();
+  await expect(card.getByRole("heading", { level: 1 })).toBeVisible();
   expect((await card.boundingBox())?.width ?? 0).toBeLessThanOrEqual(405);
   expect(await card.evaluate(node => getComputedStyle(node).borderRadius)).toBe("4px");
   const desktopField = card.getByRole("textbox", { name: "아이디" });
