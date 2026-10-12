@@ -193,8 +193,9 @@ test("mobile menu buttons have accessible hit areas and drawing view is read-onl
   for (const control of [sidebar.locator('button[data-route="drawings"]'), sidebar.locator(".sidebar-close"), more]) {
     const box = await control.boundingBox();
     expect(box).not.toBeNull();
-    expect(box!.height).toBeGreaterThanOrEqual(44);
-    expect(box!.width).toBeGreaterThanOrEqual(44);
+    // Chromium may return 43.999984 for a CSS 44px hit target; tolerate sub-pixel float error only.
+    expect(box!.height + 0.001).toBeGreaterThanOrEqual(44);
+    expect(box!.width + 0.001).toBeGreaterThanOrEqual(44);
   }
   await sidebar.locator('button[data-route="drawings"]').click();
   await expect(page.locator('[data-ui-component="drawing-sheet-workspace"]')).toBeVisible();
