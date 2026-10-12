@@ -11,7 +11,7 @@ jobs:
   runtime-health-contract:
     # Ephemeral GitHub-hosted runner; no Mac mini dependency.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
