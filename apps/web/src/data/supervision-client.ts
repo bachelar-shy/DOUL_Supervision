@@ -14,6 +14,8 @@ import type {
   Workspace,
   ProjectSettings,
   AccessibleProjects,
+  ProjectCreationInput,
+  ProjectCreationResult,
 } from "./ui-contract";
 import { MockSupervisionClient } from "./mock-supervision-client";
 
@@ -107,6 +109,7 @@ export interface SupervisionClient {
   workspace(): Promise<Workspace>;
   projectSettings(): Promise<ProjectSettings>;
   saveProjectSettings(command: string, body: object, key?: string): Promise<ProjectSettings>;
+  createProject(body: ProjectCreationInput, key?: string): Promise<ProjectCreationResult>;
   accessibleProjects(): Promise<AccessibleProjects>;
   selectProject(projectId: string): Promise<Session>;
   execute(
@@ -176,6 +179,11 @@ class HttpSupervisionClient implements SupervisionClient {
     });
   }
   accessibleProjects() { return this.client.request<AccessibleProjects>("/auth/projects"); }
+  createProject(body: ProjectCreationInput, key = newKey()) {
+    return this.client.request<ProjectCreationResult>(this.client.path("/settings/projects"), {
+      method: "POST", headers: { "Idempotency-Key": key }, body: JSON.stringify(body),
+    });
+  }
   selectProject(projectId: string) { return this.client.selectProject(projectId); }
 
   login(role: HumanRole, projectId?: string) {

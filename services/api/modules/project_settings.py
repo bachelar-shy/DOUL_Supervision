@@ -88,6 +88,7 @@ def install_project_settings_routes(app, store, *, identity, role_for, key_for, 
                 if package != '*' and package not in known:
                     packages.append(dict(id=package, name='기존 공사범위 ' + str(len(packages) + 1))); known.add(package)
         return dict(project=project, availableCommands=sorted(COMMANDS),
+                    canCreateProject=bool(actor.get('identityKey')) and role['actorGroup'] == 'ADM',
                     organizations=[dict(r, actorGroup=groups.get(r['id'])) for r in records('Party', project_id) if r['kind'] == 'ORGANIZATION'],
                     participants=[r for r in records('Party', project_id) if r['kind'] == 'PERSON'],
                     assignments=[r for r in assignments if r['actorGroup'] in PROFILES],
@@ -112,6 +113,50 @@ def install_project_settings_routes(app, store, *, identity, role_for, key_for, 
     def new_record(project_id, actor, **values):
         return dict(id=uid(), projectId=project_id, version=1, createdAt=store.engine.at(),
                     updatedAt=store.engine.at(), createdBy=actor['partyId'], **values)
+
+    @app.post('/projects/{project_id}/settings/projects')
+    async def create_project(project_id: str, request: Request):
+        actor = identity(request)
+        body = await body_json(request)
+        key = key_for(request)
+        _fields(body, ['name', 'country', 'timezone', 'classification', 'organizationName'])
+        require(isinstance(body['country'], str) and body['country'] in {'VN', 'KR'}, 'INVALID_REQUEST', '현장 국가를 확인하십시오.')
+        name, organization_name, timezone = _text(body['name']), _text(body['organizationName']), _text(body['timezone'], 80)
+        try: ZoneInfo(timezone)
+        except (ZoneInfoNotFoundError, ValueError): raise ContractError('INVALID_REQUEST', '현장 시간대를 확인하십시오.')
+        require(isinstance(body['classification'], str) and len(body['classification']) <= 200, 'INVALID_REQUEST', '공사 종류를 확인하십시오.')
+        with store.transaction(write=True):
+            _, role = authorize(project_id, actor, request)
+            require(role['actorGroup'] == 'ADM' and actor.get('identityKey'), 'NOT_AUTHORIZED', '승인된 관리자 로그인으로 프로젝트를 추가하십시오.')
+            binding = store.meta.get('identityBindings', {}).get(actor['identityKey'], {})
+            require(binding.get('active') is True, 'UNAUTHENTICATED', '관리자 로그인 배정을 확인하십시오.')
+            operation = 'project_settings:create_project'
+            cached = store.engine._replay(project_id, actor['partyId'], operation, key, body)
+            if cached is not None: return cached
+            # Build a blank project, never copy synthetic records or memberships.
+            new_id = uid()
+            project = new_record(new_id, actor, name=name, country=body['country'], timezone=timezone,
+                                 classification=body['classification'].strip(),
+                                 qualificationRules=[dict(discipline=d, minimumRank=1) for d in DISCIPLINES])
+            project['id'] = new_id
+            organization = new_record(new_id, actor, kind='ORGANIZATION', name=organization_name, loginEnabled=False)
+            existing_person = store.engine.get('Party', actor['partyId'])
+            person = new_record(new_id, actor, kind='PERSON', name=existing_person['name'],
+                                organizationId=organization['id'], loginEnabled=True)
+            assignment = new_record(new_id, actor, partyId=person['id'], organizationId=organization['id'],
+                actorGroup='ADM', roleCode='project_admin', authorityCodes=[code for code in ('manage_project_roles', 'render_document') if code in role['authorityCodes']],
+                disciplines=['*'], packageIds=['*'], locationIds=['*'], qualificationIds=[],
+                validFrom=role['validFrom'], validTo=role['validTo'], active=True, approvedBy=actor['partyId'])
+            project['organizationIds'] = [organization['id']]
+            for kind, record in [('Project', project), ('Party', organization), ('Party', person), ('RoleAssignment', assignment)]:
+                save(kind, record, None, 'create_project', actor, role, key, body)
+            store.meta.setdefault('projectAdministration', {})[new_id] = dict(organizationGroups={organization['id']: 'ADM'}, workPackages=[])
+            store.meta.setdefault('projectContexts', {})[new_id] = dict(projectId=new_id)
+            memberships = binding.setdefault('projectAssignments', {})
+            memberships[new_id] = dict(partyId=person['id'], defaultRoleAssignmentId=assignment['id'])
+            result = dict(project=deepcopy(project), setupRequired=True)
+            store.engine._remember(project_id, actor['partyId'], operation, key, body, result)
+            return result
 
     def scoped_values(body, project_id, group):
         data = administration(project_id)

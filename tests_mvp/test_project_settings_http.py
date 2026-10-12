@@ -186,5 +186,47 @@ class ProjectSettingsHTTPTest(unittest.TestCase):
         self.store.close(); self.store=create_local_persistence(self.path,demo=False)
         with self.store.transaction(): self.assertEqual(sha256(self.store.blob(record['fileId'])).hexdigest(), args['expected_hash'])
 
+    def test_create_blank_project_replay_membership_and_no_cloned_authority(self):
+        before=self.read()['project']; url=self.url+'/projects'; key=uid()
+        body=dict(name='새 실제 프로젝트',country='VN',timezone='Asia/Ho_Chi_Minh',classification='공장',organizationName='운영관리 회사')
+        headers={**self.headers,'Idempotency-Key':key}
+        first=self.http.post(url,json=body,headers=headers);self.assertEqual(first.status_code,200,first.text)
+        project=first.json()['project']; target=project['id']; self.assertNotEqual(target,self.project)
+        replay=self.http.post(url,json=body,headers=headers);self.assertEqual(replay.json(),first.json())
+        changed=self.http.post(url,json=body|{'name':'다른 프로젝트'},headers=headers);self.assertEqual(changed.status_code,409)
+        self.assertEqual(self.read()['project'],before)
+        directory=self.http.get('/auth/projects',headers=self.headers).json()['items']
+        self.assertTrue(any(p['projectId']==target and not p['synthetic'] for p in directory))
+        selection=self.http.post('/auth/project-session',json=dict(projectId=target),headers=self.headers)
+        self.assertEqual(selection.status_code,200,selection.text)
+        current={**self.headers,'Authorization':'Bearer '+selection.json()['accessToken']}
+        workspace=self.http.get('/projects/'+target+'/workspace',headers=current)
+        self.assertEqual(workspace.status_code,200,workspace.text);self.assertEqual(workspace.json()['items'],[])
+        self.assertNotIn('scope',workspace.json()['context']);self.assertNotIn('drawingRef',workspace.json()['context'])
+        data=self.http.get('/projects/'+target+'/settings',headers=current).json()
+        self.assertTrue(data['canCreateProject']);self.assertIsNone(data['scope']);self.assertEqual(len(data['assignments']),1)
+        role=data['assignments'][0]
+        with self.store.transaction():
+            actual=self.store.engine.get('RoleAssignment',role['id'])
+            self.assertEqual(actual['qualificationIds'],[])
+            self.assertEqual(set(actual['authorityCodes']),{'manage_project_roles','render_document'})
+            self.assertEqual(actual['validTo'],self.store.engine.get('RoleAssignment',self.admin['roleAssignmentId'])['validTo'])
+        self.assertEqual(self.http.get(self.url,headers=current).status_code,404)
+        self.store.close();self.store=create_local_persistence(self.path,demo=False)
+        with self.store.transaction(): self.assertEqual(self.store.engine.get('Project',target),project)
+
+    def test_create_project_rejects_other_roles_bad_inputs_and_revoked_identity(self):
+        url=self.url+'/projects'; body=dict(name='새 프로젝트',country='KR',timezone='Asia/Seoul',classification='',organizationName='관리회사')
+        for change in [dict(country=[]),dict(timezone='invalid timezone'),dict(name=' '),dict(qualificationRules=[]),dict(partyId=uid())]:
+            result=self.http.post(url,json=body|change,headers={**self.headers,'Idempotency-Key':uid()})
+            self.assertEqual(result.status_code,422,result.text)
+        actor=self.store.meta['actors']['SUP']
+        self.accounts.create(dict(actorGroup='ADM',projectId=self.project),'supervisor','Synthetic-Password-34',actor['partyId'],actor['roleAssignmentId'])
+        denied=self.http.post(url,json=body,headers={**self.login('supervisor','Synthetic-Password-34'),'Idempotency-Key':uid()})
+        self.assertEqual(denied.status_code,403,denied.text)
+        with self.store.transaction(True):
+            binding=self.store.meta['identityBindings'][subject_key(self.issuer,'local:operator')];binding['active']=False
+        revoked=self.http.post(url,json=body,headers={**self.headers,'Idempotency-Key':uid()});self.assertEqual(revoked.status_code,401)
+
 
 if __name__ == '__main__': unittest.main()

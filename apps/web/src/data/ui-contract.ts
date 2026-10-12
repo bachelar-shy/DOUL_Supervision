@@ -25,6 +25,7 @@ export interface ProjectSettings {
   project: { id: string; version: number; name: string; country: string; timezone: string; classification?: string };
   currentRoleId: string;
   availableCommands: string[];
+  canCreateProject?: boolean;
   organizations: Array<{ id: string; name: string; actorGroup: ProjectRole }>;
   participants: Array<{ id: string; name: string; organizationId?: string }>;
   assignments: Array<{ id: string; version: number; partyId: string; organizationId: string; actorGroup: ProjectRole; active: boolean; startDate: string; endDate: string; disciplines: string[]; packageIds: string[]; locationIds: string[] }>;
@@ -34,6 +35,17 @@ export interface ProjectSettings {
   roleProfiles: Array<{ actorGroup: ProjectRole; name: string }>;
   scope: { discipline: string; packageId: string; locationId: string; responsibleOrganizationId: string; minimumQualificationRank: number } | null;
   history: Array<{ id: string; at: string; command: string; afterVersion: number }>;
+}
+export interface ProjectCreationInput {
+  name: string;
+  country: string;
+  timezone: string;
+  classification: string;
+  organizationName: string;
+}
+export interface ProjectCreationResult {
+  project: ProjectSettings["project"];
+  setupRequired: boolean;
 }
 export interface AccessibleProjects {
   currentProjectId: string;

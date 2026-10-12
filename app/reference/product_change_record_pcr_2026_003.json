@@ -3,18 +3,35 @@
   "baselineFrom": "1.1",
   "baselineTo": "1.2",
   "changeClass": "C1",
-  "reason": "Implement the explicitly requested project settings and four-role UI using existing project-administration authority, plus an isolated synthetic staging project and server-approved project session selection. Existing technical decision rights, qualification gates, official versions and closure criteria are preserved.",
+  "reason": "Implement the explicitly requested project settings and four-role UI using existing project-administration authority, plus an isolated synthetic staging project and server-approved project session selection. Existing technical decision rights, qualification gates, official versions and closure criteria are preserved. Add the requested project creation entry: an authorized project-wide administrator creates an empty project and obtains a server-approved membership without copying existing data or technical authority.",
   "requestedBy": "Product Owner (user request in current chat)",
   "decidedBy": "Product Owner (explicit implementation instruction in current chat)",
-  "impactedContracts": ["design/development/project-settings-contract-20261012.md", "48_Product_Baseline_Change_Control_v1.md"],
+  "impactedContracts": [
+    "design/development/project-settings-contract-20261012.md",
+    "48_Product_Baseline_Change_Control_v1.md"
+  ],
   "impactedRegisters": [],
   "impactedForms": [],
-  "impactedApiSurfaces": ["GET /projects/{projectId}/settings", "POST /projects/{projectId}/settings/commands/{command}", "GET /auth/projects", "POST /auth/project-session"],
+  "impactedApiSurfaces": [
+    "GET /projects/{projectId}/settings",
+    "POST /projects/{projectId}/settings/commands/{command}",
+    "GET /auth/projects",
+    "POST /auth/project-session",
+    "POST /projects/{projectId}/settings/projects"
+  ],
   "compatibility": "backward_compatible",
   "migrationRequired": true,
   "migrationPlanRef": "scripts/install_site_test_project.py: explicit --enable-project-settings after private database backup, with versioned RoleAssignment and operator audit",
   "effectiveFrom": "2026-10-12T02:30:00+07:00",
-  "acceptanceScenarioIds": ["AC-SET-01", "AC-SET-02", "AC-SET-03", "AC-SET-04", "AC-SET-05", "AC-SET-06"],
+  "acceptanceScenarioIds": [
+    "AC-SET-01",
+    "AC-SET-02",
+    "AC-SET-03",
+    "AC-SET-04",
+    "AC-SET-05",
+    "AC-SET-06",
+    "AC-SET-07"
+  ],
   "decision": "approved",
-  "notes": "Implementation authorization is the user's direct requests: project settings, a mock-data test project, and exactly four visible roles (administrator/supervisor/owner/contractor). Existing DES records and referenced history remain intact. No new technical authority or qualifications are conferred by account creation. This is a v1.2 candidate change record, not a declaration that the full Product Baseline has been adopted or real-field acceptance completed; intended effectiveness requires a verified adopting release. Synthetic installation is staging-only."
+  "notes": "Implementation authorization is the user's direct requests: project settings, a mock-data test project, and exactly four visible roles (administrator/supervisor/owner/contractor). Existing DES records and referenced history remain intact. No new technical authority or qualifications are conferred by account creation. This is a v1.2 candidate change record, not a declaration that the full Product Baseline has been adopted or real-field acceptance completed; intended effectiveness requires a verified adopting release. Synthetic installation is staging-only. User follow-up identifies the missing project-add button. Creation uses existing manage_project_roles authority and server-owned identity bindings; initial assignment retains the current admin validity period and only existing administrative/render rights, with no qualifications. New project has no synthetic records, scope, drawing references, or other users."
 }

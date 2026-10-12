@@ -33,3 +33,12 @@
 자동 시험은 `tests_mvp/test_project_settings_http.py`, `scripts/test_project_session_races.mjs`, `playwright.project-settings.config.ts` 및 기존 비밀번호/field-core 회귀에 있다. 연결 브라우저는 실제 HTTPS·비밀번호·JWT·API·격리된 SQLite를 사용한다. 실제 서버의 PostgreSQL/Tailscale 확인과 실제 현장 파일럿은 별도 근거다.
 
 PCR-2026-003은 C1 호환 확장의 v1.2 후보 변경기록이다. 사용자 요청에 따른 구현 승인과 전체 Product Baseline의 공식 릴리스 채택을 구분한다. 이 기록이나 staging 배포만으로 현장 인수 또는 기준선 전체 채택을 선언하지 않는다.
+
+### AC-SET-07 — 프로젝트 추가 (사용자 요청 2026-10-12)
+
+- `＋ 프로젝트 추가`에서 프로젝트명·국가·시간대·공사 종류·관리회사명을 입력한다. 오프라인 저장은 막고 실패 시 입력과 멱등 키를 유지한다.
+- `POST /projects/{projectId}/settings/projects`는 현재 프로젝트에 전체 범위의 `manage_project_roles`가 있는 승인된 로그인 관리자만 호출한다. 클라이언트의 Party/Role/권한·자격 필드 지정은 거절한다.
+- 한 트랜잭션으로 빈 Project, 관리회사, 현재 계정에 대응하는 새 프로젝트의 담당자·관리자 배정, 승인 membership과 감사를 저장한다. 최초 배정의 유효기간은 현재 관리자 배정을 넘지 않으며 기술 권한/자격은 부여하지 않는다.
+- 새 프로젝트는 엄격한 1등급 자격 기준으로 시작한다. 업무범위, 참여회사·담당자, 도면과 증빙은 별도로 등록한다. 합성자료·공식 승인·참조·기존 타인의 membership을 복제하지 않는다.
+- 같은 멱등 키/본문은 같은 프로젝트를 반환하며 다른 본문은 409다. 생성 후 프로젝트 선택 및 재로그인으로 열 수 있고 다른 프로젝트의 자료 접근은 거절한다.
+- 검증: 실제 HTTP의 권한·입력·멱등·격리·재시작, 비밀번호 HTTPS 브라우저 desktop/phone의 버튼·오프라인 입력 보존·생성·전환·재로그인.

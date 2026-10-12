@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import type { ProjectRole, ProjectSettings, Workspace } from "../data/ui-contract";
+import type { ProjectCreationInput, ProjectRole, ProjectSettings, Workspace } from "../data/ui-contract";
 import { ApiError, type SupervisionClient } from "../data/supervision-client";
 import { Panel, SectionHeader } from "../ui";
 import { PageBoundary } from "./PageBoundary";
@@ -14,11 +14,13 @@ function dateInZone(zone:string,offset=0) {
   return ["year","month","day"].map(key=>parts.find(p=>p.type===key)?.value).join("-");
 }
 
-export function ProjectSettingsPage({client,workspace,online,onChanged}:{client:SupervisionClient;workspace:Workspace;online:boolean;onChanged:()=>Promise<void>}) {
+export function ProjectSettingsPage({client,workspace,online,onChanged,onProjectCreated}:{client:SupervisionClient;workspace:Workspace;online:boolean;onChanged:()=>Promise<void>;onProjectCreated?:(projectId:string)=>Promise<void>}) {
   const [revision,setRevision]=useState(0);const [data,setData]=useState<ProjectSettings|null>(null);const [tab,setTab]=useState(0);
   const [busy,setBusy]=useState(false);const [error,setError]=useState("");const [notice,setNotice]=useState("");
   const [accountGroup,setAccountGroup]=useState<ProjectRole>("ADM");const [personGroup,setPersonGroup]=useState<ProjectRole>("SUP");const [edit,setEdit]=useState<Assignment|null>(null);
   const attempt=useRef<{body:string;key:string}|null>(null);const mounted=useRef(true);
+  const [addingProject,setAddingProject]=useState(false);
+  const projectAttempt=useRef<{body:string;key:string;projectId?:string}|null>(null);
   useEffect(()=>{mounted.current=true;return ()=>{mounted.current=false;};},[]);
   const load=useCallback(async()=>{
     setBusy(true);setError("");
@@ -44,6 +46,23 @@ export function ProjectSettingsPage({client,workspace,online,onChanged}:{client:
       if(mounted.current)setError(e instanceof ApiError&&e.detail.code==="REFERENCE_STALE"?"다른 관리자가 설정을 변경했습니다. 입력은 유지했습니다. 다시 불러온 뒤 확인하여 저장하십시오.":e instanceof ApiError?e.detail.message:"저장 결과를 확인하지 못했습니다. 입력을 유지한 채 다시 시도하십시오.");return false;
     } finally {if(mounted.current)setBusy(false);}
   }
+  async function addProject(event:FormEvent<HTMLFormElement>) {
+    event.preventDefault();if(locked||!data?.canCreateProject)return;
+    const values=Object.fromEntries(new FormData(event.currentTarget)) as unknown as ProjectCreationInput;
+    const body=JSON.stringify(values);
+    if(projectAttempt.current?.body!==body)projectAttempt.current={body,key:crypto.randomUUID()};
+    const currentAttempt=projectAttempt.current;
+    setBusy(true);setError("");setNotice("");
+    try {
+      if(!currentAttempt.projectId){const result=await client.createProject(values,currentAttempt.key);currentAttempt.projectId=result.project.id;}
+      if(!mounted.current)return;
+      setNotice("프로젝트를 추가했습니다. 참여회사·담당자와 작업범위를 등록하십시오.");
+      if(onProjectCreated)await onProjectCreated(currentAttempt.projectId);
+      if(mounted.current){setAddingProject(false);projectAttempt.current=null;}
+    } catch(e) {
+      if(mounted.current)setError(currentAttempt.projectId?"프로젝트는 추가됐습니다. 프로젝트 선택에서 확인하거나 다시 눌러 이동하십시오.":e instanceof ApiError?e.detail.message:"프로젝트 추가 결과를 확인하지 못했습니다. 입력을 유지한 채 다시 시도하십시오.");
+    } finally {if(mounted.current)setBusy(false);}
+  }
   function form(command:string,title:string,children:ReactNode,extra:()=>object=()=>({}),clear=false) {
     return <form onSubmit={event=>{
       event.preventDefault();const target=event.currentTarget;const values=Object.fromEntries(new FormData(target));
@@ -62,6 +81,8 @@ export function ProjectSettingsPage({client,workspace,online,onChanged}:{client:
   }
   return <PageBoundary name="admin" className="project-settings-page"><Panel>
     <SectionHeader title="프로젝트 설정" meta={workspace.project.name}/>
+    {data?.canCreateProject&&<div className="settings-project-actions"><button className="primary" type="button" aria-expanded={addingProject} aria-controls="new-project-form" disabled={locked} onClick={()=>{setAddingProject(!addingProject);setError("");}}>＋ 프로젝트 추가</button></div>}
+    {data?.canCreateProject&&<form id="new-project-form" hidden={!addingProject} onSubmit={event=>void addProject(event)}><fieldset disabled={locked} className="settings-form"><legend>새 프로젝트</legend>{input("프로젝트명","name")}{select("현장 국가","country",[{id:"VN",name:"베트남"},{id:"KR",name:"한국"}],"VN")}{select("현장 시간대","timezone",[{id:"Asia/Ho_Chi_Minh",name:"베트남 시간"},{id:"Asia/Seoul",name:"한국 시간"}],"Asia/Ho_Chi_Minh")}{input("공사 종류","classification","","text",false)}{input("관리회사명","organizationName")}<p>새 프로젝트에는 현재 관리자의 배정만 등록됩니다. 참여회사·담당자와 작업범위는 생성 후 설정하십시오.</p><div className="settings-project-actions"><button className="primary" type="submit">프로젝트 생성</button><button type="button" onClick={()=>setAddingProject(false)}>취소</button></div></fieldset></form>}
     <p className="notice">관리자·감리자·발주처·시공사의 현장 배정과 로그인 계정을 관리합니다. 담당자 배정은 자격 확인이나 기술승인을 대신하지 않습니다.</p>
     <button type="button" disabled={busy||!online} onClick={()=>void load()}>다시 불러오기</button>
     {!online&&<p role="status">연결이 끊겨 저장할 수 없습니다.</p>}{error&&<p role="alert" className="settings-error">{error}</p>}{notice&&<p role="status">{notice}</p>}

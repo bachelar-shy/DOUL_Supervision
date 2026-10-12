@@ -14,6 +14,27 @@ async function settings(page: Page) {
 const panel=(page:Page,name:string)=>page.getByRole("tabpanel",{name,exact:true});
 const unique=()=>"시험-"+Date.now()+"-"+Math.floor(Math.random()*1000);
 
+test("administrator creates a blank project with a visible add button and can reopen it",async({page,context})=>{
+  await login(page);await settings(page);
+  const button=page.getByRole("button",{name:"＋ 프로젝트 추가",exact:true});await expect(button).toBeVisible();
+  await button.click();const form=page.locator("#new-project-form");await expect(form).toBeVisible();
+  const name=unique();await form.getByLabel("프로젝트명",{exact:true}).fill(name);
+  await form.getByLabel("관리회사명",{exact:true}).fill("시험 관리회사");
+  await form.getByLabel("공사 종류",{exact:true}).fill("공장");
+  await context.setOffline(true);await expect(form.getByRole("button",{name:"프로젝트 생성",exact:true})).toBeDisabled();
+  await context.setOffline(false);await expect(form.getByLabel("프로젝트명",{exact:true})).toHaveValue(name);
+  await form.getByRole("button",{name:"프로젝트 생성",exact:true}).click();
+  await expect(panel(page,"기본정보").getByLabel("프로젝트명",{exact:true})).toHaveValue(name);
+  await expect(page.getByText("합성 테스트 자료 · 실제 현장 증빙 아님",{exact:true})).toHaveCount(0);
+  await page.getByRole("tab",{name:"업무배정",exact:true}).click();
+  await expect(panel(page,"업무배정").locator("tbody tr")).toHaveCount(1);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
+  await page.reload();await login(page);await settings(page);
+  if(test.info().project.name==="phone")await page.locator(".menu-toggle").click();
+  await page.getByRole("combobox",{name:"프로젝트 선택",exact:true}).selectOption({label:name});
+  await settings(page);await expect(panel(page,"기본정보").getByLabel("프로젝트명",{exact:true})).toHaveValue(name);
+});
+
 test("real project save persists after a new password session",async({page})=>{
   await login(page); await settings(page);
   const form=panel(page,"기본정보"); const name=unique();
