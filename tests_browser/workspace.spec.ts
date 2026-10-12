@@ -199,12 +199,13 @@ test("DOUL component catalog is mounted on representative surfaces", async ({ pa
   await page.getByRole("button", { name: "닫기", exact: true }).click();
 
   await page.goto("/#/inspections");
-  await expect(page.locator('[data-ui-component="detail-pane"]')).toBeVisible();
+  await expect(page.locator('[data-ui-component="detail-pane"]')).toBeHidden();
   await page
     .getByRole("button")
     .filter({ hasText: "경량벽체 은폐 전 검측" })
     .first()
     .click();
+  await expect(page.locator('[data-ui-component="detail-pane"]')).toBeVisible();
   const inspectionBoundary = page.locator('[data-ui-component="status-boundary-group"]');
   await expect(inspectionBoundary).toBeVisible();
   await expect(inspectionBoundary).toContainText("검측 판정");
