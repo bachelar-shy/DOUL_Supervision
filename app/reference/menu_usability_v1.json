@@ -32,6 +32,7 @@
         "documents",
         "registers",
         "rfis",
+        "staff-requests",
         "parallel-test"
       ],
       "mainTasks": [
@@ -72,7 +73,8 @@
         "safety",
         "documents",
         "registers",
-        "rfis"
+        "rfis",
+        "staff-requests"
       ],
       "mainTasks": [
         {
@@ -108,7 +110,8 @@
         "completion",
         "owner",
         "documents",
-        "registers"
+        "registers",
+        "staff-requests"
       ],
       "mainTasks": [
         {
@@ -184,7 +187,8 @@
         "capture",
         "documents",
         "registers",
-        "rfis"
+        "rfis",
+        "staff-requests"
       ],
       "mainTasks": [
         {
@@ -984,6 +988,7 @@
           "documents",
           "registers",
           "rfis",
+          "staff-requests",
           "parallel-test"
         ],
         "CON": [
@@ -1000,7 +1005,8 @@
           "safety",
           "documents",
           "registers",
-          "rfis"
+          "rfis",
+          "staff-requests"
         ],
         "OWN": [
           "today",
@@ -1012,7 +1018,8 @@
           "completion",
           "owner",
           "documents",
-          "registers"
+          "registers",
+          "staff-requests"
         ],
         "ADM": [
           "today",
@@ -1040,7 +1047,8 @@
           "capture",
           "documents",
           "registers",
-          "rfis"
+          "rfis",
+          "staff-requests"
         ]
       }
     },
@@ -1054,24 +1062,28 @@
           "drawings",
           "inspections",
           "corrections",
-          "owner"
+          "owner",
+          "staff-requests"
         ],
         "CON": [
           "today",
           "capture",
           "drawings",
           "inspections",
-          "corrections"
+          "corrections",
+          "staff-requests"
         ],
         "OWN": [
           "today",
           "drawings",
           "corrections",
-          "owner"
+          "owner",
+          "staff-requests"
         ],
         "DES": [
           "today",
-          "drawings"
+          "drawings",
+          "staff-requests"
         ],
         "ADM": [
           "today",

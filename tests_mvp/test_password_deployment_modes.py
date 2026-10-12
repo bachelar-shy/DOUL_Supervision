@@ -26,7 +26,17 @@ class PasswordDeploymentModesTest(unittest.TestCase):
         self.assertIn("ARG VITE_DOUL_AUTH_MODE=external", docker)
         self.assertIn("ENV VITE_DOUL_AUTH_MODE=", docker)
         self.assertIn('configured === "password"', app)
-        self.assertIn('mode === "password" ? "valid" : "invalid"', app)
+        # The API may explicitly advertise a staging-only synthetic role
+        # chooser. Accepting that mode must not bypass the password-gated
+        # entry screen or allow an unrecognized auth mode.
+        self.assertIn('mode === "password" || mode === "test-role" ? "valid" : "invalid"', app)
+        self.assertIn('setTestRoleMode(mode === "test-role")', app)
+        self.assertIn('if (passwordMode && !authorized)', app)
+        self.assertIn('testRoleMode={testRoleMode}', app)
+        quick_login = (ROOT / "services/api/modules/synthetic_role_login.py").read_text()
+        self.assertIn("stage != 'staging' or demo or password_accounts is None", quick_login)
+        self.assertIn("require(enabled, 'NOT_AUTHORIZED'", quick_login)
+        self.assertIn("require(request.headers.get('origin') in origins", quick_login)
         self.assertIn('if (!localDev && !passwordMode)', app)
 
 
