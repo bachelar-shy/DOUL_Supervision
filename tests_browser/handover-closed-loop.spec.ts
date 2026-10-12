@@ -107,8 +107,24 @@ function fetchFixture(route: Route, base: string, origin: string) {
 }
 
 async function useRole(page: Page, role: "CON" | "SUP" | "OWN") {
-  await page.locator(".top-actions .role-picker select").nth(1).selectOption(role);
-  await expect(page.locator(".top-actions .role-picker select").nth(1)).toHaveValue(role);
+  const picker = page.locator(".top-actions .role-picker select").nth(1);
+  const changing = (await picker.inputValue()) !== role;
+  // The role picker tears down the old workspace, authenticates the next role,
+  // and fetches a new context. Navigating before that cycle finishes can be
+  // overwritten by the role-change fallback to Today.
+  const roleWorkspace = changing
+    ? page.waitForResponse(response =>
+        response.request().method() === "GET"
+        && /\/projects\/[^/]+\/workspace(?:\?|$)/.test(response.url())
+        && response.ok(), { timeout: 30000 })
+    : null;
+  await picker.selectOption(role);
+  await expect(picker).toHaveValue(role);
+  if (roleWorkspace) await roleWorkspace;
+  await expect(page.locator(".loading-panel")).toBeHidden({ timeout: 20000 });
+  if (changing) {
+    await expect(page.getByRole("heading", { name: /^Today$/ })).toBeVisible({ timeout: 15000 });
+  }
   await page.getByRole("navigation").getByRole("button", { name: /commissioning.*handover.*warranty/i }).click();
   await expect(page.locator("[data-ui-component='completion-handover-workspace']")).toBeVisible({ timeout: 15000 });
 }
