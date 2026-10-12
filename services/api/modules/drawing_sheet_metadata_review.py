@@ -30,7 +30,8 @@ def install_sheet_metadata_review_routes(app, store, *, identity, context, sheet
                 "INVALID_REQUEST", "Required fields: expectedVersion, decision, number, title, note")
         require(type(body["expectedVersion"]) is int and body["expectedVersion"] > 0,
                 "INVALID_REQUEST", "Positive expected sheet version required")
-        require(body["decision"] in DECISIONS, "INVALID_REQUEST", "Unknown review decision")
+        require(isinstance(body["decision"], str) and body["decision"] in DECISIONS,
+                "INVALID_REQUEST", "Unknown review decision")
         for field, maximum in (("number", 60), ("title", 220)):
             require(isinstance(body[field], str) and
                     0 < len(body[field].strip()) <= maximum and
