@@ -1,6 +1,10 @@
 # Historical runner guide - NOT ACTIVE CI
 
-Current GitHub Actions use the user-authorized **dedicated Mac mini Linux ARM64 runner** for all 24 workflows. Only same-repository pull-request branches may use this persistent runner. Preserve other projects, containers and Docker contexts; never prune them for CI.
+The dedicated Mac mini Linux ARM64 runner was used before the switch to
+GitHub-hosted `ubuntu-24.04` jobs. This document records its historical
+configuration only. No repository workflow should select the persistent runner.
+Preserve the staging server and other projects, containers and Docker contexts;
+never prune them as part of CI migration.
 
 ---
 
