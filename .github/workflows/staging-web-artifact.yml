@@ -1,0 +1,57 @@
+name: staging-web-artifact
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: 'Exact main commit intended for staging (40-char SHA)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-web-artifact
+  cancel-in-progress: false
+
+jobs:
+  build-web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Reject unexpected commit or non-main builds
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test "$GITHUB_SHA" = "$EXPECTED_SHA"
+          test "${#EXPECTED_SHA}" -eq 40
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - name: Build deployable field-core web on GitHub runner
+        env:
+          VITE_DOUL_AUTH_MODE: password
+        run: |
+          npm install -g npm@12.2.0
+          npm ci
+          npm run check:ui-boundary
+          npm run typecheck --workspace apps/web
+          npm run web:build
+          test -s apps/web/dist/index.html
+      - name: Create and hash immutable web release
+        run: |
+          tar -czf staging-web.tgz -C apps/web/dist .
+          sha256sum staging-web.tgz > staging-web.tgz.sha256
+      - name: Store downloadable release artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: staging-web-${{ github.sha }}
+          path: |
+            staging-web.tgz
+            staging-web.tgz.sha256
+          if-no-files-found: error
+          retention-days: 7
