@@ -27,18 +27,32 @@ for (const role of ["SUP", "CON", "OWN", "ADM", "DES"] as Role[]) {
   });
 }
 
-test("field-core drawing entry is read-only and does not expose development-only tools", async ({ page }) => {
+test("field-core drawing entry shows sheet catalogue, with owner unable to modify sheets", async ({ page }) => {
   await page.goto("/#/today");
   const drawings = page.locator('aside.sidebar [data-ui-component="navigation"] button[data-route="drawings"]');
   await expect(drawings).toContainText("도면조회");
   await drawings.click();
   await expect(page).toHaveURL(/#\/drawings$/);
   await expect(drawings).toHaveAttribute("aria-current", "page");
-  await expect(page.locator('[data-ui-page="field-drawings"]')).toBeVisible();
-  // Wait for the lazy viewer before checking that editing tools are absent.
-  await expect(page.getByText("도면의 승인 상태·개정·현장 배포 여부는 별도로 확인하십시오.")).toBeVisible();
+
+  // The real release entry is now a lightweight per-page catalogue, not the
+  // historical PDF renderer. The old reviewer remains available by explicit
+  // navigation, without exposing its development controls on entry.
+  const catalogue = page.locator('[data-ui-component="drawing-sheet-workspace"]');
+  await expect(catalogue).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "도면 검색" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "기존 PDF 검토" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "새 도면(PDF)" })).toBeVisible();
   await expect(page.locator('[data-testid="pdf-upload"]')).toHaveCount(0);
   await expect(page.locator('[data-ui-page="drawings"]')).toHaveCount(0);
+
+  // Ownership is an access boundary. Switching to the owner must remove all
+  // new-sheet creation controls while retaining read-only catalogue access.
+  await page.getByLabel("시험 사용자 역할 선택").selectOption("OWN");
+  await page.goto("/#/drawings");
+  await expect(catalogue).toBeVisible();
+  await expect(page.getByRole("button", { name: "새 도면(PDF)" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "기존 PDF 검토" })).toBeVisible();
 });
 
 test("field-core menu can scroll on a low-height screen and navigation is safe", async ({ page }) => {
