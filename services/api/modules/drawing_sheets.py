@@ -514,6 +514,6 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
         app, store, identity=identity, context=context, sheet_for=sheet_for,
         set_for=set_for, key_for=key_for, audit=_audit)
 
-install_sheet_revision_routes(app, store, identity=identity, context=context,
+    install_sheet_revision_routes(app, store, identity=identity, context=context,
                                   sheet_for=sheet_for, set_for=set_for,
                                   key_for=key_for, audit=_audit)
