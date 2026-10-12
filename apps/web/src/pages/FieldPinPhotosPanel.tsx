@@ -100,7 +100,7 @@ export function FieldPinPhotosPanel({ client, sheetId, pin }: {
 }
 export function PhotoLinksForEvidence({ client, evidenceId, onOpenSheet }: {
   client: SupervisionClient; evidenceId: string;
-  onOpenSheet?: (sheetId: string) => void;
+  onOpenSheet?: (sheetId: string, pinId: string) => void;
 }) {
   const [rows, setRows] = useState<PhotoPinLink[]>([]);
   useEffect(() => {
@@ -117,7 +117,7 @@ export function PhotoLinksForEvidence({ client, evidenceId, onOpenSheet }: {
       <strong>{row.sheetNumber}</strong> · {row.sheetTitle}
       <p>{row.pinComment}</p>
       {row.recordRef && <small>연결된 업무: {row.recordRef.objectType} · {row.recordRef.objectId.slice(0, 8)}</small>}
-      {onOpenSheet && <button type="button" onClick={() => onOpenSheet(row.sheetId)}>해당 도면 열기</button>}
+      {onOpenSheet && <button type="button" onClick={() => onOpenSheet(row.sheetId, row.pinId)}>해당 도면 열기</button>}
     </div>)}
     {!rows.length && <small>연결된 도면 핀이 없습니다.</small>}
   </section>;
