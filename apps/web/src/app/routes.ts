@@ -86,15 +86,16 @@ export const routes: readonly UiRoute[] = [
   },
   { id: "rfis", label: "RFI", labelKey: "navigation.rfis", icon: "layers" },
   { id: "admin", label: "Admin", labelKey: "navigation.admin", icon: "users" },
+  { id: "staff-requests", label: "인원 추가 요청", labelKey: "navigation.personnelRequests", icon: "user-plus" },
   { id: "parallel-test", label: "Parallel feature tests", labelKey: "navigation.parallelTest", icon: "layers" },
 ];
 
 // Stage-one field release limits navigation; original workflows and data remain intact.
 export const fieldCoreRoutes: Record<HumanRole, readonly string[]> = {
-  SUP: ["today","capture","drawings","inspections","corrections","owner"],
-  CON: ["today","capture","drawings","inspections","corrections"],
-  OWN: ["today","drawings","corrections","owner"],
-  DES: ["today","drawings"],
+  SUP: ["today","capture","drawings","inspections","corrections","owner","staff-requests"],
+  CON: ["today","capture","drawings","inspections","corrections","staff-requests"],
+  OWN: ["today","drawings","corrections","owner","staff-requests"],
+  DES: ["today","drawings","staff-requests"],
   ADM: ["today","capture","drawings","inspections","corrections","owner","admin"],
 };
 export type CorrectionSection = "observations" | "issues" | "actions";
@@ -195,10 +196,11 @@ export const roleRoutes: Record<HumanRole, readonly string[]> = {
     "rfis",
     "documents",
     "registers",
+    "staff-requests",
   ],
-  OWN: ["today", "drawings", "schedule", "contract", "payment", "completion", "owner", "issues", "documents", "registers"],
-  DES: ["today", "rfis", "drawings", "capture", "documents", "registers"],
-  ADM: allRouteIds,
+  OWN: ["today", "drawings", "schedule", "contract", "payment", "completion", "owner", "issues", "documents", "registers", "staff-requests"],
+  DES: ["today", "rfis", "drawings", "capture", "documents", "registers", "staff-requests"],
+  ADM: allRouteIds.filter((id) => id !== "staff-requests"),
 };
 
 export const machineLabels: Record<string, string> = new Proxy(

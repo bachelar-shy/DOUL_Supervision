@@ -31,6 +31,7 @@ import {
 } from "../pages";
 import { Icon } from "../pages/shared";
 import { OfflineCommandIntentPanel } from "../pages/OfflineCommandIntentPanel";
+import { PersonnelRequestPage } from "../pages/PersonnelRequestPage";
 import { offlineIntentTitle } from "../data/offline-command-labels";
 import { fieldCoreRouteFor, fieldCoreRoutes, machineForRoute, mobileRoutes, roleRoutes, routes, type CorrectionSection } from "./routes";
 import { paymentLabelKeys } from "../data/payment-workspace";
@@ -70,6 +71,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
   };
   const [role, setRole] = useState<HumanRole>(passwordMode ? client.session?.actor.actorGroup ?? "SUP" : "SUP");
   const [approvedProjects,setApprovedProjects]=useState<AccessibleProjects["items"]>([]);
+  const [pendingPersonnelRequests, setPendingPersonnelRequests] = useState(0);
   const [projectSwitching,setProjectSwitching]=useState(false);
   const [demoProjects, setDemoProjects] = useState<DemoProject[]>([]);
   const [projectChoice, setProjectChoice] = useState("");
@@ -275,6 +277,23 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     setSelected(null);
     setMenu(false);
   }, [allowed, route, workspace, demoDiagnosticDeepLink]);
+  useEffect(() => {
+    if (role !== "ADM" || !workspace || client.kind !== "http") {
+      setPendingPersonnelRequests(0);
+      return;
+    }
+    let active = true;
+    setPendingPersonnelRequests(0);
+    const loadPending = () => {
+      void client.request<{ pendingCount: number }>(client.path("/personnel-requests"))
+        .then(result => { if (active) setPendingPersonnelRequests(Math.max(0, result.pendingCount || 0)); })
+        .catch(() => { if (active) setPendingPersonnelRequests(0); });
+    };
+    loadPending();
+    window.addEventListener("focus", loadPending);
+    const interval = window.setInterval(loadPending, 60_000);
+    return () => { active = false; window.removeEventListener("focus", loadPending); window.clearInterval(interval); };
+  }, [client, role, workspace?.project.id]);
   const mobileChoices = fieldCoreMode
     ? routes.filter((item) => allowed.includes(item.id) && ["today", "capture", "inspections", "corrections"].includes(item.id))
     : mobileRoutes[role];
@@ -394,7 +413,9 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               label: routeLabel({ id, label, labelKey, icon }),
               icon: <Icon name={icon} />,
               badge:
-                id === "observations"
+                id === "admin" && pendingPersonnelRequests > 0
+                  ? pendingPersonnelRequests
+                  : id === "observations"
                   ? items.filter(
                       (item) =>
                         item.machine === "observation" &&
@@ -720,6 +741,9 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               )}
               {safeRoute === "registers" && (
                 <RegisterPage client={client} workspace={workspace} />
+              )}
+              {safeRoute === "staff-requests" && (
+                <PersonnelRequestPage key={workspace.project.id + ":" + workspace.role.id} client={client} workspace={workspace} online={online} />
               )}
               {safeRoute === "admin" && (
                 <AdminPage key={workspace.project.id} client={client} workspace={workspace} online={online} onChanged={refresh} onProjectCreated={async projectId=>{const directory=await client.accessibleProjects();setApprovedProjects(directory.items);if(!await switchProject(projectId))throw new Error("Project selection did not complete");nav("admin");}} />
