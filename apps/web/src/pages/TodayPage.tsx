@@ -72,6 +72,15 @@ export function TodayPage({
   return (
     <PageBoundary name="today">
       <DashboardTemplate>
+        {["SUP", "CON", "ADM"].includes(role) && <section className="panel grid gap-2 p-4" data-ui-component="quick-create-launcher">
+          <h2 className="font-semibold">신규 업무 등록</h2>
+          <p className="text-sm text-muted-foreground">새 업무를 작성할 화면으로 이동합니다. 저장·제출은 각 업무에서 별도로 진행됩니다.</p>
+          <div className="flex flex-wrap gap-2">
+            {allowedRoutes.includes("capture") && <button type="button" className="primary" style={{ minHeight: 44 }} onClick={() => onNavigate("capture")}>＋ 현장기록</button>}
+            {role === "CON" && allowedRoutes.includes("inspections") && <button type="button" className="secondary" style={{ minHeight: 44 }} onClick={() => onNavigate("inspections")}>＋ 신규 검측</button>}
+            {role !== "CON" && allowedRoutes.includes("corrections") && <button type="button" className="secondary" style={{ minHeight: 44 }} onClick={() => onNavigate("actions")}>＋ 시정조치</button>}
+          </div>
+        </section>}
         <div className="kpi-grid">
           {kpis.map(([label, value, route], index) => (
             <KpiCard

@@ -1,0 +1,52 @@
+name: field-create-entry
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/field-create-entry.yml'
+      - 'services/api/main.py'
+      - 'services/api/modules/field_records.py'
+      - 'apps/web/src/pages/CapturePage.tsx'
+      - 'apps/web/src/pages/FieldRecordPanel.tsx'
+      - 'apps/web/src/pages/WorkbenchPage.tsx'
+      - 'apps/web/src/pages/TodayPage.tsx'
+      - 'tests_mvp/test_field_records_http.py'
+      - 'tests_browser_quick_role/field-create.spec.ts'
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: field-create-entry-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  new-record-flows:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - name: Install exact dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -r services/api/requirements.lock
+          npm ci
+      - name: Run field record role, idempotency, and audit tests
+        run: .venv/bin/python -m unittest tests_mvp.test_field_records_http tests_mvp.test_synthetic_role_login_http -v
+      - name: Validate UI and build
+        env:
+          VITE_DOUL_AUTH_MODE: password
+        run: |
+          npm run check:ui-boundary
+          npm run lint --workspace apps/web
+          npm run web:build
+      - name: Browser desktop and mobile create flows
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test -c playwright.quick-role.config.ts tests_browser_quick_role/field-create.spec.ts

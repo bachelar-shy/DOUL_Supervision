@@ -340,6 +340,9 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     from services.api.modules.personnel_requests import install_personnel_request_routes
     install_personnel_request_routes(app, store, identity=identity, role_for=role_for,
                                      key_for=key_for, body_json=body_json)
+    from services.api.modules.field_records import install_field_record_routes
+    install_field_record_routes(app, store, identity=identity, role_for=role_for,
+                                key_for=key_for, body_json=body_json)
 
     from services.api.modules.drawing_impacts import install_drawing_impact_routes, reconcile_drawing_impacts_in_transaction
     install_drawing_impact_routes(app, store, identity=identity, role_for=role_for)

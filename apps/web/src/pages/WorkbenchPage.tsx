@@ -5,6 +5,7 @@ import { InspectionAuthoringPanel } from "./InspectionAuthoringPanel";
 import { InspectionCaseFlowPanel } from "./parallel/InspectionCaseFlowPanel";
 import { ActionAuthoringPanel } from "./parallel/ActionAuthoringPanel";
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import type {
   CommandDescriptor,
   HumanRole,
@@ -54,6 +55,8 @@ export function WorkbenchPage({
   onCreateIssue,
 }: WorkbenchPageProps) {
   const { t } = useTranslation();
+  const [newInspectionOpen, setNewInspectionOpen] = useState(false);
+  const [newActionOpen, setNewActionOpen] = useState(false);
   const routeDefinition = routes.find((item) => item.id === route);
   const routeTitle = routeDefinition
     ? t(routeDefinition.labelKey ?? "", { defaultValue: routeDefinition.label })
@@ -74,10 +77,36 @@ export function WorkbenchPage({
             <span>{t("workbench.count", { count: visibleItems.length })}</span>
           </div>
           {route === "inspections" && role === "CON" && (
-            <InspectionAuthoringPanel client={client} workspace={workspace} online={online} onCreated={onInspectionCreated} />
+            <div className="grid gap-2" data-ui-component="new-inspection-entry">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-muted-foreground">시공사 자체검측 요청을 새로 작성합니다.</p>
+                <button type="button" className="primary" style={{ minHeight: 44 }}
+                  aria-expanded={newInspectionOpen} onClick={() => setNewInspectionOpen(value => !value)}>
+                  {newInspectionOpen ? "작성 닫기" : "＋ 신규 검측"}
+                </button>
+              </div>
+              {newInspectionOpen && <InspectionAuthoringPanel client={client} workspace={workspace}
+                online={online} onCreated={async record => { await onInspectionCreated(record); setNewInspectionOpen(false); }} />}
+            </div>
           )}
-          {route === "actions" && (
-            <ActionAuthoringPanel client={client} workspace={workspace} online={online} onCreated={onActionCreated} />
+          {route === "inspections" && role !== "CON" && (
+            <p className="rounded border p-3 text-sm" role="note">
+              검측 신규 요청은 시공사에서 작성합니다. 감리자는 등록된 요청을 선택해 검측 일정·결과를 처리하고,
+              관리자는 배정 및 기록 조회를 관리합니다. 테스트 시에는 로그인 화면에서 시공사 역할을 선택하십시오.
+            </p>
+          )}
+          {route === "actions" && role !== "OWN" && (
+            <div className="grid gap-2" data-ui-component="new-action-entry">
+              <div className="flex flex-wrap items-center items-center justify-between gap-2">
+                <p className="text-sm text-muted-foreground">기존 부적합 사항에 연결되는 시정조치 초안을 작성합니다.</p>
+                <button type="button" className="primary" style={{ minHeight: 44 }}
+                  aria-expanded={newActionOpen} onClick={() => setNewActionOpen(value => !value)}>
+                  {newActionOpen ? "작성 닫기" : "＋ 신규 시정조치"}
+                </button>
+              </div>
+              {newActionOpen && <ActionAuthoringPanel client={client} workspace={workspace}
+                online={online} onCreated={onActionCreated} />}
+            </div>
           )}
           <RecordList
             items={visibleItems}
