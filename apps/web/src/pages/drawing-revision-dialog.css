@@ -1,0 +1,57 @@
+.drawing-revision-backdrop { position: fixed; inset: 0; z-index: 1180; padding: 18px;
+  display: grid; place-items: center; background: #1b2532a8; }
+.drawing-revision-modal { width: min(1250px, 97vw); max-height: 96dvh; background: #fff; color: #273849;
+  display: flex; flex-direction: column; overflow: hidden; border-radius: 4px;
+  box-shadow: 0 16px 54px #0003; }
+.drawing-revision-modal > header { min-height: 56px; padding: 8px 15px; display: flex;
+  gap: 10px; justify-content: space-between; align-items: center; border-bottom: 1px solid #d5dce5; }
+.drawing-revision-modal > header div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.drawing-revision-modal > header small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  color: #607083; }
+.drawing-revision-modal > header button { border: 0; padding: 8px; background: transparent; }
+.drawing-revision-content { display: grid; grid-template-columns: minmax(260px, 315px) minmax(0, 1fr);
+  min-height: 350px; flex: 1; overflow: hidden; }
+.drawing-revision-list { overflow: auto; padding: 15px; background: #f8f9fb;
+  border-right: 1px solid #d6dde5; font-size: 12px; }
+.drawing-revision-list > p { line-height: 1.5; color: #58687b; }
+.drawing-revision-list > button { display: flex; width: 100%; flex-direction: column; gap: 6px;
+  align-items: flex-start; padding: 10px; margin: 7px 0; background: #fff;
+  border: 1px solid #d2d9e2; border-radius: 3px; text-align: left; }
+.drawing-revision-list > button.selected { border-color: #466aab; background: #e9f0fb; }
+.drawing-revision-list button small { color: #65758b; font-size: 10px; }
+.drawing-revision-list form { margin-top: 20px; display: grid; gap: 10px;
+  padding-top: 15px; border-top: 1px solid #d6dce4; }
+.drawing-revision-list form label { display: grid; gap: 5px; font-weight: 600; }
+.drawing-revision-list form input, .drawing-revision-list form select,
+.drawing-revision-list form textarea { min-width: 0; width: 100%; padding: 7px;
+  background: #fff; border: 1px solid #becbd8; border-radius: 3px; font-weight: 400; }
+.drawing-revision-version-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.drawing-revision-list form > button { background: #1742a5; color: #fff; padding: 9px;
+  border: 0; border-radius: 3px; }
+.drawing-revision-list form > button:disabled { opacity: .45; cursor: not-allowed; }
+.drawing-revision-list form small { line-height: 1.5; color: #617286; }
+.drawing-revision-compare { min-width: 0; overflow: auto; padding: 13px; display: flex; flex-direction: column; }
+.drawing-revision-compare-tools { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
+.drawing-revision-compare-tools strong { display: flex; gap: 5px; align-items: center; margin-right: auto; }
+.drawing-revision-compare-tools button { border: 1px solid #c6d0dc; padding: 6px 10px; border-radius: 3px; }
+.drawing-revision-compare-tools button[aria-pressed=true] { background: #e5edf9; border-color: #809cd2; }
+.drawing-revision-images { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 245px;
+  gap: 9px; }
+.drawing-revision-images > div { min-width: 0; min-height: 0; display: flex; flex-direction: column;
+  border: 1px solid #cbd4dd; background: #f0f2f4; }
+.drawing-revision-images label { padding: 5px 8px; background: #fff; font-size: 11px; }
+.drawing-revision-images img { min-height: 0; width: 100%; flex: 1; object-fit: contain; }
+.drawing-revision-image-wait { display: grid; place-items: center; color: #778697;
+  flex: 1; min-height: 190px; font-size: 12px; }
+.drawing-revision-images.overlay { display: block; position: relative; min-height: 340px; }
+.drawing-revision-images.overlay > div { position: absolute; inset: 0; }
+.drawing-revision-opacity { display: flex; align-items: center; gap: 12px; padding: 7px 2px; font-size: 11px; }
+.drawing-revision-opacity input { flex: 1; }
+.drawing-revision-warning { font-size: 11px; color: #9b5d16; line-height: 1.5; }
+.drawing-revision-error { color: #a02d2d; } .drawing-revision-notice { color: #205b38; }
+@media (max-width: 700px) {
+  .drawing-revision-backdrop { padding: 5px; }
+  .drawing-revision-content { grid-template-columns: 1fr; overflow-y: auto; }
+  .drawing-revision-list { max-height: 40vh; border-right: 0; border-bottom: 1px solid #d5dce5; }
+  .drawing-revision-compare { min-height: 330px; }
+}
