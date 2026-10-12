@@ -6,6 +6,9 @@ on:
       - 'services/api/main.py'
       - 'services/api/modules/drawing_raster.py'
       - 'services/api/modules/drawing_sheets.py'
+      - 'services/api/modules/drawing_sheet_metadata.py'
+      - 'tests_mvp/test_drawing_sheet_metadata.py'
+      - 'tests_mvp/test_drawing_sheet_evidence_import_http.py' 
       - 'tests_mvp/test_drawing_sheet_catalog_http.py'
   push:
     branches: [main]
@@ -32,4 +35,4 @@ jobs:
           .venv/bin/pip install -r services/api/requirements.lock
       - name: Synthetic sheet import, RBAC, audit and markup tests
         run: |
-          .venv/bin/python -m unittest tests_mvp.test_drawing_sheet_catalog_http tests_mvp.test_synthetic_role_login_http tests_mvp.test_field_records_http -v
+          .venv/bin/python -m unittest tests_mvp.test_drawing_sheet_catalog_http tests_mvp.test_synthetic_role_login_http tests_mvp.test_field_records_http tests_mvp.test_drawing_sheet_metadata tests_mvp.test_drawing_sheet_evidence_import_http -v
