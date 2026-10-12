@@ -99,3 +99,9 @@
 - native 폐쇄흐름 14개 (`/tmp/doul-settings-closed-loops-regression.log`) 진행 중. 준공 준비·유보조건·부분 인계·재검측 후 하자종결은 이미 통과했고 나머지 인계/지급/안전/EOT를 실행한다.
 - legacy DOUL SAMPLE 94개 파일/15 사례의 UI 재검증을 별도 SQLite/port5223/8801에서 진행 중이다. native config `work/playwright.sample-recovery.config.ts` (맥미니 scratch), DB `.local/settings-sample-recovery/DOUL_SAMPLE_WWT.sqlite3`, 자료 `.local/settings-sample-materials`. 실제 서버 DB와 별개다.
 - Source 현재 변경은 실제 서버에 아직 재배포하지 않았다. 실제 서버는 검증된04538aa를 계속 제공하며 사용자 자료/비밀번호/프로젝트를 삭제하지 않는다.
+
+## 지급·도면 및 샘플 재검증 체크포인트
+
+- 폐쇄흐름14개 중12개 통과(최종 인계·하자종결·안전3개·Schedule/EOT 포함). 도면 옵션 값 기대를 실제ID/표시차수로 정리했다. 지급 실패는 병렬 native 시험의 동일 test-results 경로 충돌(ENOENT)로 확인되었다. 결과 폴더를 분리한 지급·도면 재시험2개는 전부 통과했다 (`/tmp/doul-settings-payment-drawing.log`). 시험 조건이나 실제 API 판단을 약화하지 않았다.
+- Legacy 샘플 UI 첫 사례(15개 조회·실행·프로젝트 격리)는 통과했다. 관리자 메뉴 클릭 기대도 새 “프로젝트 설정” 이름으로 맞춘다. 샘플 native outputDir는 `.local/sample-recovery-results`로 분리하고 서버 cwd도 root로 명시했다. 기존8801 포트는 다른 서비스여서 건드리지 않고 자동 선택한49269를 사용한다.
+- 다음: 샘플4개 재시험 완료, native 전체브라우저 회귀(개별 결과Dir), 타입/빌드 및 field-core/설정 회귀 후 후속 UI 재배포. GitHub 최신 CI 결과를 별도로 확인해 미실행/queued와 PASS를 구분한다.

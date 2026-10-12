@@ -64,7 +64,7 @@ test("긴 관리자 메뉴가 화면에 가려지지 않고 스크롤된다", as
   // Full-featured mode scrolls to the lower roles. Field-core mode has
   // fewer visible modules so no scrolling is needed; both must be reachable.
   expect(metrics.scroll).toBeGreaterThanOrEqual(metrics.client);
-  await nav.getByRole("button", { name: "배치·권한" }).click();
+  await nav.getByRole("button", { name: "프로젝트 설정" }).click();
   await expect(page.getByTestId("sample-usecase-panel")).toBeVisible({ timeout: 20_000 });
 });
 
