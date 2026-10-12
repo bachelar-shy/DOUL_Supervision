@@ -335,6 +335,14 @@
     min-width: 44px;
     min-height: 44px;
   }
+  /* Registers navigator tabs must remain finger-sized on site devices.
+   * The general compact 34px tab rule must not override this mobile control. */
+  .app-shell[data-layout-system="field-workspace"] [data-ui-component="register-navigator"] [role="tab"],
+  .app-shell[data-layout-system="field-workspace"] [data-ui-component="register-navigator"] button {
+    min-width: 44px;
+    min-height: 44px;
+    height: auto;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .app-shell[data-layout-system="field-workspace"] :is(
