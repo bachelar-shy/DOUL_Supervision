@@ -57,8 +57,54 @@ def page_image(pdf_path: Path, page: int, *, thumb: bool = False) -> bytes:
     return data
 
 
+# Very dense vector-text PDF plans can contain >1 million characters on one page.
+# The titleblock often appears near the *end*; truncating the first 250k loses it.
+# Keep labeled field neighborhoods, preserving page-local order and bounded memory.
+_TITLEBLOCK_HINT = re.compile(
+    r"Drawing\s*(?:Number|No\.?|Title|Name)|DWG\.?\s*(?:No\.?|Number)|"
+    r"Sheet\s*(?:No\.?|Number|Title)|SỐ\s*HIỆU\s*BẢN\s*VẼ|"
+    r"SỐ\s*BẢN\s*VẼ|TÊN\s*BẢN\s*VẼ",
+    re.IGNORECASE,
+)
+_MAX_PDF_INDEX_TEXT = 250000
+
+
+def _titleblock_excerpt(content: str) -> str:
+    """Select explicit drawing-label rows even if they follow a huge PDF drawing body."""
+    if len(content) <= _MAX_PDF_INDEX_TEXT:
+        return content
+    lines = content.splitlines()
+    markers = [i for i, line in enumerate(lines) if _TITLEBLOCK_HINT.search(line)]
+    if not markers:
+        return content[-_MAX_PDF_INDEX_TEXT:]
+    nearby = set()
+    for index in markers[-60:]:
+        nearby.update(range(max(index - 2, 0), min(index + 7, len(lines))))
+    extracts: list[str] = []
+    remaining = _MAX_PDF_INDEX_TEXT
+    for index in sorted(nearby, reverse=True):
+        line = lines[index].strip()
+        if not line:
+            continue
+        if len(line) > 10000:
+            matches = list(_TITLEBLOCK_HINT.finditer(line))
+            if matches:
+                pos = matches[-1].start()
+                line = line[max(0, pos - 256):pos + 3000]
+            else:
+                line = line[-2000:]
+        line = line[-min(len(line), remaining):]
+        if not line:
+            break
+        extracts.append(line)
+        remaining -= len(line) + 1
+        if remaining <= 0:
+            break
+    return "\n".join(reversed(extracts))
+
+
 def pdf_page_text(pdf_path: Path, page: int) -> str:
     """Extract only the selected page for titleblock indexing, not vector display."""
     result = _run(["pdftotext", "-f", str(page), "-l", str(page),
                    "-layout", str(pdf_path), "-"], RENDER_TIMEOUT)
-    return result.stdout.decode("utf-8", errors="replace")[:250000]
+    return _titleblock_excerpt(result.stdout.decode("utf-8", errors="replace"))

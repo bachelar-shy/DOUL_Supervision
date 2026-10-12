@@ -82,6 +82,32 @@ Drawing Title: SLAB DETAIL
         self.assertIsNone(item.title)
         self.assertTrue(item.needs_review)
 
+    def test_drawing_number_after_large_page_body_is_not_truncated(self):
+        from services.api.modules.drawing_raster import _titleblock_excerpt
+        payload = ("PUMP ROUTING DETAIL\\n" * 53000) + (
+            "TÊN BẢN VẼ / Drawing Title\\n"
+            "SANITARY SUPPLY DETAIL\\n"
+            "SỐ HIỆU BẢN VẼ\\n"
+            "Drawing Number                                     WS-03\\n"
+        )
+        payload = payload.replace("\\n", "\n")
+        # A titleblock can occur in the middle of huge drawing-content text;
+        # keeping only a prefix or tail must not silently lose it.
+        payload += "UNRELATED DETAIL LINE\n" * 42000
+        self.assertGreater(len(payload), 250000)
+        condensed = _titleblock_excerpt(payload)
+        self.assertLessEqual(len(condensed), 250000)
+        result = extract_sheet_candidate(5, condensed)
+        self.assertEqual(result.number, "WS-03")
+        self.assertEqual(result.title, "SANITARY SUPPLY DETAIL")
+        self.assertFalse(result.needs_review)
+
+    def test_oversized_unlabeled_pdf_uses_tail_without_guessing(self):
+        from services.api.modules.drawing_raster import _titleblock_excerpt
+        result = extract_sheet_candidate(7, _titleblock_excerpt("NOTE " * 100000))
+        self.assertIsNone(result.number)
+        self.assertTrue(result.needs_review)
+
     def test_page_zero_is_rejected(self):
         with self.assertRaises(ValueError):
             extract_sheet_candidate(0, "Drawing Number WW-01")
