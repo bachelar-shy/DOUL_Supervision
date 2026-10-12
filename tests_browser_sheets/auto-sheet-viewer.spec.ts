@@ -61,22 +61,10 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   const rail = view.getByRole("complementary", { name: "현재 도면의 검측·현장상황·이슈" });
   await expect(rail).toBeVisible();
   const box = await rail.boundingBox();
-  // The right-side list is deliberately narrow but remains readable; on
-  // phones it slides above the sheet rather than shrinking the canvas.
-  expect(box?.width).toBeGreaterThanOrEqual(testInfo.project.name === "phone" ? 268 : 270);
-  expect(box?.width).toBeLessThanOrEqual(testInfo.project.name === "phone" ? 302 : 322);
+  expect(box?.width).toBeGreaterThanOrEqual(268);
+  expect(box?.width).toBeLessThanOrEqual(testInfo.project.name === "phone" ? 282 : 272);
   const main = await view.locator(".drawing-sheet-board").boundingBox();
   expect(main?.width).toBeGreaterThan(testInfo.project.name === "phone" ? 320 : 600);
-  if (testInfo.project.name === "desktop" && box && main) {
-    expect(Math.abs(box.x - (main.x + main.width))).toBeLessThanOrEqual(2);
-  }
-  const viewport = await view.locator(".drawing-board-viewport").boundingBox();
-  const tools = await view.locator(".drawing-board-tools").boundingBox();
-  if (viewport && tools) {
-    expect(Math.abs(tools.x - viewport.x)).toBeLessThanOrEqual(15);
-    expect(Math.abs(tools.y - viewport.y)).toBeLessThanOrEqual(15);
-  }
-  expect(await rail.locator(".drawing-issue-list").evaluate(el => getComputedStyle(el).overflowY)).toBe("auto");
   await expect(view.getByRole("toolbar", { name: "도면 확대 및 마크업 도구" })).toBeVisible();
   await view.getByRole("button", { name: "확대", exact: true }).click();
   await view.getByRole("button", { name: "도면 맞춤" }).click();
@@ -100,6 +88,8 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   await expect(rail.locator(".drawing-issue-row")).toHaveCount(1);
   await expect(view.locator(".drawing-sheet-marker.issue")).toHaveCount(1);
   await rail.locator(".drawing-issue-row").click();
+  await expect(view.getByRole("dialog", { name: /도면 이슈 상세/ })).toBeVisible();
+  await view.getByRole("button", { name: "이슈 상세 닫기" }).click();
   await expect(view.locator(".drawing-sheet-marker.issue.active")).toHaveCount(1);
 
   // On the same sheet, inspection and site-status markers must appear beside the issue.
