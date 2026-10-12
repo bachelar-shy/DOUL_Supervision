@@ -121,6 +121,46 @@ def _render_set(store, project_id, set_id):
                     sheet["updatedAt"] = store.engine.at()
 
 
+
+
+def _refresh_existing_metadata(store, project_id, set_id):
+    """One-page-at-a-time indexer, never changes a manually assigned drawing number."""
+    try:
+        with store.transaction():
+            root = store.meta["drawingSets"][project_id][set_id]
+            content = store.blob(root["sourceBlobId"])
+            ids = list(root["sheetIds"])
+        with TemporaryDirectory(prefix="doul-metadata-") as folder:
+            pdf = Path(folder) / "original.pdf"
+            pdf.write_bytes(content)
+            require(pdf_pages(pdf) == len(ids), "SOURCE_INVALID", "Page identity changed")
+            for n, sheet_id in enumerate(ids, 1):
+                try:
+                    candidate = extract_sheet_candidate(n, pdf_page_text(pdf, n))
+                except (PdfSheetError, ValueError):
+                    candidate = None
+                with store.transaction(write=True):
+                    sheet = store.meta["drawingSheets"][project_id][sheet_id]
+                    if candidate is not None:
+                        sheet["extractedNumber"] = candidate.number
+                        sheet["extractedTitle"] = candidate.title
+                        sheet["metadataSource"] = candidate.provenance
+                        sheet["metadataNeedsReview"] = candidate.needs_review
+                        if sheet["number"].startswith("Sheet-") and candidate.number:
+                            sheet["number"] = candidate.number
+                            if candidate.title:
+                                sheet["title"] = candidate.title
+                            sheet["version"] += 1
+                    row = store.meta["drawingSets"][project_id][set_id]
+                    row["metadataCompletedPages"] = n
+                    row["updatedAt"] = store.engine.at()
+        with store.transaction(write=True):
+            store.meta["drawingSets"][project_id][set_id]["metadataStatus"] = "ready"
+    except Exception:
+        LOG.exception("Sheet metadata extraction failed for %s", set_id)
+        with store.transaction(write=True):
+            store.meta["drawingSets"][project_id][set_id]["metadataStatus"] = "failed"
+
 def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
     def context(project_id, request, actor):
         return _scope(store, project_id, request, actor, role_for)
@@ -298,6 +338,33 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
             result = deepcopy(row)
         tasks.add_task(_render_set, store, project_id, set_id)
         return {"set": result}
+
+    @app.post("/projects/{project_id}/drawing-sets/{set_id}/refresh-metadata", status_code=202)
+    async def refresh_registered_metadata(project_id: str, set_id: str, request: Request, tasks: BackgroundTasks):
+        """Refresh extracted sheet titleblock candidates without rewriting the PDF or manual edits."""
+        actor = identity(request)
+        key = key_for(request)
+        require(isinstance(key, str) and key.strip(), "IDEMPOTENCY_KEY_INVALID", "Request key required")
+        cache_key = f"sheet-metadata-refresh:{project_id}:{actor['partyId']}:{key}"
+        fingerprint = sha256((project_id + ":" + set_id).encode()).hexdigest()
+        with store.transaction(write=True):
+            role = context(project_id, request, actor)
+            require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "Drawing edit forbidden")
+            cache = store.requests.get(cache_key)
+            if cache:
+                require(cache["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Request changed")
+                return {"set": deepcopy(set_for(project_id, cache["setId"]))}
+            row = set_for(project_id, set_id)
+            require(row["status"] == "ready", "INVALID_REQUEST", "Drawing images not ready")
+            if row.get("metadataStatus") != "processing":
+                row["metadataStatus"] = "processing"
+                row["metadataCompletedPages"] = 0
+                row["updatedAt"] = store.engine.at()
+                tasks.add_task(_refresh_existing_metadata, store, project_id, set_id)
+            _audit(store, project_id, "sheet_metadata_refresh_requested", actor, role,
+                   {"setId": set_id, "sha256": row["sha256"]})
+            store.requests[cache_key] = {"setId": set_id, "hash": fingerprint}
+            return {"set": deepcopy(row)}
 
     @app.get("/projects/{project_id}/drawing-sheets")
     def list_sheets(project_id: str, request: Request):
