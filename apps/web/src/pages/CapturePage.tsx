@@ -12,6 +12,7 @@ import { EvidenceDetailPreview } from "./EvidenceDetailPreview";
 import { evidenceMediaLabel, evidenceSourceLabel } from "./evidence-utils";
 import { MediaAnalysisPanel } from "./MediaAnalysisPanel";
 import { FieldRecordPanel } from "./FieldRecordPanel";
+import "./fieldwire-capture-layout.css";
 
 const MAX_BATCH_FILES = 20;
 const MAX_CAPTURE_BYTES = 64 * 1024 * 1024;
@@ -242,7 +243,7 @@ export function CapturePage({
             <h2>{t("capture.intake.title")}</h2>
             <span>{t("capture.intake.original")}</span>
           </div>
-          <div className="capture-drop">
+          <div className="capture-drop" data-ui-component="capture-upload-toolbar" role="group" aria-label={t("capture.intake.title")}>
             <Icon name="camera" />
             <h2>{t("capture.intake.headline")}</h2>
             <p>

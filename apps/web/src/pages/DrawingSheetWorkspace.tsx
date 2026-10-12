@@ -11,6 +11,7 @@ import {
   updateDrawingSheet, uploadDrawingSet, reviewDrawingSheetMetadata,
   type DrawingPinKind, type DrawingSet, type DrawingSheet, type DrawingSheetPin,
 } from "../data/drawing-sheet-client";
+import { DrawingRevisionDialog } from "./DrawingRevisionDialog";
 import "./drawing-sheet-workspace.css";
 
 const OriginalDrawingReviewPage = lazy(() => import("./DrawingReviewPage").then(mod => ({ default: mod.DrawingReviewPage })));
@@ -103,6 +104,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   const [reviewMode, setReviewMode] = useState(false);
   const [reviewDecision, setReviewDecision] = useState<"verified" | "needs_review">("verified");
   const [reviewNote, setReviewNote] = useState("");
+  const [revisionOpen, setRevisionOpen] = useState(false);
   const [editNumber, setEditNumber] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -197,8 +199,9 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   }, [mode, selected?.id, fit]);
 
   function openSheet(sheet: DrawingSheet) {
-    setMode("viewer"); setSelectedId(sheet.id); setPins([]); setSelectedPinId(null); setDetailOpen(false);
-    setPinChoice(null); setPendingPoint(null); setEditOpen(false); setReviewMode(false);
+    setMode("viewer"); setSelectedId(sheet.id); setPins([]); setSelectedPinId(null);
+    setDetailOpen(false); setPinChoice(null); setPendingPoint(null);
+    setEditOpen(false); setReviewMode(false); setRevisionOpen(false);
     setZoom(1); setPan({ x: 0, y: 0 }); setRightOpen(true); setError(""); setNotice("");
   }
   function neighbor(direction: -1 | 1) {
@@ -343,6 +346,10 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
             aria-label="목록 보기" aria-pressed={listView} onClick={() => setListView(true)}><List size={16}/></button>
         </>}
         {mode === "viewer" && <>
+          <button className="draw-command" type="button" onClick={() => setRevisionOpen(true)}
+            aria-label="도면 버전 관리" title="기존 원본 PDF의 개정 이력 조회·비교">
+            <Layers3 size={15} aria-hidden="true"/> 버전 관리
+          </button>
           <span className="drawing-sheet-revision">{selected?.revision ?? "초안"}</span>
           <button className={"draw-command" + (rightOpen ? " selected" : "")} type="button"
             aria-expanded={rightOpen} onClick={() => setRightOpen(value => !value)}>
@@ -542,6 +549,11 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
       </aside>}
     </div>}
 
+    setMode("viewer"); setSelectedId(sheet.id); setPins([]); setSelectedPinId(null);
+    {revisionOpen && mode === "viewer" && selected &&
+      <DrawingRevisionDialog client={client} selected={selected} sheets={sheets}
+        canLink={["ADM","SUP"].includes(workspace.role.actorGroup)}
+        onClose={() => setRevisionOpen(false)}/>}
 
     {mode === "viewer" && selected && selectedPin && detailOpen && <div
       className="drawing-issue-dialog-backdrop" role="presentation"

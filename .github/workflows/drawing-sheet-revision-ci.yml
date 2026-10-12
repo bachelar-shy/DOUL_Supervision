@@ -1,0 +1,30 @@
+name: drawing-sheet-revisions
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/drawing-sheet-revision-ci.yml"
+      - "services/api/modules/drawing_sheet_revision_links.py"
+      - "services/api/modules/drawing_sheets.py"
+      - "tests_mvp/test_drawing_sheet_revision_links_http.py"
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  sheet-revisions-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - name: Dependencies for drawing sheet HTTP tests
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m venv .venv
+          .venv/bin/pip install -r services/api/requirements.lock
+      - name: Drawing revision links regression
+        run: |
+          .venv/bin/python -m unittest tests_mvp.test_drawing_sheet_catalog_http tests_mvp.test_drawing_sheet_revision_links_http -v
