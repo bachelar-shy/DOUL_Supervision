@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import Request
 
 from app.reference.engine import uid
-from app.reference.validation import require
+from app.reference.validation import ContractError, require
 
 REQUEST_ROLES = frozenset({'SUP', 'CON', 'OWN'})
 REQUESTERS = frozenset({'SUP', 'CON', 'OWN', 'DES'})
@@ -33,7 +33,7 @@ def install_personnel_request_routes(app, store, *, identity, role_for, key_for,
         try:
             store.engine.authorize(store.engine.get('Project', project_id),
                                    'manage_project_roles', actor['partyId'], role['id'])
-        except Exception:
+        except ContractError:
             return False
         return True
 
@@ -61,7 +61,7 @@ def install_personnel_request_routes(app, store, *, identity, role_for, key_for,
         name = _text(body['name'], 'name', 120)
         organization = _text(body['organization'], 'organization', 160)
         reason = _text(body['reason'], 'reason', 1000)
-        require(body['requestedRole'] in REQUEST_ROLES, 'INVALID_REQUEST',
+        require(isinstance(body['requestedRole'], str) and body['requestedRole'] in REQUEST_ROLES, 'INVALID_REQUEST',
                 'Requests for administrator accounts are not allowed')
         key = key_for(request)
         with store.transaction(write=True):
@@ -99,14 +99,14 @@ def install_personnel_request_routes(app, store, *, identity, role_for, key_for,
             require(False, 'INVALID_REQUEST', 'Invalid request ID')
         require(type(body['expectedVersion']) is int and body['expectedVersion'] > 0,
                 'INVALID_REQUEST', 'Expected request version is required')
-        require(body['status'] in DECISIONS, 'INVALID_REQUEST', 'Invalid review decision')
+        require(isinstance(body['status'], str) and body['status'] in DECISIONS, 'INVALID_REQUEST', 'Invalid review decision')
         note = _text(body['note'], 'note', 500, required=body['status'] == 'rejected')
         key = key_for(request)
         with store.transaction(write=True):
             actor, role = context(project_id, request)
             require(is_admin(actor, role, project_id), 'NOT_AUTHORIZED',
                     'Only this project administrator may review requests')
-            operation = 'personnel_request:review'
+            operation = 'personnel_request:review:' + request_id
             cached = store.engine._replay(project_id, actor['partyId'], operation, key, body)
             if cached is not None:
                 return cached
