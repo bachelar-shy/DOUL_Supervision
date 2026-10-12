@@ -84,6 +84,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pins, setPins] = useState<DrawingSheetPin[]>([]);
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [pinChoice, setPinChoice] = useState<PinChoice>(null);
   const [pendingPoint, setPendingPoint] = useState<{ x: number; y: number } | null>(null);
   const [comment, setComment] = useState("");
@@ -152,11 +153,19 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   const filteredPins = pins.filter(item => issueFilter === "all" || item.kind === issueFilter);
   const related = workspace.items.filter(item => ["inspection", "observation", "issue", "action"].includes(item.machine));
   const selectedPin = pins.find(item => item.id === selectedPinId) ?? null;
+  useEffect(() => {
+    if (!detailOpen) return;
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDetailOpen(false);
+    };
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [detailOpen]);
 
   useEffect(() => {
     if (!selected || selected.status !== "ready" || client.kind !== "http") { setPins([]); return; }
     let live = true;
-    setPins([]); setSelectedPinId(null);
+    setPins([]); setSelectedPinId(null); setDetailOpen(false);
     void loadSheetPins(client, selected.id).then(result => { if (live) setPins(result.items); })
       .catch(() => { if (live) setError("도면 핀 목록을 불러오지 못했습니다."); });
     return () => { live = false; };
@@ -182,7 +191,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   }, [mode, selected?.id, fit]);
 
   function openSheet(sheet: DrawingSheet) {
-    setMode("viewer"); setSelectedId(sheet.id); setPins([]); setSelectedPinId(null);
+    setMode("viewer"); setSelectedId(sheet.id); setPins([]); setSelectedPinId(null); setDetailOpen(false);
     setPinChoice(null); setPendingPoint(null); setEditOpen(false);
     setZoom(1); setPan({ x: 0, y: 0 }); setRightOpen(true); setError(""); setNotice("");
   }
@@ -221,7 +230,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   function choosePin(kind: DrawingPinKind) {
     if (!canWrite) return;
     setPinChoice(kind); setPendingPoint(null); setComment(""); setRecordRef(""); setError("");
-    setSelectedPinId(null); setRightOpen(!window.matchMedia("(max-width: 767px)").matches);
+    setSelectedPinId(null); setDetailOpen(false); setRightOpen(!window.matchMedia("(max-width: 767px)").matches);
   }
   function onDrawingClick(event: MouseEvent<HTMLDivElement>) {
     if (!pinChoice || !canWrite || drag.current?.moved) return;
@@ -251,7 +260,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
       const response = await createSheetPin(client, selected.id, payload, pinRequest.current.key);
       pinRequest.current = null;
       setPins(items => [...items, response.pin]);
-      setSelectedPinId(response.pin.id);
+      setSelectedPinId(response.pin.id); setDetailOpen(false);
       setPinChoice(null); setPendingPoint(null); setComment(""); setRecordRef("");
       setNotice(payload.recordRef ? "업무와 연결된 도면 핀을 저장했습니다." : "도면 현장 메모를 초안으로 저장했습니다.");
     } catch (cause) {
@@ -418,7 +427,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
               className={"drawing-sheet-marker " + pin.kind + (selectedPinId === pin.id ? " active" : "")}
               style={{ left: pin.x * 100 + "%", top: pin.y * 100 + "%" }}
               title={pin.comment} aria-label={drawingPinLabels[pin.kind] + " " + (idx + 1) + " " + pin.comment}
-              onClick={event => { event.stopPropagation(); setSelectedPinId(pin.id); setRightOpen(true); }}>
+              onClick={event => { event.stopPropagation(); setSelectedPinId(pin.id); setDetailOpen(true); setRightOpen(true); }}>
               {idx + 1}
             </button>)}
             {pendingPoint && <span className="drawing-sheet-marker pending"
@@ -482,7 +491,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
           </div>}
           {filteredPins.map((pin) => <button type="button" key={pin.id}
             className={"drawing-issue-row" + (pin.id === selectedPinId ? " selected" : "")}
-            onClick={() => { setSelectedPinId(pin.id); setPinChoice(null); setPendingPoint(null); }}>
+            onClick={() => { setSelectedPinId(pin.id); setDetailOpen(true); setPinChoice(null); setPendingPoint(null); }}>
             <span className={"issue-number " + pin.kind}>{pins.indexOf(pin) + 1}</span>
             <span className="issue-list-detail">
               <strong>{pin.comment}</strong>
@@ -502,14 +511,14 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     </div>}
 
 
-    {mode === "viewer" && selected && selectedPin && <div
+    {mode === "viewer" && selected && selectedPin && detailOpen && <div
       className="drawing-issue-dialog-backdrop" role="presentation"
-      onMouseDown={event => { if (event.target === event.currentTarget) setSelectedPinId(null); }}>
+      onMouseDown={event => { if (event.target === event.currentTarget) setDetailOpen(false); }}>
       <section className="drawing-issue-dialog" role="dialog" aria-modal="true"
         aria-label={"도면 이슈 상세 #" + (pins.indexOf(selectedPin) + 1)}>
         <header className="drawing-issue-dialog-header">
           <span>도면 이슈 #{pins.indexOf(selectedPin) + 1}</span>
-          <button type="button" aria-label="이슈 상세 닫기" onClick={() => setSelectedPinId(null)}><X size={19}/></button>
+          <button type="button" aria-label="이슈 상세 닫기" onClick={() => setDetailOpen(false)}><X size={19}/></button>
         </header>
         <div className="drawing-issue-dialog-main">
           <div className="drawing-issue-dialog-content">
