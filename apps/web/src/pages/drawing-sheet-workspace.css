@@ -264,3 +264,19 @@
   .drawing-board-bottom { padding:3px 7px; }
   .drawing-pin-instruction { left:50px; right:6px; max-width:none; transform:none; white-space:normal; }
 }
+
+
+/* Fieldwire-density plan catalog: fixed compact cards, no stretched thumbnails. */
+@media (min-width: 900px) {
+  .drawing-sheet-catalog { padding: 10px 18px 32px; }
+  .drawing-sheet-items.as-grid {
+    grid-template-columns: repeat(auto-fill, minmax(182px, 204px));
+    justify-content: start; gap: 13px; padding: 8px 3px 12px;
+  }
+  .drawing-sheet-items.as-grid .drawing-sheet-card { width: 100%; max-width: none; }
+  .drawing-sheet-items.as-grid .drawing-sheet-card .sheet-asset {
+    height: 116px; background: #fff;
+  }
+  .drawing-sheet-folder-header { min-height: 34px; }
+  .drawing-sheet-items.as-grid .sheet-card-text { min-height: 43px; padding: 6px 9px; }
+}
