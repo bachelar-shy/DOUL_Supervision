@@ -87,6 +87,15 @@
     border-radius: var(--fw-ui-radius);
     font-size: 12px;
   }
+  /* shadcn default buttons use a fixed h-10. Override that height as well:
+   * min-height alone would leave them at 40px despite compact density. */
+  .app-shell[data-layout-system="field-workspace"] [data-slot="button"][data-size="default"] {
+    height: auto;
+    min-height: 34px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    line-height: 1.25;
+  }
   .app-shell[data-layout-system="field-workspace"] [data-slot="button"][data-size^="icon"] {
     min-width: 34px;
     width: 34px;
