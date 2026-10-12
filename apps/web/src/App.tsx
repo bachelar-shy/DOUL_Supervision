@@ -13,6 +13,7 @@ export default function App() {
   const [authorized, setAuthorized] = useState(false);
   const [notice, setNotice] = useState<"expired" | "logoutUnverified" | undefined>();
   const [checked, setChecked] = useState<"checking" | "valid" | "invalid">("checking");
+  const [testRoleMode, setTestRoleMode] = useState(false);
   const configured = import.meta.env.VITE_DOUL_AUTH_MODE;
   const passwordMode = client.kind === "http" && configured === "password";
   const localDev = client.kind === "mock" || (import.meta.env.DEV && configured !== "password");
@@ -21,7 +22,7 @@ export default function App() {
     if (!passwordMode) return;
     let active = true;
     void client.authMode().then(
-      mode => { if (active) setChecked(mode === "password" ? "valid" : "invalid"); },
+      mode => { if (active) { setTestRoleMode(mode === "test-role"); setChecked(mode === "password" || mode === "test-role" ? "valid" : "invalid"); } },
       () => { if (active) setChecked("invalid"); },
     );
     return () => { active = false; };
@@ -40,7 +41,7 @@ export default function App() {
     </main>;
 
   if (passwordMode && !authorized)
-    return <PasswordLogin client={client} notice={notice} onAuthenticated={() => {
+    return <PasswordLogin client={client} testRoleMode={testRoleMode} notice={notice} onAuthenticated={() => {
       setNotice(undefined);
       setAuthorized(true);
     }} />;

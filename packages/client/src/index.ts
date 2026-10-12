@@ -348,6 +348,14 @@ export class ApiClient {
     if (generation === this.loginGeneration) this.session = session;
     return session;
   }
+  async loginTestRole(role: "OWN" | "CON" | "SUP" | "ADM"): Promise<Session> {
+    const generation = ++this.loginGeneration;
+    const session = await this.request<Session>("/auth/test-role-login", {
+      method: "POST", body: JSON.stringify({ role }),
+    });
+    if (generation === this.loginGeneration) this.session = session;
+    return session;
+  }
   async logout(): Promise<void> {
     const generation = ++this.loginGeneration;
     const token = this.session?.accessToken;
