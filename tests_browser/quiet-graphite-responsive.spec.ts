@@ -41,7 +41,11 @@ for (const width of widths) {
     for (const route of routes) {
       await test.step(`${width}px / ${route}`, async () => {
         await page.goto("/#/" + route);
-        await expect(page.locator("main h1")).toBeVisible();
+        if (route === "drawings") {
+          await expect(page.locator('[data-ui-component="drawing-sheet-workspace"] .drawing-sheet-commandbar')).toBeVisible();
+        } else {
+          await expect(page.locator("main .page-heading h1")).toBeVisible();
+        }
         await expect.poll(
           () => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
           { message: `${width}px/${route}: page horizontal overflow` },

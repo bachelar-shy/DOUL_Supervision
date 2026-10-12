@@ -86,7 +86,7 @@ export const routes: readonly UiRoute[] = [
   },
   { id: "rfis", label: "RFI", labelKey: "navigation.rfis", icon: "layers" },
   { id: "admin", label: "Admin", labelKey: "navigation.admin", icon: "users" },
-  { id: "staff-requests", label: "인원 추가 요청", labelKey: "navigation.personnelRequests", icon: "user-plus" },
+  { id: "staff-requests", label: "Staff requests", labelKey: "navigation.personnelRequests", icon: "user-plus" },
   { id: "parallel-test", label: "Parallel feature tests", labelKey: "navigation.parallelTest", icon: "layers" },
 ];
 

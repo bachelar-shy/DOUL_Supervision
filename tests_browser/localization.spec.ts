@@ -1,3 +1,4 @@
+import { expectNoHorizontalOverflow } from "./support/viewport-overflow";
 import { expect, test, type Page } from "@playwright/test";
 import { formatDecimalExact } from "../apps/web/src/i18n/decimal-format";
 import { formFieldLabels } from "@doul/localization";
@@ -78,14 +79,10 @@ for (const width of [390, 768, 1440]) {
     ]) {
       await chooseLanguage(page, aria, language);
       await expect(page.locator('[data-ui-page="capture"]').getByRole("heading", { name: title })).toBeVisible();
-      await expect.poll(() =>
-        page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
-      ).toBeTruthy();
+      await expectNoHorizontalOverflow(page, "localized "+language);
       await page.goto("/#/documents");
       await expect(page.locator('[data-ui-page="documents"]')).toBeVisible();
-      await expect.poll(() =>
-        page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
-      ).toBeTruthy();
+      await expectNoHorizontalOverflow(page, "localized "+language);
       await page.goto("/#/capture");
     }
   });
@@ -127,7 +124,7 @@ test("Contract notice editor translates in place without creating or changing a 
   await expect(dialog).toHaveAttribute("aria-label", "Thêm hồ sơ Thông báo hợp đồng");
   await expect(dialog.getByText(/Máy chủ sẽ kiểm tra lại quyền và phạm vi tại thời điểm nộp/)).toBeVisible();
   await expect(dialog.locator("input").first()).toHaveValue("SITE-CONTRACT-001");
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+  await expectNoHorizontalOverflow(page, "contract editor mobile");
   await expect(dialog.locator("input").nth(1)).toHaveValue("NT-001");
   await expect(dialog.getByRole("button", { name: "Thêm hồ sơ" })).toBeEnabled();
   expect(await createAction.isEnabled()).toBe(createActionEnabled);
@@ -141,7 +138,7 @@ test("Contract notice editor translates in place without creating or changing a 
   expect(await createAction.isEnabled()).toBe(createActionEnabled);
   expect(await dialog.getByRole("button", { name: "Add record" }).isEnabled()).toBe(submitEnabled);
   await expect(dialog.locator("input").first()).toHaveValue("SITE-CONTRACT-001");
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+  await expectNoHorizontalOverflow(page, "contract editor translated mobile");
 
   await locale.selectOption("ko");
   await expect(dialog).toHaveAttribute("aria-label", "계약통지 기록 추가");
@@ -246,9 +243,7 @@ for (const width of [390, 768, 1440]) {
     for (const language of ["vi", "en", "ko"]) {
       await locale.selectOption(language);
       await expect(page.locator('[data-ui-page="contract"]')).toBeVisible();
-      await expect.poll(() =>
-        page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
-      ).toBeTruthy();
+      await expectNoHorizontalOverflow(page, "localized "+language);
     }
     await page.goto("/#/capture");
     await page.locator('[data-ui-component="evidence-viewer"]').getByRole("button").first().click();
@@ -256,9 +251,7 @@ for (const width of [390, 768, 1440]) {
     for (const language of ["vi", "en", "ko"]) {
       await locale.selectOption(language);
       await expect(sheet).toBeVisible();
-      await expect.poll(() =>
-        page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
-      ).toBeTruthy();
+      await expectNoHorizontalOverflow(page, "localized "+language);
       await expect.poll(async () => {
         const box = await sheet.boundingBox();
         return box !== null && box.x + box.width <= width + 1;
@@ -279,11 +272,15 @@ for (const width of [390, 768, 1440]) {
       for (const route of ["today", "inspections", "capture", "observations", "issues", "actions", "schedule", "contract", "payment", "completion", "safety", "owner", "documents", "registers", "rfis"]) {
         await test.step(`${language}/${route}/${width}`, async () => {
           await page.goto("/#/" + route);
-          await expect(page.locator("main h1")).toBeVisible();
+          if (route === "drawings") {
+            await expect(page.locator('[data-ui-component="drawing-sheet-workspace"] .drawing-sheet-commandbar')).toBeVisible();
+          } else {
+            await expect(page.locator("main .page-heading h1")).toBeVisible();
+          }
           const surface = route === "registers" ? '[data-ui-template="register"]' : `[data-ui-page="${route === "payment" ? "measurement-payment" : route === "completion" ? "completion-handover" : route}"]`;
           await expect(page.locator(surface)).toBeVisible();
           await expect(page.locator("html")).toHaveAttribute("lang", { ko: "ko-KR", vi: "vi-VN", en: "en-US" }[language]);
-          await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), { message: `${language}/${route}: horizontal overflow` }).toBeTruthy();
+          await expectNoHorizontalOverflow(page, `${language}/${route}: horizontal overflow`);
           if (width === 390) {
             await expect(page.locator(".bottom-nav").getByRole("button", { name: { ko: "더보기", vi: "Thêm", en: "More" }[language], exact: true })).toBeVisible();
           }

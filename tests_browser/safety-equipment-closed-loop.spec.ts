@@ -470,6 +470,7 @@ test("real Safety UI/API gates Permit activation on current equipment and keeps 
 
   const remedyTitle = `AC-S Equipment remedy ${suffix}`;
   await page.goto("/#/actions");
+  await page.locator('[data-ui-component="new-action-entry"] button').click();
   const actionPanel = page.locator('[data-ui-component="action-authoring-panel"]');
   await expect(actionPanel).toBeVisible();
   await actionPanel.getByLabel("시정조치 제목", { exact: true }).fill(remedyTitle);

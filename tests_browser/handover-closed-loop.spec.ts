@@ -1097,6 +1097,8 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     // command, and use its exact assigned version for the warranty command.
     await page.getByRole("navigation").getByRole("button", { name: /corrective actions/i }).click();
     const actionWorkbench = page.locator("[data-workbench-route='actions']");
+    await expect(actionWorkbench).toBeVisible();
+    await actionWorkbench.locator('[data-ui-component="new-action-entry"] button').click();
     const actionAuthoring = page.locator("[data-ui-component='action-authoring-panel']");
     await expect(actionAuthoring).toBeVisible();
     const remedyActionTitle = "F-07 browser warranty corrective action";
@@ -1224,6 +1226,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
 
     const replacementActionTitle = "F-07 browser warranty replacement corrective action";
     await page.getByRole("navigation").getByRole("button", { name: /corrective actions/i }).click();
+    await page.locator('[data-ui-component="new-action-entry"] button').click();
     const replacementAuthoring = page.locator("[data-ui-component='action-authoring-panel']");
     await expect(replacementAuthoring).toBeVisible();
     await replacementAuthoring.getByLabel(/action title/i).fill(replacementActionTitle);

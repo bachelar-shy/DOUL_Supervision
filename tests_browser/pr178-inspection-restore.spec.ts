@@ -76,6 +76,7 @@ async function openContractor(page: Page) {
   await page.getByLabel("시험 사용자 역할 선택").selectOption("CON");
   await loaded;
   await page.goto("/#/inspections");
+  await page.locator('[data-ui-component="new-inspection-entry"] button').click();
   const form = page.getByRole("form", { name: "자체검측 작성" });
   await expect(form.getByLabel("검측 기준 도면")).toBeEnabled();
   return form;
@@ -205,6 +206,7 @@ test("late scoped response after a role switch cannot alter the saved contractor
   const picker = page.getByLabel("시험 사용자 역할 선택");
   await picker.selectOption("CON");
   await page.goto("/#/inspections");
+  await page.locator('[data-ui-component="new-inspection-entry"] button').click();
   await entered;
   loaded = page.waitForResponse(response => response.url().endsWith("/workspace") && response.ok());
   await picker.selectOption("SUP");
@@ -215,6 +217,7 @@ test("late scoped response after a role switch cannot alter the saved contractor
   await picker.selectOption("CON");
   await loaded;
   await page.goto("/#/inspections");
+  await page.locator('[data-ui-component="new-inspection-entry"] button').click();
   await expectRestored(page.getByRole("form", { name: "자체검측 작성" }), original.payload);
   expect((await storedInput(page)).payload).toEqual(original.payload);
 });

@@ -538,9 +538,7 @@ test("register entry adapts to the active human role without defining authority"
 
   for (const item of cases) {
     await rolePicker.selectOption(item.role);
-    await expect(
-      page.getByText(`${item.label} 업무 화면`, { exact: true }),
-    ).toBeVisible();
+    await expect(rolePicker).toHaveValue(item.role);
     await page.goto("/#/registers");
 
     const registerNavigator = page.locator(
@@ -877,10 +875,8 @@ test("contractor has no issue closure control", async ({ page }) => {
   await page
     .getByRole("combobox", { name: "시험 사용자 역할 선택" })
     .selectOption("CON");
-  await expect(
-    page.getByText("시공사 업무 화면", { exact: true }),
-  ).toBeVisible();
-  await page.waitForResponse((r) => r.url().endsWith("/workspace") && r.ok());
+  await expect(page.getByRole("combobox", { name: "시험 사용자 역할 선택" })).toHaveValue("CON");
+  await expect(page.locator("aside.sidebar")).toBeVisible();
   await page.evaluate(() => {
     location.hash = "/issues";
   });

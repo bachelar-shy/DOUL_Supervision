@@ -11,6 +11,9 @@ on:
       - 'scripts/project_settings_browser_server.py'
       - 'scripts/test_project_session_races.mjs'
       - 'tests_mvp/test_project_settings_http.py'
+      - 'tests_mvp/test_password_deployment_modes.py'
+      - 'tests_contracts/test_menu_usability.py'
+      - 'app/reference/menu_usability_v1.json'
       - 'tests_browser_settings/**'
       - 'playwright.project-settings.config.ts'
   push:

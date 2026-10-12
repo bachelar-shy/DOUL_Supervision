@@ -10,6 +10,15 @@ const plan = JSON.parse(readFileSync(resolve("app/reference/menu_usability_v1.js
 const roleOrder: Role[] = ["SUP", "CON", "OWN", "ADM", "DES"];
 const navSelector = 'aside.sidebar [data-ui-component="navigation"]';
 
+async function openLegacyDrawingReview(page: Page) {
+  // The new lightweight per-sheet workspace is the default. Preserve full
+  // technical-review assertions via the explicit backwards-compatible entry.
+  await expect(page.locator('[data-ui-component="drawing-sheet-workspace"]')).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "도면 검색" })).toBeVisible();
+  await page.getByRole("button", { name: "기존 PDF 검토" }).click();
+  await expect(page.locator('[data-ui-page="drawings"]')).toBeVisible();
+}
+
 async function selectRole(page: Page, role: Role) {
   if (role === "SUP") return;
   const response = page.waitForResponse(
@@ -60,8 +69,8 @@ test("field worker finds a drawing through one direct menu action, then switches
   await entry.click();
   await expect(page).toHaveURL(/#\/drawings$/);
   await expect(entry).toHaveAttribute("aria-current", "page");
-  await expect(page.locator("main h1")).toHaveText("도면 조회·검토");
-  await expect(page.locator('[data-ui-page="drawings"]')).toBeVisible();
+  await expect(page.locator('[data-ui-component="drawing-sheet-workspace"]')).toBeVisible();
+  await openLegacyDrawingReview(page);
   const view = page.getByRole("tab", { name: "PDF 도면 보기·마킹", exact: true });
   await expect(view).toHaveAttribute("aria-selected", "true");
   await expect(page.getByLabel("PDF 도면 보기", { exact: true })).toBeVisible();
@@ -98,6 +107,12 @@ test("sidebar remains independently scrollable with all routes reachable on a sh
     await expect(last).toBeInViewport();
     await last.click();
     await expect(last).toHaveAttribute("aria-current", "page");
+    const lastRoute = await last.getAttribute("data-route");
+    expect(lastRoute).toBeTruthy();
+    await expect(page).toHaveURL(new RegExp("#/" + lastRoute + "$"));
+    // The supervisor also retains the parallel-feature diagnostic menu,
+    // even though staff requests are placed after it in the sidebar.
+    await nav.locator('button[data-route="parallel-test"]').click();
     await expect(page).toHaveURL(/#\/parallel-test$/);
     await nav.locator('button[data-route="drawings"]').click();
     await expect(page).toHaveURL(/#\/drawings$/);
@@ -182,7 +197,9 @@ test("mobile menu buttons have accessible hit areas and drawing view is read-onl
     expect(box!.width).toBeGreaterThanOrEqual(44);
   }
   await sidebar.locator('button[data-route="drawings"]').click();
-  await expect(page.locator('[data-ui-page="drawings"]')).toBeVisible();
+  await expect(page.locator('[data-ui-component="drawing-sheet-workspace"]')).toBeVisible();
+  await expect(page.getByRole("button", { name: "새 도면(PDF)" })).toHaveCount(0);
+  await openLegacyDrawingReview(page);
   await expect(page.getByRole("tab", { name: "도면 등록·배포" })).toHaveCount(0);
   await expect(page.getByRole("tab", { name: "도면 개정 비교" })).toHaveCount(1);
 });
@@ -203,7 +220,7 @@ test("unauthorized deep links return to a canonical safe menu and do not expose 
 test("changing UI language translates menu without changing its target route", async ({ page }) => {
   test.setTimeout(90_000);
   await page.goto("/#/drawings");
-  await expect(page.locator('[data-ui-page="drawings"]')).toBeVisible();
+  await expect(page.locator('[data-ui-component="drawing-sheet-workspace"]')).toBeVisible();
   const localePicker = page.locator(".top-actions .role-picker select").first();
   await localePicker.selectOption("vi");
   await expect(page.locator(navSelector).locator('button[data-route="drawings"]')).toContainText("Xem · rà soát bản vẽ");

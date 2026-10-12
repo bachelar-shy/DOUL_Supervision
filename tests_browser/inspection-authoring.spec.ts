@@ -5,6 +5,10 @@ test('inspection author selects exact drawing, location, requirement and evidenc
   await expect(page.getByRole('button',{name:'새로고침',exact:true})).toBeEnabled({timeout:30000});
   await page.getByLabel('시험 사용자 역할 선택').selectOption('CON');
   await page.goto('/#/inspections');
+  // The form opens from the contractor's explicit creation action, rather
+  // than occupying the inspection list before the user requests it.
+  await expect(page.locator('[data-ui-component="new-inspection-entry"]')).toBeVisible();
+  await page.getByRole('button', { name: '＋ 신규 검측', exact: true }).click();
   const form = page.getByRole('form', {name:'자체검측 작성'});
   await expect(form).toBeVisible({timeout:30000});
   const drawingSelect = form.getByLabel('검측 기준 도면');

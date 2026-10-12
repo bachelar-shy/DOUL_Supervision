@@ -102,9 +102,25 @@ async function checkRoute(page:Page,route:string):Promise<void> {
   // the route label available for comparison even while the drawer is hidden.
   const title=(await button.locator("span").textContent())?.trim();
   expect(title,"업무 메뉴의 제목").toBeTruthy();
-  await expect(page.locator("main h1")).toHaveText(title!);
+  if (route === "drawings") {
+    // The plan-workspace replaces the page title with a dedicated command bar.
+    await expect(page.locator('[data-ui-component="drawing-sheet-workspace"]')).toBeVisible();
+    await expect(page.getByRole("searchbox", { name: "도면 검색" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "기존 PDF 검토" })).toBeVisible();
+  } else {
+    await expect(page.locator("main .page-heading h1")).toHaveText(title!);
+  }
   await expect(page.locator("main .page-heading .heading-actions button").filter({hasText:"새로고침"})).toBeEnabled();
   await expect(page.locator("main .loading-panel")).toHaveCount(0);
+}
+async function openLegacyDrawingReview(page:Page):Promise<void> {
+  // Verify both the new per-sheet catalogue and the complete preexisting
+  // technical-review workflow remain reachable, without treating the
+  // absent legacy tabs on the new default view as a feature failure.
+  await expect(page.locator('[data-ui-component="drawing-sheet-workspace"]')).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "도면 검색" })).toBeVisible();
+  await page.getByRole("button", { name: "기존 PDF 검토" }).click();
+  await expect(page.locator('[data-ui-page="drawings"] [role="tablist"]')).toBeVisible();
 }
 async function moveTo(page:Page,route:string):Promise<void> {
   const button=page.locator(navSelector+' button[data-route="'+route+'"]');
@@ -304,6 +320,7 @@ async function menuJourney(page:Page,c:Scenario,x:Result):Promise<Outcome>{
     for(const role of ["ADM","SUP","DES","CON","OWN"] as const){
       await switchRole(page,role);
       await moveTo(page,"drawings");
+      await openLegacyDrawingReview(page);
       const drawing=page.locator('[data-ui-page="drawings"]');
       await expect(drawing.getByRole("tablist")).toBeVisible();
       await expect(drawing.getByRole("tab",{name:"PDF 도면 보기·마킹",exact:true})).toBeVisible();
@@ -461,6 +478,7 @@ async function menuJourney(page:Page,c:Scenario,x:Result):Promise<Outcome>{
   }
   if(id==="MC-01"){
     await moveTo(page,"drawings");
+    await openLegacyDrawingReview(page);
     const drawing=page.locator('[data-ui-page="drawings"]');
     const view=drawing.getByRole("tab",{name:"PDF 도면 보기·마킹",exact:true});
     await expect(view).toBeVisible();await view.click();await expect(view).toHaveAttribute("aria-selected","true");
@@ -590,6 +608,7 @@ test.describe("UX 200 field journeys: run, verify, and isolate blockers",()=>{
               "마지막 항목 스크롤만 확인: 도면·문서 왕복 및 키보드·터치·휠 전체 조건은 미검증":
               "전체 역할·타 프로젝트 접근권한까지는 현재 테스트로 확인되지 않음");
           }else if(c.domain==="feature" && c.row.featureGroup==="DWG"){
+            await openLegacyDrawingReview(page);
             const tabs=page.getByRole("tab");
             await expect(tabs.first()).toBeVisible();
             await page.getByRole("tab",{name:"도면 개정 비교"}).click();

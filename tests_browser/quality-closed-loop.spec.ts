@@ -230,7 +230,10 @@ test("connected Quality UI completes linked reinspection, issue, and Owner repor
 
   await page.goto("/#/inspections");
   await selectRole(page, "CON");
+  await expect(page.locator('[data-ui-component="new-inspection-entry"]')).toBeVisible();
+  await page.getByRole("button", { name: "＋ 신규 검측", exact: true }).click();
   const form = page.getByRole("form", { name: "자체검측 작성" });
+  await expect(form).toBeVisible();
   const drawing = form.getByLabel("검측 기준 도면");
   await expect(drawing.locator("option").nth(1)).toBeAttached();
   await drawing.selectOption({ index: 1 });

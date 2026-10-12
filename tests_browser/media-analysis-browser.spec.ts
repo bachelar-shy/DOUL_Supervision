@@ -1,3 +1,4 @@
+import { expectNoHorizontalOverflow } from "./support/viewport-overflow";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -298,21 +299,21 @@ test("Capture queues synthetic analysis, shows coverage, supports human confirm/
   await expect(panel.getByText(evidence.fileHash, { exact: false })).toBeVisible();
   await expect(panel.getByText("Trạng thái: Đã phân tích xong")).toBeVisible();
   await expect(panel.getByText("Lý do chặn: Cần người xác nhận quan sát.")).toBeVisible();
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+  await expectNoHorizontalOverflow(page, "media analysis vi phone");
   await page.getByRole("combobox").first().selectOption("en");
   await expect(panel.getByRole("heading", { name: "Media analysis and human review" })).toBeVisible();
   await expect(panel.getByText("Synthetic visually grounded finding", { exact: false })).toBeVisible();
   await expect(panel.locator("code").filter({ hasText: evidence.fileHash }).first()).toBeVisible();
   await expect(panel.getByText("Run status: Succeeded")).toBeVisible();
   await expect(panel.getByText("Blocked by: A person must confirm an observation.")).toBeVisible();
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+  await expectNoHorizontalOverflow(page, "media analysis en phone");
   const afterLocale = await api<{ candidates: Array<{ record: { id: string; version: number; status: string } }>; issueReadiness: { issueEligibleObservationIds: string[] } }>(request, sup, `/media-analysis-runs/${run.id}`);
   expect(afterLocale.candidates.map(({ record }) => [record.id, record.version, record.status])).toEqual(beforeLocale.candidates.map(({ record }) => [record.id, record.version, record.status]));
   expect(afterLocale.issueReadiness).toEqual(beforeLocale.issueReadiness);
   expect(reviewMutations).toHaveLength(mutationCountBeforeLocale);
   await page.getByRole("combobox").first().selectOption("ko");
   await expect(panel.getByRole("heading", { name: "미디어 분석 및 사람 검토" })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+  await expectNoHorizontalOverflow(page, "media analysis restored phone");
   if (priorViewport) await page.setViewportSize(priorViewport);
 
   const confirmedCard = panel.locator('[data-testid^="media-candidate-"]').filter({ hasText: "Synthetic visually grounded finding" });

@@ -94,8 +94,20 @@ test('AC-SCH-01: live UI schedule → recovery → Owner EOT decision → approv
     await page.goto(contract ? '/#/contract' : '/#/schedule');
     const picker = page.getByRole('combobox', { name: '시험 사용자 역할 선택' });
     await expect(picker).toBeVisible();
-    await picker.selectOption(role);
-    await expect(page.getByText({ CON: '시공사 업무 화면', SUP: '감리 업무 화면', OWN: '발주처 업무 화면' }[role], { exact: true })).toBeVisible();
+    if (await picker.inputValue() !== role) {
+      // The demo header now describes data provenance, not the currently
+      // authorized role. Validate the server-issued project role response.
+      const changedRole = page.waitForResponse(async response => {
+        if (!response.url().endsWith('/workspace') || !response.ok()) return false;
+        try {
+          const payload = await response.json();
+          return payload.role?.actorGroup === role && payload.project?.id === project;
+        } catch { return false; }
+      });
+      await picker.selectOption(role);
+      await changedRole;
+    }
+    await expect(picker).toHaveValue(role);
     await page.goto(contract ? '/#/contract' : '/#/schedule');
     await page.getByRole('button', { name: '새로고침', exact: true }).click();
     const tab: Record<string, string> = { 'schedule-baselines': '기준공정', 'schedule-progress-updates': '진도기록',
