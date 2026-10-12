@@ -12,6 +12,7 @@ import { EvidenceDetailPreview } from "./EvidenceDetailPreview";
 import { evidenceMediaLabel, evidenceSourceLabel } from "./evidence-utils";
 import { MediaAnalysisPanel } from "./MediaAnalysisPanel";
 import { FieldRecordPanel } from "./FieldRecordPanel";
+import "./fieldwire-capture-layout.css";
 
 const MAX_BATCH_FILES = 20;
 const MAX_CAPTURE_BYTES = 64 * 1024 * 1024;
@@ -282,7 +283,7 @@ export function CapturePage({
             <h2>{t("capture.intake.title")}</h2>
             <span>{t("capture.intake.original")}</span>
           </div>
-          <div className="capture-drop">
+          <div className="capture-drop" data-ui-component="capture-upload-toolbar" role="group" aria-label={t("capture.intake.title")}>
             <Icon name="camera" />
             <h2>{t("capture.intake.headline")}</h2>
             <p>
@@ -337,7 +338,7 @@ export function CapturePage({
           <p style={{ fontSize: 11, color: "#64748b" }}>
             기존 방식으로 보관된 자료는 직접 전송해야 합니다. 서버 확인 전까지 원본을 보존합니다.
           </p>
-          {batchBusy && <p role="status">{t("capture.batch.preparing")}</p>
+          {batchBusy && <p role="status">{t("capture.batch.preparing")}</p>}
           {pending.map((p) => (
             <div className="pending-row" key={p.id}>
               <div>
