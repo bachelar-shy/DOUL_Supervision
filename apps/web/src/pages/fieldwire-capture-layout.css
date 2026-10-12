@@ -1,0 +1,238 @@
+/*
+ * Fieldwire-aligned site record / evidence workspace.
+ * UI only: never affects media bytes, upload commands, evidence authority,
+ * server links, or a separately developed Photo Library API.
+ * Brand/selected states continue to use DOUL tokens.
+ */
+.app-shell[data-layout-system="field-workspace"] .template-capture {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(290px, 320px);
+  gap: 8px;
+  min-width: 0;
+  align-items: start;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture > * {
+  min-width: 0;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture [data-ui-component="field-record-create-actions"] {
+  min-height: 42px;
+  padding: 4px 10px;
+  gap: 8px;
+  border: 1px solid var(--doul-color-line);
+  background: var(--doul-color-surface);
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture [data-ui-component="field-record-create-actions"] h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .panel {
+  min-width: 0;
+  border-radius: 3px;
+  box-shadow: none;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .section-heading {
+  min-height: 32px;
+  margin-bottom: 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--doul-color-line);
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 9px;
+  row-gap: 2px;
+  align-items: center;
+  min-height: 70px;
+  padding: 10px 12px;
+  margin: 0 0 12px;
+  text-align: left;
+  background: #fafbfd;
+  border: 1px dashed #c5d0dc;
+  border-radius: 3px;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop > svg {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  color: #718095;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop > h2 {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--doul-color-ink);
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop > p {
+  grid-column: 2;
+  grid-row: 2;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--doul-color-slate-500);
+  overflow-wrap: anywhere;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop > .upload-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  min-height: 34px;
+  margin: 0;
+  padding: 6px 9px;
+  font-size: 12px;
+  line-height: 1.3;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop > .upload-label:nth-of-type(1) {
+  grid-column: 3;
+  grid-row: 1 / 3;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop > .upload-label:nth-of-type(2) {
+  grid-column: 4;
+  grid-row: 1 / 3;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .pending-row {
+  min-height: 42px;
+  padding: 6px 2px;
+  gap: 10px;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .pending-row strong {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .pending-row small {
+  margin-top: 3px;
+  font-size: 10px;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .pending-row button {
+  flex: none;
+  min-height: 32px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+@media (min-width: 1101px) {
+  .app-shell[data-layout-system="field-workspace"] .template-capture > .right-stack {
+    /* The next grid row contains full-width media analysis. A sticky rail
+     * would float over that row and intercept its action buttons. Keep the
+     * evidence rail independently scrollable but within its own grid cell. */
+    position: relative;
+    top: auto;
+    min-height: 0;
+    max-height: calc(100dvh - 69px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #a5afbb transparent;
+    align-self: start;
+    padding-right: 3px;
+  }
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .right-stack > .panel {
+  min-width: 0;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .right-stack .meta-grid {
+  margin: 10px 0;
+  padding: 9px;
+  gap: 7px;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .right-stack .floorplan {
+  margin: 9px 0;
+  padding: 3px;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-capture .right-stack .notice {
+  margin: 8px 0 0;
+  padding: 9px;
+}
+
+@media (min-width: 768px) and (max-width: 1100px) {
+  .app-shell[data-layout-system="field-workspace"] .template-capture {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-capture > .right-stack {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+    max-height: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] .template-capture {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop {
+    grid-template-columns: 24px minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto;
+    gap: 7px 8px;
+    padding: 10px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop > svg {
+    grid-column: 1;
+    grid-row: 1 / 3;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop > h2 {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop > p {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: 12px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop > .upload-label:nth-of-type(1) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop > .upload-label:nth-of-type(2) {
+    grid-column: 1 / -1;
+    grid-row: 4;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-capture .capture-drop > .upload-label {
+    width: 100%;
+    min-height: 44px;
+    white-space: normal;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-capture .pending-row button,
+  .app-shell[data-layout-system="field-workspace"] .template-capture [data-ui-component="field-record-create-actions"] button {
+    min-height: 44px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-capture > .right-stack {
+    display: flex;
+    flex-direction: column;
+    max-height: none;
+    overflow: visible;
+    position: static;
+  }
+}

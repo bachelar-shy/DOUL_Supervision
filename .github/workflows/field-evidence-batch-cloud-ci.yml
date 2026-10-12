@@ -7,6 +7,8 @@ on:
       - "apps/web/src/pages/CapturePage.tsx"
       - "packages/localization/src/index.ts"
       - "tests_browser_launch/capture-batch.spec.ts"
+      - "tests_browser_launch/fieldwire-capture-layout.spec.ts"
+      - "apps/web/src/pages/fieldwire-capture-layout.css"
       - "tests_browser/capture-batch-connected.spec.ts"
 permissions:
   contents: read
@@ -38,7 +40,15 @@ jobs:
       - name: Verify batch selection and persisted originals
         run: |
           npx playwright install --with-deps chromium
-          npx playwright test -c playwright.field-core.config.ts capture-batch.spec.ts
+          npx playwright test -c playwright.field-core.config.ts capture-batch.spec.ts fieldwire-capture-layout.spec.ts
+      - name: Preserve capture layout screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: fieldwire-capture-layout-screenshots
+          path: preview/screenshots/fieldwire-capture-*.png
+          if-no-files-found: warn
+          retention-days: 14
       - name: Verify two-file upload against authorized test API
         env:
           DOUL_TEST_PYTHON: ${{ github.workspace }}/.venv/bin/python
