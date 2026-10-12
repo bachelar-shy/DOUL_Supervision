@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 
 function makePdf(pages = 3): Buffer {
@@ -45,7 +46,7 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   await login(page, "CON");
   const view = page.locator('[data-ui-component="drawing-sheet-workspace"]');
   await expect(view.getByRole("button", { name: "새 도면(PDF)" })).toBeVisible();
-  const uniqueFolder = testInfo.project.name + "-3장-계단상세-" + Date.now();
+  const uniqueFolder = testInfo.project.name + "-3장-계단상세-" + randomUUID();
   await view.locator('input[type="file"]').setInputFiles({
     name: uniqueFolder + ".pdf", mimeType: "application/pdf", buffer: makePdf(3),
   });
@@ -119,21 +120,26 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   }
 });
 
-test("owner reads same sheet markers but cannot upload or create issue", async ({ page }) => {
+test("owner reads only the intended sheet but cannot upload or create issue", async ({ page }, testInfo) => {
   await login(page, "ADM");
   const view = page.locator('[data-ui-component="drawing-sheet-workspace"]');
-  if (await view.locator(".drawing-sheet-card").count() === 0) {
-    await view.locator('input[type="file"]').setInputFiles({
-      name: "owner-read-test.pdf", mimeType: "application/pdf", buffer: makePdf(1),
-    });
-    await expect(view.locator(".drawing-sheet-card")).toHaveCount(1);
-  }
-  await view.locator(".drawing-sheet-card").first().click();
+  // Other browser cases intentionally retain their drawings. Identify only
+  // the PDF uploaded by this case, not the full project's cumulative count.
+  const folderName = testInfo.project.name + "-owner-permissions-" + randomUUID();
+  await view.locator('input[type="file"]').setInputFiles({
+    name: folderName + ".pdf", mimeType: "application/pdf", buffer: makePdf(1),
+  });
+  const folder = view.locator(".drawing-sheet-folder").filter({ hasText: folderName });
+  await expect(folder.locator(".drawing-sheet-card")).toHaveCount(1);
+  await expect(folder.locator(".drawing-sheet-card img")).toBeVisible({ timeout: 20000 });
+  await folder.locator(".drawing-sheet-card").click();
   await expect(view.locator(".drawing-board-image-frame img")).toBeVisible({ timeout: 15000 });
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await login(page, "OWN");
   await expect(view.getByRole("button", { name: "새 도면(PDF)" })).toHaveCount(0);
-  await view.locator(".drawing-sheet-card").first().click();
+  const ownerFolder = view.locator(".drawing-sheet-folder").filter({ hasText: folderName });
+  await expect(ownerFolder.locator(".drawing-sheet-card")).toHaveCount(1);
+  await ownerFolder.locator(".drawing-sheet-card").click();
   await expect(view.getByRole("button", { name: "새 이슈 마크" })).toHaveCount(0);
   await expect(view.getByRole("button", { name: "지적·이슈 핀 추가" })).toHaveCount(0);
   await expect(view.locator(".drawing-board-image-frame img")).toBeVisible({ timeout: 15000 });
@@ -143,14 +149,14 @@ test("mobile 390px stays on sheet and opens issue panel", async ({ page }, testI
   if (testInfo.project.name !== "phone") return;
   await login(page, "SUP");
   const view = page.locator('[data-ui-component="drawing-sheet-workspace"]');
-  const cards = view.locator(".drawing-sheet-card");
-  if (await cards.count() === 0) {
-    await view.locator('input[type="file"]').setInputFiles({
-      name: "mobile-drawing.pdf", mimeType: "application/pdf", buffer: makePdf(1),
-    });
-    await expect(cards).toHaveCount(1);
-  }
-  await cards.first().click();
+  const folderName = "mobile-issue-rail-" + randomUUID();
+  await view.locator('input[type="file"]').setInputFiles({
+    name: folderName + ".pdf", mimeType: "application/pdf", buffer: makePdf(1),
+  });
+  const folder = view.locator(".drawing-sheet-folder").filter({ hasText: folderName });
+  await expect(folder.locator(".drawing-sheet-card")).toHaveCount(1);
+  await expect(folder.locator(".drawing-sheet-card img")).toBeVisible({ timeout: 20000 });
+  await folder.locator(".drawing-sheet-card").click();
   await expect(view.locator(".drawing-board-tools")).toBeVisible();
   await view.getByRole("button", { name: "이슈 목록" }).click();
   await view.getByRole("button", { name: "이슈 목록" }).click();
