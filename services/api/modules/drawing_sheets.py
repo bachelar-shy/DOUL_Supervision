@@ -21,7 +21,8 @@ from fastapi import BackgroundTasks, Request
 from fastapi.responses import Response
 
 from app.reference.validation import ContractError, require
-from .drawing_raster import MAX_SOURCE_BYTES, PdfSheetError, pdf_pages, page_image
+from .drawing_raster import MAX_SOURCE_BYTES, PdfSheetError, pdf_pages, page_image, pdf_page_text
+from .drawing_sheet_metadata import extract_sheet_candidate
 from .drawing_sheet_annotations import install_sheet_markup_routes
 
 LOG = logging.getLogger(__name__)
@@ -73,13 +74,17 @@ def _render_set(store, project_id, set_id):
                 raise PdfSheetError("업로드된 PDF 페이지 수가 변경되었습니다")
             def raster_job(number: int):
                 # PDF decoding is CPU-bound: at most two poppler children per upload.
-                return page_image(pdf, number, thumb=True), page_image(pdf, number)
+                try:
+                    info = extract_sheet_candidate(number, pdf_page_text(pdf, number))
+                except (PdfSheetError, ValueError):
+                    info = None  # Rendering should survive a malformed or scanned titleblock.
+                return page_image(pdf, number, thumb=True), page_image(pdf, number), info
             with ThreadPoolExecutor(max_workers=2, thread_name_prefix="doul-sheet-raster") as pool:
                 jobs = {pool.submit(raster_job, number): sheet_id
                         for number, sheet_id in enumerate(ids, start=1)}
                 for future in as_completed(jobs):
                     sheet_id = jobs[future]
-                    thumb, preview = future.result()
+                    thumb, preview, info = future.result()
                     with store.transaction(write=True):
                         sheet = store.meta["drawingSheets"][project_id][sheet_id]
                         thumb_id = "drawing-thumb:" + sheet_id
@@ -88,6 +93,15 @@ def _render_set(store, project_id, set_id):
                         store.put_blob(preview_id, preview)
                         sheet.update(thumbBlobId=thumb_id, previewBlobId=preview_id,
                                      status="ready", updatedAt=store.engine.at())
+                        if info is not None:
+                            sheet["extractedNumber"] = info.number
+                            sheet["extractedTitle"] = info.title
+                            sheet["metadataSource"] = info.provenance
+                            sheet["metadataNeedsReview"] = info.needs_review
+                            if info.number:
+                                sheet["number"] = info.number
+                            if info.title:
+                                sheet["title"] = info.title
                         root = store.meta["drawingSets"][project_id][set_id]
                         root["completedPages"] += 1
                         root["updatedAt"] = store.engine.at()
@@ -107,6 +121,46 @@ def _render_set(store, project_id, set_id):
                     sheet["status"] = "failed"
                     sheet["updatedAt"] = store.engine.at()
 
+
+
+
+def _refresh_existing_metadata(store, project_id, set_id):
+    """One-page-at-a-time indexer, never changes a manually assigned drawing number."""
+    try:
+        with store.transaction():
+            root = store.meta["drawingSets"][project_id][set_id]
+            content = store.blob(root["sourceBlobId"])
+            ids = list(root["sheetIds"])
+        with TemporaryDirectory(prefix="doul-metadata-") as folder:
+            pdf = Path(folder) / "original.pdf"
+            pdf.write_bytes(content)
+            require(pdf_pages(pdf) == len(ids), "SOURCE_INVALID", "Page identity changed")
+            for n, sheet_id in enumerate(ids, 1):
+                try:
+                    candidate = extract_sheet_candidate(n, pdf_page_text(pdf, n))
+                except (PdfSheetError, ValueError):
+                    candidate = None
+                with store.transaction(write=True):
+                    sheet = store.meta["drawingSheets"][project_id][sheet_id]
+                    if candidate is not None:
+                        sheet["extractedNumber"] = candidate.number
+                        sheet["extractedTitle"] = candidate.title
+                        sheet["metadataSource"] = candidate.provenance
+                        sheet["metadataNeedsReview"] = candidate.needs_review
+                        if sheet["number"].startswith("Sheet-") and candidate.number:
+                            sheet["number"] = candidate.number
+                            if candidate.title:
+                                sheet["title"] = candidate.title
+                            sheet["version"] += 1
+                    row = store.meta["drawingSets"][project_id][set_id]
+                    row["metadataCompletedPages"] = n
+                    row["updatedAt"] = store.engine.at()
+        with store.transaction(write=True):
+            store.meta["drawingSets"][project_id][set_id]["metadataStatus"] = "ready"
+    except Exception:
+        LOG.exception("Sheet metadata extraction failed for %s", set_id)
+        with store.transaction(write=True):
+            store.meta["drawingSets"][project_id][set_id]["metadataStatus"] = "failed"
 
 def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
     def context(project_id, request, actor):
@@ -204,6 +258,114 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
             result = deepcopy(row)
         tasks.add_task(_render_set, store, project_id, set_id)
         return {"set": result}
+
+    @app.post("/projects/{project_id}/drawing-sets/from-evidence", status_code=202)
+    async def import_registered_evidence(project_id: str, request: Request, tasks: BackgroundTasks):
+        """Index a previously registered project PDF without writing its original bytes twice."""
+        actor = identity(request)
+        key = key_for(request)
+        body = await request.json()
+        require(isinstance(body, dict) and set(body) == {"evidenceRef"}, "INVALID_REQUEST",
+                "A registered Evidence reference is required")
+        ref = body["evidenceRef"]
+        require(isinstance(ref, dict) and set(ref) == {"objectType", "objectId", "version"}
+                and ref["objectType"] == "Evidence" and isinstance(ref["objectId"], str)
+                and type(ref["version"]) is int and ref["version"] > 0, "INVALID_REQUEST",
+                "A current Evidence version is required")
+        require(isinstance(key, str) and key.strip(), "IDEMPOTENCY_KEY_INVALID", "Request key required")
+        with store.transaction():
+            role = context(project_id, request, actor)
+            require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "Drawing registration forbidden")
+            source = store.engine.resolve(ref, project_id)
+            store.engine.authorize_read(source, actor["partyId"], role["id"])
+            require(source.get("sourceType") == "original" and source.get("mediaType") == "document"
+                    and source.get("metadata", {}).get("mimeType") == "application/pdf",
+                    "SOURCE_INVALID", "Registered original PDF required")
+            filename = source["metadata"].get("name", "drawing.pdf")
+            require(Path(filename).name == filename and filename.lower().endswith(".pdf"),
+                    "SOURCE_INVALID", "Invalid filename")
+            blob_id = source["fileId"]
+            original = store.blob(blob_id)
+            digest = sha256(original).hexdigest()
+            require(original.startswith(b"%PDF-") and len(original) <= 64 * 1024 * 1024
+                    and digest == source["fileHash"], "SOURCE_INVALID", "PDF identity mismatch")
+        try:
+            with TemporaryDirectory(prefix="doul-existing-pdf-") as folder:
+                path = Path(folder) / "original.pdf"
+                path.write_bytes(original)
+                count = pdf_pages(path)
+        except PdfSheetError as exc:
+            raise ContractError("INVALID_REQUEST", str(exc)) from exc
+
+        request_key = "drawing-from-evidence:" + project_id + ":" + actor["partyId"] + ":" + key
+        fingerprint = sha256(json.dumps(ref, sort_keys=True).encode()).hexdigest()
+        with store.transaction(write=True):
+            role = context(project_id, request, actor)
+            require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "Drawing registration forbidden")
+            source = store.engine.resolve(ref, project_id)
+            store.engine.authorize_read(source, actor["partyId"], role["id"])
+            require(source["fileId"] == blob_id and source["fileHash"] == digest,
+                    "REFERENCE_STALE", "Original Evidence changed")
+            cached = store.requests.get(request_key)
+            if cached:
+                require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Request changed")
+                return {"set": deepcopy(set_for(project_id, cached["setId"]))}
+            for existing in store.meta.get("drawingSets", {}).get(project_id, {}).values():
+                if existing.get("sourceEvidenceId") == source["id"] and existing.get("sha256") == digest:
+                    store.requests[request_key] = {"hash": fingerprint, "setId": existing["id"]}
+                    return {"set": deepcopy(existing)}
+            now = store.engine.at()
+            set_id = str(uuid4())
+            ids = [str(uuid4()) for _ in range(count)]
+            row = dict(id=set_id, version=1, projectId=project_id, fileName=filename,
+                       folder=_folder(filename), sha256=digest, size=len(original),
+                       sourceBlobId=blob_id, sourceEvidenceId=source["id"],
+                       sheetIds=ids, pageCount=count, completedPages=0,
+                       status="processing", createdAt=now, updatedAt=now,
+                       createdByPartyId=actor["partyId"],
+                       dataClassification="USER_PROVIDED_ORIGINAL_NOT_ISSUED")
+            store.meta.setdefault("drawingSets", {}).setdefault(project_id, {})[set_id] = row
+            sheets = store.meta.setdefault("drawingSheets", {}).setdefault(project_id, {})
+            for index, sheet_id in enumerate(ids, start=1):
+                sheets[sheet_id] = dict(
+                    id=sheet_id, version=1, projectId=project_id, setId=set_id,
+                    pageNo=index, number=f"Sheet-{index:03d}", title=f"Sheet {index} (verify)",
+                    folder=row["folder"], status="processing", revision="unverified",
+                    drawingRef=None, bindingId=None, thumbBlobId=None, previewBlobId=None,
+                    createdAt=now, updatedAt=now, createdByPartyId=actor["partyId"])
+            _audit(store, project_id, "registered_evidence_indexed", actor, role,
+                   {"setId": set_id, "evidenceId": source["id"], "pageCount": count, "sha256": digest})
+            store.requests[request_key] = {"hash": fingerprint, "setId": set_id}
+            result = deepcopy(row)
+        tasks.add_task(_render_set, store, project_id, set_id)
+        return {"set": result}
+
+    @app.post("/projects/{project_id}/drawing-sets/{set_id}/refresh-metadata", status_code=202)
+    async def refresh_registered_metadata(project_id: str, set_id: str, request: Request, tasks: BackgroundTasks):
+        """Refresh extracted sheet titleblock candidates without rewriting the PDF or manual edits."""
+        actor = identity(request)
+        key = key_for(request)
+        require(isinstance(key, str) and key.strip(), "IDEMPOTENCY_KEY_INVALID", "Request key required")
+        cache_key = f"sheet-metadata-refresh:{project_id}:{actor['partyId']}:{key}"
+        fingerprint = sha256((project_id + ":" + set_id).encode()).hexdigest()
+        with store.transaction(write=True):
+            role = context(project_id, request, actor)
+            require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "Drawing edit forbidden")
+            cache = store.requests.get(cache_key)
+            if cache:
+                require(cache["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Request changed")
+                return {"set": deepcopy(set_for(project_id, cache["setId"]))}
+            row = set_for(project_id, set_id)
+            require(row["status"] == "ready", "INVALID_REQUEST", "Drawing images not ready")
+            if row.get("metadataStatus") != "processing":
+                row["metadataStatus"] = "processing"
+                row["metadataCompletedPages"] = 0
+                row["updatedAt"] = store.engine.at()
+                tasks.add_task(_refresh_existing_metadata, store, project_id, set_id)
+            _audit(store, project_id, "sheet_metadata_refresh_requested", actor, role,
+                   {"setId": set_id, "sha256": row["sha256"]})
+            store.requests[cache_key] = {"setId": set_id, "hash": fingerprint}
+            return {"set": deepcopy(row)}
 
     @app.get("/projects/{project_id}/drawing-sheets")
     def list_sheets(project_id: str, request: Request):
