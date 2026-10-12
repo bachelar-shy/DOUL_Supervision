@@ -173,7 +173,11 @@ test.describe("today heading date", () => {
   test.use({ timezoneId: "Asia/Bangkok" });
 
   test("refreshes after local midnight without weather placeholder", async ({ page }) => {
-    await page.clock.install({ time: new Date("2026-10-06T16:59:55Z") });
+    // The clock must remain frozen while the CI browser hydrates. Otherwise
+    // a slow worker can cross midnight before the first assertion.
+    const beforeMidnight = new Date("2026-10-06T16:59:55Z");
+    await page.clock.install({ time: beforeMidnight });
+    await page.clock.pauseAt(beforeMidnight);
     await page.goto("/#/today");
     const date = page.locator('[data-ui-component="today-date-context"]');
     await expect(date).toContainText("2026년 10월 6일");
