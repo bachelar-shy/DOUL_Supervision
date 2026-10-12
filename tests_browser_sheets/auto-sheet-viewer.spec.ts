@@ -127,6 +127,17 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   await expect(view.locator(".drawing-markup-rail-count")).toContainText("0개");
   await view.getByRole("button", { name: "마크업 다시 실행" }).click();
   await expect(view.locator(".drawing-markup-rail-count")).toContainText("1개");
+
+  // The revision cloud is a curved SVG path, not the former dashed rectangle.
+  await view.getByRole("button", { name: "수정구름" }).click();
+  await page.mouse.move(dimensions.x + dimensions.width * 0.15, dimensions.y + dimensions.height * 0.62);
+  await page.mouse.down();
+  await page.mouse.move(dimensions.x + dimensions.width * 0.54, dimensions.y + dimensions.height * 0.82, { steps: 7 });
+  await page.mouse.up();
+  await expect(view.locator(".drawing-markup-rail-count")).toContainText("2개");
+  await expect(overlay.locator("g > path")).toHaveCount(1);
+  const cloudPath = await overlay.locator("g > path").getAttribute("d");
+  expect(cloudPath).toMatch(/Q [\d.-]+ [\d.-]+ [\d.-]+ [\d.-]+/);
   await view.getByRole("button", { name: "이동 도구" }).click();
 
 
@@ -134,6 +145,8 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   await login(page, "CON");
   await expect(view).toHaveAttribute("data-view", "catalog");
   await view.locator(".drawing-sheet-folder").filter({ hasText: uniqueFolder }).locator(".drawing-sheet-card").filter({ hasText: "DT-05A" }).click();
+  await expect(view.locator(".drawing-markup-rail-count")).toContainText("2개");
+  await expect(view.locator("svg.drawing-board-markup-layer g > path")).toHaveCount(1);
   await expect(rail.locator(".drawing-issue-row")).toHaveCount(3);
   for (const label of ["보 부위 간섭 확인 필요 - 합성 테스트", "합성 검측 위치 확인", "합성 현장상황 위치 기록"]) {
     await expect(rail.getByText(label, { exact: false })).toBeVisible();
