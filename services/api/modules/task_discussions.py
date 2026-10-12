@@ -134,13 +134,76 @@ def install_task_discussion_routes(app, store, *, identity, role_for, key_for, b
                     store.meta.setdefault("fieldDiscussionAlerts", {}).setdefault(project_id, []).append({
                         "id": uid(), "recipientPartyId": receiver, "commentId": entry["id"],
                         "subjectRef": deepcopy(body["subjectRef"]), "createdAt": now,
-                        "kind": "collaboration_alert"})
+                        "kind": "collaboration_alert", "version": 1, "readAt": None})
             store.meta.setdefault("fieldDiscussionAudit", {}).setdefault(project_id, []).append({
                 "event": "collaboration_comment_added", "id": entry["id"],
                 "actorPartyId": actor["partyId"], "subjectRef": deepcopy(body["subjectRef"]),
                 "at": now})
             result = {"comment": deepcopy(entry), "watcherCount": len(watchers)}
             store.engine._remember(project_id, actor["partyId"], op, key, body, result)
+            return result
+
+    def authorized_alert(project_id, alert, actor, role):
+        require(alert["recipientPartyId"] == actor["partyId"], "NOT_AUTHORIZED", "Not the notification recipient")
+        ref = alert["subjectRef"]
+        require(ref["objectType"] in ALLOWED_SUBJECTS and
+                isinstance(ref["objectId"], str), "REFERENCE_INVALID", "Invalid alert subject")
+        current = store.engine.get(ref["objectType"], ref["objectId"])
+        require(current["projectId"] == project_id, "PROJECT_MISMATCH", "Alert subject belongs to another project")
+        store.engine.authorize_read(current, actor["partyId"], role["id"])
+
+    @app.get("/projects/{project_id}/field/discussions/alerts")
+    def list_alerts(project_id: str, request: Request, unreadOnly: bool = False, limit: int = 80):
+        require(type(limit) is int and 1 <= limit <= 100, "INVALID_REQUEST", "Alert limit 1-100 required")
+        with store.transaction():
+            actor, role = context(project_id, request)
+            results = []
+            for alert in store.meta.get("fieldDiscussionAlerts", {}).get(project_id, []):
+                if alert["recipientPartyId"] != actor["partyId"]:
+                    continue
+                if unreadOnly and alert.get("readAt"):
+                    continue
+                try:
+                    authorized_alert(project_id, alert, actor, role)
+                except Exception as exc:
+                    if getattr(exc, "code", None) in {
+                        "SCOPE_MISMATCH", "NOT_AUTHORIZED", "NOT_FOUND", "ORGANIZATION_MISMATCH",
+                        "QUALIFICATION_INVALID", "ASSIGNMENT_EXPIRED", "PROJECT_MISMATCH"}:
+                        continue
+                    raise
+                results.append(deepcopy(alert))
+            results.sort(key=lambda row: (row["createdAt"], row["id"]), reverse=True)
+            return {"projectId": project_id, "count": len(results), "items": results[:limit]}
+
+    @app.post("/projects/{project_id}/field/discussions/alerts/{alert_id}/read")
+    async def read_alert(project_id: str, alert_id: str, request: Request):
+        body = await body_json(request)
+        require(isinstance(body, dict) and set(body) == {"expectedVersion"}
+                and type(body["expectedVersion"]) is int and body["expectedVersion"] >= 1,
+                "INVALID_REQUEST", "Alert version required")
+        key = key_for(request)
+        with store.transaction(write=True):
+            actor, role = context(project_id, request)
+            op = "field_discussions:alert_read"
+            command = {"alertId": alert_id, **body}
+            previous = store.engine._replay(project_id, actor["partyId"], op, key, command)
+            if previous is not None:
+                return previous
+            alerts = store.meta.get("fieldDiscussionAlerts", {}).get(project_id, [])
+            matches = [item for item in alerts if item["id"] == alert_id]
+            require(len(matches) == 1, "NOT_FOUND", "Notification unavailable")
+            alert = matches[0]
+            authorized_alert(project_id, alert, actor, role)
+            require(alert.get("version", 1) == body["expectedVersion"],
+                    "REFERENCE_STALE", "Notification was changed")
+            if alert.get("readAt") is None:
+                alert["readAt"] = store.engine.at()
+                alert["version"] = alert.get("version", 1) + 1
+                store.meta.setdefault("fieldDiscussionAudit", {}).setdefault(project_id, []).append({
+                    "event": "collaboration_alert_read", "alertId": alert["id"],
+                    "actorPartyId": actor["partyId"], "at": alert["readAt"]})
+            result = {"alert": deepcopy(alert)}
+            store.engine._remember(project_id, actor["partyId"], op, key, command, result)
             return result
 
     @app.post("/projects/{project_id}/field/discussions/watch")
