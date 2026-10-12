@@ -37,7 +37,7 @@ test("DOUL phone keeps larger action targets and task drawer geometry", async ({
   const workspace = page.locator('[data-ui-component="drawing-sheet-workspace"]');
   await expect(workspace).toBeVisible();
   expect(await computed(page, ".app-shell", "--fw-ui-control-height")).toBe("44px");
-  expect(await computed(page, ".app-shell", "--fw-ui-tool-size")).toBe("36px");
+  expect(await computed(page, ".app-shell", "--fw-ui-tool-size")).toBe("44px");
   const viewButton = workspace.getByRole("button", { name: "썸네일 보기" });
   await expect(viewButton).toBeVisible();
   const bounds = await viewButton.boundingBox();
