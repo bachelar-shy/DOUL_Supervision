@@ -53,11 +53,11 @@ test("non-admin personnel request reaches only its project administrator and rev
   await expect(inbox.getByText("관리자 검토 대기", { exact: true })).toBeVisible();
   await inbox.getByRole("button", { name: "승인 · 등록은 별도", exact: true }).click();
   await expect(inbox.getByRole("status").filter({ hasText: "요청을 승인했습니다" })).toBeVisible();
-  await expect(inbox.getByText("관리자 승인 · 계정 미발급", { exact: true })).toBeVisible();
+  await expect(inbox.locator("article").filter({ hasText: name }).getByText("관리자 승인 · 계정 미발급", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
 
   await login(page, username, password);
   await page.goto("/#/staff-requests");
-  await expect(page.locator('[data-ui-component="personnel-requests"]').getByText("관리자 승인 · 계정 미발급", { exact: true })).toBeVisible();
+  await expect(page.locator('[data-ui-component="personnel-requests"]').locator("article").filter({ hasText: name }).getByText("관리자 승인 · 계정 미발급", { exact: true })).toBeVisible();
   await expect(page.locator("aside.sidebar").getByText("프로젝트 설정", { exact: true })).toHaveCount(0);
 });
