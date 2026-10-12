@@ -45,6 +45,8 @@ test("compares two uploaded PDFs with independent page controls and no compare w
   await page.getByLabel("시험 사용자 역할 선택").selectOption("DES");
   await expect.poll(() => workspace?.role.actorGroup).toBe("DES");
   await page.goto("/#/drawings");
+  await expect(page.locator('[data-ui-component="drawing-sheet-workspace"]')).toBeVisible();
+  await page.getByRole("button", { name: "기존 PDF 검토" }).click();
   const viewer = page.getByLabel("PDF 도면 보기");
   await expect(viewer).toBeVisible();
 

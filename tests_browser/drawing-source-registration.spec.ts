@@ -29,6 +29,8 @@ test('designer registers an immutable PDF revision and explicitly requests techn
   await page.goto('/#/drawings');
   await page.getByLabel('시험 사용자 역할 선택').selectOption('DES');
   await page.goto('/#/drawings');
+  await expect(page.locator('[data-ui-component="drawing-sheet-workspace"]')).toBeVisible();
+  await page.getByRole('button', { name: '기존 PDF 검토' }).click();
   const viewer = page.getByLabel('PDF 도면 보기');
   const upload = page.waitForResponse(r => r.url().includes('/uploads/') && r.url().endsWith('/complete') && r.request().method() === 'POST');
   await viewer.getByTestId('pdf-upload').setInputFiles({ name: `authored-${suffix}.pdf`, mimeType:'application/pdf', buffer:onePagePdf() });
@@ -54,6 +56,7 @@ test('designer registers an immutable PDF revision and explicitly requests techn
   await page.reload();
   await page.getByLabel('시험 사용자 역할 선택').selectOption('DES');
   await page.goto('/#/drawings');
+  await page.getByRole('button', { name: '기존 PDF 검토' }).click();
   await page.getByRole('tab', { name: '도면 등록·배포', exact: true }).click();
   const predecessor=page.getByRole('combobox',{name:'이전 도면 개정',exact:true});
   await expect(predecessor.locator('option').filter({hasText:title})).toHaveCount(1);

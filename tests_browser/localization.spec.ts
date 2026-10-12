@@ -279,7 +279,11 @@ for (const width of [390, 768, 1440]) {
       for (const route of ["today", "inspections", "capture", "observations", "issues", "actions", "schedule", "contract", "payment", "completion", "safety", "owner", "documents", "registers", "rfis"]) {
         await test.step(`${language}/${route}/${width}`, async () => {
           await page.goto("/#/" + route);
-          await expect(page.locator("main h1")).toBeVisible();
+          if (route === "drawings") {
+            await expect(page.locator('[data-ui-component="drawing-sheet-workspace"] .drawing-sheet-commandbar')).toBeVisible();
+          } else {
+            await expect(page.locator("main .page-heading h1")).toBeVisible();
+          }
           const surface = route === "registers" ? '[data-ui-template="register"]' : `[data-ui-page="${route === "payment" ? "measurement-payment" : route === "completion" ? "completion-handover" : route}"]`;
           await expect(page.locator(surface)).toBeVisible();
           await expect(page.locator("html")).toHaveAttribute("lang", { ko: "ko-KR", vi: "vi-VN", en: "en-US" }[language]);

@@ -768,3 +768,16 @@
     height: clamp(335px, calc(100dvh - 378px), 850px);
   }
 }
+
+/* A compact desktop toolbar must never shrink phone touch targets to 34px. */
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] .topbar .menu-toggle,
+  .app-shell[data-layout-system="field-workspace"] .top-actions .role-picker select,
+  .app-shell[data-layout-system="field-workspace"] .top-actions .secondary,
+  .app-shell[data-layout-system="field-workspace"] .detail-pane > button,
+  .app-shell[data-layout-system="field-workspace"] .detail-pane .secondary,
+  .app-shell[data-layout-system="field-workspace"] .detail-pane .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
