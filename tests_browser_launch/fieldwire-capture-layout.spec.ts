@@ -18,7 +18,8 @@ test("desktop field record intake uses a compact upload toolbar and right eviden
   expect(rightBox.width).toBeLessThanOrEqual(340);
   expect(Math.abs(rightBox.x - leftBox.x - leftBox.width)).toBeLessThanOrEqual(16);
   expect(await rail.evaluate(node => getComputedStyle(node).overflowY)).toBe("auto");
-  expect(await rail.evaluate(node => getComputedStyle(node).position)).toBe("sticky");
+  // The evidence rail must not float over the full-width analysis section.
+  expect(await rail.evaluate(node => getComputedStyle(node).position)).toBe("relative");
 
   const inputs = upload.locator('input[type="file"]');
   await expect(inputs).toHaveCount(2);
