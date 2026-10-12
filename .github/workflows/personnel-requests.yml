@@ -40,7 +40,13 @@ jobs:
       - name: Verify admin-only permissions, isolation and request workflow
         run: .venv/bin/python -m unittest tests_mvp.test_project_settings_http -v
       - name: Web lint and build
+        env:
+          VITE_DOUL_AUTH_MODE: password
         run: |
           npm run check:ui-boundary
           npm run lint --workspace apps/web
           npm run web:build
+      - name: Desktop and mobile request workflow
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test -c playwright.project-settings.config.ts tests_browser_settings/personnel-requests.spec.ts
