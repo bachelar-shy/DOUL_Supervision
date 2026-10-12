@@ -9,10 +9,12 @@ on:
       - "apps/web/src/pages/DocumentTableEditor.tsx"
       - "apps/web/src/pages/document-authoring-source.ts"
       - "apps/web/src/pages/document-authoring.css"
+      - "apps/web/src/pages/fieldwire-document-layout.css"
       - "apps/web/src/data/supervision-client.ts"
       - "apps/web/src/data/mock-supervision-client.ts"
       - "apps/web/src/data/mock-workspace.ts"
       - "tests_browser_launch/document-authoring-ux.spec.ts"
+      - "tests_browser_launch/fieldwire-document-layout.spec.ts"
       - "tests_browser/document-authoring-connected.spec.ts"
 
 permissions:
@@ -50,7 +52,15 @@ jobs:
       - name: Browser checks for source and editable tables
         run: |
           npx playwright install --with-deps chromium
-          npx playwright test -c playwright.field-core.config.ts document-authoring-ux.spec.ts
+          npx playwright test -c playwright.field-core.config.ts document-authoring-ux.spec.ts fieldwire-document-layout.spec.ts
+      - name: Preserve document layout screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: fieldwire-document-layout-screenshots
+          path: preview/screenshots/fieldwire-document-*.png
+          if-no-files-found: warn
+          retention-days: 14
       - name: Authorized draft and exporter not installed behaviour
         run: npx playwright test -c playwright.config.ts document-authoring-connected.spec.ts
       - name: Existing versioned document workspace regression
