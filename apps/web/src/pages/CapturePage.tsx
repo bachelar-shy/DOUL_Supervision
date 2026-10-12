@@ -11,6 +11,7 @@ import { recordTitle } from "./record-utils";
 import { EvidenceDetailPreview } from "./EvidenceDetailPreview";
 import { evidenceMediaLabel, evidenceSourceLabel } from "./evidence-utils";
 import { MediaAnalysisPanel } from "./MediaAnalysisPanel";
+import { FieldRecordPanel } from "./FieldRecordPanel";
 
 const MAX_BATCH_FILES = 20;
 const MAX_CAPTURE_BYTES = 64 * 1024 * 1024;
@@ -74,6 +75,8 @@ export function CapturePage({
   const uploadingRef = useRef(false);
   const [error, setError] = useState("");
   const [selectedEvidenceId, setSelectedEvidenceId] = useState<string | null>(null);
+  const [recordFormOpen, setRecordFormOpen] = useState(false);
+  const fileIntakeRef = useRef<HTMLInputElement>(null);
 
   const evidenceItems = workspace.items.filter((item) => item.machine === "evidence");
   const selectedEvidence =
@@ -224,6 +227,16 @@ export function CapturePage({
   return (
     <PageBoundary name="capture">
       <CaptureTemplate>
+        <div className="col-span-full flex flex-wrap items-center justify-between gap-3" data-ui-component="field-record-create-actions">
+          <h1 className="text-xl font-semibold">현장기록</h1>
+          <button type="button" className="secondary" style={{ minHeight: 44 }}
+            onClick={() => fileIntakeRef.current?.click()}>＋ 사진·파일 추가</button>
+        </div>
+        <div className="col-span-full">
+          <FieldRecordPanel key={workspace.project.id + ":" + workspace.role.id}
+            client={client} workspace={workspace} online={online}
+            expanded={recordFormOpen} onToggle={setRecordFormOpen} />
+        </div>
         <section className="panel">
           <div className="section-heading">
             <h2>{t("capture.intake.title")}</h2>
@@ -239,6 +252,7 @@ export function CapturePage({
               {t("capture.intake.chooseFile")}
               <input
                 aria-label={t("capture.intake.fileAria")}
+                ref={fileIntakeRef}
                 type="file"
                 multiple
                 disabled={batchBusy || !!progress}
