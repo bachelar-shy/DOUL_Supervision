@@ -5,7 +5,8 @@ import "./field-checklist.css";
 
 type Item = { key: string; label: string; type: "pass_fail" | "number" | "text" | "choice"; required?: boolean; options?: string[] };
 type Template = { id: string; projectId: string; title: string; version: number; status: "draft" | "published" | "superseded"; items: Item[] };
-type Answer = { value: string | number | null; checkedAt: string; checkedBy: string };
+type Answer = { value: string | number | null; checkedAt: string; checkedBy: string;
+   evidenceRefs?: Array<{ objectType: "Evidence"; objectId: string; version: number }> };
 type Run = { id: string; version: number; templateId: string; templateVersion: number; templateSnapshot: Template; subjectRef: { objectType: string; objectId: string; version: number }; answers: Record<string, Answer>; status: "draft" };
 type TemplatesResponse = { items: Template[] };
 type RunsResponse = { items: Run[] };
@@ -17,6 +18,8 @@ export function FieldChecklistPanel({ client, workspace, online, subject }: {
 }) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [runs, setRuns] = useState<Run[]>([]);
+  const [photos, setPhotos] = useState<Array<{id:string; name:string; version:number}>>([]);
+  const [photoSelection, setPhotoSelection] = useState<Record<string, string>>({});
   const [title, setTitle] = useState("");
   const [items, setItems] = useState<Item[]>([newItem()]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
@@ -47,6 +50,16 @@ export function FieldChecklistPanel({ client, workspace, online, subject }: {
     }).catch(() => { if (!cancelled) setError("체크리스트를 불러오지 못했습니다."); });
     return () => { cancelled = true; };
   }, [client, pid, currentSubject?.id, refresh, online]);
+
+  useEffect(() => {
+    if (!online) return;
+    let live = true;
+    void client.request<{items:Array<{id:string; name:string; version:number}>}>(
+      client.path("/field/photos?media=photo&limit=80")
+    ).then(data => { if (live) setPhotos(data.items); })
+      .catch(() => { if (live) setPhotos([]); });
+    return () => { live = false; };
+  }, [client, pid, online]);
 
   // Only latest published versions are offered for new attachments.
   const published = templates.filter(item => item.status === "published")
@@ -112,8 +125,13 @@ export function FieldChecklistPanel({ client, workspace, online, subject }: {
     if (!online) { setError("오프라인 답변은 로컬 작업함에 보관 후 동기화해야 합니다."); return; }
     setBusy(true); setError("");
     try {
+      const photoId = photoSelection[run.id + ":" + item.key];
+      const photo = photos.find(photo => photo.id === photoId);
+      const evidenceRefs = photo ? { [item.key]: [
+        { objectType: "Evidence" as const, objectId: photo.id, version: photo.version },
+      ] } : undefined;
       const result = await api<{ run: Run }>("/field/checklists/runs/" + run.id + "/answers",
-        { expectedVersion: run.version, answers: { [item.key]: value } });
+        { expectedVersion: run.version, answers: { [item.key]: value }, ...(evidenceRefs ? { evidenceRefs } : {}) });
       setRuns(prev => prev.map(old => old.id === run.id ? result.run : old));
     } catch { setError("체크 결과를 기록하지 못했습니다. 다른 담당자가 변경했는지 확인하십시오."); }
     finally { setBusy(false); }
@@ -142,7 +160,7 @@ export function FieldChecklistPanel({ client, workspace, online, subject }: {
       <div className="fw-checklist-lines">
         {run.templateSnapshot.items.map(item => {
           const answer = run.answers[item.key];
-          return <label key={item.key} className="fw-checklist-line">
+          return <div key={item.key} className="fw-checklist-line">
             <span>{item.label}{item.required ? " *" : ""}</span>
             {item.type === "pass_fail" ?
               <select aria-label={item.label} value={answer?.value == null ? "" : String(answer.value)}
@@ -156,8 +174,23 @@ export function FieldChecklistPanel({ client, workspace, online, subject }: {
               <input aria-label={item.label} defaultValue={answer?.value == null ? "" : String(answer.value)}
                 key={run.version} type={item.type === "number" ? "number" : "text"} disabled={busy || !online}
                 onBlur={e => { const value = e.target.value; if (value) void changeAnswer(run, item, item.type === "number" ? Number(value) : value); }} />}
-            {answer && <small>{takeDate(answer.checkedAt)} · {answer.checkedBy.slice(0, 8)}</small>}
-          </label>;
+            {answer && <small>{takeDate(answer.checkedAt)} · {answer.checkedBy.slice(0, 8)}
+              · 사진 {answer.evidenceRefs?.length || 0}건</small>}
+            {answer && photos.length > 0 && <details style={{ gridColumn: "1 / -1" }}>
+              <summary>점검사진 첨부</summary>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <select aria-label={item.label + " 점검사진"} value={photoSelection[run.id + ":" + item.key] || ""}
+                  onChange={event => setPhotoSelection(prev => ({
+                    ...prev, [run.id + ":" + item.key]: event.target.value,
+                  }))}>
+                  <option value="">사진 선택</option>
+                  {photos.map(photo => <option key={photo.id} value={photo.id}>{photo.name}</option>)}
+                </select>
+                <button type="button" disabled={busy || !online || !photoSelection[run.id + ":" + item.key]}
+                  onClick={() => void changeAnswer(run, item, answer.value)}>사진 연결</button>
+              </div>
+            </details>}
+          </div>;
         })}
       </div>
       <p className="fw-checklist-disclaimer">확인 결과는 현재 업무에 첨부된 참고 점검기록입니다. 공식 검측 합격·승인 상태는 변경되지 않습니다.</p>

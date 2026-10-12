@@ -2,6 +2,7 @@ import { recordVersionLabel } from "../labels";
 import { RecordDetails } from "./RecordDetails";
 import { FieldChecklistPanel } from "./FieldChecklistPanel";
 import { FieldTaskDiscussions } from "./FieldTaskDiscussions";
+import { FieldDiscussionAlertsPanel } from "./FieldDiscussionAlertsPanel";
 import type { SupervisionClient } from "../data/supervision-client";
 import { InspectionAuthoringPanel } from "./InspectionAuthoringPanel";
 import { InspectionCaseFlowPanel } from "./parallel/InspectionCaseFlowPanel";
@@ -348,6 +349,8 @@ export function WorkbenchPage({
                     <summary className="cursor-pointer text-sm font-semibold">업무별 대화 · 참조인 · 첨부</summary>
                     <FieldTaskDiscussions key={workspace.project.id + ":" + current.record.id}
                       client={client} workspace={workspace} subject={current} online={online} />
+                    <FieldDiscussionAlertsPanel key={workspace.project.id + ":" + workspace.role.id}
+                      client={client} online={online} />
                   </details>
                 </div>
               )}
