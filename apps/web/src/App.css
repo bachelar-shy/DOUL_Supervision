@@ -1803,3 +1803,6 @@ strong {
   .sidebar .side-bottom { display: none; }
   .sidebar nav { flex: 1 1 auto; min-height: 110px; }
 }
+
+/* Language and trial-role selectors keep a usable hit area on field phones. */
+@media(max-width:620px){.app-shell .topbar .role-picker select{min-height:44px;min-width:44px}}

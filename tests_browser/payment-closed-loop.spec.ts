@@ -1,3 +1,4 @@
+import { selectCommandEvidence } from "./command-evidence-helper";
 import { expect, test, type APIRequestContext, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { localDateTime } from "./support/local-datetime";
 import { randomUUID, randomBytes } from "node:crypto";
@@ -212,8 +213,7 @@ async function runCommand(
   for (const [field, value] of Object.entries(payload)) await setField(dialog, field, value);
   if (configureDialog) await configureDialog(dialog);
   if (evidenceIds.length) {
-    const textareas = dialog.locator("textarea");
-    await textareas.last().fill(evidenceIds.join(" "));
+    await selectCommandEvidence(dialog,evidenceIds);
   }
   const commandUrl = `/${command.replaceAll("_", "-")}`;
   const result = page.waitForResponse((r) => r.request().method() === "POST" && r.url().includes(commandUrl), { timeout: 15_000 });

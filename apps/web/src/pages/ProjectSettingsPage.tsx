@@ -4,6 +4,7 @@ import { ApiError, type SupervisionClient } from "../data/supervision-client";
 import { Panel, SectionHeader } from "../ui";
 import { PageBoundary } from "./PageBoundary";
 import "./project-settings.css";
+import { SampleUseCasePanel } from "./SampleUseCasePanel";
 
 const names: Record<ProjectRole,string>={ADM:"관리자",SUP:"감리자",OWN:"발주처",CON:"시공사"};
 const tabs=["기본정보","참여회사·담당자","작업범위","업무배정","로그인계정"];
@@ -92,5 +93,7 @@ export function ProjectSettingsPage({client,workspace,online,onChanged}:{client:
         }}><fieldset disabled={locked||client.session?.mode!=="PASSWORD"} className="settings-form"><legend>사용자 계정 생성</legend>{client.session?.mode!=="PASSWORD"&&<p>로그인 계정은 실제 비밀번호 로그인 서버에서 등록할 수 있습니다.</p>}<label>계정 역할<select value={accountGroup} onChange={e=>setAccountGroup(e.target.value as ProjectRole)}>{groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label><div key={accountGroup}>{select("담당자·역할","role",data.assignments.filter(a=>a.active&&a.actorGroup===accountGroup).map(a=>({id:a.id,name:roleLabel(a)})))}</div>{!data.assignments.some(a=>a.active&&a.actorGroup===accountGroup)&&<p>선택한 역할의 담당자가 없습니다. 참여회사·담당자에서 먼저 등록하십시오.</p>}<label>로그인 아이디<input name="username" required pattern="[a-z][a-z0-9._-]{2,63}" maxLength={64} autoComplete="off"/></label><p>영문 소문자로 시작하는 3~64자 아이디를 입력하십시오.</p><label>초기 비밀번호<input name="password" required type="password" minLength={12} maxLength={128} autoComplete="new-password"/></label><p>12자 이상으로 입력하십시오. 저장한 비밀번호는 다시 표시하지 않습니다.</p><button className="primary" type="submit">계정 생성</button></fieldset></form>
       </div>
     </div>}
-  </Panel></PageBoundary>;
+  </Panel>
+    {import.meta.env.VITE_DOUL_UI_SCOPE==="full"&&client.kind==="http"&&workspace.demo&&workspace.role.actorGroup==="ADM"&&workspace.project.name.includes("DOUL SAMPLE")&&<SampleUseCasePanel client={client} projectId={workspace.project.id}/>}
+  </PageBoundary>;
 }

@@ -1,3 +1,4 @@
+import { selectCommandEvidence } from "./command-evidence-helper";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 
@@ -154,7 +155,7 @@ test("Contract Notice creates, calculates due date, and submits through real API
   const submitDialog = page.getByRole("dialog", {
     name: "계약통지 제출",
   });
-  await submitDialog.getByLabel("처리 근거 증빙번호").fill(evidence);
+  await selectCommandEvidence(submitDialog,[evidence]);
   const submitResponse = page.waitForResponse((response) =>
     response.url().endsWith(`/${record.id}/submit-notice`),
   );

@@ -59,7 +59,7 @@ export function CommandEvidencePicker({ workspace, selectedIds, onChange, manual
     <div className="command-evidence-options">
       {filtered.map((entry) => (
         <label key={entry.id} className="command-evidence-option">
-          <input type="checkbox" checked={selectedIds.includes(entry.id)} onChange={(event) => toggle(entry.id, event.target.checked)} />
+          <input type="checkbox" value={entry.id} checked={selectedIds.includes(entry.id)} onChange={(event) => toggle(entry.id, event.target.checked)} />
           <span>
             <strong>{entry.name}</strong>
             <small>{entry.scope ? entry.scope + " · " : ""}{ko ? "작성 차수" : vi ? "Phiên bản" : "Version"} {entry.version} · {entry.id.slice(0, 12)}</small>

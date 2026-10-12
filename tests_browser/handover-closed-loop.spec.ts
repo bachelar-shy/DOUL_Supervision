@@ -1,3 +1,4 @@
+import { selectCommandEvidence } from "./command-evidence-helper";
 import { expect, test, type Locator, type Page, type Route } from "@playwright/test";
 import { localDateTime } from "./support/local-datetime";
 import { spawn, type ChildProcess } from "node:child_process";
@@ -251,9 +252,9 @@ async function runCompletionCommand(
     }
   }
   if (evidenceIds.length) {
-    const evidenceInput = dialog.getByLabel(commandFieldLabels.evidenceIds);
+    const evidenceInput = dialog.locator(".command-evidence-picker");
     await expect(evidenceInput, "command evidence IDs are an explicit per-transition input").toHaveCount(1, { timeout: 5000 });
-    await evidenceInput.fill(evidenceIds.join(","));
+    await selectCommandEvidence(dialog,evidenceIds);
   }
   const responsePromise = page.waitForResponse((response) => response.request().method() === "POST" && response.url().includes("/api/projects/") && !response.url().endsWith("/workspace"));
   const refreshedWorkspace = expectedFailureCode
@@ -316,7 +317,7 @@ async function runWorkbenchCommand(page: Page, route: "issues" | "inspections" |
     else if (await control.evaluateAll((nodes) => nodes.some((node) => node instanceof HTMLSelectElement))) await control.selectOption(value);
     else await control.fill(value);
   }
-  if (evidenceIds.length) await dialog.getByLabel(/evidence ids|처리 근거 증빙번호/i).fill(evidenceIds.join(","));
+  if (evidenceIds.length) await selectCommandEvidence(dialog,evidenceIds);
   const posted = page.waitForResponse((response) => response.request().method() === "POST" && /\/api\/projects\/.*\/(issues|inspections|actions)\/[^/]+\//.test(new URL(response.url()).pathname));
   const refreshed = page.waitForResponse((response) => response.request().method() === "GET" && response.url().includes("/workspace"));
   await dialog.getByRole("button", { name: /execute|확인 후 실행/i }).click();

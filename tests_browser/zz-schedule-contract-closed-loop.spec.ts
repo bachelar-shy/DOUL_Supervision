@@ -1,3 +1,4 @@
+import { selectCommandEvidence } from "./command-evidence-helper";
 import { expect, test } from '@playwright/test';
 import { createHash, randomUUID } from 'node:crypto';
 import { commands, fields } from '../apps/web/src/labels';
@@ -114,8 +115,8 @@ test('AC-SCH-01: live UI schedule → recovery → Owner EOT decision → approv
           : typeof value === 'object' ? JSON.stringify(value) : String(value));
       } else await input.fill(typeof value === 'object' ? JSON.stringify(value) : String(value));
     }
-    const evidence = dialog.getByLabel('처리 근거 증빙번호', { exact: true });
-    if (await evidence.count()) await evidence.fill(evidenceId);
+    const evidence = dialog.locator(".command-evidence-picker");
+    if (await evidence.count()) await selectCommandEvidence(dialog,[evidenceId]);
     const response = page.waitForResponse(r => r.url().endsWith(`/${record.id}/${name.replaceAll('_', '-')}`)
       && r.request().method() === 'POST');
     await dialog.getByRole('button', { name: '확인 후 실행', exact: true }).click();
