@@ -73,6 +73,26 @@ export function WorkbenchPage({
             <h2>{t("workbench.listTitle", { title: routeTitle })}</h2>
             <span>{t("workbench.count", { count: visibleItems.length })}</span>
           </div>
+          {route === "inspections" && (
+            <div className="grid gap-2 rounded-sm border border-border p-3" data-ui-component="inspection-entry-actions">
+              <div className="flex flex-wrap items-center gap-2">
+                {role === "CON" ? (
+                  <button type="button" className="primary min-h-11" onClick={() => {
+                    const form = document.querySelector<HTMLFormElement>('form[aria-label="자체검측 작성"], form[aria-label="Lập phiếu tự nghiệm thu"], form[aria-label="Prepare self inspection"]');
+                    form?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    form?.querySelector<HTMLInputElement>('input[required]')?.focus({ preventScroll: true });
+                  }}>＋ 자체검측 작성</button>
+                ) : (
+                  <p role="note" className="text-sm">
+                    {role === "SUP" ? "감리 검측·검수: 아래 검측을 선택해 결과와 승인 가능 업무를 처리하십시오. 신규 자체검측 요청은 배정된 시공사 계정에서 작성합니다."
+                      : role === "ADM" ? "관리자 계정에서는 검측 기록을 조회할 수 있습니다. 신규 자체검측 요청은 해당 현장에 배정된 시공사 계정으로 작성하며, 계정·업무배정은 프로젝트 설정에서 관리합니다."
+                      : "검측 기록은 열람할 수 있지만 신규 자체검측 요청은 시공사 담당 계정에서 작성합니다."}
+                  </p>
+                )}
+              </div>
+              {role === "CON" && <p className="text-xs text-muted-foreground">초안 저장 후 별도의 검측 요청 제출 및 감리 결과 처리 절차가 이어집니다.</p>}
+            </div>
+          )}
           {route === "inspections" && role === "CON" && (
             <InspectionAuthoringPanel client={client} workspace={workspace} online={online} onCreated={onInspectionCreated} />
           )}
