@@ -115,7 +115,7 @@ export function PersonnelRequestPage({ client, workspace, online }: {
       <label className="grid gap-1">추가 요청 사유
         <textarea required maxLength={1000} rows={3} className="rounded border p-3" value={draft.reason}
           onChange={event => setDraft({ ...draft, reason: event.target.value })} /></label>
-      <div><button className="primary min-h-11" disabled={readOnly} type="submit">{busy ? "전송 중…" : "관리자에게 요청 보내기"}</button></div>
+      <div><button className="primary min-h-11" style={{ minHeight: 44 }} disabled={readOnly} type="submit">{busy ? "전송 중…" : "관리자에게 요청 보내기"}</button></div>
     </form>}
     <div className="grid gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -139,8 +139,8 @@ export function PersonnelRequestPage({ client, workspace, online }: {
               onChange={event => setNotes(prev => ({ ...prev, [item.id]: event.target.value }))} />
           </label>
           <div className="flex flex-wrap gap-2">
-            <button className="primary min-h-11" type="button" disabled={readOnly} onClick={() => void review(item, "approved")}>승인 · 등록은 별도</button>
-            <button className="secondary min-h-11" type="button" disabled={readOnly} onClick={() => void review(item, "rejected")}>반려</button>
+            <button style={{ minHeight: 44 }} className="primary min-h-11" type="button" disabled={readOnly} onClick={() => void review(item, "approved")}>승인 · 등록은 별도</button>
+            <button style={{ minHeight: 44 }} className="secondary min-h-11" type="button" disabled={readOnly} onClick={() => void review(item, "rejected")}>반려</button>
           </div>
         </div>}
       </article>)}
