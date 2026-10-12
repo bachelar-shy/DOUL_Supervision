@@ -301,3 +301,33 @@
   background:#fff; font-size:11px; color:#657485; }
 @media(max-width:767px) { .drawing-board-tools{top:5px;left:5px;max-height:calc(100% - 49px);}
   .drawing-markup-options{top:5px;right:5px;} }
+/* Full task-detail overlay, keeping the sheet and issue rail visible behind it. */
+.drawing-issue-dialog-backdrop { position: fixed; inset: 0; z-index: 1100;
+  background: rgba(24, 29, 38, .49); display: grid; place-items: center; padding: 24px; }
+.drawing-issue-dialog { width: min(1000px, 96vw); max-height: 91dvh; overflow: hidden;
+  background: #fff; border: 1px solid #c7ccd3; border-radius: 3px;
+  box-shadow: 0 15px 54px rgba(0,0,0,.19); display: flex; flex-direction: column; }
+.drawing-issue-dialog-header { min-height: 46px; padding: 9px 16px; display: flex;
+  align-items: center; justify-content: space-between; border-bottom: 1px solid #d6dbe2; font-weight: 700; }
+.drawing-issue-dialog-header button { border: 0; background: transparent; padding: 5px; }
+.drawing-issue-dialog-main { min-height: 310px; overflow: auto; display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(245px, 1fr); }
+.drawing-issue-dialog-content { padding: 20px; }
+.drawing-issue-dialog-content p { font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+.drawing-issue-dialog-content h4 { font-size: 13px; padding-top: 17px; border-top: 1px solid #e2e5e9; }
+.drawing-issue-dialog-properties { border-left: 1px solid #d6dbe2; padding: 18px; background: #f7f8fa; }
+.drawing-issue-dialog-properties h4 { margin: 0 0 16px; color: #596473; }
+.drawing-issue-dialog-properties dl { display: grid; grid-template-columns: 100px minmax(0,1fr);
+  font-size: 12px; gap: 0; margin: 0 0 16px; }
+.drawing-issue-dialog-properties dt,.drawing-issue-dialog-properties dd { margin: 0; padding: 10px 0;
+  border-bottom: 1px solid #e3e6eb; overflow-wrap: anywhere; }
+.drawing-issue-dialog-properties dt { color: #657080; }
+.drawing-issue-dialog-sheet { display: flex; flex-direction: column; gap: 5px;
+  background: #fff; padding: 10px; border: 1px solid #d6dbe2; font-size: 12px; }
+.drawing-issue-dialog-sheet .sheet-asset { height: 125px; }
+.drawing-issue-dialog-sheet span { font-size: 11px; color: #637080; }
+@media (max-width: 650px) {
+  .drawing-issue-dialog-backdrop { padding: 7px; }
+  .drawing-issue-dialog-main { grid-template-columns: 1fr; }
+  .drawing-issue-dialog-properties { border-left: 0; border-top: 1px solid #d6dbe2; }
+}
