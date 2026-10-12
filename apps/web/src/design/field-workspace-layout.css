@@ -652,12 +652,25 @@
   }
   .app-shell[data-layout-system="field-workspace"] .topbar-start .breadcrumbs span:nth-child(2) { display: none; }
   .app-shell[data-layout-system="field-workspace"] .top-actions {
-    flex: 0 0 auto;
-    gap: 5px;
+    flex: 0 1 190px;
+    min-width: 0;
     max-width: 190px;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
-  .app-shell[data-layout-system="field-workspace"] .top-actions .role-picker { font-size: 0; }
-  .app-shell[data-layout-system="field-workspace"] .top-actions .role-picker select { max-width: 100px; }
+  .app-shell[data-layout-system="field-workspace"] .top-actions .role-picker {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: calc(50% - 3px);
+    font-size: 0;
+  }
+  .app-shell[data-layout-system="field-workspace"] .top-actions .role-picker select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    text-overflow: ellipsis;
+  }
   .app-shell[data-layout-system="field-workspace"] .top-actions .avatar,
   .app-shell[data-layout-system="field-workspace"] .workspace-density-toggle { display: none; }
   .app-shell[data-layout-system="field-workspace"] .workspace-global-search {

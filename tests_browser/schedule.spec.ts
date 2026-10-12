@@ -6,6 +6,8 @@ async function baseline(page: import('@playwright/test').Page) {
   await page.goto('/#/schedule');
   await page.getByRole('combobox', {name:'시험 사용자 역할 선택'}).selectOption('CON');
   await expect(page.getByRole('combobox', {name:'시험 사용자 역할 선택'})).toHaveValue('CON');
+  // Changing roles intentionally resets navigation to Today; reopen Schedule.
+  await page.goto('/#/schedule');
   await expect(page.locator('[data-ui-component="schedule-workspace"]')).toBeVisible();
   await page.getByRole('tab',{name:'기준공정',exact:true}).click();
   await page.getByRole('button',{name:'공정 기록 추가',exact:true}).click();
@@ -54,6 +56,7 @@ test('Schedule does not execute commands offline and owner has no contractor wit
   await context.setOffline(false);
   await page.getByRole('combobox',{name:'시험 사용자 역할 선택'}).selectOption('OWN');
   await expect(page.getByRole('combobox', {name:'시험 사용자 역할 선택'})).toHaveValue('OWN');
+  await page.goto('/#/schedule');
   await expect(page.locator('[data-ui-component="schedule-workspace"]')).toBeVisible();
   await page.getByRole('tab',{name:'기준공정',exact:true}).click();
   await page.getByRole('button').filter({hasText:title}).click();
