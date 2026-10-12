@@ -1,0 +1,57 @@
+name: synthetic-quick-role-login
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/synthetic-quick-role-login.yml'
+      - 'services/api/main.py'
+      - 'services/api/modules/synthetic_role_login.py'
+      - 'services/api/modules/project_settings.py'
+      - 'packages/client/src/index.ts'
+      - 'apps/web/src/App.tsx'
+      - 'apps/web/src/App.css'
+      - 'apps/web/src/pages/PasswordLogin.tsx'
+      - 'apps/web/src/data/supervision-client.ts'
+      - 'apps/web/src/data/mock-supervision-client.ts'
+      - 'tests_mvp/test_synthetic_role_login_http.py'
+      - 'tests_browser_quick_role/**'
+      - 'playwright.quick-role.config.ts'
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: synthetic-quick-role-login-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  isolated-role-login:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - name: Install pinned dependencies
+        run: |
+          npm ci
+          python -m venv .venv
+          .venv/bin/pip install -r services/api/requirements.lock
+      - name: Unit and project isolation checks
+        run: |
+          .venv/bin/python -m unittest tests_mvp.test_synthetic_role_login_http tests_mvp.test_password_login_http tests_mvp.test_project_settings_http -v
+      - name: Validate UI boundary and build password-mode application
+        env:
+          VITE_DOUL_AUTH_MODE: password
+        run: |
+          npm run check:ui-boundary
+          npm run lint --workspace apps/web
+          npm run web:build
+      - name: Four role buttons on desktop and phone
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test -c playwright.quick-role.config.ts
