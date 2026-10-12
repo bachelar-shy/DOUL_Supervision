@@ -1,0 +1,35 @@
+name: drawing-sheet-import
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/drawing-sheet-import-ci.yml'
+      - 'services/api/main.py'
+      - 'services/api/modules/drawing_raster.py'
+      - 'services/api/modules/drawing_sheets.py'
+      - 'tests_mvp/test_drawing_sheet_catalog_http.py'
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: drawing-sheet-import-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  draft-sheet-import:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Raster tools and locked API dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          python -m venv .venv
+          .venv/bin/pip install -r services/api/requirements.lock
+      - name: Synthetic sheet import, RBAC, audit and markup tests
+        run: |
+          .venv/bin/python -m unittest tests_mvp.test_drawing_sheet_catalog_http tests_mvp.test_synthetic_role_login_http tests_mvp.test_field_records_http -v
