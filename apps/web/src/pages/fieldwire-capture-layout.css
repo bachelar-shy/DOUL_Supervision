@@ -138,8 +138,11 @@
 
 @media (min-width: 1101px) {
   .app-shell[data-layout-system="field-workspace"] .template-capture > .right-stack {
-    position: sticky;
-    top: 55px;
+    /* The next grid row contains full-width media analysis. A sticky rail
+     * would float over that row and intercept its action buttons. Keep the
+     * evidence rail independently scrollable but within its own grid cell. */
+    position: relative;
+    top: auto;
     min-height: 0;
     max-height: calc(100dvh - 69px);
     overflow-y: auto;
