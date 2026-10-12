@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { HumanRole, WorkItem, Workspace } from "../data/ui-contract";
 import { auditCommandLabel, states } from "../labels";
 import { KpiCard, Panel, SectionHeader } from "../ui";
-import { AuditTimeline, DecisionPanel } from "../ui/catalog";
+import { AuditTimeline } from "../ui/catalog";
 import { DashboardTemplate } from "../ui/templates";
 import { ResizableWorkspace } from "../ui/ResizableWorkspace";
 import { PageBoundary } from "./PageBoundary";
@@ -117,27 +117,6 @@ export function TodayPage({
               )?.name ?? item.record.locationId ?? t("record.context.sample")} />
           </Panel>
           <div className="right-stack">
-            <DecisionPanel
-              eyebrow={t("today.guard.eyebrow")}
-              title={
-                <>
-                  {t("today.guard.line1")}
-                  <br />
-                  {t("today.guard.line2")}
-                </>
-              }
-              description={t("today.guard.description")}
-              action={
-                <button
-                  className="text-button"
-                  onClick={() =>
-                    onNavigate(role === "OWN" ? "owner" : "inspections")
-                  }
-                >
-                  {t("today.guard.action")} <Icon name="arrow" />
-                </button>
-              }
-            />
             <Panel>
               <SectionHeader
                 title={t("today.audit.title")}
