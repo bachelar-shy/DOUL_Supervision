@@ -149,7 +149,7 @@ strong {
   font-weight: 600;
   color: var(--navy);
 }
-/* Project selection belongs with its project card, not the narrow topbar. */
+/* Expanded navigation shows the project selection beside its project name. */
 .project-chip > div {
   flex: 1 1 auto;
   min-width: 0;
@@ -1806,3 +1806,7 @@ strong {
 
 /* Language and trial-role selectors keep a usable hit area on field phones. */
 @media(max-width:620px){.app-shell .topbar .role-picker select{min-height:44px;min-width:44px}}
+
+.app-shell .header-project-picker{flex:1 1 180px;min-width:0;max-width:280px}
+.app-shell .header-project-picker .project-switch{margin:0;font-size:10px;line-height:12px}
+.app-shell .header-project-picker select{margin:0;min-height:36px;font-size:12px}

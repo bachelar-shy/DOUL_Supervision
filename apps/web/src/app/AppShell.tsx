@@ -89,6 +89,14 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     try { return window.localStorage.getItem("doul.ui.sidebar.collapsed.v1") === "true"; }
     catch { return false; }
   });
+  const [projectViewport,setProjectViewport]=useState(() => window.innerWidth < 768 ? "phone" : window.innerWidth <= 1100 ? "tablet" : "desktop");
+  useEffect(()=>{
+    const resize=()=>setProjectViewport(window.innerWidth < 768 ? "phone" : window.innerWidth <= 1100 ? "tablet" : "desktop");
+    window.addEventListener("resize",resize);
+    return ()=>window.removeEventListener("resize",resize);
+  },[]);
+  const hasProjectChoices=passwordMode ? approvedProjects.length>1 : demoProjects.length>1;
+  const projectPickerInHeader=hasProjectChoices&&(projectViewport==="tablet"||(projectViewport==="desktop"&&sidebarCollapsed));
   const navigationCopy = quietGraphiteNavigationCopy[quietGraphiteLanguage(i18n.resolvedLanguage ?? i18n.language)];
   const [dialog, setDialog] = useState<{
     item: WorkItem;
@@ -306,32 +314,8 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
       setError(e instanceof ApiError ? reasonLabel(e.detail.code) : t("app.error.connection"));
     }
   }
-  return (
-    <div className={"app-shell" + (sidebarCollapsed ? " sidebar-collapsed" : "")} data-design-system="quiet-graphite-a">
-      <aside id="side-navigation" className={"sidebar " + (menu ? "open" : "")} data-navigation-collapsed={String(sidebarCollapsed)}>
-        <button type="button" className="sidebar-close" aria-label={t("app.menuClose")}
-          onClick={() => setMenu(false)}>×</button>
-        <div className="sidebar-identity">
-          <div className="brand">
-            <b>
-              DOUL<span> / </span>
-            </b>
-            <small>SUPERVISION</small>
-          </div>
-          <button type="button" className="sidebar-collapse-toggle"
-            aria-label={sidebarCollapsed ? navigationCopy.expand : navigationCopy.collapse}
-            title={sidebarCollapsed ? navigationCopy.expand : navigationCopy.collapse}
-            aria-pressed={sidebarCollapsed}
-            onClick={() => setSidebarCollapsed((current) => !current)}>
-            {sidebarCollapsed ? <PanelLeftOpen size={17} aria-hidden="true" /> : <PanelLeftClose size={17} aria-hidden="true" />}
-          </button>
-        </div>
-        <div className="workspace-label">{t("app.workspace")}</div>
-        <div className="project-chip">
-          <span className="project-mark">D</span>
-          <div>
-            <strong>{workspace?.project.name ?? t("app.sampleSite")}</strong>
-            {workspace?.demo && <small>{t("app.sampleData")}</small>}
+  function renderProjectPicker() {
+    return <>
             {passwordMode && approvedProjects.length > 1 && <label className="project-switch">
               프로젝트 선택
               <select aria-label="프로젝트 선택" value={client.session?.projectId ?? ""}
@@ -363,6 +347,35 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                     </select>
                   </label>
                 )}
+    </>;
+  }
+  return (
+    <div className={"app-shell" + (sidebarCollapsed ? " sidebar-collapsed" : "")} data-design-system="quiet-graphite-a">
+      <aside id="side-navigation" className={"sidebar " + (menu ? "open" : "")} data-navigation-collapsed={String(sidebarCollapsed)}>
+        <button type="button" className="sidebar-close" aria-label={t("app.menuClose")}
+          onClick={() => setMenu(false)}>×</button>
+        <div className="sidebar-identity">
+          <div className="brand">
+            <b>
+              DOUL<span> / </span>
+            </b>
+            <small>SUPERVISION</small>
+          </div>
+          <button type="button" className="sidebar-collapse-toggle"
+            aria-label={sidebarCollapsed ? navigationCopy.expand : navigationCopy.collapse}
+            title={sidebarCollapsed ? navigationCopy.expand : navigationCopy.collapse}
+            aria-pressed={sidebarCollapsed}
+            onClick={() => setSidebarCollapsed((current) => !current)}>
+            {sidebarCollapsed ? <PanelLeftOpen size={17} aria-hidden="true" /> : <PanelLeftClose size={17} aria-hidden="true" />}
+          </button>
+        </div>
+        <div className="workspace-label">{t("app.workspace")}</div>
+        <div className="project-chip">
+          <span className="project-mark">D</span>
+          <div>
+            <strong>{workspace?.project.name ?? t("app.sampleSite")}</strong>
+            {workspace?.demo && <small>{t("app.sampleData")}</small>}
+            {!projectPickerInHeader && renderProjectPicker()}
           </div>
         </div>
         <NavigationList
@@ -404,9 +417,9 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
           >
             <Icon name="layers" />
           </button>
-          <div className="breadcrumbs">
+          {projectPickerInHeader ? <div className="header-project-picker">{renderProjectPicker()}</div> : <div className="breadcrumbs">
             DOUL / <b>{routeLabel(routes.find((x) => x.id === safeRoute))}</b>
-          </div>
+          </div>}
           <div className="top-actions">
             <span className={"connection " + (!online ? "offline" : "")}>
               {online ? t("app.connection.online") : t("app.connection.offline")}

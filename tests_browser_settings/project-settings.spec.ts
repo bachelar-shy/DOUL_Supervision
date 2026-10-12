@@ -100,3 +100,18 @@ test("approved test project switches real sessions and shows synthetic data and 
   await page.getByRole("combobox",{name:"PDF 원본 선택",exact:true}).selectOption({label:"증빙 · SYNTHETIC-A201.pdf"});
   await expect(page.locator("[data-ui-template=drawing] canvas").first()).toBeVisible();
 });
+
+
+test("project choice remains usable on tablets and when desktop navigation is collapsed",async({page})=>{
+  await page.setViewportSize({width:768,height:900});await login(page);
+  await expect(page.getByRole("combobox",{name:"프로젝트 선택",exact:true})).toBeVisible();
+  await expect(page.getByRole("combobox",{name:"프로젝트 선택",exact:true})).toHaveCount(1);
+  await page.setViewportSize({width:1024,height:900});
+  await expect(page.getByRole("combobox",{name:"프로젝트 선택",exact:true})).toBeVisible();
+  await page.setViewportSize({width:1365,height:900});
+  await page.locator(".sidebar-collapse-toggle").click();
+  const picker=page.getByRole("combobox",{name:"프로젝트 선택",exact:true});await expect(picker).toBeVisible();
+  await picker.selectOption({label:"DOUL 테스트 프로젝트 · 합성자료"});
+  await expect(page.getByText("합성 테스트 자료 · 실제 현장 증빙 아님",{exact:true})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
+});
