@@ -337,7 +337,7 @@ export function CapturePage({
           <p style={{ fontSize: 11, color: "#64748b" }}>
             기존 방식으로 보관된 자료는 직접 전송해야 합니다. 서버 확인 전까지 원본을 보존합니다.
           </p>
-          {batchBusy && <p role="status">{t("capture.batch.preparing")}</p>
+          {batchBusy && <p role="status">{t("capture.batch.preparing")}</p>}
           {pending.map((p) => (
             <div className="pending-row" key={p.id}>
               <div>
