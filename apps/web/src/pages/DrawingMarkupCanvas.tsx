@@ -15,6 +15,34 @@ interface Props {
 
 const S = (p: NormalizedPoint) => [p.x * 1000, p.y * 1000] as const;
 
+/** A closed run of outward quadratic scallops, not a dashed rectangle. */
+function revisionCloudPath(x: number, y: number, width: number, height: number): string {
+  if (width < 3 || height < 3) return `M ${x} ${y} h ${width} v ${height} h ${-width} Z`;
+  const edges: Array<[number, number, number, number, number, number]> = [
+    [x, y, x + width, y, 0, -1],
+    [x + width, y, x + width, y + height, 1, 0],
+    [x + width, y + height, x, y + height, 0, 1],
+    [x, y + height, x, y, -1, 0],
+  ];
+  const path = [`M ${x} ${y}`];
+  for (const [x0, y0, x1, y1, nx, ny] of edges) {
+    const distance = Math.hypot(x1 - x0, y1 - y0);
+    const steps = Math.max(1, Math.ceil(distance / 23));
+    const bulge = Math.min(13, Math.max(2.5, (distance / steps) * 0.55));
+    for (let index = 0; index < steps; index++) {
+      const middle = (index + 0.5) / steps;
+      const next = (index + 1) / steps;
+      const cx = x0 + (x1 - x0) * middle + nx * bulge;
+      const cy = y0 + (y1 - y0) * middle + ny * bulge;
+      const px = x0 + (x1 - x0) * next;
+      const py = y0 + (y1 - y0) * next;
+      path.push(`Q ${cx} ${cy} ${px} ${py}`);
+    }
+  }
+  return path.join(" ") + " Z";
+}
+
+
 export function DrawingMarkupCanvas({
   tool, markups, sheetVersion, color, lineWidth, text, mmPerSheetWidth,
   canWrite, onCreate, onErase,
@@ -84,9 +112,11 @@ export function DrawingMarkupCanvas({
       return <text key={key} x={start[0]} y={start[1]} fill={stroke}
         stroke="none" fontSize="26" fontWeight="600">{label.slice(0, 500)}</text>;
     }
-    if (toolKind === "rectangle" || toolKind === "cloud") {
-      return <rect key={key} x={x} y={y} width={w} height={h} {...common}
-        strokeDasharray={toolKind === "cloud" ? "7 4" : undefined}/>;
+    if (toolKind === "rectangle") {
+      return <rect key={key} x={x} y={y} width={w} height={h} {...common}/>;
+    }
+    if (toolKind === "cloud") {
+      return <path key={key} d={revisionCloudPath(x, y, w, h)} {...common}/>;
     }
     if (toolKind === "ellipse") {
       return <ellipse key={key} cx={x + w / 2} cy={y + h / 2}
