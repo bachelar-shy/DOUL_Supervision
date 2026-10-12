@@ -90,7 +90,8 @@ def install_project_settings_routes(app, store, *, identity, role_for, key_for, 
                 if package != '*' and package not in known:
                     packages.append(dict(id=package, name='기존 공사범위 ' + str(len(packages) + 1))); known.add(package)
         return dict(project=project, availableCommands=sorted(COMMANDS),
-                    canCreateProject=bool(actor.get('identityKey')) and role['actorGroup'] == 'ADM',
+                    canCreateProject=bool(actor.get('identityKey')) and role['actorGroup'] == 'ADM'
+                        and not store.meta.get('identityBindings', {}).get(actor['identityKey'], {}).get('syntheticRoleShortcut'),
                     organizations=[dict(r, actorGroup=groups.get(r['id'])) for r in records('Party', project_id) if r['kind'] == 'ORGANIZATION'],
                     participants=[r for r in records('Party', project_id) if r['kind'] == 'PERSON'],
                     assignments=[r for r in assignments if r['actorGroup'] in PROFILES],
@@ -132,6 +133,8 @@ def install_project_settings_routes(app, store, *, identity, role_for, key_for, 
             require(role['actorGroup'] == 'ADM' and actor.get('identityKey'), 'NOT_AUTHORIZED', '승인된 관리자 로그인으로 프로젝트를 추가하십시오.')
             binding = store.meta.get('identityBindings', {}).get(actor['identityKey'], {})
             require(binding.get('active') is True, 'UNAUTHENTICATED', '관리자 로그인 배정을 확인하십시오.')
+            require(not binding.get('syntheticRoleShortcut'), 'NOT_AUTHORIZED',
+                    '시험 역할 계정으로 실제 프로젝트를 추가할 수 없습니다.')
             operation = 'project_settings:create_project'
             cached = store.engine._replay(project_id, actor['partyId'], operation, key, body)
             if cached is not None: return cached

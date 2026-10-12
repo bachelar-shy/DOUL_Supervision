@@ -103,8 +103,9 @@ export interface SupervisionClient {
   login(role: HumanRole, projectId?: string): Promise<Session>;
   demoProjects(): Promise<DemoProjectDirectory>;
   loginPassword(username: string, password: string): Promise<Session>;
+  loginTestRole(role: "OWN" | "CON" | "SUP" | "ADM"): Promise<Session>;
   logout(): Promise<void>;
-  authMode(): Promise<"password" | "external" | "demo">;
+  authMode(): Promise<"password" | "test-role" | "external" | "demo">;
   onAuthenticationExpired(handler: () => void): () => void;
   workspace(): Promise<Workspace>;
   projectSettings(): Promise<ProjectSettings>;
@@ -197,11 +198,15 @@ class HttpSupervisionClient implements SupervisionClient {
   loginPassword(username: string, password: string) {
     return this.client.loginPassword(username, password);
   }
+  loginTestRole(role: "OWN" | "CON" | "SUP" | "ADM") {
+    return this.client.loginTestRole(role);
+  }
   logout() { return this.client.logout(); }
-  async authMode(): Promise<"password" | "external" | "demo"> {
-    const status = await this.client.request<{ mode: string; adapters: { authentication: string } }>("/health");
+  async authMode(): Promise<"password" | "test-role" | "external" | "demo"> {
+    const status = await this.client.request<{ mode: string; testRoleLogin?: boolean; adapters: { authentication: string } }>("/health");
     if (status.mode === "local-demo") return "demo";
-    return status.adapters.authentication === "local-password-pinned-rs256" ? "password" : "external";
+    if (status.adapters.authentication !== "local-password-pinned-rs256") return "external";
+    return status.mode === "staging" && status.testRoleLogin === true ? "test-role" : "password";
   }
   onAuthenticationExpired(handler: () => void) {
     this.client.onUnauthorized = handler;
