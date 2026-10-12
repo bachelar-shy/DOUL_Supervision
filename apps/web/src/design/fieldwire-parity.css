@@ -164,6 +164,13 @@
   line-height: 1.4;
 }
 
+/* Project creation is a high-impact administrative action: retain the
+ * existing 44px target even on desktop while general toolbar buttons are
+ * reduced to the 34px Fieldwire-inspired density. */
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-project-actions > button.primary {
+  min-height: 44px;
+}
+
 /* Fieldwire-style plan: flush workspace, compact actions, fixed tool location,
  * large continuous canvas and contextual task rail on the right. */
 @media (min-width: 768px) {
