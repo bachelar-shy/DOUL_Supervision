@@ -22,6 +22,8 @@ def _text(value, field, maximum, required=True):
 def install_personnel_request_routes(app, store, *, identity, role_for, key_for, body_json):
     def context(project_id, request, actor):
         role = role_for(actor, project_id, request.headers.get('x-roleassignment-id'))
+        require(role['id'] == actor['roleAssignmentId'], 'NOT_AUTHORIZED',
+                'Personnel requests require the authenticated project role')
         store.engine.get('Project', project_id)
         return role
 
