@@ -12,7 +12,7 @@ from app.reference.engine import uid
 from app.reference.validation import require
 
 TYPES = frozenset({"pass_fail", "number", "text", "choice"})
-SUBJECT_TYPES = frozenset({"WorkItem", "Issue", "Inspection", "Action", "Report"})
+SUBJECT_TYPES = frozenset({"WorkItem", "Issue", "Inspection", "Action", "InformationItem", "Report", "Observation", "Decision", "Approval", "AnalysisRun"})
 
 def _text(value, limit=200):
     require(isinstance(value, str) and 1 <= len(value.strip()) <= limit,
@@ -188,6 +188,33 @@ def install_field_checklist_routes(app, store, *, identity, role_for, key_for, b
             store.meta["fieldChecklistTemplates"][project_id][template_id].append(item)
             result = {"template": deepcopy(item)}
             remember(project_id, actor, key, {"templateId": template_id, **body}, op, result)
+            return result
+
+    @app.post("/projects/{project_id}/field/checklists/templates/{template_id}/draft")
+    async def update_template_draft(project_id: str, template_id: str, request: Request):
+        body = await body_json(request)
+        require(set(body) == {"expectedVersion", "title", "items"}
+                and type(body["expectedVersion"]) is int,
+                "INVALID_REQUEST", "Draft revision and latest version required")
+        key = key_for(request)
+        with store.transaction(write=True):
+            actor, role = context(project_id, request)
+            require_admin(project_id, actor, role)
+            op = "field_checklists:draft_update"
+            fingerprint = {"templateId": template_id, **body}
+            previous = replay(project_id, actor, key, fingerprint, op)
+            if previous is not None:
+                return previous
+            current = selected_template(project_id, template_id)
+            require(current["version"] == body["expectedVersion"], "REFERENCE_STALE", "Checklist revision changed")
+            require(current["status"] == "draft", "INVALID_REQUEST", "Only draft revisions can be edited")
+            proposed = {**deepcopy(current), "version": current["version"] + 1,
+                        "title": _text(body["title"]), "items": deepcopy(body["items"]),
+                        "updatedAt": store.engine.at()}
+            validate_template(proposed)
+            store.meta["fieldChecklistTemplates"][project_id][template_id].append(proposed)
+            result = {"template": deepcopy(proposed)}
+            remember(project_id, actor, key, fingerprint, op, result)
             return result
 
     @app.get("/projects/{project_id}/field/checklists/runs")

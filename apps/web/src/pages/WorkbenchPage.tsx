@@ -1,5 +1,7 @@
 import { recordVersionLabel } from "../labels";
 import { RecordDetails } from "./RecordDetails";
+import { FieldChecklistPanel } from "./FieldChecklistPanel";
+import { FieldTaskDiscussions } from "./FieldTaskDiscussions";
 import type { SupervisionClient } from "../data/supervision-client";
 import { InspectionAuthoringPanel } from "./InspectionAuthoringPanel";
 import { InspectionCaseFlowPanel } from "./parallel/InspectionCaseFlowPanel";
@@ -335,6 +337,20 @@ export function WorkbenchPage({
                   </button>
                 )}
 
+              {client.kind === "http" && (
+                <div className="my-3 grid gap-3">
+                  <details>
+                    <summary className="cursor-pointer text-sm font-semibold">공통 검측 체크리스트</summary>
+                    <FieldChecklistPanel key={workspace.project.id + ":" + current.record.id}
+                      client={client} workspace={workspace} subject={current} online={online} />
+                  </details>
+                  <details>
+                    <summary className="cursor-pointer text-sm font-semibold">업무별 대화 · 참조인 · 첨부</summary>
+                    <FieldTaskDiscussions key={workspace.project.id + ":" + current.record.id}
+                      client={client} workspace={workspace} subject={current} online={online} />
+                  </details>
+                </div>
+              )}
               <details className="technical">
                 <summary>{t("workbench.technicalSummary")}</summary>
                 <RecordDetails value={current.record} />

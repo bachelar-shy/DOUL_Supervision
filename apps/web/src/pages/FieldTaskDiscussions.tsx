@@ -9,7 +9,7 @@ type Comment = { id: string; createdAt: string; authorPartyId: string; message: 
 type Thread = { items: Comment[]; count: number; watcherCount: number; watching: boolean };
 const kindOf: Record<string, string> = {
   observation: "Observation", inspection: "Inspection", issue: "Issue", action: "Action",
-  rfi: "WorkItem", change: "WorkItem", report: "Report", decision: "Decision",
+  rfi: "WorkItem", change: "WorkItem", report: "InformationItem", decision: "Decision",
   approval: "Approval", analysis_run: "AnalysisRun",
 };
 

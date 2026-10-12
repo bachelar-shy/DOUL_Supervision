@@ -347,6 +347,25 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     install_field_record_routes(app, store, identity=identity, role_for=role_for,
                                 key_for=key_for, body_json=body_json)
 
+    # Five independent Fieldwire-inspired field modules reuse the existing
+    # domain objects and role/approval boundaries. Each installer owns its
+    # own routes; no canonical state machine or schema is changed.
+    from services.api.modules.photo_library import install_photo_library_routes
+    install_photo_library_routes(app, store, identity=identity, role_for=role_for,
+                                 key_for=key_for, body_json=body_json)
+    from services.api.modules.field_checklists import install_field_checklist_routes
+    install_field_checklist_routes(app, store, identity=identity, role_for=role_for,
+                                   key_for=key_for, body_json=body_json)
+    from services.api.modules.work_areas import install_work_area_routes
+    install_work_area_routes(app, store, identity=identity, role_for=role_for,
+                            key_for=key_for, body_json=body_json)
+    from services.api.modules.field_offline import install_field_offline_routes
+    install_field_offline_routes(app, store, identity=identity, role_for=role_for,
+                                 body_json=body_json)
+    from services.api.modules.task_discussions import install_task_discussion_routes
+    install_task_discussion_routes(app, store, identity=identity, role_for=role_for,
+                                    key_for=key_for, body_json=body_json)
+
     from services.api.modules.drawing_impacts import install_drawing_impact_routes, reconcile_drawing_impacts_in_transaction
     install_drawing_impact_routes(app, store, identity=identity, role_for=role_for)
 

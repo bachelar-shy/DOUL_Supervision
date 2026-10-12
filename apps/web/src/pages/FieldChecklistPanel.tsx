@@ -11,7 +11,7 @@ type TemplatesResponse = { items: Template[] };
 type RunsResponse = { items: Run[] };
 const newItem = (): Item => ({ key: crypto.randomUUID(), label: "", type: "pass_fail", required: false });
 
-const machineType: Record<string, string> = { inspection: "Inspection", issue: "Issue", action: "Action", report: "Report" };
+const machineType: Record<string, string> = { inspection: "Inspection", issue: "Issue", action: "Action", report: "InformationItem", observation: "Observation", rfi: "WorkItem", change: "WorkItem", decision: "Decision", approval: "Approval", analysis_run: "AnalysisRun" };
 export function FieldChecklistPanel({ client, workspace, online, subject }: {
   client: SupervisionClient; workspace: Workspace; online: boolean; subject?: WorkItem | null;
 }) {
@@ -48,8 +48,12 @@ export function FieldChecklistPanel({ client, workspace, online, subject }: {
     return () => { cancelled = true; };
   }, [client, pid, currentSubject?.id, refresh, online]);
 
-  const published = templates.filter(item => item.status === "published");
-  const draft = templates.find(item => item.id === selectedTemplate && item.status === "draft");
+  // Only latest published versions are offered for new attachments.
+  const published = templates.filter(item => item.status === "published")
+    .sort((a, b) => b.version - a.version)
+    .filter((item, index, rows) => rows.findIndex(row => row.id === item.id) === index);
+  const draft = templates.filter(item => item.id === selectedTemplate && item.status === "draft")
+    .sort((a, b) => b.version - a.version)[0];
   async function api<T>(path: string, body: object): Promise<T> {
     return client.request<T>(client.path(path), {
       method: "POST",
@@ -63,8 +67,14 @@ export function FieldChecklistPanel({ client, workspace, online, subject }: {
       options: i.type === "choice" ? i.options?.filter(Boolean) || [] : undefined }));
     setBusy(true); setError("");
     try {
-      await api("/field/checklists/templates", { title, items: clean });
-      setTitle(""); setItems([newItem()]); setEditing(false); setRefresh(v => v + 1);
+      if (editing && draft) {
+        await api("/field/checklists/templates/" + draft.id + "/draft",
+          { title, items: clean, expectedVersion: draft.version });
+      } else {
+        await api("/field/checklists/templates", { title, items: clean });
+      }
+      setTitle(""); setItems([newItem()]); setEditing(false);
+      setSelectedTemplate(""); setRefresh(v => v + 1);
     } catch { setError("양식을 저장하지 못했습니다. 항목과 관리자 권한을 확인하십시오."); }
     finally { setBusy(false); }
   }
@@ -81,7 +91,9 @@ export function FieldChecklistPanel({ client, workspace, online, subject }: {
     try {
       await api("/field/checklists/templates/" + template.id + "/revise",
         { expectedVersion: template.version, title: template.title, items: template.items });
-      setSelectedTemplate(template.id); setRefresh(v => v + 1);
+      setTitle(template.title);
+      setItems(template.items.map(item => ({ ...item, options: item.options?.slice() })));
+      setEditing(true); setSelectedTemplate(template.id); setRefresh(v => v + 1);
     } catch { setError("새 개정을 작성하지 못했습니다."); }
     finally { setBusy(false); }
   }
@@ -153,12 +165,17 @@ export function FieldChecklistPanel({ client, workspace, online, subject }: {
     {!runs.length && subjectRef && <p className="fw-checklist-empty">이 업무에 등록된 체크리스트가 없습니다.</p>}
     {isAdmin && <details className="fw-checklist-admin" open={editing}>
       <summary onClick={() => setEditing(v => !v)}>점검표 양식 관리</summary>
-      <div className="fw-checklist-admin-list">{templates.map(t => <div key={t.id + ":" + t.version}>
+      <div className="fw-checklist-admin-list">{templates.filter(t => templates
+        .filter(x => x.id === t.id).every(x => x.version <= t.version)).map(t => <div key={t.id + ":" + t.version}>
         <span>{t.title} · v{t.version} · {t.status === "draft" ? "편집중" : "발행됨"}</span>
-        {t.status === "draft" && <button disabled={busy} onClick={() => void publishTemplate(t)}>발행</button>}
-        {t.status === "published" && <button disabled={busy} onClick={() => void reviseTemplate(t)}>개정본 만들기</button>}
+        {t.status === "draft" && <button type="button" disabled={busy} onClick={() => {
+          setSelectedTemplate(t.id); setTitle(t.title);
+          setItems(t.items.map(row => ({...row, options:row.options?.slice()}))); setEditing(true);
+        }}>편집</button>}
+        {t.status === "draft" && <button type="button" disabled={busy} onClick={() => void publishTemplate(t)}>발행</button>}
+        {t.status === "published" && <button type="button" disabled={busy} onClick={() => void reviseTemplate(t)}>개정본 만들기</button>}
       </div>)}</div>
-      <h4>새 점검표</h4>
+      <h4>{editing && draft ? "점검표 개정본 편집" : "새 점검표"}</h4>
       <label>양식명<input value={title} onChange={e => setTitle(e.target.value)} /></label>
       {items.map((item, index) => <div className="fw-checklist-editor-row" key={item.key}>
         <input aria-label={"점검항목 " + (index + 1)} placeholder="검측 항목" value={item.label}
@@ -175,7 +192,8 @@ export function FieldChecklistPanel({ client, workspace, online, subject }: {
       </div>)}
       <div className="fw-checklist-actions">
         <button type="button" onClick={() => setItems(prev => prev.length < 500 ? [...prev,newItem()] : prev)} disabled={items.length >= 500}>항목 추가</button>
-        <button type="button" className="primary" disabled={!online || busy || !title.trim() || items.some(i => !i.label.trim())} onClick={() => void saveTemplate()}>양식 저장</button>
+        {editing && <button type="button" onClick={() => {setEditing(false);setSelectedTemplate("");setTitle("");setItems([newItem()]);}}>새 양식으로 전환</button>}
+        <button type="button" className="primary" disabled={!online || busy || !title.trim() || items.some(i => !i.label.trim())} onClick={() => void saveTemplate()}>{editing && draft ? "개정본 저장" : "양식 저장"}</button>
       </div>
       {draft && <p>편집 중인 개정본: {draft.title} · v{draft.version} (기존 발행본 유지)</p>}
     </details>}
