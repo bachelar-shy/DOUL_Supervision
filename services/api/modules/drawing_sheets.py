@@ -1,0 +1,335 @@
+"""Authenticated page-to-sheet catalog layered over the existing Drawing domain.
+
+The existing InformationItem/Drawing, drawingPdfBindings, drawingMarkups,
+drawingMarkupIssueLinks and drawingFieldRevisions remain authoritative.
+An uploaded, rasterized PDF creates DRAFT sheet entries, not forged Evidence,
+formal issued-for-construction drawings, or approved inspection results.
+"""
+from __future__ import annotations
+
+from copy import deepcopy
+from hashlib import sha256
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import unquote
+from uuid import uuid4
+import json
+import logging
+
+from fastapi import BackgroundTasks, Request
+from fastapi.responses import Response
+
+from app.reference.validation import ContractError, require
+from .drawing_raster import MAX_SOURCE_BYTES, PdfSheetError, pdf_pages, page_image
+
+LOG = logging.getLogger(__name__)
+WRITERS = frozenset({"ADM", "SUP", "CON"})
+KINDS = frozenset({"issue", "inspection", "site"})
+LINK_TYPES = frozenset({"Issue", "Inspection", "Observation", "Action"})
+MAX_PIN_TEXT = 1500
+
+
+def _scope(store, project_id, request, actor, role_for):
+    role = role_for(actor, project_id, request.headers.get("x-roleassignment-id"))
+    require(role["id"] == actor["roleAssignmentId"], "NOT_AUTHORIZED", "Role switching is not permitted")
+    store.engine.get("Project", project_id)
+    return role
+
+
+def _folder(filename):
+    value = Path(filename).stem.strip()[:100]
+    return value if value else "업로드 도면"
+
+
+def _sheet_result(row):
+    result = {key: deepcopy(value) for key, value in row.items()
+              if key not in {"previewBlobId", "thumbBlobId"}}
+    result["hasPreview"] = bool(row.get("previewBlobId"))
+    result["hasThumb"] = bool(row.get("thumbBlobId"))
+    return result
+
+
+def _audit(store, project_id, kind, actor, role, detail):
+    store.meta.setdefault("drawingSheetAudit", {}).setdefault(project_id, []).append({
+        "id": str(uuid4()), "event": kind, "at": store.engine.at(),
+        "partyId": actor["partyId"], "roleAssignmentId": role["id"], **detail,
+    })
+
+
+def _render_set(store, project_id, set_id):
+    """Run outside request; update one sheet per short, isolated DB transaction."""
+    try:
+        with store.transaction():
+            source = store.meta["drawingSets"][project_id][set_id]
+            content = store.blob(source["sourceBlobId"])
+            pages = source["pageCount"]
+            ids = list(source["sheetIds"])
+        with TemporaryDirectory(prefix="doul-drawing-") as folder:
+            pdf = Path(folder) / "original.pdf"
+            pdf.write_bytes(content)
+            if pdf_pages(pdf) != pages:
+                raise PdfSheetError("업로드된 PDF 페이지 수가 변경되었습니다")
+            def raster_job(number: int):
+                # PDF decoding is CPU-bound: at most two poppler children per upload.
+                return page_image(pdf, number, thumb=True), page_image(pdf, number)
+            with ThreadPoolExecutor(max_workers=2, thread_name_prefix="doul-sheet-raster") as pool:
+                jobs = {pool.submit(raster_job, number): sheet_id
+                        for number, sheet_id in enumerate(ids, start=1)}
+                for future in as_completed(jobs):
+                    sheet_id = jobs[future]
+                    thumb, preview = future.result()
+                    with store.transaction(write=True):
+                        sheet = store.meta["drawingSheets"][project_id][sheet_id]
+                        thumb_id = "drawing-thumb:" + sheet_id
+                        preview_id = "drawing-preview:" + sheet_id
+                        store.put_blob(thumb_id, thumb)
+                        store.put_blob(preview_id, preview)
+                        sheet.update(thumbBlobId=thumb_id, previewBlobId=preview_id,
+                                     status="ready", updatedAt=store.engine.at())
+                        root = store.meta["drawingSets"][project_id][set_id]
+                        root["completedPages"] += 1
+                        root["updatedAt"] = store.engine.at()
+                        if root["completedPages"] == pages:
+                            root["status"] = "ready"
+        return
+    except Exception as exc:
+        LOG.exception("Raster import failed for set %s", set_id)
+        with store.transaction(write=True):
+            root = store.meta["drawingSets"][project_id][set_id]
+            root["status"] = "failed"
+            root["error"] = "PDF 이미지 변환에 실패했습니다. 파일을 확인하여 다시 업로드하십시오."
+            root["updatedAt"] = store.engine.at()
+            for sheet_id in root["sheetIds"]:
+                sheet = store.meta["drawingSheets"][project_id][sheet_id]
+                if sheet["status"] == "processing":
+                    sheet["status"] = "failed"
+                    sheet["updatedAt"] = store.engine.at()
+
+
+def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
+    def context(project_id, request, actor):
+        return _scope(store, project_id, request, actor, role_for)
+
+    def sheet_for(project_id, sheet_id):
+        row = store.meta.get("drawingSheets", {}).get(project_id, {}).get(sheet_id)
+        require(row is not None, "NOT_FOUND", "도면을 찾을 수 없습니다")
+        return row
+
+    def set_for(project_id, set_id):
+        row = store.meta.get("drawingSets", {}).get(project_id, {}).get(set_id)
+        require(row is not None, "NOT_FOUND", "도면 묶음을 찾을 수 없습니다")
+        return row
+
+    @app.get("/projects/{project_id}/drawing-sets")
+    def list_sets(project_id: str, request: Request):
+        actor = identity(request)
+        with store.transaction():
+            context(project_id, request, actor)
+            values = list(store.meta.get("drawingSets", {}).get(project_id, {}).values())
+            return {"items": sorted(deepcopy(values), key=lambda x: x["createdAt"], reverse=True)}
+
+    @app.get("/projects/{project_id}/drawing-sets/{set_id}")
+    def get_set(project_id: str, set_id: str, request: Request):
+        actor = identity(request)
+        with store.transaction():
+            context(project_id, request, actor)
+            return {"set": deepcopy(set_for(project_id, set_id))}
+
+    @app.post("/projects/{project_id}/drawing-sets", status_code=202)
+    async def upload_set(project_id: str, request: Request, tasks: BackgroundTasks):
+        actor = identity(request)
+        key = key_for(request)
+        require(request.headers.get("content-type", "").split(";")[0].strip().lower() == "application/pdf",
+                "MIME_INVALID", "PDF 형식만 업로드할 수 있습니다")
+        filename = unquote(request.query_params.get("filename", ""))
+        require(bool(filename) and filename.lower().endswith(".pdf")
+                and filename == Path(filename).name and len(filename) <= 180
+                and not any(ord(c) < 32 for c in filename), "INVALID_REQUEST", "PDF 파일명을 확인하십시오")
+        data = bytearray()
+        async for chunk in request.stream():
+            require(len(data) + len(chunk) <= MAX_SOURCE_BYTES, "PAYLOAD_TOO_LARGE", "PDF는 20MB 이하만 지원합니다")
+            data.extend(chunk)
+        pdf_bytes = bytes(data)
+        require(pdf_bytes.startswith(b"%PDF-"), "MIME_INVALID", "유효한 PDF 파일이 아닙니다")
+        digest = sha256(pdf_bytes).hexdigest()
+        # Validate before writing any domain or blob record.
+        try:
+            with TemporaryDirectory(prefix="doul-pdfinfo-") as folder:
+                original = Path(folder) / "upload.pdf"
+                original.write_bytes(pdf_bytes)
+                count = pdf_pages(original)
+        except PdfSheetError as exc:
+            raise ContractError("INVALID_REQUEST", str(exc)) from exc
+
+        fingerprint = sha256((project_id + ":" + filename + ":" + digest).encode()).hexdigest()
+        request_key = "drawing-set:" + project_id + ":" + actor["partyId"] + ":" + key
+        with store.transaction(write=True):
+            role = context(project_id, request, actor)
+            require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "도면 등록 권한이 없습니다")
+            cached = store.requests.get(request_key)
+            if cached is not None:
+                require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "동일 요청 키의 파일이 다릅니다")
+                row = set_for(project_id, cached["setId"])
+                return {"set": deepcopy(row)}
+
+            now = store.engine.at()
+            set_id = str(uuid4())
+            file_id = "drawing-original:" + set_id
+            ids = [str(uuid4()) for _ in range(count)]
+            row = dict(id=set_id, version=1, projectId=project_id, fileName=filename,
+                       folder=_folder(filename), sha256=digest, size=len(pdf_bytes),
+                       sourceBlobId=file_id, sheetIds=ids, pageCount=count, completedPages=0,
+                       status="processing", createdAt=now, updatedAt=now,
+                       createdByPartyId=actor["partyId"], dataClassification="DRAFT_NOT_ISSUED")
+            store.put_blob(file_id, pdf_bytes)
+            store.meta.setdefault("drawingSets", {}).setdefault(project_id, {})[set_id] = row
+            sheets = store.meta.setdefault("drawingSheets", {}).setdefault(project_id, {})
+            for index, sheet_id in enumerate(ids, start=1):
+                sheets[sheet_id] = dict(
+                    id=sheet_id, version=1, projectId=project_id, setId=set_id,
+                    pageNo=index, number=f"Sheet-{index:03d}", title=f"{index}번째 도면",
+                    folder=row["folder"], status="processing", revision="초안",
+                    drawingRef=None, bindingId=None,
+                    thumbBlobId=None, previewBlobId=None, createdAt=now,
+                    updatedAt=now, createdByPartyId=actor["partyId"])
+            _audit(store, project_id, "set_uploaded", actor, role, {
+                "setId": set_id, "pageCount": count, "sha256": digest})
+            store.requests[request_key] = {"hash": fingerprint, "setId": set_id}
+            result = deepcopy(row)
+        tasks.add_task(_render_set, store, project_id, set_id)
+        return {"set": result}
+
+    @app.get("/projects/{project_id}/drawing-sheets")
+    def list_sheets(project_id: str, request: Request):
+        actor = identity(request)
+        with store.transaction():
+            context(project_id, request, actor)
+            sheets = store.meta.get("drawingSheets", {}).get(project_id, {})
+            items = sorted(sheets.values(), key=lambda row: (row["createdAt"], row["setId"], row["pageNo"]))
+            return {"items": [_sheet_result(item) for item in items], "count": len(items)}
+
+    @app.get("/projects/{project_id}/drawing-sheets/{sheet_id}")
+    def get_sheet(project_id: str, sheet_id: str, request: Request):
+        actor = identity(request)
+        with store.transaction():
+            context(project_id, request, actor)
+            row = sheet_for(project_id, sheet_id)
+            pins = store.meta.get("drawingSheetPins", {}).get(project_id, {}).get(sheet_id, {})
+            return {"sheet": _sheet_result(row), "pins": list(deepcopy(pins.values()))}
+
+    @app.get("/projects/{project_id}/drawing-sheets/{sheet_id}/image")
+    def sheet_image(project_id: str, sheet_id: str, request: Request, size: str = "preview"):
+        actor = identity(request)
+        require(size in {"preview", "thumb"}, "INVALID_REQUEST", "Unknown image size")
+        with store.transaction():
+            context(project_id, request, actor)
+            row = sheet_for(project_id, sheet_id)
+            image_id = row.get("previewBlobId" if size == "preview" else "thumbBlobId")
+            require(image_id is not None and row["status"] == "ready", "NOT_FOUND", "이미지 변환 중입니다")
+            content = store.blob(image_id)
+        return Response(content, media_type="image/jpeg", headers={
+            "Cache-Control": "private, max-age=300", "X-Content-Type-Options": "nosniff",
+        })
+
+    @app.patch("/projects/{project_id}/drawing-sheets/{sheet_id}")
+    async def update_sheet(project_id: str, sheet_id: str, request: Request):
+        actor = identity(request)
+        key = key_for(request)
+        try:
+            body = await request.json()
+        except ValueError as exc:
+            raise ContractError("INVALID_REQUEST", "Invalid JSON") from exc
+        require(isinstance(body, dict) and set(body) == {"expectedVersion", "number", "title"},
+                "INVALID_REQUEST", "Required fields: expectedVersion, number, title")
+        require(isinstance(body["expectedVersion"], int) and not isinstance(body["expectedVersion"], bool)
+                and body["expectedVersion"] > 0, "INVALID_REQUEST", "Invalid expected version")
+        for field, limit in (("number", 60), ("title", 220)):
+            require(isinstance(body[field], str) and 0 < len(body[field].strip()) <= limit,
+                    "INVALID_REQUEST", f"Invalid {field}")
+        fingerprint = sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+        request_key = "drawing-sheet-edit:" + project_id + ":" + actor["partyId"] + ":" + key
+        with store.transaction(write=True):
+            role = context(project_id, request, actor)
+            require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "도면 수정 권한이 없습니다")
+            cached = store.requests.get(request_key)
+            if cached:
+                require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Same key has different payload")
+                return deepcopy(cached["result"])
+            row = sheet_for(project_id, sheet_id)
+            require(row["version"] == body["expectedVersion"], "VERSION_CONFLICT", "도면 정보가 변경되었습니다")
+            row.update(version=row["version"] + 1, number=body["number"].strip(),
+                       title=body["title"].strip(), updatedAt=store.engine.at())
+            _audit(store, project_id, "sheet_renamed", actor, role, {
+                "sheetId": sheet_id, "version": row["version"]})
+            result = {"sheet": _sheet_result(row)}
+            store.requests[request_key] = {"hash": fingerprint, "result": deepcopy(result)}
+            return result
+
+    @app.get("/projects/{project_id}/drawing-sheets/{sheet_id}/pins")
+    def list_pins(project_id: str, sheet_id: str, request: Request):
+        actor = identity(request)
+        with store.transaction():
+            role = context(project_id, request, actor)
+            sheet_for(project_id, sheet_id)
+            pins = store.meta.get("drawingSheetPins", {}).get(project_id, {}).get(sheet_id, {})
+            values = []
+            for pin in pins.values():
+                reference = pin.get("recordRef")
+                if reference:
+                    try:
+                        record = store.engine.resolve(reference, project_id)
+                        store.engine.authorize_read(record, actor["partyId"], role["id"])
+                    except (ContractError, KeyError):
+                        continue
+                values.append(deepcopy(pin))
+            return {"items": sorted(values, key=lambda item: item["createdAt"]), "count": len(values)}
+
+    @app.post("/projects/{project_id}/drawing-sheets/{sheet_id}/pins")
+    async def add_pin(project_id: str, sheet_id: str, request: Request):
+        actor = identity(request)
+        key = key_for(request)
+        try:
+            body = await request.json()
+        except ValueError as exc:
+            raise ContractError("INVALID_REQUEST", "Invalid JSON") from exc
+        require(isinstance(body, dict) and set(body) == {"x", "y", "kind", "comment", "recordRef"},
+                "INVALID_REQUEST", "Pin requires x, y, kind, comment, recordRef")
+        for coord in ("x", "y"):
+            require(type(body[coord]) in (float, int) and 0 <= body[coord] <= 1,
+                    "INVALID_REQUEST", "Pin coordinates are normalized 0-1")
+        require(body["kind"] in KINDS, "INVALID_REQUEST", "Unknown pin category")
+        require(isinstance(body["comment"], str) and
+                0 < len(body["comment"].strip()) <= MAX_PIN_TEXT, "INVALID_REQUEST", "Pin comment required")
+        reference = body["recordRef"]
+        require(reference is None or (isinstance(reference, dict)
+            and set(reference) == {"objectType", "objectId", "version"}
+            and reference["objectType"] in LINK_TYPES
+            and isinstance(reference["objectId"], str)
+            and type(reference["version"]) is int and reference["version"] > 0),
+            "INVALID_REQUEST", "Invalid linked record")
+        fingerprint = sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+        request_key = "drawing-sheet-pin:" + project_id + ":" + actor["partyId"] + ":" + key
+        with store.transaction(write=True):
+            role = context(project_id, request, actor)
+            require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "핀 생성 권한이 없습니다")
+            cached = store.requests.get(request_key)
+            if cached:
+                require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Pin key payload changed")
+                return deepcopy(cached["result"])
+            sheet = sheet_for(project_id, sheet_id)
+            require(sheet["status"] == "ready", "INVALID_REQUEST", "준비된 도면을 선택하십시오")
+            if reference:
+                record = store.engine.resolve(reference, project_id)
+                store.engine.authorize_read(record, actor["partyId"], role["id"])
+            now = store.engine.at()
+            pin = dict(id=str(uuid4()), version=1, sheetId=sheet_id, projectId=project_id,
+                       x=float(body["x"]), y=float(body["y"]),
+                       kind=body["kind"], comment=body["comment"].strip(),
+                       recordRef=deepcopy(reference), status="draft" if not reference else "linked",
+                       createdAt=now, createdByPartyId=actor["partyId"], createdByRole=role["actorGroup"])
+            store.meta.setdefault("drawingSheetPins", {}).setdefault(project_id, {}).setdefault(sheet_id, {})[pin["id"]] = pin
+            _audit(store, project_id, "pin_created", actor, role, {"sheetId": sheet_id, "pinId": pin["id"]})
+            result = {"pin": deepcopy(pin)}
+            store.requests[request_key] = {"hash": fingerprint, "result": deepcopy(result)}
+            return result
