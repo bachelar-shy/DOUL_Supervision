@@ -150,6 +150,9 @@ export class MockSupervisionClient implements SupervisionClient {
   async drawingPdfContent(_bindingId: string): Promise<Blob> {
     throw new Error("화면 미리보기에서는 도면 PDF 원본 연결을 제공하지 않습니다.");
   }
+  async drawingSheetImage(_sheetId: string, _size: "preview" | "thumb", _signal?: AbortSignal): Promise<Blob> {
+    throw new Error("이미지 뷰어는 실제 테스트 서버의 등록 도면에서 사용할 수 있습니다.");
+  }
 
   async evidenceContent(evidenceId: string): Promise<Blob> {
     if (!evidenceId.startsWith("EVD-UI-")) {

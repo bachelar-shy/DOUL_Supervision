@@ -129,6 +129,9 @@ class DrawingSheetHTTPTest(unittest.TestCase):
         self.assertEqual(self.http.post(base + first + "/pins",
               headers={**con, "Idempotency-Key": key}, json=draft).json(), saved.json())
         self.assertEqual(self.http.get(base + first + "/pins", headers=own).json()["count"], 1)
+        detail = self.http.get(base + first, headers=own)
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.json()["pins"], self.http.get(base + first + "/pins", headers=own).json()["items"])
         self.assertEqual(self.http.get(base + second + "/pins", headers=own).json()["count"], 0)
         self.assertEqual(self.http.post(base + first + "/pins",
               headers={**own, "Idempotency-Key": uid()}, json=draft).status_code, 403)

@@ -140,6 +140,10 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
     async def upload_set(project_id: str, request: Request, tasks: BackgroundTasks):
         actor = identity(request)
         key = key_for(request)
+        # Authenticate role before spending CPU or memory on untrusted PDF decoding.
+        with store.transaction():
+            role = context(project_id, request, actor)
+            require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "도면 등록 권한이 없습니다")
         require(request.headers.get("content-type", "").split(";")[0].strip().lower() == "application/pdf",
                 "MIME_INVALID", "PDF 형식만 업로드할 수 있습니다")
         filename = unquote(request.query_params.get("filename", ""))
@@ -209,14 +213,28 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
             items = sorted(sheets.values(), key=lambda row: (row["createdAt"], row["setId"], row["pageNo"]))
             return {"items": [_sheet_result(item) for item in items], "count": len(items)}
 
+    def visible_pins(project_id, sheet_id, actor, role):
+        pins = store.meta.get("drawingSheetPins", {}).get(project_id, {}).get(sheet_id, {})
+        values = []
+        for pin in pins.values():
+            reference = pin.get("recordRef")
+            if reference:
+                try:
+                    record = store.engine.resolve(reference, project_id)
+                    store.engine.authorize_read(record, actor["partyId"], role["id"])
+                except (ContractError, KeyError):
+                    continue
+            values.append(deepcopy(pin))
+        return sorted(values, key=lambda item: item["createdAt"])
+
     @app.get("/projects/{project_id}/drawing-sheets/{sheet_id}")
     def get_sheet(project_id: str, sheet_id: str, request: Request):
         actor = identity(request)
         with store.transaction():
-            context(project_id, request, actor)
+            role = context(project_id, request, actor)
             row = sheet_for(project_id, sheet_id)
-            pins = store.meta.get("drawingSheetPins", {}).get(project_id, {}).get(sheet_id, {})
-            return {"sheet": _sheet_result(row), "pins": list(deepcopy(pins.values()))}
+            return {"sheet": _sheet_result(row),
+                    "pins": visible_pins(project_id, sheet_id, actor, role)}
 
     @app.get("/projects/{project_id}/drawing-sheets/{sheet_id}/image")
     def sheet_image(project_id: str, sheet_id: str, request: Request, size: str = "preview"):
@@ -272,18 +290,8 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
         with store.transaction():
             role = context(project_id, request, actor)
             sheet_for(project_id, sheet_id)
-            pins = store.meta.get("drawingSheetPins", {}).get(project_id, {}).get(sheet_id, {})
-            values = []
-            for pin in pins.values():
-                reference = pin.get("recordRef")
-                if reference:
-                    try:
-                        record = store.engine.resolve(reference, project_id)
-                        store.engine.authorize_read(record, actor["partyId"], role["id"])
-                    except (ContractError, KeyError):
-                        continue
-                values.append(deepcopy(pin))
-            return {"items": sorted(values, key=lambda item: item["createdAt"]), "count": len(values)}
+            values = visible_pins(project_id, sheet_id, actor, role)
+            return {"items": values, "count": len(values)}
 
     @app.post("/projects/{project_id}/drawing-sheets/{sheet_id}/pins")
     async def add_pin(project_id: str, sheet_id: str, request: Request):

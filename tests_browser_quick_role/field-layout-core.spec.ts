@@ -22,7 +22,8 @@ for (const role of ["ADM", "SUP", "CON", "OWN"] as const) {
     for (const route of fieldMenus[role]) {
       await page.evaluate(value => { location.hash = "#/" + value; }, route);
       await expect(shell).toHaveAttribute("data-workspace-route", route);
-      await expect(page.locator(".main-shell main .page-heading h1")).toBeVisible();
+      if (route === "drawings") await expect(page.locator('[data-ui-component="drawing-sheet-workspace"] .drawing-sheet-commandbar')).toBeVisible();
+      else await expect(page.locator(".main-shell main .page-heading h1")).toBeVisible();
       await expect(nav.locator('button[data-route="' + route + '"]')).toHaveAttribute("aria-current", "page");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2)).toBe(true);
     }
