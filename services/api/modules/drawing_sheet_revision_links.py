@@ -8,7 +8,7 @@ import json
 import re
 
 from fastapi import Request
-from app.reference.validation import require
+from app.reference.validation import ContractError, require
 
 REVISION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,23}$")
 WRITERS = frozenset({"ADM", "SUP"})
@@ -56,7 +56,10 @@ def install_sheet_revision_routes(app, store, *, identity, context, sheet_for, s
         key = key_for(request)
         require(isinstance(key, str) and 1 <= len(key) <= 160, "IDEMPOTENCY_KEY_INVALID",
                 "Idempotency key required")
-        body = await request.json()
+        try:
+            body = await request.json()
+        except ValueError as exc:
+            raise ContractError("INVALID_REQUEST", "Malformed revision link JSON") from exc
         fields = {"fromSheetId", "toSheetId", "previousRevision", "newRevision",
                   "expectedFromVersion", "expectedToVersion", "note"}
         require(isinstance(body, dict) and set(body) == fields, "INVALID_REQUEST",

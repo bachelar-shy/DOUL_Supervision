@@ -85,11 +85,14 @@ export function DrawingRevisionDialog({client, selected, sheets, canLink, onClos
   }, [client, selected.id]);
 
   useEffect(() => {
+    modalRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
     const escape = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", escape);
-    modalRef.current?.focus();
     return () => window.removeEventListener("keydown", escape);
   }, [onClose]);
 
