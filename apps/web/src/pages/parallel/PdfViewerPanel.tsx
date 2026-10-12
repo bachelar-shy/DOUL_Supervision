@@ -756,7 +756,7 @@ export function PdfViewerPanel({ client, workspace, onChanged, onSelectMarkup, r
     </header>
     <div className="pdf-toolbar">
       <label className="pdf-source-label">{tx("sourceLabel")}<select aria-label={tx("sourceSelect")} disabled={savingPin} value={selectedId} onChange={(event) => setSelectedId(event.target.value)}>
-        <option value="">{tx("sourceSelect")}…</option>{sources.map((source) => <option key={source.id} value={source.id}>{tx("evidence", { name: source.name })}</option>)}
+        <option value="">{tx("sourceSelect")}…</option>{sources.map((source) => <option key={source.id} value={source.id}>{source.purpose === "construction" ? t("drawings.constructionSource", { defaultValue: "공사용 도면 · {{name}}", name: source.name }) : tx("evidence", { name: source.name })}</option>)}
         {boundOnlyEvidence.map((binding) => <option key={binding.evidenceRef.objectId} value={binding.evidenceRef.objectId}>{tx("historical", { id: binding.evidenceRef.objectId, version: binding.evidenceRef.version })}</option>)}
         {selectedId && !sources.some((source) => source.id === selectedId) && !boundOnlyEvidence.some((binding) => binding.evidenceRef.objectId === selectedId) && <option value={selectedId}>{tx("uploaded", { id: selectedId })}</option>}
       </select></label>

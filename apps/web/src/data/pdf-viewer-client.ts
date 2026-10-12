@@ -9,6 +9,7 @@ export interface PdfEvidenceSource {
   mime: string;
   record: RecordDTO;
   drawing: boolean;
+  purpose: "construction" | "unspecified";
 }
 
 function text(value: unknown): string {
@@ -38,7 +39,8 @@ export function listPdfEvidenceSources(workspace: Workspace): PdfEvidenceSource[
       const mime = text(metadata.mimeType) || text(metadata.mime) || "application/pdf";
       const name = text(metadata.name) || text(record.title) || `${record.id}.pdf`;
       const bound = sameRef(record.drawingRef, workspace.context.drawingRef);
-      return { id: record.id, name, mime, record, drawing: bound };
+      const purpose = metadata.documentPurpose === "construction" ? "construction" : "unspecified";
+      return { id: record.id, name, mime, record, drawing: bound, purpose };
     });
 }
 

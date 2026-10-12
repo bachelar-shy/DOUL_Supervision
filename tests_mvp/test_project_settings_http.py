@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 from app.reference.engine import uid
 from app.reference.validation import ContractError
 from scripts.install_site_test_project import install, CLASSIFICATION
+from scripts.import_site_test_reference import import_reference
 from services.api.main import create_app
 from services.api.persistence import create_local_persistence
 from services.deployment.auth import PinnedJWT, subject_key
@@ -158,6 +159,32 @@ class ProjectSettingsHTTPTest(unittest.TestCase):
         with self.store.transaction():
             self.assertEqual(before,self.store.engine._records); self.assertEqual(audit,self.store.engine.audit_events)
         self.assertNotIn('passwordAccounts',self.read()); self.assertNotIn('identityBindings',self.read())
+
+    def test_original_construction_pdf_restoration_is_scoped_immutable_and_restart_safe(self):
+        from hashlib import sha256
+        # A large byte fixture tests the existing server limit, not PDF rendering.
+        content = b'%PDF-1.4\n' + b' ' * (21 * 1024 * 1024)
+        args = dict(project_id=self.sample['projectId'], issuer=self.issuer, username='operator',
+                    content=content, filename='original.pdf', expected_hash=sha256(content).hexdigest(),
+                    source_reference='user-upload-fixture', approval_ref='test-only-restoration')
+        before = self.read()['project']
+        record = import_reference(self.store, **args)
+        self.assertNotIn('drawingRef', record)
+        self.assertEqual(record['metadata']['documentPurpose'], 'construction')
+        self.assertEqual(record['metadata']['sourceApprovalStatus'], 'unverified')
+        self.assertEqual(record['metadata']['name'], 'original.pdf')
+        with self.store.transaction():
+            audit = deepcopy(self.store.engine.audit_events)
+            self.assertEqual(self.store.blob(record['fileId']), content)
+        self.assertEqual(import_reference(self.store, **args), record)
+        with self.store.transaction(): self.assertEqual(self.store.engine.audit_events, audit)
+        for changes in [dict(project_id=self.project), dict(expected_hash='0'*64), dict(filename='../original.pdf')]:
+            with self.assertRaises(ContractError): import_reference(self.store, **(args | changes))
+        with patch.dict(os.environ, DOUL_ENVIRONMENT='pilot'):
+            with self.assertRaises(ContractError): import_reference(self.store, **args)
+        self.assertEqual(self.read()['project'], before)
+        self.store.close(); self.store=create_local_persistence(self.path,demo=False)
+        with self.store.transaction(): self.assertEqual(sha256(self.store.blob(record['fileId'])).hexdigest(), args['expected_hash'])
 
 
 if __name__ == '__main__': unittest.main()
