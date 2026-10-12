@@ -32,8 +32,8 @@
         "documents",
         "registers",
         "rfis",
-        "parallel-test",
-        "staff-requests"
+        "staff-requests",
+        "parallel-test"
       ],
       "mainTasks": [
         {
@@ -988,8 +988,8 @@
           "documents",
           "registers",
           "rfis",
-          "parallel-test",
-          "staff-requests"
+          "staff-requests",
+          "parallel-test"
         ],
         "CON": [
           "today",
