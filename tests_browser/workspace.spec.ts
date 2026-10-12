@@ -186,7 +186,8 @@ test.describe("today heading date", () => {
 test("DOUL component catalog is mounted on representative surfaces", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('[data-ui-component="navigation"]')).toBeVisible();
-  await expect(page.locator('[data-ui-component="decision-panel"]')).toBeVisible();
+  // The pre-work inspection-vs-release notice card was deliberately removed.
+  await expect(page.locator('[data-ui-component="decision-panel"]')).toHaveCount(0);
   await expect(page.locator('[data-ui-component="audit-timeline"]')).toBeVisible();
 
   await page.goto("/#/capture");
