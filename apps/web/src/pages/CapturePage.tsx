@@ -224,24 +224,25 @@ export function CapturePage({
     }
   }
 
-  async function sendAll() {
-    if (uploadingRef.current || !online || !pending.length) return;
+  async function sendAll(onlyCurrentRole = false) {
+    const queue = onlyCurrentRole ? pending.filter(p => p.roleId === scopeRole) : pending;
+    if (uploadingRef.current || !online || !queue.length) return;
     uploadingRef.current = true;
     setError("");
     let completed = 0;
-    setProgress(t("capture.batch.sending", { current: 1, total: pending.length }));
+    setProgress(t("capture.batch.sending", { current: 1, total: queue.length }));
     try {
       // Process sequentially to avoid saturated mobile links. Failed and
       // unattempted originals remain in IndexedDB for explicit retry.
-      for (const p of pending) {
-        setProgress(t("capture.batch.sending", { current: completed + 1, total: pending.length }));
+      for (const p of queue) {
+        setProgress(t("capture.batch.sending", { current: completed + 1, total: queue.length }));
         await uploadCapture(p, (offset, total) =>
-          setProgress(t("capture.batch.progress", { current: completed + 1, total: pending.length, percent: Math.round((offset / total) * 100) })));
+          setProgress(t("capture.batch.progress", { current: completed + 1, total: queue.length, percent: Math.round((offset / total) * 100) })));
         completed += 1;
       }
       notify(t("capture.batch.sent", { count: completed }));
     } catch (e) {
-      setError(t("capture.batch.partial", { completed, total: pending.length }) + " " +
+      setError(t("capture.batch.partial", { completed, total: queue.length }) + " " +
         (e instanceof ApiError ? reasonLabel(e.detail.code) : reasonLabel()));
     } finally {
       await load().catch(() => undefined);
@@ -260,7 +261,7 @@ export function CapturePage({
     const eligible = pending.some(p => p.roleId === scopeRole);
     if (!eligible || autoAttempted.current === autoKey) return;
     autoAttempted.current = autoKey;
-    void sendAll();
+    void sendAll(true);
   }, [online, autoEnabled, autoKey, pending, scopeRole, client.kind]);
 
   return (
