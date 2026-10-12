@@ -160,6 +160,12 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     if not demo and os.getenv('DOUL_AUTH_MODE') == 'local-password':
         from services.deployment.password_auth import PasswordAccounts
         password_accounts = PasswordAccounts(store, authentication)
+    from services.api.modules.synthetic_role_login import configured, validate_synthetic_identity, install_synthetic_role_login
+    test_role_enabled = configured(stage, demo=demo, password_accounts=password_accounts)
+    if test_role_enabled:
+        from services.api.modules.synthetic_role_login import synthetic_project_id
+        with store.transaction():
+            synthetic_project_id(store)  # Refuse startup if the synthetic staging fixture is missing.
 
     async def system_request_log(request, call_next):
         import time
@@ -195,6 +201,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
         token=auth[7:] if auth.startswith('Bearer ') else ''
         if not demo:
             session=authentication.session(token,store)
+            validate_synthetic_identity(store, session, test_role_enabled)
             if password_accounts is not None and password_accounts.is_revoked(token):
                 raise ContractError('UNAUTHENTICATED','Session revoked')
             return session
@@ -356,9 +363,12 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
 
     @app.get('/health')
 
-    def health():return dict(status='ok',mode='local-demo' if demo else stage,demoProfile=store.meta.get('demoProfile') if demo else None,baseCommit=(os.getenv('DOUL_RELEASE_SHA', '') if re.fullmatch(r'[a-f0-9]{40}', os.getenv('DOUL_RELEASE_SHA', '')) else 'unversioned-development'),adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo' if demo else 'local-password-pinned-rs256' if password_accounts is not None else 'pinned-rs256-access-token','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'})
+    def health():return dict(status='ok',mode='local-demo' if demo else stage,demoProfile=store.meta.get('demoProfile') if demo else None,baseCommit=(os.getenv('DOUL_RELEASE_SHA', '') if re.fullmatch(r'[a-f0-9]{40}', os.getenv('DOUL_RELEASE_SHA', '')) else 'unversioned-development'),adapters={'database':store.adapter_name,'workflow':'merged-reference-engine','authentication':'explicit-local-demo' if demo else 'local-password-pinned-rs256' if password_accounts is not None else 'pinned-rs256-access-token','mediaPipeline':'durable-outbox-redis-worker' if app.state.queue_enabled else 'normalized-worker-ingress-demo-only','ai':'provider-not-configured','legalSignature':'not-configured','pdfDocx':'not-configured'},testRoleLogin=test_role_enabled)
 
     if password_accounts is not None:
+        install_synthetic_role_login(app, store, stage=stage, enabled=test_role_enabled,
+                                     password_accounts=password_accounts, origins=origins, body_json=body_json)
+
         @app.get('/auth/projects')
         def password_projects(request:Request):
             actor=identity(request)
@@ -388,6 +398,8 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                 current=store.engine.get('RoleAssignment',actor['roleAssignmentId'])
                 role_for(actor,current['projectId'])
                 binding=store.meta['identityBindings'][actor['identityKey']]
+                require(not binding.get('syntheticRoleShortcut'), 'NOT_AUTHORIZED',
+                        'Synthetic test users cannot switch projects')
                 approved=binding.get('projectAssignments',{}).get(body['projectId'])
                 require(isinstance(approved,dict),'NOT_AUTHORIZED','Project membership is not provisioned')
                 target=store.engine.get('RoleAssignment',approved['defaultRoleAssignmentId'])

@@ -26,6 +26,12 @@ class PasswordLoginHTTPTest(unittest.TestCase):
             with env, patch('services.deployment.gates.validate_store'),patch('services.deployment.gates.https_origins',return_value=['https://app.example']),patch('services.deployment.gates.allowed_hosts',return_value=['testserver']):
                 pwd=PasswordAccounts(store,verifier)
                 admin=store.meta['actors']['ADM'];supervisor=store.meta['actors']['SUP']
+                # Match the project-wide administrator assignment used by operational settings.
+                with store.transaction(write=True):
+                    original=store.engine.get('RoleAssignment',admin['roleAssignmentId'])
+                    revised=dict(original,version=original['version']+1,updatedAt=store.engine.at(),
+                                 disciplines=['*'],packageIds=['*'],locationIds=['*'])
+                    store.engine._save('RoleAssignment',revised)
                 pwd.create({'actorGroup':'ADM','projectId':store.meta['projectId']},'operator','Secure-Password-12',admin['partyId'],admin['roleAssignmentId'])
                 app=create_app(demo=False,persistence=store,authentication=verifier)
                 with TestClient(app) as http:
