@@ -54,6 +54,11 @@ test.afterAll(async () => {
   if (fixtureDir) rmSync(fixtureDir, { recursive: true, force: true });
 });
 
+test.afterEach(async ({page})=>{
+  // Finish forwarded fixture requests before Playwright closes the page/context.
+  await page.unrouteAll({behavior:"wait"});
+});
+
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/**", async route => {
     const url = new URL(route.request().url());

@@ -14,7 +14,7 @@ export default defineConfig({
       env:{DOUL_ENVIRONMENT:"development",DOUL_API_ALLOWED_ORIGINS:origin+",http://127.0.0.1:5181"},
     },
     {
-      command:"npm run web -- --host 127.0.0.1 --port 5221 --strictPort",
+      command:"npm run dev --workspace apps/web -- --host 127.0.0.1 --port 5221 --strictPort",
       url:origin,reuseExistingServer:false,
       env:{VITE_DOUL_UI_SCOPE:"full",VITE_DOUL_AUTH_MODE:"",DOUL_TEST_API_TARGET:"http://127.0.0.1:8799"},
     },
