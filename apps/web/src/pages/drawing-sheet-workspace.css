@@ -264,3 +264,24 @@
   .drawing-board-bottom { padding:3px 7px; }
   .drawing-pin-instruction { left:50px; right:6px; max-width:none; transform:none; white-space:normal; }
 }
+
+/* Source is immutable; markups live in an independent normalized overlay. */
+.drawing-board-markup-layer { position:absolute; inset:0; width:100%; height:100%;
+  z-index:1; pointer-events:none; overflow:visible; }
+.drawing-board-markup-layer.active { pointer-events:auto; cursor:crosshair; touch-action:none; }
+.drawing-board-markup-layer .markup-erasable { cursor:pointer; pointer-events:stroke; }
+.drawing-board-tools { max-height:calc(100% - 62px); overflow-y:auto; scrollbar-width:thin; }
+.drawing-board-tools button:disabled { opacity:.4; }
+.drawing-markup-options { position:absolute; top:10px; right:10px; max-width:min(250px,55%);
+  display:flex; flex-direction:column; gap:7px; align-items:stretch;
+  z-index:5; padding:10px; border:1px solid #d0d8e4; background:#ffffffed;
+  border-radius:3px; font-size:11px; box-shadow:0 2px 8px #24334d1b; }
+.drawing-markup-options > span { font-weight:700; }
+.drawing-markup-options label { display:flex; align-items:center; justify-content:space-between; gap:7px; }
+.drawing-markup-options label input[type="number"],.drawing-markup-options label input:not([type]){
+  width:135px; min-width:0; padding:5px; border:1px solid #cbd4df; }
+.drawing-markup-options small { color:#68788a; line-height:1.4; }
+.drawing-markup-rail-count { border-top:1px solid #dbe0e6; padding:10px 12px;
+  background:#fff; font-size:11px; color:#657485; }
+@media(max-width:767px) { .drawing-board-tools{top:5px;left:5px;max-height:calc(100% - 49px);}
+  .drawing-markup-options{top:5px;right:5px;} }
