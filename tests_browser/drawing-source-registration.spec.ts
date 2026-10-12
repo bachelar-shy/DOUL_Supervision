@@ -57,5 +57,6 @@ test('designer registers an immutable PDF revision and explicitly requests techn
   await page.getByRole('tab', { name: '도면 등록·배포', exact: true }).click();
   const predecessor=page.getByRole('combobox',{name:'이전 도면 개정',exact:true});
   await expect(predecessor.locator('option').filter({hasText:title})).toHaveCount(1);
-  await expect(predecessor.locator('option').filter({hasText:title})).toHaveAttribute('value',`InformationItem:${result.drawing.id}:1`);
+  await expect(predecessor.locator('option').filter({hasText:title})).toHaveAttribute('value',result.drawing.id);
+  await expect(predecessor.locator('option').filter({hasText:title})).toHaveText(`${title} · 01 · 기록 제1차`);
 });

@@ -91,3 +91,11 @@
 - CommandEvidencePicker가 기존 증빙번호 textarea를 고급 입력에 숨긴 뒤 폐쇄흐름 시험들이 옛 필드를 찾고 있었다. 시험은 보이는 증빙 체크박스를 사용하고 목록에 없는 검증용 번호만 명시적 고급 입력을 사용하도록 정리한다. HTTP 결과/버전/권한/증빙 검증은 유지한다.
 - 합성 배너 문구 기대를 현재 표시로 맞추고 관리자 화면 대신 실제 관리대장에서 스크롤 헤더를 검증한다. 휴대폰의 역할/언어 선택기 높이36px도44px로 수정했다.
 - 이 후속 수정은 아직 native 전체 회귀/배포 전이다. native 전용 포트를 사용해 실제 서비스나 다른 시험 서버와 혼용하지 않고 검증한다.
+
+## 후속 회귀 진척 — 미완료 항목을 그대로 이어갈 것
+
+- `d52bde3`, `646fb4a`, `290b4f3`, `85798b1`까지 GitHub에 push. native 전용 `playwright.regression.config.ts` (UI5221/API8799, full, 독립 DB) 추가. 시험 fixture에 해당 Origin을 명시하여 기존 화면/서비스와 섞지 않는다.
+- 수정 후 native 회귀 39개 중36개 통과: 계약통지·Claim/EOT, 전체 화면 용어, 번역 미리보기4, 문서 배치, 대장 스크롤, 휴대폰44px, 검측 임시저장5 포함. 남은3개는 도면 옵션의 value 형식(기존 ID), fixture Origin, 바뀐 중지 수령 확인 레이블로 정리했고 관련 재시험 중이다.
+- native 폐쇄흐름 14개 (`/tmp/doul-settings-closed-loops-regression.log`) 진행 중. 준공 준비·유보조건·부분 인계·재검측 후 하자종결은 이미 통과했고 나머지 인계/지급/안전/EOT를 실행한다.
+- legacy DOUL SAMPLE 94개 파일/15 사례의 UI 재검증을 별도 SQLite/port5223/8801에서 진행 중이다. native config `work/playwright.sample-recovery.config.ts` (맥미니 scratch), DB `.local/settings-sample-recovery/DOUL_SAMPLE_WWT.sqlite3`, 자료 `.local/settings-sample-materials`. 실제 서버 DB와 별개다.
+- Source 현재 변경은 실제 서버에 아직 재배포하지 않았다. 실제 서버는 검증된04538aa를 계속 제공하며 사용자 자료/비밀번호/프로젝트를 삭제하지 않는다.
