@@ -229,4 +229,94 @@ class ProjectSettingsHTTPTest(unittest.TestCase):
         revoked=self.http.post(url,json=body,headers={**self.headers,'Idempotency-Key':uid()});self.assertEqual(revoked.status_code,401)
 
 
+    def test_project_personnel_request_delivery_admin_only_accounts_and_isolation(self):
+        path='/projects/'+self.project+'/personnel-requests'
+        created={}
+        for group in ('CON','SUP','OWN'):
+            person=self.store.meta['actors'][group]
+            username='staff_'+group.lower()
+            self.accounts.create(dict(actorGroup='ADM',projectId=self.project),
+                username,'Synthetic-Password-'+group+'-35',person['partyId'],person['roleAssignmentId'])
+            headers=self.login(username,'Synthetic-Password-'+group+'-35')
+            response=self.http.get(path,headers=headers)
+            self.assertEqual(response.status_code,200,response.text)
+            self.assertFalse(response.json()['canReview'])
+            self.assertEqual(response.json()['items'],[])
+            payload=dict(name='추가인원 '+group,organization='시험회사 '+group,requestedRole=group,reason='현장 검측 업무 인력 보강')
+            key=uid()
+            send=self.http.post(path,json=payload,headers={**headers,'Idempotency-Key':key})
+            self.assertEqual(send.status_code,200,send.text)
+            self.assertEqual(send.json()['deliveredTo'],'project_admin_inbox')
+            self.assertEqual(send.json()['record']['status'],'pending')
+            created[group]=send.json()['record']
+            self.assertEqual(self.http.post(path,json=payload,headers={**headers,'Idempotency-Key':key}).json(),send.json())
+            self.assertEqual(self.http.post(path,json=payload|{'reason':'다름'},headers={**headers,'Idempotency-Key':key}).status_code,409)
+            self.assertEqual(self.http.post(path,json=payload|{'requesterPartyId':uid()},headers={**headers,'Idempotency-Key':uid()}).status_code,422)
+            self.assertEqual(self.http.post(path,json=payload|{'requestedRole':'ADM'},headers={**headers,'Idempotency-Key':uid()}).status_code,422)
+            self.assertEqual(self.http.post(path,json=payload|{'requestedRole':[]},headers={**headers,'Idempotency-Key':uid()}).status_code,422)
+            account_body=dict(username='forbidden_'+group.lower(),password='Synthetic-Password-99',
+                              partyId=person['partyId'],roleAssignmentId=person['roleAssignmentId'])
+            self.assertEqual(self.http.post('/auth/accounts',json=account_body,headers=headers).status_code,403)
+            self.assertEqual(self.http.get(self.url,headers=headers).status_code,403)
+            self.assertEqual(self.http.post(self.url+'/projects',
+                json=dict(name='금지',country='VN',timezone='Asia/Ho_Chi_Minh',classification='',organizationName='금지'),
+                headers={**headers,'Idempotency-Key':uid()}).status_code,403)
+            self.assertEqual(self.http.post(path+'/'+created[group]['id']+'/decision',
+                json=dict(expectedVersion=1,status='approved',note=''),
+                headers={**headers,'Idempotency-Key':uid()}).status_code,403)
+            own=self.http.get(path,headers=headers).json()['items']
+            self.assertEqual([item['id'] for item in own],[created[group]['id']])
+
+        inbox=self.http.get(path,headers=self.headers)
+        self.assertEqual(inbox.status_code,200,inbox.text)
+        self.assertTrue(inbox.json()['canReview'])
+        self.assertEqual(inbox.json()['pendingCount'],3)
+        self.assertEqual({item['id'] for item in inbox.json()['items']},{record['id'] for record in created.values()})
+        self.assertEqual(self.http.post(path,
+            json=dict(name='관리자',organization='관리',requestedRole='CON',reason='금지'),
+            headers={**self.headers,'Idempotency-Key':uid()}).status_code,403)
+
+        request_id=created['CON']['id']
+        review_path=path+'/'+request_id+'/decision'
+        decision=dict(expectedVersion=1,status='approved',note='배정과 계정은 별도 등록')
+        key=uid()
+        approved=self.http.post(review_path,json=decision,headers={**self.headers,'Idempotency-Key':key})
+        self.assertEqual(approved.status_code,200,approved.text)
+        self.assertEqual(approved.json()['record']['version'],2)
+        self.assertFalse(approved.json()['accountCreated'])
+        self.assertEqual(self.http.post(review_path,json=decision,headers={**self.headers,'Idempotency-Key':key}).json(),approved.json())
+        self.assertEqual(self.http.post(review_path,json=decision,headers={**self.headers,'Idempotency-Key':uid()}).status_code,409)
+        self.assertEqual(self.http.post(path+'/'+created['SUP']['id']+'/decision',
+            json=dict(expectedVersion=1,status='rejected',note=' '),
+            headers={**self.headers,'Idempotency-Key':uid()}).status_code,422)
+        rejected=self.http.post(path+'/'+created['SUP']['id']+'/decision',
+            json=dict(expectedVersion=1,status='rejected',note='인력 계획 자료 미비'),
+            headers={**self.headers,'Idempotency-Key':uid()})
+        self.assertEqual(rejected.status_code,200,rejected.text)
+        self.assertEqual(rejected.json()['record']['status'],'rejected')
+
+        con_headers=self.login('staff_con','Synthetic-Password-CON-35')
+        con_record=self.http.get(path,headers=con_headers).json()['items'][0]
+        self.assertEqual(con_record['status'],'approved')
+        self.assertEqual(con_record['reviewNote'],decision['note'])
+        with self.store.transaction():
+            events=self.store.meta['personnelRequestAudit'][self.project]
+            self.assertEqual(len(events),5)
+            self.assertEqual({event['event'] for event in events},{'submitted','approved','rejected'})
+
+        selected=self.http.post('/auth/project-session',json=dict(projectId=self.sample['projectId']),headers=self.headers)
+        self.assertEqual(selected.status_code,200,selected.text)
+        in_sample={**self.headers,'Authorization':'Bearer '+selected.json()['accessToken']}
+        self.assertEqual(self.http.get(path,headers=in_sample).status_code,404)
+        sample_list=self.http.get('/projects/'+self.sample['projectId']+'/personnel-requests',headers=in_sample)
+        self.assertEqual(sample_list.status_code,200,sample_list.text)
+        self.assertEqual(sample_list.json()['items'],[])
+        self.assertEqual(self.http.post('/projects/'+self.sample['projectId']+'/personnel-requests/'+request_id+'/decision',
+            json=decision,headers={**in_sample,'Idempotency-Key':uid()}).status_code,404)
+        self.store.close();self.store=create_local_persistence(self.path,demo=False)
+        with self.store.transaction():
+            self.assertEqual(self.store.meta['personnelRequests'][self.project][request_id]['status'],'approved')
+            self.assertEqual(len(self.store.meta['personnelRequestAudit'][self.project]),5)
+
+
 if __name__ == '__main__': unittest.main()
