@@ -501,6 +501,46 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
       </aside>}
     </div>}
 
+
+    {mode === "viewer" && selected && selectedPin && <div
+      className="drawing-issue-dialog-backdrop" role="presentation"
+      onMouseDown={event => { if (event.target === event.currentTarget) setSelectedPinId(null); }}>
+      <section className="drawing-issue-dialog" role="dialog" aria-modal="true"
+        aria-label={"도면 이슈 상세 #" + (pins.indexOf(selectedPin) + 1)}>
+        <header className="drawing-issue-dialog-header">
+          <span>도면 이슈 #{pins.indexOf(selectedPin) + 1}</span>
+          <button type="button" aria-label="이슈 상세 닫기" onClick={() => setSelectedPinId(null)}><X size={19}/></button>
+        </header>
+        <div className="drawing-issue-dialog-main">
+          <div className="drawing-issue-dialog-content">
+            <strong>{drawingPinLabels[selectedPin.kind]} · {selectedPin.status === "linked" ? "업무 연결" : "미연결 초안"}</strong>
+            <p>{selectedPin.comment}</p>
+            <h4>관련 업무</h4>
+            {selectedPin.recordRef
+              ? <button type="button" className="draw-command" onClick={() => openLinkedPin(selectedPin)}>연결된 업무 열기 →</button>
+              : <p>공식 업무와 연결되지 않은 도면 마크입니다.</p>}
+            <h4>현장 기록</h4>
+            <p>현장 사진 및 검측 결과는 연결된 업무에서 확인합니다. 자료가 없으면 임의로 표시하지 않습니다.</p>
+          </div>
+          <aside className="drawing-issue-dialog-properties">
+            <h4>속성</h4>
+            <dl>
+              <dt>구분</dt><dd>{drawingPinLabels[selectedPin.kind]}</dd>
+              <dt>상태</dt><dd>{selectedPin.status === "linked" ? "업무 연결" : "초안"}</dd>
+              <dt>도면번호</dt><dd>{selected.number}</dd>
+              <dt>도면명</dt><dd>{selected.title}</dd>
+              <dt>도면 개정</dt><dd>{selected.revision}</dd>
+              <dt>도면 위치</dt><dd>{Math.round(selectedPin.x * 100)}% / {Math.round(selectedPin.y * 100)}%</dd>
+            </dl>
+            <div className="drawing-issue-dialog-sheet">
+              <ImageAsset client={client} sheet={selected} size="thumb" label={selected.number + " 관련 도면"}/>
+              <strong>{selected.number}</strong><span>{selected.title}</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </div>}
+
     {editOpen && selected && <div className="drawing-sheet-edit-backdrop" role="presentation"
       onMouseDown={e => { if (e.target === e.currentTarget) setEditOpen(false); }}>
       <form className="drawing-sheet-edit-dialog" role="dialog" aria-label="도면 정보 수정" onSubmit={event => { void saveMetadata(event); }}>
