@@ -108,7 +108,7 @@ export function PersonnelRequestPage({ client, workspace, online }: {
         <input required maxLength={160} className="min-h-11 rounded border px-3" value={draft.organization}
           onChange={event => setDraft({ ...draft, organization: event.target.value })} /></label>
       <label className="grid gap-1">요청 역할
-        <select className="min-h-11 rounded border px-3" value={draft.requestedRole}
+        <select aria-label="요청 역할" className="min-h-11 rounded border px-3" value={draft.requestedRole}
           onChange={event => setDraft({ ...draft, requestedRole: event.target.value as RequestedRole })}>
           {(["CON", "SUP", "OWN"] as const).map(role => <option key={role} value={role}>{roles[role]}</option>)}
         </select></label>
