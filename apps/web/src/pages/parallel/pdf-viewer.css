@@ -12,3 +12,10 @@
 .pdf-canvas-viewport.is-panning:active{cursor:grabbing;}
 .pdf-canvas-viewport.is-panning .pdf-canvas-stack{pointer-events:none;}
 .pdf-canvas-viewport.is-panning .pdf-pin-layer,.pdf-canvas-viewport.is-panning .pdf-markup-layer{pointer-events:none;}
+
+/* Keep long original filenames inside the page; the drawing itself can pan. */
+.pdf-toolbar{min-width:0;max-width:100%;}
+.pdf-source-label{flex:1 1 260px;min-width:0;max-width:100%;}
+.pdf-source-label select{flex:1;min-width:0;max-width:100%;width:100%;text-overflow:ellipsis;}
+.pdf-canvas-viewport{max-width:100%;}
+.pdf-state,.pdf-binding-label{overflow-wrap:anywhere;}

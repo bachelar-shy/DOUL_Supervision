@@ -1,3 +1,4 @@
+import { selectCommandEvidence } from "./command-evidence-helper";
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import { randomUUID, randomBytes } from "node:crypto";
 import { spawn, type ChildProcess } from "node:child_process";
@@ -243,7 +244,7 @@ async function openAndSubmitCommand(
   await page.getByRole("button", { name: label, exact: true }).click();
   const dialog = page.getByRole("dialog", { name: label });
   for (const [field, value] of Object.entries(payload)) await setCommandField(dialog, field, value);
-  if (evidenceIds.length) await dialog.getByLabel("처리 근거 증빙번호", { exact: true }).fill(evidenceIds.join(" "));
+  if (evidenceIds.length) await selectCommandEvidence(dialog,evidenceIds);
   const responsePromise = page.waitForResponse((response) => response.request().method() === "POST"
     && response.url().endsWith(`/api/projects/${projectId}/${collection}/${current.id}/${command.replaceAll("_", "-")}`));
   await dialog.locator(".modal-actions button.primary").click();

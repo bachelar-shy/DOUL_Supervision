@@ -54,5 +54,5 @@ test("시공사·발주처·관리자의 메뉴 범위는 서로 다르다", asy
   await expect(menu.getByText("감리보고", { exact: true })).toBeVisible();
   await expect(menu.getByText("현장기록", { exact: true })).toHaveCount(0);
   await role.selectOption("ADM");
-  await expect(menu.getByText("배치·권한", { exact: true })).toBeVisible();
+  await expect(menu.getByText("프로젝트 설정", { exact: true })).toBeVisible();
 });

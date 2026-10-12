@@ -1,3 +1,4 @@
+import { selectCommandEvidence } from "./command-evidence-helper";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -179,7 +180,7 @@ test("inspection results stay explicit, typed, localized, and unapproved until a
 
   // Empty results reach the actual server and fail atomically. The evidence
   // envelope is present so the failure is specifically the empty result set.
-  await modal.getByLabel("처리 근거 증빙번호").fill(evidenceId);
+  await selectCommandEvidence(modal,[evidenceId]);
   const emptySubmitPromise = page.waitForResponse((response) => response.url().includes(`/inspections/${inspection.id}/submit-results`)
     && response.request().method() === "POST");
   await modal.getByRole("button", { name: "확인 후 실행", exact: true }).click();

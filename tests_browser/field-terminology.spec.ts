@@ -7,7 +7,7 @@ test("Korean field workflows use consistent labels and retain official workflow 
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/#/today");
   await expect(page.getByLabel("시험 사용자 역할 선택")).toBeVisible();
-  await expect(page.getByText("시험 현장 · 실제 현장의 공식 기록이 아닙니다.", { exact: true })).toBeVisible();
+  await expect(page.getByText("합성 테스트 자료 · 실제 현장 증빙 아님", { exact: true })).toBeVisible();
   for (const route of ["today", "inspections", "capture", "observations", "issues", "actions", "schedule", "contract", "payment", "completion", "safety", "owner", "rfis", "documents", "registers", "parallel-test"]) {
     await page.goto(`/#/${route}`);
     await expect(page.locator("main")).toBeVisible();

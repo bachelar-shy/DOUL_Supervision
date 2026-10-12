@@ -1,3 +1,4 @@
+import { selectCommandEvidence } from "./command-evidence-helper";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { commands, fields } from "../apps/web/src/labels";
@@ -153,7 +154,7 @@ async function uiCommand(
       await input.fill(typeof value === "object" ? JSON.stringify(value) : String(value));
     }
   }
-  if (evidenceId) await dialog.getByLabel("처리 근거 증빙번호", { exact: true }).fill(evidenceId);
+  if (evidenceId) await selectCommandEvidence(dialog,[evidenceId]);
   const submitted = page.waitForResponse(response =>
     response.request().method() === "POST" &&
     response.url().endsWith(`/api/projects/${projectId}/${collection}/${current.id}/${command.replaceAll("_", "-")}`));

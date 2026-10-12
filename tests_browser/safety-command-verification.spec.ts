@@ -1,3 +1,4 @@
+import { selectCommandEvidence } from "./command-evidence-helper";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 
@@ -82,7 +83,7 @@ test("selected current SafetyStopOrder uses server actions and refuses a guarded
   await row.click();
   await expect(panel.locator(".detail-head h2")).toHaveText(title);
   const commandRegion = panel.locator('[data-ui-component="action-gate"]');
-  const acknowledge = commandRegion.getByRole("button", { name: /작업중지 확인/ });
+  const acknowledge = commandRegion.getByRole("button", { name: /중지 수령 확인/ });
   await expect(acknowledge).toBeEnabled();
 
   await acknowledge.click();
@@ -93,8 +94,8 @@ test("selected current SafetyStopOrder uses server actions and refuses a guarded
 
   await acknowledge.click();
   const acknowledgeDialog = page.getByRole("dialog");
-  const commandEvidence = acknowledgeDialog.getByLabel("처리 근거 증빙번호", { exact: true });
-  if (await commandEvidence.count()) await commandEvidence.fill(context.evidenceId);
+  const commandEvidence = acknowledgeDialog.locator(".command-evidence-picker");
+  if (await commandEvidence.count()) await selectCommandEvidence(acknowledgeDialog,[context.evidenceId]);
   const acknowledgeResponse = page.waitForResponse(response => response.request().method() === "POST" && response.url().endsWith(`/safety-stop-orders/${stop.id}/acknowledge-stop`));
   await acknowledgeDialog.getByRole("button", { name: "확인 후 실행", exact: true }).click();
   const acknowledgedCommand = await acknowledgeResponse;

@@ -45,6 +45,7 @@ export default function App() {
       setAuthorized(true);
     }} />;
   return <AppShell client={client} passwordMode={passwordMode} onLogout={(revoked) => {
+    if (client.session) return; // A late logout result must not discard a newer login.
     clearAllSessionFormDrafts();
     setAuthorized(false);
     setNotice(revoked ? undefined : "logoutUnverified");

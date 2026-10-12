@@ -1,3 +1,4 @@
+import { selectCommandEvidence } from "./command-evidence-helper";
 import { test, expect, type Locator } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
@@ -471,9 +472,7 @@ test("safety workspace keeps permit, stop, resume gate, and equipment states sep
     "현재 업무 단계의 근거 증빙을 선택하십시오.",
   );
   expect(evidenceCommandBody).toBeNull();
-  await evidenceDialog
-    .getByRole("textbox", { name: "처리 근거 증빙번호" })
-    .fill("EVD-COMMAND-001, EVD-COMMAND-002");
+  await selectCommandEvidence(evidenceDialog,["EVD-COMMAND-001","EVD-COMMAND-002"]);
   await evidenceDialog
     .getByRole("button", { name: "확인 후 실행", exact: true })
     .click();
@@ -752,7 +751,7 @@ test("register table header remains visible during long internal scroll", async 
   await page.waitForResponse((response) =>
     response.url().endsWith("/workspace") && response.ok(),
   );
-  await page.goto("/#/admin");
+  await page.goto("/#/registers");
   const tableScroll = page.locator(".template-register .table-scroll");
   await expect(tableScroll).toBeVisible();
 

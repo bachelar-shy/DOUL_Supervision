@@ -12,6 +12,10 @@ import type {
   Session,
   WorkItem,
   Workspace,
+  ProjectSettings,
+  AccessibleProjects,
+  ProjectCreationInput,
+  ProjectCreationResult,
 } from "./ui-contract";
 import { MockSupervisionClient } from "./mock-supervision-client";
 
@@ -103,6 +107,11 @@ export interface SupervisionClient {
   authMode(): Promise<"password" | "external" | "demo">;
   onAuthenticationExpired(handler: () => void): () => void;
   workspace(): Promise<Workspace>;
+  projectSettings(): Promise<ProjectSettings>;
+  saveProjectSettings(command: string, body: object, key?: string): Promise<ProjectSettings>;
+  createProject(body: ProjectCreationInput, key?: string): Promise<ProjectCreationResult>;
+  accessibleProjects(): Promise<AccessibleProjects>;
+  selectProject(projectId: string): Promise<Session>;
   execute(
     item: WorkItem,
     command: string,
@@ -162,6 +171,20 @@ class HttpSupervisionClient implements SupervisionClient {
   get session() {
     return this.client.session;
   }
+
+  projectSettings() { return this.client.request<ProjectSettings>(this.client.path("/settings")); }
+  saveProjectSettings(command: string, body: object, key = newKey()) {
+    return this.client.request<ProjectSettings>(this.client.path(`/settings/commands/${command}`), {
+      method: "POST", headers: { "Idempotency-Key": key }, body: JSON.stringify(body),
+    });
+  }
+  accessibleProjects() { return this.client.request<AccessibleProjects>("/auth/projects"); }
+  createProject(body: ProjectCreationInput, key = newKey()) {
+    return this.client.request<ProjectCreationResult>(this.client.path("/settings/projects"), {
+      method: "POST", headers: { "Idempotency-Key": key }, body: JSON.stringify(body),
+    });
+  }
+  selectProject(projectId: string) { return this.client.selectProject(projectId); }
 
   login(role: HumanRole, projectId?: string) {
     return this.client.login(role, projectId);
@@ -303,10 +326,7 @@ class HttpSupervisionClient implements SupervisionClient {
       }, signal: AbortSignal.timeout(120000) },
     );
     if (!response.ok) {
-      if (response.status === 401 && session.mode === "PASSWORD") {
-        this.client.session = null;
-        this.client.onUnauthorized?.();
-      }
+      if (response.status === 401) this.client.expireSession(session.accessToken);
       throw new Error(response.status === 501 ? "DOCUMENT_EXPORT_NOT_CONFIGURED" :
         response.status === 401 ? "DOCUMENT_EXPORT_UNAUTHENTICATED" :
         response.status === 403 || response.status === 404 ? "DOCUMENT_EXPORT_ACCESS_DENIED" :

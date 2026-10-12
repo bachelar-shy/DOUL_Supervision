@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { CalendarDays, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {
+  AccessibleProjects,
   CommandDescriptor,
   Fields,
   HumanRole,
@@ -68,6 +69,8 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     return t(value.labelKey ?? "", { defaultValue: value.label });
   };
   const [role, setRole] = useState<HumanRole>(passwordMode ? client.session?.actor.actorGroup ?? "SUP" : "SUP");
+  const [approvedProjects,setApprovedProjects]=useState<AccessibleProjects["items"]>([]);
+  const [projectSwitching,setProjectSwitching]=useState(false);
   const [demoProjects, setDemoProjects] = useState<DemoProject[]>([]);
   const [projectChoice, setProjectChoice] = useState("");
   const [projectDirectoryReady, setProjectDirectoryReady] = useState(client.kind !== "http" || passwordMode);
@@ -86,6 +89,14 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     try { return window.localStorage.getItem("doul.ui.sidebar.collapsed.v1") === "true"; }
     catch { return false; }
   });
+  const [projectViewport,setProjectViewport]=useState(() => window.innerWidth < 768 ? "phone" : window.innerWidth <= 1100 ? "tablet" : "desktop");
+  useEffect(()=>{
+    const resize=()=>setProjectViewport(window.innerWidth < 768 ? "phone" : window.innerWidth <= 1100 ? "tablet" : "desktop");
+    window.addEventListener("resize",resize);
+    return ()=>window.removeEventListener("resize",resize);
+  },[]);
+  const hasProjectChoices=passwordMode ? approvedProjects.length>1 : demoProjects.length>1;
+  const projectPickerInHeader=hasProjectChoices&&(projectViewport==="tablet"||(projectViewport==="desktop"&&sidebarCollapsed));
   const navigationCopy = quietGraphiteNavigationCopy[quietGraphiteLanguage(i18n.resolvedLanguage ?? i18n.language)];
   const [dialog, setDialog] = useState<{
     item: WorkItem;
@@ -115,6 +126,32 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
       if (current()) setLoading(false);
     }
   }, [client, t]);
+  useEffect(() => {
+    if (!passwordMode || client.kind !== "http") return;
+    let current = true;
+    void client.accessibleProjects().then(directory => {
+      if (current) setApprovedProjects(directory.items);
+    }).catch(() => { if (current) setApprovedProjects([]); });
+    return () => { current = false; };
+  }, [client, passwordMode, workspace?.project.id, workspace?.project.name]);
+  async function switchProject(projectId: string) {
+    if (projectId === client.session?.projectId) return true;
+    if (projectSwitching || !online) return false;
+    // Retain the current workspace until the server has approved the new session.
+    ++sequence.current; ++refreshSequence.current;
+    setProjectSwitching(true); setDialog(null); setSelected(null); setError("");
+    try {
+      const session = await client.selectProject(projectId);
+      activeRole.current = session.actor.actorGroup;
+      setRole(session.actor.actorGroup); setWorkspace(null); setLoading(true);
+      setProjectChoice(session.projectId); nav("today"); setMenu(false);
+      return true;
+    } catch (e) {
+      setError(e instanceof ApiError ? reasonLabel(e.detail.code) : t("app.error.connection"));
+      setLoading(false);
+      return false;
+    } finally { setProjectSwitching(false); }
+  }
   useEffect(() => {
     if (client.kind !== "http" || passwordMode) {
       setProjectDirectoryReady(true);
@@ -280,6 +317,41 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
       setError(e instanceof ApiError ? reasonLabel(e.detail.code) : t("app.error.connection"));
     }
   }
+  function renderProjectPicker() {
+    return <>
+            {passwordMode && approvedProjects.length > 1 && <label className="project-switch">
+              프로젝트 선택
+              <select aria-label="프로젝트 선택" value={client.session?.projectId ?? ""}
+                disabled={projectSwitching || !online} onChange={e=>void switchProject(e.target.value)}>
+                {approvedProjects.map(project=><option key={project.projectId} value={project.projectId}>{project.name}</option>)}
+              </select>
+            </label>}
+                {!passwordMode && demoProjects.length > 1 && (
+                  <label className="project-switch">
+                    시험 프로젝트{" "}
+                    <select aria-label="프로젝트 선택" value={projectChoice}
+                      onChange={(e) => {
+                        if (e.target.value === projectChoice) return;
+                        ++sequence.current;
+                        setDialog(null);
+                        setSelected(null);
+                        setError("");
+                        setWorkspace(null);
+                        setLoading(true);
+                        setProjectChoice(e.target.value);
+                        nav("today");
+                        setMenu(false);
+                      }}>
+                      {demoProjects.map((project) => (
+                        <option key={project.projectId} value={project.projectId}>
+                          {project.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+    </>;
+  }
   return (
     <div className={"app-shell" + (sidebarCollapsed ? " sidebar-collapsed" : "")} data-design-system="quiet-graphite-a">
       <aside id="side-navigation" className={"sidebar " + (menu ? "open" : "")} data-navigation-collapsed={String(sidebarCollapsed)}>
@@ -306,30 +378,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
           <div>
             <strong>{workspace?.project.name ?? t("app.sampleSite")}</strong>
             {workspace?.demo && <small>{t("app.sampleData")}</small>}
-                {!passwordMode && demoProjects.length > 1 && (
-                  <label className="project-switch">
-                    시험 프로젝트{" "}
-                    <select aria-label="프로젝트 선택" value={projectChoice}
-                      onChange={(e) => {
-                        if (e.target.value === projectChoice) return;
-                        ++sequence.current;
-                        setDialog(null);
-                        setSelected(null);
-                        setError("");
-                        setWorkspace(null);
-                        setLoading(true);
-                        setProjectChoice(e.target.value);
-                        nav("today");
-                        setMenu(false);
-                      }}>
-                      {demoProjects.map((project) => (
-                        <option key={project.projectId} value={project.projectId}>
-                          {project.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
+            {!projectPickerInHeader && renderProjectPicker()}
           </div>
         </div>
         <NavigationList
@@ -371,9 +420,9 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
           >
             <Icon name="layers" />
           </button>
-          <div className="breadcrumbs">
+          {projectPickerInHeader ? <div className="header-project-picker">{renderProjectPicker()}</div> : <div className="breadcrumbs">
             DOUL / <b>{routeLabel(routes.find((x) => x.id === safeRoute))}</b>
-          </div>
+          </div>}
           <div className="top-actions">
             <span className={"connection " + (!online ? "offline" : "")}>
               {online ? t("app.connection.online") : t("app.connection.offline")}
@@ -430,7 +479,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               <span>{t("app.demo.mockDetail")}</span>
             </>
           ) : (
-            <>{t("app.demo.live")}</>
+            <>{workspace?.context.dataClassification === "SYNTHETIC_TEST_NOT_SITE_EVIDENCE" ? "합성 테스트 자료 · 실제 현장 증빙 아님" : t("app.demo.live")}</>
           )}
         </div>
         {!online && (
@@ -673,7 +722,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                 <RegisterPage client={client} workspace={workspace} />
               )}
               {safeRoute === "admin" && (
-                <AdminPage client={client} workspace={workspace} />
+                <AdminPage key={workspace.project.id} client={client} workspace={workspace} online={online} onChanged={refresh} onProjectCreated={async projectId=>{const directory=await client.accessibleProjects();setApprovedProjects(directory.items);if(!await switchProject(projectId))throw new Error("Project selection did not complete");nav("admin");}} />
               )}
               {safeRoute === "parallel-test" && (
                 <ParallelTestPage key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} online={online} onNavigate={nav} onChanged={refresh} onSelect={setSelected} onOpenCommand={(item, action) => setDialog({ item, action })} />

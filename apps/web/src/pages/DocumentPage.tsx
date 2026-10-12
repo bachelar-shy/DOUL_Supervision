@@ -10,6 +10,7 @@ import { DocumentWorkspaceTemplate } from "../ui/templates";
 import { PageBoundary } from "./PageBoundary";
 import { Icon } from "./shared";
 import { recordTitle } from "./record-utils";
+import { TranslationPreviewPanel } from "./TranslationPreviewPanel";
 import { DocumentSigningPanel } from "./DocumentSigningPanel";
 import { DocumentTableEditor, buildDocumentData, type DocumentTableValues } from "./DocumentTableEditor";
 import { documentAuthoringForms, eligibleDocumentSources, sourceSelectionForForm } from "./document-authoring-source";
@@ -310,6 +311,7 @@ function DocumentEditor({ client, workspace, online, refresh }: DocumentPageProp
             {err || exportError}
           </div>
         )}
+        {import.meta.env.VITE_DOUL_UI_SCOPE === "full" && <TranslationPreviewPanel client={client} workspace={workspace}/>}
       </form>
       <section className="preview-pane">
         <div className="preview-header">

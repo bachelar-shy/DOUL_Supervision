@@ -22,3 +22,15 @@ test("lists only readable evidence PDFs and labels only exact drawing-bound sour
   expect(sources[1]).toMatchObject({ name: "other.pdf", drawing: false });
   expect(sources[2]).toMatchObject({ name: "old.pdf", drawing: false });
 });
+
+test("construction purpose preserves original filename and does not invent a drawing binding", () => {
+  const original = {
+    ...workspace,
+    items: [{ machine: "evidence", record: { id: "user-original", metadata: {
+      name: "LAYEX_For Bidding_Architecture_260911.pdf", mimeType: "application/pdf", documentPurpose: "construction",
+    } } }],
+  } as unknown as Workspace;
+  expect(listPdfEvidenceSources(original)[0]).toMatchObject({
+    name: "LAYEX_For Bidding_Architecture_260911.pdf", purpose: "construction", drawing: false,
+  });
+});
