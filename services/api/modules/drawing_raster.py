@@ -55,3 +55,10 @@ def page_image(pdf_path: Path, page: int, *, thumb: bool = False) -> bytes:
     if not data.startswith(b"\xff\xd8\xff") or len(data) > MAX_PREVIEW_BYTES:
         raise PdfSheetError("이미지가 크기 제한을 초과하거나 올바르지 않습니다")
     return data
+
+
+def pdf_page_text(pdf_path: Path, page: int) -> str:
+    """Extract only the selected page for titleblock indexing, not vector display."""
+    result = _run(["pdftotext", "-f", str(page), "-l", str(page),
+                   "-layout", str(pdf_path), "-"], RENDER_TIMEOUT)
+    return result.stdout.decode("utf-8", errors="replace")[:250000]
