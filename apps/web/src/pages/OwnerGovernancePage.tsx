@@ -199,7 +199,7 @@ export function OwnerGovernancePage({
 
               <h2 className="detail-title">{recordTitle(detail!)}</h2>
 
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div className="rounded-sm border border-border bg-slate-50 p-3">
                   <small className="block text-slate-400">
                     {tr("owner.meta.sourceVersion")}
@@ -349,7 +349,7 @@ export function OwnerGovernancePage({
               {impactRows(impact).length ? (
                 <div className="mt-5">
                   <h3 className="subheading">{tr("owner.impact.title")}</h3>
-                  <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {impactRows(impact).map((row) => (
                       <div
                         key={row.label}
