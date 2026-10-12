@@ -155,6 +155,7 @@ export interface SupervisionClient {
   documentExport(documentId: string, format: "pdf" | "docx"): Promise<Blob>;
   evidenceContent(evidenceId: string): Promise<Blob>;
   drawingPdfContent(bindingId: string): Promise<Blob>;
+  drawingSheetImage(sheetId: string, size: "preview" | "thumb", signal?: AbortSignal): Promise<Blob>;
   path(suffix: string): string;
   request<T>(path: string, init?: RequestInit): Promise<T>;
 }
@@ -379,6 +380,27 @@ class HttpSupervisionClient implements SupervisionClient {
     const blob = await response.blob();
     if (blob.size > 20 * 1024 * 1024 || blob.type !== "application/pdf") {
       throw new Error("연결된 원본의 PDF 형식 또는 20 MiB 제한을 확인하십시오.");
+    }
+    return blob;
+  }
+
+  async drawingSheetImage(sheetId: string, size: "preview" | "thumb", signal?: AbortSignal): Promise<Blob> {
+    const session = this.client.session;
+    if (!session) throw new Error("로그인이 필요합니다.");
+    const response = await fetch(
+      this.baseUrl + this.client.path(`/drawing-sheets/${encodeURIComponent(sheetId)}/image?size=${size}`),
+      {
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+          "X-RoleAssignment-Id": session.actor.roleAssignmentId,
+        },
+        signal,
+      },
+    );
+    if (!response.ok) throw new Error("도면 이미지 로딩 실패 (" + response.status + ")");
+    const blob = await response.blob();
+    if (!blob.type.startsWith("image/jpeg") || blob.size > 4 * 1024 * 1024) {
+      throw new Error("도면 이미지 형식이 올바르지 않습니다.");
     }
     return blob;
   }

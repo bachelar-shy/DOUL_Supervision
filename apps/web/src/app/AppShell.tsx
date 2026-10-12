@@ -50,8 +50,7 @@ import { quietGraphiteLanguage, quietGraphiteNavigationCopy } from "../design/qu
 // must explicitly opt into all modules with VITE_DOUL_UI_SCOPE=full.
 export const fieldCoreMode = import.meta.env.VITE_DOUL_UI_SCOPE !== "full";
 
-const DrawingReviewPage = lazy(() => import("../pages/DrawingReviewPage").then((module) => ({ default: module.DrawingReviewPage })));
-const PdfViewerPanel = lazy(() => import("../pages/parallel/PdfViewerPanel").then((module) => ({ default: module.PdfViewerPanel })));
+const DrawingSheetWorkspace = lazy(() => import("../pages/DrawingSheetWorkspace").then((module) => ({ default: module.DrawingSheetWorkspace })));
 
 function millisecondsUntilNextLocalDay(now: Date) {
   const next = new Date(now);
@@ -747,23 +746,17 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                   onOpenCommand={(item, action) => setDialog({ item, action })}
                 />
               )}
-              {safeRoute === "drawings" && fieldCoreMode && (
-                <div data-ui-page="field-drawings">
+              {safeRoute === "drawings" && (
+                <div data-ui-page="field-drawings" className="drawing-sheet-shell">
                   <Suspense fallback={<div className="loading-panel">{t("app.loading.workspace")}</div>}>
-                    <PdfViewerPanel client={client} workspace={workspace} readOnly />
+                    <DrawingSheetWorkspace
+                      key={`${workspace.project.id}:${workspace.role.id}:drawing-sheets`}
+                      client={client} workspace={workspace}
+                      onChanged={refresh} onSelect={setSelected} onNavigate={nav}
+                      onOpenCommand={(item, action) => setDialog({ item, action })}
+                    />
                   </Suspense>
                 </div>
-              )}
-              {safeRoute === "drawings" && !fieldCoreMode && (
-                <DrawingReviewPage
-                  key={`${workspace.project.id}:${workspace.role.id}:drawings`}
-                  client={client}
-                  workspace={workspace}
-                  onChanged={refresh}
-                  onSelect={setSelected}
-                  onNavigate={nav}
-                  onOpenCommand={(item, action) => setDialog({ item, action })}
-                />
               )}
               {safeRoute === "corrections" && (
                 <div data-ui-page="field-corrections">
