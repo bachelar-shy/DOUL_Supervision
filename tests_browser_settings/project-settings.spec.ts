@@ -119,7 +119,9 @@ test("approved test project switches real sessions and shows synthetic data and 
   await chooser.selectOption({label:"DOUL 테스트 프로젝트 · 합성자료"});
   await expect(page.getByText("합성 테스트 자료 · 실제 현장 증빙 아님",{exact:true})).toBeVisible();
   await settings(page);await expect(panel(page,"기본정보").getByLabel("프로젝트명",{exact:true})).toHaveValue("DOUL 테스트 프로젝트 · 합성자료");
-  await page.goto("/#/drawings");await expect(page.locator("[data-ui-template=drawing] select").first()).toContainText("SYNTHETIC-A201.pdf");
+  await page.goto("/#/drawings");
+  await page.getByRole("button", { name: "기존 PDF 검토" }).click();
+  await expect(page.locator("[data-ui-template=drawing] select").first()).toContainText("SYNTHETIC-A201.pdf");
   await page.getByRole("combobox",{name:"PDF 원본 선택",exact:true}).selectOption({label:"증빙 · SYNTHETIC-A201.pdf"});
   await expect(page.locator("[data-ui-template=drawing] canvas").first()).toBeVisible();
 });

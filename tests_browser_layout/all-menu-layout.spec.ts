@@ -46,7 +46,11 @@ for (const role of ["ADM", "CON", "SUP", "OWN"] as const) {
     for (const route of allMenus[role]) {
       await page.evaluate(id => { location.hash = "#/" + id; }, route);
       await expect(page.locator('.app-shell[data-workspace-route="' + route + '"]')).toBeVisible();
-      await expect(main.locator(".page-heading h1")).toBeVisible();
+      if (route === "drawings") {
+        await expect(main.locator('[data-ui-component="drawing-sheet-workspace"] .drawing-sheet-commandbar')).toBeVisible();
+      } else {
+        await expect(main.locator(".page-heading h1")).toBeVisible();
+      }
       await expect(sidebar.locator('nav.doul-navigation button[data-route="' + route + '"]'))
         .toHaveAttribute("aria-current", "page");
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2);

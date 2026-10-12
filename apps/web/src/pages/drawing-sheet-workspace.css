@@ -259,7 +259,8 @@
   }
   .drawing-sheet-command-left { flex:1; }
   .drawing-sheet-command-right { flex:none; }
-  .drawing-sheet-command-right .draw-command:last-child { display:none; }
+  .drawing-sheet-command-right .draw-original { width:34px; padding:5px; flex:none; }
+  .drawing-sheet-command-right .draw-original span { display:none; }
   .drawing-board-bottom { padding:3px 7px; }
   .drawing-pin-instruction { left:50px; right:6px; max-width:none; transform:none; white-space:normal; }
 }

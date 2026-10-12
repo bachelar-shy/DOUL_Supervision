@@ -17,13 +17,14 @@ test("감리자 첫 화면에는 현장기록·도면·검측·조치·보고만
   expect(errors).toEqual([]);
 });
 
-test("도면조회는 별도 메뉴에서 PDF를 읽기 전용으로 제공한다", async ({ page }) => {
+test("도면조회는 별도 메뉴에서 개별 시트 목록과 기존 PDF 도구를 제공한다", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/#/drawings");
   await expect(page.locator('[data-ui-page="field-drawings"]')).toBeVisible();
-  await expect(page.getByText("도면의 승인 상태·개정·현장 배포 여부는 별도로 확인하십시오.")).toBeVisible();
-  await expect(page.locator('[data-testid="pdf-upload"]')).toHaveCount(0);
+  await expect(page.locator('[data-ui-component="drawing-sheet-workspace"]')).toBeVisible();
+  await expect(page.getByRole("button", { name: "기존 PDF 검토" })).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "도면 검색" })).toBeVisible();
   expect(errors).toEqual([]);
 });
 

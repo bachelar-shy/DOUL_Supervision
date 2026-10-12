@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type PointerEvent, type MouseEvent } from "react";
 import {
   ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, CircleDot, ClipboardCheck,
-  FilePlus2, Grid2X2, Layers3, List, MapPin, Maximize, MousePointer2,
+  FilePlus2, FileText, Grid2X2, Layers3, List, MapPin, Maximize, MousePointer2,
   Pencil, Plus, RotateCcw, Search, Upload, X, ZoomIn, ZoomOut,
 } from "lucide-react";
 import type { SupervisionClient } from "../data/supervision-client";
@@ -316,9 +316,10 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
             <Layers3 size={15} aria-hidden="true" /> 이슈 목록
           </button>
         </>}
-        {mode !== "original" && <button type="button" className="draw-command"
+        {mode !== "original" && <button type="button" className="draw-command draw-original"
+          aria-label="기존 PDF 검토"
           onClick={() => { setPinChoice(null); setMode("original"); }}>
-          기존 PDF 검토
+          <FileText size={15} aria-hidden="true" /><span>기존 PDF 검토</span>
         </button>}
       </div>
     </div>

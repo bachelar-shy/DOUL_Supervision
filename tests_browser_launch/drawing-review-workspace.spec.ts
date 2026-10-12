@@ -8,13 +8,11 @@ test("오늘 화면에서 읽기 전용 도면조회로 이동하고 원본 선�
   await expect(page).toHaveURL(/#\/drawings$/);
   const review = page.locator('[data-ui-page="field-drawings"]');
   await expect(review).toBeVisible();
-  await expect(review.getByRole("searchbox")).toBeVisible();
-  await expect(review.getByText("도면의 승인 상태·개정·현장 배포 여부는 별도로 확인하십시오.")).toBeVisible();
+  await expect(review.locator('[data-ui-component="drawing-sheet-workspace"]')).toBeVisible();
+  await review.getByRole("searchbox", { name: "도면 검색" }).fill("WWT");
+  await expect(review.getByRole("searchbox", { name: "도면 검색" })).toHaveValue("WWT");
+  await review.getByRole("button", { name: "기존 PDF 검토" }).click();
+  await expect(review.getByRole("heading", { name: "도면 PDF" })).toBeVisible();
   await expect(review.getByRole("combobox", { name: "PDF 원본 선택" })).toBeVisible();
-  await review.getByRole("searchbox").fill("WWT");
-  await expect(review.getByRole("searchbox")).toHaveValue("WWT");
-  await expect(review.locator('[data-testid="pdf-upload"]')).toHaveCount(0);
-  await expect(review.locator(".pdf-markup-controls, .pdf-pin-controls")).toHaveCount(0);
-  await expect(review.getByRole("tab", { name: "도면 관리" })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
