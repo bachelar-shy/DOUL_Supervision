@@ -54,6 +54,7 @@ def _dates(start, end, timezone):
 def install_project_settings_routes(app, store, *, identity, role_for, key_for, body_json):
     def authorize(project_id, actor, request):
         role = role_for(actor, project_id, request.headers.get('x-roleassignment-id'))
+        require(role['actorGroup'] == 'ADM', 'NOT_AUTHORIZED', 'Project settings belong to the project administrator')
         project = store.engine.get('Project', project_id)
         # Project-wide settings require explicit project-wide administration scope.
         store.engine.authorize(project, 'manage_project_roles', actor['partyId'], role['id'])
