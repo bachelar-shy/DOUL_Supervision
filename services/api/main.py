@@ -353,6 +353,9 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
     from services.api.modules.photo_library import install_photo_library_routes
     install_photo_library_routes(app, store, identity=identity, role_for=role_for,
                                  key_for=key_for, body_json=body_json)
+    from services.api.modules.photo_links import install_photo_link_routes
+    install_photo_link_routes(app, store, identity=identity, role_for=role_for,
+                              key_for=key_for, body_json=body_json)
     from services.api.modules.field_checklists import install_field_checklist_routes
     install_field_checklist_routes(app, store, identity=identity, role_for=role_for,
                                    key_for=key_for, body_json=body_json)

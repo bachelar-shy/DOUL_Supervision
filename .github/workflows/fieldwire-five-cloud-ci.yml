@@ -9,6 +9,15 @@ on:
       - 'services/api/modules/work_areas.py'
       - 'services/api/modules/field_offline.py'
       - 'services/api/modules/task_discussions.py'
+      - 'services/api/modules/photo_links.py'
+      - 'apps/web/src/data/field-media-cache.ts'
+      - 'apps/web/src/data/drawing-sheet-client.ts'
+      - 'apps/web/src/pages/OfflineMediaPanel.tsx'
+      - 'apps/web/src/pages/FieldOfflineQueue.tsx'
+      - 'apps/web/src/pages/FieldPinPhotosPanel.tsx'
+      - 'apps/web/src/pages/FieldDiscussionAlertsPanel.tsx'
+      - 'apps/web/src/pages/DrawingSheetWorkspace.tsx'
+      - 'design/development/fieldwire-second-wave-20261013.md'
       - 'apps/web/src/app/AppShell.tsx'
       - 'apps/web/src/pages/WorkbenchPage.tsx'
       - 'apps/web/src/pages/FieldPhotoLibrary.tsx'
@@ -45,7 +54,6 @@ jobs:
         run: |
           python -m venv .venv
           .venv/bin/pip install -r services/api/requirements.lock
-          npm install --global npm@12.2.0
           npm ci
       - name: Test all five field business contracts and HTTP flows
         run: |

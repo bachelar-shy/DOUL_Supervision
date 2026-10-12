@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { SupervisionClient } from "../data/supervision-client";
 import type { Workspace } from "../data/ui-contract";
 import "./field-photo-library.css";
+import { PhotoLinksForEvidence } from "./FieldPinPhotosPanel";
 
 type Photo = {
   id: string; name: string; mediaType: "photo" | "video"; locationId?: string;
@@ -115,6 +116,7 @@ export function FieldPhotoLibrary({ client, workspace, online }: {
       <section role="dialog" aria-modal="true" aria-label="현장사진 상세" className="fw-photo-dialog" onClick={e => e.stopPropagation()}>
         <header><h3>{selected.name}</h3><button type="button" onClick={() => setSelected(null)} aria-label="닫기">×</button></header>
         <Preview client={client} id={selected.id} mediaType={selected.mediaType} large />
+        <PhotoLinksForEvidence client={client} evidenceId={selected.id} />
         <dl><dt>촬영일</dt><dd>{take(selected.capturedAt) || "정보 없음"}</dd><dt>업로드일</dt><dd>{take(selected.uploadedAt) || "정보 없음"}</dd>
           <dt>공사구역</dt><dd>{locationNames.get(selected.locationId || "") || "미지정"}</dd><dt>업로드 담당자</dt><dd>{selected.submittedBy || "정보 없음"}</dd></dl>
         {canTag && <div className="fw-photo-tags"><label>사진 태그<input value={editingTags} aria-label="사진 태그 수정" onChange={e => setEditingTags(e.target.value)} placeholder="콘크리트, 2층, 검측" /></label>

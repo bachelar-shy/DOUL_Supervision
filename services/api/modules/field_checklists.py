@@ -263,8 +263,10 @@ def install_field_checklist_routes(app, store, *, identity, role_for, key_for, b
     @app.post("/projects/{project_id}/field/checklists/runs/{run_id}/answers")
     async def save_answers(project_id: str, run_id: str, request: Request):
         body = await body_json(request)
-        require(set(body) == {"expectedVersion", "answers"}
-                and type(body["expectedVersion"]) is int, "INVALID_REQUEST", "Expected version and answers required")
+        require(isinstance(body, dict) and {"expectedVersion", "answers"} <= set(body)
+                and set(body) <= {"expectedVersion", "answers", "evidenceRefs"}
+                and type(body["expectedVersion"]) is int,
+                "INVALID_REQUEST", "Expected version, answers and optional item photos required")
         key = key_for(request)
         with store.transaction(write=True):
             actor, role = context(project_id, request)
@@ -278,9 +280,32 @@ def install_field_checklist_routes(app, store, *, identity, role_for, key_for, b
             if previous is not None: return previous
             require(run["version"] == body["expectedVersion"], "REFERENCE_STALE", "Checklist run changed")
             normalized = prepare_answers(run["templateSnapshot"], body["answers"])["answers"]
+            attached = body.get("evidenceRefs", {})
+            require(isinstance(attached, dict) and set(attached) <= set(normalized),
+                    "INVALID_REQUEST", "Photos must correspond to answered checklist items")
+            for item_key, refs in attached.items():
+                require(isinstance(refs, list) and len(refs) <= 8,
+                        "INVALID_REQUEST", "Maximum eight photos per checklist item")
+                seen = set()
+                for ref in refs:
+                    require(isinstance(ref, dict)
+                            and set(ref) == {"objectType", "objectId", "version"}
+                            and ref.get("objectType") == "Evidence"
+                            and isinstance(ref.get("objectId"), str)
+                            and type(ref.get("version")) is int and ref["version"] >= 1
+                            and ref["objectId"] not in seen,
+                            "REFERENCE_INVALID", "Versioned, unique photo references required")
+                    seen.add(ref["objectId"])
+                    evidence = store.engine.resolve(ref, project_id)
+                    require(evidence.get("mediaType") in {"photo", "video"},
+                            "REFERENCE_TYPE_INVALID", "Only photo/video evidence is supported")
+                    store.engine.authorize_read(evidence, actor["partyId"], role["id"])
             for item_key, value in normalized.items():
+                previous_answer = run["answers"].get(item_key, {})
+                refs = attached[item_key] if item_key in attached else previous_answer.get("evidenceRefs", [])
                 run["answers"][item_key] = {"value": value, "checkedBy": actor["partyId"],
-                                            "checkedAt": store.engine.at()}
+                                            "checkedAt": store.engine.at(),
+                                            "evidenceRefs": deepcopy(refs)}
             run["version"] += 1
             run["updatedAt"] = store.engine.at()
             store.meta.setdefault("fieldChecklistAudit", {}).setdefault(project_id, []).append(

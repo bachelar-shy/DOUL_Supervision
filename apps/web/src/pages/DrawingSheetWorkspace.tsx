@@ -12,6 +12,7 @@ import {
   type DrawingPinKind, type DrawingSet, type DrawingSheet, type DrawingSheetPin,
 } from "../data/drawing-sheet-client";
 import "./drawing-sheet-workspace.css";
+import { FieldPinPhotosPanel } from "./FieldPinPhotosPanel";
 
 const OriginalDrawingReviewPage = lazy(() => import("./DrawingReviewPage").then(mod => ({ default: mod.DrawingReviewPage })));
 
@@ -529,7 +530,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
               ? <button type="button" className="draw-command" onClick={() => openLinkedPin(selectedPin)}>연결된 업무 열기 →</button>
               : <p>공식 업무와 연결되지 않은 도면 마크입니다.</p>}
             <h4>현장 기록</h4>
-            <p>현장 사진 및 검측 결과는 연결된 업무에서 확인합니다. 자료가 없으면 임의로 표시하지 않습니다.</p>
+            <FieldPinPhotosPanel key={selectedPin.id} client={client} sheetId={selected.id} pin={selectedPin} />
           </div>
           <aside className="drawing-issue-dialog-properties">
             <h4>속성</h4>
