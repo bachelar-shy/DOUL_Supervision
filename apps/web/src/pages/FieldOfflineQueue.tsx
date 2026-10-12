@@ -4,6 +4,7 @@ import type { CommandDescriptor, Fields, WorkItem, Workspace } from "../data/ui-
 import { type FieldOutboxItem, listFieldCommands, queueFieldCommand,
   removeFieldCommand, updateFieldCommand } from "../data/field-outbox";
 import { CommandModal } from "./CommandModal";
+import { OfflineMediaPanel } from "./OfflineMediaPanel";
 import "./field-offline-queue.css";
 
 type Choice = { item: WorkItem; action: CommandDescriptor; key: string };
@@ -124,6 +125,8 @@ export function FieldOfflineQueue({ client, workspace, online, onChanged }: {
     </ol>
     {!outbox.length && <p className="fw-offline-empty">미전송 업무가 없습니다.</p>}
     <p className="fw-offline-note">오프라인에서 작성한 내용은 공식 승인·검측 완료가 아닙니다. 재연결 시 서버 권한 및 이전 버전을 검증합니다.</p>
+    <OfflineMediaPanel key={identity.projectId + ":" + identity.roleId + ":" + identity.partyId}
+      client={client} scope={identity} online={online} />
     {dialog && <CommandModal key={dialog.key} dialog={dialog} workspace={workspace}
       submitLabel="기기에 보관" onClose={() => setDialog(null)}
       onSubmit={async (payload,evidenceIds) => { await save(payload,evidenceIds); }} />}
