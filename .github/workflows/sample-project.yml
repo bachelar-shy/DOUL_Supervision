@@ -41,7 +41,8 @@ permissions:
 
 jobs:
   synthetic-sample-api-browser:
-    runs-on: ubuntu-24.04
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
     timeout-minutes: 25
     steps:
       - name: Checkout
@@ -87,6 +88,7 @@ jobs:
         env:
           DOUL_TEST_API_TARGET: http://127.0.0.1:8794
           DOUL_SAMPLE_BASE_URL: http://127.0.0.1:5187
+          VITE_DOUL_UI_SCOPE: full
         run: |
           set -eu
           .venv/bin/python -m services.api --demo --database .local/DOUL_SAMPLE_WWT.sqlite3 --port 8794 > .local/sample-api.log 2>&1 &

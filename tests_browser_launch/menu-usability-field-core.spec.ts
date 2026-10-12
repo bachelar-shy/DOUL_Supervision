@@ -35,6 +35,8 @@ test("field-core drawing entry is read-only and does not expose development-only
   await expect(page).toHaveURL(/#\/drawings$/);
   await expect(drawings).toHaveAttribute("aria-current", "page");
   await expect(page.locator('[data-ui-page="field-drawings"]')).toBeVisible();
+  // Wait for the lazy viewer before checking that editing tools are absent.
+  await expect(page.getByText("도면의 승인 상태·개정·현장 배포 여부는 별도로 확인하십시오.")).toBeVisible();
   await expect(page.locator('[data-testid="pdf-upload"]')).toHaveCount(0);
   await expect(page.locator('[data-ui-page="drawings"]')).toHaveCount(0);
 });

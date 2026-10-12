@@ -42,13 +42,13 @@ import {
 import { formatLongDate } from "../i18n/format";
 import { quietGraphiteLanguage, quietGraphiteNavigationCopy } from "../design/quiet-graphite-copy";
 
-// Production UI defaults to the agreed five field workflows; development keeps
-// full module coverage. Operators can explicitly override with VITE_DOUL_UI_SCOPE.
-export const fieldCoreMode =
-  import.meta.env.VITE_DOUL_UI_SCOPE === "field-core" ||
-  (import.meta.env.PROD && import.meta.env.VITE_DOUL_UI_SCOPE !== "full");
+// The user-facing app always defaults to the agreed five field workflows,
+// including the development server used for site trials. Internal verification
+// must explicitly opt into all modules with VITE_DOUL_UI_SCOPE=full.
+export const fieldCoreMode = import.meta.env.VITE_DOUL_UI_SCOPE !== "full";
 
 const DrawingReviewPage = lazy(() => import("../pages/DrawingReviewPage").then((module) => ({ default: module.DrawingReviewPage })));
+const PdfViewerPanel = lazy(() => import("../pages/parallel/PdfViewerPanel").then((module) => ({ default: module.PdfViewerPanel })));
 
 function millisecondsUntilNextLocalDay(now: Date) {
   const next = new Date(now);
@@ -594,7 +594,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               {safeRoute === "drawings" && fieldCoreMode && (
                 <div data-ui-page="field-drawings">
                   <Suspense fallback={<div className="loading-panel">{t("app.loading.workspace")}</div>}>
-                    <DrawingReviewPage client={client} workspace={workspace} onNavigate={nav} onChanged={refresh} onSelect={setSelected} onOpenCommand={(item, action) => setDialog({ item, action })} />
+                    <PdfViewerPanel client={client} workspace={workspace} readOnly />
                   </Suspense>
                 </div>
               )}

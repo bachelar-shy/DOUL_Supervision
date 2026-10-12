@@ -14,7 +14,8 @@ export default defineConfig({
     command: "npm run web:mock -- --host 127.0.0.1 --port 5198",
     url: "http://127.0.0.1:5198",
     reuseExistingServer: false,
-    env: { VITE_DOUL_UI_SCOPE: "field-core" },
+    // Exercise the real default, rather than forcing the desired scope.
+    env: { VITE_DOUL_UI_SCOPE: "" },
     timeout: 30000,
   },
 });

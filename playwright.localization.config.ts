@@ -19,6 +19,7 @@ export default defineConfig({
   reporter: [["list"]],
   webServer: {
     command: "npm run web:mock -- --port 5192 --strictPort",
+    env: { VITE_DOUL_UI_SCOPE: "full" },
     url: "http://127.0.0.1:5192",
     reuseExistingServer: false,
     timeout: 30000,

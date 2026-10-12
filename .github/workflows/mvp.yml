@@ -11,7 +11,8 @@ concurrency:
 jobs:
   local-adapter-and-ui:
     # Ephemeral GitHub-hosted runner; no Mac mini dependency.
-    runs-on: ubuntu-24.04
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -86,7 +87,8 @@ jobs:
   # Deterministic non-empty file shards keep every browser case and its afterAll assertions.
   browser-integration-shard:
     name: Browser integration shard ${{ matrix.shard }}/6
-    runs-on: ubuntu-24.04
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
     timeout-minutes: 35
     strategy:
       fail-fast: false
