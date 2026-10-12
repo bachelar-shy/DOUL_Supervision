@@ -293,7 +293,7 @@
 @media (max-width: 767px) {
   .app-shell[data-layout-system="field-workspace"] {
     --fw-ui-control-height: 44px;
-    --fw-ui-tool-size: 36px;
+    --fw-ui-tool-size: 44px;
   }
   .app-shell[data-layout-system="field-workspace"] .drawing-sheet-commandbar {
     min-height: 48px;
@@ -315,8 +315,18 @@
   ) {
     min-height: 44px;
   }
+  .app-shell[data-layout-system="field-workspace"] .drawing-sheet-workspace .draw-command.icon-control {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 7px;
+  }
   .app-shell[data-layout-system="field-workspace"] .drawing-board-tools button {
-    min-height: 36px;
+    width: var(--fw-ui-tool-size);
+    height: var(--fw-ui-tool-size);
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
