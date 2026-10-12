@@ -191,7 +191,7 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
 
     sessions={};session_lock=RLock()
     app.add_middleware(TrustedHostMiddleware,allowed_hosts=hosts)
-    app.add_middleware(CORSMiddleware,allow_origins=origins,allow_methods=['GET','POST','PUT'],allow_headers=['Authorization','Content-Type','X-RoleAssignment-Id','Idempotency-Key','Upload-Offset'])
+    app.add_middleware(CORSMiddleware,allow_origins=origins,allow_methods=['GET','POST','PUT','PATCH'],allow_headers=['Authorization','Content-Type','X-RoleAssignment-Id','Idempotency-Key','Upload-Offset'])
 
     @app.exception_handler(ContractError)
     async def contract_error(request,exc):return JSONResponse(error_body(exc),status_code=status_for(exc.code))
@@ -322,6 +322,9 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
             key_for=key_for, quarantine_root=evidence_root / 'evidence-quarantine', sniff=sniff)
         from services.api.modules.location.edit_routes import register_location_edit_routes
         register_location_edit_routes(app, store=store, identity=identity, role_for=role_for, demo_enabled=demo)
+
+    from services.api.modules.drawing_sheets import install_drawing_sheet_routes
+    install_drawing_sheet_routes(app, store, identity=identity, role_for=role_for, key_for=key_for)
 
     from services.api.modules.drawing_pdf_bindings import install_drawing_pdf_binding_routes
     install_drawing_pdf_binding_routes(app, store, identity=identity, role_for=role_for, key_for=key_for, demo_enabled=demo)
