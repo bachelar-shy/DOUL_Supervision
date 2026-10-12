@@ -14,7 +14,7 @@ on:
       - 'services/api/modules/drawing_sheets.py'
       - 'services/api/modules/drawing_sheet_annotations.py'
       - 'apps/web/src/pages/DrawingMarkupCanvas.tsx'
-      - 'tests_mvp/test_drawing_sheet_markups_http.py' 
+      - 'tests_mvp/test_drawing_sheet_markups_http.py'
   push:
     branches: [main]
 permissions:
