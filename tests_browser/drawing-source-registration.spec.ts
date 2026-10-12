@@ -55,5 +55,7 @@ test('designer registers an immutable PDF revision and explicitly requests techn
   await page.getByLabel('시험 사용자 역할 선택').selectOption('DES');
   await page.goto('/#/drawings');
   await page.getByRole('tab', { name: '도면 등록·배포', exact: true }).click();
-  await expect(page.getByLabel('도면 작성 차수 기록').getByRole('button', {name: new RegExp(title)})).toBeVisible();
+  const predecessor=page.getByRole('combobox',{name:'이전 도면 개정',exact:true});
+  await expect(predecessor.locator('option').filter({hasText:title})).toHaveCount(1);
+  await expect(predecessor.locator('option').filter({hasText:title})).toHaveAttribute('value',`InformationItem:${result.drawing.id}:1`);
 });

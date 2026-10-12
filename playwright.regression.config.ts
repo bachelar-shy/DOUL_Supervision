@@ -4,6 +4,7 @@ import base from "./playwright.config";
 // Own disposable services so local regression never attaches to somebody else's preview.
 const origin="http://127.0.0.1:5221";
 process.env.DOUL_TEST_BROWSER_ORIGIN=origin;
+process.env.DOUL_API_ALLOWED_ORIGINS=origin+",http://127.0.0.1:5181";
 export default defineConfig({
   ...base,
   use:{...base.use,baseURL:origin},
