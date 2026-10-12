@@ -330,6 +330,9 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
 
     from services.api.modules.project_settings import install_project_settings_routes
     install_project_settings_routes(app, store, identity=identity, role_for=role_for, key_for=key_for, body_json=body_json)
+    from services.api.modules.personnel_requests import install_personnel_request_routes
+    install_personnel_request_routes(app, store, identity=identity, role_for=role_for,
+                                     key_for=key_for, body_json=body_json)
 
     from services.api.modules.drawing_impacts import install_drawing_impact_routes, reconcile_drawing_impacts_in_transaction
     install_drawing_impact_routes(app, store, identity=identity, role_for=role_for)
@@ -412,6 +415,8 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
                 admin_role=store.engine.get('RoleAssignment',actor['roleAssignmentId'])
                 require(admin_role['actorGroup']=='ADM' and admin_role['active'] and instant(admin_role['validFrom'])<=instant(store.engine.at())<instant(admin_role['validTo']), 'NOT_AUTHORIZED', 'Current administrator role required')
                 project_id=admin_role['projectId']
+                store.engine.authorize(store.engine.get('Project', project_id),
+                                       'manage_project_roles', actor['partyId'], admin_role['id'])
             body=await body_json(request)
             require(set(body)=={'username','password','partyId','roleAssignmentId'}, 'INVALID_REQUEST', 'Unexpected account fields')
             return password_accounts.create(dict(actorGroup='ADM',projectId=project_id), body['username'],body['password'],body['partyId'],body['roleAssignmentId'])
