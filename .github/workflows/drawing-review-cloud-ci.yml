@@ -20,7 +20,7 @@ permissions:
 jobs:
   cloud-web-review:
     if: (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.event.pull_request.number == 153)
-    runs-on: [self-hosted, Linux, ARM64, doul-macmini]
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout PR code
