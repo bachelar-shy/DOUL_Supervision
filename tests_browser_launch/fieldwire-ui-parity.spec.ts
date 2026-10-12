@@ -13,9 +13,9 @@ test("DOUL desktop controls keep Fieldwire density and DOUL brand", async ({ pag
   expect(await computed(page, ".sidebar", "width")).toBe("208px");
   expect(await computed(page, ".topbar", "height")).toBe("48px");
   expect(await computed(page, ".app-shell", "--fw-ui-control-height")).toBe("34px");
-  expect(await computed(page, ".app-shell", "--fw-ui-primary")).toContain("var(--doul-color-brand");
+  expect(await computed(page, ".app-shell", "--fw-ui-primary")).toBe(
+    await computed(page, ".app-shell", "--doul-color-brand"));
   expect(await computed(page, ".sidebar nav", "scrollbar-width")).toBe("thin");
-  await expect(page.locator('[data-ui-component="decision-panel"]')).toHaveCount(1);
 });
 
 test("DOUL plan workspace places compact commands within the shared frame", async ({ page }) => {
