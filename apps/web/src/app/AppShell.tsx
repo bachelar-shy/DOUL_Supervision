@@ -31,6 +31,7 @@ import {
 } from "../pages";
 import { Icon } from "../pages/shared";
 import { OfflineCommandIntentPanel } from "../pages/OfflineCommandIntentPanel";
+import { PersonnelRequestPage } from "../pages/PersonnelRequestPage";
 import { offlineIntentTitle } from "../data/offline-command-labels";
 import { fieldCoreRouteFor, fieldCoreRoutes, machineForRoute, mobileRoutes, roleRoutes, routes, type CorrectionSection } from "./routes";
 import { paymentLabelKeys } from "../data/payment-workspace";
@@ -720,6 +721,9 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               )}
               {safeRoute === "registers" && (
                 <RegisterPage client={client} workspace={workspace} />
+              )}
+              {safeRoute === "staff-requests" && (
+                <PersonnelRequestPage key={workspace.project.id + ":" + workspace.role.id} client={client} workspace={workspace} online={online} />
               )}
               {safeRoute === "admin" && (
                 <AdminPage key={workspace.project.id} client={client} workspace={workspace} online={online} onChanged={refresh} onProjectCreated={async projectId=>{const directory=await client.accessibleProjects();setApprovedProjects(directory.items);if(!await switchProject(projectId))throw new Error("Project selection did not complete");nav("admin");}} />
