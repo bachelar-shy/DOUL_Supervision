@@ -107,9 +107,21 @@ function fetchFixture(route: Route, base: string, origin: string) {
 }
 
 async function useRole(page: Page, role: "CON" | "SUP" | "OWN") {
-  await page.locator(".top-actions .role-picker select").nth(1).selectOption(role);
-  await expect(page.locator(".top-actions .role-picker select").nth(1)).toHaveValue(role);
+  const rolePicker = page.locator(".top-actions .role-picker select").nth(1);
+  // A role change signs in and reloads the authorized workspace asynchronously.
+  // Do not race its initial 'Today' redirect with the next menu click.
+  const changingRole = (await rolePicker.inputValue()) !== role;
+  const ready = changingRole
+    ? page.waitForResponse(response =>
+      /\/projects\/[^/]+\/workspace(?:\?|$)/.test(response.url())
+      && response.request().method() === "GET" && response.ok(), { timeout: 20000 })
+    : null;
+  await rolePicker.selectOption(role);
+  await expect(rolePicker).toHaveValue(role);
+  if (ready) await ready;
+  await expect(page.locator(".loading-panel")).toHaveCount(0, { timeout: 20000 });
   await page.getByRole("navigation").getByRole("button", { name: /commissioning.*handover.*warranty/i }).click();
+  await expect(page).toHaveURL(/#\/completion$/, { timeout: 10000 });
   await expect(page.locator("[data-ui-component='completion-handover-workspace']")).toBeVisible({ timeout: 15000 });
 }
 
