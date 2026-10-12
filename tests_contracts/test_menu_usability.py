@@ -64,14 +64,17 @@ class MenuUsabilityContractTests(unittest.TestCase):
                 self.assertNotIn("parallel-test", detail["visibleRouteIds"])
         # The full-development menu intentionally omits the grouped release-only
         # "corrections" route; the release uses fieldCoreRoutes.
-        self.assertEqual(set(roles["ADM"]["visibleRouteIds"]), set(ids) - {"corrections"})
+        self.assertEqual(set(roles["ADM"]["visibleRouteIds"]), set(ids) - {"corrections", "staff-requests"})
+        self.assertNotIn("staff-requests", roles["ADM"]["visibleRouteIds"])
+        for role in ("SUP", "CON", "OWN", "DES"):
+            self.assertIn("staff-requests", roles[role]["visibleRouteIds"])
         profiles = PLAN["menuProfiles"]
         self.assertEqual(profiles["full"]["navigationByRole"],
                          {role: detail["visibleRouteIds"] for role, detail in roles.items()})
         self.assertEqual(profiles["fieldCore"]["navigationByRole"]["SUP"],
-                         ["today", "capture", "drawings", "inspections", "corrections", "owner"])
+                         ["today", "capture", "drawings", "inspections", "corrections", "owner", "staff-requests"])
         self.assertEqual(profiles["fieldCore"]["navigationByRole"]["CON"],
-                         ["today", "capture", "drawings", "inspections", "corrections"])
+                         ["today", "capture", "drawings", "inspections", "corrections", "staff-requests"])
 
     def test_direct_drawing_view_uses_existing_components_and_role_permissions(self):
         source = (ROOT / "apps/web/src/pages/DrawingReviewPage.tsx").read_text(encoding="utf-8")
