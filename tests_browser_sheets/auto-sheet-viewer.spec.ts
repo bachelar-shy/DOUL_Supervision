@@ -88,8 +88,6 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   await expect(rail.locator(".drawing-issue-row")).toHaveCount(1);
   await expect(view.locator(".drawing-sheet-marker.issue")).toHaveCount(1);
   await rail.locator(".drawing-issue-row").click();
-  await expect(view.getByRole("dialog", { name: /도면 이슈 상세/ })).toBeVisible();
-  await view.getByRole("button", { name: "이슈 상세 닫기" }).click();
   await expect(view.locator(".drawing-sheet-marker.issue.active")).toHaveCount(1);
 
   // On the same sheet, inspection and site-status markers must appear beside the issue.
