@@ -49,7 +49,7 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Responsive pane and scroll regression
-        run: npx playwright test --config playwright.workspace-layout.config.ts tests_browser_layout/resizable-workspace.spec.ts
+        run: npx playwright test --config playwright.workspace-layout.config.ts tests_browser_layout/resizable-workspace.spec.ts tests_browser_layout/fieldwire-workbench-context.spec.ts
       - name: Upload failing layout traces
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
