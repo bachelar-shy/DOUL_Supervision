@@ -109,6 +109,24 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   await rail.getByRole("button", { name: "검측 1" }).click();
   await expect(rail.locator(".drawing-issue-row")).toHaveCount(1);
   await rail.getByRole("button", { name: "전체 3" }).click();
+  // A markup is a separate, durable overlay rather than an edit of the source PDF.
+  await view.getByRole("button", { name: "사각형" }).click();
+  const overlay = view.locator("svg.drawing-board-markup-layer");
+  const dimensions = await overlay.boundingBox();
+  expect(dimensions).not.toBeNull();
+  if (!dimensions) throw new Error("Markup overlay bounds unavailable");
+  await page.mouse.move(dimensions.x + dimensions.width * 0.2, dimensions.y + dimensions.height * 0.2);
+  await page.mouse.down();
+  await page.mouse.move(dimensions.x + dimensions.width * 0.6, dimensions.y + dimensions.height * 0.5, {steps: 4});
+  await page.mouse.up();
+  await expect(view.locator(".drawing-markup-rail-count")).toContainText("1개");
+  await expect(overlay.locator("g > rect")).toHaveCount(1);
+  await view.getByRole("button", { name: "마크업 실행취소" }).click();
+  await expect(view.locator(".drawing-markup-rail-count")).toContainText("0개");
+  await view.getByRole("button", { name: "마크업 다시 실행" }).click();
+  await expect(view.locator(".drawing-markup-rail-count")).toContainText("1개");
+  await view.getByRole("button", { name: "이동 도구" }).click();
+
 
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await login(page, "CON");

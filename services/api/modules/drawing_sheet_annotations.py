@@ -50,7 +50,8 @@ def install_sheet_markup_routes(app, store, *, identity, context, sheet_for, key
         with store.transaction():
             context(project_id, request, actor)
             sheet_for(project_id, sheet_id)
-            items = [deepcopy(x) for x in rows(project_id, sheet_id).values() if x["status"] == "active"]
+            found = store.meta.get("drawingSheetMarkups", {}).get(project_id, {}).get(sheet_id, {})
+            items = [deepcopy(x) for x in found.values() if x["status"] == "active"]
             return {"items": sorted(items, key=lambda x: x["createdAt"]), "count": len(items)}
 
     @app.post("/projects/{project_id}/drawing-sheets/{sheet_id}/markups")
