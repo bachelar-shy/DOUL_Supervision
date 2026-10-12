@@ -7,6 +7,11 @@ test("workbench uses a full-width list until a record opens in the right context
   await expect(workspace).toHaveAttribute("data-view", "first");
   await expect(workspace.locator('[data-layout-pane="first"]')).toBeVisible();
   await expect(workspace.locator('[data-layout-pane="second"]')).toBeHidden();
+  const listBody = await workspace.locator(".doul-resizable-body").boundingBox();
+  const fullList = await workspace.locator('[data-layout-pane="first"]').boundingBox();
+  if (!listBody || !fullList) throw new Error("List-only workspace not rendered");
+  expect(Math.abs(fullList.x - listBody.x)).toBeLessThanOrEqual(2);
+  expect(Math.abs(fullList.width - listBody.width)).toBeLessThanOrEqual(2);
 
   const record = workspace.locator(".record-row").first();
   await expect(record).toBeVisible();
