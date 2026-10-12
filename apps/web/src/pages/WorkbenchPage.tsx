@@ -94,31 +94,31 @@ export function WorkbenchPage({
           </div>
           <div className="workbench-list-toolbar" data-ui-component="workbench-list-toolbar">
             <label className="workbench-list-search">
-              <span className="sr-only">목록 검색</span>
-              <input type="search" aria-label="목록 검색" placeholder="업무명·번호 검색"
+              <span className="sr-only">{t("workbench.filter.search")}</span>
+              <input type="search" aria-label={t("workbench.filter.search")} placeholder={t("workbench.filter.placeholder")}
                 value={listSearch} onChange={(event) => setListSearch(event.target.value)} />
             </label>
-            <select aria-label="상태 필터" title="상태별 필터" value={statusFilter}
+            <select aria-label={t("workbench.filter.status")} title={t("workbench.filter.statusTitle")} value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}>
-              <option value="all">전체 상태</option>
+              <option value="all">{t("workbench.filter.allStatuses")}</option>
               {knownStatuses.map((status) => <option value={status} key={status}>
                 {states[status] || status}
               </option>)}
             </select>
-            <select aria-label="정렬 기준" title="목록 정렬" value={listSort}
+            <select aria-label={t("workbench.filter.sort")} title={t("workbench.filter.sortTitle")} value={listSort}
               onChange={(event) => setListSort(event.target.value as "recent" | "name")}>
-              <option value="recent">기본 정렬</option>
-              <option value="name">이름순</option>
+              <option value="recent">{t("workbench.filter.originalOrder")}</option>
+              <option value="name">{t("workbench.filter.byName")}</option>
             </select>
-            <span className="workbench-list-count">{filteredItems.length}/{visibleItems.length}건</span>
+            <span className="workbench-list-count">{t("workbench.filter.count", { filtered: filteredItems.length, total: visibleItems.length })}</span>
           </div>
           {route === "inspections" && role === "CON" && (
             <div className="grid gap-2" data-ui-component="new-inspection-entry">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm text-muted-foreground">시공사 자체검측 요청을 새로 작성합니다.</p>
+                <p className="text-sm text-muted-foreground">{t("workbench.inspectionCreateDescription")}</p>
                 <button type="button" className="primary" style={{ minHeight: 44 }}
                   aria-expanded={newInspectionOpen} onClick={() => setNewInspectionOpen(value => !value)}>
-                  {newInspectionOpen ? "작성 닫기" : "＋ 신규 검측"}
+                  {newInspectionOpen ? t("workbench.closeCreate") : t("workbench.inspectionCreate")}
                 </button>
               </div>
               {newInspectionOpen && <InspectionAuthoringPanel client={client} workspace={workspace}
@@ -127,17 +127,16 @@ export function WorkbenchPage({
           )}
           {route === "inspections" && role !== "CON" && (
             <p className="rounded border p-3 text-sm" role="note">
-              검측 신규 요청은 시공사에서 작성합니다. 감리자는 등록된 요청을 선택해 검측 일정·결과를 처리하고,
-              관리자는 배정 및 기록 조회를 관리합니다. 테스트 시에는 로그인 화면에서 시공사 역할을 선택하십시오.
+              {t("workbench.inspectionCreateOtherRoles")}
             </p>
           )}
           {route === "actions" && role !== "OWN" && (
             <div className="grid gap-2" data-ui-component="new-action-entry">
               <div className="flex flex-wrap items-center items-center justify-between gap-2">
-                <p className="text-sm text-muted-foreground">기존 부적합 사항에 연결되는 시정조치 초안을 작성합니다.</p>
+                <p className="text-sm text-muted-foreground">{t("workbench.actionCreateDescription")}</p>
                 <button type="button" className="primary" style={{ minHeight: 44 }}
                   aria-expanded={newActionOpen} onClick={() => setNewActionOpen(value => !value)}>
-                  {newActionOpen ? "작성 닫기" : "＋ 신규 시정조치"}
+                  {newActionOpen ? t("workbench.closeCreate") : t("workbench.actionCreate")}
                 </button>
               </div>
               {newActionOpen && <ActionAuthoringPanel client={client} workspace={workspace}

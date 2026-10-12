@@ -228,9 +228,9 @@ export function CapturePage({
     <PageBoundary name="capture">
       <CaptureTemplate>
         <div className="col-span-full flex flex-wrap items-center justify-between gap-3" data-ui-component="field-record-create-actions">
-          <h1 className="text-xl font-semibold">현장기록</h1>
+          <h1 className="text-xl font-semibold">{t("capture.quick.title")}</h1>
           <button type="button" className="secondary" style={{ minHeight: 44 }}
-            onClick={() => fileIntakeRef.current?.click()}>＋ 사진·파일 추가</button>
+            onClick={() => fileIntakeRef.current?.click()}>{t("capture.quick.addFiles")}</button>
         </div>
         <div className="col-span-full">
           <FieldRecordPanel key={workspace.project.id + ":" + workspace.role.id}
