@@ -1,4 +1,5 @@
 import { recordVersionLabel } from "../labels";
+import { X } from "lucide-react";
 import type { CommandDescriptor, RecordDTO, WorkItem, Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
 import { OwnerDecisionAuthoringPanel } from "./OwnerDecisionAuthoringPanel";
@@ -179,11 +180,21 @@ export function OwnerGovernancePage({
                     : tr("owner.type.decision")} ·{" "}
                   {detail?.id.slice(0, 8)}
                 </span>
-                <StatusBadge status={detail?.status}>
-                  {states[detail?.status || ""] ||
-                    detail?.status ||
-                    tr("owner.value.noStatus")}
-                </StatusBadge>
+                <div className="flex min-w-0 shrink-0 items-center gap-2">
+                  <StatusBadge status={detail?.status}>
+                    {states[detail?.status || ""] ||
+                      detail?.status ||
+                      tr("owner.value.noStatus")}
+                  </StatusBadge>
+                  <button type="button"
+                    className="hidden size-8 items-center justify-center rounded-sm border border-border bg-white text-muted-foreground hover:bg-muted md:inline-flex"
+                    data-ui-component="workbench-detail-close"
+                    aria-label={tr("owner.back")}
+                    title={tr("owner.back")}
+                    onClick={() => onSelect(null)}>
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                </div>
               </div>
 
               <h2 className="detail-title">{recordTitle(detail!)}</h2>
