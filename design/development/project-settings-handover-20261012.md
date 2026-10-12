@@ -1,5 +1,17 @@
 # 프로젝트 설정 개발 인계 — 2026-10-12
 
+## 최신 상태 — 여기부터 재개
+
+- 브랜치 `feat/project-settings-20261012`, PR https://github.com/bachelar-shy/DOUL_Supervision/pull/188 (draft; PR #187 기반). 구현 및 현재 서버 소스 `04538aa`. 작은 커밋은 GitHub에 push되어 있다.
+- **프로젝트 설정 및 네 역할 선택, 별도 합성 테스트 프로젝트가 실제 Tailscale 서버에 적용됐고 실제 HTTPS 검증까지 통과했다.** URL https://automation-macmini.tail0e9ef7.ts.net:10001/ . admin 계정은 기존 비밀번호를 유지하며 비밀번호는 인계/소스에 기록하지 않는다.
+- `프로젝트 설정` 메뉴에서 다섯 설정 탭을 사용한다. 계정 역할은 관리자·감리자·발주처·시공사 네 가지를 고르고 그 역할에 등록된 담당자를 선택한다. 원래 프로젝트에는 admin만 있으므로 다른 담당자는 먼저 등록한다. 별도 테스트 프로젝트에는 네 역할의 합성 담당자와 측정기록, 검측/시정/보고, PDF와 합성 이미지가 있다.
+- 맥미니 native: 설정 HTTP/비밀번호15, 세션순서4, 실제 HTTPS 연결 desktop/phone12, 기존 비밀번호5, field-core29 통과. 후속 계정 역할 필터 변경도 desktop/phone12 및 타입·빌드·lint(90 warnings/0 errors) 통과.
+- 실제 서버: admin 로그인, 일곱 메뉴(오늘+현장 다섯+설정), 네 역할, 설정 저장, 프로젝트 왕복 전환/합성 배너 격리, PDF 렌더링, 390px 가로 넘침 없음/44px 역할 선택, JS errors 0 / HTTP5xx 0. 실제 API에서 이전 토큰401·교차 프로젝트404·멱등 재시도·409 충돌·로그아웃401 검증. API 재시작 후 PostgreSQL 설정과 감사 유지 및 기존 Project 버전1 보존 확인.
+- **전체 GitHub 회귀 CI는 아직 미통과.** HEAD 04538aa: project-settings, local-adapter-and-ui, contracts, 전용 러너 정책 등은 성공. sample-project-verification, translation-check, browser-integration shards 1~6 실패. 병합/전체 Goal 완료를 선언하지 않는다.
+- 다음 작업은 이 CI 실패 로그를 분석해 재현/수정하고 관련 검증을 통과시키는 것이다. 로그는 맥미니 `/tmp/doul-settings-ci-browser.log`, `/tmp/doul-settings-ci-sample.log`, `/tmp/doul-settings-ci-translation.log`; run IDs 38168197995 / 38168198010 / 38168197991. 각 수정은 작은 커밋과 이 인계 갱신으로 이어간다.
+- 실제 서버 private 근거: `/Users/automation/work/DOUL-operational-runtime/20261012/project-settings-verification.json`, `settings-api-verification.json`, `settings-deployment.json`. DB 백업과 이전 UI를 `backups/`에 보존했다. 이 파일들은 private이고 Git에 올리지 않는다. source worktree `/Users/automation/work/doul-project-settings-20261012`; `preview/` 사용자 산출물을 보존한다.
+- Goal 사용량 회복 자체가 자동 재실행을 보장하지 않는다. 새 채팅에서는 이 파일과 Git/PR/실제 서버 상태를 읽고 미완료 CI부터 재개한다. 완료한 구현/설치를 반복하거나 DB·미커밋 변경을 삭제하지 않는다.
+
 ## 요청과 작업 범위
 
 - 프로젝트 설정 화면과 실제 저장 API 구현.
