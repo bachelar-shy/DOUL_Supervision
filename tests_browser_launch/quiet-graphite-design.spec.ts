@@ -7,24 +7,24 @@ async function metric(page: Page, selector: string, property: string): Promise<s
   );
 }
 
-test("Quiet Graphite A: 1440px tokens, 208/64 navigation and persisted collapse", async ({ page }) => {
+test("DOUL Field Workspace: 1440px tokens, 208/64 navigation and persisted collapse", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/#/today");
-  await expect(page.locator(".app-shell")).toHaveAttribute("data-design-system", "quiet-graphite-a");
-  expect(await metric(page, ".topbar", "height")).toBe("56px");
+  await expect(page.locator(".app-shell")).toHaveAttribute("data-layout-system", "field-workspace");
+  expect(await metric(page, ".topbar", "height")).toBe("48px");
   expect(await metric(page, ".sidebar", "width")).toBe("208px");
   expect(await metric(page, ".main-shell", "margin-left")).toBe("208px");
-  expect(await metric(page, ".page-heading h1", "font-size")).toBe("24px");
+  expect(await metric(page, ".page-heading h1", "font-size")).toBe("17px");
   expect(await metric(page, "body", "font-size")).toBe("14px");
-  expect(await metric(page, ".sidebar", "background-color")).toBe("rgb(242, 244, 245)");
-  await expect(page.locator(".sidebar nav button")).toHaveCount(6);
-  await page.screenshot({ path: "preview/screenshots/06-quiet-graphite-1440.png", fullPage: true });
+  expect(await metric(page, ".sidebar", "background-color")).toBe("rgb(43, 48, 54)");
+  await expect(page.locator(".sidebar nav button")).toHaveCount(7);
+  await page.screenshot({ path: "preview/screenshots/06-field-workspace-1440.png", fullPage: true });
 
   await page.getByRole("button", { name: "왼쪽 메뉴 접기" }).click();
   await expect.poll(() => metric(page, ".sidebar", "width")).toBe("64px");
   await expect.poll(() => metric(page, ".main-shell", "margin-left")).toBe("64px");
   await expect(page.locator(".sidebar nav button").first()).toHaveAttribute("title", /.+/);
-  await page.screenshot({ path: "preview/screenshots/07-quiet-graphite-collapsed.png", fullPage: true });
+  await page.screenshot({ path: "preview/screenshots/07-field-workspace-collapsed.png", fullPage: true });
   await page.reload();
   expect(await metric(page, ".sidebar", "width")).toBe("64px");
   await page.getByRole("button", { name: "왼쪽 메뉴 펼치기" }).click();
@@ -32,13 +32,14 @@ test("Quiet Graphite A: 1440px tokens, 208/64 navigation and persisted collapse"
 });
 
 for (const width of [1024, 768, 390]) {
-  test(`Quiet Graphite A: responsive layout at ${width}px, no clipped content`, async ({ page }) => {
+  test(`DOUL Field Workspace: responsive layout at ${width}px, no clipped content`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto("/#/today");
     await expect(page.locator(".page-heading h1")).toBeVisible();
-    expect(await metric(page, ".topbar", "height")).toBe("56px");
-    expect(await metric(page, ".page-heading h1", "font-size")).toBe("24px");
-    expect(await metric(page, ".sidebar", "width")).toBe(width <= 390 ? "288px" : "64px");
+    const headerHeight = parseFloat(await metric(page, ".topbar", "height"));
+    expect(headerHeight).toBeGreaterThanOrEqual(width <= 390 ? 90 : 48);
+    expect(await metric(page, ".page-heading h1", "font-size")).toBe(width <= 390 ? "16px" : "17px");
+    expect(await metric(page, ".sidebar", "width")).toBe(width <= 390 ? "290px" : "64px");
     expect(await metric(page, ".main-shell", "margin-left")).toBe(width <= 390 ? "0px" : "64px");
     const pageWidth = await page.evaluate(() =>
       ({ viewport: window.innerWidth, bodyScroll: document.documentElement.scrollWidth }));
@@ -52,7 +53,7 @@ for (const width of [1024, 768, 390]) {
       await expect(page.locator(".sidebar.open")).toBeVisible();
       await expect(page.locator(".sidebar nav button").first()).toBeVisible();
     }
-    await page.screenshot({ path: `preview/screenshots/08-quiet-graphite-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `preview/screenshots/08-field-workspace-${width}.png`, fullPage: true });
   });
 }
 

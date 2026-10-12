@@ -5,7 +5,7 @@ import { InspectionAuthoringPanel } from "./InspectionAuthoringPanel";
 import { InspectionCaseFlowPanel } from "./parallel/InspectionCaseFlowPanel";
 import { ActionAuthoringPanel } from "./parallel/ActionAuthoringPanel";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type {
   CommandDescriptor,
   HumanRole,
@@ -57,6 +57,13 @@ export function WorkbenchPage({
   const { t } = useTranslation();
   const [newInspectionOpen, setNewInspectionOpen] = useState(false);
   const [newActionOpen, setNewActionOpen] = useState(false);
+  const [listSearch, setListSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [listSort, setListSort] = useState<"recent" | "name">("recent");
+  useEffect(() => {
+    setListSearch("");
+    setStatusFilter("all");
+  }, [route]);
   const routeDefinition = routes.find((item) => item.id === route);
   const routeTitle = routeDefinition
     ? t(routeDefinition.labelKey ?? "", { defaultValue: routeDefinition.label })
@@ -67,6 +74,15 @@ export function WorkbenchPage({
   const visibleItems = workspace.items.filter((item) =>
     machines.includes(item.machine),
   );
+  const knownStatuses = [...new Set(visibleItems.map((item) => item.record.status).filter((status): status is string => Boolean(status)))];
+  const filteredItems = visibleItems
+    .filter((item) => (statusFilter === "all" || item.record.status === statusFilter)
+      && (!listSearch.trim() || (
+        recordTitle(item.record) + " " + item.record.id + " " + (item.record.status ?? "")
+      ).toLocaleLowerCase().includes(listSearch.trim().toLocaleLowerCase())));
+  // Keep the server's original list order unless the user selects name sorting.
+  if (listSort === "name") filteredItems.sort((a, b) =>
+    recordTitle(a.record).localeCompare(recordTitle(b.record)));
 
   return (
     <PageBoundary name={route} data-workbench-route={route}>
@@ -75,6 +91,26 @@ export function WorkbenchPage({
           <div className="section-heading">
             <h2>{t("workbench.listTitle", { title: routeTitle })}</h2>
             <span>{t("workbench.count", { count: visibleItems.length })}</span>
+          </div>
+          <div className="workbench-list-toolbar" data-ui-component="workbench-list-toolbar">
+            <label className="workbench-list-search">
+              <span className="sr-only">목록 검색</span>
+              <input type="search" aria-label="목록 검색" placeholder="업무명·번호 검색"
+                value={listSearch} onChange={(event) => setListSearch(event.target.value)} />
+            </label>
+            <select aria-label="상태 필터" title="상태별 필터" value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}>
+              <option value="all">전체 상태</option>
+              {knownStatuses.map((status) => <option value={status} key={status}>
+                {states[status] || status}
+              </option>)}
+            </select>
+            <select aria-label="정렬 기준" title="목록 정렬" value={listSort}
+              onChange={(event) => setListSort(event.target.value as "recent" | "name")}>
+              <option value="recent">기본 정렬</option>
+              <option value="name">이름순</option>
+            </select>
+            <span className="workbench-list-count">{filteredItems.length}/{visibleItems.length}건</span>
           </div>
           {route === "inspections" && role === "CON" && (
             <div className="grid gap-2" data-ui-component="new-inspection-entry">
@@ -109,7 +145,7 @@ export function WorkbenchPage({
             </div>
           )}
           <RecordList
-            items={visibleItems}
+            items={filteredItems}
             selected={selected}
             onSelect={(item) => onSelect(item.record.id)}
           />

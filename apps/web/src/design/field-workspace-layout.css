@@ -1,0 +1,770 @@
+/*
+ * DOUL Field Workspace — shared, layout-only treatment of all existing routes.
+ * References: Fieldwire's dense navigation, toolbar, list/detail and plan workspace.
+ * Keeps DOUL menu labels/order, route contracts, authorization and DOUL Blue tokens.
+ * This layer intentionally loads AFTER Quiet Graphite for predictable override.
+ */
+.app-shell[data-layout-system="field-workspace"] {
+  --field-nav: #2b3036;
+  --field-nav-hover: #39434d;
+  --field-nav-fg: #d9e0e8;
+  --field-nav-subtle: #b5c0cb;
+  --field-outline: #dce2e9;
+  --field-surface: #fff;
+  --field-canvas: #f4f6f8;
+  --field-primary: var(--doul-color-brand, #0b2e91);
+  --doul-ui-sidebar: var(--field-nav);
+  --doul-design-page-gutter: 16px;
+  --doul-design-pane-gap: 8px;
+  --doul-color-surface-alt: var(--field-canvas);
+  --doul-color-line: var(--field-outline);
+  --doul-ui-selected: #eaf0ff;
+  background: var(--field-canvas);
+  color: var(--doul-color-ink);
+}
+
+/* Retain the original menu categories and ordering, switch presentation only. */
+.app-shell[data-layout-system="field-workspace"] .sidebar {
+  padding: 0 0 8px;
+  border-right: 1px solid #1e2329;
+  color: var(--field-nav-fg);
+  background: var(--field-nav);
+}
+.app-shell[data-layout-system="field-workspace"] .sidebar-identity {
+  flex: 0 0 auto;
+  min-height: 48px;
+  margin: 0;
+  padding: 5px 9px 5px 14px;
+  border-bottom: 1px solid #414a53;
+  gap: 7px;
+}
+.app-shell[data-layout-system="field-workspace"] .sidebar-identity .brand b {
+  color: #fff;
+  font-size: 19px;
+  line-height: 1.05;
+}
+.app-shell[data-layout-system="field-workspace"] .sidebar-identity .brand b span,
+.app-shell[data-layout-system="field-workspace"] .sidebar-identity .brand small {
+  color: #adb9c4;
+}
+.app-shell[data-layout-system="field-workspace"] .sidebar-identity .brand small {
+  font-size: 9px;
+  font-weight: 500;
+}
+.app-shell[data-layout-system="field-workspace"] .sidebar-collapse-toggle {
+  color: #d2dbe4;
+  border-color: #59626e;
+  border-radius: 3px;
+}
+.app-shell[data-layout-system="field-workspace"] .sidebar-collapse-toggle:hover,
+.app-shell[data-layout-system="field-workspace"] .sidebar-collapse-toggle:focus-visible {
+  color: #fff;
+  border-color: #8b9baa;
+  background: var(--field-nav-hover);
+}
+.app-shell[data-layout-system="field-workspace"] .workspace-label {
+  margin-top: 10px;
+  padding: 0 14px;
+  font-size: 10px;
+  font-weight: 550;
+  letter-spacing: .085em;
+  color: var(--field-nav-subtle);
+}
+.app-shell[data-layout-system="field-workspace"] .project-chip {
+  gap: 9px;
+  margin: 0 0 8px;
+  padding: 11px 12px 12px;
+  border-bottom: 1px solid #414a53;
+}
+.app-shell[data-layout-system="field-workspace"] .project-mark {
+  color: #fff;
+  background: var(--field-primary);
+  border: 1px solid #5369bb;
+  border-radius: 4px;
+}
+.app-shell[data-layout-system="field-workspace"] .project-chip strong {
+  color: #f6f8fa;
+  font-size: 12px;
+  font-weight: 650;
+}
+.app-shell[data-layout-system="field-workspace"] .project-chip small,
+.app-shell[data-layout-system="field-workspace"] .project-switch {
+  color: var(--field-nav-subtle);
+  font-size: 11px;
+}
+.app-shell[data-layout-system="field-workspace"] .project-switch select {
+  color: #26313c;
+  background: #f9fafc;
+  border-color: #667786;
+  border-radius: 3px;
+  min-height: 34px;
+  font-size: 12px;
+}
+.app-shell[data-layout-system="field-workspace"] .sidebar nav {
+  gap: 1px;
+  padding: 0;
+  margin: 0;
+  scrollbar-color: #64717f transparent;
+}
+.app-shell[data-layout-system="field-workspace"] .sidebar nav button {
+  flex: 0 0 38px;
+  height: 38px;
+  min-height: 38px;
+  width: 100%;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 0;
+  gap: 11px;
+  color: var(--field-nav-fg);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.1;
+  text-align: left;
+}
+.app-shell[data-layout-system="field-workspace"] .sidebar nav button:hover:not(:disabled) {
+  color: #fff;
+  background: var(--field-nav-hover);
+}
+.app-shell[data-layout-system="field-workspace"] .sidebar nav button.active {
+  color: #fff;
+  background: var(--field-primary);
+  box-shadow: inset 3px 0 #83a4fa;
+  font-weight: 650;
+}
+.app-shell[data-layout-system="field-workspace"] .sidebar nav button svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.app-shell[data-layout-system="field-workspace"] .sidebar nav button i {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #566270;
+  color: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .sidebar nav button.active i {
+  color: var(--field-primary);
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .side-bottom {
+  padding: 12px 14px 6px;
+  border-top: 1px solid #414a53;
+  font-size: 11px;
+  color: var(--field-nav-subtle);
+}
+.app-shell[data-layout-system="field-workspace"] .side-bottom small {
+  color: #a3afbb;
+  font-size: 10px;
+}
+
+/* Fieldwire-like persistent white application header and functional search. */
+.app-shell[data-layout-system="field-workspace"] .main-shell {
+  background: var(--field-canvas);
+  min-height: 100dvh;
+}
+.app-shell[data-layout-system="field-workspace"] .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  min-width: 0;
+  height: 48px;
+  min-height: 48px;
+  gap: 12px;
+  padding: 0 14px;
+  background: #fff;
+  border-bottom: 1px solid var(--field-outline);
+}
+.app-shell[data-layout-system="field-workspace"] .topbar-start {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 0 1 230px;
+  gap: 8px;
+}
+.app-shell[data-layout-system="field-workspace"] .breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  min-width: 0;
+  white-space: nowrap;
+  color: #647181;
+  font-size: 12px;
+}
+.app-shell[data-layout-system="field-workspace"] .breadcrumbs span:first-child {
+  color: #273542;
+  font-weight: 700;
+}
+.app-shell[data-layout-system="field-workspace"] .breadcrumbs b {
+  display: inline-block;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  font-weight: 600;
+}
+.app-shell[data-layout-system="field-workspace"] .header-project-picker {
+  min-width: 0;
+  max-width: 100%;
+}
+.app-shell[data-layout-system="field-workspace"] .workspace-global-search {
+  position: relative;
+  flex: 0 1 330px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 170px;
+  height: 34px;
+  padding: 0 9px;
+  border: 1px solid #d4dbe3;
+  border-radius: 4px;
+  background: #f9fafb;
+  color: #677585;
+}
+.app-shell[data-layout-system="field-workspace"] .workspace-global-search:focus-within {
+  border-color: var(--field-primary);
+  box-shadow: 0 0 0 2px #0b2e9117;
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .workspace-global-search > svg { flex: none; }
+.app-shell[data-layout-system="field-workspace"] .workspace-global-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  font-size: 12px;
+  color: #263541;
+}
+.app-shell[data-layout-system="field-workspace"] .workspace-global-search input::-webkit-search-cancel-button { display: none; }
+.app-shell[data-layout-system="field-workspace"] .search-clear {
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  border-radius: 3px;
+  color: #627181;
+}
+.app-shell[data-layout-system="field-workspace"] .search-clear:hover { background: #eaf0ff; }
+.app-shell[data-layout-system="field-workspace"] .workspace-search-results {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 60;
+  max-height: min(60dvh, 450px);
+  min-width: min(320px, 80vw);
+  overflow-y: auto;
+  border: 1px solid #c6d1df;
+  border-radius: 5px;
+  box-shadow: 0 12px 26px #202a3529;
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .workspace-search-caption {
+  padding: 9px 11px 5px;
+  background: #f6f8fa;
+  color: #607080;
+  font-size: 11px;
+  font-weight: 650;
+}
+.app-shell[data-layout-system="field-workspace"] .workspace-search-results button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 38px;
+  padding: 6px 11px;
+  text-align: left;
+  color: #273642;
+  font-size: 12px;
+  border-bottom: 1px solid #f0f1f3;
+}
+.app-shell[data-layout-system="field-workspace"] .workspace-search-results button:hover,
+.app-shell[data-layout-system="field-workspace"] .workspace-search-results button:focus-visible {
+  background: #eaf0ff;
+}
+.app-shell[data-layout-system="field-workspace"] .workspace-search-results button svg {
+  width: 15px;
+  height: 15px;
+  color: var(--field-primary);
+}
+.app-shell[data-layout-system="field-workspace"] .workspace-search-results button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-shell[data-layout-system="field-workspace"] .workspace-search-results button small {
+  margin-left: auto;
+  color: #617080;
+  font-size: 10px;
+}
+.app-shell[data-layout-system="field-workspace"] .workspace-search-results p {
+  padding: 12px;
+  font-size: 12px;
+  color: #647181;
+}
+.app-shell[data-layout-system="field-workspace"] .top-actions { margin-left: auto; gap: 8px; flex: 0 0 auto; }
+.app-shell[data-layout-system="field-workspace"] .workspace-density-toggle {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: #596777;
+  border: 1px solid #d3dbe4;
+  border-radius: 4px;
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .workspace-density-toggle[aria-pressed=true] {
+  border-color: #a9bde9;
+  color: var(--field-primary);
+  background: #eef3ff;
+}
+.app-shell[data-layout-system="field-workspace"] .role-picker {
+  gap: 5px;
+  font-size: 11px;
+}
+.app-shell[data-layout-system="field-workspace"] .role-picker select {
+  max-width: 150px;
+  min-height: 34px;
+  padding: 4px 20px 4px 7px;
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .top-actions .secondary { min-height: 34px; padding: 5px 9px; }
+.app-shell[data-layout-system="field-workspace"] .avatar {
+  height: 29px;
+  width: 29px;
+  border: 1px solid #dbe4f2;
+  background: #eaf0ff;
+  color: var(--field-primary);
+}
+.app-shell[data-layout-system="field-workspace"] .connection { font-size: 11px; }
+.app-shell[data-layout-system="field-workspace"] .demo-bar {
+  min-height: 25px;
+  display: flex;
+  align-items: center;
+  padding: 2px 15px;
+  font-size: 10px;
+  line-height: 1.35;
+  color: #617181;
+  background: #f3f5f7;
+  border-bottom: 1px solid #e1e5e9;
+}
+
+/* Universal per-route toolbar: one flat horizontal band on every page. */
+.app-shell[data-layout-system="field-workspace"] .main-shell main {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 22px;
+  min-height: calc(100dvh - 100px);
+}
+.app-shell[data-layout-system="field-workspace"] .main-shell main > .page-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 61px;
+  width: 100%;
+  padding: 10px 16px;
+  margin: 0 0 13px;
+  border-bottom: 1px solid #dce2e9;
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .main-shell main > .page-heading h1 {
+  font-size: 17px;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -.015em;
+}
+.app-shell[data-layout-system="field-workspace"] .main-shell main > .page-heading .eyebrow {
+  display: none;
+}
+.app-shell[data-layout-system="field-workspace"] .main-shell main > .page-heading p {
+  display: none;
+}
+.app-shell[data-layout-system="field-workspace"] .main-shell main > .page-heading .heading-context { font-size: 12px; }
+.app-shell[data-layout-system="field-workspace"] .main-shell main > .page-heading .heading-actions {
+  margin-left: auto;
+  flex: none;
+  gap: 6px;
+}
+.app-shell[data-layout-system="field-workspace"] .main-shell main > .page-heading .heading-actions button {
+  min-height: 36px;
+  padding: 7px 11px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+/* Everything below the common toolbar shares a narrow, consistent inset. */
+.app-shell[data-layout-system="field-workspace"] .main-shell main > :not(.page-heading) {
+  width: calc(100% - 28px);
+  max-width: calc(100% - 28px);
+  min-width: 0;
+  margin-left: 14px;
+  margin-right: 14px;
+  box-sizing: border-box;
+}
+.app-shell[data-layout-system="field-workspace"] .main-shell main > .page-heading + [data-ui-page="field-drawings"],
+.app-shell[data-layout-system="field-workspace"] .main-shell main > .page-heading + .drawing-review-page {
+  margin-left: 10px;
+  margin-right: 10px;
+  width: calc(100% - 20px);
+  max-width: calc(100% - 20px);
+}
+.app-shell[data-layout-system="field-workspace"] .app-footer {
+  border-top: 1px solid #e1e5ec;
+  padding: 10px 15px;
+  font-size: 10px;
+  color: #71808c;
+}
+.app-shell[data-layout-system="field-workspace"] .app-footer span { color: #738292; }
+
+/* Shared data views: flat, dense, no wide decorative empty gutters. */
+.app-shell[data-layout-system="field-workspace"] .panel,
+.app-shell[data-layout-system="field-workspace"] .kpi,
+.app-shell[data-layout-system="field-workspace"] .preview-pane,
+.app-shell[data-layout-system="field-workspace"] .capture-drop {
+  border: 1px solid var(--field-outline);
+  border-radius: 4px;
+  box-shadow: none;
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"].is-compact .panel { padding: 12px; }
+.app-shell[data-layout-system="field-workspace"]:not(.is-compact) .panel { padding: 17px; }
+.app-shell[data-layout-system="field-workspace"] .section-heading {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+.app-shell[data-layout-system="field-workspace"] .section-heading h2 { font-size: 14px; font-weight: 700; }
+.app-shell[data-layout-system="field-workspace"] .section-heading > span { font-size: 11px; }
+.app-shell[data-layout-system="field-workspace"] .template-dashboard .kpi-grid {
+  gap: 8px;
+  padding: 0;
+  margin-bottom: 10px;
+  border: 0;
+}
+.app-shell[data-layout-system="field-workspace"] .kpi {
+  padding: 12px 14px;
+  min-height: 82px;
+  gap: 5px;
+}
+.app-shell[data-layout-system="field-workspace"] .kpi b { font-size: 23px; margin: 1px 0; }
+.app-shell[data-layout-system="field-workspace"] .kpi em {
+  font-size: 11px;
+  padding-top: 4px;
+  margin: 0;
+}
+.app-shell[data-layout-system="field-workspace"] .template-workbench,
+.app-shell[data-layout-system="field-workspace"] .template-owner-report,
+.app-shell[data-layout-system="field-workspace"] .template-document,
+.app-shell[data-layout-system="field-workspace"] .template-register,
+.app-shell[data-layout-system="field-workspace"] .template-capture,
+.app-shell[data-layout-system="field-workspace"] .template-drawing {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace .doul-layout-controls {
+  min-height: 32px;
+  margin-bottom: 7px;
+  font-size: 11px;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace .doul-layout-choices button,
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace .doul-layout-reset {
+  min-height: 28px;
+  padding: 5px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace .doul-resizable-body {
+  height: clamp(410px, calc(100dvh - 192px), 1150px);
+  min-height: 0;
+  grid-template-columns: minmax(0, var(--doul-split-first, 32%)) 10px minmax(0, 1fr);
+}
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace .doul-resizable-divider {
+  width: 10px;
+  min-width: 10px;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-divider::before { left: 4px; width: 1px; }
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-divider::after { left: 2px; width: 6px; }
+.app-shell[data-layout-system="field-workspace"] .template-workbench .list-pane,
+.app-shell[data-layout-system="field-workspace"] .template-owner-report .list-pane { padding: 11px; }
+.app-shell[data-layout-system="field-workspace"] .template-workbench .detail-pane,
+.app-shell[data-layout-system="field-workspace"] .template-owner-report .detail-pane { padding-top: 10px; }
+.app-shell[data-layout-system="field-workspace"] .record-list { margin: 0 -5px; }
+.app-shell[data-layout-system="field-workspace"] .record-row {
+  min-height: 44px;
+  padding: 9px 8px;
+  gap: 9px;
+  border-radius: 0;
+  border-bottom: 1px solid #edf0f3;
+}
+.app-shell[data-layout-system="field-workspace"] .record-row.selected {
+  background: #eaf0ff;
+  box-shadow: inset 3px 0 0 var(--field-primary);
+}
+.app-shell[data-layout-system="field-workspace"] .record-icon {
+  width: 28px;
+  min-width: 28px;
+  height: 30px;
+  background: #eef2f6;
+  border-radius: 3px;
+}
+.app-shell[data-layout-system="field-workspace"] .record-summary > strong { margin: 3px 0; font-size: 13px; }
+.app-shell[data-layout-system="field-workspace"] .record-summary small { font-size: 11px; }
+.app-shell[data-layout-system="field-workspace"] .badge {
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+.app-shell[data-layout-system="field-workspace"] .table-scroll th,
+.app-shell[data-layout-system="field-workspace"] .table-scroll td,
+.app-shell[data-layout-system="field-workspace"] .project-settings-page th,
+.app-shell[data-layout-system="field-workspace"] .project-settings-page td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e9ee;
+  font-size: 12px;
+}
+.app-shell[data-layout-system="field-workspace"] .table-scroll th,
+.app-shell[data-layout-system="field-workspace"] .project-settings-page th {
+  font-weight: 650;
+  color: #445263;
+  background: #f4f6f8;
+}
+.app-shell[data-layout-system="field-workspace"] [role="tablist"]:not(.doul-layout-choices),
+.app-shell[data-layout-system="field-workspace"] .settings-tabs {
+  gap: 5px;
+  padding-bottom: 0;
+  border-bottom: 1px solid var(--field-outline);
+}
+.app-shell[data-layout-system="field-workspace"] [role="tablist"] > [role="tab"] {
+  border-radius: 3px 3px 0 0;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 550;
+}
+.app-shell[data-layout-system="field-workspace"] [role="tablist"] > [role="tab"][aria-selected=true] {
+  box-shadow: inset 0 -2px var(--field-primary);
+  color: var(--field-primary);
+  border-color: #dce4f1;
+}
+.app-shell[data-layout-system="field-workspace"] .settings-form {
+  border-radius: 4px;
+  padding: 13px;
+}
+.app-shell[data-layout-system="field-workspace"] .settings-tabs { overflow-x: auto; }
+.app-shell[data-layout-system="field-workspace"] .capture-drop { padding: 15px 16px; }
+.app-shell[data-layout-system="field-workspace"] .template-capture { gap: 9px; }
+.app-shell[data-layout-system="field-workspace"] .document-workbench { gap: 9px; }
+
+/* Consistent white command bar and spacious canvas on plans, not another page. */
+.app-shell[data-layout-system="field-workspace"] .pdf-viewer-panel {
+  gap: 7px;
+  border-radius: 3px;
+  padding: 11px;
+}
+.app-shell[data-layout-system="field-workspace"] .pdf-viewer-header {
+  padding-bottom: 7px;
+  border-bottom: 1px solid #e8edf2;
+}
+.app-shell[data-layout-system="field-workspace"] .pdf-toolbar {
+  min-height: 40px;
+  padding: 3px 0;
+  border-color: var(--field-outline);
+}
+.app-shell[data-layout-system="field-workspace"] .pdf-canvas-viewport {
+  max-height: calc(100dvh - 248px);
+  min-height: 330px;
+  padding: 9px;
+  background: #e7eaee;
+}
+.app-shell[data-layout-system="field-workspace"] .pdf-page-controls { padding: 5px; }
+.app-shell[data-layout-system="field-workspace"] .pdf-markup-controls {
+  border-color: #dbe3ed;
+  border-radius: 3px;
+  background: #f6f8fb;
+}
+.app-shell[data-layout-system="field-workspace"] .pdf-markup-controls > button {
+  border-color: #9aafd4;
+  color: var(--field-primary);
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .pdf-markup-controls > button[aria-pressed=true] {
+  color: #fff;
+  background: var(--field-primary);
+}
+.app-shell[data-layout-system="field-workspace"] .pdf-markup-shape {
+  stroke: var(--field-primary);
+  fill: #0b2e911f;
+}
+
+/* Tablet: persistent icon navigation. Phone: the same routes in a drawer. */
+@media (min-width: 768px) and (max-width: 1100px) {
+  .app-shell[data-layout-system="field-workspace"] .sidebar-identity { padding-inline: 6px; }
+  .app-shell[data-layout-system="field-workspace"] .sidebar-identity .brand b::before { color: #fff; }
+  .app-shell[data-layout-system="field-workspace"] .sidebar nav button {
+    justify-content: center;
+    padding-inline: 8px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .topbar-start { flex-basis: 140px; }
+  .app-shell[data-layout-system="field-workspace"] .workspace-global-search { flex-basis: 230px; }
+  .app-shell[data-layout-system="field-workspace"] .top-actions .connection { display: none; }
+}
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] .sidebar {
+    width: min(290px, calc(100vw - 44px));
+    padding: 0 0 12px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .sidebar-identity {
+    padding-left: 16px;
+    padding-right: 50px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .sidebar-identity .brand b { color: #fff; }
+  .app-shell[data-layout-system="field-workspace"] .sidebar-close { color: #e1e7ee; }
+  .app-shell[data-layout-system="field-workspace"] .sidebar nav button {
+    min-height: 44px;
+    height: 44px;
+    flex-basis: 44px;
+    font-size: 13px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .topbar {
+    flex-wrap: wrap;
+    align-content: center;
+    height: auto;
+    min-height: 92px;
+    gap: 5px 7px;
+    padding: 6px 12px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .topbar-start {
+    flex: 1 1 100px;
+    min-width: 0;
+    max-width: calc(100% - 192px);
+  }
+  .app-shell[data-layout-system="field-workspace"] .topbar-start .breadcrumbs {
+    display: flex;
+    font-size: 11px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .topbar-start .breadcrumbs span:first-child {
+    display: none;
+  }
+  .app-shell[data-layout-system="field-workspace"] .topbar-start .breadcrumbs span:nth-child(2) { display: none; }
+  .app-shell[data-layout-system="field-workspace"] .top-actions {
+    flex: 0 0 auto;
+    gap: 5px;
+    max-width: 190px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .top-actions .role-picker { font-size: 0; }
+  .app-shell[data-layout-system="field-workspace"] .top-actions .role-picker select { max-width: 100px; }
+  .app-shell[data-layout-system="field-workspace"] .top-actions .avatar,
+  .app-shell[data-layout-system="field-workspace"] .workspace-density-toggle { display: none; }
+  .app-shell[data-layout-system="field-workspace"] .workspace-global-search {
+    order: 3;
+    flex: 1 1 100%;
+    min-width: 0;
+    height: 36px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .workspace-global-search input { font-size: 13px; }
+  .app-shell[data-layout-system="field-workspace"] .demo-bar { padding: 5px 12px; font-size: 10px; }
+  .app-shell[data-layout-system="field-workspace"] .main-shell main > .page-heading {
+    min-height: 54px;
+    padding: 8px 12px;
+    gap: 7px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .main-shell main > .page-heading h1 { font-size: 16px; }
+  .app-shell[data-layout-system="field-workspace"] .main-shell main > .page-heading .page-heading-details { display: none; }
+  .app-shell[data-layout-system="field-workspace"] .main-shell main > .page-heading .heading-actions button { min-height: 44px; padding: 8px; }
+  .app-shell[data-layout-system="field-workspace"] .main-shell main > :not(.page-heading) {
+    width: calc(100% - 20px);
+    max-width: calc(100% - 20px);
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .panel { padding: 12px; }
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace .doul-resizable-body {
+    height: auto;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace .doul-resizable-pane {
+    height: auto;
+    min-height: 0;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace .doul-resizable-pane > * {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace .doul-resizable-divider { display: none; }
+  .app-shell[data-layout-system="field-workspace"] .pdf-canvas-viewport {
+    min-height: 260px;
+    max-height: 62dvh;
+  }
+  .app-shell[data-layout-system="field-workspace"] .pdf-viewer-panel { padding: 8px; }
+  .app-shell[data-layout-system="field-workspace"] .bottom-nav {
+    z-index: 18;
+    background: #fff;
+  }
+  .app-shell[data-layout-system="field-workspace"] .bottom-nav button { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell[data-layout-system="field-workspace"] .sidebar,
+  .app-shell[data-layout-system="field-workspace"] .main-shell { transition: none; }
+}
+
+/* Shared searchable list header used by inspections, findings, actions, RFI and other Workbench routes. */
+.app-shell[data-layout-system="field-workspace"] .workbench-list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin: 0 -4px 9px;
+  padding: 7px 4px;
+  border-top: 1px solid #eef1f4;
+  border-bottom: 1px solid #e7ecf0;
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .workbench-list-search {
+  flex: 1 1 140px;
+  min-width: 118px;
+}
+.app-shell[data-layout-system="field-workspace"] .workbench-list-search input,
+.app-shell[data-layout-system="field-workspace"] .workbench-list-toolbar select {
+  width: 100%;
+  height: 34px;
+  min-height: 34px;
+  padding: 5px 8px;
+  border: 1px solid #d5dce5;
+  border-radius: 3px;
+  font-size: 12px;
+  color: #344455;
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .workbench-list-toolbar select {
+  flex: 0 1 108px;
+  min-width: 85px;
+}
+.app-shell[data-layout-system="field-workspace"] .workbench-list-count {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: #647382;
+  font-size: 11px;
+}
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] .workbench-list-toolbar select,
+  .app-shell[data-layout-system="field-workspace"] .workbench-list-search input {
+    min-height: 44px;
+    height: 44px;
+    font-size: 13px;
+  }
+}
+/* Dashboard has KPI and a quick-create bar above its panes; keep both columns
+ * close to one viewport tall instead of making the main page scroll twice. */
+@media (min-width: 768px) {
+  .app-shell[data-layout-system="field-workspace"] .template-dashboard .doul-resizable-body {
+    height: clamp(335px, calc(100dvh - 378px), 850px);
+  }
+}

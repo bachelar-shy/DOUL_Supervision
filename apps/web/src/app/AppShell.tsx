@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { CalendarDays, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { CalendarDays, PanelLeftClose, PanelLeftOpen, Rows3, Search, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {
   AccessibleProjects,
@@ -30,6 +30,7 @@ import {
   WorkbenchPage,
 } from "../pages";
 import { Icon } from "../pages/shared";
+import { recordTitle } from "../pages/record-utils";
 import { OfflineCommandIntentPanel } from "../pages/OfflineCommandIntentPanel";
 import { PersonnelRequestPage } from "../pages/PersonnelRequestPage";
 import { offlineIntentTitle } from "../data/offline-command-labels";
@@ -87,6 +88,14 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
   const [toast, setToast] = useState("");
   const [online, setOnline] = useState(navigator.onLine);
   const [menu, setMenu] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const globalSearchRef = useRef<HTMLInputElement>(null);
+  const searchAreaRef = useRef<HTMLDivElement>(null);
+  const [compactDensity, setCompactDensity] = useState(() => {
+    try { return window.localStorage.getItem("doul.ui.field-layout.compact.v1") !== "false"; }
+    catch { return true; }
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return window.localStorage.getItem("doul.ui.sidebar.collapsed.v1") === "true"; }
     catch { return false; }
@@ -108,6 +117,33 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     try { window.localStorage.setItem("doul.ui.sidebar.collapsed.v1", String(sidebarCollapsed)); }
     catch { /* The optional navigation preference does not block work. */ }
   }, [sidebarCollapsed]);
+  useEffect(() => {
+    try { window.localStorage.setItem("doul.ui.field-layout.compact.v1", String(compactDensity)); }
+    catch { /* Density is optional and never blocks work. */ }
+  }, [compactDensity]);
+  useEffect(() => {
+    const keyboard = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        globalSearchRef.current?.focus();
+        setSearchOpen(true);
+      }
+      if (event.key === "Escape") {
+        setSearchOpen(false);
+        globalSearchRef.current?.blur();
+      }
+    };
+    const outside = (event: MouseEvent) => {
+      if (event.target instanceof Node && !searchAreaRef.current?.contains(event.target))
+        setSearchOpen(false);
+    };
+    window.addEventListener("keydown", keyboard);
+    document.addEventListener("mousedown", outside);
+    return () => {
+      window.removeEventListener("keydown", keyboard);
+      document.removeEventListener("mousedown", outside);
+    };
+  }, []);
   const sequence = useRef(0);
   const refreshSequence = useRef(0);
   const activeRole = useRef(role);
@@ -257,6 +293,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     setSelected(null);
     setDialog(null);
     setMenu(false);
+    setSearchOpen(false);
   };
   const safeRoute = allowed.includes(route) || demoDiagnosticDeepLink ? route : "today";
   useEffect(() => {
@@ -304,6 +341,15 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
       label: routeLabel(item),
     }));
   const items = workspace?.items || [];
+  const trimmedSearch = globalSearch.trim().toLocaleLowerCase();
+  const menuMatches = trimmedSearch.length
+    ? routes.filter((entry) => allowed.includes(entry.id)
+        && routeLabel(entry).toLocaleLowerCase().includes(trimmedSearch)).slice(0, 6)
+    : [];
+  const recordMatches = trimmedSearch.length >= 2
+    ? items.filter((item) => recordTitle(item.record).toLocaleLowerCase().includes(trimmedSearch)
+        || item.record.id.toLocaleLowerCase().includes(trimmedSearch)).slice(0, 6)
+    : [];
   const current = items.find((x) => x.record.id === selected) || null;
   async function perform(
     item: WorkItem,
@@ -372,7 +418,9 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
     </>;
   }
   return (
-    <div className={"app-shell" + (sidebarCollapsed ? " sidebar-collapsed" : "")} data-design-system="quiet-graphite-a">
+    <div className={"app-shell" + (sidebarCollapsed ? " sidebar-collapsed" : "") + (compactDensity ? " is-compact" : "")}
+      data-design-system="quiet-graphite-a" data-layout-system="field-workspace"
+      data-workspace-route={safeRoute}>
       <aside id="side-navigation" className={"sidebar " + (menu ? "open" : "")} data-navigation-collapsed={String(sidebarCollapsed)}>
         <button type="button" className="sidebar-close" aria-label={t("app.menuClose")}
           onClick={() => setMenu(false)}>×</button>
@@ -432,19 +480,57 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
       {menu && <button type="button" className="sidebar-backdrop" aria-label={t("app.menuClose")} onClick={() => setMenu(false)} />}
       <div className="main-shell">
         <header className="topbar">
-          <button
-            className="icon-button menu-toggle"
-            aria-label={t("app.menuOpen")}
-            aria-controls="side-navigation"
-            aria-expanded={menu}
-            onClick={() => setMenu(!menu)}
-          >
-            <Icon name="layers" />
-          </button>
-          {projectPickerInHeader ? <div className="header-project-picker">{renderProjectPicker()}</div> : <div className="breadcrumbs">
-            DOUL / <b>{routeLabel(routes.find((x) => x.id === safeRoute))}</b>
-          </div>}
+          <div className="topbar-start">
+            <button
+              className="icon-button menu-toggle"
+              aria-label={t("app.menuOpen")}
+              aria-controls="side-navigation"
+              aria-expanded={menu}
+              onClick={() => setMenu(!menu)}
+            >
+              <Icon name="layers" />
+            </button>
+            {projectPickerInHeader ? <div className="header-project-picker">{renderProjectPicker()}</div> : <div className="breadcrumbs">
+              <span>DOUL</span> <span aria-hidden="true">/</span> <b>{routeLabel(routes.find((x) => x.id === safeRoute))}</b>
+            </div>}
+          </div>
+          <div className="workspace-global-search" ref={searchAreaRef} data-ui-component="global-navigation-search">
+            <Search aria-hidden="true" size={16} />
+            <input ref={globalSearchRef} type="search" aria-label="메뉴 및 업무 검색"
+              placeholder="메뉴·업무 검색 (Ctrl+K)" value={globalSearch}
+              onFocus={() => setSearchOpen(true)} onChange={(event) => {
+                setGlobalSearch(event.target.value);
+                setSearchOpen(true);
+              }} />
+            {globalSearch && <button type="button" className="search-clear" aria-label="검색어 지우기" onClick={() => {
+              setGlobalSearch(""); globalSearchRef.current?.focus();
+            }}><X size={15} aria-hidden="true" /></button>}
+            {searchOpen && trimmedSearch && <div className="workspace-search-results" role="group" aria-label="검색 결과">
+              {menuMatches.length > 0 && <div className="workspace-search-caption">메뉴</div>}
+              {menuMatches.map((entry) => <button type="button" key={entry.id} onClick={() => {
+                nav(entry.id); setGlobalSearch("");
+              }}><Icon name={entry.icon} /><span>{routeLabel(entry)}</span></button>)}
+              {recordMatches.length > 0 && <div className="workspace-search-caption">업무 기록</div>}
+              {recordMatches.map((item) => <button type="button" key={item.record.id} onClick={() => {
+                const routeEntry = Object.entries(machineForRoute).find(([target, machines]) =>
+                  machines.includes(item.machine) && (allowed.includes(target)
+                    || (fieldCoreMode && allowed.includes(fieldCoreRouteFor(target).route))));
+                if (routeEntry) nav(routeEntry[0]);
+                else nav("today");
+                setSelected(item.record.id);
+                setGlobalSearch("");
+              }}><Icon name="document" /><span>{recordTitle(item.record)}</span><small>{item.record.id.slice(0, 6)}</small></button>)}
+              {!menuMatches.length && !recordMatches.length &&
+                <p>일치하는 메뉴나 기록이 없습니다.</p>}
+            </div>}
+          </div>
           <div className="top-actions">
+            <button type="button" className="workspace-density-toggle"
+              title={compactDensity ? "여유 있는 간격으로 보기" : "조밀하게 보기"}
+              aria-label="화면 밀도 변경" aria-pressed={compactDensity}
+              onClick={() => setCompactDensity((value) => !value)}>
+              <Rows3 size={16} aria-hidden="true" />
+            </button>
             <span className={"connection " + (!online ? "offline" : "")}>
               {online ? t("app.connection.online") : t("app.connection.offline")}
             </span>
@@ -508,7 +594,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
             {t("app.offlineReadOnly")}
           </div>
         )}
-        <main>
+        <main data-ui-component="workspace-main">
           <PageHeader
             eyebrow={t("mobile.roleWorkspace", { role: roleLabel(role) })}
             title={routeLabel(routes.find((x) => x.id === safeRoute))}
