@@ -17,6 +17,7 @@ const unique=()=>"시험-"+Date.now()+"-"+Math.floor(Math.random()*1000);
 test("administrator creates a blank project with a visible add button and can reopen it",async({page,context})=>{
   await login(page);await settings(page);
   const button=page.getByRole("button",{name:"＋ 프로젝트 추가",exact:true});await expect(button).toBeVisible();
+  expect((await button.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   await button.click();const form=page.locator("#new-project-form");await expect(form).toBeVisible();
   const name=unique();await form.getByLabel("프로젝트명",{exact:true}).fill(name);
   await form.getByLabel("관리회사명",{exact:true}).fill("시험 관리회사");
