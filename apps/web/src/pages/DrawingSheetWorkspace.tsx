@@ -349,6 +349,9 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   }, [mode, selected?.id, selected?.status]);
 
   function openSheet(sheet: DrawingSheet) {
+    // Mark navigation synchronously: a pending mutation may resolve before
+    // React commits the new selectedId state.
+    liveSelectedId.current = sheet.id;
     setMode("viewer"); setSelectedId(sheet.id); setPins([]); setSelectedPinId(null);
     setDetailOpen(false); setPinChoice(null); setPendingPoint(null);
     setEditOpen(false); setReviewMode(false); setRevisionOpen(false);
@@ -561,7 +564,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   return <div className="drawing-sheet-workspace" data-ui-component="drawing-sheet-workspace" data-view={mode}>
     <div className="drawing-sheet-commandbar">
       <div className="drawing-sheet-command-left">
-        {mode === "viewer" ? <button className="draw-command" type="button" onClick={() => { setMode("catalog"); setPinChoice(null); }}>
+        {mode === "viewer" ? <button className="draw-command" type="button" onClick={() => { liveSelectedId.current = null; setMode("catalog"); setPinChoice(null); }}>
           <ArrowLeft size={15} aria-hidden="true" /> 전체 도면
         </button> : <strong className="drawing-sheet-route-label">도면 관리</strong>}
         <span className="draw-command-separator" aria-hidden="true" />
