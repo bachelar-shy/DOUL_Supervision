@@ -55,8 +55,10 @@ test.afterAll(async () => {
 });
 
 test.afterEach(async ({page})=>{
-  // Finish forwarded fixture requests before Playwright closes the page/context.
-  await page.unrouteAll({behavior:"wait"});
+  // Required API responses are already asserted in each test. Abandoned
+  // fixture requests on reload/role switch must not block teardown forever.
+  // Playwright will suppress late errors only after these routes are removed.
+  await page.unrouteAll({behavior:"ignoreErrors"});
 });
 
 test.beforeEach(async ({ page }) => {
