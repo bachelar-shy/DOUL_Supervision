@@ -198,9 +198,12 @@
 }
 .app-shell[data-layout-system="field-workspace"] .breadcrumbs b {
   display: inline-block;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
   padding: 0;
   overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
   font-size: 12px;
   font-weight: 600;
