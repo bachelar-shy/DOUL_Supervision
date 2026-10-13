@@ -325,6 +325,8 @@ def create_app(db_path=':memory:', demo=False, persistence=None, queue_enabled=N
 
     from services.api.modules.drawing_sheets import install_drawing_sheet_routes
     install_drawing_sheet_routes(app, store, identity=identity, role_for=role_for, key_for=key_for)
+    from services.api.modules.drawing_sheet_recovery import install_drawing_recovery
+    install_drawing_recovery(app, store)
 
     from services.api.modules.drawing_pdf_bindings import install_drawing_pdf_binding_routes
     install_drawing_pdf_binding_routes(app, store, identity=identity, role_for=role_for, key_for=key_for, demo_enabled=demo)
