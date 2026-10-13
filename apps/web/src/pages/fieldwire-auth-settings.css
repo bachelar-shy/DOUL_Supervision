@@ -1,0 +1,274 @@
+/*
+ * DOUL Field UI — login and project settings surface alignment.
+ * Presentation only. Authentication and role/permission contracts are unchanged.
+ * Layout geometry is DOUL's Fieldwire-inspired desktop/mobile guideline, not
+ * an assertion that Fieldwire publishes these exact pixel values.
+ */
+.doul-auth-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: #f3f5f7;
+}
+.doul-auth-card.panel {
+  width: 100%;
+  max-width: 404px;
+  display: grid;
+  gap: 12px;
+  padding: 27px 29px 29px;
+  border: 1px solid #d8dfe6;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 4px 12px #24324314;
+}
+.doul-auth-brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 7px;
+  padding-bottom: 11px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #e2e6eb;
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -.025em;
+  font-weight: 750;
+  color: #202b36;
+}
+.doul-auth-brand span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .09em;
+  color: #788797;
+}
+.doul-auth-card .doul-auth-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #2c3947;
+}
+.doul-auth-card .doul-auth-description {
+  margin: -2px 0 5px;
+  color: #667585;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.doul-auth-card .doul-auth-field {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #354658;
+}
+.doul-auth-card .doul-auth-field input {
+  width: 100%;
+  height: 36px;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid #cad2dc;
+  border-radius: 3px;
+  background: #fff;
+  color: #263747;
+  font-size: 13px;
+}
+.doul-auth-card .doul-auth-field input:focus-visible {
+  outline: 2px solid #0b2e91;
+  outline-offset: 1px;
+}
+.doul-auth-card .doul-auth-submit.primary {
+  width: 100%;
+  min-height: 38px;
+  margin-top: 6px;
+  border-radius: 3px;
+  background: #0b2e91;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 650;
+}
+.doul-auth-card .doul-auth-submit.primary:hover:not(:disabled) { background: #143fa9; }
+.doul-auth-card .doul-auth-submit.primary:disabled { opacity: .58; cursor: not-allowed; }
+.doul-auth-card .doul-auth-error { margin: 0; font-size: 12px; color: #aa312a; }
+.doul-auth-card .doul-auth-notice { margin: 0; font-size: 12px; color: #5d6b79; }
+
+.test-role-login-screen {
+  background: #f3f5f7;
+}
+.test-role-login-screen .test-role-login-card {
+  max-width: 510px;
+  padding: 24px 28px 28px;
+  gap: 11px;
+  border-radius: 4px;
+  border-color: #d8dfe6;
+  box-shadow: 0 4px 12px #24324314;
+}
+.test-role-login-screen .test-role-login-card h1 { font-size: 20px; }
+.test-role-login-screen .test-role-login-choices { gap: 8px; margin-top: 3px; }
+.test-role-login-screen .test-role-login-option {
+  min-height: 66px;
+  padding: 10px 12px;
+  gap: 3px;
+  border-radius: 3px;
+}
+.test-role-login-screen .test-role-login-option strong { font-size: 13px; }
+.test-role-login-screen .test-role-login-option:hover:not(:disabled),
+.test-role-login-screen .test-role-login-option:focus-visible {
+  border-color: #0b2e91;
+  background: #edf2ff;
+  outline-offset: 1px;
+}
+.test-role-login-screen .test-role-login-footnote {
+  margin-top: 5px;
+  padding-top: 10px;
+}
+
+.app-shell[data-layout-system="field-workspace"] .project-settings-page {
+  --fw-admin-stroke: #dce2e9;
+  --fw-admin-muted: #f6f8fa;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page > .panel {
+  border-radius: 3px;
+  padding: 12px;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-tabs {
+  position: sticky;
+  top: 48px;
+  z-index: 9;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-width: 0;
+  margin: 11px 0 14px;
+  padding: 0;
+  overflow-x: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #a5afbb transparent;
+  background: #fff;
+  border-bottom: 1px solid var(--fw-admin-stroke);
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-tabs button {
+  flex: none;
+  min-height: 36px;
+  height: 36px;
+  padding: 7px 13px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #627183;
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-tabs button:hover { background: #f3f5f8; color: #2d3b49; }
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-tabs button[aria-selected="true"] {
+  color: var(--doul-color-brand, #0b2e91);
+  border-bottom-color: var(--doul-color-brand, #0b2e91);
+  background: #f5f8ff;
+  font-weight: 700;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-tabs button:focus-visible {
+  outline: 2px solid var(--doul-color-brand, #0b2e91);
+  outline-offset: -3px;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-columns:not([hidden]) {
+  gap: 9px;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-form {
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 11px 13px 13px;
+  border: 1px solid var(--fw-admin-stroke);
+  border-radius: 3px;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-form legend {
+  padding: 0 4px;
+  color: #2c3c4b;
+  font-size: 13px;
+  font-weight: 700;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-form label {
+  gap: 4px;
+  color: #435261;
+  font-size: 12px;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-form :is(input:not([type="checkbox"]), select) {
+  min-height: 35px;
+  height: 35px;
+  padding: 5px 8px;
+  border: 1px solid #ccd5df;
+  border-radius: 3px;
+  background: #fff;
+  color: #2b3a4a;
+  font-size: 12px;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-form input:focus-visible,
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-form select:focus-visible {
+  outline: 2px solid var(--doul-color-brand, #0b2e91);
+  outline-offset: 1px;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-form input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-form button.primary {
+  min-height: 35px;
+  justify-self: start;
+  padding: 6px 12px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-table-scroll {
+  max-height: min(65dvh, 710px);
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #a5afbb transparent;
+  border: 1px solid var(--fw-admin-stroke);
+  overscroll-behavior: contain;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-table-scroll th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--fw-admin-muted);
+  font-weight: 700;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-table-scroll :is(th, td) {
+  padding: 9px 11px;
+  font-size: 12px;
+  border-bottom: 1px solid #e8ecf1;
+}
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-table-scroll tr:hover td {
+  background: #f4f7fb;
+}
+@media (max-width: 767px) {
+  .doul-auth-screen { padding: 14px; }
+  .doul-auth-card.panel { padding: 22px 19px; }
+  .doul-auth-card .doul-auth-field input { min-height: 44px; height: 44px; font-size: 14px; }
+  .doul-auth-card .doul-auth-submit.primary { min-height: 44px; }
+  .test-role-login-screen .test-role-login-card { padding: 20px 17px; }
+  .test-role-login-screen .test-role-login-option { min-height: 56px; }
+  .app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-tabs { top: 92px; }
+  .app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-tabs button {
+    min-height: 44px;
+    height: 44px;
+    font-size: 13px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-form :is(input:not([type="checkbox"]), select) {
+    min-height: 44px;
+    height: 44px;
+    font-size: 13px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-form button.primary {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-tabs,
+  .doul-auth-card { scroll-behavior: auto; }
+}
