@@ -15,6 +15,7 @@ import { DocumentSigningPanel } from "./DocumentSigningPanel";
 import { DocumentTableEditor, buildDocumentData, type DocumentTableValues } from "./DocumentTableEditor";
 import { documentAuthoringForms, eligibleDocumentSources, sourceSelectionForForm } from "./document-authoring-source";
 import "./document-authoring.css";
+import "./fieldwire-document-layout.css";
 import { documentAuthoringCopy, documentFormNames } from "./document-authoring-copy";
 import { useSessionFormDraft } from "../data/session-form-draft";
 
