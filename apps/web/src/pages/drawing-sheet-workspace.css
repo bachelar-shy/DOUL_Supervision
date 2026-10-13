@@ -353,3 +353,16 @@
 .drawing-sheet-edit-dialog select,
 .drawing-sheet-edit-dialog textarea { width:100%; padding:7px; border:1px solid #bcc6d2;
   border-radius:3px; font-size:12px; }
+
+/* Sheet-only rail width: preserve the reviewed Fieldwire sheet geometry. */
+.app-shell[data-layout-system="field-workspace"] .drawing-sheet-workspace .drawing-sheet-viewer:not(.right-collapsed) {
+  grid-template-columns: minmax(0, 1fr) 270px;
+}
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] .drawing-sheet-workspace .drawing-sheet-viewer:not(.right-collapsed) {
+    display: block;
+  }
+  .app-shell[data-layout-system="field-workspace"] .drawing-sheet-workspace .drawing-sheet-issue-rail {
+    width: min(280px, calc(100vw - 45px));
+  }
+}
