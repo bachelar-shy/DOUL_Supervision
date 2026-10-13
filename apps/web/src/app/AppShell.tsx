@@ -36,6 +36,7 @@ import { FieldPhotoLibrary } from "../pages/FieldPhotoLibrary";
 import { FieldWorkAreas } from "../pages/FieldWorkAreas";
 import { FieldOfflineQueue } from "../pages/FieldOfflineQueue";
 import { PersonnelRequestPage } from "../pages/PersonnelRequestPage";
+import { requestDrawingFocus } from "../data/drawing-focus";
 import "../design/shell-compact-status.css";
 import { fieldCoreRouteFor, fieldCoreRoutes, machineForRoute, mobileRoutes, roleRoutes, routes, type CorrectionSection } from "./routes";
 import { paymentLabelKeys } from "../data/payment-workspace";
@@ -680,6 +681,12 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                 <TodayPage
                   role={role}
                   workspace={workspace}
+                  client={client}
+                  onOpenDrawingPin={(sheetId, pinId) => {
+                    nav("drawings");
+                    if (!requestDrawingFocus(workspace.project.id, sheetId, pinId))
+                      setToast(t("app.error.connection"));
+                  }}
                   allowedRoutes={fieldCoreMode && allowed.includes("corrections") ? [...allowed, "observations", "issues", "actions"] : allowed}
                   onNavigate={nav}
                   onOpenItem={(item) => {

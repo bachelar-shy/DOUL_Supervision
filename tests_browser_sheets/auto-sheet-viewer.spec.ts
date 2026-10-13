@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 function makePdf(pages = 3): Buffer {
   const chunks: Buffer[] = [Buffer.from("%PDF-1.4\n")];
@@ -40,6 +40,18 @@ async function login(page: Page, role: "ADM" | "CON" | "SUP" | "OWN") {
   await expect(page.getByRole("button", { name: "로그아웃", exact: true })).toBeVisible();
   await page.goto("/#/drawings");
   await expect(page.locator('[data-ui-component="drawing-sheet-workspace"]')).toBeVisible();
+}
+
+async function placePinOnVisibleImage(view: Locator, xRatio: number, yRatio: number) {
+  const frame = view.locator(".drawing-board-image-frame");
+  const box = await frame.boundingBox();
+  if (!box) throw new Error("Cannot locate current drawing image");
+  // The mobile image shrinks to fit. Absolute desktop offsets can hit the
+  // viewport behind the image and are not a usable field interaction.
+  await frame.click({position: {
+    x: Math.round(box.width * xRatio),
+    y: Math.round(box.height * yRatio),
+  }});
 }
 
 test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane proportions", async ({ page }, testInfo) => {
@@ -109,7 +121,7 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   await modal.getByRole("button", { name: "저장" }).click();
   await expect(view.locator(".drawing-board-current-label")).toContainText("DT-05A");
   await view.getByRole("button", { name: "지적·이슈 핀 추가" }).click();
-  await view.locator(".drawing-board-image-frame").click({ position: { x: 280, y: 190 } });
+  await placePinOnVisibleImage(view, .55, .55);
   const form = view.getByRole("form", { name: "도면 마크업 핀 작성" });
   await expect(form.getByText("도면 위치 선택 완료", { exact: false })).toBeVisible();
   await form.getByRole("textbox", { name: "내용" }).fill("보 부위 간섭 확인 필요 - 합성 테스트");
@@ -127,8 +139,8 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
     { button: "현장상황 핀 추가", label: "합성 현장상황 위치 기록", marker: "site" },
   ]) {
     await view.getByRole("button", { name: pinCase.button }).click();
-    const coordinate = pinCase.marker === "inspection" ? { x: 145, y: 105 } : { x: 220, y: 85 };
-    await view.locator(".drawing-board-image-frame").click({ position: coordinate });
+    const coordinate = pinCase.marker === "inspection" ? { x: .37, y: .66 } : { x: .68, y: .35 };
+    await placePinOnVisibleImage(view, coordinate.x, coordinate.y);
     const pinForm = view.getByRole("form", { name: "도면 마크업 핀 작성" });
     await expect(pinForm.getByText("도면 위치 선택 완료", { exact: false })).toBeVisible();
     await pinForm.getByRole("textbox", { name: "내용" }).fill(pinCase.label);

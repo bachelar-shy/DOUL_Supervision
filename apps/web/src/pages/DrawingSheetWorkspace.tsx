@@ -19,6 +19,9 @@ import { DrawingRevisionDialog } from "./DrawingRevisionDialog";
 import "./drawing-sheet-workspace.css";
 import { FIELD_DRAWING_FOCUS_EVENT, consumeDrawingFocus } from "../data/drawing-focus";
 import { FieldPinPhotosPanel } from "./FieldPinPhotosPanel";
+import { DrawingPinDiscussion } from "./DrawingPinDiscussion";
+import { DrawingPinCountBadges, DrawingThumbnailPins, type PinMarker } from "./DrawingPinIndicators";
+import { loadDrawingPinIndex, type DrawingPinActivity } from "../data/drawing-pin-activity-client";
 
 const OriginalDrawingReviewPage = lazy(() => import("./DrawingReviewPage").then(mod => ({ default: mod.DrawingReviewPage })));
 
@@ -34,9 +37,10 @@ interface Props {
 type SheetMode = "catalog" | "viewer" | "original";
 type PinChoice = DrawingPinKind | null;
 
-function ImageAsset({ client, sheet, size, label, className = "", onLoad }: {
+function ImageAsset({ client, sheet, size, label, className = "", onLoad, eager = false }: {
   client: SupervisionClient; sheet: DrawingSheet; size: "thumb" | "preview";
   label: string; className?: string; onLoad?: (w: number, h: number) => void;
+  eager?: boolean;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -44,6 +48,7 @@ function ImageAsset({ client, sheet, size, label, className = "", onLoad }: {
   const [error, setError] = useState(false);
   useEffect(() => {
     setVisible(false); setSrc(null); setError(false);
+    if (eager) { setVisible(true); return; }
     const el = root.current;
     if (!el) return;
     const observer = new IntersectionObserver(entries => {
@@ -51,7 +56,7 @@ function ImageAsset({ client, sheet, size, label, className = "", onLoad }: {
     }, { rootMargin: "220px" });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [sheet.id, size]);
+  }, [sheet.id, size, eager]);
   useEffect(() => {
     if (!visible || sheet.status !== "ready" || client.kind !== "http") return;
     let active = true;
@@ -74,6 +79,18 @@ function ImageAsset({ client, sheet, size, label, className = "", onLoad }: {
       {error ? "이미지 로딩 실패" : sheet.status === "processing" ? "이미지 변환 중" :
         sheet.status === "failed" ? "변환 오류" : "불러오는 중"}
     </div>}
+  </div>;
+}
+
+function SheetPinImage({ client, sheet, size, label, pins, eager = false }: {
+  client: SupervisionClient; sheet: DrawingSheet; size: "thumb" | "preview";
+  label: string; pins: readonly PinMarker[]; eager?: boolean;
+}) {
+  const [naturalSize, setNaturalSize] = useState<{width:number;height:number} | null>(null);
+  return <div className="drawing-thumbnail-wrap">
+    <ImageAsset client={client} sheet={sheet} size={size} label={label} eager={eager}
+      onLoad={(width, height) => setNaturalSize({width, height})}/>
+    <DrawingThumbnailPins pins={pins} naturalSize={naturalSize}/>
   </div>;
 }
 
@@ -102,6 +119,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   const [sheets, setSheets] = useState<DrawingSheet[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pins, setPins] = useState<DrawingSheetPin[]>([]);
+  const [pinActivity, setPinActivity] = useState<DrawingPinActivity[]>([]);
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
   const [markups, setMarkups] = useState<DrawingSheetMarkup[]>([]);
   const [markupTool, setMarkupTool] = useState<DrawingMarkupKind | "eraser" | "pointer">("pointer");
@@ -171,6 +189,32 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     }
   }, [sets, refresh]);
 
+  const reloadPinActivity = useCallback(async () => {
+    if (client.kind !== "http") return;
+    try { const next = await loadDrawingPinIndex(client); setPinActivity(next.items); }
+    catch { setPinActivity([]); }
+  }, [client]);
+  useEffect(() => {
+    setPinActivity([]);
+    void reloadPinActivity();
+    const update = () => { if (document.visibilityState === "visible") void reloadPinActivity(); };
+    window.addEventListener("focus", update);
+    window.addEventListener("doul-drawing-pin-activity", update);
+    const timer = window.setInterval(update, 5000);
+    return () => {
+      window.removeEventListener("focus", update);
+      window.removeEventListener("doul-drawing-pin-activity", update);
+      window.clearInterval(timer);
+    };
+  }, [projectId, workspace.role.id, reloadPinActivity]);
+  const pinsBySheet = useMemo(() => {
+    const grouped = new Map<string, DrawingPinActivity[]>();
+    for (const pin of pinActivity) {
+      const group = grouped.get(pin.sheetId) ?? [];
+      group.push(pin); grouped.set(pin.sheetId, group);
+    }
+    return grouped;
+  }, [pinActivity]);
   const selected = useMemo(() => sheets.find(item => item.id === selectedId) ?? null, [sheets, selectedId]);
   const visibleSheets = useMemo(() => {
     const query = keyword.trim().toLocaleLowerCase();
@@ -383,6 +427,8 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
       const response = await createSheetPin(client, selected.id, payload, pinRequest.current.key);
       pinRequest.current = null;
       setPins(items => [...items, response.pin]);
+      void reloadPinActivity();
+      window.dispatchEvent(new Event("doul-drawing-pin-activity"));
       setSelectedPinId(response.pin.id); setDetailOpen(false);
       setPinChoice(null); setPendingPoint(null); setComment(""); setRecordRef("");
       setNotice(payload.recordRef ? "업무와 연결된 도면 핀을 저장했습니다." : "도면 현장 메모를 초안으로 저장했습니다.");
@@ -412,6 +458,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
       setMarkups(previous => [...previous, result.markup]);
       setMarkupHistory(previous => [...previous, result.markup.id]);
       setRedoHistory([]);
+      if (window.matchMedia("(max-width: 767px)").matches) setRightOpen(true);
       setNotice("도면 마크업을 저장했습니다.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "마크업 저장 실패"); }
     finally { setMarkupBusy(false); }
@@ -556,10 +603,12 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
           {group.items.map(sheet => <button key={sheet.id} type="button"
             data-sheet-id={sheet.id} className="drawing-sheet-card"
             onClick={() => openSheet(sheet)}>
-            <ImageAsset client={client} sheet={sheet} size="thumb" label={sheet.number + " 도면 미리보기"} />
+            <SheetPinImage client={client} sheet={sheet} size="thumb"
+              label={sheet.number + " 도면 미리보기"} pins={pinsBySheet.get(sheet.id) ?? []} />
             <span className="sheet-card-text">
               <strong>{sheet.number}</strong>
               <small>{sheet.title}</small>
+              <DrawingPinCountBadges pins={pinsBySheet.get(sheet.id) ?? []} />
               <small className={"drawing-sheet-review-text" +
                 (sheet.metadataReview?.status !== "verified" ? " needs-review" : "")}>
                 {sheet.metadataReview?.status === "verified" ? "정보 확인됨" : "정보 미확인"}
@@ -601,7 +650,8 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
               <button key={tool} type="button" aria-label={label} title={label}
                 aria-pressed={markupTool === tool} disabled={markupBusy}
                 className={markupTool === tool ? "selected" : ""}
-                onClick={() => { setPinChoice(null); setPendingPoint(null); setMarkupTool(tool); }}>
+                onClick={() => { setPinChoice(null); setPendingPoint(null); setMarkupTool(tool);
+                  if (window.matchMedia("(max-width: 767px)").matches) setRightOpen(false); }}>
                 <Icon size={17}/>
               </button>)}
             {canWrite && <button type="button" title="마크업 실행취소" aria-label="마크업 실행취소"
@@ -735,7 +785,6 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
       </aside>}
     </div>}
 
-    setMode("viewer"); setSelectedId(sheet.id); setPins([]); setSelectedPinId(null);
     {revisionOpen && mode === "viewer" && selected &&
       <DrawingRevisionDialog client={client} selected={selected} sheets={sheets}
         canLink={["ADM","SUP"].includes(workspace.role.actorGroup)}
@@ -758,6 +807,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
             {selectedPin.recordRef
               ? <button type="button" className="draw-command" onClick={() => openLinkedPin(selectedPin)}>연결된 업무 열기 →</button>
               : <p>공식 업무와 연결되지 않은 도면 마크입니다.</p>}
+            <DrawingPinDiscussion client={client} sheetId={selected.id} pinId={selectedPin.id} />
             <h4>현장 기록</h4>
             <FieldPinPhotosPanel key={selectedPin.id} client={client} sheetId={selected.id} pin={selectedPin} />
           </div>
@@ -771,10 +821,12 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
               <dt>도면 개정</dt><dd>{selected.revision}</dd>
               <dt>도면 위치</dt><dd>{Math.round(selectedPin.x * 100)}% / {Math.round(selectedPin.y * 100)}%</dd>
             </dl>
-            <div className="drawing-issue-dialog-sheet">
-              <ImageAsset client={client} sheet={selected} size="thumb" label={selected.number + " 관련 도면"}/>
+            <button type="button" className="drawing-issue-dialog-sheet" aria-label={selected.number + " 도면 열기"}
+              onClick={() => { setDetailOpen(false); setRightOpen(!window.matchMedia("(max-width: 767px)").matches); }}>
+              <SheetPinImage client={client} sheet={selected} size="thumb"
+                label={selected.number + " 관련 도면"} pins={pins} eager />
               <strong>{selected.number}</strong><span>{selected.title}</span>
-            </div>
+            </button>
           </aside>
         </div>
       </section>

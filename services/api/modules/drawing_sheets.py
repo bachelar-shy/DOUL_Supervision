@@ -26,6 +26,7 @@ from .drawing_sheet_metadata import extract_sheet_candidate
 from .drawing_sheet_metadata_review import install_sheet_metadata_review_routes
 from .drawing_sheet_annotations import install_sheet_markup_routes
 from .drawing_sheet_revision_links import install_sheet_revision_routes
+from .drawing_pin_replies import install_sheet_pin_reply_routes
 
 LOG = logging.getLogger(__name__)
 WRITERS = frozenset({"ADM", "SUP", "CON"})
@@ -475,6 +476,34 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
             values.append(deepcopy(pin))
         return sorted(values, key=lambda item: item["createdAt"])
 
+    @app.get("/projects/{project_id}/drawing-sheets/pin-index")
+    def pin_index(project_id: str, request: Request):
+        """One permission-filtered read for Today and per-sheet count/thumbnail overlays."""
+        actor = identity(request)
+        with store.transaction():
+            role = context(project_id, request, actor)
+            sheets = store.meta.get("drawingSheets", {}).get(project_id, {})
+            reply_project = store.meta.get("drawingPinReplies", {}).get(project_id, {})
+            rows = []
+            for sheet in sheets.values():
+                for pin in visible_pins(project_id, sheet["id"], actor, role):
+                    replies = reply_project.get(sheet["id"], {}).get(pin["id"], [])
+                    latest = replies[-1] if replies else None
+                    rows.append({
+                        "pinId": pin["id"], "sheetId": sheet["id"],
+                        "kind": pin["kind"], "comment": pin["comment"],
+                        "status": pin["status"], "recordRef": pin.get("recordRef"),
+                        "x": pin["x"], "y": pin["y"],
+                        "createdAt": pin["createdAt"],
+                        "lastActivityAt": latest["createdAt"] if latest else pin["createdAt"],
+                        "replyCount": len(replies),
+                        "latestReply": latest["message"][:180] if latest else None,
+                        "sheetNumber": sheet["number"], "sheetTitle": sheet["title"],
+                        "sheetRevision": sheet.get("revision", ""),
+                    })
+            rows.sort(key=lambda item: (item["lastActivityAt"], item["pinId"]), reverse=True)
+            return {"items": rows, "count": len(rows)}
+
     @app.get("/projects/{project_id}/drawing-sheets/{sheet_id}")
     def get_sheet(project_id: str, sheet_id: str, request: Request):
         actor = identity(request)
@@ -603,3 +632,6 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
     install_sheet_revision_routes(app, store, identity=identity, context=context,
                                   sheet_for=sheet_for, set_for=set_for,
                                   key_for=key_for, audit=_audit)
+    install_sheet_pin_reply_routes(
+        app, store, identity=identity, context=context, sheet_for=sheet_for,
+        visible_pins=visible_pins, key_for=key_for, audit=_audit)
