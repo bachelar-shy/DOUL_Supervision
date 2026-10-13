@@ -166,6 +166,10 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   wheelTransformRef.current = { zoom, pan };
   const drag = useRef<{ x: number; y: number; startX: number; startY: number; moved: boolean } | null>(null);
   const pinRequest = useRef<{ key: string; serialized: string; sheetId: string } | null>(null);
+  // Async save callbacks must compare against the live sheet, not the
+  // selection captured before awaiting a network response.
+  const liveSelectedId = useRef(selectedId);
+  liveSelectedId.current = selectedId;
   const uploadAttempt = useRef<{file: File; key: string} | null>(null);
   const retryAttempts = useRef(new Map<string, {version: number;key:string}>());
   const [retryingSetId, setRetryingSetId] = useState<string | null>(null);
@@ -453,7 +457,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
       if (response.pin.sheetId !== sheetId) throw new Error("저장 대상 도면이 일치하지 않습니다.");
       if (pinRequest.current?.sheetId === sheetId && pinRequest.current.serialized === serialized)
         pinRequest.current = null;
-      if (selectedId !== sheetId) {
+      if (liveSelectedId.current !== sheetId) {
         void reloadPinActivity();
         return;
       }
