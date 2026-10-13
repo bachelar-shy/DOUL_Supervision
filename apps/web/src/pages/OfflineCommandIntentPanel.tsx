@@ -15,7 +15,7 @@ function language() {
 
 type Choice = { key: string; item: WorkItem; action: CommandDescriptor };
 
-export function OfflineCommandIntentPanel({ client, workspace, online, onChanged }: { client: SupervisionClient; workspace: Workspace; online: boolean; onChanged: () => Promise<void> }) {
+export function OfflineCommandIntentPanel({ client, workspace, online, onChanged, onStatus }: { client: SupervisionClient; workspace: Workspace; online: boolean; onChanged: () => Promise<void>; onStatus?: (message: string) => void }) {
   const t = offlineCommandLabels[language()];
   const actorId = client.session?.actor.partyId ?? "unknown";
   const roleId = client.session?.actor.roleAssignmentId ?? workspace.role.id;
@@ -67,6 +67,7 @@ export function OfflineCommandIntentPanel({ client, workspace, online, onChanged
     if (!dialog) return;
     const next = saveOfflineCommandIntent(key, dialog.item, dialog.action.command, payload, evidenceIds, actorId, roleId, projectId);
     setIntent(next); setFresh(null); setChecked(false); setDialog(null); setError("");
+    onStatus?.("기기에 임시 저장했습니다. 인터넷 연결 후 확인·제출할 수 있습니다.");
   }
 
   function rebase() {
@@ -81,6 +82,7 @@ export function OfflineCommandIntentPanel({ client, workspace, online, onChanged
     try {
       await client.execute(currentItem, intent.command, intent.payload, intent.evidenceIds, intent.requestKey);
       clearOfflineCommandIntent(key); setIntent(null); setFresh(null); setChecked(false); await onChanged();
+      onStatus?.("기기에 보관한 업무를 서버에 제출했습니다.");
     } catch (cause) {
       setError(cause instanceof ApiError ? reasonLabel(cause.detail.code) : reasonLabel());
       setChecked(false);
