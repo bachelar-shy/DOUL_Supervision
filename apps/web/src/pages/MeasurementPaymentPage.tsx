@@ -291,7 +291,7 @@ export function MeasurementPaymentPage({
           <div className="payment-record-list">
             {items.length ? items.map((item) => {
               const data = paymentRecordData(item);
-              return <button type="button" className={`payment-record-row${selected === item.record.id ? " selected" : ""}`} key={item.record.id} onClick={() => onSelect(item.record.id)}>
+              return <button type="button" className={`payment-record-row${selected === item.record.id ? " selected" : ""}`} key={item.record.id} aria-pressed={selected === item.record.id} onClick={() => onSelect(item.record.id)}>
                 <span className="payment-record-main"><strong>{recordTitle(item.record)}</strong><small>{paymentIdentity(item)} · {recordVersionLabel(item.record.version)}</small></span>
                 <span className="payment-record-amount">{amount(machine === "payment_claim" ? data.claimedGrossAmount : machine === "quantity_measurement" ? data.claimedQuantity : data.contractAmount, machine === "quantity_measurement" ? data.unit : data.currency)}</span>
                 <StatusBadge status={item.record.status}>{states[item.record.status || ""] || item.record.status || "—"}</StatusBadge>
