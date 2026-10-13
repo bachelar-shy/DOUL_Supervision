@@ -169,7 +169,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   // Async save callbacks must compare against the live sheet, not the
   // selection captured before awaiting a network response.
   const liveSelectedId = useRef(selectedId);
-  liveSelectedId.current = selectedId;
+  liveSelectedId.current = mode === "viewer" ? selectedId : null;
   const uploadAttempt = useRef<{file: File; key: string} | null>(null);
   const retryAttempts = useRef(new Map<string, {version: number;key:string}>());
   const [retryingSetId, setRetryingSetId] = useState<string | null>(null);
