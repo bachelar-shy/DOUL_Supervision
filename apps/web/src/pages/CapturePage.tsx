@@ -268,11 +268,6 @@ export function CapturePage({
   return (
     <PageBoundary name="capture">
       <CaptureTemplate>
-        <div className="col-span-full flex flex-wrap items-center justify-between gap-3" data-ui-component="field-record-create-actions">
-          <h2 className="text-xl font-semibold">{t("capture.quick.title")}</h2>
-          <button type="button" className="secondary" style={{ minHeight: 44 }}
-            onClick={() => fileIntakeRef.current?.click()}>{t("capture.quick.addFiles")}</button>
-        </div>
         <div className="col-span-full">
           <FieldRecordPanel key={workspace.project.id + ":" + workspace.role.id}
             client={client} workspace={workspace} online={online}
