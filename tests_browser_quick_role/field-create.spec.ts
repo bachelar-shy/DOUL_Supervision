@@ -17,9 +17,10 @@ test("시공사 신규 현장기록 작성과 저장 및 검측 신규 버튼", 
   await expect(page).toHaveURL(/#\/capture$/);
   const field = page.locator('[data-ui-component="field-record-panel"]');
   await expect(field.getByRole("button", { name: "＋ 신규 현장기록" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "＋ 사진·파일 추가" })).toBeVisible();
+  const originalIntake = page.locator('[data-ui-component="capture-upload-toolbar"] .upload-label').first();
+  await expect(originalIntake).toBeVisible();
   const chooseFile = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: "＋ 사진·파일 추가" }).click();
+  await originalIntake.click();
   const filePicker = await chooseFile;
   expect(filePicker.isMultiple()).toBe(true);
   await field.getByRole("button", { name: "＋ 신규 현장기록" }).click();

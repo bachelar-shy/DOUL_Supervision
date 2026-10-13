@@ -189,6 +189,7 @@ function DocumentEditor({ client, workspace, online, refresh }: DocumentPageProp
             setExportError("");
           }}>{uxCopy.sessionDiscard}</button>
         </div>
+        <div className="document-metadata-grid" data-ui-component="document-metadata-grid">
         <label>
           {t("document.form.label")}
           <select
@@ -245,6 +246,7 @@ function DocumentEditor({ client, workspace, online, refresh }: DocumentPageProp
             <option value="final">{copy.final}</option>
           </select>
         </label>
+        </div>
         <div className="notice">
           {renderMode === "draft" ? t("document.notice.draft") : copy.finalStatus}
         </div>
