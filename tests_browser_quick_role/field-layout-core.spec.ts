@@ -14,6 +14,7 @@ for (const role of ["ADM", "SUP", "CON", "OWN"] as const) {
     await expect(page.getByRole("button", { name: "로그아웃", exact: true })).toBeVisible();
     const shell = page.locator('.app-shell[data-layout-system="field-workspace"]');
     await expect(shell).toBeVisible();
+    await expect(page.locator('[data-ui-component="decision-panel"]')).toHaveCount(0);
     const nav = page.locator("#side-navigation nav.doul-navigation");
     expect(await nav.locator("button[data-route]").evaluateAll(nodes =>
       nodes.map(node => node.getAttribute("data-route")))).toEqual(fieldMenus[role]);
