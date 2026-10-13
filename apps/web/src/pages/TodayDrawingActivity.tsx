@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SupervisionClient } from "../data/supervision-client";
 import { drawingPinLabels } from "../data/drawing-sheet-client";
+import { formatDateTime } from "../i18n/format";
 import { loadDrawingPinIndex, type DrawingPinActivity } from "../data/drawing-pin-activity-client";
 import "./today-drawing-activity.css";
 
@@ -66,7 +67,7 @@ export function TodayDrawingActivity({ client, onOpenPin }: {
         </span>
         <span className="today-pin-tail">
           <small>{pin.replyCount ? "댓글 " + pin.replyCount : ""}</small>
-          <small>{new Date(pin.lastActivityAt).toLocaleDateString("ko-KR")}</small>
+          <small>{formatDateTime(pin.lastActivityAt)}</small>
         </span>
       </button>)}
     </div>
