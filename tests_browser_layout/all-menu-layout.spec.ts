@@ -122,3 +122,35 @@ test("global header shows project context instead of repeating the active menu t
     }
   }
 });
+
+
+test("long Korean, Vietnamese and English project names truncate without changing project context", async ({ page }) => {
+  await enter(page, "SUP");
+  // Test-login may render a temporary sample-site label before the synthetic
+  // workspace finishes loading. Wait for a real record before reading it.
+  await page.evaluate(() => { location.hash = "#/issues"; });
+  await expect(page.locator('.app-shell[data-workspace-route="issues"] .record-row').first()).toBeVisible();
+  const breadcrumb = page.locator('[data-ui-component="project-context-breadcrumb"]');
+  const name = breadcrumb.locator("b");
+  const fullName = (await page.locator(".project-chip strong").textContent())?.trim();
+  expect(fullName).toBeTruthy();
+  await expect(name).toHaveAttribute("title", fullName!);
+  for (const width of [390, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    // Simulates a realistic overlong project without changing API data.
+    await name.evaluate(node => {
+      node.textContent = "Hà Nội Nhà máy công nghiệp Project A동 공장 개선공사 ".repeat(9);
+    });
+    const metrics = await name.evaluate(node => {
+      const style = getComputedStyle(node);
+      return { client: node.clientWidth, scroll: node.scrollWidth, overflow: style.overflow,
+        ellipsis: style.textOverflow, parent: node.parentElement?.clientWidth ?? 0 };
+    });
+    expect(metrics.ellipsis, width + ": project truncation").toBe("ellipsis");
+    expect(metrics.overflow, width + ": project text is clipped locally").toBe("hidden");
+    expect(metrics.client, width + ": breadcrumb constrained by header").toBeLessThanOrEqual(metrics.parent + 1);
+    expect(metrics.scroll, width + ": long project is ellipsized").toBeGreaterThan(metrics.client + 3);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), width + ": document overflow").toBeLessThanOrEqual(2);
+    await expect(name).toHaveAttribute("title", fullName!);
+  }
+});
