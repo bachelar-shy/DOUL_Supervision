@@ -13,6 +13,7 @@ import "./design/quiet-graphite-a.css";
 import "./design/field-workspace-layout.css";
 import "./design/fieldwire-parity.css";
 import "./design/fieldwire-authoring-disclosure.css";
+import "./design/fieldwire-tabs-toolbar.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
