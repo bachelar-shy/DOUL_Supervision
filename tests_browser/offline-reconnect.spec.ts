@@ -128,7 +128,7 @@ test("offline intent survives reconnect and refuses a competing server version u
   const loaded = page.waitForResponse(response => response.url().endsWith("/workspace") && response.ok());
   await page.goto("/#/today");
   await loaded;
-  const summary = page.locator("main > details > summary");
+  const summary = page.locator('[data-ui-component="offline-status-toggle"]');
   await summary.click();
   const panel = page.getByRole("region", { name: "연결 끊김 시 업무 임시저장" });
   const option = panel.locator(`option[value="inspection:${record.id}:start"]`);
@@ -180,7 +180,7 @@ test("current offline intent is sent only by explicit submission after reconnect
   if (!record) throw new Error("Missing scheduled inspection fixture");
   const loaded = page.waitForResponse(response => response.url().endsWith("/workspace") && response.ok());
   await page.goto("/#/today"); await loaded;
-  await page.locator("main > details > summary").click();
+  await page.locator('[data-ui-component="offline-status-toggle"]').click();
   const panel = page.getByRole("region", { name: "연결 끊김 시 업무 임시저장" });
   await panel.getByRole("combobox").selectOption(`inspection:${record.id}:start`);
   browserCommands = 0;

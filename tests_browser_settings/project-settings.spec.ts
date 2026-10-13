@@ -117,7 +117,7 @@ test("approved test project switches real sessions and shows synthetic data and 
   if(test.info().project.name==="phone")await page.locator(".menu-toggle").click();
   const chooser=page.getByLabel("프로젝트 선택",{exact:true});await expect(chooser).toBeVisible();
   await chooser.selectOption({label:"DOUL 테스트 프로젝트 · 합성자료"});
-  await expect(page.getByText("합성 테스트 자료 · 실제 현장 증빙 아님",{exact:true})).toBeVisible();
+  await expect(page.locator(".project-chip")).toHaveAttribute("title", "합성 테스트 자료 · 실제 현장 증빙 아님");
   await settings(page);await expect(panel(page,"기본정보").getByLabel("프로젝트명",{exact:true})).toHaveValue("DOUL 테스트 프로젝트 · 합성자료");
   await page.goto("/#/drawings");
   await page.getByRole("button", { name: "기존 PDF 검토" }).click();
@@ -137,7 +137,7 @@ test("project choice remains usable on tablets and when desktop navigation is co
   await page.locator(".sidebar-collapse-toggle").click();
   const picker=page.getByRole("combobox",{name:"프로젝트 선택",exact:true});await expect(picker).toBeVisible();
   await picker.selectOption({label:"DOUL 테스트 프로젝트 · 합성자료"});
-  await expect(page.getByText("합성 테스트 자료 · 실제 현장 증빙 아님",{exact:true})).toBeVisible();
+  await expect(page.locator(".project-chip")).toHaveAttribute("title", "합성 테스트 자료 · 실제 현장 증빙 아님");
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
 });
 

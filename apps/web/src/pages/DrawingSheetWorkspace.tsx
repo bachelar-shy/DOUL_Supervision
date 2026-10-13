@@ -37,9 +37,10 @@ interface Props {
 type SheetMode = "catalog" | "viewer" | "original";
 type PinChoice = DrawingPinKind | null;
 
-function ImageAsset({ client, sheet, size, label, className = "", onLoad }: {
+function ImageAsset({ client, sheet, size, label, className = "", onLoad, eager = false }: {
   client: SupervisionClient; sheet: DrawingSheet; size: "thumb" | "preview";
   label: string; className?: string; onLoad?: (w: number, h: number) => void;
+  eager?: boolean;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -47,6 +48,7 @@ function ImageAsset({ client, sheet, size, label, className = "", onLoad }: {
   const [error, setError] = useState(false);
   useEffect(() => {
     setVisible(false); setSrc(null); setError(false);
+    if (eager) { setVisible(true); return; }
     const el = root.current;
     if (!el) return;
     const observer = new IntersectionObserver(entries => {
@@ -54,7 +56,7 @@ function ImageAsset({ client, sheet, size, label, className = "", onLoad }: {
     }, { rootMargin: "220px" });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [sheet.id, size]);
+  }, [sheet.id, size, eager]);
   useEffect(() => {
     if (!visible || sheet.status !== "ready" || client.kind !== "http") return;
     let active = true;
@@ -80,13 +82,13 @@ function ImageAsset({ client, sheet, size, label, className = "", onLoad }: {
   </div>;
 }
 
-function SheetPinImage({ client, sheet, size, label, pins }: {
+function SheetPinImage({ client, sheet, size, label, pins, eager = false }: {
   client: SupervisionClient; sheet: DrawingSheet; size: "thumb" | "preview";
-  label: string; pins: readonly PinMarker[];
+  label: string; pins: readonly PinMarker[]; eager?: boolean;
 }) {
   const [naturalSize, setNaturalSize] = useState<{width:number;height:number} | null>(null);
   return <div className="drawing-thumbnail-wrap">
-    <ImageAsset client={client} sheet={sheet} size={size} label={label}
+    <ImageAsset client={client} sheet={sheet} size={size} label={label} eager={eager}
       onLoad={(width, height) => setNaturalSize({width, height})}/>
     <DrawingThumbnailPins pins={pins} naturalSize={naturalSize}/>
   </div>;
@@ -456,6 +458,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
       setMarkups(previous => [...previous, result.markup]);
       setMarkupHistory(previous => [...previous, result.markup.id]);
       setRedoHistory([]);
+      if (window.matchMedia("(max-width: 767px)").matches) setRightOpen(true);
       setNotice("도면 마크업을 저장했습니다.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "마크업 저장 실패"); }
     finally { setMarkupBusy(false); }
@@ -647,7 +650,8 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
               <button key={tool} type="button" aria-label={label} title={label}
                 aria-pressed={markupTool === tool} disabled={markupBusy}
                 className={markupTool === tool ? "selected" : ""}
-                onClick={() => { setPinChoice(null); setPendingPoint(null); setMarkupTool(tool); }}>
+                onClick={() => { setPinChoice(null); setPendingPoint(null); setMarkupTool(tool);
+                  if (window.matchMedia("(max-width: 767px)").matches) setRightOpen(false); }}>
                 <Icon size={17}/>
               </button>)}
             {canWrite && <button type="button" title="마크업 실행취소" aria-label="마크업 실행취소"
@@ -818,9 +822,9 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
               <dt>도면 위치</dt><dd>{Math.round(selectedPin.x * 100)}% / {Math.round(selectedPin.y * 100)}%</dd>
             </dl>
             <button type="button" className="drawing-issue-dialog-sheet" aria-label={selected.number + " 도면 열기"}
-              onClick={() => { setDetailOpen(false); setRightOpen(true); }}>
+              onClick={() => { setDetailOpen(false); setRightOpen(!window.matchMedia("(max-width: 767px)").matches); }}>
               <SheetPinImage client={client} sheet={selected} size="thumb"
-                label={selected.number + " 관련 도면"} pins={pins} />
+                label={selected.number + " 관련 도면"} pins={pins} eager />
               <strong>{selected.number}</strong><span>{selected.title}</span>
             </button>
           </aside>
