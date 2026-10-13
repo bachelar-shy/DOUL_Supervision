@@ -1,5 +1,6 @@
 import { recordTypeLabel } from "../labels";
 import { recordVersionLabel } from "../labels";
+import i18n from "../i18n/config";
 import { useMemo, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CommandDescriptor, CreationCapability, DomainRef, WorkItem, Workspace } from "../data/ui-contract";
@@ -495,8 +496,8 @@ export function CompletionHandoverPage({
         <p className="completion-intro">{t("description")}</p>
       </Tabs>
       <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
-        <Panel className="list-pane">
-          <SectionHeader title={t(tab.key)} meta={`${items.length}`} />
+        <Panel className="list-pane" aria-label={t(tab.key)}>
+          <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">{i18n.t("common.count", { count: items.length })}</p>
           <div data-ui-component="completion-create-action" className="completion-create-action"><ActionButton disabled={!online || client.kind === "mock" || !capability?.canCreate} onClick={() => setCreating(machine)}>{t("create")}</ActionButton></div>
           {!capability?.canCreate && <p className="completion-capability-note">{capability ? creationCapabilityLabel(capability) : t("createUnavailable")}</p>}
           <p className="muted">{t(tab.description)}</p>
