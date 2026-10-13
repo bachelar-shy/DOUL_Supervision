@@ -1,0 +1,20 @@
+.drawing-pin-discussion { margin-top:17px; border-top:1px solid #d9dee5; font-size:12px; }
+.drawing-pin-discussion-header h4 { margin:12px 0 8px; border:0; padding:0; font-weight:700; }
+.drawing-pin-discussion-header small { color:#677688; font-weight:500; }
+.drawing-pin-discussion-stream { display:grid; gap:6px; max-height:240px; overflow:auto; }
+.drawing-pin-reply { border:1px solid #e1e5ea; background:#fff; border-radius:3px; padding:8px 9px; }
+.drawing-pin-reply.nested { margin-left:17px; border-left:3px solid #8ba5d2; }
+.drawing-pin-reply header { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.drawing-pin-reply header small,.drawing-pin-reply-re { color:#697586; }
+.drawing-pin-reply p { margin:5px 0 !important; overflow-wrap:anywhere; white-space:pre-wrap; }
+.drawing-pin-reply-action { border:0; background:none; padding:2px 0; color:#2453a0; text-decoration:underline; cursor:pointer; }
+.drawing-pin-discussion-muted { color:#738091; margin:9px 0; font-size:12px; }
+.drawing-pin-discussion-error { color:#a62928; margin:8px 0; }
+.drawing-pin-discussion-compose { margin-top:9px; }
+.drawing-pin-discussion-compose label { display:block; margin:0 0 6px; font-weight:600; }
+.drawing-pin-discussion-compose textarea { width:100%; box-sizing:border-box; border:1px solid #c7d0db; border-radius:3px; padding:7px; resize:vertical; background:#fff; color:#273545; }
+.drawing-pin-reply-to { display:flex; justify-content:space-between; gap:8px; padding:5px; background:#eaf0f9; color:#254c85; }
+.drawing-pin-reply-to button { background:transparent; border:0; text-decoration:underline; }
+.drawing-pin-discussion-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:9px; margin-top:7px; }
+.drawing-pin-discussion-actions span { color:#737e8c; font-size:10px; }
+.drawing-pin-discussion-actions button { min-height:36px; padding:5px 13px; }

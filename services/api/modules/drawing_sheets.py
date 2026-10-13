@@ -26,6 +26,7 @@ from .drawing_sheet_metadata import extract_sheet_candidate
 from .drawing_sheet_metadata_review import install_sheet_metadata_review_routes
 from .drawing_sheet_annotations import install_sheet_markup_routes
 from .drawing_sheet_revision_links import install_sheet_revision_routes
+from .drawing_pin_replies import install_sheet_pin_reply_routes
 
 LOG = logging.getLogger(__name__)
 WRITERS = frozenset({"ADM", "SUP", "CON"})
@@ -603,3 +604,6 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
     install_sheet_revision_routes(app, store, identity=identity, context=context,
                                   sheet_for=sheet_for, set_for=set_for,
                                   key_for=key_for, audit=_audit)
+    install_sheet_pin_reply_routes(
+        app, store, identity=identity, context=context, sheet_for=sheet_for,
+        visible_pins=visible_pins, key_for=key_for, audit=_audit)
