@@ -635,13 +635,16 @@ export function ContractPage({
   return (
     <PageBoundary name="contract">
       <section data-ui-component="contract-workspace">
-        <Tabs
+        
+
+        <WorkbenchTemplate hasDetail={Boolean(selectedItem)} className="operational-tabs-workspace"
+          topToolbar={<Tabs
           value={activeMachine}
           onValueChange={(value) => {
             setMachine(value as ContractMachine);
             onSelect(null);
           }}
-          className="mb-4 gap-0 overflow-hidden rounded-sm border border-border bg-white"
+          className="operational-toolbar-tabs"
         >
           <TabsList
             variant="line"
@@ -661,8 +664,7 @@ export function ContractPage({
             {tabDescription}
           </div>
         </Tabs>
-
-        <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
+          }>
           <Panel className="list-pane" aria-label={tabName}>
             <div className="fieldwire-operational-list-head" data-ui-component="operational-list-head">
             <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">{tr("contract.page.count", { count: items.length })}</p>

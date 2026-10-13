@@ -184,6 +184,26 @@ export function ResizableWorkspace({
       <div className="doul-layout-controls" role="group" aria-label={label("group")}
         data-has-toolbar={topToolbar ? "true" : "false"}>
         {topToolbar}
+        <select
+          className="doul-layout-mode-select"
+          data-ui-component="mobile-view-mode"
+          aria-label={label("group")}
+          value={view}
+          onChange={event => {
+            const selected = event.target.value;
+            if (selected === "reset") {
+              setRatio(firstPercent);
+              setFocus({ scope, view: "split" });
+            } else {
+              setFocus({ scope, view: selected as View });
+            }
+          }}
+        >
+          <option value="first">{firstLabel}</option>
+          <option value="split">{splitLabel}</option>
+          <option value="second" disabled={listFirst && !hasDetail}>{secondLabel}</option>
+          <option value="reset">{label("reset")}</option>
+        </select>
         <div className="doul-layout-choices">
           <button type="button" data-layout-action="first" aria-pressed={view === "first"}
             aria-label={firstLabel} title={firstLabel}

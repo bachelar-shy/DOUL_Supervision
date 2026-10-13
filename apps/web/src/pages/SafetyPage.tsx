@@ -342,13 +342,21 @@ export function SafetyPage({
   return (
     <PageBoundary name="safety">
       <section data-ui-component="safety-workspace">
-        <Tabs
+        
+
+        <details className="fieldwire-authoring-disclosure" data-ui-component="safety-create-disclosure">
+          <summary>{safetyAuthoringTitle(i18n.resolvedLanguage || i18n.language || "ko")}</summary>
+          <SafetyAuthoringPanel key={`${workspace.project.id}:${workspace.role.id}:${activeMachine}`} client={client} workspace={workspace} machine={activeMachine} online={online} onCreated={onCreated} />
+        </details>
+
+        <WorkbenchTemplate hasDetail={Boolean(selectedItem)} className="operational-tabs-workspace"
+          topToolbar={<Tabs
           value={activeMachine}
           onValueChange={(value) => {
             setMachine(value as SafetyMachine);
             onSelect(null);
           }}
-          className="mb-4 gap-0 overflow-hidden rounded-sm border border-border bg-white"
+          className="operational-toolbar-tabs"
         >
           <TabsList
             variant="line"
@@ -368,13 +376,7 @@ export function SafetyPage({
             {tabDescription}
           </div>
         </Tabs>
-
-        <details className="fieldwire-authoring-disclosure" data-ui-component="safety-create-disclosure">
-          <summary>{safetyAuthoringTitle(i18n.resolvedLanguage || i18n.language || "ko")}</summary>
-          <SafetyAuthoringPanel key={`${workspace.project.id}:${workspace.role.id}:${activeMachine}`} client={client} workspace={workspace} machine={activeMachine} online={online} onCreated={onCreated} />
-        </details>
-
-        <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
+          }>
           <Panel className="list-pane" aria-label={tabName}>
             <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">
               {tr("common.count", { count: items.length })}

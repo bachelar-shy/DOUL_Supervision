@@ -10,7 +10,7 @@ for (const width of [390, 768, 1024, 1440]) {
     for (const menu of menus) {
       await page.goto("/#/" + menu);
       const shell = page.locator('.app-shell[data-layout-system="field-workspace"]');
-      const tabs = shell.locator('[data-ui-component$="-workspace"] > [data-slot="tabs"] > [data-slot="tabs-list"]').first();
+      const tabs = shell.locator('.operational-tabs-workspace .operational-toolbar-tabs > [data-slot="tabs-list"]').first();
       await expect(tabs, menu + ": tab strip").toBeVisible();
       const geometry = await tabs.evaluate(element => {
         const r = element.getBoundingClientRect();
@@ -86,6 +86,52 @@ test("operational list count and create action share one compact line at desktop
         expect(createBox!.height, route + ": finger-sized create control").toBeGreaterThanOrEqual(44);
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), route + ": page overflow").toBeLessThanOrEqual(2);
+    }
+  }
+});
+
+
+test("all operational menus keep their tabs and view controls on the same line", async ({ page }) => {
+  for (const width of [390, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const menu of menus) {
+      await page.goto("/#/" + menu);
+      const root = page.locator('[data-ui-component="' + (
+        menu === "payment" ? "measurement-payment" : menu === "completion" ? "completion-handover" : menu
+      ) + '-workspace"] .operational-tabs-workspace');
+      await expect(root).toBeVisible();
+      const tabs = root.locator('.operational-toolbar-tabs > [data-slot="tabs-list"]');
+      const controls = root.locator(".doul-layout-controls");
+      await expect(tabs).toBeVisible();
+      if (width !== 1024) {
+        await page.screenshot({
+          path: "preview/screenshots/fieldwire-nondrawing-tabview-" + menu + "-" + width + ".png",
+          fullPage: false,
+        });
+      }
+      const button = controls.locator('[data-layout-action="first"]');
+      const mobileMode = controls.locator('[data-ui-component="mobile-view-mode"]');
+      if (width >= 768) {
+        await expect(button).toBeVisible();
+        await expect(mobileMode).toBeHidden();
+        const a = await tabs.boundingBox(), b = await button.boundingBox();
+        expect(a && b, menu + ": tabs and action button mounted").toBeTruthy();
+        expect(Math.abs(a!.y - b!.y), menu + ": same command row").toBeLessThanOrEqual(7);
+      } else {
+        await expect(mobileMode).toBeVisible();
+        await expect(button).toBeHidden();
+        const rect = await mobileMode.boundingBox();
+        expect(rect!.height, menu + ": mobile touch height").toBeGreaterThanOrEqual(44);
+        await mobileMode.selectOption("first");
+        await expect(root).toHaveAttribute("data-view", "first");
+        await mobileMode.selectOption("split");
+      }
+      const triggers = tabs.locator('[data-slot="tabs-trigger"]');
+      const first = triggers.first();
+      await expect(first).toBeVisible();
+      await first.click();
+      await expect(first).toHaveAttribute("data-state", "active");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), menu + ": no body overflow").toBeLessThanOrEqual(2);
     }
   }
 });
