@@ -1,0 +1,23 @@
+.drawing-pin-badges {
+  display:flex; gap:4px; flex-wrap:wrap; align-items:center; min-height:14px;
+}
+.drawing-pin-badge {
+  display:inline-flex; gap:3px; align-items:center; padding:2px 4px;
+  font-size:10px; line-height:1.3; border-radius:3px; font-weight:650;
+  white-space:nowrap; border:1px solid currentColor;
+}
+.drawing-pin-badge.issue { color:#aa342e; background:#fff3f2; }
+.drawing-pin-badge.inspection { color:#1e54a2; background:#f0f5ff; }
+.drawing-pin-badge.site { color:#956213; background:#fff8e8; }
+.drawing-pin-badge-dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+.drawing-thumbnail-wrap { position:relative; display:block; width:100%; flex:none; }
+.drawing-thumbnail-pins { position:absolute; inset:0; pointer-events:none; }
+.drawing-thumbnail-pin {
+  position:absolute; z-index:2; display:grid; place-items:center;
+  transform:translate(-50%,-50%); width:14px; height:14px;
+  border-radius:50%; color:#fff; border:1.5px solid white;
+  box-shadow:0 1px 3px #0006; font-size:8px; font-weight:750;
+}
+.drawing-thumbnail-pin.issue { background:#b63b36; }
+.drawing-thumbnail-pin.inspection { background:#275ab5; }
+.drawing-thumbnail-pin.site { background:#b87816; }
