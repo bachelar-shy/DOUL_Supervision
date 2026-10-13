@@ -36,7 +36,7 @@ import { FieldPhotoLibrary } from "../pages/FieldPhotoLibrary";
 import { FieldWorkAreas } from "../pages/FieldWorkAreas";
 import { FieldOfflineQueue } from "../pages/FieldOfflineQueue";
 import { PersonnelRequestPage } from "../pages/PersonnelRequestPage";
-import { offlineIntentTitle } from "../data/offline-command-labels";
+import "../design/shell-compact-status.css";
 import { fieldCoreRouteFor, fieldCoreRoutes, machineForRoute, mobileRoutes, roleRoutes, routes, type CorrectionSection } from "./routes";
 import { paymentLabelKeys } from "../data/payment-workspace";
 import { completionLabelKeys } from "../data/completion-workspace";
@@ -89,6 +89,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [online, setOnline] = useState(navigator.onLine);
+  const [showOfflineTools, setShowOfflineTools] = useState(false);
   const [menu, setMenu] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -451,12 +452,11 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
           </button>
         </div>
         <div className="workspace-label">{t("app.workspace")}</div>
-        <div className="project-chip">
+        <div className="project-chip" title={workspace?.context.dataClassification === "SYNTHETIC_TEST_NOT_SITE_EVIDENCE" ? "합성 테스트 자료 · 실제 현장 증빙 아님" : workspace?.project.name}>
           <span className="project-mark">D</span>
           <div>
             <strong>{workspace?.project.name ?? t("app.sampleSite")}</strong>
-            {workspace?.demo && <small>{t("app.sampleData")}</small>}
-            {!projectPickerInHeader && renderProjectPicker()}
+{!projectPickerInHeader && renderProjectPicker()}
           </div>
         </div>
         <NavigationList
@@ -542,9 +542,13 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               onClick={() => setCompactDensity((value) => !value)}>
               <Rows3 size={16} aria-hidden="true" />
             </button>
-            <span className={"connection " + (!online ? "offline" : "")}>
+            <button type="button" className={"connection connection-toggle " + (!online ? "offline" : "")}
+              data-ui-component="offline-status-toggle" aria-expanded={showOfflineTools}
+              aria-controls="field-offline-tools"
+              aria-label={online ? "온라인 · 미전송 업무 확인" : "오프라인 · 기기 저장 업무 확인"}
+              title="저장 및 동기화 상태" onClick={() => setShowOfflineTools(value => !value)}>
               {online ? t("app.connection.online") : t("app.connection.offline")}
-            </span>
+            </button>
             <label className="role-picker">
               {t("app.languagePicker")}{" "}
               <select
@@ -590,20 +594,22 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
             <span className="avatar">{roleLabel(role)[0]}</span>
           </div>
         </header>
-        <div className="demo-bar">
-          {client.kind === "mock" ? (
-            <>
-              {t("app.demo.mock")}{" "}
-              <span>{t("app.demo.mockDetail")}</span>
-            </>
-          ) : (
-            <>{workspace?.context.dataClassification === "SYNTHETIC_TEST_NOT_SITE_EVIDENCE" ? "합성 테스트 자료 · 실제 현장 증빙 아님" : t("app.demo.live")}</>
-          )}
-        </div>
-        {!online && (
-          <div role="alert" className="offline-bar">
-            {t("app.offlineReadOnly")}
-          </div>
+        {workspace && client.kind !== "mock" && (
+          <aside id="field-offline-tools" data-ui-component="offline-tools" className="offline-tools-flyout"
+            aria-label="기기 저장 및 동기화" hidden={!showOfflineTools}>
+            <div className="offline-tools-heading">
+              <strong>{online ? "기기 저장 및 동기화" : "오프라인 · 기기 저장"}</strong>
+              <button type="button" aria-label="저장 상태 닫기"
+                onClick={() => setShowOfflineTools(false)}>닫기</button>
+            </div>
+            <p className="offline-tools-caption">{online
+              ? "기기에 보관한 현장 업무는 온라인 연결 시 자동 전송을 시도합니다. 미전송·충돌 건은 여기에서 확인하세요."
+              : "오프라인 작업함에 저장한 업무는 기기에 보관되고, 온라인 복구 후 자동 전송을 시도합니다."}</p>
+            <OfflineCommandIntentPanel key={`${workspace.project.id}:${client.session?.actor.roleAssignmentId ?? workspace.role.id}:${client.session?.actor.partyId}`}
+              client={client} workspace={workspace} online={online} onChanged={refresh} />
+            <FieldOfflineQueue key={`outbox:${workspace.project.id}:${workspace.role.id}`}
+              client={client} workspace={workspace} online={online} onChanged={refresh} />
+          </aside>
         )}
         <main data-ui-component="workspace-main">
           <PageHeader
@@ -643,11 +649,6 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               ) : null
             }
           />
-          {workspace && client.kind !== "mock" && <details className="mb-3">
-            <summary>{offlineIntentTitle(i18n.resolvedLanguage || "ko")}</summary>
-            <OfflineCommandIntentPanel key={`${workspace.project.id}:${client.session?.actor.roleAssignmentId ?? workspace.role.id}:${client.session?.actor.partyId}`} client={client} workspace={workspace} online={online} onChanged={refresh} />
-            <FieldOfflineQueue key={`outbox:${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} online={online} onChanged={refresh} />
-          </details>}
           {error && (
             <div role="alert" className="error-box">
               <strong>{t("app.error.unprocessed")}</strong> {error}
