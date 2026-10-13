@@ -8,6 +8,7 @@ on:
       - 'playwright.field-layout.config.ts'
       - 'tests_browser_layout/all-menu-layout.spec.ts'
       - 'tests_browser_layout/fieldwire-authoring-disclosure.spec.ts'
+      - 'tests_browser_layout/fieldwire-create-compact.spec.ts'
       - 'tests_browser_quick_role/field-layout-core.spec.ts'
       - 'tests_browser_launch/quiet-graphite-design.spec.ts'
   push:
@@ -49,7 +50,7 @@ jobs:
       - name: All available menu routes and global search
         run: npx playwright test -c playwright.field-layout.config.ts tests_browser_layout/all-menu-layout.spec.ts
       - name: Owner and Safety list-first draft UX (isolated UI Mock)
-        run: npx playwright test -c playwright.workspace-layout.config.ts tests_browser_layout/fieldwire-authoring-disclosure.spec.ts
+        run: npx playwright test -c playwright.workspace-layout.config.ts tests_browser_layout/fieldwire-authoring-disclosure.spec.ts tests_browser_layout/fieldwire-create-compact.spec.ts
       - name: Keep owner and safety list-first screenshots
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
