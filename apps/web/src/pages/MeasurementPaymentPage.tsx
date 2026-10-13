@@ -280,9 +280,11 @@ export function MeasurementPaymentPage({
       </Tabs>
       <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
         <Panel className="list-pane" aria-label={t(tabs.find((tab) => tab.id === machine)!.key)}>
+          <div className="fieldwire-operational-list-head" data-ui-component="operational-list-head">
           <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">{i18n.t("common.count", { count: items.length })}</p>
           <div className="payment-create-actions">
             <ActionButton disabled={!online || client.kind === "mock" || !canCreate} onClick={() => setCreating(machine)}>{t("create")}</ActionButton>
+          </div>
           </div>
           {!canCreate && <p className="payment-capability-note" role="note">
             {creationCapabilityLabel(createCapability)}

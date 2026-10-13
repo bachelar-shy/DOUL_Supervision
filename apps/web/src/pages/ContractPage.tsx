@@ -664,6 +664,7 @@ export function ContractPage({
 
         <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
           <Panel className="list-pane" aria-label={tabName}>
+            <div className="fieldwire-operational-list-head" data-ui-component="operational-list-head">
             <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">{tr("contract.page.count", { count: items.length })}</p>
             <div className="schedule-list-actions">
               <ActionButton
@@ -672,6 +673,7 @@ export function ContractPage({
               >
                 {tr("contract.page.createAction", { tab: tabName })}
               </ActionButton>
+            </div>
             </div>
             {!canCreate ? (
               <p role="status" className="muted" data-testid="creation-capability-reason">

@@ -48,9 +48,44 @@ test("operational list headers show only a localized count, not the selected tab
     await page.goto("/#/" + route);
     const list = page.locator('[data-ui-component="' + component + '"] .list-pane').first();
     await expect(list).toBeVisible();
-    await expect(list.locator(':scope > [data-ui-component="list-record-count"]')).toBeVisible();
+    const listHead = list.locator(':scope > [data-ui-component="operational-list-head"]');
+    await expect(listHead).toBeVisible();
+    await expect(listHead.locator('[data-ui-component="list-record-count"]')).toBeVisible();
+    await expect(listHead.getByRole("button").first()).toBeVisible();
     await expect(list.locator(':scope > .section-heading')).toHaveCount(0);
     const countLabel = (await list.locator('[data-ui-component="list-record-count"]').textContent())?.trim();
     expect(countLabel, route + ": real translated item count").toMatch(/\d/);
+  }
+});
+
+
+test("operational list count and create action share one compact line at desktop and stay usable on phone", async ({ page }) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const [route, component] of [
+      ["schedule", "schedule-workspace"],
+      ["contract", "contract-workspace"],
+      ["payment", "measurement-payment-workspace"],
+      ["completion", "completion-handover-workspace"],
+    ] as const) {
+      await page.goto("/#/" + route);
+      const head = page.locator('[data-ui-component="' + component + '"] [data-ui-component="operational-list-head"]').first();
+      await expect(head).toBeVisible();
+      const count = head.locator('[data-ui-component="list-record-count"]');
+      const create = head.getByRole("button").first();
+      await expect(count).toBeVisible();
+      await expect(create).toBeVisible();
+      const countBox = await count.boundingBox();
+      const createBox = await create.boundingBox();
+      expect(countBox && createBox, route + ": list header control geometry").toBeTruthy();
+      if (width === 1440) {
+        const countCenter = countBox!.y + countBox!.height / 2;
+        const createCenter = createBox!.y + createBox!.height / 2;
+        expect(Math.abs(countCenter - createCenter), route + ": count and create align").toBeLessThanOrEqual(9);
+      } else {
+        expect(createBox!.height, route + ": finger-sized create control").toBeGreaterThanOrEqual(44);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), route + ": page overflow").toBeLessThanOrEqual(2);
+    }
   }
 });

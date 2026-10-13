@@ -568,3 +568,80 @@
     line-height: 1.4;
   }
 }
+
+
+/* Operational list heading is a single action strip (count + create/import),
+ * not a standalone count row followed by another full-width button row. */
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="schedule-workspace"],
+  [data-ui-component="contract-workspace"],
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) .list-pane > .fieldwire-operational-list-head {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 10px;
+  min-height: 39px;
+  min-width: 0;
+  margin: -2px 0 7px;
+  padding: 0 0 6px;
+  border-bottom: 1px solid var(--fw-ui-separator);
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="schedule-workspace"],
+  [data-ui-component="contract-workspace"],
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) .fieldwire-operational-list-head > [data-ui-component="list-record-count"] {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  font-size: 11px;
+  color: #627181;
+  font-variant-numeric: tabular-nums;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="schedule-workspace"],
+  [data-ui-component="contract-workspace"],
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) .fieldwire-operational-list-head > :is(
+  .schedule-list-actions,
+  .payment-create-actions,
+  .completion-create-action
+) {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  gap: 5px;
+  border: 0;
+}
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] :is(
+    [data-ui-component="schedule-workspace"],
+    [data-ui-component="contract-workspace"],
+    [data-ui-component="measurement-payment-workspace"],
+    [data-ui-component="completion-handover-workspace"]
+  ) .list-pane > .fieldwire-operational-list-head {
+    min-height: 44px;
+  }
+  .app-shell[data-layout-system="field-workspace"] :is(
+    [data-ui-component="schedule-workspace"],
+    [data-ui-component="contract-workspace"],
+    [data-ui-component="measurement-payment-workspace"],
+    [data-ui-component="completion-handover-workspace"]
+  ) .fieldwire-operational-list-head > :is(
+    .schedule-list-actions,
+    .payment-create-actions,
+    .completion-create-action
+  ) button {
+    min-height: 44px;
+  }
+}
