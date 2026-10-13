@@ -351,3 +351,220 @@
     transition: none;
   }
 }
+
+
+/* Operational menus: one Fieldwire-like tab strip and flat, selected record
+ * rows. Presentation only; no change to the underlying work-item workflows.
+ * Scope excludes the drawing viewer, which has its own implementation. */
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="schedule-workspace"],
+  [data-ui-component="safety-workspace"],
+  [data-ui-component="contract-workspace"],
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="schedule-workspace"],
+  [data-ui-component="safety-workspace"],
+  [data-ui-component="contract-workspace"],
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) > [data-slot="tabs"] {
+  min-width: 0;
+  margin-bottom: 9px;
+  border-color: var(--fw-ui-separator);
+  border-radius: 3px;
+  box-shadow: none;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="schedule-workspace"],
+  [data-ui-component="safety-workspace"],
+  [data-ui-component="contract-workspace"],
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) > [data-slot="tabs"] > [data-slot="tabs-list"] {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 37px;
+  gap: 3px;
+  padding: 0 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--fw-ui-scroll-thumb) transparent;
+  border-bottom: 1px solid var(--fw-ui-separator);
+  border-radius: 0;
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="schedule-workspace"],
+  [data-ui-component="safety-workspace"],
+  [data-ui-component="contract-workspace"],
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) > [data-slot="tabs"] > [data-slot="tabs-list"] > [data-slot="tabs-trigger"] {
+  flex: 0 0 auto;
+  min-height: 36px;
+  height: 36px;
+  padding: 6px 10px;
+  border-radius: 0;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+  scroll-snap-align: start;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="schedule-workspace"],
+  [data-ui-component="safety-workspace"],
+  [data-ui-component="contract-workspace"],
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) > [data-slot="tabs"] > [data-slot="tabs-list"] > [data-slot="tabs-trigger"][data-state="active"] {
+  color: var(--fw-ui-primary);
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="schedule-workspace"],
+  [data-ui-component="safety-workspace"],
+  [data-ui-component="contract-workspace"],
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) > [data-slot="tabs"] > [data-slot="tabs-list"] > [data-slot="tabs-trigger"]::after {
+  bottom: 0;
+  background: var(--fw-ui-primary);
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="schedule-workspace"],
+  [data-ui-component="safety-workspace"],
+  [data-ui-component="contract-workspace"],
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) > [data-slot="tabs"] > :not([data-slot="tabs-list"]) {
+  margin: 0;
+  min-height: 30px;
+  padding: 7px 12px;
+  color: #637183;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="schedule-workspace"],
+  [data-ui-component="contract-workspace"],
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) :is(.schedule-list-actions, .payment-create-actions, .completion-create-action) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  gap: 6px;
+  margin: 3px 0 8px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid #e7ecf0;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) :is(.payment-record-list, .completion-record-list) {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  margin: 0 -5px;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) :is(.payment-record-row, .completion-record-row) {
+  min-height: 48px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 11px;
+  border: 0;
+  border-bottom: 1px solid #e7ecf0;
+  border-radius: 0;
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) :is(.payment-record-row, .completion-record-row):hover {
+  background: #f3f6fa;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) :is(.payment-record-row, .completion-record-row).selected {
+  background: var(--fw-ui-primary-light);
+  box-shadow: inset 3px 0 var(--fw-ui-primary);
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) :is(.payment-record-row, .completion-record-row):focus-visible {
+  outline: 2px solid var(--fw-ui-primary);
+  outline-offset: -2px;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) :is(.payment-summary, .completion-summary) {
+  gap: 6px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-ui-component="measurement-payment-workspace"],
+  [data-ui-component="completion-handover-workspace"]
+) :is(.payment-summary, .completion-summary) > div {
+  padding: 9px;
+  border-color: var(--fw-ui-separator);
+}
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] :is(
+    [data-ui-component="schedule-workspace"],
+    [data-ui-component="safety-workspace"],
+    [data-ui-component="contract-workspace"],
+    [data-ui-component="measurement-payment-workspace"],
+    [data-ui-component="completion-handover-workspace"]
+  ) > [data-slot="tabs"] > [data-slot="tabs-list"] {
+    min-height: 44px;
+    padding-inline: 6px;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+  .app-shell[data-layout-system="field-workspace"] :is(
+    [data-ui-component="schedule-workspace"],
+    [data-ui-component="safety-workspace"],
+    [data-ui-component="contract-workspace"],
+    [data-ui-component="measurement-payment-workspace"],
+    [data-ui-component="completion-handover-workspace"]
+  ) > [data-slot="tabs"] > [data-slot="tabs-list"] > [data-slot="tabs-trigger"] {
+    min-height: 44px;
+    height: 44px;
+    padding-inline: 12px;
+    font-size: 13px;
+  }
+  .app-shell[data-layout-system="field-workspace"] :is(
+    [data-ui-component="measurement-payment-workspace"],
+    [data-ui-component="completion-handover-workspace"]
+  ) :is(.payment-record-row, .completion-record-row) {
+    min-height: 56px;
+    padding: 10px;
+  }
+  .app-shell[data-layout-system="field-workspace"] :is(
+    [data-ui-component="measurement-payment-workspace"],
+    [data-ui-component="completion-handover-workspace"]
+  ) :is(.payment-record-main small, .completion-record-row small, .completion-record-context) {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
