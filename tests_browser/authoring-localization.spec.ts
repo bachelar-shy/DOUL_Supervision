@@ -51,6 +51,7 @@ test("connected authoring and document UI preserve drafts and source records acr
 
   await page.goto("/#/safety");
   const safetyPanel = page.locator('[data-ui-component="safety-authoring-panel"]');
+  await page.locator('[data-ui-component="safety-create-disclosure"] summary').click();
   await expect(safetyPanel).toBeVisible();
   const title = safetyPanel.getByLabel("기록 제목", { exact: true });
   const draftTitle = "Locale preservation only · SAFETY-DRAFT-LOCALIZATION";

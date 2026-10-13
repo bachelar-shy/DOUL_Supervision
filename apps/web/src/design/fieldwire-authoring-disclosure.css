@@ -1,0 +1,71 @@
+/*
+ * Contextual authoring disclosure for Safety and Owner report screens.
+ * Existing forms stay mounted: collapsing cannot discard a draft or trigger
+ * server-side actions. Drawings and other menus are deliberately untouched.
+ */
+.app-shell[data-layout-system="field-workspace"] .fieldwire-authoring-disclosure {
+  min-width: 0;
+  margin: 0 0 10px;
+  border: 1px solid var(--fw-ui-separator, #dce2e9);
+  border-radius: 3px;
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .fieldwire-authoring-disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  padding: 7px 12px;
+  color: #334155;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+.app-shell[data-layout-system="field-workspace"] .fieldwire-authoring-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.app-shell[data-layout-system="field-workspace"] .fieldwire-authoring-disclosure > summary::before {
+  content: "+";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border: 1px solid #bdc8d5;
+  border-radius: 2px;
+  color: var(--fw-ui-primary, #0b2e91);
+  font-size: 14px;
+  font-weight: 550;
+}
+.app-shell[data-layout-system="field-workspace"] .fieldwire-authoring-disclosure[open] > summary::before {
+  content: "−";
+}
+.app-shell[data-layout-system="field-workspace"] .fieldwire-authoring-disclosure > summary:hover {
+  background: #f6f8fb;
+}
+.app-shell[data-layout-system="field-workspace"] .fieldwire-authoring-disclosure > summary:focus-visible {
+  outline: 2px solid var(--fw-ui-primary, #0b2e91);
+  outline-offset: -2px;
+}
+.app-shell[data-layout-system="field-workspace"] .fieldwire-authoring-disclosure > [data-ui-component$="-authoring"],
+.app-shell[data-layout-system="field-workspace"] .fieldwire-authoring-disclosure > [data-ui-component="safety-authoring-panel"] {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--fw-ui-separator, #dce2e9);
+  border-radius: 0;
+  box-shadow: none;
+}
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] .fieldwire-authoring-disclosure > summary {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}

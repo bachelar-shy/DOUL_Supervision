@@ -7,6 +7,7 @@ on:
       - 'apps/web/src/**'
       - 'playwright.field-layout.config.ts'
       - 'tests_browser_layout/all-menu-layout.spec.ts'
+      - 'tests_browser_layout/fieldwire-authoring-disclosure.spec.ts'
       - 'tests_browser_quick_role/field-layout-core.spec.ts'
       - 'tests_browser_launch/quiet-graphite-design.spec.ts'
   push:
@@ -47,6 +48,16 @@ jobs:
         run: npx playwright test -c playwright.quick-role.config.ts tests_browser_quick_role/field-layout-core.spec.ts
       - name: All available menu routes and global search
         run: npx playwright test -c playwright.field-layout.config.ts tests_browser_layout/all-menu-layout.spec.ts
+      - name: Owner and Safety list-first draft UX (isolated UI Mock)
+        run: npx playwright test -c playwright.workspace-layout.config.ts tests_browser_layout/fieldwire-authoring-disclosure.spec.ts
+      - name: Keep owner and safety list-first screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: fieldwire-list-first-owner-safety
+          path: preview/screenshots/fieldwire-list-first-*.png
+          if-no-files-found: warn
+          retention-days: 14
       - name: Existing independent pane and document regression
         run: npx playwright test -c playwright.workspace-layout.config.ts tests_browser_layout/resizable-workspace.spec.ts
       - name: DOUL layout visual geometry 1440 1024 768 390

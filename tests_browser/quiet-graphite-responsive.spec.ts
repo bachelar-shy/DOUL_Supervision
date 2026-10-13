@@ -53,6 +53,9 @@ for (const width of widths) {
         expect(await visibleControlOverflow(page), `${width}px/${route}: controls outside viewport`).toEqual([]);
 
         if (route === "safety") {
+          const disclosure = page.locator('[data-ui-component="safety-create-disclosure"]');
+          await expect(disclosure).not.toHaveAttribute("open");
+          await disclosure.locator("summary").click();
           const authoring = page.locator('[data-ui-component="safety-authoring-panel"]');
           await expect(authoring).toBeVisible();
           const tabs = page.locator('[data-ui-page="safety"] [role="tab"]');

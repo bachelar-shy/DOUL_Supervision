@@ -49,6 +49,13 @@ const copy: Record<Locale, Copy> = {
   },
 };
 
+/** Use the existing translated draft title in a list-first disclosure. */
+export function safetyAuthoringTitle(language: string): string {
+  const code = language.split("-")[0];
+  const locale: Locale = code === "vi" || code === "en" ? code : "ko";
+  return copy[locale].title;
+}
+
 function displayRecord(record: RecordDTO, ref: DomainRef) {
   const metadata = record.metadata && typeof record.metadata === "object" ? record.metadata : {};
   const title = typeof record.title === "string" ? record.title

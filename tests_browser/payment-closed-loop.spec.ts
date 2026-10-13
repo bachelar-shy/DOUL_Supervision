@@ -256,6 +256,8 @@ async function selectOwnerDecision(page: Page, title: string) {
 
 async function createAndDecideThroughOwnerUi(page: Page, targetRef: Ref, title: string, suffix: string) {
   await page.goto(ownerRoute);
+  const disclosure = page.locator('[data-ui-component="owner-create-disclosure"]');
+  await disclosure.locator("summary").click();
   const panel = page.locator('[data-ui-component="owner-decision-authoring"]');
   await expect(panel).toBeVisible();
   await panel.getByLabel("결정 요청 제목", { exact: true }).fill(title);
