@@ -52,6 +52,7 @@ def install_sheet_metadata_review_routes(app, store, *, identity, context, sheet
             role = context(project_id, request, actor)
             require(role["actorGroup"] in REVIEWERS, "NOT_AUTHORIZED",
                     "Only site administrators or supervisors can verify extracted drawing metadata")
+            sheet_for(project_id, sheet_id, actor, role)
             cached = store.requests.get(cache_key)
             if cached:
                 require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Request changed")
