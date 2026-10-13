@@ -65,6 +65,7 @@ def install_sheet_markup_routes(app, store, *, identity, context, sheet_for, key
         with store.transaction(write=True):
             role = context(project_id, request, actor)
             require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "Markup creation forbidden")
+            sheet_for(project_id, sheet_id, actor, role)
             cached = store.requests.get(cache_key)
             if cached:
                 require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Request changed")
