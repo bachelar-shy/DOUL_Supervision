@@ -11,6 +11,7 @@ import "./ui/resizable-workspace.css";
 import "./site-mobile-readability.css";
 import "./design/quiet-graphite-a.css";
 import "./design/field-workspace-layout.css";
+import "./design/fieldwire-parity.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
