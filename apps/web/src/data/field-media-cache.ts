@@ -74,7 +74,7 @@ async function readByKey(key: string): Promise<OfflineMediaItem | null> {
     tx.onabort = () => { db.close(); reject(tx.error ?? new Error("OFFLINE_CACHE_READ_FAILED")); };
   });
 }
-function forScope(item: OfflineMediaItem, scope: OfflineScope) {
+function forScope(item: OfflineMediaMetadata, scope: OfflineScope) {
   return item.projectId === scope.projectId && item.partyId === scope.partyId && item.roleId === scope.roleId;
 }
 export async function listOfflineMedia(scope: OfflineScope): Promise<Omit<OfflineMediaItem, "media">[]> {
