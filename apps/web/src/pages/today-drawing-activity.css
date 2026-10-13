@@ -1,0 +1,20 @@
+.today-pin-activity { border-top:1px solid #dce2e8; margin-top:12px; padding-top:10px; font-size:12px; min-width:0; }
+.today-pin-activity-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:7px; margin-bottom:8px; color:#344252; }
+.today-pin-activity-header small,.today-pin-activity-header > span { font-size:11px; font-weight:450; color:#718092; }
+.today-pin-activity-list { display:grid; gap:2px; max-height:390px; overflow-y:auto; }
+.today-pin-activity-row {
+  width:100%; display:flex; align-items:flex-start; gap:8px; text-align:left; min-width:0; min-height:53px;
+  background:transparent; padding:8px 6px; border:0; border-bottom:1px solid #e5e9ed; color:inherit;
+}
+.today-pin-activity-row:hover,.today-pin-activity-row:focus-visible { background:#edf3fb; outline-color:#0b2e91; }
+.today-pin-kind { flex:none; font-size:10px; padding:3px 5px; border-radius:3px; font-weight:650; white-space:nowrap; }
+.today-pin-kind.issue { color:#a63530; background:#fae9e8; }
+.today-pin-kind.inspection { color:#1e509c; background:#e8eefb; }
+.today-pin-kind.site { color:#926015; background:#fff3d8; }
+.today-pin-content { flex:1; display:flex; flex-direction:column; gap:3px; min-width:0; }
+.today-pin-content strong { font-size:12px; font-weight:600; overflow-wrap:anywhere; }
+.today-pin-content small { color:#6a7786; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.today-pin-content .today-pin-latest { color:#40618e; }
+.today-pin-tail { display:flex; flex-direction:column; align-items:flex-end; gap:3px; white-space:nowrap; font-size:10px; color:#748093; }
+.today-pin-empty { color:#768396; margin:9px 4px; font-size:12px; }
+@media(max-width:530px) { .today-pin-activity-row { flex-wrap:wrap; } .today-pin-tail { margin-left:auto; } }

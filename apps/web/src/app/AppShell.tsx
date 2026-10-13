@@ -37,6 +37,7 @@ import { FieldWorkAreas } from "../pages/FieldWorkAreas";
 import { FieldOfflineQueue } from "../pages/FieldOfflineQueue";
 import { PersonnelRequestPage } from "../pages/PersonnelRequestPage";
 import { offlineIntentTitle } from "../data/offline-command-labels";
+import { requestDrawingFocus } from "../data/drawing-focus";
 import { fieldCoreRouteFor, fieldCoreRoutes, machineForRoute, mobileRoutes, roleRoutes, routes, type CorrectionSection } from "./routes";
 import { paymentLabelKeys } from "../data/payment-workspace";
 import { completionLabelKeys } from "../data/completion-workspace";
@@ -675,6 +676,12 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                 <TodayPage
                   role={role}
                   workspace={workspace}
+                  client={client}
+                  onOpenDrawingPin={(sheetId, pinId) => {
+                    nav("drawings");
+                    if (!requestDrawingFocus(workspace.project.id, sheetId, pinId))
+                      setToast("해당 도면 마크를 열지 못했습니다.");
+                  }}
                   allowedRoutes={fieldCoreMode && allowed.includes("corrections") ? [...allowed, "observations", "issues", "actions"] : allowed}
                   onNavigate={nav}
                   onOpenItem={(item) => {

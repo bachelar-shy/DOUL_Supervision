@@ -1,4 +1,6 @@
 import { useTranslation } from "react-i18next";
+import type { SupervisionClient } from "../data/supervision-client";
+import { TodayDrawingActivity } from "./TodayDrawingActivity";
 import type { HumanRole, WorkItem, Workspace } from "../data/ui-contract";
 import { auditCommandLabel, states } from "../labels";
 import { KpiCard, Panel, SectionHeader } from "../ui";
@@ -13,6 +15,8 @@ import { formatTime } from "../i18n/format";
 export interface TodayPageProps {
   role: HumanRole;
   workspace: Workspace;
+  client: SupervisionClient;
+  onOpenDrawingPin: (sheetId: string, pinId: string) => void;
   allowedRoutes: readonly string[];
   onNavigate: (route: string) => void;
   onOpenItem: (item: WorkItem) => void;
@@ -21,6 +25,8 @@ export interface TodayPageProps {
 export function TodayPage({
   role,
   workspace,
+  client,
+  onOpenDrawingPin,
   allowedRoutes,
   onNavigate,
   onOpenItem,
@@ -116,6 +122,8 @@ export function TodayPage({
               contextLabel={(item) => workspace.locations?.find(
                 location => location.id === item.record.locationId,
               )?.name ?? item.record.locationId ?? t("record.context.sample")} />
+            {allowedRoutes.includes("drawings") && client.kind === "http" &&
+              <TodayDrawingActivity client={client} onOpenPin={onOpenDrawingPin} />}
           </Panel>
           <div className="right-stack">
             <Panel>
