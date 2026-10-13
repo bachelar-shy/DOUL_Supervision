@@ -410,10 +410,14 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
             note: reviewNote.trim(),
           }, crypto.randomUUID())
         : await updateDrawingSheet(client, selected, editNumber, editTitle);
-      setSheets(previous => previous.map(sheet => sheet.id === selected.id ? updated.sheet : sheet));
-      setNotice(reviewMode ? "원본 도면정보 검수 이력이 저장되었습니다." : "도면번호와 도면명이 저장되었습니다.");
-      setEditOpen(false);
-    } catch { setError("도면 정보 저장 실패. 최신 정보를 확인하십시오."); }
+      setSheets(previous => previous.map(sheet => sheet.id === updated.sheet.id ? updated.sheet : sheet));
+      if (liveSelectedId.current === updated.sheet.id) {
+        setNotice(reviewMode ? "원본 도면정보 검수 이력이 저장되었습니다." : "도면번호와 도면명이 저장되었습니다.");
+        setEditOpen(false);
+      }
+    } catch {
+      if (liveSelectedId.current === selected?.id) setError("도면 정보 저장 실패. 최신 정보를 확인하십시오.");
+    }
     finally { setBusy(false); }
   }
   function startEdit() {
@@ -472,7 +476,8 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
       setPinChoice(null); setPendingPoint(null); setComment(""); setRecordRef("");
       setNotice(payload.recordRef ? "업무와 연결된 도면 핀을 저장했습니다." : "도면 현장 메모를 초안으로 저장했습니다.");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "도면 핀을 저장하지 못했습니다.");
+      if (liveSelectedId.current === sheetId)
+        setError(cause instanceof Error ? cause.message : "도면 핀을 저장하지 못했습니다.");
     } finally { setBusy(false); }
   }
   function startDrag(event: PointerEvent<HTMLDivElement>) {
@@ -491,9 +496,11 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   function stopDrag() { drag.current = null; }
   async function addMarkup(body: NewSheetMarkup) {
     if (!selected || !canWrite || markupBusy) return;
+    const sheetId = selected.id;
     setMarkupBusy(true); setError("");
     try {
-      const result = await createSheetMarkup(client, selected.id, body, crypto.randomUUID());
+      const result = await createSheetMarkup(client, sheetId, body, crypto.randomUUID());
+      if (liveSelectedId.current !== sheetId) return;
       setMarkups(previous => [...previous, result.markup]);
       setMarkupHistory(previous => [...previous, result.markup.id]);
       setRedoHistory([]);
@@ -504,9 +511,11 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   }
   async function eraseMarkup(item: DrawingSheetMarkup) {
     if (!selected || !canWrite || markupBusy) return;
+    const sheetId = selected.id;
     setMarkupBusy(true);
     try {
-      await changeSheetMarkup(client, selected.id, item.id, "archive", item.version, crypto.randomUUID());
+      await changeSheetMarkup(client, sheetId, item.id, "archive", item.version, crypto.randomUUID());
+      if (liveSelectedId.current !== sheetId) return;
       setMarkups(previous => previous.filter(value => value.id !== item.id));
       setMarkupHistory(previous => previous.filter(id => id !== item.id));
       setRedoHistory([]);
@@ -517,9 +526,11 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     const id = markupHistory[markupHistory.length - 1];
     const item = markups.find(value => value.id === id);
     if (!item) return;
+    const sheetId = selected.id;
     setMarkupBusy(true);
     try {
-      const result = await changeSheetMarkup(client, selected.id, id, "archive", item.version, crypto.randomUUID());
+      const result = await changeSheetMarkup(client, sheetId, id, "archive", item.version, crypto.randomUUID());
+      if (liveSelectedId.current !== sheetId) return;
       setMarkups(previous => previous.filter(value => value.id !== id));
       setMarkupHistory(previous => previous.slice(0, -1));
       setRedoHistory(previous => [...previous, result.markup]);
@@ -529,9 +540,11 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     if (!selected || !canWrite || markupBusy) return;
     const item = redoHistory[redoHistory.length - 1];
     if (!item) return;
+    const sheetId = selected.id;
     setMarkupBusy(true);
     try {
-      const result = await changeSheetMarkup(client, selected.id, item.id, "restore", item.version, crypto.randomUUID());
+      const result = await changeSheetMarkup(client, sheetId, item.id, "restore", item.version, crypto.randomUUID());
+      if (liveSelectedId.current !== sheetId) return;
       setMarkups(previous => [...previous, result.markup]);
       setMarkupHistory(previous => [...previous, item.id]);
       setRedoHistory(previous => previous.slice(0, -1));
