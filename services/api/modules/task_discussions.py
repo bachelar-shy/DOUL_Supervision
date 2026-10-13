@@ -118,7 +118,7 @@ def install_task_discussion_routes(app, store, *, identity, role_for, key_for, b
                 require(can_read_person(subject_record, project_id, mentioned),
                         "NOT_AUTHORIZED", "Mentioned person lacks project or subject access")
             for ref in message["evidenceRefs"]:
-                evidence = store.engine.resolve(ref, project_id)
+                evidence = store.engine._current_reference(ref, project_id, object_type="Evidence")
                 store.engine.authorize_read(evidence, actor["partyId"], role["id"])
             op = "field_discussions:comment"
             previous = store.engine._replay(project_id, actor["partyId"], op, key, body)
