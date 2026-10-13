@@ -663,8 +663,8 @@ export function ContractPage({
         </Tabs>
 
         <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
-          <Panel className="list-pane">
-            <SectionHeader title={tabName} meta={tr("contract.page.count", { count: items.length })} />
+          <Panel className="list-pane" aria-label={tabName}>
+            <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">{tr("contract.page.count", { count: items.length })}</p>
             <div className="schedule-list-actions">
               <ActionButton
                 disabled={!online || client.kind === "mock" || !canCreate}
