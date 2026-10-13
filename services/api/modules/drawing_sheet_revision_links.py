@@ -26,6 +26,20 @@ def install_sheet_revision_routes(app, store, *, identity, context, sheet_for, s
                 "Confirm the original drawing number for both pages before linking revisions")
         return number.casefold()
 
+    def projected(project_id, entry):
+        """Report identity drift without modifying an immutable revision link."""
+        value = deepcopy(entry)
+        before = sheet_for(project_id, entry["fromSheetId"])
+        after = sheet_for(project_id, entry["toSheetId"])
+        number = entry["drawingNumber"].strip().casefold()
+        value["metadataConsistent"] = all(
+            sheet["number"].strip().casefold() == number
+            for sheet in (before, after))
+        value["sourceHashesConsistent"] = (
+            set_for(project_id, before["setId"])["sha256"] == entry["fromPdfHash"]
+            and set_for(project_id, after["setId"])["sha256"] == entry["toPdfHash"])
+        return value
+
     @app.get("/projects/{project_id}/drawing-sheet-revisions")
     def list_sheet_revisions(project_id: str, request: Request, sheetId: str | None = None):
         actor = identity(request)
@@ -46,7 +60,7 @@ def install_sheet_revision_routes(app, store, *, identity, context, sheet_for, s
                     if len(related) == size:
                         break
                 records = [edge for edge in links if edge["fromSheetId"] in related]
-            return {"items": sorted((deepcopy(edge) for edge in records),
+            return {"items": sorted((projected(project_id, edge) for edge in records),
                                     key=lambda row: (row["createdAt"], row["id"])),
                     "count": len(records)}
 
@@ -114,9 +128,13 @@ def install_sheet_revision_routes(app, store, *, identity, context, sheet_for, s
                     "VERSION_CONFLICT", "The target already has a predecessor")
             for existing in entries:
                 if existing["toSheetId"] == former["id"]:
+                    require(existing["drawingNumber"].strip().casefold() == identity_number(former),
+                            "VERSION_CONFLICT", "Predecessor number changed after prior revision")
                     require(existing["newRevision"] == body["previousRevision"],
                             "VERSION_CONFLICT", "Previous revision label differs from history")
                 if existing["fromSheetId"] == later["id"]:
+                    require(existing["drawingNumber"].strip().casefold() == identity_number(later),
+                            "VERSION_CONFLICT", "Successor number changed after prior revision")
                     require(existing["previousRevision"] == body["newRevision"],
                             "VERSION_CONFLICT", "Next revision label differs from history")
             ancestor = former["id"]

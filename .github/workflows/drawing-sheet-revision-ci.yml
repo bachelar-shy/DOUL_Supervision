@@ -6,6 +6,7 @@ on:
       - "services/api/modules/drawing_sheet_revision_links.py"
       - "services/api/modules/drawing_sheets.py"
       - "tests_mvp/test_drawing_sheet_revision_links_http.py"
+      - "tests_mvp/test_drawing_revision_markup_acceptance_http.py"
   push:
     branches: [main]
 permissions:
@@ -27,4 +28,4 @@ jobs:
           .venv/bin/pip install -r services/api/requirements.lock
       - name: Drawing revision links regression
         run: |
-          .venv/bin/python -m unittest tests_mvp.test_drawing_sheet_catalog_http tests_mvp.test_drawing_sheet_revision_links_http -v
+          .venv/bin/python -m unittest tests_mvp.test_drawing_sheet_catalog_http tests_mvp.test_drawing_sheet_revision_links_http tests_mvp.test_drawing_revision_markup_acceptance_http -v

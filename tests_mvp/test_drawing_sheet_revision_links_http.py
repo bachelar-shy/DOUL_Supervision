@@ -48,7 +48,10 @@ class SheetRevisionLinksHTTPTests(DrawingSheetHTTPTest):
         role_owned = self.http.get("/projects/" + self.project + "/drawing-sheet-revisions",
                                   headers=self.quick("OWN"), params={"sheetId": second["id"]})
         self.assertEqual(role_owned.status_code, 200)
-        self.assertEqual(role_owned.json()["items"], [edge])
+        projected = role_owned.json()["items"][0]
+        self.assertTrue(projected.pop("metadataConsistent"))
+        self.assertTrue(projected.pop("sourceHashesConsistent"))
+        self.assertEqual(projected, edge)
         self.assertEqual(self.request_revision(first, second, role="OWN").status_code, 403)
         self.assertEqual(self.request_revision(first, second, role="CON").status_code, 403)
         different = self.request_revision(first, second, key=idem, current="04")
