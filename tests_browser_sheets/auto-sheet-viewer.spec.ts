@@ -178,7 +178,20 @@ test("supervisor verifies an original PDF titleblock and owner sees read-only st
   await expect(folder.locator(".drawing-sheet-card img")).toBeVisible({ timeout: 20000 });
   await folder.locator(".drawing-sheet-card").click();
   await expect(view.getByText("원본정보 미확인")).toBeVisible();
-  await view.getByRole("button", { name: "도면정보 검수" }).click();
+  // Regression: at 390px the review action must not be behind the revision button.
+  const reviewAction = view.getByRole("button", { name: "도면정보 검수" });
+  const versionAction = view.getByRole("button", { name: "도면 버전 관리" });
+  const reviewBox = await reviewAction.boundingBox();
+  const revisionBox = await versionAction.boundingBox();
+  expect(reviewBox).not.toBeNull();
+  expect(revisionBox).not.toBeNull();
+  if (!reviewBox || !revisionBox) throw new Error("Drawing commandbar action missing");
+  const overlap = reviewBox.x < revisionBox.x + revisionBox.width
+    && revisionBox.x < reviewBox.x + reviewBox.width
+    && reviewBox.y < revisionBox.y + revisionBox.height
+    && revisionBox.y < reviewBox.y + reviewBox.height;
+  expect(overlap, "titleblock review must not overlap version actions").toBe(false);
+  await reviewAction.click();
   const dialog = view.getByRole("dialog", { name: "도면정보 검수" });
   await expect(dialog.getByText("원본 PDF 표제란 자동 추출")).toBeVisible();
   await dialog.getByLabel("도면번호").fill("DV-51");

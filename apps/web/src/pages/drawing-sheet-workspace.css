@@ -239,7 +239,18 @@
 @media (max-width: 767px) {
   /* Mobile bottom navigation occupies a separate fixed row; keep sheet controls clear. */
   .drawing-sheet-workspace { height:calc(100dvh - 238px); min-height:335px; }
-  .drawing-sheet-commandbar { min-height:48px; padding:6px 8px; }
+  /* Two independent toolbar rows: review and revision buttons cannot overlap.
+     Both remain reachable in a 390px viewport with horizontal scrolling. */
+  .drawing-sheet-commandbar {
+    min-height:48px; padding:5px 8px; flex-wrap:wrap;
+    align-items:stretch; justify-content:flex-start; row-gap:4px; column-gap:0;
+  }
+  .drawing-sheet-command-left, .drawing-sheet-command-right {
+    flex:1 1 100%; width:100%; max-width:100%; min-width:0; min-height:34px;
+    overflow-x:auto; overflow-y:hidden; scrollbar-width:thin;
+    flex-wrap:nowrap; align-items:center; justify-content:flex-start;
+  }
+  .drawing-sheet-command-left > *, .drawing-sheet-command-right > * { flex-shrink:0; }
   .drawing-sheet-command-right .drawing-sheet-revision { display:none; }
   .drawing-sheet-route-label { font-size:12px; }
   .drawing-current-sheet { max-width:125px; font-size:11px; }
@@ -257,8 +268,8 @@
     position:absolute; inset:0 0 0 auto; z-index:8; width:min(280px,calc(100vw - 45px));
     box-shadow:-7px 0 18px #2224;
   }
-  .drawing-sheet-command-left { flex:1; }
-  .drawing-sheet-command-right { flex:none; }
+  .drawing-sheet-command-left { flex:1 1 100%; }
+  .drawing-sheet-command-right { flex:1 1 100%; }
   .drawing-sheet-command-right .draw-original { width:34px; padding:5px; flex:none; }
   .drawing-sheet-command-right .draw-original span { display:none; }
   .drawing-board-bottom { padding:3px 7px; }
