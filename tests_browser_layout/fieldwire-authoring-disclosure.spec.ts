@@ -45,3 +45,46 @@ for (const width of [390, 1440]) {
     }
   });
 }
+
+
+test("Owner counters and process help are compact while keeping the report queue usable", async ({ page }) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/#/owner");
+    const summary = page.locator('[data-ui-component="owner-governance-summary"]');
+    const cards = summary.locator(":scope > .panel");
+    await expect(cards).toHaveCount(3);
+    const flow = page.locator('[data-ui-component="owner-governance-flow"]');
+    await expect(flow).not.toHaveAttribute("open");
+    await expect(flow.locator("summary")).toBeVisible();
+    const queue = page.locator('[data-ui-component="resizable-workspace"] .record-row').first();
+    await expect(queue).toBeVisible();
+    if (width < 768) {
+      const positions = await cards.evaluateAll(items => items.map(item => item.getBoundingClientRect().top));
+      expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(3);
+      const rect = await summary.boundingBox();
+      expect(rect!.height, "three counters fit a mobile status strip").toBeLessThanOrEqual(110);
+      const y = (await queue.boundingBox())!.y;
+      expect(y, "actual record is still in first viewport").toBeLessThan(800);
+    }
+    await flow.locator("summary").click();
+    await expect(flow).toHaveAttribute("open", "");
+    await expect(flow.locator(".owner-flow-content")).toBeVisible();
+    await flow.locator("summary").click();
+    await expect(flow).not.toHaveAttribute("open");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(2);
+  }
+});
+
+test("Today primary capture and inspection actions stay available in compact launcher", async ({ page }) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/#/today");
+    const row = page.locator('[data-ui-component="quick-create-launcher"]');
+    await expect(row).toBeVisible();
+    await expect(row.locator(".today-quick-actions button").first()).toBeVisible();
+    const bounds = await row.boundingBox();
+    expect(bounds!.height, "quick create should not dominate first viewport").toBeLessThanOrEqual(width < 768 ? 120 : 100);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(2);
+  }
+});
