@@ -123,7 +123,8 @@ export function TodayPage({
                 location => location.id === item.record.locationId,
               )?.name ?? item.record.locationId ?? t("record.context.sample")} />
             {allowedRoutes.includes("drawings") && client.kind === "http" &&
-              <TodayDrawingActivity client={client} onOpenPin={onOpenDrawingPin} />}
+              <TodayDrawingActivity key={workspace.project.id + ":" + workspace.role.id}
+                client={client} onOpenPin={onOpenDrawingPin} />}
           </Panel>
           <div className="right-stack">
             <Panel>
