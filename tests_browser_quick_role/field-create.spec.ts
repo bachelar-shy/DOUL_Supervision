@@ -10,7 +10,8 @@ async function roleLogin(page: Page, role: "CON" | "SUP" | "ADM") {
 test("시공사 신규 현장기록 작성과 저장 및 검측 신규 버튼", async ({ page }) => {
   const title = "현장기록 기능 확인 " + Date.now();
   await roleLogin(page, "CON");
-  const quick = page.locator('[data-ui-component="quick-create-launcher"]');
+  const quick = page.locator('[data-ui-component="today-header-quick-actions"]');
+  await expect(page.locator('[data-ui-component="quick-create-launcher"]')).toHaveCount(0);
   await expect(quick.getByRole("button", { name: "＋ 신규 검측" })).toBeVisible();
   await expect(quick.getByRole("button", { name: "＋ 현장기록" })).toBeVisible();
   await quick.getByRole("button", { name: "＋ 현장기록" }).click();

@@ -1,39 +1,80 @@
-/* Keep quick field actions within a single compact row on desktop. */
-.app-shell[data-layout-system="field-workspace"] [data-ui-component="quick-create-launcher"] {
-  min-height: 48px;
-  padding: 7px 10px;
+/* Today keeps its accessible page title without repeating the breadcrumb visually.
+ * The date and role-specific new-work actions occupy ONE command row. */
+.app-shell[data-layout-system="field-workspace"][data-workspace-route="today"]
+.main-shell main > .page-heading {
+  min-height: 50px;
+  margin-bottom: 8px;
+  padding: 6px 14px;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.app-shell[data-layout-system="field-workspace"][data-workspace-route="today"]
+.main-shell main > .page-heading > div:first-child {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.app-shell[data-layout-system="field-workspace"][data-workspace-route="today"]
+.main-shell main > .page-heading .page-heading-details {
+  display: flex;
   align-items: center;
-  border-radius: 3px;
-}
-.app-shell[data-layout-system="field-workspace"] [data-ui-component="quick-create-launcher"] h2 {
-  margin: 0;
-  font-size: 13px;
-  flex: 0 0 auto;
-}
-.app-shell[data-layout-system="field-workspace"] [data-ui-component="quick-create-launcher"] .today-quick-help {
-  font-size: 11px;
-  line-height: 1.3;
-  flex: 1 1 120px;
+  margin-right: auto;
   min-width: 0;
-  margin: 0;
+  color: #526477;
 }
-.app-shell[data-layout-system="field-workspace"] [data-ui-component="quick-create-launcher"] .today-quick-actions {
+.app-shell[data-layout-system="field-workspace"][data-workspace-route="today"]
+.main-shell main > .page-heading .heading-actions {
+  display: flex;
+  align-items: center;
+  min-width: 0;
   margin-left: auto;
-  gap: 5px;
 }
-.app-shell[data-layout-system="field-workspace"] [data-ui-component="quick-create-launcher"] .today-quick-actions button {
-  min-height: 40px;
+.app-shell[data-layout-system="field-workspace"] .today-header-quick-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.app-shell[data-layout-system="field-workspace"] .today-header-quick-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 7px 12px;
+  white-space: nowrap;
   font-size: 12px;
+  font-weight: 650;
 }
 @media (max-width: 767px) {
-  .app-shell[data-layout-system="field-workspace"] [data-ui-component="quick-create-launcher"] .today-quick-help {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
+  .app-shell[data-layout-system="field-workspace"][data-workspace-route="today"]
+  .main-shell main > .page-heading {
+    min-height: 50px;
+    padding: 7px 10px;
+    gap: 7px;
   }
-  .app-shell[data-layout-system="field-workspace"] [data-ui-component="quick-create-launcher"] .today-quick-actions button {
+  .app-shell[data-layout-system="field-workspace"][data-workspace-route="today"]
+  .main-shell main > .page-heading .page-heading-details {
+    display: flex;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .app-shell[data-layout-system="field-workspace"][data-workspace-route="today"]
+  .main-shell main > .page-heading .heading-actions {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+  }
+  .app-shell[data-layout-system="field-workspace"] .today-header-quick-actions {
+    justify-content: flex-end;
+  }
+  .app-shell[data-layout-system="field-workspace"] .today-header-quick-actions button {
     min-height: 44px;
+    padding: 9px;
+    font-size: 12px;
   }
 }

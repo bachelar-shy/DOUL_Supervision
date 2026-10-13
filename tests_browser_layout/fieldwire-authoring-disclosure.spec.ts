@@ -80,9 +80,9 @@ test("Today primary capture and inspection actions stay available in compact lau
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/#/today");
-    const row = page.locator('[data-ui-component="quick-create-launcher"]');
+    const row = page.locator('[data-ui-component="today-header-quick-actions"]');
     await expect(row).toBeVisible();
-    await expect(row.locator(".today-quick-actions button").first()).toBeVisible();
+    await expect(row.getByRole("button").first()).toBeVisible();
     const bounds = await row.boundingBox();
     expect(bounds!.height, "quick create should not dominate first viewport").toBeLessThanOrEqual(width < 768 ? 120 : 100);
     expect(await page.evaluate(() => document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(2);

@@ -15,7 +15,7 @@ for (const fails of [false,true]) test(`a delayed prior-role ${fails ? 'failure'
     if (fails) await route.fulfill({status:503,json:{message:'Synthetic delayed refresh failure'}});
     else await route.fulfill({response});
   });
-  await page.getByRole('button',{name:'새로고침',exact:true}).click();
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
   await ready;
   await page.getByLabel('시험 사용자 역할 선택').selectOption('ADM');
   await page.goto('/#/parallel-test');

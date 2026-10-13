@@ -140,7 +140,9 @@ async function selectRole(page: Page, role: string) {
   await picker.selectOption(role);
   await expect(picker).toHaveValue(role);
   await page.goto("/#/inspections");
-  await expect(page.getByRole("button", { name: "새로고침", exact: true }).first()).toBeEnabled({ timeout: 30_000 });
+  // The global refresh button was deliberately removed from the compact header.
+  // Wait for the actual role-specific inspection workspace to become ready.
+  await expect(page.locator('[data-ui-component="resizable-workspace"]')).toBeVisible({ timeout: 30_000 });
 }
 
 async function runCommand(

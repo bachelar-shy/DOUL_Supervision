@@ -650,9 +650,11 @@ test("mobile interactive controls keep 44px touch targets", async ({ page }) => 
   await page.goto("/#/inspections");
   await expect(page.locator("h1")).toBeVisible();
 
+  await page.goto("/#/today");
   await expectTouchTarget(
-    page.getByRole("button", { name: "현장 촬영", exact: true }),
+    page.locator('[data-ui-component="today-header-quick-actions"]').getByRole("button").first(),
   );
+  await page.goto("/#/inspections");
   await expectTouchTarget(
     page.getByRole("button", { name: "메뉴 열기", exact: true }),
   );
@@ -999,7 +1001,8 @@ test("offline evidence stays local until explicit upload", async ({
     page.getByText("현장 기록 가져오기", { exact: true }),
   ).toBeVisible();
   await context.setOffline(true);
-  await expect(page.locator(".offline-bar")).toContainText("오프라인");
+  await expect(page.locator('[data-ui-component="offline-status-toggle"]')).toHaveAttribute("aria-label", /오프라인/);
+  await expect(page.locator(".offline-bar")).toHaveCount(0);
   await page
     .getByLabel("증빙 파일 선택")
     .setInputFiles({
