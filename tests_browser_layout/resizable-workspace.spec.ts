@@ -163,11 +163,11 @@ test("Fieldwire list and detail view toggles use compact labeled icons without l
       await expect(split).toHaveAttribute("aria-label", /.+/);
       const size = await first.boundingBox();
       expect(size, route + ": list view button has geometry").not.toBeNull();
-      expect(size!.height, route + ": touch target").toBeGreaterThanOrEqual(width < 768 ? 44 : 28);
+      expect(size!.height, route + ": touch target").toBeGreaterThanOrEqual(width < 768 ? 44 : 34);
       if (width >= 768) {
         await expect(first.locator("span")).toHaveCSS("display", "none");
         const bar = await controls.boundingBox();
-        expect(bar!.height, route + ": compact top controls").toBeLessThanOrEqual(36);
+        expect(bar!.height, route + ": compact top controls").toBeLessThanOrEqual(38);
       }
       await split.click();
       await expect(root).toHaveAttribute("data-view", width < 768 ? "first" : "split");
