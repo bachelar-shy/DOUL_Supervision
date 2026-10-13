@@ -31,7 +31,7 @@ import {
   type RegisterProjectionDefinition,
 } from "../data/register-projection-catalog.generated";
 import { reasonLabel, states } from "../labels";
-import { EmptyState, SectionHeader, StatusBadge } from "../ui";
+import { EmptyState, StatusBadge } from "../ui";
 import "./fieldwire-register-compact.css";
 import {
   DetailDrawer,
