@@ -73,3 +73,17 @@ test("phone switches from list to detail with a usable return control", async ({
   await expect(workspace).toHaveAttribute("data-view", "first");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2)).toBe(true);
 });
+
+test("payment and completion selected records expose aria-pressed without changing the workflow", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  for (const [route, selector] of [["payment", ".payment-record-row"], ["completion", ".completion-record-row"]] as const) {
+    await page.goto("/#/" + route);
+    const row = page.locator(selector).first();
+    await expect(row).toBeVisible();
+    await expect(row).toHaveAttribute("aria-pressed", "false");
+    await row.click();
+    await expect(row).toHaveAttribute("aria-pressed", "true");
+    await page.locator('[data-ui-component="resizable-workspace"] [data-layout-action="first"]').click();
+    await expect(row).toHaveAttribute("aria-pressed", "true");
+  }
+});
