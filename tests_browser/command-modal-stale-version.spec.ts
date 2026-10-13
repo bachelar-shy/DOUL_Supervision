@@ -180,7 +180,8 @@ async function submitStaleCommand(
 
 async function refreshAndCheck(page: Page, request: APIRequestContext, session: Session, record: WorkRecord, eventId: string) {
   const refresh = page.waitForResponse(response => response.request().method() === "GET" && response.url().endsWith("/workspace") && response.ok());
-  await page.getByRole("button", { name: "새로고침", exact: true }).first().click();
+  // Refetch on window focus instead of the removed permanent header control.
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await refresh;
   const detail = page.locator(".detail-pane");
   await expect(detail).toContainText(`기록 제${record.version}차`);
