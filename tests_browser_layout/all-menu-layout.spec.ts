@@ -126,6 +126,10 @@ test("global header shows project context instead of repeating the active menu t
 
 test("long Korean, Vietnamese and English project names truncate without changing project context", async ({ page }) => {
   await enter(page, "SUP");
+  // Test-login may render a temporary sample-site label before the synthetic
+  // workspace finishes loading. Wait for a real record before reading it.
+  await page.evaluate(() => { location.hash = "#/issues"; });
+  await expect(page.locator('.app-shell[data-workspace-route="issues"] .record-row').first()).toBeVisible();
   const breadcrumb = page.locator('[data-ui-component="project-context-breadcrumb"]');
   const name = breadcrumb.locator("b");
   const fullName = (await page.locator(".project-chip strong").textContent())?.trim();
