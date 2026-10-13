@@ -166,6 +166,15 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
       if (current()) setLoading(false);
     }
   }, [client, t]);
+  // Returning to the app refreshes current records without a permanent toolbar button.
+  // The existing request generation checks prevent an older role response from overwriting a newer one.
+  useEffect(() => {
+    const onFocus = () => {
+      if (navigator.onLine && client.session) void refresh();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [client, refresh]);
   useEffect(() => {
     if (!passwordMode || client.kind !== "http") return;
     let current = true;
