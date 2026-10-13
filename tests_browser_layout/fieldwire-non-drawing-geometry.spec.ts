@@ -42,3 +42,23 @@ for (const width of [390, 768, 1024, 1440, 1920]) {
     }
   });
 }
+
+
+test("workbench menu has one visible heading and search/count in a single list toolbar", async ({ page }) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const route of ["issues", "actions", "inspections", "rfis"]) {
+      await page.goto("/#/" + route);
+      const shell = page.locator('.app-shell[data-layout-system="field-workspace"]');
+      await expect(shell.locator(".main-shell main > .page-heading h1")).toBeVisible();
+      const workbench = shell.locator('[data-ui-template="workbench"]');
+      await expect(workbench.locator(".list-pane > .section-heading")).toHaveCount(0);
+      await expect(workbench.locator(".list-pane > h2.sr-only")).toHaveCount(1);
+      await expect(workbench.locator(".workbench-list-toolbar")).toBeVisible();
+      await expect(workbench.locator(".workbench-list-count")).toBeVisible();
+      await expect(workbench.locator(".workbench-list-search input")).toBeVisible();
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      expect(overflow, route + ": horizontal overflow").toBeLessThanOrEqual(2);
+    }
+  }
+});
