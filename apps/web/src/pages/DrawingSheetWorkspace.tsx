@@ -13,6 +13,8 @@ import {
 } from "../data/drawing-sheet-client";
 import { DrawingRevisionDialog } from "./DrawingRevisionDialog";
 import "./drawing-sheet-workspace.css";
+import { FIELD_DRAWING_FOCUS_EVENT, consumeDrawingFocus } from "../data/drawing-focus";
+import { FieldPinPhotosPanel } from "./FieldPinPhotosPanel";
 
 const OriginalDrawingReviewPage = lazy(() => import("./DrawingReviewPage").then(mod => ({ default: mod.DrawingReviewPage })));
 
@@ -113,6 +115,8 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [rightOpen, setRightOpen] = useState(true);
+  const [focusEpoch, setFocusEpoch] = useState(0);
+  const focusPinRef = useRef<{sheetId:string; pinId:string}|null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const imageFrameRef = useRef<HTMLDivElement>(null);
@@ -174,10 +178,34 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     if (!selected || selected.status !== "ready" || client.kind !== "http") { setPins([]); return; }
     let live = true;
     setPins([]); setSelectedPinId(null); setDetailOpen(false);
-    void loadSheetPins(client, selected.id).then(result => { if (live) setPins(result.items); })
-      .catch(() => { if (live) setError("도면 핀 목록을 불러오지 못했습니다."); });
+    void loadSheetPins(client, selected.id).then(result => {
+      if (!live) return;
+      setPins(result.items);
+      const intended = focusPinRef.current;
+      if (intended && intended.sheetId === selected.id) {
+        focusPinRef.current = null;
+        const match = result.items.find(pin => pin.id === intended.pinId);
+        if (match) { setSelectedPinId(match.id); setDetailOpen(true); setRightOpen(true); }
+        else setNotice("해당 도면 마크가 변경되었거나 현재 계정에서 조회할 수 없습니다.");
+      }
+    }).catch(() => { if (live) setError("도면 핀 목록을 불러오지 못했습니다."); });
     return () => { live = false; };
   }, [client, selected?.id, selected?.status]);
+
+  useEffect(() => {
+    const onFocus = () => setFocusEpoch(value => value + 1);
+    window.addEventListener(FIELD_DRAWING_FOCUS_EVENT, onFocus);
+    return () => window.removeEventListener(FIELD_DRAWING_FOCUS_EVENT, onFocus);
+  }, []);
+  useEffect(() => {
+    if (loading || client.kind !== "http") return;
+    const intent = consumeDrawingFocus(projectId);
+    if (!intent) return;
+    const sheet = sheets.find(row => row.id === intent.sheetId && row.status === "ready");
+    if (!sheet) { setNotice("해당 도면이 없거나 현재 프로젝트에서 접근할 수 없습니다."); return; }
+    focusPinRef.current = { sheetId: sheet.id, pinId: intent.pinId };
+    openSheet(sheet);
+  }, [loading, sheets, projectId, focusEpoch, client.kind]);
 
   const fit = useCallback(() => {
     const area = viewportRef.current;
@@ -573,7 +601,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
               ? <button type="button" className="draw-command" onClick={() => openLinkedPin(selectedPin)}>연결된 업무 열기 →</button>
               : <p>공식 업무와 연결되지 않은 도면 마크입니다.</p>}
             <h4>현장 기록</h4>
-            <p>현장 사진 및 검측 결과는 연결된 업무에서 확인합니다. 자료가 없으면 임의로 표시하지 않습니다.</p>
+            <FieldPinPhotosPanel key={selectedPin.id} client={client} sheetId={selected.id} pin={selectedPin} />
           </div>
           <aside className="drawing-issue-dialog-properties">
             <h4>속성</h4>

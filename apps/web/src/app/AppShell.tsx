@@ -32,6 +32,9 @@ import {
 import { Icon } from "../pages/shared";
 import { recordTitle } from "../pages/record-utils";
 import { OfflineCommandIntentPanel } from "../pages/OfflineCommandIntentPanel";
+import { FieldPhotoLibrary } from "../pages/FieldPhotoLibrary";
+import { FieldWorkAreas } from "../pages/FieldWorkAreas";
+import { FieldOfflineQueue } from "../pages/FieldOfflineQueue";
 import { PersonnelRequestPage } from "../pages/PersonnelRequestPage";
 import { offlineIntentTitle } from "../data/offline-command-labels";
 import { fieldCoreRouteFor, fieldCoreRoutes, machineForRoute, mobileRoutes, roleRoutes, routes, type CorrectionSection } from "./routes";
@@ -642,6 +645,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
           {workspace && client.kind !== "mock" && <details className="mb-3">
             <summary>{offlineIntentTitle(i18n.resolvedLanguage || "ko")}</summary>
             <OfflineCommandIntentPanel key={`${workspace.project.id}:${client.session?.actor.roleAssignmentId ?? workspace.role.id}:${client.session?.actor.partyId}`} client={client} workspace={workspace} online={online} onChanged={refresh} />
+            <FieldOfflineQueue key={`outbox:${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} online={online} onChanged={refresh} />
           </details>}
           {error && (
             <div role="alert" className="error-box">
@@ -802,13 +806,19 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                 />
               )}
               {safeRoute === "capture" && (
-                <CapturePage
-                  client={client}
-                  workspace={workspace}
-                  online={online}
-                  refresh={refresh}
-                  notify={setToast}
-                />
+                <>
+                  <CapturePage
+                    client={client}
+                    workspace={workspace}
+                    online={online}
+                    refresh={refresh}
+                    notify={setToast}
+                  />
+                  {client.kind === "http" && (
+                    <FieldPhotoLibrary key={workspace.project.id + ":" + workspace.role.id}
+                      client={client} workspace={workspace} online={online} />
+                  )}
+                </>
               )}
               {safeRoute === "documents" && (
                 <DocumentPage
@@ -825,7 +835,11 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                 <PersonnelRequestPage key={workspace.project.id + ":" + workspace.role.id} client={client} workspace={workspace} online={online} />
               )}
               {safeRoute === "admin" && (
-                <AdminPage key={workspace.project.id} client={client} workspace={workspace} online={online} onChanged={refresh} onProjectCreated={async projectId=>{const directory=await client.accessibleProjects();setApprovedProjects(directory.items);if(!await switchProject(projectId))throw new Error("Project selection did not complete");nav("admin");}} />
+                <>
+                  <AdminPage key={workspace.project.id} client={client} workspace={workspace} online={online} onChanged={refresh} onProjectCreated={async projectId=>{const directory=await client.accessibleProjects();setApprovedProjects(directory.items);if(!await switchProject(projectId))throw new Error("Project selection did not complete");nav("admin");}} />
+                  {client.kind === "http" && <FieldWorkAreas key={workspace.project.id + ":" + workspace.role.id}
+                    client={client} workspace={workspace} online={online} />}
+                </>
               )}
               {safeRoute === "parallel-test" && (
                 <ParallelTestPage key={`${workspace.project.id}:${workspace.role.id}`} client={client} workspace={workspace} online={online} onNavigate={nav} onChanged={refresh} onSelect={setSelected} onOpenCommand={(item, action) => setDialog({ item, action })} />
