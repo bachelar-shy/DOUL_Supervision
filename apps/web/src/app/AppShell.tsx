@@ -493,7 +493,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               <Icon name="layers" />
             </button>
             {projectPickerInHeader ? <div className="header-project-picker">{renderProjectPicker()}</div> : <div className="breadcrumbs" data-ui-component="project-context-breadcrumb">
-              <span>DOUL</span> <span aria-hidden="true">/</span> <b>{workspace?.project.name ?? t("app.sampleSite")}</b>
+              <span>DOUL</span> <span aria-hidden="true">/</span> <b title={workspace?.project.name ?? t("app.sampleSite")}>{workspace?.project.name ?? t("app.sampleSite")}</b>
             </div>}
           </div>
           <div className="workspace-global-search" ref={searchAreaRef} data-ui-component="global-navigation-search">
