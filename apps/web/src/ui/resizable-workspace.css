@@ -396,6 +396,11 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+/* Prior icon-group padding raised the combined strip to 40px even after
+ * lowering its min-height. 34px buttons + 2px border + 2px padding = 38px. */
+.app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > .doul-layout-choices {
+  padding: 1px;
+}
 .app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > :is(.doul-layout-choices, .doul-layout-reset) {
   flex: 0 0 auto;
 }
