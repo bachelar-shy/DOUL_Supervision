@@ -62,7 +62,8 @@ export interface ResizableWorkspaceProps extends HTMLAttributes<HTMLDivElement> 
 
 export function ResizableWorkspace({
   children, kind, layoutId, hasDetail = false,
-  firstPercent = kind === "dashboard" ? 65 : kind === "document" ? 36 : 34,
+  firstPercent = kind === "dashboard" ? 65 : kind === "document" ? 36
+    : kind === "workbench" || kind === "owner" ? 68 : 34,
   className, style, ...props
 }: ResizableWorkspaceProps) {
   const { i18n } = useTranslation();
@@ -92,7 +93,11 @@ export function ResizableWorkspace({
     return min <= max ? { min, max } : { min: 20, max: 80 };
   }, [width, minFirst, minSecond]);
   const ratio = clamp(preferred, bounds.min, bounds.max);
-  const view = focus?.scope === scope ? focus.view : "split";
+  // Fieldwire-style tasks fill the workspace until a record is selected.
+  // The detail opens contextually without changing the current route or list scroll.
+  const listFirst = kind === "workbench" || kind === "owner";
+  const view = focus?.scope === scope ? focus.view
+    : listFirst && !hasDetail ? "first" : "split";
   const effectiveView: View =
     compact && view === "split" && (kind === "workbench" || kind === "owner")
       ? (hasDetail ? "second" : "first")
@@ -116,11 +121,11 @@ export function ResizableWorkspace({
 
   useEffect(() => {
     const prev = previousDetailRef.current;
-    if (hasDetail && prev?.scope === scope && !prev.value) {
-      setFocus({ scope, view: "split" });
+    if (listFirst && prev?.scope === scope && prev.value !== hasDetail) {
+      setFocus({ scope, view: hasDetail ? "split" : "first" });
     }
     previousDetailRef.current = { scope, value: hasDetail };
-  }, [hasDetail, scope]);
+  }, [hasDetail, scope, listFirst]);
 
   const setRatio = (next: number) =>
     setOverride({ scope, ratio: clamp(next, bounds.min, bounds.max) });

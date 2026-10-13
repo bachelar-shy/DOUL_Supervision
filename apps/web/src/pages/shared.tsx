@@ -65,6 +65,8 @@ export function RecordList({
         items.map((x) => (
           <button
             key={x.record.id}
+            type="button"
+            aria-pressed={selected !== undefined ? selected === x.record.id : undefined}
             className={
               "record-row " + (selected === x.record.id ? "selected" : "")
             }
