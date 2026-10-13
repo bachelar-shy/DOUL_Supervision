@@ -366,3 +366,16 @@
     width: min(280px, calc(100vw - 45px));
   }
 }
+
+/* Pin badges and exact-position thumbnail markers reuse the existing DOUL palette. */
+.drawing-sheet-card .drawing-thumbnail-wrap { width:100%; }
+.drawing-sheet-items.as-list .drawing-thumbnail-wrap { width:105px; height:64px; flex:none; }
+.drawing-sheet-items.as-list .drawing-thumbnail-wrap .sheet-asset { width:100%; }
+.drawing-sheet-card .drawing-pin-badges { margin-top:2px; }
+.drawing-sheet-card:focus-visible .drawing-thumbnail-pin { box-shadow:0 0 0 2px #fff,0 0 0 4px #0b2e91; }
+button.drawing-issue-dialog-sheet {
+  cursor:pointer; color:inherit; text-align:left; width:100%; font-family:inherit;
+}
+button.drawing-issue-dialog-sheet:hover { border-color:#1f56a4; background:#eef4fd; }
+button.drawing-issue-dialog-sheet:focus-visible { outline:2px solid #1f56a4; outline-offset:2px; }
+.drawing-issue-dialog-sheet .drawing-thumbnail-wrap { width:100%; }
