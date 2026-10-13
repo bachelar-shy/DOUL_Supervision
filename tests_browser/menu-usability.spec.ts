@@ -20,7 +20,10 @@ async function openLegacyDrawingReview(page: Page) {
 }
 
 async function selectRole(page: Page, role: Role) {
-  if (role === "SUP") return;
+  if (role === "SUP") {
+    await expect(page.locator(".loading-panel")).toBeHidden({ timeout: 20_000 });
+    return;
+  }
   const response = page.waitForResponse(
     (item) => item.url().endsWith("/workspace") && item.status() === 200,
     { timeout: 20_000 },
@@ -28,6 +31,10 @@ async function selectRole(page: Page, role: Role) {
   await page.getByLabel("시험 사용자 역할 선택").selectOption(role);
   await response;
   await expect(page.getByLabel("시험 사용자 역할 선택")).toHaveValue(role);
+  // The response can resolve before React commits the newly authorized workspace.
+  // Never start sidebar navigation while the role-specific workspace is loading.
+  await expect(page.locator(".loading-panel")).toBeHidden({ timeout: 20_000 });
+  await expect(page.locator(navSelector).locator('button[data-route="today"]')).toHaveAttribute("aria-current", "page");
   await expect(page.locator("main h1")).toBeVisible();
 }
 
@@ -105,11 +112,12 @@ test("sidebar remains independently scrollable with all routes reachable on a sh
     await expect.poll(() => nav.evaluate((element) => element.scrollTop)).toBeGreaterThan(20);
     const last = nav.locator("button[data-route]").last();
     await expect(last).toBeInViewport();
-    await last.click();
-    await expect(last).toHaveAttribute("aria-current", "page");
     const lastRoute = await last.getAttribute("data-route");
     expect(lastRoute).toBeTruthy();
+    await last.click();
+    // The route and highlighted current item must agree after the navigation.
     await expect(page).toHaveURL(new RegExp("#/" + lastRoute + "$"));
+    await expect(last).toHaveAttribute("aria-current", "page");
     // The supervisor also retains the parallel-feature diagnostic menu,
     // even though staff requests are placed after it in the sidebar.
     await nav.locator('button[data-route="parallel-test"]').click();
