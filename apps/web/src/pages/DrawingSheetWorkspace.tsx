@@ -363,7 +363,8 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     event.currentTarget.value = "";
     if (!file || !canWrite || busy) return;
     const attempt = uploadAttempt.current;
-    if (!attempt || attempt.file !== file)
+    if (!attempt || attempt.file.name !== file.name ||
+        attempt.file.size !== file.size || attempt.file.lastModified !== file.lastModified)
       uploadAttempt.current = {file,key:crypto.randomUUID()};
     setUploading(true); setError(""); setNotice("");
     try {
