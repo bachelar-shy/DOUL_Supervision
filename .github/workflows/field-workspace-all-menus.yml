@@ -47,7 +47,9 @@ jobs:
       - name: All stage-one menus and user roles (desktop and phone)
         run: npx playwright test -c playwright.quick-role.config.ts tests_browser_quick_role/field-layout-core.spec.ts
       - name: All available menu routes and global search
-        run: npx playwright test -c playwright.field-layout.config.ts tests_browser_layout/all-menu-layout.spec.ts tests_browser_layout/fieldwire-authoring-disclosure.spec.ts
+        run: npx playwright test -c playwright.field-layout.config.ts tests_browser_layout/all-menu-layout.spec.ts
+      - name: Owner and Safety list-first draft UX (isolated UI Mock)
+        run: npx playwright test -c playwright.workspace-layout.config.ts tests_browser_layout/fieldwire-authoring-disclosure.spec.ts
       - name: Existing independent pane and document regression
         run: npx playwright test -c playwright.workspace-layout.config.ts tests_browser_layout/resizable-workspace.spec.ts
       - name: DOUL layout visual geometry 1440 1024 768 390
