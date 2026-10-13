@@ -201,7 +201,7 @@ export function ResizableWorkspace({
         >
           <option value="first">{firstLabel}</option>
           <option value="split">{splitLabel}</option>
-          <option value="second">{secondLabel}</option>
+          <option value="second" disabled={listFirst && !hasDetail}>{secondLabel}</option>
           <option value="reset">{label("reset")}</option>
         </select>
         <div className="doul-layout-choices">
