@@ -18,6 +18,11 @@ for (const width of [390, 1440]) {
       await expect(disclosure).not.toHaveAttribute("open");
       await expect(form).toBeHidden();
       await expect(list, item.route + ": list stays available without opening form").toBeVisible();
+      if (item.route === "safety") {
+        const safetyList = page.locator('[data-ui-component="safety-workspace"] .list-pane');
+        await expect(safetyList.locator(':scope > [data-ui-component="list-record-count"]')).toBeVisible();
+        await expect(safetyList.locator(':scope > .section-heading')).toHaveCount(0);
+      }
       const listRect = await list.boundingBox();
       expect(listRect?.y, item.route + ": list is in first viewport").toBeLessThan(800);
       await page.screenshot({
