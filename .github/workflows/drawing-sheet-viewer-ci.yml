@@ -15,6 +15,8 @@ on:
       - 'services/api/modules/drawing_sheet_annotations.py'
       - 'apps/web/src/pages/DrawingMarkupCanvas.tsx'
       - 'tests_mvp/test_drawing_sheet_markups_http.py'
+      - 'tests_mvp/test_drawing_pin_replies_http.py'
+      - 'services/api/modules/drawing_pin_replies.py'
   push:
     branches: [main]
 permissions:
@@ -45,7 +47,7 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium
       - name: Sheet markup role, persistence and undo/redo API tests
-        run: .venv/bin/python -m unittest tests_mvp.test_drawing_sheet_markups_http -v
+        run: .venv/bin/python -m unittest tests_mvp.test_drawing_sheet_markups_http tests_mvp.test_drawing_pin_replies_http -v
       - name: UI lint and build
         env:
           VITE_DOUL_AUTH_MODE: password
