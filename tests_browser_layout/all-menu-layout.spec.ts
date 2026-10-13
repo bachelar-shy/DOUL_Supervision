@@ -97,3 +97,28 @@ test("desktop density toggle persists and mobile menu still opens", async ({ pag
     await expect(page.locator("#side-navigation").locator('button[data-route="admin"]')).toBeVisible();
   }
 });
+
+
+test("global header shows project context instead of repeating the active menu title", async ({ page }) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await enter(page, "SUP");
+    await expect(page.locator(".loading-panel")).toHaveCount(0);
+    for (const route of ["issues", "inspections", "owner"]) {
+      await page.evaluate(id => { location.hash = "#/" + id; }, route);
+      await expect(page.locator(".app-shell")).toHaveAttribute("data-workspace-route", route);
+      const header = page.locator(".main-shell main > .page-heading h1");
+      const breadcrumb = page.locator('[data-ui-component="project-context-breadcrumb"]');
+      await expect(breadcrumb).toBeVisible();
+      await expect.poll(async () =>
+        (await breadcrumb.locator("b").textContent())?.trim()
+        === (await page.locator(".project-chip strong").textContent())?.trim(),
+      ).toBe(true);
+      const routeTitle = (await header.textContent())?.trim();
+      expect(routeTitle, "active menu must retain a single h1").toBeTruthy();
+      expect((await breadcrumb.textContent())?.includes(routeTitle!), route + ": no repeated menu in global header").toBe(false);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      expect(overflow, route + ": no horizontal overflow").toBeLessThanOrEqual(2);
+    }
+  }
+});
