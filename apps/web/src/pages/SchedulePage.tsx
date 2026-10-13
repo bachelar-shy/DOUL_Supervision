@@ -860,13 +860,15 @@ export function SchedulePage({
 
   return <PageBoundary name="schedule">
     <section data-ui-component="schedule-workspace">
-      <Tabs
+      
+      <WorkbenchTemplate hasDetail={Boolean(item)} className="operational-tabs-workspace"
+          topToolbar={<Tabs
         value={active}
         onValueChange={(value) => {
           setMachine(value);
           onSelect(null);
         }}
-        className="mb-4 gap-0 overflow-hidden rounded-sm border border-border bg-white"
+        className="operational-toolbar-tabs"
       >
         <TabsList variant="line" className="w-full justify-start flex-wrap h-auto border-b border-border px-3">
           {tabs.map((tabItem) => (
@@ -883,7 +885,7 @@ export function SchedulePage({
           {tr(tab.descriptionKey)}
         </p>
       </Tabs>
-      <WorkbenchTemplate hasDetail={Boolean(item)}>
+          }>
         <Panel className="list-pane" aria-label={tr(tab.labelKey)}>
           <div className="fieldwire-operational-list-head" data-ui-component="operational-list-head">
           <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">
