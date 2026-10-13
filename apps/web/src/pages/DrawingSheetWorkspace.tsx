@@ -368,7 +368,10 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
       uploadAttempt.current = {file,key:crypto.randomUUID()};
     setUploading(true); setError(""); setNotice("");
     try {
-      const result = await uploadDrawingSet(client, file, uploadAttempt.current!.key);
+      const result = await uploadDrawingSet(client, file, uploadAttempt.current!.key,
+        workspace.context.scope, (offset, total) => {
+          setNotice(`도면 원본 업로드 ${Math.round(offset * 100 / total)}%`);
+        });
       uploadAttempt.current = null;
       setNotice(`PDF ${result.set.pageCount}장이 분리 대상으로 등록되었습니다. 변환 상태를 확인하십시오.`);
       setMode("catalog"); await refresh();
