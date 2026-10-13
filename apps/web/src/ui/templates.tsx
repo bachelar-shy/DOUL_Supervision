@@ -29,14 +29,15 @@ export interface WorkbenchTemplateProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   hasDetail?: boolean;
   layoutId?: string;
+  topToolbar?: ReactNode;
 }
 
 export function WorkbenchTemplate({
-  children, hasDetail = false, layoutId, className, ...props
+  children, hasDetail = false, layoutId, topToolbar, className, ...props
 }: WorkbenchTemplateProps) {
   return (
     <ResizableWorkspace
-      kind="workbench" layoutId={layoutId} hasDetail={hasDetail}
+      kind="workbench" layoutId={layoutId} hasDetail={hasDetail} topToolbar={topToolbar}
       className={cn("template", "template-workbench", "workbench", className)}
       data-ui-template="workbench" {...props}
     >
@@ -46,11 +47,11 @@ export function WorkbenchTemplate({
 }
 
 export function OwnerReportTemplate({
-  children, hasDetail = false, layoutId, className, ...props
+  children, hasDetail = false, layoutId, topToolbar, className, ...props
 }: WorkbenchTemplateProps) {
   return (
     <ResizableWorkspace
-      kind="owner" layoutId={layoutId} hasDetail={hasDetail}
+      kind="owner" layoutId={layoutId} hasDetail={hasDetail} topToolbar={topToolbar}
       className={cn("template", "template-owner-report", "workbench", className)}
       data-ui-template="owner-report" {...props}
     >

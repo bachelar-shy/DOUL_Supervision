@@ -176,3 +176,40 @@ test("Fieldwire list and detail view toggles use compact labeled icons without l
     }
   }
 });
+
+
+test("issue workbench keeps search, filters and view selection in one toolbar", async ({ page }) => {
+  for (const width of [390, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/#/issues");
+    const shell = workspace(page, "workbench");
+    const controls = shell.locator('.doul-layout-controls[data-has-toolbar="true"]');
+    const toolbar = controls.locator(':scope > [data-ui-component="workbench-list-toolbar"]');
+    await expect(toolbar).toBeVisible();
+    await expect(shell.locator(".list-pane > .workbench-list-toolbar")).toHaveCount(0);
+    const search = toolbar.locator('input[type="search"]');
+    await expect(search).toBeVisible();
+    await expect(toolbar.locator("select")).toHaveCount(2);
+    await expect(toolbar.locator(".workbench-list-count")).toBeVisible();
+    await expect(controls.locator('[data-layout-action="split"]')).toBeVisible();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    expect(overflow, width + ": horizontal overflow").toBeLessThanOrEqual(2);
+    if (width >= 1024) {
+      const a = await toolbar.boundingBox();
+      const b = await controls.locator(".doul-layout-choices").boundingBox();
+      expect(a && b, "all controls have geometry").toBeTruthy();
+      expect(Math.abs(a!.y - b!.y), width + ": filters and layout modes aligned").toBeLessThanOrEqual(9);
+      expect((await controls.boundingBox())!.height, "compact single line").toBeLessThanOrEqual(51);
+    }
+    await search.fill("NO-SUCH-RECORD-FIELDWIRE");
+    await expect(shell.locator(".record-row")).toHaveCount(0);
+    await search.fill("");
+    const row = shell.locator(".record-row").first();
+    if (await row.count()) {
+      await row.click();
+      await expect(toolbar.locator('input[type="search"]')).toHaveValue("");
+      await expect(toolbar.locator("select").first()).toHaveValue("all");
+      await expect(controls.locator('[data-layout-action="split"]')).toBeVisible();
+    }
+  }
+});

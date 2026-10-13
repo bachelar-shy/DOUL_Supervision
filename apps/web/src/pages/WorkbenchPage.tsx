@@ -88,14 +88,9 @@ export function WorkbenchPage({
   if (listSort === "name") filteredItems.sort((a, b) =>
     recordTitle(a.record).localeCompare(recordTitle(b.record)));
 
-  return (
-    <PageBoundary name={route} data-workbench-route={route}>
-      <WorkbenchLayout hasDetail={!!current}>
-        <section className="panel list-pane">
-          {/* The active menu already has the page h1; keep the list's
-              accessible heading without repeating the title visually. The
-              list count belongs to the searchable toolbar below. */}
-          <h2 className="sr-only">{t("workbench.listTitle", { title: routeTitle })}</h2>
+  // The filters belong beside the view selector, not in a separate full-width
+  // row above the records. Moving the same controlled inputs preserves state.
+  const topToolbar = (
           <div className="workbench-list-toolbar" data-ui-component="workbench-list-toolbar">
             <label className="workbench-list-search">
               <span className="sr-only">{t("workbench.filter.search")}</span>
@@ -116,6 +111,16 @@ export function WorkbenchPage({
             </select>
             <span className="workbench-list-count">{t("workbench.filter.count", { filtered: filteredItems.length, total: visibleItems.length })}</span>
           </div>
+  );
+
+  return (
+    <PageBoundary name={route} data-workbench-route={route}>
+      <WorkbenchLayout hasDetail={!!current} topToolbar={topToolbar}>
+        <section className="panel list-pane">
+          {/* The active menu already has the page h1; keep the list's
+              accessible heading without repeating the title visually. The
+              list count belongs to the shared search and view toolbar. */}
+          <h2 className="sr-only">{t("workbench.listTitle", { title: routeTitle })}</h2>
           {route === "inspections" && role === "CON" && (
             <div className="grid gap-2" data-ui-component="new-inspection-entry">
               <div className="flex flex-wrap items-center justify-between gap-2">

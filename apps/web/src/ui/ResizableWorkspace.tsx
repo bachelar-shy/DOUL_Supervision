@@ -58,10 +58,11 @@ export interface ResizableWorkspaceProps extends HTMLAttributes<HTMLDivElement> 
   layoutId?: string;
   hasDetail?: boolean;
   firstPercent?: number;
+  topToolbar?: ReactNode;
 }
 
 export function ResizableWorkspace({
-  children, kind, layoutId, hasDetail = false,
+  children, kind, layoutId, hasDetail = false, topToolbar,
   firstPercent = kind === "dashboard" ? 65 : kind === "document" ? 36
     : kind === "workbench" || kind === "owner" ? 68 : 34,
   className, style, ...props
@@ -180,7 +181,9 @@ export function ResizableWorkspace({
       data-view={effectiveView}
       {...props}
     >
-      <div className="doul-layout-controls" role="group" aria-label={label("group")}>
+      <div className="doul-layout-controls" role="group" aria-label={label("group")}
+        data-has-toolbar={topToolbar ? "true" : "false"}>
+        {topToolbar}
         <div className="doul-layout-choices">
           <button type="button" data-layout-action="first" aria-pressed={view === "first"}
             aria-label={firstLabel} title={firstLabel}

@@ -348,3 +348,88 @@
     min-height: 44px;
   }
 }
+
+
+/* Fieldwire-style unified controls for the generic Workbench only.
+ * One row owns record search, status, sort, count and list/detail modes.
+ * Document/drawing/owner workflows without topToolbar remain unchanged. */
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace .doul-layout-controls[data-has-toolbar="true"] {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  gap: 6px;
+  min-height: 36px;
+  margin-bottom: 5px;
+}
+/* Width changes from list-only to split view must not trigger scroll
+ * anchoring that shifts the previously selected record list. */
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace[data-kind="workbench"] .list-pane {
+  overflow-anchor: none;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > .workbench-list-toolbar {
+  display: flex;
+  flex: 1 1 auto;
+  flex-flow: row nowrap;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > .workbench-list-toolbar .workbench-list-search {
+  flex: 1 1 180px;
+  min-width: 100px;
+  max-width: none;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > .workbench-list-toolbar select {
+  flex: 0 1 115px;
+  min-width: 88px;
+  max-width: 145px;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > .workbench-list-toolbar .workbench-list-count {
+  flex: none;
+  margin: 0;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+/* Prior icon-group padding raised the combined strip to 40px even after
+ * lowering its min-height. 34px buttons + 2px border + 2px padding = 38px. */
+.app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > .doul-layout-choices {
+  padding: 1px;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > :is(.doul-layout-choices, .doul-layout-reset) {
+  flex: 0 0 auto;
+}
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace .doul-layout-controls[data-has-toolbar="true"] {
+    flex-wrap: wrap;
+    align-items: center;
+    min-height: 0;
+    gap: 5px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > .workbench-list-toolbar {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 5px;
+    order: 0;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > .workbench-list-toolbar .workbench-list-search {
+    flex: 1 1 100%;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > .workbench-list-toolbar select {
+    flex: 1 1 108px;
+    min-width: 85px;
+    max-width: none;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > .doul-layout-choices {
+    order: 1;
+    margin-left: auto;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > .doul-layout-reset {
+    order: 2;
+  }
+}
