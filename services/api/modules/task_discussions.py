@@ -61,7 +61,7 @@ def install_task_discussion_routes(app, store, *, identity, role_for, key_for, b
                 and type(ref.get("version")) is int and ref["version"] >= 1,
                 "REFERENCE_INVALID", "Exact work reference required")
         if exact_version:
-            record = store.engine.resolve(ref, project_id)
+            record = store.engine._current_reference(ref, project_id, object_type=ref["objectType"])
         else:
             record = store.engine.get(ref["objectType"], ref["objectId"])
             require(record["projectId"] == project_id, "PROJECT_MISMATCH", "Wrong project")

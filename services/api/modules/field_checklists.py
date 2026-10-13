@@ -104,7 +104,7 @@ def install_field_checklist_routes(app, store, *, identity, role_for, key_for, b
                 and type(reference.get("version")) is int and reference["version"] > 0,
                 "REFERENCE_INVALID", "Exact work reference required")
         if exact_version:
-            record = store.engine.resolve(reference, project_id=project_id)
+            record = store.engine._current_reference(reference, project_id, object_type=reference["objectType"])
         else:
             # Existing checklist retains the exact historical attachment;
             # current record permissions remain authoritative for reads.
