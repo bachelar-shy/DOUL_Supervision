@@ -62,68 +62,101 @@ def _audit(store, project_id, kind, actor, role, detail):
 
 
 def _render_set(store, project_id, set_id):
-    """Run outside request; update one sheet per short, isolated DB transaction."""
+    """Render only unfinished pages; progress and successful pages survive failures."""
     try:
         with store.transaction():
             source = store.meta["drawingSets"][project_id][set_id]
             content = store.blob(source["sourceBlobId"])
             pages = source["pageCount"]
-            ids = list(source["sheetIds"])
+            pending = [
+                (store.meta["drawingSheets"][project_id][sheet_id]["pageNo"], sheet_id)
+                for sheet_id in source["sheetIds"]
+                if store.meta["drawingSheets"][project_id][sheet_id]["status"] != "ready"
+            ]
         with TemporaryDirectory(prefix="doul-drawing-") as folder:
             pdf = Path(folder) / "original.pdf"
             pdf.write_bytes(content)
             if pdf_pages(pdf) != pages:
-                raise PdfSheetError("업로드된 PDF 페이지 수가 변경되었습니다")
+                raise PdfSheetError("등록된 원본 PDF의 페이지 수가 변경되었습니다")
+
             def raster_job(number: int):
-                # PDF decoding is CPU-bound: at most two poppler children per upload.
+                # Metadata is advisory; a scanned titleblock cannot fail the raster.
                 try:
                     info = extract_sheet_candidate(number, pdf_page_text(pdf, number))
                 except (PdfSheetError, ValueError):
-                    info = None  # Rendering should survive a malformed or scanned titleblock.
+                    info = None
                 return page_image(pdf, number, thumb=True), page_image(pdf, number), info
+
+            # Only two futures exist at a time, even for a 145-page source.
+            # This bounds decoded JPEGs and Poppler children in a small worker.
             with ThreadPoolExecutor(max_workers=2, thread_name_prefix="doul-sheet-raster") as pool:
-                jobs = {pool.submit(raster_job, number): sheet_id
-                        for number, sheet_id in enumerate(ids, start=1)}
-                for future in as_completed(jobs):
-                    sheet_id = jobs[future]
-                    thumb, preview, info = future.result()
-                    with store.transaction(write=True):
-                        sheet = store.meta["drawingSheets"][project_id][sheet_id]
-                        thumb_id = "drawing-thumb:" + sheet_id
-                        preview_id = "drawing-preview:" + sheet_id
-                        store.put_blob(thumb_id, thumb)
-                        store.put_blob(preview_id, preview)
-                        sheet.update(thumbBlobId=thumb_id, previewBlobId=preview_id,
-                                     status="ready", updatedAt=store.engine.at())
-                        if info is not None:
-                            sheet["extractedNumber"] = info.number
-                            sheet["extractedTitle"] = info.title
-                            sheet["metadataSource"] = info.provenance
-                            sheet["metadataNeedsReview"] = info.needs_review
-                            if info.number:
-                                sheet["number"] = info.number
-                            if info.title:
-                                sheet["title"] = info.title
-                        root = store.meta["drawingSets"][project_id][set_id]
-                        root["completedPages"] += 1
-                        root["updatedAt"] = store.engine.at()
-                        if root["completedPages"] == pages:
-                            root["status"] = "ready"
-        return
-    except Exception as exc:
+                for offset in range(0, len(pending), 2):
+                    jobs = {pool.submit(raster_job, number): sheet_id
+                            for number, sheet_id in pending[offset:offset + 2]}
+                    for future in as_completed(jobs):
+                        sheet_id = jobs[future]
+                        try:
+                            thumb, preview, info = future.result()
+                        except Exception:
+                            LOG.exception("Could not rasterize drawing sheet %s", sheet_id)
+                            with store.transaction(write=True):
+                                sheet = store.meta["drawingSheets"][project_id][sheet_id]
+                                if sheet["status"] != "ready":
+                                    sheet["status"] = "failed"
+                                    sheet["updatedAt"] = store.engine.at()
+                            continue
+                        with store.transaction(write=True):
+                            sheet = store.meta["drawingSheets"][project_id][sheet_id]
+                            if sheet["status"] == "ready":
+                                continue  # Never rewrite a previously completed page.
+                            thumb_id = "drawing-thumb:" + sheet_id
+                            preview_id = "drawing-preview:" + sheet_id
+                            store.put_blob(thumb_id, thumb)
+                            store.put_blob(preview_id, preview)
+                            sheet.update(thumbBlobId=thumb_id, previewBlobId=preview_id,
+                                         status="ready", updatedAt=store.engine.at())
+                            if info is not None:
+                                sheet["extractedNumber"] = info.number
+                                sheet["extractedTitle"] = info.title
+                                sheet["metadataSource"] = info.provenance
+                                sheet["metadataNeedsReview"] = info.needs_review
+                                # A retry must never discard an operator's metadata edit.
+                                if info.number and sheet["number"].startswith("Sheet-"):
+                                    sheet["number"] = info.number
+                                if info.title and (sheet["title"].startswith("Sheet ")
+                                                   or sheet["title"].endswith("번째 도면")):
+                                    sheet["title"] = info.title
+                            root = store.meta["drawingSets"][project_id][set_id]
+                            root["completedPages"] = sum(
+                                store.meta["drawingSheets"][project_id][sid]["status"] == "ready"
+                                for sid in root["sheetIds"])
+                            root["updatedAt"] = store.engine.at()
+
+        with store.transaction(write=True):
+            root = store.meta["drawingSets"][project_id][set_id]
+            rows = [store.meta["drawingSheets"][project_id][sid] for sid in root["sheetIds"]]
+            root["completedPages"] = sum(sheet["status"] == "ready" for sheet in rows)
+            root["status"] = "ready" if root["completedPages"] == pages else "failed"
+            if root["status"] == "ready":
+                root.pop("error", None)
+            else:
+                root["error"] = "일부 페이지 변환에 실패했습니다. 실패한 페이지만 다시 시도할 수 있습니다."
+            root["updatedAt"] = store.engine.at()
+    except Exception:
         LOG.exception("Raster import failed for set %s", set_id)
         with store.transaction(write=True):
             root = store.meta["drawingSets"][project_id][set_id]
-            root["status"] = "failed"
-            root["error"] = "PDF 이미지 변환에 실패했습니다. 파일을 확인하여 다시 업로드하십시오."
-            root["updatedAt"] = store.engine.at()
             for sheet_id in root["sheetIds"]:
                 sheet = store.meta["drawingSheets"][project_id][sheet_id]
                 if sheet["status"] == "processing":
                     sheet["status"] = "failed"
                     sheet["updatedAt"] = store.engine.at()
-
-
+            root["completedPages"] = sum(
+                store.meta["drawingSheets"][project_id][sid]["status"] == "ready"
+                for sid in root["sheetIds"])
+            root["status"] = "failed"
+            root["error"] = "PDF 이미지 변환에 실패했습니다. 원본을 확인한 뒤 다시 시도하십시오."
+            root["updatedAt"] = store.engine.at()
 
 
 def _refresh_existing_metadata(store, project_id, set_id):
@@ -339,6 +372,56 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
                    {"setId": set_id, "evidenceId": source["id"], "pageCount": count, "sha256": digest})
             store.requests[request_key] = {"hash": fingerprint, "setId": set_id}
             result = deepcopy(row)
+        tasks.add_task(_render_set, store, project_id, set_id)
+        return {"set": result}
+
+    @app.post("/projects/{project_id}/drawing-sets/{set_id}/retry", status_code=202)
+    async def retry_failed_set(project_id: str, set_id: str, request: Request, tasks: BackgroundTasks):
+        """Resume only failed pages with version and role guards; keep ready images."""
+        actor = identity(request)
+        key = key_for(request)
+        require(isinstance(key, str) and 1 <= len(key) <= 160, "IDEMPOTENCY_KEY_INVALID",
+                "Request key required")
+        try:
+            body = await request.json()
+        except ValueError as exc:
+            raise ContractError("INVALID_REQUEST", "Invalid JSON") from exc
+        require(isinstance(body, dict) and set(body) == {"expectedVersion"}
+                and type(body["expectedVersion"]) is int and body["expectedVersion"] > 0,
+                "INVALID_REQUEST", "Expected drawing-set version required")
+        fingerprint = sha256(json.dumps({"setId": set_id, **body}, sort_keys=True).encode()).hexdigest()
+        request_key = f"drawing-set-retry:{project_id}:{actor['partyId']}:{key}"
+        with store.transaction(write=True):
+            role = context(project_id, request, actor)
+            require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "도면 변환 재시도 권한이 없습니다")
+            cached = store.requests.get(request_key)
+            if cached:
+                require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Request changed")
+                return {"set": deepcopy(set_for(project_id, cached["setId"]))}
+            root = set_for(project_id, set_id)
+            require(root["version"] == body["expectedVersion"], "VERSION_CONFLICT",
+                    "도면 묶음 버전이 변경되었습니다")
+            require(root["status"] == "failed", "INVALID_REQUEST",
+                    "실패한 도면 묶음만 재시도할 수 있습니다")
+            pending = [store.meta["drawingSheets"][project_id][sid] for sid in root["sheetIds"]
+                       if store.meta["drawingSheets"][project_id][sid]["status"] != "ready"]
+            require(bool(pending), "INVALID_REQUEST", "재처리할 페이지가 없습니다")
+            original = store.blob(root["sourceBlobId"])
+            require(sha256(original).hexdigest() == root["sha256"], "SOURCE_INVALID",
+                    "원본 PDF가 변경되어 재시도할 수 없습니다")
+            now = store.engine.at()
+            root["version"] += 1
+            root["status"] = "processing"
+            root.pop("error", None)
+            root["updatedAt"] = now
+            for sheet in pending:
+                sheet["status"] = "processing"
+                sheet["updatedAt"] = now
+            _audit(store, project_id, "sheet_raster_retry_requested", actor, role,
+                   {"setId": set_id, "remainingPages": len(pending),
+                    "sha256": root["sha256"], "version": root["version"]})
+            store.requests[request_key] = {"hash": fingerprint, "setId": set_id}
+            result = deepcopy(root)
         tasks.add_task(_render_set, store, project_id, set_id)
         return {"set": result}
 
