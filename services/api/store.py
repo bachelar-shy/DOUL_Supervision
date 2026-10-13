@@ -32,6 +32,7 @@ class SQLiteSnapshotAdapter:
     def __init__(self, path=':memory:', demo=True):
         if path != ':memory:':Path(path).parent.mkdir(parents=True,exist_ok=True)
         self.lock=RLock()
+        self._transaction_depth=0
         self.db=sqlite3.connect(path,check_same_thread=False,isolation_level=None,timeout=15)
         self.db.execute('PRAGMA journal_mode=WAL')
         self.db.execute('CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY CHECK(id=1), payload TEXT NOT NULL)')
@@ -83,9 +84,24 @@ class SQLiteSnapshotAdapter:
     @contextmanager
     def transaction(self, write=False):
         with self.lock:
+            if self._transaction_depth:
+                # Identity verification opens a read scope even when a
+                # project-scoped API handler is already inside a transaction.
+                # Reuse that connection snapshot; another BEGIN would fail,
+                # and reloading state would discard in-flight changes.
+                if write:
+                    raise RuntimeError('Nested SQLite snapshot writes are not supported')
+                self._transaction_depth+=1
+                try:
+                    yield self
+                finally:
+                    self._transaction_depth-=1
+                return
             self.db.execute('BEGIN IMMEDIATE' if write else 'BEGIN')
-            payload=self._load(return_payload=True)
+            payload=None
+            self._transaction_depth=1
             try:
+                payload=self._load(return_payload=True)
                 yield self
                 if write:self._save()
                 self.db.execute('COMMIT')
@@ -93,6 +109,8 @@ class SQLiteSnapshotAdapter:
                 self.db.execute('ROLLBACK')
                 if payload is not None:self.restore(json.loads(payload))
                 raise
+            finally:
+                self._transaction_depth=0
 
     def put_blob(self, file_id, content):
         self.db.execute('INSERT INTO blobs(id,content) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET content=excluded.content',(file_id,content))
