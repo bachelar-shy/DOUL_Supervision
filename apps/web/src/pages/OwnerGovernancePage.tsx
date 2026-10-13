@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import type { CommandDescriptor, RecordDTO, WorkItem, Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
 import { OwnerDecisionAuthoringPanel, ownerDecisionAuthoringLabels } from "./OwnerDecisionAuthoringPanel";
+import "./fieldwire-owner-compact.css";
 import { describeCommandAvailability } from "../data/ui-presentation";
 import { commands, states } from "../labels";
 import { EmptyState, StatusBadge } from "../ui";
@@ -143,18 +144,13 @@ export function OwnerGovernancePage({
         </div>
       </div>
 
-      <div
-        className="mt-3 rounded-sm border border-border bg-card px-4 py-3 text-[10px] leading-5 text-slate-500"
-        data-ui-component="owner-governance-flow"
-      >
-        <strong className="mr-2 text-slate-700">
-          {tr("owner.flow.title")}
-        </strong>
-        {tr("owner.flow.steps")}
-        <span className="ml-2 text-slate-400">
-          {tr("owner.flow.warning")}
-        </span>
-      </div>
+      <details className="owner-flow-disclosure" data-ui-component="owner-governance-flow">
+        <summary>{tr("owner.flow.title")}</summary>
+        <div className="owner-flow-content">
+          <p>{tr("owner.flow.steps")}</p>
+          <p>{tr("owner.flow.warning")}</p>
+        </div>
+      </details>
 
       <OwnerReportTemplate hasDetail={!!ownerCurrent} className="mt-3">
         <section className="panel list-pane">

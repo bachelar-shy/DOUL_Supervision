@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { HumanRole, WorkItem, Workspace } from "../data/ui-contract";
 import { auditCommandLabel, states } from "../labels";
 import { KpiCard, Panel, SectionHeader } from "../ui";
+import "./fieldwire-today-compact.css";
 import { AuditTimeline } from "../ui/catalog";
 import { DashboardTemplate } from "../ui/templates";
 import { ResizableWorkspace } from "../ui/ResizableWorkspace";
@@ -72,10 +73,10 @@ export function TodayPage({
   return (
     <PageBoundary name="today">
       <DashboardTemplate>
-        {["SUP", "CON", "ADM"].includes(role) && <section className="panel grid gap-2 p-4" data-ui-component="quick-create-launcher">
+        {["SUP", "CON", "ADM"].includes(role) && <section className="panel flex flex-wrap items-center gap-2 p-2" data-ui-component="quick-create-launcher">
           <h2 className="font-semibold">{t("today.quick.title")}</h2>
-          <p className="text-sm text-muted-foreground">{t("today.quick.description")}</p>
-          <div className="flex flex-wrap gap-2">
+          <p className="today-quick-help text-sm text-muted-foreground">{t("today.quick.description")}</p>
+          <div className="today-quick-actions flex flex-wrap gap-2">
             {allowedRoutes.includes("capture") && <button type="button" className="primary" style={{ minHeight: 44 }} onClick={() => onNavigate("capture")}>{t("today.quick.capture")}</button>}
             {role === "CON" && allowedRoutes.includes("inspections") && <button type="button" className="secondary" style={{ minHeight: 44 }} onClick={() => onNavigate("inspections")}>{t("today.quick.inspection")}</button>}
             {role !== "CON" && allowedRoutes.includes("corrections") && <button type="button" className="secondary" style={{ minHeight: 44 }} onClick={() => onNavigate("actions")}>{t("today.quick.action")}</button>}
