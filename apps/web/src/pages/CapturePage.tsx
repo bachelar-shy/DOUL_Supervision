@@ -21,6 +21,8 @@ interface LocalCapture {
   id: string;
   projectId: string;
   partyId: string;
+  /** Role assignment at capture time, optional only for legacy stored data. */
+  roleId?: string;
   name: string;
   mime: string;
   bytes: ArrayBuffer;
@@ -71,6 +73,24 @@ export function CapturePage({
 }) {
   const { t } = useTranslation();
   const [pending, setPending] = useState<LocalCapture[]>([]);
+  const scopeRole = client.session?.actor.roleAssignmentId || workspace.role.id;
+  const autoKey = ["doul-capture-autosync-v1", workspace.project.id,
+    client.session?.actor.partyId || "", scopeRole].join(":");
+  const [autoPreference, setAutoPreference] = useState({ key: "", enabled: false });
+  const autoEnabled = autoPreference.key === autoKey && autoPreference.enabled;
+  const autoAttempted = useRef("");
+  useEffect(() => {
+    try {
+      setAutoPreference({ key: autoKey, enabled: window.localStorage.getItem(autoKey) === "true" });
+    } catch { setAutoPreference({ key: autoKey, enabled: false }); }
+    autoAttempted.current = "";
+  }, [autoKey]);
+  function setAutoSync(enabled: boolean) {
+    setAutoPreference({ key: autoKey, enabled });
+    try { window.localStorage.setItem(autoKey, enabled ? "true" : "false"); }
+    catch { setError(t("capture.autoSync.storageError")); }
+    if (enabled) autoAttempted.current = "";
+  }
   const [progress, setProgress] = useState("");
   const [batchBusy, setBatchBusy] = useState(false);
   const uploadingRef = useRef(false);
@@ -88,10 +108,11 @@ export function CapturePage({
       (await captures("list")).filter(
         (x) =>
           x.projectId === workspace.project.id &&
-          x.partyId === client.session!.actor.partyId,
+          x.partyId === client.session!.actor.partyId &&
+          (!x.roleId || x.roleId === scopeRole),
       ),
     );
-  }, [client, workspace.project.id]);
+  }, [client, workspace.project.id, scopeRole]);
 
   useEffect(() => {
     let active = true;
@@ -102,7 +123,8 @@ export function CapturePage({
             rows.filter(
               (x) =>
                 x.projectId === workspace.project.id &&
-                x.partyId === client.session!.actor.partyId,
+                x.partyId === client.session!.actor.partyId &&
+                (!x.roleId || x.roleId === scopeRole),
             ),
           );
       })
@@ -112,7 +134,7 @@ export function CapturePage({
     return () => {
       active = false;
     };
-  }, [client, workspace.project.id]);
+  }, [client, workspace.project.id, scopeRole]);
 
   async function intakeFiles(files: File[]) {
     if (!files.length || batchBusy) return;
@@ -146,6 +168,7 @@ export function CapturePage({
           id: crypto.randomUUID(),
           projectId: workspace.project.id,
           partyId: client.session!.actor.partyId,
+          roleId: scopeRole,
           name: file.name,
           mime: file.type,
           bytes,
@@ -167,6 +190,10 @@ export function CapturePage({
   }
 
   async function uploadCapture(p: LocalCapture, onProgress: (offset: number, total: number) => void) {
+    if (p.projectId !== workspace.project.id || p.partyId !== client.session?.actor.partyId ||
+        (p.roleId && p.roleId !== client.session?.actor.roleAssignmentId)) {
+      throw new Error("CAPTURE_SCOPE_CHANGED");
+    }
     await client.upload(new Uint8Array(p.bytes), {
       name: p.name,
       mime: p.mime,
@@ -198,24 +225,25 @@ export function CapturePage({
     }
   }
 
-  async function sendAll() {
-    if (uploadingRef.current || !online || !pending.length) return;
+  async function sendAll(onlyCurrentRole = false) {
+    const queue = onlyCurrentRole ? pending.filter(p => p.roleId === scopeRole) : pending;
+    if (uploadingRef.current || !online || !queue.length) return;
     uploadingRef.current = true;
     setError("");
     let completed = 0;
-    setProgress(t("capture.batch.sending", { current: 1, total: pending.length }));
+    setProgress(t("capture.batch.sending", { current: 1, total: queue.length }));
     try {
       // Process sequentially to avoid saturated mobile links. Failed and
       // unattempted originals remain in IndexedDB for explicit retry.
-      for (const p of pending) {
-        setProgress(t("capture.batch.sending", { current: completed + 1, total: pending.length }));
+      for (const p of queue) {
+        setProgress(t("capture.batch.sending", { current: completed + 1, total: queue.length }));
         await uploadCapture(p, (offset, total) =>
-          setProgress(t("capture.batch.progress", { current: completed + 1, total: pending.length, percent: Math.round((offset / total) * 100) })));
+          setProgress(t("capture.batch.progress", { current: completed + 1, total: queue.length, percent: Math.round((offset / total) * 100) })));
         completed += 1;
       }
       notify(t("capture.batch.sent", { count: completed }));
     } catch (e) {
-      setError(t("capture.batch.partial", { completed, total: pending.length }) + " " +
+      setError(t("capture.batch.partial", { completed, total: queue.length }) + " " +
         (e instanceof ApiError ? reasonLabel(e.detail.code) : reasonLabel()));
     } finally {
       await load().catch(() => undefined);
@@ -224,6 +252,18 @@ export function CapturePage({
       setProgress("");
     }
   }
+
+  // A single bounded attempt on each reconnection. On failure, originals
+  // stay in IndexedDB and the user may manually retry. Legacy entries whose
+  // role cannot be verified are never submitted automatically.
+  useEffect(() => {
+    if (!online) { autoAttempted.current = ""; return; }
+    if (!autoEnabled || client.kind !== "http" || uploadingRef.current) return;
+    const eligible = pending.some(p => p.roleId === scopeRole);
+    if (!eligible || autoAttempted.current === autoKey) return;
+    autoAttempted.current = autoKey;
+    void sendAll(true);
+  }, [online, autoEnabled, autoKey, pending, scopeRole, client.kind]);
 
   return (
     <PageBoundary name="capture">
@@ -290,6 +330,14 @@ export function CapturePage({
               {t("capture.batch.sendAll")}
             </button>
           </div>
+          <label className="flex items-center gap-2 text-sm" style={{ marginBottom: 8 }}>
+            <input type="checkbox" aria-label={t("capture.autoSync.ariaLabel")}
+              checked={autoEnabled} onChange={event => setAutoSync(event.target.checked)} />
+            {t("capture.autoSync.description")}
+          </label>
+          <p style={{ fontSize: 11, color: "#64748b" }}>
+            {t("capture.autoSync.note")}
+          </p>
           {batchBusy && <p role="status">{t("capture.batch.preparing")}</p>}
           {pending.map((p) => (
             <div className="pending-row" key={p.id}>

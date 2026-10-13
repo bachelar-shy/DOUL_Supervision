@@ -1,5 +1,8 @@
 import { recordVersionLabel } from "../labels";
 import { RecordDetails } from "./RecordDetails";
+import { FieldChecklistPanel } from "./FieldChecklistPanel";
+import { FieldTaskDiscussions } from "./FieldTaskDiscussions";
+import { FieldDiscussionAlertsPanel } from "./FieldDiscussionAlertsPanel";
 import type { SupervisionClient } from "../data/supervision-client";
 import { InspectionAuthoringPanel } from "./InspectionAuthoringPanel";
 import { InspectionCaseFlowPanel } from "./parallel/InspectionCaseFlowPanel";
@@ -346,6 +349,22 @@ export function WorkbenchPage({
                   </button>
                 )}
 
+              {client.kind === "http" && (
+                <div className="my-3 grid gap-3">
+                  <details>
+                    <summary className="cursor-pointer text-sm font-semibold">{t("workbench.fieldChecklist")}</summary>
+                    <FieldChecklistPanel key={workspace.project.id + ":" + current.record.id}
+                      client={client} workspace={workspace} subject={current} online={online} />
+                  </details>
+                  <details>
+                    <summary className="cursor-pointer text-sm font-semibold">{t("workbench.discussion")}</summary>
+                    <FieldTaskDiscussions key={workspace.project.id + ":" + current.record.id}
+                      client={client} workspace={workspace} subject={current} online={online} />
+                    <FieldDiscussionAlertsPanel key={workspace.project.id + ":" + workspace.role.id}
+                      client={client} online={online} />
+                  </details>
+                </div>
+              )}
               <details className="technical">
                 <summary>{t("workbench.technicalSummary")}</summary>
                 <RecordDetails value={current.record} />

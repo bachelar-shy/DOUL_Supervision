@@ -19,7 +19,7 @@ export interface DrawingSheet {
 
 }
 export interface DrawingSheetPin {
-  id: string; sheetId: string; projectId: string; kind: "issue" | "inspection" | "site";
+  id: string; sheetId: string; projectId: string; version?: number; kind: "issue" | "inspection" | "site";
   x: number; y: number; comment: string; status: "draft" | "linked";
   recordRef: DomainRef | null; createdAt: string; createdByRole: string;
 }
