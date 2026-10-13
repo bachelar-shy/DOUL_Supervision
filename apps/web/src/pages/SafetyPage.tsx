@@ -1,7 +1,7 @@
 import { recordVersionLabel } from "../labels";
 import { useState } from "react";
 import type { SupervisionClient } from "../data/supervision-client";
-import { SafetyAuthoringPanel } from "./SafetyAuthoringPanel";
+import { SafetyAuthoringPanel, safetyAuthoringTitle } from "./SafetyAuthoringPanel";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -369,7 +369,10 @@ export function SafetyPage({
           </div>
         </Tabs>
 
-        <SafetyAuthoringPanel key={`${workspace.project.id}:${workspace.role.id}:${activeMachine}`} client={client} workspace={workspace} machine={activeMachine} online={online} onCreated={onCreated} />
+        <details className="fieldwire-authoring-disclosure" data-ui-component="safety-create-disclosure">
+          <summary>{safetyAuthoringTitle(i18n.resolvedLanguage || i18n.language || "ko")}</summary>
+          <SafetyAuthoringPanel key={`${workspace.project.id}:${workspace.role.id}:${activeMachine}`} client={client} workspace={workspace} machine={activeMachine} online={online} onCreated={onCreated} />
+        </details>
 
         <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
           <Panel className="list-pane">
