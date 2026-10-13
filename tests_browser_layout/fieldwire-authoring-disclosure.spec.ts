@@ -20,6 +20,10 @@ for (const width of [390, 1440]) {
       await expect(list, item.route + ": list stays available without opening form").toBeVisible();
       const listRect = await list.boundingBox();
       expect(listRect?.y, item.route + ": list is in first viewport").toBeLessThan(800);
+      await page.screenshot({
+        path: "preview/screenshots/fieldwire-list-first-" + item.route + "-" + width + ".png",
+        fullPage: false,
+      });
       const touchHeight = await summary.evaluate(element => element.getBoundingClientRect().height);
       expect(touchHeight, item.route + ": usable summary target").toBeGreaterThanOrEqual(width < 768 ? 44 : 38);
       await summary.click();
