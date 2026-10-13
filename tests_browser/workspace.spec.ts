@@ -502,7 +502,10 @@ test("safety workspace keeps permit, stop, resume gate, and equipment states sep
 
 test("29 register projections support selection, filtering, and detail", async ({ page }) => {
   await page.goto("/#/registers");
-  await expect(page.getByText("29개 표준 관리대장", { exact: true })).toBeVisible();
+  // This compact screen intentionally removes the duplicate register heading.
+  // Assert the complete catalog through its accessible navigator instead.
+  await expect(page.locator('[data-ui-component="register-navigator"]')).toBeVisible();
+  await expect(page.locator('[data-ui-component="register-navigator"]').getByRole("tab", { name: "전체 29개", exact: true })).toBeVisible();
   await expect(page.locator('[data-ui-component="register-table"] tbody tr')).not.toHaveCount(0);
 
   await page.getByPlaceholder("제목, 상태, 위치, 번호 검색").fill("경량벽체");
