@@ -49,11 +49,11 @@ test("expired drawing previews are never returned as offline originals", async (
       "A-102 기초 평면도", new Blob(["preview"], { type: "image/png" }));
     const key = [scope.projectId, scope.partyId, scope.roleId, "drawing-preview", "sheet-002", 3].join("|");
     await new Promise<void>((resolve, reject) => {
-      const opened = indexedDB.open("doul-field-media-cache-v1", 1);
+      const opened = indexedDB.open("doul-field-media-cache-v1", 2);
       opened.onerror = () => reject(opened.error);
       opened.onsuccess = () => {
         const db = opened.result;
-        const tx = db.transaction("media", "readwrite");
+        const tx = db.transaction(["media", "metadata"], "readwrite");
         const store = tx.objectStore("media");
         const request = store.get(key);
         request.onsuccess = () => {
@@ -61,6 +61,10 @@ test("expired drawing previews are never returned as offline originals", async (
           if (!item) return;
           item.storedAt = Date.now() - 8 * 24 * 60 * 60 * 1000;
           store.put(item);
+          const metadata = tx.objectStore("metadata");
+          const {media: _media, ...info} = item as Record<string, unknown>;
+          void _media;
+          metadata.put(info);
         };
         tx.oncomplete = () => { db.close(); resolve(); };
         tx.onabort = () => { db.close(); reject(tx.error); };
@@ -72,4 +76,30 @@ test("expired drawing previews are never returned as offline originals", async (
     return { expired: expired === null, listed: listed.length };
   });
   expect(result).toEqual({ expired: true, listed: 0 });
+});
+
+test("offline list and storage operations never scan media Blob records", async ({ page }) => {
+  await page.goto("/#/capture");
+  const result = await page.evaluate(async () => {
+    const cache = await import("/src/data/field-media-cache.ts");
+    const scope = {projectId:"meta-test",partyId:"meta-user",roleId:"meta-role"};
+    await cache.clearOfflineMedia(scope);
+    const proto = IDBObjectStore.prototype;
+    const previous = proto.getAll;
+    let scannedMedia = false;
+    proto.getAll = function(...args: Parameters<IDBObjectStore["getAll"]>) {
+      if (this.name === "media") {scannedMedia = true; throw new Error("Blob scan forbidden");}
+      return previous.apply(this,args);
+    };
+    try {
+      await cache.cacheOfflineMedia(scope,"drawing-thumb","sheet-1",1,"지붕 도면",
+        new Blob(["thumb"],{type:"image/png"}));
+      const rows = await cache.listOfflineMedia(scope);
+      const image = await cache.getOfflineMedia(scope,"drawing-thumb","sheet-1",1);
+      await cache.clearOfflineMedia(scope);
+      return {scannedMedia,count:rows.length,title:rows[0]?.title,
+        text:await image?.text(),remaining:(await cache.listOfflineMedia(scope)).length};
+    } finally {proto.getAll = previous;}
+  });
+  expect(result).toEqual({scannedMedia:false,count:1,title:"지붕 도면",text:"thumb",remaining:0});
 });
