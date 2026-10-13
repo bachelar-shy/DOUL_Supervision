@@ -105,3 +105,53 @@
     box-shadow: 0 0 0 1px #ad7529;
   }
 }
+
+/* At 768px the Vietnamese labels are wider than the tablet topbar.
+   Preserve the accessible selects while reducing only their visible chrome. */
+@media (min-width: 768px) and (max-width: 1100px) {
+  .app-shell[data-layout-system="field-workspace"] .topbar .top-actions {
+    flex: 0 1 285px;
+    min-width: 0;
+    max-width: 285px;
+    gap: 4px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .topbar .top-actions .role-picker {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 115px;
+    gap: 0;
+    font-size: 0;
+  }
+  .app-shell[data-layout-system="field-workspace"] .topbar .top-actions .role-picker select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    font-size: 11px;
+    text-overflow: ellipsis;
+  }
+  .app-shell[data-layout-system="field-workspace"] .topbar .top-actions .avatar,
+  .app-shell[data-layout-system="field-workspace"] .topbar .workspace-density-toggle {
+    display: none;
+  }
+  .app-shell[data-layout-system="field-workspace"] .topbar .top-actions button.connection-toggle {
+    width: 38px;
+    min-width: 38px;
+    padding: 0;
+    font-size: 0;
+    line-height: 0;
+  }
+  .app-shell[data-layout-system="field-workspace"] .topbar .top-actions button.connection-toggle::before {
+    content: "";
+    display: block;
+    width: 10px;
+    height: 10px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px #7d9a85;
+    background: #4c8860;
+  }
+  .app-shell[data-layout-system="field-workspace"] .topbar .top-actions button.connection-toggle.offline::before {
+    background: #bb7b27;
+    box-shadow: 0 0 0 1px #ad7529;
+  }
+}
