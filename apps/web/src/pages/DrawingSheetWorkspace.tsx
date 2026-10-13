@@ -11,7 +11,7 @@ import {
   createSheetPin, drawingPinLabels, loadDrawingSets, loadDrawingSheets, loadSheetPins,
   createSheetMarkup, loadSheetMarkups, changeSheetMarkup,
   type DrawingSheetMarkup, type DrawingMarkupKind, type NewSheetMarkup,
-  updateDrawingSheet, uploadDrawingSet, reviewDrawingSheetMetadata,
+  updateDrawingSheet, uploadDrawingSet, retryFailedDrawingSet, reviewDrawingSheetMetadata,
   type DrawingPinKind, type DrawingSet, type DrawingSheet, type DrawingSheetPin,
 } from "../data/drawing-sheet-client";
 import { DrawingMarkupCanvas } from "./DrawingMarkupCanvas";
@@ -165,7 +165,14 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   const wheelTransformRef = useRef({ zoom, pan });
   wheelTransformRef.current = { zoom, pan };
   const drag = useRef<{ x: number; y: number; startX: number; startY: number; moved: boolean } | null>(null);
-  const pinRequest = useRef<{ key: string; serialized: string } | null>(null);
+  const pinRequest = useRef<{ key: string; serialized: string; sheetId: string } | null>(null);
+  // Async save callbacks must compare against the live sheet, not the
+  // selection captured before awaiting a network response.
+  const liveSelectedId = useRef(selectedId);
+  liveSelectedId.current = mode === "viewer" ? selectedId : null;
+  const uploadAttempt = useRef<{file: File; key: string} | null>(null);
+  const retryAttempts = useRef(new Map<string, {version: number;key:string}>());
+  const [retryingSetId, setRetryingSetId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (client.kind !== "http") { setLoading(false); return; }
@@ -342,6 +349,9 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   }, [mode, selected?.id, selected?.status]);
 
   function openSheet(sheet: DrawingSheet) {
+    // Mark navigation synchronously: a pending mutation may resolve before
+    // React commits the new selectedId state.
+    liveSelectedId.current = sheet.id;
     setMode("viewer"); setSelectedId(sheet.id); setPins([]); setSelectedPinId(null);
     setDetailOpen(false); setPinChoice(null); setPendingPoint(null);
     setEditOpen(false); setReviewMode(false); setRevisionOpen(false);
@@ -355,15 +365,40 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = "";
     if (!file || !canWrite || busy) return;
+    const attempt = uploadAttempt.current;
+    if (!attempt || attempt.file.name !== file.name ||
+        attempt.file.size !== file.size || attempt.file.lastModified !== file.lastModified)
+      uploadAttempt.current = {file,key:crypto.randomUUID()};
     setUploading(true); setError(""); setNotice("");
     try {
-      const result = await uploadDrawingSet(client, file, crypto.randomUUID());
+      const result = await uploadDrawingSet(client, file, uploadAttempt.current!.key,
+        workspace.context.scope, (offset, total) => {
+          setNotice(`도면 원본 업로드 ${Math.round(offset * 100 / total)}%`);
+        });
+      uploadAttempt.current = null;
       setNotice(`PDF ${result.set.pageCount}장이 분리 대상으로 등록되었습니다. 변환 상태를 확인하십시오.`);
       setMode("catalog"); await refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "도면 업로드에 실패했습니다.");
     } finally { setUploading(false); }
   }
+  async function retryDrawingSet(set: DrawingSet) {
+    if (!canWrite || retryingSetId || busy || set.status !== "failed") return;
+    const previous = retryAttempts.current.get(set.id);
+    const attempt = previous?.version === set.version
+      ? previous : {version:set.version,key:crypto.randomUUID()};
+    retryAttempts.current.set(set.id,attempt);
+    setRetryingSetId(set.id);setError("");
+    try {
+      await retryFailedDrawingSet(client,set,attempt.key);
+      retryAttempts.current.delete(set.id);
+      setNotice("실패한 도면 페이지를 다시 처리하고 있습니다.");
+      await refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "도면 재처리를 확인하지 못했습니다.");
+    } finally {setRetryingSetId(null);}
+  }
+
   async function saveMetadata(event: FormEvent) {
     event.preventDefault();
     if (!selected || !canWrite || busy) return;
@@ -378,10 +413,14 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
             note: reviewNote.trim(),
           }, crypto.randomUUID())
         : await updateDrawingSheet(client, selected, editNumber, editTitle);
-      setSheets(previous => previous.map(sheet => sheet.id === selected.id ? updated.sheet : sheet));
-      setNotice(reviewMode ? "원본 도면정보 검수 이력이 저장되었습니다." : "도면번호와 도면명이 저장되었습니다.");
-      setEditOpen(false);
-    } catch { setError("도면 정보 저장 실패. 최신 정보를 확인하십시오."); }
+      setSheets(previous => previous.map(sheet => sheet.id === updated.sheet.id ? updated.sheet : sheet));
+      if (liveSelectedId.current === updated.sheet.id) {
+        setNotice(reviewMode ? "원본 도면정보 검수 이력이 저장되었습니다." : "도면번호와 도면명이 저장되었습니다.");
+        setEditOpen(false);
+      }
+    } catch {
+      if (liveSelectedId.current === selected?.id) setError("도면 정보 저장 실패. 최신 정보를 확인하십시오.");
+    }
     finally { setBusy(false); }
   }
   function startEdit() {
@@ -420,20 +459,28 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
         version: target.record.version } : null,
     };
     const serialized = JSON.stringify(payload);
-    if (pinRequest.current?.serialized !== serialized)
-      pinRequest.current = { key: crypto.randomUUID(), serialized };
+    const sheetId = selected.id;
+    if (pinRequest.current?.serialized !== serialized || pinRequest.current.sheetId !== sheetId)
+      pinRequest.current = {key:crypto.randomUUID(),serialized,sheetId};
     setBusy(true); setError("");
     try {
-      const response = await createSheetPin(client, selected.id, payload, pinRequest.current.key);
-      pinRequest.current = null;
-      setPins(items => [...items, response.pin]);
+      const response = await createSheetPin(client, sheetId, payload, pinRequest.current.key);
+      if (response.pin.sheetId !== sheetId) throw new Error("저장 대상 도면이 일치하지 않습니다.");
+      if (pinRequest.current?.sheetId === sheetId && pinRequest.current.serialized === serialized)
+        pinRequest.current = null;
+      if (liveSelectedId.current !== sheetId) {
+        void reloadPinActivity();
+        return;
+      }
+      setPins(items => [...items.filter(item => item.id !== response.pin.id), response.pin]);
       void reloadPinActivity();
       window.dispatchEvent(new Event("doul-drawing-pin-activity"));
       setSelectedPinId(response.pin.id); setDetailOpen(false);
       setPinChoice(null); setPendingPoint(null); setComment(""); setRecordRef("");
       setNotice(payload.recordRef ? "업무와 연결된 도면 핀을 저장했습니다." : "도면 현장 메모를 초안으로 저장했습니다.");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "도면 핀을 저장하지 못했습니다.");
+      if (liveSelectedId.current === sheetId)
+        setError(cause instanceof Error ? cause.message : "도면 핀을 저장하지 못했습니다.");
     } finally { setBusy(false); }
   }
   function startDrag(event: PointerEvent<HTMLDivElement>) {
@@ -452,9 +499,11 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   function stopDrag() { drag.current = null; }
   async function addMarkup(body: NewSheetMarkup) {
     if (!selected || !canWrite || markupBusy) return;
+    const sheetId = selected.id;
     setMarkupBusy(true); setError("");
     try {
-      const result = await createSheetMarkup(client, selected.id, body, crypto.randomUUID());
+      const result = await createSheetMarkup(client, sheetId, body, crypto.randomUUID());
+      if (liveSelectedId.current !== sheetId) return;
       setMarkups(previous => [...previous, result.markup]);
       setMarkupHistory(previous => [...previous, result.markup.id]);
       setRedoHistory([]);
@@ -465,9 +514,11 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   }
   async function eraseMarkup(item: DrawingSheetMarkup) {
     if (!selected || !canWrite || markupBusy) return;
+    const sheetId = selected.id;
     setMarkupBusy(true);
     try {
-      await changeSheetMarkup(client, selected.id, item.id, "archive", item.version, crypto.randomUUID());
+      await changeSheetMarkup(client, sheetId, item.id, "archive", item.version, crypto.randomUUID());
+      if (liveSelectedId.current !== sheetId) return;
       setMarkups(previous => previous.filter(value => value.id !== item.id));
       setMarkupHistory(previous => previous.filter(id => id !== item.id));
       setRedoHistory([]);
@@ -478,9 +529,11 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     const id = markupHistory[markupHistory.length - 1];
     const item = markups.find(value => value.id === id);
     if (!item) return;
+    const sheetId = selected.id;
     setMarkupBusy(true);
     try {
-      const result = await changeSheetMarkup(client, selected.id, id, "archive", item.version, crypto.randomUUID());
+      const result = await changeSheetMarkup(client, sheetId, id, "archive", item.version, crypto.randomUUID());
+      if (liveSelectedId.current !== sheetId) return;
       setMarkups(previous => previous.filter(value => value.id !== id));
       setMarkupHistory(previous => previous.slice(0, -1));
       setRedoHistory(previous => [...previous, result.markup]);
@@ -490,9 +543,11 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     if (!selected || !canWrite || markupBusy) return;
     const item = redoHistory[redoHistory.length - 1];
     if (!item) return;
+    const sheetId = selected.id;
     setMarkupBusy(true);
     try {
-      const result = await changeSheetMarkup(client, selected.id, item.id, "restore", item.version, crypto.randomUUID());
+      const result = await changeSheetMarkup(client, sheetId, item.id, "restore", item.version, crypto.randomUUID());
+      if (liveSelectedId.current !== sheetId) return;
       setMarkups(previous => [...previous, result.markup]);
       setMarkupHistory(previous => [...previous, item.id]);
       setRedoHistory(previous => previous.slice(0, -1));
@@ -509,7 +564,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   return <div className="drawing-sheet-workspace" data-ui-component="drawing-sheet-workspace" data-view={mode}>
     <div className="drawing-sheet-commandbar">
       <div className="drawing-sheet-command-left">
-        {mode === "viewer" ? <button className="draw-command" type="button" onClick={() => { setMode("catalog"); setPinChoice(null); }}>
+        {mode === "viewer" ? <button className="draw-command" type="button" onClick={() => { liveSelectedId.current = null; setMode("catalog"); setPinChoice(null); }}>
           <ArrowLeft size={15} aria-hidden="true" /> 전체 도면
         </button> : <strong className="drawing-sheet-route-label">도면 관리</strong>}
         <span className="draw-command-separator" aria-hidden="true" />
@@ -598,6 +653,14 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
           </span>}
           {group.set.status === "failed" && <span className="drawing-set-status failed">변환 실패 · {group.set.error}</span>}
         </button>
+        {group.set.status === "failed" && canWrite && <div className="drawing-set-recovery">
+          <button type="button" className="draw-command" disabled={retryingSetId !== null}
+            onClick={() => {void retryDrawingSet(group.set);}}>
+            <RotateCcw size={14} aria-hidden="true"/>
+            {retryingSetId === group.set.id ? "다시 처리 요청 중…" : "실패 페이지 다시 처리"}
+          </button>
+          <span>{group.set.completedPages}/{group.set.pageCount}장 변환 완료 · 완료된 도면은 유지됩니다.</span>
+        </div>}
         {!hiddenFolders.includes(group.set.id) && <div className={listView
           ? "drawing-sheet-items as-list" : "drawing-sheet-items as-grid"}>
           {group.items.map(sheet => <button key={sheet.id} type="button"
