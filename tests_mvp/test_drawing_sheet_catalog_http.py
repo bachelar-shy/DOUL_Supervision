@@ -143,6 +143,27 @@ class DrawingSheetHTTPTest(unittest.TestCase):
                  headers={**con, "Idempotency-Key": uid()}, json={**draft, **bad})
             self.assertNotEqual(response.status_code, 200, response.text)
 
+    def test_replayed_pin_key_cannot_cross_sheet_boundary(self):
+        self.assertEqual(self.upload().status_code, 202)
+        con = self.quick("CON")
+        sheets = self.http.get("/projects/" + self.project + "/drawing-sheets",
+                               headers=con).json()["items"]
+        first, second = sheets[0]["id"], sheets[1]["id"]
+        payload = {"x": 0.24, "y": 0.45, "kind": "issue",
+                   "comment": "공통 점검", "recordRef": None}
+        key = uid()
+        prefix = "/projects/" + self.project + "/drawing-sheets/"
+        one = self.http.post(prefix + first + "/pins",
+                             json=payload, headers={**con, "Idempotency-Key": key})
+        self.assertEqual(one.status_code, 200, one.text)
+        cross = self.http.post(prefix + second + "/pins",
+                               json=payload, headers={**con, "Idempotency-Key": key})
+        self.assertEqual(cross.status_code, 409, cross.text)
+        self.assertEqual(self.http.get(prefix + second + "/pins",
+                                       headers=con).json()["count"], 0)
+        self.assertEqual(self.http.post(prefix + first + "/pins",
+                             json=payload, headers={**con, "Idempotency-Key": key}).json(), one.json())
+
     def test_non_pdf_and_corrupt_pdf_rejected_before_any_write(self):
         result = self.upload(data=b"%PDF-corrupted content")
         self.assertEqual(result.status_code, 422)
