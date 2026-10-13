@@ -103,14 +103,17 @@ test("global header shows project context instead of repeating the active menu t
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await enter(page, "SUP");
-    const projectName = (await page.locator(".project-chip strong").textContent())?.trim();
-    expect(projectName).toBeTruthy();
+    await expect(page.locator(".loading-panel")).toHaveCount(0);
     for (const route of ["issues", "inspections", "owner"]) {
       await page.evaluate(id => { location.hash = "#/" + id; }, route);
+      await expect(page.locator(".app-shell")).toHaveAttribute("data-workspace-route", route);
       const header = page.locator(".main-shell main > .page-heading h1");
       const breadcrumb = page.locator('[data-ui-component="project-context-breadcrumb"]');
       await expect(breadcrumb).toBeVisible();
-      await expect(breadcrumb.locator("b")).toHaveText(projectName!);
+      await expect.poll(async () =>
+        (await breadcrumb.locator("b").textContent())?.trim()
+        === (await page.locator(".project-chip strong").textContent())?.trim(),
+      ).toBe(true);
       const routeTitle = (await header.textContent())?.trim();
       expect(routeTitle, "active menu must retain a single h1").toBeTruthy();
       expect((await breadcrumb.textContent())?.includes(routeTitle!), route + ": no repeated menu in global header").toBe(false);
