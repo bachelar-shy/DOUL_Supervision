@@ -375,11 +375,10 @@ export function SafetyPage({
         </details>
 
         <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
-          <Panel className="list-pane">
-            <SectionHeader
-              title={tabName}
-              meta={tr("common.count", { count: items.length })}
-            />
+          <Panel className="list-pane" aria-label={tabName}>
+            <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">
+              {tr("common.count", { count: items.length })}
+            </p>
             <RecordList
               items={items}
               selected={selected}
