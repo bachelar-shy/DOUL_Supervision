@@ -307,24 +307,24 @@
     [data-kind="workbench"], [data-kind="owner"]
   ) .doul-layout-controls {
     justify-content: flex-end;
-    min-height: 30px;
+    min-height: 36px;
     margin-bottom: 4px;
   }
   .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace:is(
     [data-kind="workbench"], [data-kind="owner"]
   ) .doul-layout-choices {
-    padding: 2px;
+    padding: 0;
     gap: 1px;
     border-radius: 3px;
   }
   .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace:is(
     [data-kind="workbench"], [data-kind="owner"]
   ) :is(.doul-layout-choices button, .doul-layout-reset) {
-    min-width: 28px;
-    width: 28px;
-    min-height: 28px;
-    height: 28px;
-    padding: 5px;
+    min-width: 34px;
+    width: 34px;
+    min-height: 34px;
+    height: 34px;
+    padding: 6px;
     gap: 0;
   }
   .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace:is(
