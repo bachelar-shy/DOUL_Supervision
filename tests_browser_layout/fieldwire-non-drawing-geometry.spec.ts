@@ -63,3 +63,30 @@ test("workbench menu has one visible heading and search/count in a single list t
     }
   }
 });
+
+test("today has only one compact date and new-work toolbar", async ({ page }) => {
+  for (const width of [390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/#/today");
+    const heading = page.locator('.app-shell[data-workspace-route="today"] .main-shell main > .page-heading');
+    const date = heading.locator('[data-ui-component="today-date-context"]');
+    const actions = heading.locator('[data-ui-component="today-header-quick-actions"]');
+    await expect(date).toBeVisible();
+    await expect(actions).toBeVisible();
+    await expect(actions.getByRole("button").first()).toBeVisible();
+    await expect(page.locator('[data-ui-component="quick-create-launcher"]')).toHaveCount(0);
+    await expect(heading.getByRole("button", { name: "새로고침" })).toHaveCount(0);
+    await expect(heading.getByRole("button", { name: "현장 촬영" })).toHaveCount(0);
+    // Semantics remain available to screen readers, but the duplicate title is not visible.
+    await expect(heading.locator("h1")).toHaveText("오늘");
+    if (width >= 768) {
+      const a = await date.boundingBox(), b = await actions.boundingBox();
+      if (!a || !b) throw new Error("Today date or actions missing");
+      expect(Math.abs(a.y + a.height / 2 - b.y - b.height / 2)).toBeLessThanOrEqual(9);
+    } else {
+      const bounds = await actions.getByRole("button").first().boundingBox();
+      expect(bounds?.height).toBeGreaterThanOrEqual(44);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(2);
+  }
+});
