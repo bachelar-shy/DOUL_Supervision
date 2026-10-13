@@ -48,8 +48,8 @@ def install_sheet_markup_routes(app, store, *, identity, context, sheet_for, key
     def list_markups(project_id: str, sheet_id: str, request: Request):
         actor = identity(request)
         with store.transaction():
-            context(project_id, request, actor)
-            sheet_for(project_id, sheet_id)
+            role = context(project_id, request, actor)
+            sheet_for(project_id, sheet_id, actor, role)
             found = store.meta.get("drawingSheetMarkups", {}).get(project_id, {}).get(sheet_id, {})
             items = [deepcopy(x) for x in found.values() if x["status"] == "active"]
             return {"items": sorted(items, key=lambda x: x["createdAt"]), "count": len(items)}
@@ -60,7 +60,7 @@ def install_sheet_markup_routes(app, store, *, identity, context, sheet_for, key
         key = key_for(request)
         body = await request.json()
         _validate(body)
-        fingerprint = sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
+        fingerprint = sha256(json.dumps({"sheetId": sheet_id, "body": body}, sort_keys=True).encode()).hexdigest()
         cache_key = f"sheet-markup:{project_id}:{actor['partyId']}:{key}"
         with store.transaction(write=True):
             role = context(project_id, request, actor)
@@ -69,7 +69,7 @@ def install_sheet_markup_routes(app, store, *, identity, context, sheet_for, key
             if cached:
                 require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Request changed")
                 return deepcopy(cached["result"])
-            sheet = sheet_for(project_id, sheet_id)
+            sheet = sheet_for(project_id, sheet_id, actor, role)
             require(sheet["status"] == "ready" and sheet["version"] == body["sheetVersion"],
                     "VERSION_CONFLICT", "Drawing sheet changed")
             now = store.engine.at()
@@ -95,7 +95,7 @@ def install_sheet_markup_routes(app, store, *, identity, context, sheet_for, key
                 and type(body["expectedVersion"]) is int and body["expectedVersion"] > 0,
                 "INVALID_REQUEST", "Markup version is required")
         cache_key = f"sheet-markup-{action}:{project_id}:{actor['partyId']}:{key}"
-        fingerprint = sha256((markup_id + action + str(body["expectedVersion"])).encode()).hexdigest()
+        fingerprint = sha256((sheet_id + ":" + markup_id + action + str(body["expectedVersion"])).encode()).hexdigest()
         with store.transaction(write=True):
             role = context(project_id, request, actor)
             require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "Markup editing forbidden")
@@ -103,7 +103,7 @@ def install_sheet_markup_routes(app, store, *, identity, context, sheet_for, key
             if cached:
                 require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Request changed")
                 return deepcopy(cached["result"])
-            sheet_for(project_id, sheet_id)
+            sheet_for(project_id, sheet_id, actor, role)
             record = rows(project_id, sheet_id).get(markup_id)
             require(record is not None, "NOT_FOUND", "Markup not found")
             require(record["version"] == body["expectedVersion"], "VERSION_CONFLICT", "Markup changed")

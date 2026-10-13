@@ -56,7 +56,7 @@ def install_sheet_metadata_review_routes(app, store, *, identity, context, sheet
             if cached:
                 require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Request changed")
                 return deepcopy(cached["result"])
-            sheet = sheet_for(project_id, sheet_id)
+            sheet = sheet_for(project_id, sheet_id, actor, role)
             require(sheet["status"] == "ready", "INVALID_REQUEST", "Raster page not ready")
             require(sheet["version"] == body["expectedVersion"],
                     "VERSION_CONFLICT", "Sheet metadata has changed")

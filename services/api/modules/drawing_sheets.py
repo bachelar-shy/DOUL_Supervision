@@ -212,20 +212,42 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
         require(row is not None, "NOT_FOUND", "도면 묶음을 찾을 수 없습니다")
         return row
 
+    def authorize_set(project_id, row, actor, role):
+        source_id = row.get("sourceEvidenceId")
+        if source_id:
+            source = store.engine.get("Evidence", source_id)
+            require(source["projectId"] == project_id and
+                    source["fileId"] == row["sourceBlobId"] and
+                    source["fileHash"] == row["sha256"],
+                    "NOT_AUTHORIZED", "도면 원본이 변경되었거나 접근할 수 없습니다")
+            store.engine.authorize_read(source, actor["partyId"], role["id"])
+        return row
+
+    def authorize_sheet(project_id, sheet_id, actor, role):
+        sheet = sheet_for(project_id, sheet_id)
+        authorize_set(project_id, set_for(project_id, sheet["setId"]), actor, role)
+        return sheet
+
     @app.get("/projects/{project_id}/drawing-sets")
     def list_sets(project_id: str, request: Request):
         actor = identity(request)
         with store.transaction():
-            context(project_id, request, actor)
+            role = context(project_id, request, actor)
             values = list(store.meta.get("drawingSets", {}).get(project_id, {}).values())
-            return {"items": sorted(deepcopy(values), key=lambda x: x["createdAt"], reverse=True)}
+            allowed = []
+            for row in values:
+                try:
+                    allowed.append(deepcopy(authorize_set(project_id, row, actor, role)))
+                except (ContractError, KeyError):
+                    continue
+            return {"items": sorted(allowed, key=lambda x: x["createdAt"], reverse=True)}
 
     @app.get("/projects/{project_id}/drawing-sets/{set_id}")
     def get_set(project_id: str, set_id: str, request: Request):
         actor = identity(request)
         with store.transaction():
-            context(project_id, request, actor)
-            return {"set": deepcopy(set_for(project_id, set_id))}
+            role = context(project_id, request, actor)
+            return {"set": deepcopy(authorize_set(project_id, set_for(project_id, set_id), actor, role))}
 
     @app.post("/projects/{project_id}/drawing-sets", status_code=202)
     async def upload_set(project_id: str, request: Request, tasks: BackgroundTasks):
@@ -457,12 +479,19 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
     def list_sheets(project_id: str, request: Request):
         actor = identity(request)
         with store.transaction():
-            context(project_id, request, actor)
+            role = context(project_id, request, actor)
             sheets = store.meta.get("drawingSheets", {}).get(project_id, {})
-            items = sorted(sheets.values(), key=lambda row: (row["createdAt"], row["setId"], row["pageNo"]))
+            visible = []
+            for sheet in sheets.values():
+                try:
+                    visible.append(authorize_sheet(project_id, sheet["id"], actor, role))
+                except (ContractError, KeyError):
+                    continue
+            items = sorted(visible, key=lambda row: (row["createdAt"], row["setId"], row["pageNo"]))
             return {"items": [_sheet_result(item) for item in items], "count": len(items)}
 
     def visible_pins(project_id, sheet_id, actor, role):
+        authorize_sheet(project_id, sheet_id, actor, role)
         pins = store.meta.get("drawingSheetPins", {}).get(project_id, {}).get(sheet_id, {})
         values = []
         for pin in pins.values():
@@ -486,6 +515,10 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
             reply_project = store.meta.get("drawingPinReplies", {}).get(project_id, {})
             rows = []
             for sheet in sheets.values():
+                try:
+                    authorize_sheet(project_id, sheet["id"], actor, role)
+                except (ContractError, KeyError):
+                    continue
                 for pin in visible_pins(project_id, sheet["id"], actor, role):
                     replies = reply_project.get(sheet["id"], {}).get(pin["id"], [])
                     latest = replies[-1] if replies else None
@@ -509,7 +542,7 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
         actor = identity(request)
         with store.transaction():
             role = context(project_id, request, actor)
-            row = sheet_for(project_id, sheet_id)
+            row = authorize_sheet(project_id, sheet_id, actor, role)
             return {"sheet": _sheet_result(row),
                     "pins": visible_pins(project_id, sheet_id, actor, role)}
 
@@ -518,8 +551,8 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
         actor = identity(request)
         require(size in {"preview", "thumb"}, "INVALID_REQUEST", "Unknown image size")
         with store.transaction():
-            context(project_id, request, actor)
-            row = sheet_for(project_id, sheet_id)
+            role = context(project_id, request, actor)
+            row = authorize_sheet(project_id, sheet_id, actor, role)
             image_id = row.get("previewBlobId" if size == "preview" else "thumbBlobId")
             require(image_id is not None and row["status"] == "ready", "NOT_FOUND", "이미지 변환 중입니다")
             content = store.blob(image_id)
@@ -542,7 +575,8 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
         for field, limit in (("number", 60), ("title", 220)):
             require(isinstance(body[field], str) and 0 < len(body[field].strip()) <= limit,
                     "INVALID_REQUEST", f"Invalid {field}")
-        fingerprint = sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+        fingerprint = sha256(json.dumps({"sheetId": sheet_id, "body": body},
+            sort_keys=True, ensure_ascii=False).encode()).hexdigest()
         request_key = "drawing-sheet-edit:" + project_id + ":" + actor["partyId"] + ":" + key
         with store.transaction(write=True):
             role = context(project_id, request, actor)
@@ -551,7 +585,7 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
             if cached:
                 require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Same key has different payload")
                 return deepcopy(cached["result"])
-            row = sheet_for(project_id, sheet_id)
+            row = authorize_sheet(project_id, sheet_id, actor, role)
             require(row["version"] == body["expectedVersion"], "VERSION_CONFLICT", "도면 정보가 변경되었습니다")
             row.update(version=row["version"] + 1, number=body["number"].strip(),
                        title=body["title"].strip(), updatedAt=store.engine.at())
@@ -570,7 +604,7 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
         actor = identity(request)
         with store.transaction():
             role = context(project_id, request, actor)
-            sheet_for(project_id, sheet_id)
+            authorize_sheet(project_id, sheet_id, actor, role)
             values = visible_pins(project_id, sheet_id, actor, role)
             return {"items": values, "count": len(values)}
 
@@ -597,7 +631,8 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
             and isinstance(reference["objectId"], str)
             and type(reference["version"]) is int and reference["version"] > 0),
             "INVALID_REQUEST", "Invalid linked record")
-        fingerprint = sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+        fingerprint = sha256(json.dumps({"sheetId": sheet_id, "body": body},
+            sort_keys=True, ensure_ascii=False).encode()).hexdigest()
         request_key = "drawing-sheet-pin:" + project_id + ":" + actor["partyId"] + ":" + key
         with store.transaction(write=True):
             role = context(project_id, request, actor)
@@ -606,7 +641,7 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
             if cached:
                 require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Pin key payload changed")
                 return deepcopy(cached["result"])
-            sheet = sheet_for(project_id, sheet_id)
+            sheet = authorize_sheet(project_id, sheet_id, actor, role)
             require(sheet["status"] == "ready", "INVALID_REQUEST", "준비된 도면을 선택하십시오")
             if reference:
                 record = store.engine.resolve(reference, project_id)
@@ -624,14 +659,14 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
             return result
 
     install_sheet_metadata_review_routes(
-        app, store, identity=identity, context=context, sheet_for=sheet_for,
+        app, store, identity=identity, context=context, sheet_for=authorize_sheet,
         set_for=set_for, key_for=key_for, audit=_audit)
     install_sheet_markup_routes(app, store, identity=identity, context=context,
-                                sheet_for=sheet_for, key_for=key_for, audit=_audit)
+                                sheet_for=authorize_sheet, key_for=key_for, audit=_audit)
 
     install_sheet_revision_routes(app, store, identity=identity, context=context,
-                                  sheet_for=sheet_for, set_for=set_for,
+                                  sheet_for=authorize_sheet, set_for=set_for,
                                   key_for=key_for, audit=_audit)
     install_sheet_pin_reply_routes(
-        app, store, identity=identity, context=context, sheet_for=sheet_for,
+        app, store, identity=identity, context=context, sheet_for=authorize_sheet,
         visible_pins=visible_pins, key_for=key_for, audit=_audit)
