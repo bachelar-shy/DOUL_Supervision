@@ -2,7 +2,7 @@ import { recordVersionLabel } from "../labels";
 import { X } from "lucide-react";
 import type { CommandDescriptor, RecordDTO, WorkItem, Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
-import { OwnerDecisionAuthoringPanel } from "./OwnerDecisionAuthoringPanel";
+import { OwnerDecisionAuthoringPanel, ownerDecisionAuthoringLabels } from "./OwnerDecisionAuthoringPanel";
 import { describeCommandAvailability } from "../data/ui-presentation";
 import { commands, states } from "../labels";
 import { EmptyState, StatusBadge } from "../ui";
@@ -103,7 +103,13 @@ export function OwnerGovernancePage({
 
   return (
     <PageBoundary name="owner" data-owner-governance="true">
-      <OwnerDecisionAuthoringPanel client={client} workspace={workspace} online={online} onCreated={onCreated} />
+      <details className="fieldwire-authoring-disclosure" data-ui-component="owner-create-disclosure">
+        <summary>{ownerDecisionAuthoringLabels[
+          (i18n.resolvedLanguage || i18n.language || "ko").startsWith("vi") ? "vi"
+          : (i18n.resolvedLanguage || i18n.language || "ko").startsWith("en") ? "en" : "ko"
+        ].title}</summary>
+        <OwnerDecisionAuthoringPanel client={client} workspace={workspace} online={online} onCreated={onCreated} />
+      </details>
       <div
         className="grid gap-3 md:grid-cols-3"
         data-ui-component="owner-governance-summary"
