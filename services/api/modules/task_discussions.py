@@ -109,20 +109,24 @@ def install_task_discussion_routes(app, store, *, identity, role_for, key_for, b
         with store.transaction(write=True):
             actor, role = context(project_id, request)
             require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "No discussion permission")
-            subject_record = subject(project_id, body["subjectRef"], actor, role)
+            # Replays must still pass the *current* project/role read gate,
+            # but an already accepted comment can be safely retried after
+            # the official Issue or Evidence has advanced its version.
+            subject_record = subject(project_id, body["subjectRef"], actor, role, exact_version=False)
             message = make_task_comment(project_id=project_id, work_ref=body["subjectRef"],
                 author_party_id=actor["partyId"], role_assignment_id=role["id"],
                 message=body["message"], mentions=body["mentionPartyIds"],
                 evidence_refs=body["evidenceRefs"])
+            op = "field_discussions:comment"
+            previous = store.engine._replay(project_id, actor["partyId"], op, key, body)
+            if previous is not None: return previous
+            subject_record = subject(project_id, body["subjectRef"], actor, role, exact_version=True)
             for mentioned in message["mentionPartyIds"]:
                 require(can_read_person(subject_record, project_id, mentioned),
                         "NOT_AUTHORIZED", "Mentioned person lacks project or subject access")
             for ref in message["evidenceRefs"]:
-                evidence = store.engine.resolve(ref, project_id)
+                evidence = store.engine._current_reference(ref, project_id, object_type="Evidence")
                 store.engine.authorize_read(evidence, actor["partyId"], role["id"])
-            op = "field_discussions:comment"
-            previous = store.engine._replay(project_id, actor["partyId"], op, key, body)
-            if previous is not None: return previous
             threads = store.meta.setdefault("fieldTaskDiscussions", {}).setdefault(project_id, {})
             thread = threads.setdefault(thread_id(body["subjectRef"]), {"comments": [], "watchers": []})
             watchers = set(thread["watchers"])

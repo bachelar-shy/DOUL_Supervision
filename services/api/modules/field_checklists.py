@@ -303,7 +303,7 @@ def install_field_checklist_routes(app, store, *, identity, role_for, key_for, b
                             and ref["objectId"] not in seen,
                             "REFERENCE_INVALID", "Versioned, unique photo references required")
                     seen.add(ref["objectId"])
-                    evidence = store.engine.resolve(ref, project_id)
+                    evidence = store.engine._current_reference(ref, project_id, object_type="Evidence")
                     require(evidence.get("mediaType") in {"photo", "video"},
                             "REFERENCE_TYPE_INVALID", "Only photo/video evidence is supported")
                     store.engine.authorize_read(evidence, actor["partyId"], role["id"])

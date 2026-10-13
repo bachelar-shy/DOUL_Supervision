@@ -55,15 +55,25 @@ test.afterAll(async () => {
 });
 
 test.afterEach(async ({page})=>{
-  // Finish forwarded fixture requests before Playwright closes the page/context.
-  await page.unrouteAll({behavior:"wait"});
+  // Required API responses are already asserted in each test. Abandoned
+  // fixture requests on reload/role switch must not block teardown forever.
+  // Playwright will suppress late errors only after these routes are removed.
+  await page.unrouteAll({behavior:"ignoreErrors"});
 });
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/**", async route => {
     const url = new URL(route.request().url());
     const response = await route.fetch({ url: `${apiOrigin}${url.pathname.replace(/^\/api/, "")}${url.search}` });
-    await route.fulfill({ response });
+    try {
+      await route.fulfill({ response });
+    } catch (error) {
+      // A role change or reload can cancel this request while route.fetch
+      // is in flight. Ignore only Playwright's already-settled route signal;
+      // unexpected proxy errors must still fail the test.
+      if (error instanceof Error && error.message.includes("Route is already handled!")) return;
+      throw error;
+    }
   });
 });
 
