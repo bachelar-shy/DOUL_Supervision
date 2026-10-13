@@ -885,6 +885,7 @@ export function SchedulePage({
       </Tabs>
       <WorkbenchTemplate hasDetail={Boolean(item)}>
         <Panel className="list-pane" aria-label={tr(tab.labelKey)}>
+          <div className="fieldwire-operational-list-head" data-ui-component="operational-list-head">
           <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">
             {tr("schedule.count", { count: items.length })}
           </p>
@@ -903,6 +904,7 @@ export function SchedulePage({
                 {tr("schedule.page.createAction")}
               </ActionButton>
             )}
+          </div>
           </div>
           {client.kind === "mock" && active === SOURCE_TAB && (
             <p className="muted">{tr("schedule.page.mockNoImport")}</p>
