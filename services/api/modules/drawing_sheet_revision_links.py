@@ -105,6 +105,8 @@ def install_sheet_revision_routes(app, store, *, identity, context, sheet_for, s
             role = context(project_id, request, actor)
             require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED",
                     "Only project administrator or supervision can link drawing revisions")
+            sheet_for(project_id, body["fromSheetId"], actor, role)
+            sheet_for(project_id, body["toSheetId"], actor, role)
             cached = store.requests.get(request_key)
             if cached:
                 require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Request changed")
