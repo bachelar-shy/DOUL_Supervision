@@ -33,5 +33,5 @@ test("synthetic provenance and offline tools do not take permanent workspace row
   await expect(tools.getByText(/온라인 복구 후 자동 전송을 시도/)).toBeVisible();
   await context.setOffline(false);
   await expect(status).toHaveAttribute("aria-label", /온라인/);
-  await expect(page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).resolves.toBeLessThanOrEqual(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(2);
 });
