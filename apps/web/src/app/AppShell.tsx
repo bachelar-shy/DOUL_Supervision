@@ -542,13 +542,16 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               onClick={() => setCompactDensity((value) => !value)}>
               <Rows3 size={16} aria-hidden="true" />
             </button>
-            <button type="button" className={"connection connection-toggle " + (!online ? "offline" : "")}
+            {workspace && client.kind !== "mock" ? <button type="button"
+              className={"connection connection-toggle " + (!online ? "offline" : "")}
               data-ui-component="offline-status-toggle" aria-expanded={showOfflineTools}
               aria-controls="field-offline-tools"
               aria-label={online ? "온라인 · 미전송 업무 확인" : "오프라인 · 기기 저장 업무 확인"}
               title="저장 및 동기화 상태" onClick={() => setShowOfflineTools(value => !value)}>
               {online ? t("app.connection.online") : t("app.connection.offline")}
-            </button>
+            </button> : <span className={"connection " + (!online ? "offline" : "")}>
+              {online ? t("app.connection.online") : t("app.connection.offline")}
+            </span>}
             <label className="role-picker">
               {t("app.languagePicker")}{" "}
               <select
