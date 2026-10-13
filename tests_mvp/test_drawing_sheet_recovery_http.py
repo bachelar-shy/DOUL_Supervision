@@ -1,5 +1,6 @@
 """Interrupted raster conversion is recovered from durable state."""
 import time
+import shutil
 from hashlib import sha256
 from services.api.modules.drawing_sheets import _render_set
 from services.api.modules.drawing_sheet_recovery import recoverable_sets
@@ -52,6 +53,8 @@ class DrawingRasterRecoveryTests(DrawingSheetHTTPTest):
 
 import unittest
 
+@unittest.skipUnless(shutil.which("pdfinfo") and shutil.which("pdftoppm") and
+                     shutil.which("pdftotext"), "Poppler required")
 class DrawingRecoveryRestartIntegration(unittest.TestCase):
     def test_new_api_process_reclaims_stale_set_without_manual_retry(self):
         import os
