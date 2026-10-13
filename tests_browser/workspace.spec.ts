@@ -1001,7 +1001,8 @@ test("offline evidence stays local until explicit upload", async ({
     page.getByText("현장 기록 가져오기", { exact: true }),
   ).toBeVisible();
   await context.setOffline(true);
-  await expect(page.locator(".offline-bar")).toContainText("오프라인");
+  await expect(page.locator('[data-ui-component="offline-status-toggle"]')).toHaveAttribute("aria-label", /오프라인/);
+  await expect(page.locator(".offline-bar")).toHaveCount(0);
   await page
     .getByLabel("증빙 파일 선택")
     .setInputFiles({
