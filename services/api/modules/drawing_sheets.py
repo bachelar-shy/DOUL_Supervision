@@ -557,7 +557,7 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
             require(image_id is not None and row["status"] == "ready", "NOT_FOUND", "이미지 변환 중입니다")
             content = store.blob(image_id)
         return Response(content, media_type="image/jpeg", headers={
-            "Cache-Control": "private, max-age=300", "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
         })
 
     @app.patch("/projects/{project_id}/drawing-sheets/{sheet_id}")
@@ -581,6 +581,7 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
         with store.transaction(write=True):
             role = context(project_id, request, actor)
             require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "도면 수정 권한이 없습니다")
+            authorize_sheet(project_id, sheet_id, actor, role)
             cached = store.requests.get(request_key)
             if cached:
                 require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Same key has different payload")
@@ -637,6 +638,7 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
         with store.transaction(write=True):
             role = context(project_id, request, actor)
             require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "핀 생성 권한이 없습니다")
+            authorize_sheet(project_id, sheet_id, actor, role)
             cached = store.requests.get(request_key)
             if cached:
                 require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Pin key payload changed")
