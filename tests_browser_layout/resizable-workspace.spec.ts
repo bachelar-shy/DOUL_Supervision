@@ -147,3 +147,32 @@ test("dashboard supports focus and registers keep a single scroll region", async
   await expect(table).toBeVisible();
   expect(await table.evaluate(node => getComputedStyle(node).overflowY)).toBe("auto");
 });
+
+
+test("Fieldwire list and detail view toggles use compact labeled icons without losing keyboard access", async ({ page }) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const [route, kind] of [["issues", "workbench"], ["owner", "owner"]] as const) {
+      await page.goto("/#/" + route);
+      const root = workspace(page, kind);
+      const controls = root.locator(".doul-layout-controls");
+      const first = controls.locator('[data-layout-action="first"]');
+      const split = controls.locator('[data-layout-action="split"]');
+      await expect(first).toBeVisible();
+      await expect(first).toHaveAttribute("aria-label", /.+/);
+      await expect(split).toHaveAttribute("aria-label", /.+/);
+      const size = await first.boundingBox();
+      expect(size, route + ": list view button has geometry").not.toBeNull();
+      expect(size!.height, route + ": touch target").toBeGreaterThanOrEqual(width < 768 ? 44 : 34);
+      if (width >= 768) {
+        await expect(first.locator("span")).toHaveCSS("display", "none");
+        const bar = await controls.boundingBox();
+        expect(bar!.height, route + ": compact top controls").toBeLessThanOrEqual(38);
+      }
+      await split.click();
+      await expect(root).toHaveAttribute("data-view", width < 768 ? "first" : "split");
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      expect(overflow, route + ": horizontal overflow").toBeLessThanOrEqual(2);
+    }
+  }
+});

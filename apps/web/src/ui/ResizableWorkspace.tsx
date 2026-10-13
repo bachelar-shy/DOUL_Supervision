@@ -188,7 +188,7 @@ export function ResizableWorkspace({
             <PanelLeft aria-hidden="true" size={15} /><span>{firstLabel}</span>
           </button>
           <button type="button" data-layout-action="split" aria-pressed={view === "split"}
-            aria-label={splitLabel}
+            aria-label={splitLabel} title={splitLabel}
             onClick={() => setFocus({ scope, view: "split" })}>
             <Columns2 aria-hidden="true" size={15} />
             <span>{splitLabel}</span>

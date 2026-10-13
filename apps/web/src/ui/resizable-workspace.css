@@ -296,3 +296,55 @@
   overflow-wrap: anywhere;
   height: auto;
 }
+
+
+/* Fieldwire-like compact view controls: the list is primary content.
+ * Icon buttons remain individually named by aria-label/title in
+ * ResizableWorkspace.tsx, so collapsing visual captions is accessible.
+ * Keep document and dashboard controls as-is to avoid changing authoring. */
+@media (min-width: 768px) {
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace:is(
+    [data-kind="workbench"], [data-kind="owner"]
+  ) .doul-layout-controls {
+    justify-content: flex-end;
+    min-height: 36px;
+    margin-bottom: 4px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace:is(
+    [data-kind="workbench"], [data-kind="owner"]
+  ) .doul-layout-choices {
+    padding: 0;
+    gap: 1px;
+    border-radius: 3px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace:is(
+    [data-kind="workbench"], [data-kind="owner"]
+  ) :is(.doul-layout-choices button, .doul-layout-reset) {
+    min-width: 34px;
+    width: 34px;
+    min-height: 34px;
+    height: 34px;
+    padding: 6px;
+    gap: 0;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace:is(
+    [data-kind="workbench"], [data-kind="owner"]
+  ) .doul-layout-choices button span {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace:is(
+    [data-kind="workbench"], [data-kind="owner"]
+  ) .doul-layout-controls {
+    justify-content: flex-end;
+    min-height: 44px;
+    margin-bottom: 5px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace:is(
+    [data-kind="workbench"], [data-kind="owner"]
+  ) :is(.doul-layout-choices button, .doul-layout-reset) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
