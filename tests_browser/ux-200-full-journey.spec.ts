@@ -86,11 +86,15 @@ async function step(x:Result, name:string, action:()=>Promise<void>):Promise<voi
 }
 async function switchRole(page:Page,role:Role):Promise<void> {
   const picker=page.getByLabel("시험 사용자 역할 선택");
-  if(await picker.inputValue()!==role)await picker.selectOption(role);
+  if(await picker.inputValue()!==role){
+    const authorized = page.waitForResponse(r => r.url().endsWith("/workspace") && r.ok());
+    await picker.selectOption(role);
+    await authorized;
+  }
   await expect(picker).toHaveValue(role);
   // The header changes before the new role's workspace arrives. A visible h1
   // alone lets absence assertions pass against the intervening loading screen.
-  await expect(page.locator("main .page-heading .heading-actions button").filter({hasText:"새로고침"})).toBeEnabled();
+  await expect(page.locator('[data-ui-component="workspace-main"]')).toBeVisible();
   await expect(page.locator("main .loading-panel")).toHaveCount(0);
 }
 async function checkRoute(page:Page,route:string):Promise<void> {
@@ -110,7 +114,7 @@ async function checkRoute(page:Page,route:string):Promise<void> {
   } else {
     await expect(page.locator("main .page-heading h1")).toHaveText(title!);
   }
-  await expect(page.locator("main .page-heading .heading-actions button").filter({hasText:"새로고침"})).toBeEnabled();
+  await expect(page.locator('[data-ui-component="workspace-main"]')).toBeVisible();
   await expect(page.locator("main .loading-panel")).toHaveCount(0);
 }
 async function openLegacyDrawingReview(page:Page):Promise<void> {
