@@ -8,8 +8,9 @@ import { OfflineMediaPanel } from "./OfflineMediaPanel";
 import "./field-offline-queue.css";
 
 type Choice = { item: WorkItem; action: CommandDescriptor; key: string };
-export function FieldOfflineQueue({ client, workspace, online, onChanged }: {
-  client: SupervisionClient; workspace: Workspace; online: boolean; onChanged: () => Promise<void>;
+export function FieldOfflineQueue({ client, workspace, online, onChanged, onStatus }: {
+  client: SupervisionClient; workspace: Workspace; online: boolean;
+  onChanged: () => Promise<void>; onStatus?: (message: string) => void;
 }) {
   const identity = useMemo(() => ({
     projectId: workspace.project.id,
@@ -43,13 +44,15 @@ export function FieldOfflineQueue({ client, workspace, online, onChanged }: {
       await queueFieldCommand(identity, dialog.item, dialog.action.command, payload, evidenceIds);
       setDialog(null); setChoice(""); setError("");
       await reload();
+      onStatus?.("기기에 저장했습니다. 인터넷 연결 후 자동 동기화를 시도합니다.");
     } catch { setStorageFailed(true); setError("기기 저장에 실패했습니다. 업무 내용이 보관되지 않았습니다."); }
   }
 
   const sync = useCallback(async () => {
     if (!online || syncingRef.current || !identity.partyId || storageFailed) return;
     syncingRef.current = true; setSyncing(true); setError("");
-    let anySuccess = false;
+    let syncedCount = 0;
+    let needsReview = false;
     try {
       const pending = await listFieldCommands(identity);
       if (!pending.length) return;
@@ -65,15 +68,17 @@ export function FieldOfflineQueue({ client, workspace, online, onChanged }: {
             || !action.ready && !action.requiresInput) {
           await updateFieldCommand({ ...queued, status: "conflict",
             error: "기준도면·업무 버전 또는 현재 권한이 변경되었습니다. 재검토가 필요합니다." });
+          needsReview = true;
           continue;
         }
         try {
           await client.execute(item, queued.command, queued.payload, queued.evidenceIds, queued.requestKey);
-          await removeFieldCommand(queued.id); anySuccess = true;
+          await removeFieldCommand(queued.id); syncedCount += 1;
         } catch (cause) {
           if (cause instanceof ApiError && [401,403,409,422].includes(cause.status)) {
             await updateFieldCommand({ ...queued, status: "conflict",
               error: "현재 권한 또는 업무 상태가 변경되어 자동 제출을 보류했습니다." });
+            needsReview = true;
           } else {
             await updateFieldCommand({ ...queued, status: "retry",
               error: "전송 실패: 네트워크가 복구되면 다시 시도합니다." });
@@ -81,12 +86,16 @@ export function FieldOfflineQueue({ client, workspace, online, onChanged }: {
           }
         }
       }
-      if (anySuccess) await onChanged();
+      if (syncedCount) {
+        await onChanged();
+        onStatus?.(`기기 저장 업무 ${syncedCount}건을 서버에 동기화했습니다.`);
+      }
+      if (needsReview) onStatus?.("미전송 업무 중 재검토가 필요한 건이 있습니다. 연결 상태에서 작업함을 확인하세요.");
     } catch { setError("오프라인 업무 동기화가 중단되었습니다. 내용은 기기에 보존됩니다."); }
     finally {
       syncingRef.current = false; setSyncing(false); await reload();
     }
-  }, [online, identity, storageFailed, client, onChanged, reload]);
+  }, [online, identity, storageFailed, client, onChanged, reload, onStatus]);
 
   // Attempt automatic transfer once when the connection returns. A failed
   // network attempt must not trigger an immediate infinite retry loop.
