@@ -4,7 +4,7 @@ import type { SupervisionClient } from "./supervision-client";
 export interface DrawingSet {
   id: string; projectId: string; fileName: string; folder: string;
   pageCount: number; completedPages: number; status: "processing" | "ready" | "failed";
-  error?: string; createdAt: string; updatedAt: string;
+  error?: string; version: number; createdAt: string; updatedAt: string;
 }
 export interface DrawingSheet {
   id: string; projectId: string; setId: string; pageNo: number;
@@ -104,4 +104,12 @@ export function changeSheetMarkup(client: SupervisionClient, sheetId: string,
     drawingSheetPath(client, sheetId) + "/markups/" + encodeURIComponent(id) + "/" + action,
     {method: "POST", headers: {"Idempotency-Key": key},
       body: JSON.stringify({expectedVersion: version})});
+}
+
+/** Retry only unfinished raster pages; ready pages and the original remain immutable. */
+export function retryFailedDrawingSet(client: SupervisionClient, set: DrawingSet, key: string) {
+  return client.request<{set: DrawingSet}>(
+    client.path("/drawing-sets/") + encodeURIComponent(set.id) + "/retry",
+    {method:"POST",headers:{"Idempotency-Key":key},
+      body:JSON.stringify({expectedVersion:set.version})});
 }
