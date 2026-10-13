@@ -58,6 +58,35 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   await folder.locator("button.drawing-sheet-card").nth(1).click();
   await expect(view).toHaveAttribute("data-view", "viewer");
   await expect(view.locator(".drawing-board-image-frame img")).toBeVisible({ timeout: 15000 });
+  // The plan, not the document, owns Windows mouse wheel zoom. Keep the point
+  // under the mouse anchored while drawing pins and annotations move with it.
+  if (testInfo.project.name === "desktop") {
+    const viewport = view.locator(".drawing-board-viewport");
+    const frame = view.locator(".drawing-board-image-frame");
+    const before = await frame.boundingBox();
+    if (!before) throw new Error("Drawing image frame missing");
+    const pointer = { x: before.x + before.width * .62, y: before.y + before.height * .58 };
+    const pointBefore = { x: (pointer.x - before.x) / before.width, y: (pointer.y - before.y) / before.height };
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+    await page.mouse.move(pointer.x, pointer.y);
+    await page.mouse.wheel(0, -160);
+    await expect.poll(async () => Number(await viewport.getAttribute("data-zoom"))).toBeGreaterThan(1);
+    const after = await frame.boundingBox();
+    if (!after) throw new Error("Drawing image frame lost after wheel zoom");
+    expect(after.width).toBeGreaterThan(before.width);
+    expect(Math.abs((pointer.x - after.x) / after.width - pointBefore.x)).toBeLessThan(.02);
+    expect(Math.abs((pointer.y - after.y) / after.height - pointBefore.y)).toBeLessThan(.02);
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
+    const previousZoom = await viewport.getAttribute("data-zoom");
+    const toolBox = await view.locator(".drawing-board-tools").boundingBox();
+    if (!toolBox) throw new Error("Drawing toolbar missing");
+    await page.mouse.move(toolBox.x + 12, toolBox.y + 12);
+    await page.mouse.wheel(0, -80);
+    expect(await viewport.getAttribute("data-zoom")).toBe(previousZoom);
+    await page.mouse.move(pointer.x, pointer.y);
+    await page.mouse.wheel(0, 160);
+    await expect.poll(async () => Number(await viewport.getAttribute("data-zoom"))).toBeCloseTo(1, 2);
+  }
   const rail = view.getByRole("complementary", { name: "현재 도면의 검측·현장상황·이슈" });
   await expect(rail).toBeVisible();
   const box = await rail.boundingBox();
