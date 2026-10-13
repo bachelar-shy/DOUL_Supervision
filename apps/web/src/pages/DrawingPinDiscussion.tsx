@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { SupervisionClient } from "../data/supervision-client";
+import { formatDateTime } from "../i18n/format";
 import "./drawing-pin-discussion.css";
 
 export interface DrawingPinReply {
@@ -74,7 +75,7 @@ export function DrawingPinDiscussion({ client, sheetId, pinId }: {
     <div className="drawing-pin-discussion-stream">
       {thread.items.map(item => <article key={item.id} className={"drawing-pin-reply" + (item.parentId ? " nested" : "")}>
         <header><strong>{item.authorName || roleLabel[item.authorRole] || "관계자"}</strong>
-          <small>{roleLabel[item.authorRole] || "참여자"} · {new Date(item.createdAt).toLocaleString("ko-KR")}</small></header>
+          <small>{roleLabel[item.authorRole] || "참여자"} · {formatDateTime(item.createdAt)}</small></header>
         {item.parentId && <small className="drawing-pin-reply-re">↳ 답글</small>}
         <p>{item.message}</p>
         <button type="button" className="drawing-pin-reply-action"
