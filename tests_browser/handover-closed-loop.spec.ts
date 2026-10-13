@@ -817,6 +817,7 @@ async function runCompletionHandoverScenario(page: Page, continueWarranty: boole
     await runCompletionCommand(page, /submit.*owner review/i, {}, [fixture.evidenceId]);
 
     await page.goto("/#/owner");
+    await page.locator('[data-ui-component="owner-create-disclosure"] summary').click();
     const authoring = page.locator('[data-ui-component="owner-decision-authoring"]');
     await authoring.getByLabel(/decision request title/i).fill("Conditional acceptance for browser handover");
     const targetSelect = authoring.getByLabel(/target record/i);
