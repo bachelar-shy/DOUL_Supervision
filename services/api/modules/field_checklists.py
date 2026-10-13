@@ -97,13 +97,19 @@ def install_field_checklist_routes(app, store, *, identity, role_for, key_for, b
         require(matches, "NOT_FOUND", "Checklist version unavailable")
         return matches[0]
 
-    def target(project_id, reference, actor, role):
+    def target(project_id, reference, actor, role, *, exact_version=True):
         require(isinstance(reference, dict) and set(reference) == {"objectType", "objectId", "version"}
                 and reference.get("objectType") in SUBJECT_TYPES
                 and isinstance(reference.get("objectId"), str)
                 and type(reference.get("version")) is int and reference["version"] > 0,
                 "REFERENCE_INVALID", "Exact work reference required")
-        record = store.engine.resolve(reference, project_id=project_id)
+        if exact_version:
+            record = store.engine._current_reference(reference, project_id, object_type=reference["objectType"])
+        else:
+            # Existing checklist retains the exact historical attachment;
+            # current record permissions remain authoritative for reads.
+            record = store.engine.get(reference["objectType"], reference["objectId"])
+            require(record["projectId"] == project_id, "PROJECT_MISMATCH", "Wrong project")
         store.engine.authorize_read(record, actor["partyId"], role["id"])
         return record
 
@@ -116,11 +122,12 @@ def install_field_checklist_routes(app, store, *, identity, role_for, key_for, b
     @app.get("/projects/{project_id}/field/checklists/templates")
     def get_templates(project_id: str, request: Request):
         with store.transaction():
-            context(project_id, request)
+            actor, role = context(project_id, request)
             history = store.meta.get("fieldChecklistTemplates", {}).get(project_id, {})
+            is_admin = role["actorGroup"] == "ADM" and role["roleCode"] == "project_admin"
             return {"projectId": project_id, "items": [deepcopy(item)
-                for revisions in history.values() for item in revisions if item["status"] == "published"
-                or item is revisions[-1]]}
+                for revisions in history.values() for item in revisions
+                if item["status"] == "published" or (is_admin and item is revisions[-1])]}
 
     @app.post("/projects/{project_id}/field/checklists/templates")
     async def create_template(project_id: str, request: Request):
@@ -225,7 +232,7 @@ def install_field_checklist_routes(app, store, *, identity, role_for, key_for, b
             for run in store.meta.get("fieldChecklistRuns", {}).get(project_id, {}).values():
                 if subjectId and run["subjectRef"]["objectId"] != subjectId: continue
                 try:
-                    target(project_id, run["subjectRef"], actor, role)
+                    target(project_id, run["subjectRef"], actor, role, exact_version=False)
                 except Exception as exc:
                     if getattr(exc, "code", None) in {"SCOPE_MISMATCH", "NOT_AUTHORIZED", "NOT_FOUND", "ORGANIZATION_MISMATCH", "QUALIFICATION_INVALID"}:
                         continue
@@ -274,7 +281,7 @@ def install_field_checklist_routes(app, store, *, identity, role_for, key_for, b
             runs = store.meta.get("fieldChecklistRuns", {}).get(project_id, {})
             require(run_id in runs, "NOT_FOUND", "Checklist unavailable")
             run = runs[run_id]
-            target(project_id, run["subjectRef"], actor, role)
+            target(project_id, run["subjectRef"], actor, role, exact_version=False)
             op = "field_checklists:answer"
             previous = replay(project_id, actor, key, {"runId": run_id, **body}, op)
             if previous is not None: return previous

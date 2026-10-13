@@ -44,13 +44,18 @@ def install_photo_link_routes(app, store, *, identity, role_for, key_for, body_j
             require(role["actorGroup"] in {"SUP", "ADM", "CON", "OWN", "DES"},
                     "NOT_AUTHORIZED", "No sheet-pin read permission")
 
-    def photo_for(project_id, ref, actor, role):
+    def photo_for(project_id, ref, actor, role, *, exact_version=False):
         require(isinstance(ref, dict) and set(ref) == {"objectType", "objectId", "version"}
                 and ref["objectType"] == "Evidence"
                 and isinstance(ref["objectId"], str) and bool(ref["objectId"])
                 and type(ref["version"]) is int and ref["version"] > 0,
-                "REFERENCE_INVALID", "Current photo evidence reference required")
-        evidence = store.engine.resolve(ref, project_id)
+                "REFERENCE_INVALID", "Versioned photo evidence reference required")
+        # Linked history retains its original EvidenceRef, while current
+        # project permissions govern every read and unlink operation.
+        evidence = store.engine.get("Evidence", ref["objectId"])
+        require(evidence["projectId"] == project_id, "PROJECT_MISMATCH", "Other project photo")
+        if exact_version:
+            require(evidence["version"] == ref["version"], "REFERENCE_STALE", "Photo version changed")
         require(evidence.get("mediaType") in MEDIA_TYPES,
                 "INVALID_REQUEST", "Only photo/video evidence can be linked")
         store.engine.authorize_read(evidence, actor["partyId"], role["id"])
@@ -119,7 +124,7 @@ def install_photo_link_routes(app, store, *, identity, role_for, key_for, body_j
             require(pin["version"] == body["expectedPinVersion"],
                     "REFERENCE_STALE", "Pin was updated")
             authorize_pin(project_id, pin, actor, role)
-            evidence = photo_for(project_id, body["evidenceRef"], actor, role)
+            evidence = photo_for(project_id, body["evidenceRef"], actor, role, exact_version=True)
             require(role["actorGroup"] != "CON" or (
                 evidence.get("submittedBy") == actor["partyId"]
                 and pin.get("createdByPartyId") == actor["partyId"]),

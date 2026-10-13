@@ -54,13 +54,17 @@ def install_task_discussion_routes(app, store, *, identity, role_for, key_for, b
         store.engine.get("Project", project_id)
         return actor, role
 
-    def subject(project_id, ref, actor, role):
+    def subject(project_id, ref, actor, role, *, exact_version=True):
         require(isinstance(ref, dict) and set(ref) == {"objectType", "objectId", "version"}
                 and ref.get("objectType") in ALLOWED_SUBJECTS
                 and isinstance(ref.get("objectId"), str)
                 and type(ref.get("version")) is int and ref["version"] >= 1,
                 "REFERENCE_INVALID", "Exact work reference required")
-        record = store.engine.resolve(ref, project_id)
+        if exact_version:
+            record = store.engine._current_reference(ref, project_id, object_type=ref["objectType"])
+        else:
+            record = store.engine.get(ref["objectType"], ref["objectId"])
+            require(record["projectId"] == project_id, "PROJECT_MISMATCH", "Wrong project")
         authorize_task_comment(store.engine, record, project_id, actor["partyId"], role["id"])
         return record
 
@@ -87,7 +91,7 @@ def install_task_discussion_routes(app, store, *, identity, role_for, key_for, b
         with store.transaction():
             actor, role = context(project_id, request)
             ref = {"objectType": subjectType, "objectId": subjectId, "version": version}
-            subject(project_id, ref, actor, role)
+            subject(project_id, ref, actor, role, exact_version=False)
             thread = store.meta.get("fieldTaskDiscussions", {}).get(project_id, {}).get(thread_id(ref), {})
             comments = deepcopy(thread.get("comments", []))
             if sort == "newest":

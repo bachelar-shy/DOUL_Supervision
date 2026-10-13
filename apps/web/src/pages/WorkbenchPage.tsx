@@ -341,12 +341,12 @@ export function WorkbenchPage({
               {client.kind === "http" && (
                 <div className="my-3 grid gap-3">
                   <details>
-                    <summary className="cursor-pointer text-sm font-semibold">공통 검측 체크리스트</summary>
+                    <summary className="cursor-pointer text-sm font-semibold">{t("workbench.fieldChecklist")}</summary>
                     <FieldChecklistPanel key={workspace.project.id + ":" + current.record.id}
                       client={client} workspace={workspace} subject={current} online={online} />
                   </details>
                   <details>
-                    <summary className="cursor-pointer text-sm font-semibold">업무별 대화 · 참조인 · 첨부</summary>
+                    <summary className="cursor-pointer text-sm font-semibold">{t("workbench.discussion")}</summary>
                     <FieldTaskDiscussions key={workspace.project.id + ":" + current.record.id}
                       client={client} workspace={workspace} subject={current} online={online} />
                     <FieldDiscussionAlertsPanel key={workspace.project.id + ":" + workspace.role.id}

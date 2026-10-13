@@ -53,6 +53,19 @@ class PhotoLinkHttpTest(unittest.TestCase):
         evidence_links = self.http.get(path, headers=self.headers("SUP"),
             params={"evidenceId": photo_id}).json()
         self.assertEqual(evidence_links["count"], 1)
+        # Official Evidence revisions do not erase a correctly authorized
+        # historic drawing link. A new link still requires current version.
+        with self.store.transaction(write=True):
+            previous_photo = self.store.engine.get("Evidence", photo_id)
+            self.store.engine._save("Evidence", {
+                **previous_photo, "version": 2, "updatedAt": self.store.engine.at()})
+        still_visible = self.http.get(path, headers=self.headers("SUP"),
+            params={"evidenceId": photo_id})
+        self.assertEqual(still_visible.status_code, 200, still_visible.text)
+        self.assertEqual(still_visible.json()["count"], 1)
+        self.assertEqual(still_visible.json()["items"][0]["evidenceRef"]["version"], 1)
+        outdated_link = self.http.post(path, json=body, headers=self.headers("SUP"))
+        self.assertEqual(outdated_link.status_code, 409, outdated_link.text)
         stale = self.http.post(path, headers=self.headers("SUP"),
             json={**body, "expectedPinVersion": 9})
         self.assertEqual(stale.status_code, 409, stale.text)
