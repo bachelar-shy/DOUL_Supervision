@@ -1,10 +1,14 @@
 import { recordVersionLabel } from "../labels";
 import { RecordDetails } from "./RecordDetails";
+import { FieldChecklistPanel } from "./FieldChecklistPanel";
+import { FieldTaskDiscussions } from "./FieldTaskDiscussions";
+import { FieldDiscussionAlertsPanel } from "./FieldDiscussionAlertsPanel";
 import type { SupervisionClient } from "../data/supervision-client";
 import { InspectionAuthoringPanel } from "./InspectionAuthoringPanel";
 import { InspectionCaseFlowPanel } from "./parallel/InspectionCaseFlowPanel";
 import { ActionAuthoringPanel } from "./parallel/ActionAuthoringPanel";
 import { useTranslation } from "react-i18next";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type {
   CommandDescriptor,
@@ -167,11 +171,21 @@ export function WorkbenchPage({
                   {machineLabels[current.machine]} ·{" "}
                   {current.record.id.slice(0, 8)}
                 </span>
-                <StatusBadge status={current.record.status}>
-                  {states[current.record.status || ""] ||
-                    current.record.status ||
-                    t("workbench.originalPreserved")}
-                </StatusBadge>
+                <div className="flex min-w-0 shrink-0 items-center gap-2">
+                  <StatusBadge status={current.record.status}>
+                    {states[current.record.status || ""] ||
+                      current.record.status ||
+                      t("workbench.originalPreserved")}
+                  </StatusBadge>
+                  <button type="button"
+                    className="hidden size-8 items-center justify-center rounded-sm border border-border bg-white text-muted-foreground hover:bg-muted md:inline-flex"
+                    data-ui-component="workbench-detail-close"
+                    aria-label={t("workbench.back")}
+                    title={t("workbench.back")}
+                    onClick={() => onSelect(null)}>
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                </div>
               </div>
               <h2 className="detail-title">{recordTitle(current.record)}</h2>
               <div className="meta-grid">
@@ -335,6 +349,22 @@ export function WorkbenchPage({
                   </button>
                 )}
 
+              {client.kind === "http" && (
+                <div className="my-3 grid gap-3">
+                  <details>
+                    <summary className="cursor-pointer text-sm font-semibold">{t("workbench.fieldChecklist")}</summary>
+                    <FieldChecklistPanel key={workspace.project.id + ":" + current.record.id}
+                      client={client} workspace={workspace} subject={current} online={online} />
+                  </details>
+                  <details>
+                    <summary className="cursor-pointer text-sm font-semibold">{t("workbench.discussion")}</summary>
+                    <FieldTaskDiscussions key={workspace.project.id + ":" + current.record.id}
+                      client={client} workspace={workspace} subject={current} online={online} />
+                    <FieldDiscussionAlertsPanel key={workspace.project.id + ":" + workspace.role.id}
+                      client={client} online={online} />
+                  </details>
+                </div>
+              )}
               <details className="technical">
                 <summary>{t("workbench.technicalSummary")}</summary>
                 <RecordDetails value={current.record} />

@@ -12,9 +12,14 @@ export interface DrawingSheet {
   revision: string; status: "processing" | "ready" | "failed";
   createdAt: string; updatedAt: string;
   hasPreview: boolean; hasThumb: boolean; drawingRef: DomainRef | null; bindingId: string | null;
+  extractedNumber?: string | null; extractedTitle?: string | null;
+  metadataSource?: string; metadataNeedsReview?: boolean;
+  metadataReview?: { status: "verified" | "needs_review"; reviewedAt: string;
+    reviewedByRole: string; sourcePdfHash: string; note: string };
+
 }
 export interface DrawingSheetPin {
-  id: string; sheetId: string; projectId: string; kind: "issue" | "inspection" | "site";
+  id: string; sheetId: string; projectId: string; version?: number; kind: "issue" | "inspection" | "site";
   x: number; y: number; comment: string; status: "draft" | "linked";
   recordRef: DomainRef | null; createdAt: string; createdByRole: string;
 }
@@ -59,4 +64,14 @@ export async function loadSheetPins(client: SupervisionClient, sheetId: string) 
 export async function createSheetPin(client: SupervisionClient, sheetId: string, body: NewDrawingPin, key: string) {
   return client.request<{ pin: DrawingSheetPin }>(drawingSheetPath(client, sheetId) + "/pins",
     { method: "POST", headers: { "Idempotency-Key": key }, body: JSON.stringify(body) });
+}
+
+/** Source titleblock verification is separate from drawing release or site approval. */
+export function reviewDrawingSheetMetadata(client: SupervisionClient, sheetId: string,
+  payload: {expectedVersion: number; decision: "verified" | "needs_review";
+    number: string; title: string; note: string}, key: string) {
+  return client.request<{sheet: DrawingSheet}>(
+    drawingSheetPath(client, sheetId) + "/metadata-review",
+    { method: "POST", headers: {"Idempotency-Key": key}, body: JSON.stringify(payload) },
+  );
 }
