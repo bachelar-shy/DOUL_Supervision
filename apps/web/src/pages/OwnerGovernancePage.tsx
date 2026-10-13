@@ -1,4 +1,5 @@
 import { recordVersionLabel } from "../labels";
+import { X } from "lucide-react";
 import type { CommandDescriptor, RecordDTO, WorkItem, Workspace } from "../data/ui-contract";
 import type { SupervisionClient } from "../data/supervision-client";
 import { OwnerDecisionAuthoringPanel } from "./OwnerDecisionAuthoringPanel";
@@ -179,16 +180,26 @@ export function OwnerGovernancePage({
                     : tr("owner.type.decision")} ·{" "}
                   {detail?.id.slice(0, 8)}
                 </span>
-                <StatusBadge status={detail?.status}>
-                  {states[detail?.status || ""] ||
-                    detail?.status ||
-                    tr("owner.value.noStatus")}
-                </StatusBadge>
+                <div className="flex min-w-0 shrink-0 items-center gap-2">
+                  <StatusBadge status={detail?.status}>
+                    {states[detail?.status || ""] ||
+                      detail?.status ||
+                      tr("owner.value.noStatus")}
+                  </StatusBadge>
+                  <button type="button"
+                    className="hidden size-8 items-center justify-center rounded-sm border border-border bg-white text-muted-foreground hover:bg-muted md:inline-flex"
+                    data-ui-component="workbench-detail-close"
+                    aria-label={tr("owner.back")}
+                    title={tr("owner.back")}
+                    onClick={() => onSelect(null)}>
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                </div>
               </div>
 
               <h2 className="detail-title">{recordTitle(detail!)}</h2>
 
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div className="rounded-sm border border-border bg-slate-50 p-3">
                   <small className="block text-slate-400">
                     {tr("owner.meta.sourceVersion")}
@@ -338,7 +349,7 @@ export function OwnerGovernancePage({
               {impactRows(impact).length ? (
                 <div className="mt-5">
                   <h3 className="subheading">{tr("owner.impact.title")}</h3>
-                  <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {impactRows(impact).map((row) => (
                       <div
                         key={row.label}

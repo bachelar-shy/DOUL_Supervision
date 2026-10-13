@@ -504,7 +504,7 @@ export function CompletionHandoverPage({
             {items.length ? items.map((item) => {
               const data = completionData(item);
               const secondary = item.machine === "commissioning_package" ? data.system : item.machine === "handover_package" ? object(data.handoverScope).scopeId : data.handoverRef;
-              return <button type="button" className={`completion-record-row${selected === item.record.id ? " selected" : ""}`} key={item.record.id} onClick={() => onSelect(item.record.id)}>
+              return <button type="button" className={`completion-record-row${selected === item.record.id ? " selected" : ""}`} key={item.record.id} aria-pressed={selected === item.record.id} onClick={() => onSelect(item.record.id)}>
                 <span><strong>{recordTitle(item.record)}</strong><small>{completionIdentity(item)} · {t("sourceVersion")} {recordVersionLabel(item.record.version)}</small></span>
                 <span className="completion-record-context">{completionText(secondary)}</span>
                 <StatusBadge status={item.record.status}>{states[item.record.status || ""] || item.record.status || "—"}</StatusBadge>

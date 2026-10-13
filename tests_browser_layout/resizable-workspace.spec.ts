@@ -8,6 +8,9 @@ test("workbench resizing is keyboard accessible and persisted per screen", async
   await page.goto("/#/inspections");
   const shell = workspace(page, "workbench");
   await expect(shell).toHaveAttribute("data-compact", "false");
+  await expect(shell).toHaveAttribute("data-view", "first");
+  await shell.locator(".record-row").first().click();
+  await expect(shell).toHaveAttribute("data-view", "split");
   const divider = shell.getByRole("separator");
   await expect(divider).toBeVisible();
   const old = Number(await divider.getAttribute("aria-valuenow"));
@@ -20,11 +23,11 @@ test("workbench resizing is keyboard accessible and persisted per screen", async
   ).toBe(newRatio);
 
   await page.reload();
-  await expect(workspace(page, "workbench").getByRole("separator")).toHaveAttribute("aria-valuenow", String(newRatio));
+  await expect(workspace(page, "workbench").locator('[role="separator"]')).toHaveAttribute("aria-valuenow", String(newRatio));
   await page.goto("/#/actions");
-  await expect(workspace(page, "workbench").getByRole("separator")).toHaveAttribute("aria-valuenow", String(old));
+  await expect(workspace(page, "workbench").locator('[role="separator"]')).toHaveAttribute("aria-valuenow", String(old));
   await page.goto("/#/inspections");
-  await expect(workspace(page, "workbench").getByRole("separator")).toHaveAttribute("aria-valuenow", String(newRatio));
+  await expect(workspace(page, "workbench").locator('[role="separator"]')).toHaveAttribute("aria-valuenow", String(newRatio));
 });
 
 test("pointer resize is bounded and reset returns to the initial ratio", async ({ page }) => {
@@ -80,6 +83,9 @@ test("workbench scrolls its two panes independently", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 940 });
   await page.goto("/#/inspections");
   const shell = workspace(page, "workbench");
+  await expect(shell).toHaveAttribute("data-view", "first");
+  await shell.locator(".record-row").first().click();
+  await expect(shell).toHaveAttribute("data-view", "split");
   await expect(shell.getByRole("separator")).toBeVisible();
   const panes = shell.locator(".doul-resizable-pane > .panel");
   await expect(panes).toHaveCount(2);

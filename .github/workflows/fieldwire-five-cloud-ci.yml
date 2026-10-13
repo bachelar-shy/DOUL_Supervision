@@ -1,0 +1,74 @@
+name: fieldwire-five-cloud-ci
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/fieldwire-five-cloud-ci.yml'
+      - 'services/api/main.py'
+      - 'services/api/modules/photo_library.py'
+      - 'services/api/modules/field_checklists.py'
+      - 'services/api/modules/work_areas.py'
+      - 'services/api/modules/field_offline.py'
+      - 'services/api/modules/task_discussions.py'
+      - 'services/api/modules/photo_links.py'
+      - 'apps/web/src/data/field-media-cache.ts'
+      - 'apps/web/src/data/drawing-sheet-client.ts'
+      - 'apps/web/src/pages/OfflineMediaPanel.tsx'
+      - 'apps/web/src/pages/FieldOfflineQueue.tsx'
+      - 'apps/web/src/pages/FieldPinPhotosPanel.tsx'
+      - 'apps/web/src/pages/FieldDiscussionAlertsPanel.tsx'
+      - 'apps/web/src/pages/DrawingSheetWorkspace.tsx'
+      - 'design/development/fieldwire-second-wave-20261013.md'
+      - 'apps/web/src/app/AppShell.tsx'
+      - 'apps/web/src/pages/WorkbenchPage.tsx'
+      - 'apps/web/src/pages/FieldPhotoLibrary.tsx'
+      - 'apps/web/src/pages/FieldChecklistPanel.tsx'
+      - 'apps/web/src/pages/FieldWorkAreas.tsx'
+      - 'apps/web/src/pages/FieldOfflineQueue.tsx'
+      - 'apps/web/src/pages/FieldTaskDiscussions.tsx'
+      - 'apps/web/src/data/field-outbox.ts'
+      - 'tests_mvp/test_fw_*.py'
+      - 'tests_browser_fieldwire/**'
+      - 'playwright.fieldwire-five.config.ts'
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: fw-five-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  five-field-features:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - name: Install audited locked environment
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -r services/api/requirements.lock
+          npm ci
+      - name: Test all five field business contracts and HTTP flows
+        run: |
+          .venv/bin/python -m unittest discover -s tests_mvp -p 'test_fw_*.py' -v
+      - name: Verify frontend boundaries and build
+        env:
+          VITE_DOUL_UI_SCOPE: full
+        run: |
+          npm run check:ui-boundary
+          npm run lint --workspace apps/web
+          npm run web:build
+      - name: Desktop and mobile browser E2E
+        env:
+          DOUL_FW_TEST_PYTHON: .venv/bin/python
+        run: |
+          mkdir -p .local
+          npx playwright install --with-deps chromium
+          npx playwright test -c playwright.fieldwire-five.config.ts

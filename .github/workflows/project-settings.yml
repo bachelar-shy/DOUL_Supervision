@@ -60,3 +60,12 @@ jobs:
           npx playwright test -c playwright.project-settings.config.ts
           npx playwright test -c playwright.auth.config.ts
           npx playwright test -c playwright.field-core.config.ts
+      - name: Preserve DOUL Field UI login and settings screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: fieldwire-login-settings-screenshots
+          path: preview/screenshots/fieldwire-*.png
+          if-no-files-found: warn
+          retention-days: 14
+

@@ -173,7 +173,11 @@ test.describe("today heading date", () => {
   test.use({ timezoneId: "Asia/Bangkok" });
 
   test("refreshes after local midnight without weather placeholder", async ({ page }) => {
-    await page.clock.install({ time: new Date("2026-10-06T16:59:55Z") });
+    // The clock must remain frozen while the CI browser hydrates. Otherwise
+    // a slow worker can cross midnight before the first assertion.
+    const beforeMidnight = new Date("2026-10-06T16:59:55Z");
+    await page.clock.install({ time: beforeMidnight });
+    await page.clock.pauseAt(beforeMidnight);
     await page.goto("/#/today");
     const date = page.locator('[data-ui-component="today-date-context"]');
     await expect(date).toContainText("2026년 10월 6일");
@@ -186,7 +190,8 @@ test.describe("today heading date", () => {
 test("DOUL component catalog is mounted on representative surfaces", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('[data-ui-component="navigation"]')).toBeVisible();
-  await expect(page.locator('[data-ui-component="decision-panel"]')).toBeVisible();
+  // The pre-work inspection-vs-release notice card was deliberately removed.
+  await expect(page.locator('[data-ui-component="decision-panel"]')).toHaveCount(0);
   await expect(page.locator('[data-ui-component="audit-timeline"]')).toBeVisible();
 
   await page.goto("/#/capture");
@@ -199,12 +204,13 @@ test("DOUL component catalog is mounted on representative surfaces", async ({ pa
   await page.getByRole("button", { name: "닫기", exact: true }).click();
 
   await page.goto("/#/inspections");
-  await expect(page.locator('[data-ui-component="detail-pane"]')).toBeVisible();
+  await expect(page.locator('[data-ui-component="detail-pane"]')).toBeHidden();
   await page
     .getByRole("button")
     .filter({ hasText: "경량벽체 은폐 전 검측" })
     .first()
     .click();
+  await expect(page.locator('[data-ui-component="detail-pane"]')).toBeVisible();
   const inspectionBoundary = page.locator('[data-ui-component="status-boundary-group"]');
   await expect(inspectionBoundary).toBeVisible();
   await expect(inspectionBoundary).toContainText("검측 판정");
@@ -993,7 +999,7 @@ test("offline evidence stays local until explicit upload", async ({
     page.getByText("현장 기록 가져오기", { exact: true }),
   ).toBeVisible();
   await context.setOffline(true);
-  await expect(page.getByRole("alert")).toContainText("오프라인");
+  await expect(page.locator(".offline-bar")).toContainText("오프라인");
   await page
     .getByLabel("증빙 파일 선택")
     .setInputFiles({

@@ -8,11 +8,13 @@ import type { SupervisionClient } from "../data/supervision-client";
 import type { CommandDescriptor, WorkItem, Workspace } from "../data/ui-contract";
 import {
   createSheetPin, drawingPinLabels, loadDrawingSets, loadDrawingSheets, loadSheetPins,
-  updateDrawingSheet, uploadDrawingSet,
+  updateDrawingSheet, uploadDrawingSet, reviewDrawingSheetMetadata,
   type DrawingPinKind, type DrawingSet, type DrawingSheet, type DrawingSheetPin,
 } from "../data/drawing-sheet-client";
 import { DrawingRevisionDialog } from "./DrawingRevisionDialog";
 import "./drawing-sheet-workspace.css";
+import { FIELD_DRAWING_FOCUS_EVENT, consumeDrawingFocus } from "../data/drawing-focus";
+import { FieldPinPhotosPanel } from "./FieldPinPhotosPanel";
 
 const OriginalDrawingReviewPage = lazy(() => import("./DrawingReviewPage").then(mod => ({ default: mod.DrawingReviewPage })));
 
@@ -79,6 +81,7 @@ const availableKinds: DrawingPinKind[] = ["issue", "inspection", "site"];
 export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, onNavigate, onOpenCommand }: Props) {
   const projectId = workspace.project.id;
   const canWrite = ["ADM", "SUP", "CON"].includes(workspace.role.actorGroup);
+  const canReview = ["ADM", "SUP"].includes(workspace.role.actorGroup);
   const [mode, setMode] = useState<SheetMode>("catalog");
   const [sets, setSets] = useState<DrawingSet[]>([]);
   const [sheets, setSheets] = useState<DrawingSheet[]>([]);
@@ -96,9 +99,13 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   const [fitSize, setFitSize] = useState({ width: 800, height: 550 });
   const [listView, setListView] = useState(false);
   const [keyword, setKeyword] = useState("");
+  const [reviewOnly, setReviewOnly] = useState(false);
   const [issueFilter, setIssueFilter] = useState<DrawingPinKind | "all">("all");
   const [hiddenFolders, setHiddenFolders] = useState<string[]>([]);
   const [editOpen, setEditOpen] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
+  const [reviewDecision, setReviewDecision] = useState<"verified" | "needs_review">("verified");
+  const [reviewNote, setReviewNote] = useState("");
   const [revisionOpen, setRevisionOpen] = useState(false);
   const [editNumber, setEditNumber] = useState("");
   const [editTitle, setEditTitle] = useState("");
@@ -108,6 +115,8 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [rightOpen, setRightOpen] = useState(true);
+  const [focusEpoch, setFocusEpoch] = useState(0);
+  const focusPinRef = useRef<{sheetId:string; pinId:string}|null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const imageFrameRef = useRef<HTMLDivElement>(null);
@@ -125,7 +134,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   }, [client]);
 
   useEffect(() => {
-    setLoading(true); setMode("catalog"); setSelectedId(null); setPins([]); setKeyword("");
+    setLoading(true); setMode("catalog"); setSelectedId(null); setPins([]); setKeyword(""); setReviewOnly(false);
     void refresh();
   }, [projectId, workspace.role.id, refresh]);
 
@@ -139,9 +148,10 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   const selected = useMemo(() => sheets.find(item => item.id === selectedId) ?? null, [sheets, selectedId]);
   const visibleSheets = useMemo(() => {
     const query = keyword.trim().toLocaleLowerCase();
-    return sheets.filter(item => !query || [item.number, item.title, item.folder, String(item.pageNo)]
-      .some(value => value.toLocaleLowerCase().includes(query)));
-  }, [sheets, keyword]);
+    return sheets.filter(item => (!reviewOnly || item.metadataReview?.status !== "verified") &&
+      (!query || [item.number, item.title, item.folder, String(item.pageNo)]
+      .some(value => value.toLocaleLowerCase().includes(query))));
+  }, [sheets, keyword, reviewOnly]);
   const folders = useMemo(() => {
     const grouped = new Map<string, DrawingSheet[]>();
     visibleSheets.forEach(item => {
@@ -149,8 +159,8 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
       grouped.get(item.setId)?.push(item);
     });
     return sets.map(item => ({ set: item, items: grouped.get(item.id) ?? [] }))
-      .filter(group => group.items.length || !keyword.trim());
-  }, [sets, visibleSheets, keyword]);
+      .filter(group => group.items.length || (!keyword.trim() && !reviewOnly));
+  }, [sets, visibleSheets, keyword, reviewOnly]);
   const pageIndex = sheets.findIndex(item => item.id === selectedId);
   const filteredPins = pins.filter(item => issueFilter === "all" || item.kind === issueFilter);
   const related = workspace.items.filter(item => ["inspection", "observation", "issue", "action"].includes(item.machine));
@@ -168,10 +178,34 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     if (!selected || selected.status !== "ready" || client.kind !== "http") { setPins([]); return; }
     let live = true;
     setPins([]); setSelectedPinId(null); setDetailOpen(false);
-    void loadSheetPins(client, selected.id).then(result => { if (live) setPins(result.items); })
-      .catch(() => { if (live) setError("도면 핀 목록을 불러오지 못했습니다."); });
+    void loadSheetPins(client, selected.id).then(result => {
+      if (!live) return;
+      setPins(result.items);
+      const intended = focusPinRef.current;
+      if (intended && intended.sheetId === selected.id) {
+        focusPinRef.current = null;
+        const match = result.items.find(pin => pin.id === intended.pinId);
+        if (match) { setSelectedPinId(match.id); setDetailOpen(true); setRightOpen(true); }
+        else setNotice("해당 도면 마크가 변경되었거나 현재 계정에서 조회할 수 없습니다.");
+      }
+    }).catch(() => { if (live) setError("도면 핀 목록을 불러오지 못했습니다."); });
     return () => { live = false; };
   }, [client, selected?.id, selected?.status]);
+
+  useEffect(() => {
+    const onFocus = () => setFocusEpoch(value => value + 1);
+    window.addEventListener(FIELD_DRAWING_FOCUS_EVENT, onFocus);
+    return () => window.removeEventListener(FIELD_DRAWING_FOCUS_EVENT, onFocus);
+  }, []);
+  useEffect(() => {
+    if (loading || client.kind !== "http") return;
+    const intent = consumeDrawingFocus(projectId);
+    if (!intent) return;
+    const sheet = sheets.find(row => row.id === intent.sheetId && row.status === "ready");
+    if (!sheet) { setNotice("해당 도면이 없거나 현재 프로젝트에서 접근할 수 없습니다."); return; }
+    focusPinRef.current = { sheetId: sheet.id, pinId: intent.pinId };
+    openSheet(sheet);
+  }, [loading, sheets, projectId, focusEpoch, client.kind]);
 
   const fit = useCallback(() => {
     const area = viewportRef.current;
@@ -195,7 +229,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   function openSheet(sheet: DrawingSheet) {
     setMode("viewer"); setSelectedId(sheet.id); setPins([]); setSelectedPinId(null);
     setDetailOpen(false); setPinChoice(null); setPendingPoint(null);
-    setEditOpen(false); setRevisionOpen(false);
+    setEditOpen(false); setReviewMode(false); setRevisionOpen(false);
     setZoom(1); setPan({ x: 0, y: 0 }); setRightOpen(true); setError(""); setNotice("");
   }
   function neighbor(direction: -1 | 1) {
@@ -220,15 +254,29 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     if (!selected || !canWrite || busy) return;
     setBusy(true); setError("");
     try {
-      const updated = await updateDrawingSheet(client, selected, editNumber, editTitle);
+      if (reviewMode && !canReview) throw new Error("검수 권한이 없습니다.");
+      const updated = reviewMode
+        ? await reviewDrawingSheetMetadata(client, selected.id, {
+            expectedVersion: selected.version, decision: reviewDecision,
+            number: reviewDecision === "verified" ? editNumber.trim() : selected.number,
+            title: reviewDecision === "verified" ? editTitle.trim() : selected.title,
+            note: reviewNote.trim(),
+          }, crypto.randomUUID())
+        : await updateDrawingSheet(client, selected, editNumber, editTitle);
       setSheets(previous => previous.map(sheet => sheet.id === selected.id ? updated.sheet : sheet));
-      setNotice("도면번호와 도면명이 저장되었습니다."); setEditOpen(false);
+      setNotice(reviewMode ? "원본 도면정보 검수 이력이 저장되었습니다." : "도면번호와 도면명이 저장되었습니다.");
+      setEditOpen(false);
     } catch { setError("도면 정보 저장 실패. 최신 정보를 확인하십시오."); }
     finally { setBusy(false); }
   }
   function startEdit() {
     if (!selected || !canWrite) return;
-    setEditNumber(selected.number); setEditTitle(selected.title); setEditOpen(true);
+    setReviewMode(false); setEditNumber(selected.number); setEditTitle(selected.title); setEditOpen(true);
+  }
+  function startMetadataReview() {
+    if (!selected || !canReview || selected.status !== "ready") return;
+    setEditNumber(selected.number); setEditTitle(selected.title);
+    setReviewDecision("verified"); setReviewNote(""); setReviewMode(true); setEditOpen(true);
   }
   function choosePin(kind: DrawingPinKind) {
     if (!canWrite) return;
@@ -309,6 +357,10 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
           {canWrite && <button type="button" className="draw-command" onClick={startEdit} title="도면번호·도면명 수정">
             <Pencil size={14} aria-hidden="true" /> 정보 수정
           </button>}
+          {canReview && selected.status === "ready" && <button type="button" className="draw-command"
+            onClick={startMetadataReview} aria-label="도면정보 검수">도면정보 검수</button>}
+          <small className="drawing-sheet-review-text">{selected.metadataReview?.status === "verified"
+            ? "원본정보 확인됨" : "원본정보 미확인"}</small>
         </>}
         {mode === "original" && <button className="draw-command" type="button" onClick={() => setMode("catalog")}>
           <ArrowLeft size={15} aria-hidden="true" /> 장별 도면
@@ -349,6 +401,10 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
           <input type="search" aria-label="도면 검색" placeholder="도면번호·도면명 검색"
             value={keyword} onChange={event => setKeyword(event.target.value)} />
         </label>
+        <button type="button" className="draw-command" aria-pressed={reviewOnly}
+          onClick={() => setReviewOnly(value => !value)}>
+          검수 필요 ({sheets.filter(item => item.metadataReview?.status !== "verified").length})
+        </button>
         <span>총 {sheets.length}장 · 원본 {sets.length}건</span>
         <button type="button" className="draw-command" onClick={() => { void refresh(); }}>새로고침</button>
       </div>
@@ -384,6 +440,10 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
             <span className="sheet-card-text">
               <strong>{sheet.number}</strong>
               <small>{sheet.title}</small>
+              <small className={"drawing-sheet-review-text" +
+                (sheet.metadataReview?.status !== "verified" ? " needs-review" : "")}>
+                {sheet.metadataReview?.status === "verified" ? "정보 확인됨" : "정보 미확인"}
+              </small>
             </span>
             {sheet.status !== "ready" && <span className="sheet-card-status">{sheet.status === "failed" ? "오류" : "처리 중"}</span>}
           </button>)}
@@ -541,7 +601,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
               ? <button type="button" className="draw-command" onClick={() => openLinkedPin(selectedPin)}>연결된 업무 열기 →</button>
               : <p>공식 업무와 연결되지 않은 도면 마크입니다.</p>}
             <h4>현장 기록</h4>
-            <p>현장 사진 및 검측 결과는 연결된 업무에서 확인합니다. 자료가 없으면 임의로 표시하지 않습니다.</p>
+            <FieldPinPhotosPanel key={selectedPin.id} client={client} sheetId={selected.id} pin={selectedPin} />
           </div>
           <aside className="drawing-issue-dialog-properties">
             <h4>속성</h4>
@@ -564,14 +624,37 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
 
     {editOpen && selected && <div className="drawing-sheet-edit-backdrop" role="presentation"
       onMouseDown={e => { if (e.target === e.currentTarget) setEditOpen(false); }}>
-      <form className="drawing-sheet-edit-dialog" role="dialog" aria-label="도면 정보 수정" onSubmit={event => { void saveMetadata(event); }}>
-        <h3>도면 정보 수정</h3>
+      <form className="drawing-sheet-edit-dialog" role="dialog" aria-label={reviewMode ? "도면정보 검수" : "도면 정보 수정"} onSubmit={event => { void saveMetadata(event); }}>
+        <h3>{reviewMode ? "도면번호·도면명 원본 검수" : "도면 정보 수정"}</h3>
         <label>도면번호<input autoFocus maxLength={60} value={editNumber} required
           onChange={event => setEditNumber(event.target.value)} /></label>
         <label>도면명<input maxLength={220} value={editTitle} required
           onChange={event => setEditTitle(event.target.value)} /></label>
-        <p>수정 내용은 독립 도면 정보에만 반영됩니다. 원본 PDF와 공식 배포 상태는 변경되지 않습니다.</p>
-        <div><button className="primary-action" type="submit" disabled={busy}>저장</button>
+        {reviewMode && <section className="drawing-sheet-extract-inspect">
+          <strong>원본 PDF 표제란 자동 추출</strong>
+          <p>도면번호: {selected.extractedNumber || "인식 불가"}</p>
+          <p>도면명: {selected.extractedTitle || "인식 불가"}</p>
+          <p>상태: {selected.metadataReview?.status === "verified" ? "확인 완료" : "미확인"}</p>
+          {selected.metadataReview && <p>최근 검수: {selected.metadataReview.note}</p>}
+        </section>}
+        {reviewMode && <label>검수 결정
+          <select aria-label="검수 결정" value={reviewDecision}
+            onChange={event => setReviewDecision(event.target.value as "verified" | "needs_review")}>
+            <option value="verified">원본 내용 확인 완료</option>
+            <option value="needs_review">재검토 필요</option>
+          </select>
+        </label>}
+        {reviewMode && <label>검수 근거 또는 재검토 사유
+          <textarea aria-label="검수 의견" required maxLength={500} minLength={2} rows={3}
+            value={reviewNote} onChange={event => setReviewNote(event.target.value)} />
+        </label>}
+        <p>{reviewMode ? "원본 도면정보 검수는 시공용 발행·감리 승인과 별개입니다." :
+          "수정 내용은 독립 도면 정보에만 반영됩니다. 원본 PDF와 공식 배포 상태는 변경되지 않습니다."}</p>
+        <div><button className="primary-action" type="submit" disabled={busy ||
+          (reviewMode && (reviewNote.trim().length < 2 ||
+            (reviewDecision === "verified" && editNumber.trim().toLowerCase().startsWith("sheet-"))))}>
+            {reviewMode ? "검수 기록" : "저장"}
+          </button>
           <button type="button" onClick={() => setEditOpen(false)}>취소</button></div>
       </form>
     </div>}

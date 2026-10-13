@@ -165,3 +165,46 @@ test("mobile 390px stays on sheet and opens issue panel", async ({ page }, testI
   await expect(view.getByRole("complementary", { name: "현재 도면의 검측·현장상황·이슈" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2)).toBe(true);
 });
+
+test("supervisor verifies an original PDF titleblock and owner sees read-only status", async ({ page }, testInfo) => {
+  await login(page, "SUP");
+  const view = page.locator('[data-ui-component="drawing-sheet-workspace"]');
+  const folderName = testInfo.project.name + "-review-titleblock-" + randomUUID();
+  await view.locator('input[type="file"]').setInputFiles({
+    name: folderName + ".pdf", mimeType: "application/pdf", buffer: makePdf(1),
+  });
+  const folder = view.locator(".drawing-sheet-folder").filter({ hasText: folderName });
+  await expect(folder.locator(".drawing-sheet-card")).toHaveCount(1);
+  await expect(folder.locator(".drawing-sheet-card img")).toBeVisible({ timeout: 20000 });
+  await folder.locator(".drawing-sheet-card").click();
+  await expect(view.getByText("원본정보 미확인")).toBeVisible();
+  // Regression: at 390px the review action must not be behind the revision button.
+  const reviewAction = view.getByRole("button", { name: "도면정보 검수" });
+  const versionAction = view.getByRole("button", { name: "도면 버전 관리" });
+  const reviewBox = await reviewAction.boundingBox();
+  const revisionBox = await versionAction.boundingBox();
+  expect(reviewBox).not.toBeNull();
+  expect(revisionBox).not.toBeNull();
+  if (!reviewBox || !revisionBox) throw new Error("Drawing commandbar action missing");
+  const overlap = reviewBox.x < revisionBox.x + revisionBox.width
+    && revisionBox.x < reviewBox.x + reviewBox.width
+    && reviewBox.y < revisionBox.y + revisionBox.height
+    && revisionBox.y < reviewBox.y + reviewBox.height;
+  expect(overlap, "titleblock review must not overlap version actions").toBe(false);
+  await reviewAction.click();
+  const dialog = view.getByRole("dialog", { name: "도면정보 검수" });
+  await expect(dialog.getByText("원본 PDF 표제란 자동 추출")).toBeVisible();
+  await dialog.getByLabel("도면번호").fill("DV-51");
+  await dialog.getByLabel("도면명").fill("Verified Architectural Detail");
+  await dialog.getByLabel("검수 의견").fill("Reviewed the page titleblock, no formal issue approval");
+  await dialog.getByRole("button", { name: "검수 기록" }).click();
+  await expect(view.getByText("원본정보 확인됨")).toBeVisible();
+  await expect(view.locator(".drawing-board-current-label")).toContainText("DV-51");
+
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click();
+  await login(page, "OWN");
+  await view.locator(".drawing-sheet-folder").filter({ hasText: folderName })
+    .locator(".drawing-sheet-card").click();
+  await expect(view.getByText("원본정보 확인됨")).toBeVisible();
+  await expect(view.getByRole("button", { name: "도면정보 검수" })).toHaveCount(0);
+});

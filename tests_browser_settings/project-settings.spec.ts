@@ -140,3 +140,26 @@ test("project choice remains usable on tablets and when desktop navigation is co
   await expect(page.getByText("합성 테스트 자료 · 실제 현장 증빙 아님",{exact:true})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
 });
+
+test("DOUL project settings keep compact Fieldwire-like tab and input alignment", async ({ page }) => {
+  await login(page);
+  await settings(page);
+  const root = page.locator('.app-shell[data-layout-system="field-workspace"] .project-settings-page');
+  await expect(root).toBeVisible();
+  const tabs = root.getByRole("tablist", { name: "프로젝트 설정" });
+  await expect(tabs).toBeVisible();
+  await expect(tabs.getByRole("tab", { name: "기본정보" })).toHaveAttribute("aria-selected", "true");
+  const tabHeight = (await tabs.getByRole("tab", { name: "기본정보" }).boundingBox())?.height ?? 0;
+  expect(tabHeight).toBeGreaterThanOrEqual(test.info().project.name === "phone" ? 44 : 36);
+  expect(tabHeight).toBeLessThanOrEqual(test.info().project.name === "phone" ? 48 : 40);
+  const nameInput = panel(page, "기본정보").getByLabel("프로젝트명", { exact: true });
+  const height = (await nameInput.boundingBox())?.height ?? 0;
+  expect(height).toBeGreaterThanOrEqual(test.info().project.name === "phone" ? 44 : 35);
+  await tabs.getByRole("tab", { name: "업무배정" }).click();
+  await expect(panel(page, "업무배정")).toBeVisible();
+  const table = root.locator(".settings-table-scroll");
+  await expect(table).toBeVisible();
+  expect(await table.evaluate(node => getComputedStyle(node).overflowY)).toBe("auto");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2)).toBe(true);
+  await page.screenshot({ path: "preview/screenshots/fieldwire-admin-settings-" + test.info().project.name + ".png" });
+});

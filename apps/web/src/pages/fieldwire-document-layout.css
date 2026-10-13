@@ -1,0 +1,244 @@
+/*
+ * DOUL document authoring surface — Fieldwire-aligned compact dual-pane UI.
+ * Styling only: drafts, document render, signing, server permissions and
+ * exported source bytes remain under their existing contracts.
+ */
+.app-shell[data-layout-system="field-workspace"] .template-document {
+  --doc-ui-line: #dce2e9;
+  --doc-ui-control: 35px;
+  --doc-ui-muted: #f4f6f8;
+  min-width: 0;
+  width: 100%;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .doul-resizable-body {
+  min-height: 0;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .editor-pane {
+  min-width: 0;
+  padding: 11px 13px 16px;
+  border: 1px solid var(--doc-ui-line);
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: none;
+  overscroll-behavior: contain;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .editor-pane > h2 {
+  position: sticky;
+  z-index: 2;
+  top: -11px;
+  min-height: 35px;
+  margin: -11px -13px 10px;
+  padding: 10px 13px 8px;
+  background: #fff;
+  border-bottom: 1px solid var(--doc-ui-line);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #283848;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .document-session-draft-notice {
+  gap: 6px;
+  margin: 0 0 11px;
+  padding: 7px 9px;
+  border-radius: 3px;
+  border-color: var(--doc-ui-line);
+  background: var(--doc-ui-muted);
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .document-session-draft-notice p {
+  flex: 1 1 120px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .document-session-draft-notice button {
+  min-height: 33px;
+  padding: 6px 10px;
+  font-size: 11px;
+  border-radius: 3px;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .editor-pane > label,
+.app-shell[data-layout-system="field-workspace"] .template-document .document-fields label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  margin: 0 0 9px;
+  color: #435365;
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1.45;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .editor-pane :is(input:not([type="checkbox"]), select),
+.app-shell[data-layout-system="field-workspace"] .template-document .document-editable-table input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: var(--doc-ui-control);
+  height: var(--doc-ui-control);
+  padding: 6px 9px;
+  border: 1px solid #cbd4df;
+  border-radius: 3px;
+  background: #fff;
+  color: #273848;
+  font-size: 12px;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .editor-pane :is(input, select, button):focus-visible {
+  outline: 2px solid var(--doul-color-brand, #0b2e91);
+  outline-offset: 1px;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .editor-pane > .notice {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .editor-pane details {
+  min-width: 0;
+  margin: 9px 0;
+  border-top: 1px solid var(--doc-ui-line);
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .editor-pane details > summary {
+  margin: 0;
+  padding: 9px 0;
+  color: #324457;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .document-fields {
+  max-height: none;
+  min-width: 0;
+  padding-right: 0;
+  overflow: visible;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .document-editable-tables {
+  gap: 9px;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document :is(.document-editable-table, .document-editable-row) {
+  gap: 7px;
+  padding: 10px;
+  border-radius: 3px;
+  border-color: var(--doc-ui-line);
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .editor-pane :is(.primary, .secondary) {
+  min-height: 34px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .two-buttons {
+  gap: 7px;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .preview-pane {
+  min-width: 0;
+  padding: 0 14px 16px;
+  border: 1px solid var(--doc-ui-line);
+  border-radius: 3px;
+  background: #e9edf1;
+  box-shadow: none;
+  overscroll-behavior: contain;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .preview-header {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  min-height: 41px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 13px;
+  margin: 0 -14px 12px;
+  border-bottom: 1px solid var(--doc-ui-line);
+  background: #fff;
+  color: #273747;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .preview-header span {
+  margin-left: auto;
+  color: #617081;
+  font-size: 11px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .preview-pane iframe {
+  display: block;
+  width: 100%;
+  min-height: 650px;
+  max-width: 920px;
+  margin-inline: auto;
+  border: 1px solid var(--doc-ui-line);
+  border-radius: 0;
+  background: #fff;
+}
+
+.app-shell[data-layout-system="field-workspace"] .template-document .paper-empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: clamp(320px, 65vh, 710px);
+  max-width: 920px;
+  margin-inline: auto;
+  padding: 32px;
+  border: 1px solid var(--doc-ui-line);
+  background: #fff;
+}
+
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] .template-document {
+    --doc-ui-control: 44px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-document .editor-pane {
+    padding: 10px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-document .editor-pane > h2 {
+    position: static;
+    margin: -10px -10px 9px;
+    padding: 10px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-document .editor-pane :is(.primary, .secondary),
+  .app-shell[data-layout-system="field-workspace"] .template-document .document-session-draft-notice button {
+    min-height: 44px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-document .preview-pane {
+    padding: 0 7px 10px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-document .preview-header {
+    position: static;
+    margin: 0 -7px 8px;
+    padding: 9px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-document .preview-pane iframe {
+    height: 560px;
+    min-height: 560px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-document .paper-empty {
+    min-height: 300px;
+    padding: 26px 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell[data-layout-system="field-workspace"] .template-document {
+    scroll-behavior: auto;
+  }
+}
