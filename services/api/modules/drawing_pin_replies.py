@@ -56,6 +56,7 @@ def install_sheet_pin_reply_routes(app, store, *, identity, context, sheet_for,
             require(role["actorGroup"] in COMMENT_ROLES,
                     "NOT_AUTHORIZED", "도면 대화에 참여할 수 없습니다")
             authorized_pin(project_id, sheet_id, pin_id, actor, role)
+            authorized_pin(project_id, sheet_id, pin_id, actor, role)
             existing = store.requests.get(request_key)
             if existing:
                 require(existing["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT",
