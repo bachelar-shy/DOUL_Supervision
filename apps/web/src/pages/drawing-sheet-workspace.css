@@ -281,6 +281,26 @@
   .drawing-sheet-items.as-grid .sheet-card-text { min-height: 43px; padding: 6px 9px; }
 }
 
+/* Source is immutable; markups live in an independent normalized overlay. */
+.drawing-board-markup-layer { position:absolute; inset:0; width:100%; height:100%;
+  z-index:1; pointer-events:none; overflow:visible; }
+.drawing-board-markup-layer.active { pointer-events:auto; cursor:crosshair; touch-action:none; }
+.drawing-board-markup-layer .markup-erasable { cursor:pointer; pointer-events:stroke; }
+.drawing-board-tools { max-height:calc(100% - 62px); overflow-y:auto; scrollbar-width:thin; }
+.drawing-board-tools button:disabled { opacity:.4; }
+.drawing-markup-options { position:absolute; top:10px; right:10px; max-width:min(250px,55%);
+  display:flex; flex-direction:column; gap:7px; align-items:stretch;
+  z-index:5; padding:10px; border:1px solid #d0d8e4; background:#ffffffed;
+  border-radius:3px; font-size:11px; box-shadow:0 2px 8px #24334d1b; }
+.drawing-markup-options > span { font-weight:700; }
+.drawing-markup-options label { display:flex; align-items:center; justify-content:space-between; gap:7px; }
+.drawing-markup-options label input[type="number"],.drawing-markup-options label input:not([type]){
+  width:135px; min-width:0; padding:5px; border:1px solid #cbd4df; }
+.drawing-markup-options small { color:#68788a; line-height:1.4; }
+.drawing-markup-rail-count { border-top:1px solid #dbe0e6; padding:10px 12px;
+  background:#fff; font-size:11px; color:#657485; }
+@media(max-width:767px) { .drawing-board-tools{top:5px;left:5px;max-height:calc(100% - 49px);}
+  .drawing-markup-options{top:5px;right:5px;} }
 /* Full task-detail overlay, keeping the sheet and issue rail visible behind it. */
 .drawing-issue-dialog-backdrop { position: fixed; inset: 0; z-index: 1100;
   background: rgba(24, 29, 38, .49); display: grid; place-items: center; padding: 24px; }
@@ -311,3 +331,14 @@
   .drawing-issue-dialog-main { grid-template-columns: 1fr; }
   .drawing-issue-dialog-properties { border-left: 0; border-top: 1px solid #d6dbe2; }
 }
+
+/* PDF titleblock verification is a separate audit step, not an approval badge. */
+.drawing-sheet-review-text { display:block; font-size:10px; font-weight:400; color:#637082; }
+.drawing-sheet-review-text.needs-review { color:#946526; }
+.drawing-sheet-extract-inspect { background:#f4f6f9; border:1px solid #e0e4eb;
+  padding:9px 10px; margin:8px 0; font-size:11px; }
+.drawing-sheet-extract-inspect p { margin:5px 0; overflow-wrap:anywhere; }
+.drawing-sheet-edit-dialog { max-height: min(88dvh,740px); overflow-y:auto; }
+.drawing-sheet-edit-dialog select,
+.drawing-sheet-edit-dialog textarea { width:100%; padding:7px; border:1px solid #bcc6d2;
+  border-radius:3px; font-size:12px; }

@@ -12,6 +12,11 @@ export interface DrawingSheet {
   revision: string; status: "processing" | "ready" | "failed";
   createdAt: string; updatedAt: string;
   hasPreview: boolean; hasThumb: boolean; drawingRef: DomainRef | null; bindingId: string | null;
+  extractedNumber?: string | null; extractedTitle?: string | null;
+  metadataSource?: string; metadataNeedsReview?: boolean;
+  metadataReview?: { status: "verified" | "needs_review"; reviewedAt: string;
+    reviewedByRole: string; sourcePdfHash: string; note: string };
+
 }
 export interface DrawingSheetPin {
   id: string; sheetId: string; projectId: string; version?: number; kind: "issue" | "inspection" | "site";
@@ -59,4 +64,44 @@ export async function loadSheetPins(client: SupervisionClient, sheetId: string) 
 export async function createSheetPin(client: SupervisionClient, sheetId: string, body: NewDrawingPin, key: string) {
   return client.request<{ pin: DrawingSheetPin }>(drawingSheetPath(client, sheetId) + "/pins",
     { method: "POST", headers: { "Idempotency-Key": key }, body: JSON.stringify(body) });
+}
+
+export type DrawingMarkupKind = "pen" | "line" | "arrow" | "rectangle" | "ellipse" |
+  "cloud" | "text" | "measure";
+
+export interface DrawingSheetMarkup {
+  id: string; version: number; projectId: string; sheetId: string; sheetVersion: number;
+  tool: DrawingMarkupKind; points: Array<{x:number; y:number}>;
+  color: string; lineWidth: number; text: string; status: "active" | "archived";
+  createdAt: string; updatedAt: string; createdByPartyId: string; createdByRole: string;
+}
+export type NewSheetMarkup = Pick<DrawingSheetMarkup,
+  "sheetVersion" | "tool" | "points" | "color" | "lineWidth" | "text">;
+
+export function loadSheetMarkups(client: SupervisionClient, sheetId: string) {
+  return client.request<{items: DrawingSheetMarkup[]; count: number}>(
+    drawingSheetPath(client, sheetId) + "/markups");
+}
+export function createSheetMarkup(client: SupervisionClient, sheetId: string,
+  payload: NewSheetMarkup, key: string) {
+  return client.request<{markup: DrawingSheetMarkup}>(
+    drawingSheetPath(client, sheetId) + "/markups",
+    {method: "POST", headers: {"Idempotency-Key": key}, body: JSON.stringify(payload)});
+}
+export function changeSheetMarkup(client: SupervisionClient, sheetId: string,
+  id: string, action: "archive" | "restore", version: number, key: string) {
+  return client.request<{markup: DrawingSheetMarkup}>(
+    drawingSheetPath(client, sheetId) + "/markups/" + encodeURIComponent(id) + "/" + action,
+    {method: "POST", headers: {"Idempotency-Key": key},
+      body: JSON.stringify({expectedVersion: version})});
+}
+/** Source titleblock verification is separate from drawing release or site approval. */
+export function reviewDrawingSheetMetadata(client: SupervisionClient, sheetId: string,
+  payload: {expectedVersion: number; decision: "verified" | "needs_review";
+    number: string; title: string; note: string}, key: string) {
+  return client.request<{sheet: DrawingSheet}>(
+    drawingSheetPath(client, sheetId) + "/metadata-review",
+    { method: "POST", headers: {"Idempotency-Key": key}, body: JSON.stringify(payload) },
+  );
+
 }

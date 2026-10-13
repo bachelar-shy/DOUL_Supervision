@@ -111,11 +111,42 @@ test("one PDF creates three independent thumbnail sheets and Fieldwire-like pane
   await rail.getByRole("button", { name: "검측 1" }).click();
   await expect(rail.locator(".drawing-issue-row")).toHaveCount(1);
   await rail.getByRole("button", { name: "전체 3" }).click();
+  // A markup is a separate, durable overlay rather than an edit of the source PDF.
+  await view.getByRole("button", { name: "사각형" }).click();
+  const overlay = view.locator("svg.drawing-board-markup-layer");
+  const dimensions = await overlay.boundingBox();
+  expect(dimensions).not.toBeNull();
+  if (!dimensions) throw new Error("Markup overlay bounds unavailable");
+  await page.mouse.move(dimensions.x + dimensions.width * 0.2, dimensions.y + dimensions.height * 0.2);
+  await page.mouse.down();
+  await page.mouse.move(dimensions.x + dimensions.width * 0.6, dimensions.y + dimensions.height * 0.5, {steps: 4});
+  await page.mouse.up();
+  await expect(view.locator(".drawing-markup-rail-count")).toContainText("1개");
+  await expect(overlay.locator("g > rect")).toHaveCount(1);
+  await view.getByRole("button", { name: "마크업 실행취소" }).click();
+  await expect(view.locator(".drawing-markup-rail-count")).toContainText("0개");
+  await view.getByRole("button", { name: "마크업 다시 실행" }).click();
+  await expect(view.locator(".drawing-markup-rail-count")).toContainText("1개");
+
+  // The revision cloud is a curved SVG path, not the former dashed rectangle.
+  await view.getByRole("button", { name: "수정구름" }).click();
+  await page.mouse.move(dimensions.x + dimensions.width * 0.15, dimensions.y + dimensions.height * 0.62);
+  await page.mouse.down();
+  await page.mouse.move(dimensions.x + dimensions.width * 0.54, dimensions.y + dimensions.height * 0.82, { steps: 7 });
+  await page.mouse.up();
+  await expect(view.locator(".drawing-markup-rail-count")).toContainText("2개");
+  await expect(overlay.locator("g > path")).toHaveCount(1);
+  const cloudPath = await overlay.locator("g > path").getAttribute("d");
+  expect(cloudPath).toMatch(/Q [\d.-]+ [\d.-]+ [\d.-]+ [\d.-]+/);
+  await view.getByRole("button", { name: "이동 도구" }).click();
+
 
   await page.getByRole("button", { name: "로그아웃", exact: true }).click();
   await login(page, "CON");
   await expect(view).toHaveAttribute("data-view", "catalog");
   await view.locator(".drawing-sheet-folder").filter({ hasText: uniqueFolder }).locator(".drawing-sheet-card").filter({ hasText: "DT-05A" }).click();
+  await expect(view.locator(".drawing-markup-rail-count")).toContainText("2개");
+  await expect(view.locator("svg.drawing-board-markup-layer g > path")).toHaveCount(1);
   await expect(rail.locator(".drawing-issue-row")).toHaveCount(3);
   for (const label of ["보 부위 간섭 확인 필요 - 합성 테스트", "합성 검측 위치 확인", "합성 현장상황 위치 기록"]) {
     await expect(rail.getByText(label, { exact: false })).toBeVisible();
@@ -164,4 +195,34 @@ test("mobile 390px stays on sheet and opens issue panel", async ({ page }, testI
   await view.getByRole("button", { name: "이슈 목록" }).click();
   await expect(view.getByRole("complementary", { name: "현재 도면의 검측·현장상황·이슈" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2)).toBe(true);
+});
+
+test("supervisor verifies an original PDF titleblock and owner sees read-only status", async ({ page }, testInfo) => {
+  await login(page, "SUP");
+  const view = page.locator('[data-ui-component="drawing-sheet-workspace"]');
+  const folderName = testInfo.project.name + "-review-titleblock-" + randomUUID();
+  await view.locator('input[type="file"]').setInputFiles({
+    name: folderName + ".pdf", mimeType: "application/pdf", buffer: makePdf(1),
+  });
+  const folder = view.locator(".drawing-sheet-folder").filter({ hasText: folderName });
+  await expect(folder.locator(".drawing-sheet-card")).toHaveCount(1);
+  await expect(folder.locator(".drawing-sheet-card img")).toBeVisible({ timeout: 20000 });
+  await folder.locator(".drawing-sheet-card").click();
+  await expect(view.getByText("원본정보 미확인")).toBeVisible();
+  await view.getByRole("button", { name: "도면정보 검수" }).click();
+  const dialog = view.getByRole("dialog", { name: "도면정보 검수" });
+  await expect(dialog.getByText("원본 PDF 표제란 자동 추출")).toBeVisible();
+  await dialog.getByLabel("도면번호").fill("DV-51");
+  await dialog.getByLabel("도면명").fill("Verified Architectural Detail");
+  await dialog.getByLabel("검수 의견").fill("Reviewed the page titleblock, no formal issue approval");
+  await dialog.getByRole("button", { name: "검수 기록" }).click();
+  await expect(view.getByText("원본정보 확인됨")).toBeVisible();
+  await expect(view.locator(".drawing-board-current-label")).toContainText("DV-51");
+
+  await page.getByRole("button", { name: "로그아웃", exact: true }).click();
+  await login(page, "OWN");
+  await view.locator(".drawing-sheet-folder").filter({ hasText: folderName })
+    .locator(".drawing-sheet-card").click();
+  await expect(view.getByText("원본정보 확인됨")).toBeVisible();
+  await expect(view.getByRole("button", { name: "도면정보 검수" })).toHaveCount(0);
 });
