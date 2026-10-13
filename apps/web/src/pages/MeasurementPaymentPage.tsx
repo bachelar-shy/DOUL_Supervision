@@ -272,13 +272,15 @@ export function MeasurementPaymentPage({
 
   return <PageBoundary name="measurement-payment">
     <section data-ui-component="measurement-payment-workspace">
-      <Tabs value={machine} onValueChange={(value) => { setMachine(value as PaymentMachine); onSelect(null); }} className="payment-tabs">
+      
+      <WorkbenchTemplate hasDetail={Boolean(selectedItem)} className="operational-tabs-workspace"
+          topToolbar={<Tabs value={machine} onValueChange={(value) => { setMachine(value as PaymentMachine); onSelect(null); }} className="operational-toolbar-tabs">
         <TabsList variant="line" className="payment-tabs-list">
           {tabs.map((tab) => <TabsTrigger key={tab.id} value={tab.id}>{t(tab.key)}</TabsTrigger>)}
         </TabsList>
         <div className="payment-intro">{t("description")}</div>
       </Tabs>
-      <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
+          }>
         <Panel className="list-pane" aria-label={t(tabs.find((tab) => tab.id === machine)!.key)}>
           <div className="fieldwire-operational-list-head" data-ui-component="operational-list-head">
           <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">{i18n.t("common.count", { count: items.length })}</p>
