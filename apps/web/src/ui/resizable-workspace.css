@@ -360,8 +360,13 @@
   justify-content: flex-end;
   min-width: 0;
   gap: 6px;
-  min-height: 40px;
+  min-height: 36px;
   margin-bottom: 5px;
+}
+/* Width changes from list-only to split view must not trigger scroll
+ * anchoring that shifts the previously selected record list. */
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace[data-kind="workbench"] .list-pane {
+  overflow-anchor: none;
 }
 .app-shell[data-layout-system="field-workspace"] .doul-layout-controls[data-has-toolbar="true"] > .workbench-list-toolbar {
   display: flex;
