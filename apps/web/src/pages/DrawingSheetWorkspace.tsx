@@ -143,6 +143,9 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   const inputRef = useRef<HTMLInputElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const imageFrameRef = useRef<HTMLDivElement>(null);
+  // Keep wheel events atomic even when the browser sends several before React paints.
+  const wheelTransformRef = useRef({ zoom, pan });
+  wheelTransformRef.current = { zoom, pan };
   const drag = useRef<{ x: number; y: number; startX: number; startY: number; moved: boolean } | null>(null);
   const pinRequest = useRef<{ key: string; serialized: string } | null>(null);
 
@@ -258,6 +261,41 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     fit();
     return () => observer.disconnect();
   }, [mode, selected?.id, fit]);
+
+  useEffect(() => {
+    if (mode !== "viewer" || selected?.status !== "ready") return;
+    const area = viewportRef.current;
+    if (!area) return;
+    const onWheel = (event: WheelEvent) => {
+      // Controls may have their own wheel/scroll behaviour; the drawing owns only
+      // wheels over the plan surface (including pins and the markup overlay).
+      if (event.target instanceof Element && event.target.closest(
+        ".drawing-board-tools, .drawing-markup-options, .drawing-board-bottom, input, select, textarea"
+      )) return;
+      if (!event.deltaY) return;
+      event.preventDefault(); // passive:false is required to stop the document scrolling.
+      const previous = wheelTransformRef.current;
+      const pixels = event.deltaMode === 1 ? event.deltaY * 16
+        : event.deltaMode === 2 ? event.deltaY * area.clientHeight : event.deltaY;
+      // Standard Windows wheel and precision trackpad both zoom smoothly.
+      const factor = Math.exp(-Math.max(-240, Math.min(240, pixels)) * .0015);
+      const nextZoom = Math.min(5, Math.max(.4, previous.zoom * factor));
+      if (nextZoom === previous.zoom) return;
+      const bounds = area.getBoundingClientRect();
+      const cursorX = event.clientX - bounds.left - bounds.width / 2;
+      const cursorY = event.clientY - bounds.top - bounds.height / 2;
+      const ratio = nextZoom / previous.zoom;
+      const nextPan = {
+        x: cursorX - (cursorX - previous.pan.x) * ratio,
+        y: cursorY - (cursorY - previous.pan.y) * ratio,
+      };
+      wheelTransformRef.current = { zoom: nextZoom, pan: nextPan };
+      setZoom(nextZoom);
+      setPan(nextPan);
+    };
+    area.addEventListener("wheel", onWheel, { passive: false });
+    return () => area.removeEventListener("wheel", onWheel);
+  }, [mode, selected?.id, selected?.status]);
 
   function openSheet(sheet: DrawingSheet) {
     setMode("viewer"); setSelectedId(sheet.id); setPins([]); setSelectedPinId(null);
@@ -537,6 +575,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     {mode === "viewer" && selected && <div className={"drawing-sheet-viewer" + (rightOpen ? "" : " right-collapsed")}>
       <section className="drawing-sheet-board" aria-label="개별 도면 뷰어">
         <div className="drawing-board-viewport" ref={viewportRef}
+          data-zoom={zoom.toFixed(3)}
           onPointerDown={startDrag} onPointerMove={updateDrag} onPointerUp={stopDrag}
           onPointerCancel={stopDrag}>
           <div className="drawing-board-tools" role="toolbar" aria-label="도면 확대 및 마크업 도구">
