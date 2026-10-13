@@ -119,7 +119,7 @@ export function WorkbenchPage({
         <section className="panel list-pane">
           {/* The active menu already has the page h1; keep the list's
               accessible heading without repeating the title visually. The
-              list count belongs to the searchable toolbar below. */}
+              list count belongs to the shared search and view toolbar. */}
           <h2 className="sr-only">{t("workbench.listTitle", { title: routeTitle })}</h2>
           {route === "inspections" && role === "CON" && (
             <div className="grid gap-2" data-ui-component="new-inspection-entry">
