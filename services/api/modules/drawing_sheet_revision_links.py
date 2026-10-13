@@ -60,9 +60,14 @@ def install_sheet_revision_routes(app, store, *, identity, context, sheet_for, s
                     if len(related) == size:
                         break
                 records = [edge for edge in links if edge["fromSheetId"] in related]
-            return {"items": sorted((projected(project_id, edge, actor, role) for edge in records),
-                                    key=lambda row: (row["createdAt"], row["id"])),
-                    "count": len(records)}
+            allowed = []
+            for edge in records:
+                try:
+                    allowed.append(projected(project_id, edge, actor, role))
+                except (ContractError, KeyError):
+                    continue
+            return {"items": sorted(allowed, key=lambda row: (row["createdAt"], row["id"])),
+                    "count": len(allowed)}
 
     @app.post("/projects/{project_id}/drawing-sheet-revisions", status_code=201)
     async def link_sheet_revisions(project_id: str, request: Request):
