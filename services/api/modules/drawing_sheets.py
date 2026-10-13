@@ -24,6 +24,7 @@ from app.reference.validation import ContractError, require
 from .drawing_raster import MAX_SOURCE_BYTES, PdfSheetError, pdf_pages, page_image, pdf_page_text
 from .drawing_sheet_metadata import extract_sheet_candidate
 from .drawing_sheet_annotations import install_sheet_markup_routes
+from .drawing_sheet_revision_links import install_sheet_revision_routes
 
 LOG = logging.getLogger(__name__)
 WRITERS = frozenset({"ADM", "SUP", "CON"})
@@ -507,3 +508,7 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
 
     install_sheet_markup_routes(app, store, identity=identity, context=context,
                                 sheet_for=sheet_for, key_for=key_for, audit=_audit)
+
+    install_sheet_revision_routes(app, store, identity=identity, context=context,
+                                  sheet_for=sheet_for, set_for=set_for,
+                                  key_for=key_for, audit=_audit)
