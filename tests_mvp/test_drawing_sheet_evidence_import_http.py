@@ -50,5 +50,56 @@ class RegisteredDrawingImportHTTPTests(SyntheticQuickLoginHTTPTest):
         self.assertTrue(picture.content.startswith(bytes([0xFF, 0xD8, 0xFF])))
 
 
+    def test_source_permission_revocation_blocks_derived_assets_and_catalog(self):
+        adm = self.quick("ADM")
+        contractor = self.quick("CON")
+        with self.store.transaction():
+            source = next(record for (kind, _), record in self.store.engine._records.items()
+                          if kind == "Evidence" and record["projectId"] == self.project
+                          and record.get("mediaType") == "document"
+                          and record.get("metadata", {}).get("mimeType") == "application/pdf")
+            source_id = source["id"]
+            source_version = source["version"]
+        endpoint = "/projects/" + self.project
+        created = self.http.post(endpoint + "/drawing-sets/from-evidence",
+            headers={**adm, "Idempotency-Key": uid()},
+            json={"evidenceRef": {"objectType": "Evidence",
+                                  "objectId": source_id, "version": source_version}})
+        self.assertEqual(created.status_code, 202, created.text)
+        set_id = created.json()["set"]["id"]
+        sheet_id = created.json()["set"]["sheetIds"][0]
+        workspace = self.http.get(endpoint + "/workspace", headers=contractor)
+        self.assertEqual(workspace.status_code, 200, workspace.text)
+        role_id = workspace.json()["role"]["id"]
+        # Simulate removal from the source discipline while retaining project
+        # membership; an existing signed-in session must not bypass the gate.
+        with self.store.transaction(write=True):
+            role = self.store.engine._records[("RoleAssignment", role_id)]
+            role["disciplines"] = ["not-the-source-discipline"]
+        original = self.http.get(endpoint + "/evidence/" + source_id + "/content",
+                                 headers=contractor)
+        self.assertEqual(original.status_code, 403, original.text[:250])
+        for size in ("preview", "thumb"):
+            image = self.http.get(endpoint + "/drawing-sheets/" + sheet_id +
+                                  "/image?size=" + size, headers=contractor)
+            self.assertEqual(image.status_code, 403, image.text[:250])
+        self.assertEqual(self.http.get(endpoint + "/drawing-sheets/" + sheet_id,
+                         headers=contractor).status_code, 403)
+        self.assertEqual(self.http.get(endpoint + "/drawing-sheets/" + sheet_id +
+                         "/markups", headers=contractor).status_code, 403)
+        self.assertEqual(self.http.get(endpoint + "/drawing-sheets/" + sheet_id +
+                         "/pins", headers=contractor).status_code, 403)
+        catalog = self.http.get(endpoint + "/drawing-sheets", headers=contractor)
+        self.assertEqual(catalog.status_code, 200, catalog.text)
+        self.assertNotIn(sheet_id, [item["id"] for item in catalog.json()["items"]])
+        directory = self.http.get(endpoint + "/drawing-sets", headers=contractor)
+        self.assertEqual(directory.status_code, 200, directory.text)
+        self.assertNotIn(set_id, [item["id"] for item in directory.json()["items"]])
+        for size in ("preview", "thumb"):
+            image = self.http.get(endpoint + "/drawing-sheets/" + sheet_id +
+                                  "/image?size=" + size, headers=adm)
+            self.assertEqual(image.status_code, 200)
+
+
 if __name__ == "__main__":
     unittest.main()
