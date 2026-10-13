@@ -491,11 +491,13 @@ export function CompletionHandoverPage({
 
   return <PageBoundary name="completion-handover">
     <section data-ui-component="completion-handover-workspace">
-      <Tabs value={machine} onValueChange={(value) => { setMachine(value as CompletionMachine); onSelect(null); }} className="completion-tabs">
+      
+      <WorkbenchTemplate hasDetail={Boolean(selectedItem)} className="operational-tabs-workspace"
+          topToolbar={<Tabs value={machine} onValueChange={(value) => { setMachine(value as CompletionMachine); onSelect(null); }} className="operational-toolbar-tabs">
         <TabsList variant="line" className="completion-tabs-list">{tabs.map((value) => <TabsTrigger key={value.id} value={value.id}>{t(value.key)}</TabsTrigger>)}</TabsList>
         <p className="completion-intro">{t("description")}</p>
       </Tabs>
-      <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
+          }>
         <Panel className="list-pane" aria-label={t(tab.key)}>
           <div className="fieldwire-operational-list-head" data-ui-component="operational-list-head">
           <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">{i18n.t("common.count", { count: items.length })}</p>
