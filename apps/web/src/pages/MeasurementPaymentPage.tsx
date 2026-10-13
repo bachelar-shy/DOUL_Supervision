@@ -1,4 +1,5 @@
 import { recordVersionLabel } from "../labels";
+import i18n from "../i18n/config";
 import { useMemo, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CommandDescriptor, WorkItem, Workspace } from "../data/ui-contract";
@@ -278,8 +279,8 @@ export function MeasurementPaymentPage({
         <div className="payment-intro">{t("description")}</div>
       </Tabs>
       <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
-        <Panel className="list-pane">
-          <SectionHeader title={t(tabs.find((tab) => tab.id === machine)!.key)} meta={`${items.length}`} />
+        <Panel className="list-pane" aria-label={t(tabs.find((tab) => tab.id === machine)!.key)}>
+          <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">{i18n.t("common.count", { count: items.length })}</p>
           <div className="payment-create-actions">
             <ActionButton disabled={!online || client.kind === "mock" || !canCreate} onClick={() => setCreating(machine)}>{t("create")}</ActionButton>
           </div>

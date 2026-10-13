@@ -884,11 +884,10 @@ export function SchedulePage({
         </p>
       </Tabs>
       <WorkbenchTemplate hasDetail={Boolean(item)}>
-        <Panel className="list-pane">
-          <SectionHeader
-            title={tr(tab.labelKey)}
-            meta={tr("schedule.count", { count: items.length })}
-          />
+        <Panel className="list-pane" aria-label={tr(tab.labelKey)}>
+          <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">
+            {tr("schedule.count", { count: items.length })}
+          </p>
           <div className="schedule-list-actions">
             <ActionButton
               disabled={!online || client.kind === "mock"}

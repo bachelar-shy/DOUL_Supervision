@@ -35,3 +35,22 @@ for (const width of [390, 768, 1024, 1440]) {
     }
   });
 }
+
+
+test("operational list headers show only a localized count, not the selected tab title again", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  for (const [route, component] of [
+    ["schedule", "schedule-workspace"],
+    ["contract", "contract-workspace"],
+    ["payment", "measurement-payment-workspace"],
+    ["completion", "completion-handover-workspace"],
+  ] as const) {
+    await page.goto("/#/" + route);
+    const list = page.locator('[data-ui-component="' + component + '"] .list-pane').first();
+    await expect(list).toBeVisible();
+    await expect(list.locator(':scope > [data-ui-component="list-record-count"]')).toBeVisible();
+    await expect(list.locator(':scope > .section-heading')).toHaveCount(0);
+    const countLabel = (await list.locator('[data-ui-component="list-record-count"]').textContent())?.trim();
+    expect(countLabel, route + ": real translated item count").toMatch(/\d/);
+  }
+});
