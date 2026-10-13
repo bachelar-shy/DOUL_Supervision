@@ -120,7 +120,9 @@ test("selected current SafetyStopOrder uses server actions and refuses a guarded
   });
   expect(correctionResponse.status(), await correctionResponse.text()).toBe(200);
 
-  await page.getByRole("button", { name: "새로고침", exact: true }).click();
+  const fresh = page.waitForResponse(r => r.url().endsWith("/workspace") && r.ok());
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await fresh;
   const beforeGuard = await request.get(`/api/projects/${sup.projectId}/safety-stop-orders/${stop.id}`, { headers: headers(con) });
   const versionBeforeGuard = (await beforeGuard.json()).version;
   const actionResponse = await request.get(`/api/projects/${sup.projectId}/safety-stop-orders/${stop.id}/available-actions`, { headers: headers(con) });

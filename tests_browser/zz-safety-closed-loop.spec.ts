@@ -130,7 +130,9 @@ async function uiCommand(
   evidenceId?: string,
 ): Promise<RecordData> {
   await chooseRole(page, actor.actor.actorGroup);
-  await page.getByRole("button", { name: "새로고침", exact: true }).click();
+  const fresh = page.waitForResponse(r => r.url().endsWith("/workspace") && r.ok());
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await fresh;
   await page.getByRole("tab", { name: safetyTabs[collection], exact: true }).click();
   const workspace = page.locator('[data-ui-component="safety-workspace"]');
   const row = workspace.locator(".record-list").getByRole("button").filter({ hasText: current.title! }).first();

@@ -109,7 +109,9 @@ test('AC-SCH-01: live UI schedule → recovery → Owner EOT decision → approv
     }
     await expect(picker).toHaveValue(role);
     await page.goto(contract ? '/#/contract' : '/#/schedule');
-    await page.getByRole('button', { name: '새로고침', exact: true }).click();
+    const fresh = page.waitForResponse(r => r.url().endsWith('/workspace') && r.ok());
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await fresh;
     const tab: Record<string, string> = { 'schedule-baselines': '기준공정', 'schedule-progress-updates': '진도기록',
       'delay-events': '지연사건', 'recovery-plans': '회복계획', 'contract-notices': '계약통지', 'eot-requests': '공기연장(EOT)' };
     await page.getByRole('tab', { name: tab[collection], exact: true }).click();

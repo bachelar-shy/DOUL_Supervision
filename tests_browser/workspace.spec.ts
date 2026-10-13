@@ -650,9 +650,11 @@ test("mobile interactive controls keep 44px touch targets", async ({ page }) => 
   await page.goto("/#/inspections");
   await expect(page.locator("h1")).toBeVisible();
 
+  await page.goto("/#/today");
   await expectTouchTarget(
-    page.getByRole("button", { name: "현장 촬영", exact: true }),
+    page.locator('[data-ui-component="today-header-quick-actions"]').getByRole("button").first(),
   );
+  await page.goto("/#/inspections");
   await expectTouchTarget(
     page.getByRole("button", { name: "메뉴 열기", exact: true }),
   );

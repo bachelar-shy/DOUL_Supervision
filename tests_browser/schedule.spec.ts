@@ -85,7 +85,9 @@ test('Schedule rejects a stale UI command and refresh exposes the saved version'
   await dialog.getByRole('button',{name:'확인 후 실행'}).click();expect((await conflict).status()).toBe(409);
   await expect(dialog.getByRole('alert')).toContainText('다른 사용자가 변경했습니다');
   await dialog.getByRole('button',{name:'취소',exact:true}).click();
-  await page.getByRole('button',{name:'새로고침',exact:true}).click();
+  const fresh = page.waitForResponse(r => r.url().endsWith('/workspace') && r.ok());
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await fresh;
   await expect(page.locator('.detail-head')).toContainText(title);
   await expect(page.locator('.detail-head .badge')).toHaveText('요청 철회');
 });

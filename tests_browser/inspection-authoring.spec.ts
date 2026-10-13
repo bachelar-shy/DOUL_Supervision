@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 test('inspection author selects exact drawing, location, requirement and evidence without automatic prechecks', async ({page}) => {
   await page.goto('/#/inspections');
-  await expect(page.getByRole('button',{name:'새로고침',exact:true})).toBeEnabled({timeout:30000});
+  await expect(page.locator('[data-ui-component="workspace-main"]')).toBeVisible({timeout:30000});
   await page.getByLabel('시험 사용자 역할 선택').selectOption('CON');
   await page.goto('/#/inspections');
   // The form opens from the contractor's explicit creation action, rather
