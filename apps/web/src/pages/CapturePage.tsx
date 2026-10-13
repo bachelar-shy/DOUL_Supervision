@@ -87,7 +87,7 @@ export function CapturePage({
   function setAutoSync(enabled: boolean) {
     setAutoPreference({ key: autoKey, enabled });
     try { window.localStorage.setItem(autoKey, enabled ? "true" : "false"); }
-    catch { setError("자동전송 설정을 저장할 수 없습니다. 현재 화면에서만 유지됩니다."); }
+    catch { setError(t("capture.autoSync.storageError")); }
     if (enabled) autoAttempted.current = "";
   }
   const [progress, setProgress] = useState("");
@@ -330,12 +330,12 @@ export function CapturePage({
             </button>
           </div>
           <label className="flex items-center gap-2 text-sm" style={{ marginBottom: 8 }}>
-            <input type="checkbox" aria-label="연결 복구 시 미전송 자료 자동 전송"
+            <input type="checkbox" aria-label={t("capture.autoSync.ariaLabel")}
               checked={autoEnabled} onChange={event => setAutoSync(event.target.checked)} />
-            연결 복구 시 같은 프로젝트·담당자·역할의 미전송 자료를 1회 자동 전송
+            {t("capture.autoSync.description")}
           </label>
           <p style={{ fontSize: 11, color: "#64748b" }}>
-            기존 방식으로 보관된 자료는 직접 전송해야 합니다. 서버 확인 전까지 원본을 보존합니다.
+            {t("capture.autoSync.note")}
           </p>
           {batchBusy && <p role="status">{t("capture.batch.preparing")}</p>}
           {pending.map((p) => (
