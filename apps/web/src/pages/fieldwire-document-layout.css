@@ -242,3 +242,45 @@
     scroll-behavior: auto;
   }
 }
+
+/* Related document selection controls form one responsive section instead
+ * of four independent full-width rows. Draft/render contracts are unchanged. */
+.app-shell[data-layout-system="field-workspace"] .template-document .document-metadata-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 6px 9px;
+  margin: 0 0 7px;
+  min-width: 0;
+}
+.app-shell[data-layout-system="field-workspace"] .template-document .document-metadata-grid > label {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  margin: 0;
+  color: #435365;
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1.4;
+}
+.app-shell[data-layout-system="field-workspace"] .template-document .document-metadata-grid > label > :is(select, input) {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--doc-ui-control, 35px);
+  height: var(--doc-ui-control, 35px);
+  border: 1px solid #cbd4df;
+  border-radius: 3px;
+  background: #fff;
+  color: #273848;
+  padding: 6px 9px;
+  font-size: 12px;
+}
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] .template-document .document-metadata-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .template-document .document-metadata-grid > label {
+    font-size: 12px;
+  }
+}
