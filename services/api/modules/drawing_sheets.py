@@ -23,6 +23,7 @@ from fastapi.responses import Response
 from app.reference.validation import ContractError, require
 from .drawing_raster import MAX_SOURCE_BYTES, PdfSheetError, pdf_pages, page_image, pdf_page_text
 from .drawing_sheet_metadata import extract_sheet_candidate
+from .drawing_sheet_metadata_review import install_sheet_metadata_review_routes
 from .drawing_sheet_revision_links import install_sheet_revision_routes
 
 LOG = logging.getLogger(__name__)
@@ -441,6 +442,10 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
             require(row["version"] == body["expectedVersion"], "VERSION_CONFLICT", "도면 정보가 변경되었습니다")
             row.update(version=row["version"] + 1, number=body["number"].strip(),
                        title=body["title"].strip(), updatedAt=store.engine.at())
+            # Editing the identity after verification must invalidate that review.
+            if row.get("metadataReview", {}).get("status") == "verified":
+                row["metadataReview"] = {**row["metadataReview"], "status": "needs_review",
+                    "note": "The drawing identity was edited after verification; recheck required."}
             _audit(store, project_id, "sheet_renamed", actor, role, {
                 "sheetId": sheet_id, "version": row["version"]})
             result = {"sheet": _sheet_result(row)}
@@ -505,6 +510,9 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
             store.requests[request_key] = {"hash": fingerprint, "result": deepcopy(result)}
             return result
 
+    install_sheet_metadata_review_routes(
+        app, store, identity=identity, context=context, sheet_for=sheet_for,
+        set_for=set_for, key_for=key_for, audit=_audit)
 
     install_sheet_revision_routes(app, store, identity=identity, context=context,
                                   sheet_for=sheet_for, set_for=set_for,
