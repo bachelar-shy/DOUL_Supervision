@@ -18,16 +18,16 @@ from tests_mvp.test_synthetic_role_login_http import SyntheticQuickLoginHTTPTest
 
 def large_pdf():
     original = test_pdf(145, variant="A")
-    marker = re.search(rb"startxref\\n(\\d+)\\n%%EOF", original)
+    marker = re.search(rb"startxref\n(\d+)\n%%EOF", original)
     assert marker is not None
     old_offset = int(marker.group(1))
     # Add a PDF 1.4 comment BEFORE xref, so offsets of all actual page objects
     # remain unchanged. The xref pointer itself is updated accordingly.
-    pad = b"%" + b"X" * (56 * 1024 * 1024 - len(original) - 2) + b"\\n"
+    pad = b"%" + b"X" * (56 * 1024 * 1024 - len(original) - 2) + b"\n"
     result = original[:old_offset] + pad + original[old_offset:]
     result = result.replace(
-        b"startxref\\n" + str(old_offset).encode() + b"\\n",
-        b"startxref\\n" + str(old_offset + len(pad)).encode() + b"\\n",
+        b"startxref\n" + str(old_offset).encode() + b"\n",
+        b"startxref\n" + str(old_offset + len(pad)).encode() + b"\n",
     )
     assert 56 * 1024 * 1024 <= len(result) <= 57 * 1024 * 1024
     return result
@@ -129,7 +129,7 @@ class LargeDrawingAcceptance(SyntheticQuickLoginHTTPTest):
                 "/image?size=preview", headers=headers)
             self.assertEqual(picture.status_code, 200, picture.text[:300] if
                              picture.status_code != 200 else "")
-            self.assertTrue(picture.content.startswith(b"\\xff\\xd8\\xff"))
+            self.assertTrue(picture.content.startswith(b"\xff\xd8\xff"))
 
 
 if __name__ == "__main__":
