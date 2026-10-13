@@ -4,12 +4,16 @@ on:
     paths:
       - "scripts/verify_drawing_originals.py"
       - "tests_mvp/test_drawing_originals_cli.py"
+      - "tests_mvp/test_import_registered_drawing_cli.py"
+      - "scripts/import_registered_drawing.py"
       - ".github/workflows/drawing-original-source-qa.yml"
   push:
     branches: [main]
     paths:
       - "scripts/verify_drawing_originals.py"
       - "tests_mvp/test_drawing_originals_cli.py"
+      - "tests_mvp/test_import_registered_drawing_cli.py"
+      - "scripts/import_registered_drawing.py"
       - ".github/workflows/drawing-original-source-qa.yml"
 permissions:
   contents: read
@@ -23,4 +27,4 @@ jobs:
         with:
           python-version: "3.12"
       - name: Original catalog QA contract (no network or staging secrets)
-        run: python -m unittest tests_mvp.test_drawing_originals_cli -v
+        run: python -m unittest tests_mvp.test_drawing_originals_cli tests_mvp.test_import_registered_drawing_cli -v
