@@ -3,14 +3,18 @@ import {
   ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, CircleDot, ClipboardCheck,
   FilePlus2, FileText, Grid2X2, Layers3, List, MapPin, Maximize, MousePointer2,
   Pencil, Plus, RotateCcw, Search, Upload, X, ZoomIn, ZoomOut,
+  Square, Circle, Cloud, Type, Minus, ArrowUpRight, Undo2, Redo2, Eraser, Ruler,
 } from "lucide-react";
 import type { SupervisionClient } from "../data/supervision-client";
 import type { CommandDescriptor, WorkItem, Workspace } from "../data/ui-contract";
 import {
   createSheetPin, drawingPinLabels, loadDrawingSets, loadDrawingSheets, loadSheetPins,
+  createSheetMarkup, loadSheetMarkups, changeSheetMarkup,
+  type DrawingSheetMarkup, type DrawingMarkupKind, type NewSheetMarkup,
   updateDrawingSheet, uploadDrawingSet, reviewDrawingSheetMetadata,
   type DrawingPinKind, type DrawingSet, type DrawingSheet, type DrawingSheetPin,
 } from "../data/drawing-sheet-client";
+import { DrawingMarkupCanvas } from "./DrawingMarkupCanvas";
 import { DrawingRevisionDialog } from "./DrawingRevisionDialog";
 import "./drawing-sheet-workspace.css";
 import { FIELD_DRAWING_FOCUS_EVENT, consumeDrawingFocus } from "../data/drawing-focus";
@@ -77,6 +81,17 @@ const workRefType: Record<string, string> = {
   inspection: "Inspection", observation: "Observation", issue: "Issue", action: "Action",
 };
 const availableKinds: DrawingPinKind[] = ["issue", "inspection", "site"];
+const markupButtons = [
+  {tool:"pen", label:"자유선", Icon:Pencil},
+  {tool:"line", label:"직선", Icon:Minus},
+  {tool:"arrow", label:"화살표", Icon:ArrowUpRight},
+  {tool:"rectangle", label:"사각형", Icon:Square},
+  {tool:"ellipse", label:"원·타원", Icon:Circle},
+  {tool:"cloud", label:"수정구름", Icon:Cloud},
+  {tool:"text", label:"문자", Icon:Type},
+  {tool:"measure", label:"거리 측정", Icon:Ruler},
+  {tool:"eraser", label:"마크업 삭제", Icon:Eraser},
+] as const;
 
 export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, onNavigate, onOpenCommand }: Props) {
   const projectId = workspace.project.id;
@@ -88,6 +103,14 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pins, setPins] = useState<DrawingSheetPin[]>([]);
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
+  const [markups, setMarkups] = useState<DrawingSheetMarkup[]>([]);
+  const [markupTool, setMarkupTool] = useState<DrawingMarkupKind | "eraser" | "pointer">("pointer");
+  const [markupColor, setMarkupColor] = useState("#ef552b");
+  const [markupText, setMarkupText] = useState("");
+  const [mmPerSheetWidth, setMmPerSheetWidth] = useState<number | null>(null);
+  const [markupHistory, setMarkupHistory] = useState<string[]>([]);
+  const [redoHistory, setRedoHistory] = useState<DrawingSheetMarkup[]>([]);
+  const [markupBusy, setMarkupBusy] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [pinChoice, setPinChoice] = useState<PinChoice>(null);
   const [pendingPoint, setPendingPoint] = useState<{ x: number; y: number } | null>(null);
@@ -165,6 +188,16 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   const filteredPins = pins.filter(item => issueFilter === "all" || item.kind === issueFilter);
   const related = workspace.items.filter(item => ["inspection", "observation", "issue", "action"].includes(item.machine));
   const selectedPin = pins.find(item => item.id === selectedPinId) ?? null;
+  useEffect(() => {
+    setMarkups([]); setMarkupHistory([]); setRedoHistory([]); setMarkupTool("pointer");
+    setMmPerSheetWidth(null);
+    if (!selected || selected.status !== "ready" || client.kind !== "http") return;
+    let live = true;
+    void loadSheetMarkups(client, selected.id).then(result => {
+      if (live) setMarkups(result.items);
+    }).catch(() => { if (live) setError("도면 마크업을 조회하지 못했습니다."); });
+    return () => { live = false; };
+  }, [client, selected?.id, selected?.status]);
   useEffect(() => {
     if (!detailOpen) return;
     const onEscape = (event: KeyboardEvent) => {
@@ -280,6 +313,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
   }
   function choosePin(kind: DrawingPinKind) {
     if (!canWrite) return;
+    setMarkupTool("pointer");
     setPinChoice(kind); setPendingPoint(null); setComment(""); setRecordRef(""); setError("");
     setSelectedPinId(null); setDetailOpen(false); setRightOpen(!window.matchMedia("(max-width: 767px)").matches);
   }
@@ -319,6 +353,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     } finally { setBusy(false); }
   }
   function startDrag(event: PointerEvent<HTMLDivElement>) {
+    if (markupTool !== "pointer") return;
     if (event.button !== 0 || pinChoice || (event.target instanceof Element && event.target.closest("button"))) return;
     drag.current = { x: event.clientX, y: event.clientY, startX: pan.x, startY: pan.y, moved: false };
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -331,6 +366,53 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
     setPan({ x: drag.current.startX + diffX, y: drag.current.startY + diffY });
   }
   function stopDrag() { drag.current = null; }
+  async function addMarkup(body: NewSheetMarkup) {
+    if (!selected || !canWrite || markupBusy) return;
+    setMarkupBusy(true); setError("");
+    try {
+      const result = await createSheetMarkup(client, selected.id, body, crypto.randomUUID());
+      setMarkups(previous => [...previous, result.markup]);
+      setMarkupHistory(previous => [...previous, result.markup.id]);
+      setRedoHistory([]);
+      setNotice("도면 마크업을 저장했습니다.");
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "마크업 저장 실패"); }
+    finally { setMarkupBusy(false); }
+  }
+  async function eraseMarkup(item: DrawingSheetMarkup) {
+    if (!selected || !canWrite || markupBusy) return;
+    setMarkupBusy(true);
+    try {
+      await changeSheetMarkup(client, selected.id, item.id, "archive", item.version, crypto.randomUUID());
+      setMarkups(previous => previous.filter(value => value.id !== item.id));
+      setMarkupHistory(previous => previous.filter(id => id !== item.id));
+      setRedoHistory([]);
+    } catch { setError("마크업 삭제 실패"); } finally { setMarkupBusy(false); }
+  }
+  async function undoMarkup() {
+    if (!selected || !canWrite || markupBusy) return;
+    const id = markupHistory[markupHistory.length - 1];
+    const item = markups.find(value => value.id === id);
+    if (!item) return;
+    setMarkupBusy(true);
+    try {
+      const result = await changeSheetMarkup(client, selected.id, id, "archive", item.version, crypto.randomUUID());
+      setMarkups(previous => previous.filter(value => value.id !== id));
+      setMarkupHistory(previous => previous.slice(0, -1));
+      setRedoHistory(previous => [...previous, result.markup]);
+    } catch { setError("마크업 실행취소 실패"); } finally { setMarkupBusy(false); }
+  }
+  async function redoMarkup() {
+    if (!selected || !canWrite || markupBusy) return;
+    const item = redoHistory[redoHistory.length - 1];
+    if (!item) return;
+    setMarkupBusy(true);
+    try {
+      const result = await changeSheetMarkup(client, selected.id, item.id, "restore", item.version, crypto.randomUUID());
+      setMarkups(previous => [...previous, result.markup]);
+      setMarkupHistory(previous => [...previous, item.id]);
+      setRedoHistory(previous => previous.slice(0, -1));
+    } catch { setError("마크업 다시 실행 실패"); } finally { setMarkupBusy(false); }
+  }
   function openLinkedPin(pin: DrawingSheetPin) {
     if (!pin.recordRef) return;
     const kind = pin.recordRef.objectType;
@@ -472,8 +554,24 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
                 kind === "inspection" ? <ClipboardCheck size={18}/> : <MapPin size={18}/>}
             </button>)}
             {canWrite && <button type="button" title="마크업 종료 / 이동" aria-label="이동 도구"
-              aria-pressed={pinChoice === null} onClick={() => { setPinChoice(null); setPendingPoint(null); }}>
+              aria-pressed={pinChoice === null} onClick={() => { setPinChoice(null); setPendingPoint(null); setMarkupTool("pointer"); }}>
               <MousePointer2 size={17}/>
+            </button>}
+            {canWrite && <span className="draw-tool-divider" />}
+            {canWrite && markupButtons.map(({tool,label,Icon}) =>
+              <button key={tool} type="button" aria-label={label} title={label}
+                aria-pressed={markupTool === tool} disabled={markupBusy}
+                className={markupTool === tool ? "selected" : ""}
+                onClick={() => { setPinChoice(null); setPendingPoint(null); setMarkupTool(tool); }}>
+                <Icon size={17}/>
+              </button>)}
+            {canWrite && <button type="button" title="마크업 실행취소" aria-label="마크업 실행취소"
+              disabled={!markupHistory.length || markupBusy} onClick={() => { void undoMarkup(); }}>
+              <Undo2 size={17}/>
+            </button>}
+            {canWrite && <button type="button" title="마크업 다시 실행" aria-label="마크업 다시 실행"
+              disabled={!redoHistory.length || markupBusy} onClick={() => { void redoMarkup(); }}>
+              <Redo2 size={17}/>
             </button>}
             <span className="draw-tool-divider" />
             <button type="button" title="확대 초기화" aria-label="확대 초기화" onClick={() => { setZoom(1); setPan({x:0,y:0}); }}>
@@ -490,6 +588,10 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
               onLoad={(width, height) => {
                 if (assetSize.width !== width || assetSize.height !== height) setAssetSize({ width, height });
               }} />
+            <DrawingMarkupCanvas key={selected.id} tool={markupTool} markups={markups}
+              sheetVersion={selected.version} color={markupColor} lineWidth={2.5}
+              text={markupText} mmPerSheetWidth={mmPerSheetWidth} canWrite={canWrite && !markupBusy}
+              onCreate={body => { void addMarkup(body); }} onErase={item => { void eraseMarkup(item); }}/>
             {pins.map((pin, idx) => <button type="button" key={pin.id} data-pin-id={pin.id}
               className={"drawing-sheet-marker " + pin.kind + (selectedPinId === pin.id ? " active" : "")}
               style={{ left: pin.x * 100 + "%", top: pin.y * 100 + "%" }}
@@ -500,6 +602,22 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
             {pendingPoint && <span className="drawing-sheet-marker pending"
               style={{ left: pendingPoint.x * 100 + "%", top: pendingPoint.y * 100 + "%" }} aria-hidden="true"><Plus size={12}/></span>}
           </div> : <div className="drawing-sheet-empty">{selected.status === "failed" ? "도면 변환에 실패했습니다." : "페이지 이미지를 준비 중입니다."}</div>}
+          {canWrite && markupTool !== "pointer" && <div className="drawing-markup-options"
+            onPointerDown={event => event.stopPropagation()}>
+            <span>{markupButtons.find(item => item.tool === markupTool)?.label}</span>
+            <label>색상<input aria-label="마크업 색상" type="color" value={markupColor}
+              onChange={event => setMarkupColor(event.target.value)}/></label>
+            {markupTool === "text" && <label>문자<input aria-label="마크업 문자" maxLength={500}
+              placeholder="기입할 문자" value={markupText} onChange={event => setMarkupText(event.target.value)}/></label>}
+            {markupTool === "measure" && <label>도면 전체 폭(mm)<input aria-label="도면 전체 폭(mm)"
+              type="number" min="1" max="100000000" step="any" placeholder="미설정"
+              value={mmPerSheetWidth ?? ""} onChange={event => {
+                const value = Number(event.target.value);
+                setMmPerSheetWidth(value > 0 && value <= 100000000 ? value : null);
+              }}/></label>}
+            <small>{markupTool === "measure" && !mmPerSheetWidth
+              ? "축척 설정 전 실제 길이를 표시하지 않습니다." : "원본 PDF와 분리하여 저장합니다."}</small>
+          </div>}
           {pinChoice && <div className="drawing-pin-instruction" role="status">도면에서 위치를 클릭한 후 오른쪽에 내용을 입력하십시오.</div>}
         </div>
         <div className="drawing-board-bottom">
@@ -548,7 +666,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
             <button type="submit" className="primary-action" disabled={!pendingPoint || !comment.trim() || busy}>
               {busy ? "저장 중…" : "핀 저장"}
             </button>
-            <button type="button" onClick={() => { setPinChoice(null); setPendingPoint(null); }}>취소</button>
+            <button type="button" onClick={() => { setPinChoice(null); setPendingPoint(null); setMarkupTool("pointer"); }}>취소</button>
           </div>
           <small>업무를 연결하지 않으면 현장 메모 초안이며, 공식 검측·시정조치는 별도 승인 절차가 필요합니다.</small>
         </form>}
@@ -574,6 +692,7 @@ export function DrawingSheetWorkspace({ client, workspace, onChanged, onSelect, 
             ? <button type="button" onClick={() => openLinkedPin(selectedPin)}>연결된 업무 보기 →</button>
             : <span className="small-note">현장 메모 초안 · 공식 지적 등록 전</span>}
         </div>}
+        <div className="drawing-markup-rail-count">도면 마크업 {markups.length}개</div>
       </aside>}
     </div>}
 

@@ -75,3 +75,33 @@ export function reviewDrawingSheetMetadata(client: SupervisionClient, sheetId: s
     { method: "POST", headers: {"Idempotency-Key": key}, body: JSON.stringify(payload) },
   );
 }
+
+export type DrawingMarkupKind = "pen" | "line" | "arrow" | "rectangle" | "ellipse" |
+  "cloud" | "text" | "measure";
+
+export interface DrawingSheetMarkup {
+  id: string; version: number; projectId: string; sheetId: string; sheetVersion: number;
+  tool: DrawingMarkupKind; points: Array<{x:number; y:number}>;
+  color: string; lineWidth: number; text: string; status: "active" | "archived";
+  createdAt: string; updatedAt: string; createdByPartyId: string; createdByRole: string;
+}
+export type NewSheetMarkup = Pick<DrawingSheetMarkup,
+  "sheetVersion" | "tool" | "points" | "color" | "lineWidth" | "text">;
+
+export function loadSheetMarkups(client: SupervisionClient, sheetId: string) {
+  return client.request<{items: DrawingSheetMarkup[]; count: number}>(
+    drawingSheetPath(client, sheetId) + "/markups");
+}
+export function createSheetMarkup(client: SupervisionClient, sheetId: string,
+  payload: NewSheetMarkup, key: string) {
+  return client.request<{markup: DrawingSheetMarkup}>(
+    drawingSheetPath(client, sheetId) + "/markups",
+    {method: "POST", headers: {"Idempotency-Key": key}, body: JSON.stringify(payload)});
+}
+export function changeSheetMarkup(client: SupervisionClient, sheetId: string,
+  id: string, action: "archive" | "restore", version: number, key: string) {
+  return client.request<{markup: DrawingSheetMarkup}>(
+    drawingSheetPath(client, sheetId) + "/markups/" + encodeURIComponent(id) + "/" + action,
+    {method: "POST", headers: {"Idempotency-Key": key},
+      body: JSON.stringify({expectedVersion: version})});
+}
