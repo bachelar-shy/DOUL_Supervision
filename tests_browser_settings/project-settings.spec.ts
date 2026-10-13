@@ -72,7 +72,12 @@ test("company and participant are saved through the API and become an account ch
   await tab.getByRole("button",{name:"참여회사 등록",exact:true}).click();
   await expect(tab.getByText(company,{exact:false})).toBeVisible();
   await tab.getByRole("combobox",{name:"역할",exact:true}).selectOption("CON");await tab.getByRole("combobox",{name:"소속 회사",exact:true}).selectOption({label:company});
-  await tab.getByLabel("담당자 이름",{exact:true}).fill(person);await tab.getByRole("button",{name:"담당자 등록",exact:true}).click();
+  await tab.getByLabel("담당자 이름",{exact:true}).fill(person);
+  await tab.getByRole("button",{name:"담당자 등록",exact:true}).click();
+  // Wait for the API round trip and workspace refresh before changing tabs.
+  // Switching during the pending save can target a panel from an old render.
+  await expect(tab.getByText(person,{exact:false})).toBeVisible();
+  await expect(page.getByRole("button",{name:"다시 불러오기",exact:true})).toBeEnabled();
   await page.getByRole("tab",{name:"로그인계정",exact:true}).click();
   await panel(page,"로그인계정").getByRole("combobox",{name:"계정 역할",exact:true}).selectOption("CON");
   await expect(panel(page,"로그인계정").getByLabel("담당자·역할").locator("option").filter({hasText:person})).toHaveCount(1);
