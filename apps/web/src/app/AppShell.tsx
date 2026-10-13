@@ -622,24 +622,16 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               ) : null
             }
             actions={
-              <>
-                <ActionButton
-                  onClick={() => void refresh()}
-                  disabled={loading || !online}
-                >
-                  <Icon name="refresh" />
-                  {t("app.action.refresh")}
-                </ActionButton>
-                {role === "SUP" && (
-                  <ActionButton
-                    variant="primary"
-                    onClick={() => nav("capture")}
-                  >
-                    <Icon name="camera" />
-                    {t("app.action.capture")}
-                  </ActionButton>
-                )}
-              </>
+              safeRoute === "today" && ["SUP", "CON", "ADM"].includes(role) ? (
+                <div data-ui-component="today-header-quick-actions" className="today-header-quick-actions">
+                  {allowed.includes("capture") && <button className="primary" type="button"
+                    onClick={() => nav("capture")}>{t("today.quick.capture")}</button>}
+                  {role === "CON" && allowed.includes("inspections") && <button className="secondary" type="button"
+                    onClick={() => nav("inspections")}>{t("today.quick.inspection")}</button>}
+                  {role !== "CON" && allowed.includes("corrections") && <button className="secondary" type="button"
+                    onClick={() => nav("actions")}>{t("today.quick.action")}</button>}
+                </div>
+              ) : null
             }
           />
           {workspace && client.kind !== "mock" && <details className="mb-3">
