@@ -609,9 +609,9 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
               ? "기기에 보관한 현장 업무는 온라인 연결 시 자동 전송을 시도합니다. 미전송·충돌 건은 여기에서 확인하세요."
               : "오프라인 작업함에 저장한 업무는 기기에 보관되고, 온라인 복구 후 자동 전송을 시도합니다."}</p>
             <OfflineCommandIntentPanel key={`${workspace.project.id}:${client.session?.actor.roleAssignmentId ?? workspace.role.id}:${client.session?.actor.partyId}`}
-              client={client} workspace={workspace} online={online} onChanged={refresh} />
+              client={client} workspace={workspace} online={online} onChanged={refresh} onStatus={setToast} />
             <FieldOfflineQueue key={`outbox:${workspace.project.id}:${workspace.role.id}`}
-              client={client} workspace={workspace} online={online} onChanged={refresh} />
+              client={client} workspace={workspace} online={online} onChanged={refresh} onStatus={setToast} />
           </aside>
         )}
         <main data-ui-component="workspace-main">
