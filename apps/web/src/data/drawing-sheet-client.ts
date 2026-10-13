@@ -1,5 +1,5 @@
 import type { DomainRef } from "./ui-contract";
-import type { SupervisionClient } from "./supervision-client";
+import type { SupervisionClient, UploadOptions } from "./supervision-client";
 
 export interface DrawingSet {
   id: string; projectId: string; fileName: string; folder: string;
@@ -41,15 +41,37 @@ export async function loadDrawingSheets(client: SupervisionClient) {
 export async function loadDrawingSets(client: SupervisionClient) {
   return client.request<{ items: DrawingSet[] }>(client.path("/drawing-sets"));
 }
-export async function uploadDrawingSet(client: SupervisionClient, file: File, key: string) {
+/** 20 MiB direct source uploads; large PDF drawings reuse the existing
+ * 64 MiB resumable Evidence upload instead of creating duplicate originals. */
+export async function uploadDrawingSet(client: SupervisionClient, file: File, key: string,
+    scope?: UploadOptions["scope"], progress?: (offset: number, total: number) => void) {
   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf"))
     throw new Error("PDF만 업로드할 수 있습니다.");
-  if (file.size > 20 * 1024 * 1024) throw new Error("파일 크기는 20MB 이하여야 합니다.");
-  return client.request<{ set: DrawingSet }>(
-    client.path("/drawing-sets") + "?filename=" + encodeURIComponent(file.name),
-    { method: "POST", headers: { "Content-Type": "application/pdf", "Idempotency-Key": key }, body: file },
+  if (file.size === 0 || file.size > 64 * 1024 * 1024)
+    throw new Error("도면 원본은 64MB 이하만 등록할 수 있습니다.");
+  if (file.size <= 20 * 1024 * 1024) {
+    return client.request<{ set: DrawingSet }>(
+      client.path("/drawing-sets") + "?filename=" + encodeURIComponent(file.name),
+      {method:"POST", headers:{"Content-Type":"application/pdf","Idempotency-Key":key}, body:file},
+    );
+  }
+  if (!scope || !client.session) throw new Error("현재 프로젝트의 작업범위와 로그인이 필요합니다.");
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const hash = Array.from(new Uint8Array(digest), x => x.toString(16).padStart(2,"0")).join("");
+  const original = await client.upload(bytes, {
+    name:file.name, mime:"application/pdf", hash, scope,
+    sourcePartyId:client.session.actor.partyId, captureId:key,
+  },progress);
+  return client.request<{set: DrawingSet}>(
+    client.path("/drawing-sets/from-evidence"),
+    {method:"POST", headers:{"Idempotency-Key":key+"-drawing-index"},
+      body:JSON.stringify({evidenceRef:{
+        objectType:"Evidence",objectId:original.id,version:original.version,
+      }})},
   );
 }
+
 export async function updateDrawingSheet(client: SupervisionClient, sheet: DrawingSheet,
                                          number: string, title: string) {
   return client.request<{ sheet: DrawingSheet }>(
