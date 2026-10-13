@@ -1,0 +1,353 @@
+/*
+ * DOUL supervision - Fieldwire-aligned interaction geometry, v1.
+ * Reference: Fieldwire web plan/tasks layout and control patterns.
+ * Only presentation is changed: DOUL palette, server permissions, and
+ * original document/data contracts remain authoritative.
+ * Load after field-workspace-layout.css.
+ */
+.app-shell[data-layout-system="field-workspace"] {
+  --fw-ui-primary: var(--doul-color-brand, #0b2e91);
+  --fw-ui-primary-light: #eaf0ff;
+  --fw-ui-separator: #dce2e9;
+  --fw-ui-canvas: #f4f6f8;
+  --fw-ui-control-height: 34px;
+  --fw-ui-row-height: 40px;
+  --fw-ui-radius: 3px;
+  --fw-ui-scroll-thumb: #a5afbb;
+  --fw-ui-scroll-track: transparent;
+  --fw-ui-tool-size: 34px;
+  --fw-ui-issue-rail: clamp(270px, 24%, 320px);
+}
+
+/* Scrolling is owned by the current pane, never by an unrelated pane.
+ * Firefox honors scrollbar-width/color; Chromium/WebKit honor the pseudo rules. */
+.app-shell[data-layout-system="field-workspace"] :is(
+  .sidebar nav,
+  .doul-resizable-pane > *,
+  .table-scroll,
+  .register-content,
+  .drawing-sheet-catalog,
+  .drawing-issue-list,
+  .drawing-sheet-issue-rail,
+  .drawing-sheet-original,
+  .pdf-canvas-viewport,
+  .workspace-search-results,
+  .settings-tabs
+) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fw-ui-scroll-thumb) var(--fw-ui-scroll-track);
+  overscroll-behavior: contain;
+}
+.app-shell[data-layout-system="field-workspace"] ::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+.app-shell[data-layout-system="field-workspace"] ::-webkit-scrollbar-track {
+  background: var(--fw-ui-scroll-track);
+}
+.app-shell[data-layout-system="field-workspace"] ::-webkit-scrollbar-thumb {
+  background: var(--fw-ui-scroll-thumb);
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+.app-shell[data-layout-system="field-workspace"] ::-webkit-scrollbar-thumb:hover {
+  background: #748292;
+}
+.app-shell[data-layout-system="field-workspace"] :is(.sidebar nav, .drawing-issue-list, .drawing-sheet-catalog) {
+  min-height: 0;
+}
+
+/* One control scale for navigation, pages, tables, forms and popup actions.
+ * The phone override below keeps larger touch targets. */
+@media (min-width: 768px) {
+  .app-shell[data-layout-system="field-workspace"] :is(
+    .primary,
+    .secondary,
+    .icon-button,
+    .text-button,
+    .draw-command,
+    .workspace-density-toggle,
+    .doul-layout-reset,
+    [data-slot="button"],
+    [data-slot="input"],
+    [data-slot="select-trigger"],
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    select
+  ) {
+    min-height: var(--fw-ui-control-height);
+  }
+  .app-shell[data-layout-system="field-workspace"] :is(
+    .primary,
+    .secondary,
+    .draw-command,
+    .doul-layout-reset,
+    [data-slot="button"]
+  ) {
+    border-radius: var(--fw-ui-radius);
+    font-size: 12px;
+  }
+  /* shadcn default buttons use a fixed h-10. Override that height as well:
+   * min-height alone would leave them at 40px despite compact density. */
+  .app-shell[data-layout-system="field-workspace"] [data-slot="button"][data-size="default"] {
+    height: auto;
+    min-height: 34px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    line-height: 1.25;
+  }
+  .app-shell[data-layout-system="field-workspace"] [data-slot="button"][data-size^="icon"] {
+    min-width: 34px;
+    width: 34px;
+    height: 34px;
+  }
+  .app-shell[data-layout-system="field-workspace"] :is([data-slot="input"], [data-slot="select-trigger"]) {
+    height: 34px;
+    border-radius: var(--fw-ui-radius);
+    font-size: 12px;
+  }
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  input, select, textarea, .primary, .secondary, [data-slot="button"]
+):focus-visible {
+  outline: 2px solid var(--fw-ui-primary);
+  outline-offset: 2px;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  button[aria-pressed="true"], button[aria-selected="true"]
+):not(.sidebar nav button):not(.drawing-board-tools button) {
+  border-color: #aabbe3;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  .primary, [data-slot="button"][data-variant="default"]
+):disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [data-slot="table-row"], .table-scroll tbody tr, .record-row
+) {
+  min-height: var(--fw-ui-row-height);
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  [role="tablist"] > [role="tab"], .settings-tabs button
+) {
+  min-height: 34px;
+  border-radius: var(--fw-ui-radius) var(--fw-ui-radius) 0 0;
+}
+.app-shell[data-layout-system="field-workspace"] :is(
+  .record-row, .table-scroll tbody tr
+):hover {
+  background: #f3f6fa;
+}
+
+/* Dialog and dropdown geometry should be aligned across the app.
+ * Radix portal content is outside the .app-shell, so these use data-slot. */
+:where(
+  [data-slot="dropdown-menu-content"],
+  [data-slot="select-content"],
+  [data-slot="popover-content"],
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"]
+) {
+  border: 1px solid #d9e0e8;
+  border-radius: 4px;
+  box-shadow: 0 8px 22px #202a351c;
+}
+:where([data-slot="dropdown-menu-item"], [data-slot="select-item"]) {
+  min-height: 32px;
+  font-size: 12px;
+}
+:where([data-slot="tooltip-content"]) {
+  max-width: 270px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* Project creation is a high-impact administrative action: retain the
+ * existing 44px target even on desktop while general toolbar buttons are
+ * reduced to the 34px Fieldwire-inspired density. */
+.app-shell[data-layout-system="field-workspace"] .project-settings-page .settings-project-actions > button.primary {
+  min-height: 44px;
+}
+
+/* Fieldwire-style plan: flush workspace, compact actions, fixed tool location,
+ * large continuous canvas and contextual task rail on the right. */
+@media (min-width: 768px) {
+  .app-shell[data-layout-system="field-workspace"][data-workspace-route="drawings"] .main-shell main > [data-ui-page="field-drawings"] {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+  .app-shell[data-layout-system="field-workspace"][data-workspace-route="drawings"] .app-footer {
+    display: none;
+  }
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-sheet-commandbar {
+  min-height: 46px;
+  padding: 6px 12px;
+  gap: 8px;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-sheet-command-left,
+.app-shell[data-layout-system="field-workspace"] .drawing-sheet-command-right {
+  gap: 5px;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-sheet-command-left {
+  flex: 1 1 0;
+  overflow: hidden;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-current-sheet {
+  min-width: 0;
+  max-width: min(34vw, 390px);
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-sheet-workspace .draw-command {
+  min-height: 32px;
+  padding: 5px 9px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-sheet-workspace .draw-command.icon-control {
+  width: 34px;
+  padding: 5px;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-sheet-viewer:not(.right-collapsed) {
+  grid-template-columns: minmax(0, 1fr) var(--fw-ui-issue-rail);
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-sheet-viewer.right-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-board-viewport {
+  background: #e9edf1;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-board-tools {
+  top: 10px;
+  left: 10px;
+  gap: 1px;
+  padding: 3px;
+  border-radius: 3px;
+  background: #313942;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-board-tools button {
+  width: var(--fw-ui-tool-size);
+  height: var(--fw-ui-tool-size);
+  border-radius: 2px;
+  background: #313942;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-board-tools button:hover:not(:disabled),
+.app-shell[data-layout-system="field-workspace"] .drawing-board-tools button.selected,
+.app-shell[data-layout-system="field-workspace"] .drawing-board-tools button[aria-pressed="true"] {
+  background: var(--fw-ui-primary);
+  color: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-board-bottom {
+  flex-basis: 36px;
+  gap: 8px;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-sheet-issue-rail {
+  min-width: 0;
+  border-left: 1px solid var(--fw-ui-separator);
+  background: #f7f8fa;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-issue-heading {
+  min-height: 40px;
+  padding: 5px 10px 5px 13px;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-issue-filters {
+  flex: none;
+  gap: 3px;
+  padding: 6px 8px;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-issue-filters button {
+  min-height: 28px;
+  padding: 4px 7px;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-issue-list {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-issue-row {
+  min-height: 49px;
+  padding: 7px 10px;
+  gap: 8px;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-issue-row.selected {
+  background: var(--fw-ui-primary-light);
+  box-shadow: inset 3px 0 var(--fw-ui-primary);
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-issue-row:focus-visible {
+  outline-offset: -2px;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-pin-detail {
+  max-height: 32vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-sheet-items.as-grid {
+  justify-content: start;
+}
+.app-shell[data-layout-system="field-workspace"] .drawing-board-current-label {
+  max-width: 55%;
+}
+
+/* Keep thumb-readable forms on site phones. The task rail becomes a sheet,
+ * rather than covering the drawing at desktop widths. */
+@media (min-width: 768px) and (max-width: 1100px) {
+  .app-shell[data-layout-system="field-workspace"] {
+    --fw-ui-issue-rail: 260px;
+  }
+}
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] {
+    --fw-ui-control-height: 44px;
+    --fw-ui-tool-size: 44px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .drawing-sheet-commandbar {
+    min-height: 48px;
+    padding: 6px 8px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .drawing-sheet-viewer,
+  .app-shell[data-layout-system="field-workspace"] .drawing-sheet-viewer:not(.right-collapsed) {
+    display: block;
+  }
+  .app-shell[data-layout-system="field-workspace"] .drawing-sheet-issue-rail {
+    width: min(300px, calc(100vw - 45px));
+  }
+  .app-shell[data-layout-system="field-workspace"] .drawing-board-tools {
+    top: 6px;
+    left: 6px;
+  }
+  .app-shell[data-layout-system="field-workspace"] :is(
+    [data-slot="button"], .draw-command, .primary, .secondary
+  ) {
+    min-height: 44px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .drawing-sheet-workspace .draw-command.icon-control {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 7px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .drawing-board-tools button {
+    width: var(--fw-ui-tool-size);
+    height: var(--fw-ui-tool-size);
+    min-width: 44px;
+    min-height: 44px;
+  }
+  /* Registers navigator tabs must remain finger-sized on site devices.
+   * The general compact 34px tab rule must not override this mobile control. */
+  .app-shell[data-layout-system="field-workspace"] [data-ui-component="register-navigator"] [role="tab"],
+  .app-shell[data-layout-system="field-workspace"] [data-ui-component="register-navigator"] button {
+    min-width: 44px;
+    min-height: 44px;
+    height: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell[data-layout-system="field-workspace"] :is(
+    .record-row, .drawing-issue-row, .draw-command
+  ) {
+    transition: none;
+  }
+}

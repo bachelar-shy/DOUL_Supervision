@@ -484,6 +484,13 @@
   min-height: 0;
   grid-template-columns: minmax(0, var(--doul-split-first, 32%)) 10px minmax(0, 1fr);
 }
+/* Single-pane views must occupy the WHOLE task workspace.
+ * This has to be more specific than the generic 3-column split rule above:
+ * otherwise the hidden detail still reserves about one third of the grid. */
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace[data-view="first"] .doul-resizable-body,
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace[data-view="second"] .doul-resizable-body {
+  grid-template-columns: minmax(0, 1fr);
+}
 .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace .doul-resizable-divider {
   width: 10px;
   min-width: 10px;

@@ -107,25 +107,21 @@ function fetchFixture(route: Route, base: string, origin: string) {
 }
 
 async function useRole(page: Page, role: "CON" | "SUP" | "OWN") {
-  const picker = page.locator(".top-actions .role-picker select").nth(1);
-  const changing = (await picker.inputValue()) !== role;
-  // The role picker tears down the old workspace, authenticates the next role,
-  // and fetches a new context. Navigating before that cycle finishes can be
-  // overwritten by the role-change fallback to Today.
-  const roleWorkspace = changing
+  const rolePicker = page.locator(".top-actions .role-picker select").nth(1);
+  // A role change signs in and reloads the authorized workspace asynchronously.
+  // Do not race its initial 'Today' redirect with the next menu click.
+  const changingRole = (await rolePicker.inputValue()) !== role;
+  const ready = changingRole
     ? page.waitForResponse(response =>
-        response.request().method() === "GET"
-        && /\/projects\/[^/]+\/workspace(?:\?|$)/.test(response.url())
-        && response.ok(), { timeout: 30000 })
+      /\/projects\/[^/]+\/workspace(?:\?|$)/.test(response.url())
+      && response.request().method() === "GET" && response.ok(), { timeout: 20000 })
     : null;
-  await picker.selectOption(role);
-  await expect(picker).toHaveValue(role);
-  if (roleWorkspace) await roleWorkspace;
-  await expect(page.locator(".loading-panel")).toBeHidden({ timeout: 20000 });
-  if (changing) {
-    await expect(page.getByRole("heading", { name: /^Today$/ })).toBeVisible({ timeout: 15000 });
-  }
+  await rolePicker.selectOption(role);
+  await expect(rolePicker).toHaveValue(role);
+  if (ready) await ready;
+  await expect(page.locator(".loading-panel")).toHaveCount(0, { timeout: 20000 });
   await page.getByRole("navigation").getByRole("button", { name: /commissioning.*handover.*warranty/i }).click();
+  await expect(page).toHaveURL(/#\/completion$/, { timeout: 10000 });
   await expect(page.locator("[data-ui-component='completion-handover-workspace']")).toBeVisible({ timeout: 15000 });
 }
 

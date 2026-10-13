@@ -4,6 +4,7 @@ import { ApiError, type SupervisionClient } from "../data/supervision-client";
 import { Panel, SectionHeader } from "../ui";
 import { PageBoundary } from "./PageBoundary";
 import "./project-settings.css";
+import "./fieldwire-auth-settings.css";
 import { SampleUseCasePanel } from "./SampleUseCasePanel";
 import { PersonnelRequestPage } from "./PersonnelRequestPage";
 
