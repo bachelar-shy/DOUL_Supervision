@@ -173,7 +173,7 @@ async function selectRecord(page: Page, title: string) {
 async function createSafetyDraft(page: Page, machine: "equipment" | "permit" | "stop", fixture: Fixture, title: string, permitTitle?: string) {
   await selectTab(page, safetyTabs[machine]);
   const disclosure = page.locator('[data-ui-component="safety-create-disclosure"]');
-  if (!(await disclosure.getAttribute("open"))) await disclosure.locator("summary").click();
+  if ((await disclosure.getAttribute("open")) === null) await disclosure.locator("summary").click();
   const panel = page.locator('[data-ui-component="safety-authoring-panel"]');
   await expect(panel).toBeVisible();
   await panel.getByLabel("기록 제목", { exact: true }).fill(title);
