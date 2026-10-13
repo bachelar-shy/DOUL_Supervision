@@ -41,6 +41,21 @@ async function readAll(): Promise<OfflineMediaItem[]> {
     tx.onabort = () => { db.close(); reject(tx.error); };
   });
 }
+/** Fetch one scoped item by its primary key.
+ * Looking up a drawing must not deserialize the entire (up to 80 MB)
+ * offline media library into the phone's JavaScript heap.
+ */
+async function readByKey(key: string): Promise<OfflineMediaItem | null> {
+  const db = await open();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(TABLE, "readonly");
+    const request = tx.objectStore(TABLE).get(key);
+    let found: OfflineMediaItem | null = null;
+    request.onsuccess = () => { found = (request.result as OfflineMediaItem | undefined) ?? null; };
+    tx.oncomplete = () => { db.close(); resolve(found); };
+    tx.onabort = () => { db.close(); reject(tx.error ?? new Error("OFFLINE_CACHE_READ_FAILED")); };
+  });
+}
 async function writeTransaction(write: (store: IDBObjectStore) => void): Promise<void> {
   const db = await open();
   return new Promise((resolve, reject) => {
@@ -63,9 +78,11 @@ export async function listOfflineMedia(scope: OfflineScope): Promise<Omit<Offlin
 export async function getOfflineMedia(scope: OfflineScope, kind: OfflineMediaKind,
     objectId: string, version: number): Promise<Blob | null> {
   const key = keyFor(scope, kind, objectId, version);
-  const records = await readAll();
-  const row = records.find(item => item.key === key);
-  return row && forScope(row, scope) && Date.now() - row.storedAt <= EXPIRY_MS ? row.media : null;
+  const row = await readByKey(key);
+  return row && forScope(row, scope) &&
+    row.kind === kind && row.objectId === objectId && row.version === version &&
+    row.media instanceof Blob && Date.now() - row.storedAt <= EXPIRY_MS
+    ? row.media : null;
 }
 export async function cacheOfflineMedia(scope: OfflineScope, kind: OfflineMediaKind,
     objectId: string, version: number, title: string, media: Blob): Promise<void> {
