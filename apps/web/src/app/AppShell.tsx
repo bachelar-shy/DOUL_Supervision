@@ -685,7 +685,7 @@ export function AppShell({ client, passwordMode = false, onLogout }: { client: S
                   onOpenDrawingPin={(sheetId, pinId) => {
                     nav("drawings");
                     if (!requestDrawingFocus(workspace.project.id, sheetId, pinId))
-                      setToast("해당 도면 마크를 열지 못했습니다.");
+                      setToast(t("app.error.connection"));
                   }}
                   allowedRoutes={fieldCoreMode && allowed.includes("corrections") ? [...allowed, "observations", "issues", "actions"] : allowed}
                   onNavigate={nav}
