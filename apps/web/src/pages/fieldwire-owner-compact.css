@@ -1,0 +1,57 @@
+/* The owner queue remains primary; counters fit a single mobile row. */
+.app-shell[data-layout-system="field-workspace"] .owner-flow-disclosure {
+  margin: 7px 0 0;
+  border: 1px solid var(--fw-ui-separator, #dce2e9);
+  border-radius: 3px;
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .owner-flow-disclosure > summary {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.app-shell[data-layout-system="field-workspace"] .owner-flow-disclosure > summary:focus-visible {
+  outline: 2px solid var(--fw-ui-primary, #0b2e91);
+  outline-offset: -2px;
+}
+.app-shell[data-layout-system="field-workspace"] .owner-flow-content {
+  padding: 10px;
+  border-top: 1px solid #dce2e9;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.app-shell[data-layout-system="field-workspace"] .owner-flow-content p + p { margin-top: 5px; }
+.app-shell[data-layout-system="field-workspace"] [data-owner-governance="true"] .template-owner-report { margin-top: 7px; }
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] [data-ui-component="owner-governance-summary"] {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .app-shell[data-layout-system="field-workspace"] [data-ui-component="owner-governance-summary"] > .panel {
+    min-width: 0;
+    min-height: 65px;
+    padding: 7px;
+  }
+  .app-shell[data-layout-system="field-workspace"] [data-ui-component="owner-governance-summary"] .eyebrow {
+    display: block;
+    font-size: 10px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  .app-shell[data-layout-system="field-workspace"] [data-ui-component="owner-governance-summary"] strong {
+    margin-top: 4px;
+    font-size: 19px;
+    line-height: 1.2;
+  }
+  .app-shell[data-layout-system="field-workspace"] [data-ui-component="owner-governance-summary"] small {
+    display: none;
+  }
+  .app-shell[data-layout-system="field-workspace"] .owner-flow-disclosure > summary {
+    min-height: 44px;
+  }
+}
