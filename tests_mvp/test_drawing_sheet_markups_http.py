@@ -20,6 +20,14 @@ class DrawingSheetMarkupHTTPTests(DrawingSheetHTTPTest):
         item = result.json()["markup"]
         self.assertEqual(item["status"], "active")
         self.assertEqual(self.http.post(url,headers={**adm,"Idempotency-Key":key},json=body).json(), result.json())
+        other = self.http.get("/projects/" + self.project +
+            "/drawing-sheets", headers=adm).json()["items"][1]
+        other_url = "/projects/" + self.project + "/drawing-sheets/" + other["id"] + "/markups"
+        # Same payload and request key must not return another drawing's markup.
+        cross = self.http.post(other_url, headers={**adm, "Idempotency-Key": key},
+                               json={**body, "sheetVersion": other["version"]})
+        self.assertEqual(cross.status_code, 409, cross.text)
+        self.assertEqual(self.http.get(other_url, headers=adm).json()["count"], 0)
         self.assertEqual(self.http.get(url,headers=own).json()["count"], 1)
         self.assertEqual(self.http.post(url,headers={**own,"Idempotency-Key":uid()},json=body).status_code,403)
         self.assertEqual(self.http.post(url,headers={**adm,"Idempotency-Key":uid()},
