@@ -497,8 +497,10 @@ export function CompletionHandoverPage({
       </Tabs>
       <WorkbenchTemplate hasDetail={Boolean(selectedItem)}>
         <Panel className="list-pane" aria-label={t(tab.key)}>
+          <div className="fieldwire-operational-list-head" data-ui-component="operational-list-head">
           <p className="mb-2 text-xs text-muted-foreground" data-ui-component="list-record-count">{i18n.t("common.count", { count: items.length })}</p>
           <div data-ui-component="completion-create-action" className="completion-create-action"><ActionButton disabled={!online || client.kind === "mock" || !capability?.canCreate} onClick={() => setCreating(machine)}>{t("create")}</ActionButton></div>
+          </div>
           {!capability?.canCreate && <p className="completion-capability-note">{capability ? creationCapabilityLabel(capability) : t("createUnavailable")}</p>}
           <p className="muted">{t(tab.description)}</p>
           <div className="completion-record-list">
