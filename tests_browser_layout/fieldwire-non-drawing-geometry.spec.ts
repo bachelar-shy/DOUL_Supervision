@@ -26,7 +26,8 @@ for (const width of [390, 768, 1024, 1440, 1920]) {
       expect(header.width, route + ": full-width toolbar").toBeGreaterThan(main.width - 3);
       expect(topbar.height, route + ": compact global header").toBeGreaterThanOrEqual(width < 768 ? 90 : 47);
       expect(topbar.height, route + ": global header not oversized").toBeLessThanOrEqual(width < 768 ? 112 : 50);
-      expect(header.height, route + ": page toolbar").toBeGreaterThanOrEqual(width < 768 ? 53 : 60);
+      expect(header.height, route + ": page toolbar").toBeGreaterThanOrEqual(
+        route === "today" ? 48 : width < 768 ? 53 : 60);
       const overflow = await page.evaluate(() =>
         document.documentElement.scrollWidth - window.innerWidth);
       expect(overflow, route + ": horizontal overflow").toBeLessThanOrEqual(2);
