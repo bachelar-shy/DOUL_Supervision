@@ -82,5 +82,35 @@ class FieldEvidenceCurrentRefsHTTP(unittest.TestCase):
                              issue["version"])
 
 
+    def test_idempotent_retry_after_revision_returns_same_comment(self):
+        issue = self.visible("Issue", "SUP")
+        _, current_photo = self._photo_revisions("SUP")
+        payload = {"subjectRef": issue, "message": "재연결 후 동일 댓글 재전송",
+                   "mentionPartyIds": [], "evidenceRefs": [current_photo]}
+        url = self.endpoint("discussions/comments")
+        key = uid()
+        first = self.http.post(url, headers=self.headers("SUP", key=key), json=payload)
+        self.assertEqual(first.status_code, 200, first.text)
+        with self.store.transaction(write=True):
+            issue_record = self.store.engine.get("Issue", issue["objectId"])
+            self.store.engine._save("Issue", {
+                **issue_record, "version": issue_record["version"] + 1,
+                "updatedAt": self.store.engine.at()})
+            photo = self.store.engine.get("Evidence", current_photo["objectId"])
+            self.store.engine._save("Evidence", {
+                **photo, "version": photo["version"] + 1,
+                "updatedAt": self.store.engine.at()})
+        replay = self.http.post(url, headers=self.headers("SUP", key=key), json=payload)
+        self.assertEqual(replay.status_code, 200, replay.text)
+        self.assertEqual(replay.json(), first.json())
+        history = self.http.get(self.endpoint("discussions"), headers=self.headers("SUP"),
+            params={"subjectType": "Issue", "subjectId": issue["objectId"],
+                    "version": issue["version"]})
+        self.assertEqual(history.status_code, 200, history.text)
+        self.assertEqual(history.json()["count"], 1)
+        new_request_old_versions = self.http.post(url, headers=self.headers("SUP"), json=payload)
+        self.assertEqual(new_request_old_versions.status_code, 409, new_request_old_versions.text)
+
+
 if __name__ == "__main__":
     unittest.main()
