@@ -329,6 +329,52 @@ export function createMockWorkspace(role: HumanRole): Workspace {
     ],
     items: [
       ...safetyPreviewItems(role),
+      // Synthetic operational records exercise selected-row UX in UI Mock only.
+      // No API writes, approvals, or real project data are created.
+      {
+        machine: "contract_boq",
+        record: {
+          id: "BOQ-UI-001",
+          projectId: "UI-MOCK",
+          version: 2,
+          subtype: "ContractBOQ",
+          status: "draft",
+          title: "A동 건축공사 계약내역서",
+          discipline: "ARCH",
+          packageId: scope.packageId,
+          locationId: scope.locationId,
+          boq: {
+            boqNo: "BOQ-UI-001",
+            revision: "R01",
+            currency: "VND",
+            lineItems: [
+              { itemNo: "A-101", description: "철근콘크리트공사", unit: "m³", contractQuantity: 120, unitRate: 1_000_000, contractAmount: 120_000_000 },
+            ],
+          },
+        },
+        actions: [],
+      },
+      {
+        machine: "commissioning_package",
+        record: {
+          id: "COM-UI-001",
+          projectId: "UI-MOCK",
+          version: 1,
+          subtype: "CommissioningPackage",
+          status: "draft",
+          title: "A동 환기설비 시운전",
+          discipline: "MEP",
+          packageId: scope.packageId,
+          locationId: scope.locationId,
+          data: {
+            commissioningNo: "COM-UI-001",
+            system: "환기설비",
+            readinessStatus: "not_ready",
+            testResultHistory: [],
+          },
+        },
+        actions: [],
+      },
       {
         machine: "evidence",
         record: {
