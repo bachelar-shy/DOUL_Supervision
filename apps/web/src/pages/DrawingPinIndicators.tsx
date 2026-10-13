@@ -2,7 +2,9 @@ import { useLayoutEffect, useRef, useState } from "react";
 import type { DrawingSheetPin } from "../data/drawing-sheet-client";
 import "./drawing-pin-indicators.css";
 
-export type PinMarker = Pick<DrawingSheetPin, "id" | "kind" | "x" | "y">;
+export type PinMarker = Pick<DrawingSheetPin, "kind" | "x" | "y"> & {
+  id?: string; pinId?: string;
+};
 const labels = {issue: "지적·이슈", inspection: "검측", site: "현장상황"} as const;
 const order = ["issue", "inspection", "site"] as const;
 
@@ -48,7 +50,7 @@ export function DrawingThumbnailPins({ pins, naturalSize }: {
   const offsetY = (size.height - height) / 2;
   return <span ref={root} className="drawing-thumbnail-pins" aria-hidden="true">
     {valid && pins.slice(0, 30).map((pin, index) =>
-      <span key={pin.id} className={"drawing-thumbnail-pin " + pin.kind}
+      <span key={pin.id ?? pin.pinId ?? index} className={"drawing-thumbnail-pin " + pin.kind}
         style={{
           left: offsetX + Math.max(0, Math.min(1, pin.x)) * width,
           top: offsetY + Math.max(0, Math.min(1, pin.y)) * height,
