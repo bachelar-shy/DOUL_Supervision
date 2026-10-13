@@ -25,6 +25,17 @@ class DrawingPinRepliesHTTPTests(DrawingSheetHTTPTest):
         self.assertEqual(first.json()["reply"]["authorRole"], "CON")
         self.assertEqual(self.http.post(endpoint, headers={**con, "Idempotency-Key": key},
                            json=first_body).json(), first.json())
+        second_pin = self.http.post(base + "/pins",
+            headers={**con, "Idempotency-Key": uid()},
+            json={"x": 0.43, "y": 0.55, "kind": "issue",
+                  "comment": "다른 작업 위치", "recordRef": None})
+        self.assertEqual(second_pin.status_code, 200, second_pin.text)
+        second_endpoint = base + "/pins/" + second_pin.json()["pin"]["id"] + "/replies"
+        # Same user, key, message and sheet cannot replay a different pin's reply.
+        cross = self.http.post(second_endpoint,
+            headers={**con, "Idempotency-Key": key}, json=first_body)
+        self.assertEqual(cross.status_code, 409, cross.text)
+        self.assertEqual(self.http.get(second_endpoint, headers=adm).json()["count"], 0)
         reply = self.http.post(endpoint, headers={**own, "Idempotency-Key": uid()},
               json={"message": "현장 방문 후 회신하겠습니다", "parentId": first.json()["reply"]["id"]})
         self.assertEqual(reply.status_code, 200, reply.text)
