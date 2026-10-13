@@ -417,6 +417,7 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
         with store.transaction(write=True):
             role = context(project_id, request, actor)
             require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "도면 변환 재시도 권한이 없습니다")
+            authorize_set(project_id, set_for(project_id, set_id), actor, role)
             cached = store.requests.get(request_key)
             if cached:
                 require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Request changed")
@@ -459,6 +460,7 @@ def install_drawing_sheet_routes(app, store, *, identity, role_for, key_for):
         with store.transaction(write=True):
             role = context(project_id, request, actor)
             require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED", "Drawing edit forbidden")
+            authorize_set(project_id, set_for(project_id, set_id), actor, role)
             cache = store.requests.get(cache_key)
             if cache:
                 require(cache["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Request changed")
