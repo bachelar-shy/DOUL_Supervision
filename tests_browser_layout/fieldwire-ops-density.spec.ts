@@ -103,6 +103,12 @@ test("all operational menus keep their tabs and view controls on the same line",
       const tabs = root.locator('.operational-toolbar-tabs > [data-slot="tabs-list"]');
       const controls = root.locator(".doul-layout-controls");
       await expect(tabs).toBeVisible();
+      if (width !== 1024) {
+        await page.screenshot({
+          path: "preview/screenshots/fieldwire-nondrawing-tabview-" + menu + "-" + width + ".png",
+          fullPage: false,
+        });
+      }
       const button = controls.locator('[data-layout-action="first"]');
       const mobileMode = controls.locator('[data-ui-component="mobile-view-mode"]');
       if (width >= 768) {
