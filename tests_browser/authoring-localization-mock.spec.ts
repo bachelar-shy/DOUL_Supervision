@@ -27,6 +27,7 @@ async function chooseLocale(page: Page, language: "ko" | "vi" | "en") {
 test("UI mock keeps Safety creation unavailable and exposes no signing action without an official final snapshot", async ({ page }) => {
   await page.goto("/#/safety");
   const safetyPanel = page.locator('[data-ui-component="safety-authoring-panel"]');
+  await page.locator('[data-ui-component="safety-create-disclosure"] summary').click();
   await expect(safetyPanel).toBeVisible();
   for (const [language, createLabel] of [
     ["ko", "안전 초안 저장"], ["vi", "Lưu bản nháp an toàn"], ["en", "Save Safety draft"],
