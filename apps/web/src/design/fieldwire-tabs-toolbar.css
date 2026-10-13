@@ -1,0 +1,119 @@
+/* Operational menus share one horizontal command row: workflow tabs at
+ * left, list/split/detail actions at right. Existing tab state and pane
+ * resizing are unchanged. The drawing command bar is not affected. */
+.app-shell[data-layout-system="field-workspace"] .doul-layout-mode-select {
+  display: none;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace.operational-tabs-workspace .doul-layout-controls[data-has-toolbar="true"] {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-start;
+  justify-content: flex-end;
+  min-width: 0;
+  min-height: 39px;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace.operational-tabs-workspace .operational-toolbar-tabs {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  max-width: 100%;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace.operational-tabs-workspace .operational-toolbar-tabs > [data-slot="tabs-list"] {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  flex: 1 1 auto;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+  height: 39px;
+  min-height: 39px;
+  padding: 0 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+  border: 0;
+  border-bottom: 1px solid #dce2e9;
+  border-radius: 0;
+  background: #fff;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace.operational-tabs-workspace .operational-toolbar-tabs > [data-slot="tabs-list"] > [data-slot="tabs-trigger"] {
+  display: inline-flex;
+  flex: 0 0 auto;
+  min-height: 38px;
+  height: 38px;
+  padding: 6px 9px;
+  margin: 0;
+  line-height: 1.3;
+  font-size: 12px;
+  white-space: nowrap;
+  scroll-snap-align: start;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace.operational-tabs-workspace .operational-toolbar-tabs > :not([data-slot="tabs-list"]) {
+  min-height: 0;
+  margin: 0;
+  padding: 5px 8px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #657487;
+}
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace.operational-tabs-workspace .doul-layout-choices,
+.app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace.operational-tabs-workspace .doul-layout-reset {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace.operational-tabs-workspace .doul-layout-controls[data-has-toolbar="true"] {
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin-bottom: 5px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace.operational-tabs-workspace .operational-toolbar-tabs {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace.operational-tabs-workspace .operational-toolbar-tabs > [data-slot="tabs-list"] {
+    height: 44px;
+    min-height: 44px;
+    padding: 0 3px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace.operational-tabs-workspace .operational-toolbar-tabs > [data-slot="tabs-list"] > [data-slot="tabs-trigger"] {
+    height: 44px;
+    min-height: 44px;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace.operational-tabs-workspace :is(.doul-layout-choices, .doul-layout-reset) {
+    display: none;
+  }
+  .app-shell[data-layout-system="field-workspace"] .doul-resizable-workspace.operational-tabs-workspace .doul-layout-mode-select {
+    display: block;
+    flex: 0 0 112px;
+    width: 112px;
+    max-width: 112px;
+    min-height: 44px;
+    margin: 0;
+    padding: 7px 5px;
+    font-size: 12px;
+    border: 1px solid #cad4df;
+    border-radius: 3px;
+    background: #fff;
+    color: #334155;
+  }
+}
