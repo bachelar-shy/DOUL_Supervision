@@ -92,10 +92,10 @@ export function WorkbenchPage({
     <PageBoundary name={route} data-workbench-route={route}>
       <WorkbenchLayout hasDetail={!!current}>
         <section className="panel list-pane">
-          <div className="section-heading">
-            <h2>{t("workbench.listTitle", { title: routeTitle })}</h2>
-            <span>{t("workbench.count", { count: visibleItems.length })}</span>
-          </div>
+          {/* The active menu already has the page h1; keep the list's
+              accessible heading without repeating the title visually. The
+              list count belongs to the searchable toolbar below. */}
+          <h2 className="sr-only">{t("workbench.listTitle", { title: routeTitle })}</h2>
           <div className="workbench-list-toolbar" data-ui-component="workbench-list-toolbar">
             <label className="workbench-list-search">
               <span className="sr-only">{t("workbench.filter.search")}</span>
