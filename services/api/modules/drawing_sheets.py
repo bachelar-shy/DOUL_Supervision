@@ -16,6 +16,7 @@ from urllib.parse import unquote
 from uuid import uuid4
 import json
 import logging
+import time
 
 from fastapi import BackgroundTasks, Request
 from fastapi.responses import Response
@@ -63,7 +64,17 @@ def _audit(store, project_id, kind, actor, role, detail):
 
 
 def _render_set(store, project_id, set_id):
-    """Render only unfinished pages; progress and successful pages survive failures."""
+    """Render unfinished pages, reclaiming abandoned jobs after process failure."""
+    token = str(uuid4())
+    with store.transaction(write=True):
+        root = store.meta["drawingSets"][project_id][set_id]
+        if root["status"] != "processing":
+            return
+        now = time.time()
+        if root.get("renderOwner") and now - root.get("renderHeartbeat", 0) < 120:
+            return
+        root["renderOwner"] = token
+        root["renderHeartbeat"] = now
     try:
         with store.transaction():
             source = store.meta["drawingSets"][project_id][set_id]
@@ -101,12 +112,20 @@ def _render_set(store, project_id, set_id):
                         except Exception:
                             LOG.exception("Could not rasterize drawing sheet %s", sheet_id)
                             with store.transaction(write=True):
+                                root = store.meta["drawingSets"][project_id][set_id]
+                                if root.get("renderOwner") != token:
+                                    return
+                                root["renderHeartbeat"] = time.time()
                                 sheet = store.meta["drawingSheets"][project_id][sheet_id]
                                 if sheet["status"] != "ready":
                                     sheet["status"] = "failed"
                                     sheet["updatedAt"] = store.engine.at()
                             continue
                         with store.transaction(write=True):
+                            root = store.meta["drawingSets"][project_id][set_id]
+                            if root.get("renderOwner") != token:
+                                return
+                            root["renderHeartbeat"] = time.time()
                             sheet = store.meta["drawingSheets"][project_id][sheet_id]
                             if sheet["status"] == "ready":
                                 continue  # Never rewrite a previously completed page.
@@ -135,6 +154,8 @@ def _render_set(store, project_id, set_id):
 
         with store.transaction(write=True):
             root = store.meta["drawingSets"][project_id][set_id]
+            if root.get("renderOwner") != token:
+                return
             rows = [store.meta["drawingSheets"][project_id][sid] for sid in root["sheetIds"]]
             root["completedPages"] = sum(sheet["status"] == "ready" for sheet in rows)
             root["status"] = "ready" if root["completedPages"] == pages else "failed"
@@ -143,10 +164,14 @@ def _render_set(store, project_id, set_id):
             else:
                 root["error"] = "일부 페이지 변환에 실패했습니다. 실패한 페이지만 다시 시도할 수 있습니다."
             root["updatedAt"] = store.engine.at()
+            root.pop("renderOwner", None)
+            root.pop("renderHeartbeat", None)
     except Exception:
         LOG.exception("Raster import failed for set %s", set_id)
         with store.transaction(write=True):
             root = store.meta["drawingSets"][project_id][set_id]
+            if root.get("renderOwner") != token:
+                return
             for sheet_id in root["sheetIds"]:
                 sheet = store.meta["drawingSheets"][project_id][sheet_id]
                 if sheet["status"] == "processing":
@@ -158,6 +183,8 @@ def _render_set(store, project_id, set_id):
             root["status"] = "failed"
             root["error"] = "PDF 이미지 변환에 실패했습니다. 원본을 확인한 뒤 다시 시도하십시오."
             root["updatedAt"] = store.engine.at()
+            root.pop("renderOwner", None)
+            root.pop("renderHeartbeat", None)
 
 
 def _refresh_existing_metadata(store, project_id, set_id):
