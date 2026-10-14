@@ -26,11 +26,11 @@ def install_sheet_revision_routes(app, store, *, identity, context, sheet_for, s
                 "Confirm the original drawing number for both pages before linking revisions")
         return number.casefold()
 
-    def projected(project_id, entry):
+    def projected(project_id, entry, actor, role):
         """Report identity drift without modifying an immutable revision link."""
         value = deepcopy(entry)
-        before = sheet_for(project_id, entry["fromSheetId"])
-        after = sheet_for(project_id, entry["toSheetId"])
+        before = sheet_for(project_id, entry["fromSheetId"], actor, role)
+        after = sheet_for(project_id, entry["toSheetId"], actor, role)
         number = entry["drawingNumber"].strip().casefold()
         value["metadataConsistent"] = all(
             sheet["number"].strip().casefold() == number
@@ -44,9 +44,9 @@ def install_sheet_revision_routes(app, store, *, identity, context, sheet_for, s
     def list_sheet_revisions(project_id: str, request: Request, sheetId: str | None = None):
         actor = identity(request)
         with store.transaction():
-            context(project_id, request, actor)
+            role = context(project_id, request, actor)
             if sheetId is not None:
-                sheet_for(project_id, sheetId)
+                sheet_for(project_id, sheetId, actor, role)
             records = revisions(project_id).values()
             if sheetId is not None:
                 # Resolve the complete predecessor/successor chain for this sheet.
@@ -60,9 +60,14 @@ def install_sheet_revision_routes(app, store, *, identity, context, sheet_for, s
                     if len(related) == size:
                         break
                 records = [edge for edge in links if edge["fromSheetId"] in related]
-            return {"items": sorted((projected(project_id, edge) for edge in records),
-                                    key=lambda row: (row["createdAt"], row["id"])),
-                    "count": len(records)}
+            allowed = []
+            for edge in records:
+                try:
+                    allowed.append(projected(project_id, edge, actor, role))
+                except (ContractError, KeyError):
+                    continue
+            return {"items": sorted(allowed, key=lambda row: (row["createdAt"], row["id"])),
+                    "count": len(allowed)}
 
     @app.post("/projects/{project_id}/drawing-sheet-revisions", status_code=201)
     async def link_sheet_revisions(project_id: str, request: Request):
@@ -100,12 +105,14 @@ def install_sheet_revision_routes(app, store, *, identity, context, sheet_for, s
             role = context(project_id, request, actor)
             require(role["actorGroup"] in WRITERS, "NOT_AUTHORIZED",
                     "Only project administrator or supervision can link drawing revisions")
+            sheet_for(project_id, body["fromSheetId"], actor, role)
+            sheet_for(project_id, body["toSheetId"], actor, role)
             cached = store.requests.get(request_key)
             if cached:
                 require(cached["hash"] == fingerprint, "IDEMPOTENCY_CONFLICT", "Request changed")
                 return deepcopy(cached["result"])
-            former = sheet_for(project_id, body["fromSheetId"])
-            later = sheet_for(project_id, body["toSheetId"])
+            former = sheet_for(project_id, body["fromSheetId"], actor, role)
+            later = sheet_for(project_id, body["toSheetId"], actor, role)
             require(former["status"] == later["status"] == "ready",
                     "INVALID_REQUEST", "Both pages must be ready")
             require(former["version"] == body["expectedFromVersion"] and

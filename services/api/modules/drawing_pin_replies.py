@@ -14,7 +14,7 @@ MAX_MESSAGE = 4000
 def install_sheet_pin_reply_routes(app, store, *, identity, context, sheet_for,
                                    visible_pins, key_for, audit):
     def authorized_pin(project_id, sheet_id, pin_id, actor, role):
-        sheet_for(project_id, sheet_id)
+        sheet_for(project_id, sheet_id, actor, role)
         # Linked formal records must pass their existing read gate; being
         # a participant in the project is insufficient for a hidden Issue.
         visible = visible_pins(project_id, sheet_id, actor, role)
@@ -49,12 +49,13 @@ def install_sheet_pin_reply_routes(app, store, *, identity, context, sheet_for,
                 "INVALID_REQUEST", "댓글은 1~4000자로 작성하십시오")
         require(parent is None or (isinstance(parent, str) and 1 <= len(parent) <= 100),
                 "INVALID_REQUEST", "잘못된 답글 대상입니다")
-        fingerprint = sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+        fingerprint = sha256(json.dumps({"sheetId": sheet_id, "pinId": pin_id, "body": body}, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
         request_key = "drawing-pin-reply:" + project_id + ":" + actor["partyId"] + ":" + key
         with store.transaction(write=True):
             role = context(project_id, request, actor)
             require(role["actorGroup"] in COMMENT_ROLES,
                     "NOT_AUTHORIZED", "도면 대화에 참여할 수 없습니다")
+            authorized_pin(project_id, sheet_id, pin_id, actor, role)
             authorized_pin(project_id, sheet_id, pin_id, actor, role)
             existing = store.requests.get(request_key)
             if existing:
