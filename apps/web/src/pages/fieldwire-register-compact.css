@@ -1,0 +1,37 @@
+/* Register menu name is already provided by the global page heading.
+ * Keep the read-only projection notice visible, but without a second title
+ * and full-height banner before the register chooser. */
+.app-shell[data-layout-system="field-workspace"] .template-register > .register-context-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  min-width: 0;
+  min-height: 34px;
+  margin: 0 0 7px;
+  padding: 5px 9px;
+  border: 1px solid var(--fw-ui-separator, #dce2e9);
+  border-radius: 3px;
+  background: #fafbfd;
+  color: #58677a;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.app-shell[data-layout-system="field-workspace"] .template-register .register-context-project {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  color: #45546a;
+  overflow-wrap: anywhere;
+}
+.app-shell[data-layout-system="field-workspace"] .template-register .register-content > :is(.mb-3, .mt-3) {
+  margin-top: 7px;
+  margin-bottom: 7px;
+}
+@media (max-width: 767px) {
+  .app-shell[data-layout-system="field-workspace"] .template-register > .register-context-strip {
+    font-size: 12px;
+    padding: 8px;
+  }
+}

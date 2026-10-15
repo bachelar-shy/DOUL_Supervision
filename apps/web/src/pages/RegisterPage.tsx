@@ -31,7 +31,8 @@ import {
   type RegisterProjectionDefinition,
 } from "../data/register-projection-catalog.generated";
 import { reasonLabel, states } from "../labels";
-import { EmptyState, SectionHeader, StatusBadge } from "../ui";
+import { EmptyState, StatusBadge } from "../ui";
+import "./fieldwire-register-compact.css";
 import {
   DetailDrawer,
   FilterBar,
@@ -430,18 +431,10 @@ export function RegisterPage({
 
   return (
     <RegisterTemplate
-      header={
-        <SectionHeader
-          title={t("register.page.title")}
-          meta={`${definition.id} · ${registerName(definition, t)}`}
-        />
-      }
       notice={
-        <div className="mb-4 grid gap-3 rounded-lg border border-border bg-slate-50 p-3 text-[10px] leading-5 text-slate-500 md:grid-cols-[1fr_auto] md:items-center">
+        <div className="register-context-strip" data-ui-component="register-context-strip" role="note">
           <span>{t("register.page.notice")}</span>
-          <span className="font-medium text-slate-700">
-            {workspace.project.name} · {registerModeLabel(definition, t)}
-          </span>
+          <span className="register-context-project">{workspace.project.name} · {registerModeLabel(definition, t)}</span>
         </div>
       }
     >
